@@ -54,34 +54,13 @@ def can_bridge_firewall(privnic):
         print "failed to turn on bridge netfilter"
         exit(3)
 
-'''
-    try:
-        execute("iptables -N BRIDGE-FIREWALL")
-        execute("iptables -N BRIDGE-FIREWALL")
-        execute("iptables -I BRIDGE-FIREWALL -m state --state RELATED,ESTABLISHED -j ACCEPT")
-        execute("iptables -D FORWARD -j RH-Firewall-1-INPUT")
-    except:
-        logging.exception('Chain BRIDGE-FIREWALL already exists: ')
-
-    result = 0
-    try:
-        execute("iptables -n -L FORWARD | grep BRIDGE-FIREWALL")
-    except:
-        try:
-            execute("iptables -I FORWARD -m physdev --physdev-is-bridged -j BRIDGE-FIREWALL")
-            execute("iptables -A FORWARD -m physdev --physdev-is-bridged --physdev-out " +  privnic + " -j ACCEPT")
-            execute("iptables -A FORWARD -j DROP")
-        except:
-            result = 1
-'''
-
     if not os.path.exists('/var/run/cloud'):
         os.makedirs('/var/run/cloud')
  
     cleanup_rules_for_dead_vms()
     cleanup_rules()
     
-    return result
+    return True
 '''
 def ipset(ipsetname, proto, start, end, ips):
     try:
@@ -195,10 +174,14 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         return 'false' 
     
             
-def default_network_rules_systemvm(vm_name):
+def default_network_rules_systemvm(vm_name, brname):
+    if not addFWFramework(brname):
+        return False 
+
     vifs = getVifs(vm_name)
     domid = getvmId(vm_name)
     vmchain = vm_name
+    brfw = "BRIDGE-FIREWALL-" + brname
  
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
   
@@ -210,8 +193,8 @@ def default_network_rules_systemvm(vm_name):
   
     for vif in vifs:
         try:
-            execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
-            execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " + vif + " -j " +  vmchain)
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j " +  vmchain)
         except:
             logging.debug("Failed to program default rules")
             return 'false'
@@ -223,8 +206,12 @@ def default_network_rules_systemvm(vm_name):
     return 'true'
 
 
-def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif):
+def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
+    if not addFWFramework(brname):
+        return False 
+
     vmName = vm_name 
+    brfw = "BRIDGE-FIREWALL-" + brname
     domID = getvmId(vm_name)
     delete_rules_for_vm_in_bridge_firewall_chain(vmName)
     vmchain = vm_name
@@ -243,8 +230,8 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif):
         execute("iptables -F " + vmchain_default)
 
     try:
-        execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " +  vmchain_default)
-        execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " +  vif + " -j " + vmchain_default)
+        execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " +  vmchain_default)
+        execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-in " +  vif + " -j " + vmchain_default)
         execute("iptables -A  " + vmchain_default + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
         #allow dhcp
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -p udp --dport 67 --sport 68 -j ACCEPT")
@@ -272,7 +259,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     
     vmchain = vm_name
     
-    delcmd = "iptables -S BRIDGE-FIREWALL | grep " +  vmchain + " | sed 's/-A/-D/'"
+    delcmd = "iptables -S | grep " +  vmchain + " | grep physdev-is-bridged | sed 's/-A/-D/'"
     delcmds = execute(delcmd).split('\n')
     delcmds.pop()
     for cmd in delcmds:
@@ -419,7 +406,7 @@ def remove_rule_log_for_vm(vmName):
     
     return result
 
-def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif):
+def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif, brname):
   try:
     vmName = vm_name
     domId = getvmId(vmName)
@@ -437,7 +424,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
         return 'true'
 
     if changes[0] or changes[2]:
-        default_network_rules(vmName, vm_id, vm_ip, vmMac, vif)
+        default_network_rules(vmName, vm_id, vm_ip, vmMac, vif, brname)
 
     lines = rules.split(';')[:-1]
 
@@ -513,6 +500,32 @@ def getvmId(vmName):
     cmd = "virsh list |grep " + vmName + " | awk '{print $1}'"
     return bash("-c", cmd).stdout.strip()
     
+def addFWFramework(brname):
+    brfw = "BRIDGE-FIREWALL-" + brname
+    try:
+        execute("iptables -L " + brfw)
+    except:
+        execute("iptables -N " + brfw)
+
+    try:
+        refs = execute("iptables -n -L  " + brfw + " |grep " + brfw + " | cut -d \( -f2 | awk '{print $1}'").strip()
+        if refs == "0":
+            execute("iptables -A FORWARD -i " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
+            execute("iptables -A FORWARD -o " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
+            phydev = execute("brctl show |grep " + brname + " | awk '{print $4}'").strip()
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + phydev + " -j ACCEPT")
+            execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
+            execute("iptables -A FORWARD -i " + brname + " -j DROP")
+            execute("iptables -A FORWARD -o " + brname + " -j DROP")
+    
+        return True
+    except:
+        try:
+            execute("iptables -F " + brfw)
+        except:
+            return False
+        return False
+            
 if __name__ == '__main__':
     logging.basicConfig(filename="/var/log/cloud/security_group.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
     parser = OptionParser()
@@ -524,20 +537,20 @@ if __name__ == '__main__':
     parser.add_option("--sig", dest="sig")
     parser.add_option("--seq", dest="seq")
     parser.add_option("--rules", dest="rules")
-    parser.add_option("--phynic", dest="phynic")
+    parser.add_option("--brname", dest="brname")
     (option, args) = parser.parse_args()
     cmd = args[0]
     if cmd == "can_bridge_firewall":
         can_bridge_firewall(args[1])
     elif cmd == "default_network_rules":
-        default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmMAC, option.vif)
+        default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmMAC, option.vif, option.brname)
     elif cmd == "destroy_network_rules_for_vm":
         destroy_network_rules_for_vm(option.vmName) 
     elif cmd == "default_network_rules_systemvm":
-        default_network_rules_systemvm(option.vmName)
+        default_network_rules_systemvm(option.vmName, option.brname)
     elif cmd == "get_rule_logs_for_vms":
         get_rule_logs_for_vms()
     elif cmd == "add_network_rules":
-        add_network_rules(option.vmName, option.vmID, option.vmIP, option.sig, option.seq, option.vmMAC, option.rules, option.vif)
+        add_network_rules(option.vmName, option.vmID, option.vmIP, option.sig, option.seq, option.vmMAC, option.rules, option.vif, option.brname)
     elif cmd == "cleanup_rules":
         cleanup_rules()

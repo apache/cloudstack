@@ -1402,12 +1402,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private Answer execute(SecurityIngressRulesCmd cmd) {
         String vif = null;
+        String brname = null;
         try {
             Connect conn = LibvirtConnection.getConnection();
             List<InterfaceDef> nics = getInterfaces(conn, cmd.getVmName());
-            vif = nics.get(0).getBrName();
+            vif = nics.get(0).getDevName();
+            brname = nics.get(0).getBrName();
         } catch (LibvirtException e) {
-            
+            return new SecurityIngressRuleAnswer(cmd, false, e.toString());
         }
         
     	boolean result = add_network_rules(cmd.getVmName(),
@@ -1415,7 +1417,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			cmd.getGuestIp(),cmd.getSignature(), 
     			Long.toString(cmd.getSeqNum()), 
     			cmd.getGuestMac(), 
-    			cmd.stringifyRules(), vif);
+    			cmd.stringifyRules(), vif, brname);
 
     	if (!result) {
     		s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
@@ -2053,9 +2055,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			s_logger.debug("starting " + vmName + ": " + vm.toString());
 			startDomain(conn, vmName, vm.toString());
 			
-			if (vmSpec.getType() != VirtualMachine.Type.User) {
-			    default_network_rules_for_systemvm(vmName);
-			} 
+
+			NicTO[] nics = vmSpec.getNics();
+			for (NicTO nic : nics) {
+			    if (nic.isSecurityGroupEnabled()) {
+			        if (vmSpec.getType() != VirtualMachine.Type.User) {
+			            default_network_rules_for_systemvm(conn, vmName);
+			        } else {
+			            default_network_rules(conn, vmName, nic, vmSpec.getId());
+			        }
+			    }
+			}
 
 			// Attach each data volume to the VM, if there is a deferred attached disk
 			for (DiskDef disk : vm.getDevices().getDisks()) {
@@ -3129,6 +3139,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	if (!_can_bridge_firewall) {
             return false;
         }
+    	
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("destroy_network_rules_for_vm");
     	cmd.add("--vmname");
@@ -3140,16 +3151,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return true;
     }
     
-    private boolean default_network_rules(String vmName, long vmId, String rules) {
+    private boolean default_network_rules(Connect conn, String vmName, NicTO nic, Long vmId) {
     	if (!_can_bridge_firewall) {
             return false;
         }
+    	
+    	List<InterfaceDef> intfs = getInterfaces(conn, vmName);
+    	if (intfs.size() < nic.getDeviceId()) {
+    	    return false;
+    	}
+    	
+    	InterfaceDef intf = intfs.get(nic.getDeviceId());
+    	String brname = intf.getBrName();
+    	String vif = intf.getDevName();
+    	
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("default_network_rules");
     	cmd.add("--vmname", vmName);
-    	cmd.add("--rules", rules);
-    	cmd.add("--vmid", Long.toString(vmId));
-    	
+    	cmd.add("--vmid", vmId.toString());
+    	cmd.add("--vmip", nic.getIp());
+    	cmd.add("--vmmac", nic.getMac());
+    	cmd.add("--vif", vif);
+    	cmd.add("--brname", brname);
     	String result = cmd.execute();
     	if (result != null) {
     		return false;
@@ -3157,14 +3180,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return true;
     }
     
-    private boolean default_network_rules_for_systemvm(String vmName) {
+    private boolean default_network_rules_for_systemvm(Connect conn, String vmName) {
     	if (!_can_bridge_firewall) {
             return false;
         }
+    	List<InterfaceDef> intfs = getInterfaces(conn, vmName);
+        if (intfs.size() < 1) {
+            return false;
+        }
+        /*FIX ME: */
+        InterfaceDef intf = intfs.get(intfs.size() - 1);
+        String brname = intf.getBrName();
+        
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("default_network_rules_systemvm");
-    	cmd.add("--vmname");
-    	cmd.add(vmName);
+    	cmd.add("--vmname", vmName);
+    	cmd.add("--brname", brname);
     	String result = cmd.execute();
     	if (result != null) {
     		return false;
@@ -3172,10 +3203,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return true;
     }
     
-    private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules, String vif) {
+    private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules, String vif, String brname) {
     	if (!_can_bridge_firewall) {
             return false;
         }
+    	
     	String newRules = rules.replace(" ", ";");
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("add_network_rules");
@@ -3186,6 +3218,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	cmd.add("--seq", seq);
     	cmd.add("--vmmac", mac);
     	cmd.add("--vif", vif);
+    	cmd.add("--brname", brname);
     	if (rules != null)
     	    cmd.add("--rules", newRules);
     	String result = cmd.execute();
@@ -3302,8 +3335,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     
     private Answer execute(NetworkRulesSystemVmCommand cmd) {
         boolean success = false;
-
-        success = default_network_rules_for_systemvm(cmd.getVmName());
+        Connect conn;
+        try {
+            conn = LibvirtConnection.getConnection();
+            success = default_network_rules_for_systemvm(conn, cmd.getVmName());
+        } catch (LibvirtException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
       
         return new Answer(cmd, success, "");
     }

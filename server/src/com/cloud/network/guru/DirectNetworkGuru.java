@@ -172,6 +172,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         getIp(nic, dc, vm, network);
+        
+        /*It's public ip, don't release it*/
+        if (network.isSecurityGroupEnabled() && nic.getIp4Address() != null) {
+            nic.setStrategy(ReservationStrategy.Create);
+        }
 
         return nic;
     }

@@ -37,6 +37,7 @@ public class NetworkTO {
     protected TrafficType type;
     protected URI broadcastUri;
     protected URI isolationUri;
+    protected boolean isSecurityGroupEnabled;
     
     public NetworkTO() {
     }
@@ -84,7 +85,11 @@ public class NetworkTO {
     public void setType(TrafficType type) {
         this.type = type;
     }
-
+    
+    public void setSecurityGroupEnabled(boolean enabled) {
+        this.isSecurityGroupEnabled = enabled;
+    }
+    
     /**
      * This constructor is usually for hosts where the other information are not important.
      * 
@@ -160,4 +165,9 @@ public class NetworkTO {
     public void setIsolationuri(URI isolationUri) {
         this.isolationUri = isolationUri;
     }
+    
+    public boolean isSecurityGroupEnabled() {
+        return this.isSecurityGroupEnabled;
+    }
+
 }

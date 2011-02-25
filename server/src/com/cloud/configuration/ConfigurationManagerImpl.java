@@ -1135,10 +1135,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             
             //Create deafult networks
             createDefaultNetworks(zone.getId(), isSecurityGroupEnabled);
-            
-            if (isSecurityGroupEnabled) {
-                _configDao.update(Config.DirectAttachSecurityGroupsEnabled.key(), "true");
-            }
             txn.commit();
             return zone;
         } catch (Exception ex) {
