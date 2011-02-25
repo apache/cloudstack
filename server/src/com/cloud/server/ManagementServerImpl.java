@@ -2091,7 +2091,6 @@ public class ManagementServerImpl implements ManagementServer {
             if (accountName != null) {
                 sc.setParameters("domainIdEQ", domainId);
                 sc.setParameters("accountName", "%" + accountName + "%");
-                sc.addAnd("removed", SearchCriteria.Op.NULL);
             } else if (isAdmin) {
                 DomainVO domain = _domainDao.findById(domainId);
                 sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
