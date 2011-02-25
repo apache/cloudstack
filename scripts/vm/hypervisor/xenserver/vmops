@@ -2106,7 +2106,9 @@ def network_rules(session, args):
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
+                elif end == "-1":
+                    range = start
+                iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             util.pread2(iptables)
             util.SMlog(iptables)
         
@@ -2117,7 +2119,9 @@ def network_rules(session, args):
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', 'ACCEPT']
+                elif end == "-1":
+                    range = start
+                iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', 'ACCEPT']
             util.pread2(iptables)
             util.SMlog(iptables)
             

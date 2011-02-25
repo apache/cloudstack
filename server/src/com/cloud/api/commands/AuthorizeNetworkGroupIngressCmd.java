@@ -101,9 +101,10 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
         	if (icmpType == -1 && icmpCode != -1) {
         		throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid icmp type range" );
         	} 
-        	if (icmpCode > 255) {
+        	if (icmpCode > 15) {
         		throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid icmp code " );
         	}
+        	
         	startPortOrType = icmpType;
         	endPortOrCode= icmpCode;
         } else if (protocol.equals("all")) {
@@ -195,6 +196,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
                     s_logger.debug( "Invalid cidr (" + cidr + ") given, unable to authorize ingress.");	
                     throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid cidr (" + cidr + ") given, unable to authorize ingress.");	
         		}
+        		
         		authorizedCidrs.add(cidr);
         	}
         }

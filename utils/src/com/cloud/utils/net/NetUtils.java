@@ -407,6 +407,9 @@ public class NetUtils {
         
         if (cidrSizeNum < 0 || cidrSizeNum > 32) return false;
         
+        if (cidrAddress.equals("0.0.0.0") && cidrSizeNum != 0) 
+        	return false;
+        
         return true;
 	}
 	
