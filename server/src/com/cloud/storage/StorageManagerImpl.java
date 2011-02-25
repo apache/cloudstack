@@ -537,9 +537,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
             }
 
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
-                    volume.getId(), volume.getName(), offeringId, templateId, createdVolume.getSize());
-            _usageEventDao.persist(usageEvent);
+//            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
+//                    volume.getId(), volume.getName(), offeringId, templateId, createdVolume.getSize());
+//            _usageEventDao.persist(usageEvent);
         }
         txn.commit();
         return createdVolume;
