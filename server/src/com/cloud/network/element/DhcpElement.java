@@ -80,6 +80,8 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         
         if (provider.equalsIgnoreCase(Provider.JuniperSRX.getName()) && ipType == GuestIpType.Virtual) {
             return true;
+        } else if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){
+        	return false;
         } else {
             if (dc.getNetworkType() == NetworkType.Basic) {
                 return (ipType == GuestIpType.Direct && trafficType == TrafficType.Guest);

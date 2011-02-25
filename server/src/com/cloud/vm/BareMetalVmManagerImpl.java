@@ -2,20 +2,26 @@ package com.cloud.vm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
@@ -39,15 +45,20 @@ import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine.Type;
 
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager {
 	private static final Logger s_logger = Logger.getLogger(BareMetalVmManagerImpl.class); 
+	private ConfigurationDao _configDao;
 
 	@Override
 	public boolean attachISOToVM(long vmId, long isoId, boolean attach) {
@@ -275,6 +286,87 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	}
 	
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-		return null;
+		return super.startVirtualMachine(cmd);
+	}
+
+	@Override
+	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+		_name = name;
+
+		ComponentLocator locator = ComponentLocator.getCurrentLocator();
+		_configDao = locator.getDao(ConfigurationDao.class);
+		if (_configDao == null) {
+			throw new ConfigurationException("Unable to get the configuration dao.");
+		}
+
+		Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
+
+		_instance = configs.get("instance.name");
+		if (_instance == null) {
+			_instance = "DEFAULT";
+		}
+
+		String workers = configs.get("expunge.workers");
+		int wrks = NumbersUtil.parseInt(workers, 10);
+
+		String time = configs.get("expunge.interval");
+		_expungeInterval = NumbersUtil.parseInt(time, 86400);
+
+		time = configs.get("expunge.delay");
+		_expungeDelay = NumbersUtil.parseInt(time, _expungeInterval);
+
+		_executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
+
+		_itMgr.registerGuru(Type.UserBareMetal, this);
+
+		s_logger.info("User VM Manager is configured.");
+
+		return true;
+	}
+	
+	@Override
+	public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
+        UserVmVO vm = profile.getVirtualMachine();
+	    Account owner = _accountDao.findById(vm.getAccountId());
+	    
+	    if (owner == null || owner.getState() == Account.State.disabled) {
+	        throw new PermissionDeniedException("The owner of " + vm + " either does not exist or is disabled: " + vm.getAccountId());
+	    }
+	    
+	    return true;
+	}
+	
+	@Override
+	public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
+		UserVmVO userVm = profile.getVirtualMachine();
+		List<NicVO> nics = _nicDao.listByVmId(userVm.getId());
+		for (NicVO nic : nics) {
+			NetworkVO network = _networkDao.findById(nic.getNetworkId());
+			if (network.getTrafficType() == TrafficType.Guest) {
+				userVm.setPrivateIpAddress(nic.getIp4Address());
+				userVm.setPrivateMacAddress(nic.getMacAddress());
+			}
+		}
+		_vmDao.update(userVm.getId(), userVm);
+		return true;
+	}
+	
+	@Override
+	public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
+		UserVmVO vm = profile.getVirtualMachine();
+		UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(),
+				vm.getServiceOfferingId(), vm.getTemplateId(), null);
+		_usageEventDao.persist(usageEvent);
+
+		List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+		for (NicVO nic : nics) {
+			NetworkVO network = _networkDao.findById(nic.getNetworkId());
+			long isDefault = (nic.isDefaultNic()) ? 1 : 0;
+			usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(),
+					network.getNetworkOfferingId(), null, isDefault);
+			_usageEventDao.persist(usageEvent);
+		}
+
+		return true;
 	}
 }
