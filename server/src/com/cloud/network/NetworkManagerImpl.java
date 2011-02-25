@@ -1444,6 +1444,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // finalize owner for the network
         Account ctxAccount = UserContext.current().getCaller();
         Account owner = _accountMgr.finalizeOwner(ctxAccount, cmd.getAccountName(), cmd.getDomainId());
+        UserContext.current().setAccountId(owner.getAccountId());
         
         // if end ip is not specified, default it to startIp
         if (endIP == null && startIP != null) {
