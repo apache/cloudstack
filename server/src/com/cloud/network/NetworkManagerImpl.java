@@ -1823,6 +1823,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @DB
     @Override
     public boolean destroyNetwork(long networkId, ReservationContext context) {
+        Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());
+        
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             s_logger.debug("Unable to find network with id: " + networkId);
@@ -1845,6 +1847,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
         if (ipsToRelease != null && !ipsToRelease.isEmpty()) {
             for (IPAddressVO ip : ipsToRelease) {
+                //delete load balancer rules associated with the ip address before unassigning it
+                _lbMgr.removeAllLoadBalanacers(ip.getId(), callerAccount, context.getCaller().getId());
                 unassignPublicIpAddress(ip);
             }
 
@@ -2180,6 +2184,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
         return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+    }
+    
+    
+    @Override
+    public Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
+        return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
     }
 
     @Override @DB
