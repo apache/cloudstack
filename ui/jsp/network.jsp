@@ -1133,7 +1133,30 @@ dictionary = {
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
-        <ol>                
+        <ol>         
+            <li style="display: none" id="vlan_id_container">
+                <label for="user_name">
+                    <fmt:message key="label.vlan.id"/>:</label>
+                <input class="text" type="text" id="vlan_id" />
+                <div id="vlan_id_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>        
+            <li  style="display: none" id="gateway_container">
+                <label>
+                    <fmt:message key="label.gateway"/>:</label>
+                <input class="text" type="text" id="gateway" />
+                <div id="gateway_errormsg" class="dialog_formcontent_errormsg"
+                    style="display: none;">
+                </div>
+            </li>
+            <li  style="display: none" id="netmask_container">
+                <label>
+                    <fmt:message key="label.netmask"/>:</label>
+                <input class="text" type="text"id="netmask" />
+                <div id="netmask_errormsg" class="dialog_formcontent_errormsg"
+                    style="display: none;">
+                </div>
+            </li>                       
             <li>
                 <label for="user_name">
                     <fmt:message key="label.ip.range"/>:</label>
