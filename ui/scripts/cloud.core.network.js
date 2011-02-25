@@ -1284,7 +1284,7 @@ function bindAddNetworkButton($button) {
 				var name = todb($thisDialog.find("#add_publicip_vlan_network_name").val());
 				var desc = todb($thisDialog.find("#add_publicip_vlan_network_desc").val());
 				$.ajax({
-					data: createURL("command=listNetworkOfferings&traffictype=Public"),
+					data: createURL("command=listNetworkOfferings&guestiptype=Direct"),
 					dataType: "json",
 					async: false,
 					success: function(json) {
