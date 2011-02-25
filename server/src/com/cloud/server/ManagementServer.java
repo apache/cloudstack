@@ -30,8 +30,11 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
@@ -365,7 +368,7 @@ public interface ManagementServer extends ManagementService {
 
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId);
-	ConsoleProxyVO stopConsoleProxy(long instanceId);
+	ConsoleProxyVO stopConsoleProxy(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 	ConsoleProxyVO rebootConsoleProxy(long instanceId);
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);

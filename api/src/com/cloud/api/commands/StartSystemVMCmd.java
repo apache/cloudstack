@@ -79,7 +79,13 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_SSVM_START;
+        VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
+        if(type == VirtualMachine.Type.ConsoleProxy){
+            return EventTypes.EVENT_PROXY_START;
+        }
+        else{
+            return EventTypes.EVENT_SSVM_START;
+        }
     }
 
     @Override
@@ -97,6 +103,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Vm Id: "+getId());
         VirtualMachine instance = _mgr.startSystemVM(this);
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);

@@ -80,7 +80,13 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_SSVM_STOP;
+        VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
+        if(type == VirtualMachine.Type.ConsoleProxy){
+            return EventTypes.EVENT_PROXY_STOP;
+        }
+        else{
+            return EventTypes.EVENT_SSVM_STOP;
+        }
     }
 
     @Override
@@ -104,6 +110,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
+        UserContext.current().setEventDetails("Vm Id: "+getId());
         VirtualMachine result = _mgr.stopSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

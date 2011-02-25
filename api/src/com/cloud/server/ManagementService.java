@@ -105,6 +105,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 
 /**
  * Hopefull this is temporary.
@@ -424,5 +425,7 @@ public interface ManagementService {
      * @return The encrypted password.
      */
     String getVMPassword(GetVMPasswordCmd cmd);
+
+    Type findSystemVMTypeById(long instanceId);
 
 }
