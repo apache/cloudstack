@@ -1456,6 +1456,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networkOffering == null || networkOffering.isSystemOnly()) {
             throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
         }
+        
+        //Check if network offering is Available
+        if (networkOffering.getAvailability() == Availability.Unavailable) {
+            throw new InvalidParameterValueException("Can't create network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability());
+        }
 
         // allow isDefault to be set only for Direct network
         if (networkOffering.getGuestType() == GuestIpType.Virtual) {
