@@ -164,7 +164,7 @@ public class ApiResponseSerializer {
                         }else if (fieldValue instanceof Date) {
                             sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date)fieldValue) + "</" + serializedName.value() + ">");
                         } else {
-                            sb.append("<" + serializedName.value() + ">" + fieldValue.toString() + "</" + serializedName.value() + ">");
+                            sb.append("<" + serializedName.value() + ">" + escapeSpecialXmlChars(fieldValue.toString()) + "</" + serializedName.value() + ">");
                         }
                     }
                 } catch (IllegalArgumentException e) {
@@ -221,5 +221,27 @@ public class ApiResponseSerializer {
         }
 
         return sb.toString();
+    }
+    
+    private static String escapeSpecialXmlChars(String originalString) {
+        char[] origChars = originalString.toCharArray();
+        StringBuilder resultString = new StringBuilder();
+        
+        for (char singleChar : origChars) {
+            if (singleChar == '"') {
+                resultString.append("&quot;");
+            } else if (singleChar == '\'') {
+                resultString.append("&apos;");
+            } else if (singleChar == '<') {
+                resultString.append("&lt;");
+            } else if (singleChar == '>') {
+                resultString.append("&gt;");
+            } else if (singleChar == '&') {
+                resultString.append("&amp;");
+            } else {
+                resultString.append(singleChar);
+            }
+        }
+        return resultString.toString();
     }
 }
