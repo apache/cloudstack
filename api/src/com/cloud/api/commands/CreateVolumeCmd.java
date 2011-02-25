@@ -46,7 +46,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DISK_OFFERING_ID,required = true, type=CommandType.LONG, description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
+    @Parameter(name=ApiConstants.DISK_OFFERING_ID,required = false, type=CommandType.LONG, description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
     private Long diskOfferingId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the disk offering. If used with the account parameter returns the disk volume associated with the account for the specified domain.")
@@ -58,7 +58,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size. Mutually exclusive with diskOfferingId")
     private Long size;
 
-    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the snapshot ID for the disk volume. If snapshot id is passed in, a private disk offering id must be passed in as well (no disk size, only tags).")
+    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
     private Long snapshotId;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")

@@ -427,7 +427,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         String volumeUUID = null;
         String details = null;
 
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
         DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
         DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
 
@@ -526,7 +526,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // Create an event
         Long templateId = originalVolume.getTemplateId();
         ;
-        Long diskOfferingId = volume.getDiskOfferingId();
+        Long diskOfferingId = originalVolume.getDiskOfferingId();
 
         if (createdVolume.getPath() != null) {
             Long offeringId = null;
@@ -665,9 +665,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setPodId(pod.getId());
             volume.setState(Volume.State.Ready);
             _volsDao.persist(volume);
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
-                    volume.getId(), volume.getName(), diskOffering.getId(), null, dskCh.getSize());
-            _usageEventDao.persist(usageEvent);
+            
 
         }
         txn.commit();
@@ -1399,7 +1397,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Long size = null;
 
         // validate input parameters before creating the volume
-        if (cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) {
+        if ((cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) || (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null)) {
             throw new InvalidParameterValueException("Either disk Offering Id or snapshot Id must be passed whilst creating volume");
         }
 
@@ -1450,30 +1448,18 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 size = (size * 1024 * 1024 * 1024);// custom size entered is in GB, to be converted to bytes
             }
         } else {
-            DiskOfferingVO privOffering = null;
             Long snapshotId = cmd.getSnapshotId();
             Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
-            diskOfferingId = cmd.getDiskOfferingId();
+             
             if (snapshotCheck == null) {
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
-            }
-
-            if(diskOfferingId == null) {
-                throw new InvalidParameterValueException("Please specify a valid private disk offering");
-            } else {
-                privOffering = _diskOfferingDao.findById(diskOfferingId);
-                if(privOffering == null) {
-                    throw new InvalidParameterValueException("Please specify a valid private disk offering");
-                } else {
-                    if(!privOffering.isCustomized())
-                        throw new InvalidParameterValueException("Please specify a valid private disk offering");
-                }
             }
             
             VolumeVO vol = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
             zoneId = vol.getDataCenterId();
             size = vol.getSize(); //we maintain size from org vol ; disk offering is used for tags purposes
-
+            diskOfferingId = vol.getDiskOfferingId();
+            
             if (account != null) {
                 if (isAdmin(account.getType())) {
                     Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
@@ -1527,6 +1513,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume.setState(Volume.State.Allocated);
         volume = _volsDao.persist(volume);
         UserContext.current().setEventDetails("Volume Id: "+volume.getId());
+        
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
+                volume.getId(), volume.getName(), diskOfferingId, null, size);
+        
+        _usageEventDao.persist(usageEvent);
+        
         return volume;
     }
 
