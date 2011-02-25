@@ -1173,7 +1173,12 @@ function bindAddNetworkButton($button) {
         return;
     
     var $dialogAddNetworkForZone = $("#dialog_add_network_for_zone"); 
-     
+           
+    if(zoneObj.securitygroupsenabled)
+        $dialogAddNetworkForZone.find("#add_publicip_vlan_scope").empty().append('<option value="account-specific">account-specific</option>');
+	else		
+        $dialogAddNetworkForZone.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>').append('<option value="account-specific">account-specific</option>');
+         
 	$dialogAddNetworkForZone.find("#add_publicip_vlan_scope").change(function(event) {		    
 	    if($(this).val() == "zone-wide") {
 	        $dialogAddNetworkForZone.find("#add_publicip_vlan_domain_container").hide();

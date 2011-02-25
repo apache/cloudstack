@@ -1238,9 +1238,11 @@ dictionary = {
             <li id="add_publicip_vlan_scope_container">
                 <label for="add_publicip_vlan_scope">
                     <fmt:message key="label.scope"/>:</label>
-                <select class="select" id="add_publicip_vlan_scope">                    
+                <select class="select" id="add_publicip_vlan_scope">     
+                    <!--            
                     <option value="zone-wide"><fmt:message key="label.zone.wide"/></option>
-                    <option value="account-specific"><fmt:message key="label.account.specific"/></option>                   
+                    <option value="account-specific"><fmt:message key="label.account.specific"/></option>  
+                    -->                      
                 </select>
             </li>           
             <li style="display: none" id="add_publicip_vlan_domain_container">
