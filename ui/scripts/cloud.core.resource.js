@@ -1086,7 +1086,7 @@ function closeAddZoneWizard() {
 
 function initAddZoneWizard() {    
     var $addZoneWizard = $("#add_zone_wizard");        
-    $addZoneWizard.draggable();
+    //$addZoneWizard.draggable();
     
     $addZoneWizard.find("#add_zone_public").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
@@ -1152,7 +1152,9 @@ function initAddZoneWizard() {
                 closeAddZoneWizard();
                 break;
             
-            case "Basic":  //create VLAN in pod-level      
+            case "Basic":  //create VLAN in pod-level   
+                $thisWizard.find("#step1").find("input[name=isolation_mode]").removeAttr("checked"); //uncheck all radio buttons under Isolation Mode
+                                
                 //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3)                 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").hide();
                 
@@ -1162,7 +1164,9 @@ function initAddZoneWizard() {
                 return true;
                 break;
                 
-            case "Advanced":  //create VLAN in zone-level 
+            case "Advanced":  //create VLAN in zone-level                 
+                $thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").attr("checked", true); //check the 1st radio button under Insolation Mode
+                
                 //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").show();  
                 
@@ -1173,6 +1177,14 @@ function initAddZoneWizard() {
                 
                 return true;
                 break;
+            
+            case "isolation_mode_virtual":
+                return true;
+                break;
+            
+            case "isolation_mode_securitygroup":
+                return true;
+                break;    
             
             case "go_to_step_2": //step 1 => step 2   
                 $thisWizard.find("#step1").hide();
@@ -1329,6 +1341,9 @@ function addZoneWizardSubmit($thisWizard) {
 	
 	var networktype = $thisWizard.find("#step1").find("input:radio[name=basic_advanced]:checked").val();  //"Basic", "Advanced"
 	moreCriteria.push("&networktype="+todb(networktype));
+	
+	if(networktype == "Advanced")
+	    moreCriteria.push("&securitygroupenabled="+$thisWizard.find("#step1").find("input[name=isolation_mode]:checked").val());    
 	
 	var name = trim($thisWizard.find("#add_zone_name").val());
 	moreCriteria.push("&name="+todb(name));

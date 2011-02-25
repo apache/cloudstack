@@ -184,20 +184,20 @@
 										<fmt:message key="message.advanced.mode.desc"/>
                                     </p>
                                     
-                                    <div class="zonepopup_subselectionbox_helptext">Islolation Mode</div>
+                                    <div class="zonepopup_subselectionbox_helptext">Isolation Mode</div>
                                     
                                     <div class="zonepopup_subselectionbox">
                                         <form>
                                             <ol>
                                                 <li>
-                                                    <input type="radio" name="basic_advanced" value="Advanced" id="Advanced" class="radio" />
-                                                    <label class="label">Virtual</label>
+                                                    <input type="radio" name="isolation_mode" value="false" id="isolation_mode_virtual" class="radio" />
+                                                    <label class="label"><fmt:message key="label.virtual"/></label>
                                                     <span>Some description will appear here. Some description will appear here. Some description will appear here..</span>
                                                 </li>
                                                 
                                                 <li>
-                                                    <input type="radio" name="basic_advanced" value="Advanced" id="Advanced" class="radio" />
-                                                    <label class="label">Security Group</label>
+                                                    <input type="radio" name="isolation_mode" value="true" id="isolation_mode_securitygroup" class="radio" />
+                                                    <label class="label"><fmt:message key="label.security.group"/></label>
                                                     <span>Some description will appear here. Some description will appear here. Some description will appear here..</span>
                                                 </li>
                                             </ol>
