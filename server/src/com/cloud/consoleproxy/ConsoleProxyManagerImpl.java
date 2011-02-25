@@ -563,9 +563,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         Account systemAcct = _accountMgr.getSystemAccount();
         
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
-
         List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
-        if (dc.getNetworkType() == NetworkType.Basic) {
+
+        if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
             defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemGuestNetwork);
         }
         

@@ -115,7 +115,7 @@ public class CreateZoneCmd extends BaseCmd {
         return networkType;
     }
     
-    public boolean isSecurityGroupEnabled() {
+    public Boolean isSecurityGroupEnabled() {
         if (securitygroupenabled == null) {
             return false;
         }

@@ -69,8 +69,13 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         //this guru handles only non-system network with guestIpType = Direct
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getGuestType() == GuestIpType.Direct && offering.getTrafficType() == TrafficType.Guest && !offering.isSystemOnly()) {
-            return true;
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getGuestType() == GuestIpType.Direct && offering.getTrafficType() == TrafficType.Guest) {
+            if (dc.isSecurityGroupEnabled()) {
+                return true;
+            } else if (!offering.isSystemOnly()) {
+                return true;
+            }
+            return false;
         } else {
             s_logger.trace("We only take care of Guest Direct networks");
             return false;
@@ -97,6 +102,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
             }
+            
+            config.setSecurityGroupEnabled(userSpecified.isSecurityGroupEnabled());
             
             if (userSpecified.getCidr() != null) {
                 config.setCidr(userSpecified.getCidr());

@@ -1125,7 +1125,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType, isSecurityGroupEnabled);
             zone = _zoneDao.persist(zone);
 
             // Add vnet entries for the new zone if zone type is Advanced
@@ -1170,11 +1170,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 } else if (offering.getTrafficType() == TrafficType.Control) {
                     broadcastDomainType = BroadcastDomainType.LinkLocal;
                 } else if (offering.getTrafficType() == TrafficType.Public) {
-                    if (zone.getNetworkType() == NetworkType.Advanced) {
-                        if (isSecurityGroupEnabled) {
-                            isNetworkDefault = true;
-                            userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
-                        }
+                    if (zone.getNetworkType() == NetworkType.Advanced && !zone.isSecurityGroupEnabled()) {
                         broadcastDomainType = BroadcastDomainType.Vlan;
                     } else {
                         continue;
@@ -1183,6 +1179,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     if (zone.getNetworkType() == NetworkType.Basic) {
                         isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
+                        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
+                    } else if (offering.getGuestType() == GuestIpType.Direct && isSecurityGroupEnabled) {
+                        isNetworkDefault = true;
                         userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
                     } else {
                         continue;
@@ -1216,7 +1215,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             isBasic = true;
         }
         
-       
+        Boolean securityGroupEnabled = cmd.isSecurityGroupEnabled();
+        
+
         NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
         
         //Guest cidr is required for Advanced zone creation; error out when the parameter specified for Basic zone
@@ -1241,7 +1242,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             vnetRange = null;
         }
         
-        boolean securityGroupEnabled = cmd.isSecurityGroupEnabled();
         if (zoneType == NetworkType.Basic) {
             securityGroupEnabled = true;
         }
@@ -1588,6 +1588,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
         
+        if (zone.isSecurityGroupEnabled() && forVirtualNetwork) {
+            throw new InvalidParameterValueException("Can't add virtual network into a zone with security group enabled");
+        }
+        
         //If networkId is not specified, and vlan is Virtual or Direct Untagged, try to locate default networks
         if (forVirtualNetwork){
             if (network == null) {
@@ -1724,7 +1728,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         //Allow adding untagged direct vlan only for Basic zone
-        if (zone.getNetworkType() == NetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork) {
+        if (zone.getNetworkType() == NetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && (!forVirtualNetwork || zone.isSecurityGroupEnabled())) {
             throw new InvalidParameterValueException("Direct untagged network is not supported for the zone " + zone.getId() + " of type " + zone.getNetworkType());
         } else if (zone.getNetworkType() == NetworkType.Basic && !(vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork)) {
             throw new InvalidParameterValueException("Only direct untagged network is supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());

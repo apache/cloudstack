@@ -1489,6 +1489,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
         }
         
+        if (zone.isSecurityGroupEnabled() && networkOffering.getGuestType() == GuestIpType.Virtual) {
+            throw new InvalidParameterValueException("Virtual Network creation is not allowd if zone is security group enabled");
+        }
         
         //If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
         ArrayList<String> networkConfigs = new ArrayList<String>();
@@ -1552,7 +1555,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         txn.start();
-        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, cmd.isSecurityGroupEnabled());
+        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false);
         
         // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
