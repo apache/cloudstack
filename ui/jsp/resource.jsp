@@ -183,8 +183,30 @@
                                     <p>	
 										<fmt:message key="message.advanced.mode.desc"/>
                                     </p>
+                                    
+                                    <div class="zonepopup_subselectionbox_helptext">Islolation Mode</div>
+                                    
+                                    <div class="zonepopup_subselectionbox">
+                                        <form>
+                                            <ol>
+                                                <li>
+                                                    <input type="radio" name="basic_advanced" value="Advanced" id="Advanced" class="radio" />
+                                                    <label class="label">Virtual</label>
+                                                    <span>Some description will appear here. Some description will appear here. Some description will appear here..</span>
+                                                </li>
+                                                
+                                                <li>
+                                                    <input type="radio" name="basic_advanced" value="Advanced" id="Advanced" class="radio" />
+                                                    <label class="label">Security Group</label>
+                                                    <span>Some description will appear here. Some description will appear here. Some description will appear here..</span>
+                                                </li>
+                                            </ol>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
+                            
+                            
                         </div>
 	                 </div>
                 </div>
