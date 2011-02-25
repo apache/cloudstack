@@ -214,7 +214,7 @@
     <dirset dir="${base.dir}/setup/db"/>
   </path>
   
-  <target name="compile-tests" depends="build-all">
+  <target name="compile-tests" depends="compile-all">
     <mkdir dir="${unittest.dir}"/>
     <mkdir dir="${unittest.target.dir}"/>
     <mkdir dir="${unittest.jar.dir}"/>
@@ -224,13 +224,17 @@
   </target>
   
   <target name="unittest" description="Execute unit tests" depends="compile-tests">
-    <junit fork="yes" printsummary="true" failureproperty="junit.failure">
+    <junit fork="true" printsummary="true" showoutput="true" failureproperty="junit.failure">
       <!-- N.b. use failureproperty instead of haltonfailure, because if we use
            the former, we will get no detailed report about the failure.
            If the test fails, the fail element below will still assure that
            the Ant run will exit with error status.
       -->
+      <!--bootclasspath refid="test.classpath"/-->
       <classpath refid="test.classpath"/>
+      <permissions>
+        <grant class="java.security.AllPermission"/>
+      </permissions>
       <jvmarg value="${debug.jvmarg}"/>
       <batchtest todir="${unittest.dir}">
         <formatter type="plain"/>
@@ -250,12 +254,13 @@
   </target>
     
   <target name="test" description="Execute one unit test" depends="compile-tests">
-    <junit fork="true" printsummary="true" failureproperty="junit.failure">
+    <junit fork="true" printsummary="true" clonevm="true" failureproperty="junit.failure">
       <!-- N.b. use failureproperty instead of haltonfailure, because if we use
            the former, we will get no detailed report about the failure.
            If the test fails, the fail element below will still assure that
            the Ant run will exit with error status.
       -->
+      <bootclasspath refid="test.classpath"/>
       <classpath refid="test.classpath"/>
       <batchtest todir="${unittest.dir}">
         <formatter type="plain"/>

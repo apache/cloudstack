@@ -29,16 +29,16 @@ public interface ComponentLocatorMBean extends ManagementBean {
     /**
      * @return the list of adapters accessible by this component locator.
      **/
-    Map<String, List<String>> getAdapters();
+    Map<String, List<String>> getAdapterNames();
 
     /**
      * @return the list of managers accessible by this component locator.
      **/
-    Collection<String> getManagers();
+    Collection<String> getManagerNames();
     
     /**
      * @return the list of DAOs accessible by this component locator.
      */
-    Collection<String> getDaos();
+    Collection<String> getDaoNames();
 
 }

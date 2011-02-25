@@ -90,7 +90,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
-    protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>    _daoMap;
+    protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>    _daoMap;
     protected String                                                    _serverName;
     protected Object                                                    _component;
     protected HashMap<Class<?>, Class<?>>                               _factories;
@@ -101,6 +101,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     public ComponentLocator(String server) {
         _serverName = server;
+        Runtime.getRuntime().addShutdownHook(new CleanupThread());
     }
 
     public String getLocatorName() {
@@ -615,7 +616,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
     
     @Override
-    public Map<String, List<String>> getAdapters() {
+    public Map<String, List<String>> getAdapterNames() {
         HashMap<String, List<String>> result = new HashMap<String, List<String>>();
         for (Map.Entry<String, Adapters<? extends Adapter>> entry : _adapterMap.entrySet()) {
             Adapters<? extends Adapter> adapters = entry.getValue();
@@ -632,13 +633,13 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     public Map<String, List<String>> getAllAccessibleAdapters() {
         Map<String, List<String>> parentResults = new HashMap<String, List<String>>();
-        Map<String, List<String>> results = getAdapters();
+        Map<String, List<String>> results = getAdapterNames();
         parentResults.putAll(results);
         return parentResults;
     }
 
     @Override
-    public Collection<String> getManagers() {
+    public Collection<String> getManagerNames() {
         Collection<String> names = new HashSet<String>();
         for (Map.Entry<String, ComponentInfo<Manager>> entry : _managerMap.entrySet()) {
             names.add(entry.getValue().name);
@@ -647,7 +648,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     @Override
-    public Collection<String> getDaos() {
+    public Collection<String> getDaoNames() {
         Collection<String> names = new HashSet<String>();
         for (Map.Entry<String, ComponentInfo<GenericDao<?, ?>>> entry : _daoMap.entrySet()) {
             names.add(entry.getValue().name);
@@ -665,6 +666,20 @@ public class ComponentLocator implements ComponentLocatorMBean {
             return adapters;
         }
         return new Adapters<Adapter>(key, new ArrayList<ComponentInfo<Adapter>>());
+    }
+    
+    protected void resetInterceptors(InterceptorLibrary library) {
+        library.addInterceptors(s_interceptors);
+        if (s_interceptors.size() > 0) {
+            s_callbacks = new Callback[s_interceptors.size() + 2];
+            int i = 0;
+            s_callbacks[i++] = NoOp.INSTANCE;
+            s_callbacks[i++] = new InterceptorDispatcher();
+            for (AnnotationInterceptor<?> interceptor : s_interceptors) {
+                s_callbacks[i++] = interceptor.getCallback();
+            }
+            s_callbackFilter = new InterceptorFilter();
+        }
     }
 
     protected static ComponentLocator getLocatorInternal(String server, boolean setInThreadLocal, String configFileName, String log4jFilename) {
@@ -859,18 +874,8 @@ public class ComponentLocator implements ComponentLocatorMBean {
                         String libraryName = getAttribute(atts, "library");
                         try {
                             Class<?> libraryClazz = Class.forName(libraryName);
-                            InterceptorLibrary  library = (InterceptorLibrary)libraryClazz.newInstance();
-                            library.addInterceptors(s_interceptors);
-                            if (s_interceptors.size() > 0) {
-                                s_callbacks = new Callback[s_interceptors.size() + 2];
-                                int i = 0;
-                                s_callbacks[i++] = NoOp.INSTANCE;
-                                s_callbacks[i++] = new InterceptorDispatcher();
-                                for (AnnotationInterceptor<?> interceptor : s_interceptors) {
-                                    s_callbacks[i++] = interceptor.getCallback();
-                                }
-                                s_callbackFilter = new InterceptorFilter();
-                            }
+                            InterceptorLibrary library = (InterceptorLibrary)libraryClazz.newInstance();
+                            resetInterceptors(library);
                         } catch (ClassNotFoundException e) {
                             throw new CloudRuntimeException("Unable to find " + libraryName, e);
                         } catch (InstantiationException e) {

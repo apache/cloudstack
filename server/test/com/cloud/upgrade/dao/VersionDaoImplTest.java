@@ -42,9 +42,6 @@ import com.cloud.utils.db.Transaction;
 public class VersionDaoImplTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(VersionDaoImplTest.class);
 
-    /**
-     * @throws java.lang.Exception
-     */
     @Override
     @Before
     public void setUp() throws Exception {
@@ -82,12 +79,7 @@ public class VersionDaoImplTest extends TestCase {
             throw new RuntimeException("Unable to close DB connection", e);
         }
     }
-    
-    
 
-    /**
-     * @throws java.lang.Exception
-     */
     @Override
     @After
     public void tearDown() throws Exception {
@@ -96,7 +88,7 @@ public class VersionDaoImplTest extends TestCase {
     public void test217to22Upgrade() {
         s_logger.debug("Finding sample data from 2.1.7");
         executeScript("VersionDaoImplTest/2.1.7/2.1.7.sample.sql");
-        
+
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         
         String version = dao.getCurrentVersion();

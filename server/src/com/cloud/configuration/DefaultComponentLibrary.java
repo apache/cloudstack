@@ -18,9 +18,7 @@
 package com.cloud.configuration;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -128,9 +126,9 @@ import com.cloud.user.dao.SSHKeyPairDaoImpl;
 import com.cloud.user.dao.UserAccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentLibrary;
+import com.cloud.utils.component.ComponentLibraryBase;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.GenericDao;
@@ -148,21 +146,7 @@ import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
-public class DefaultComponentLibrary implements ComponentLibrary {
-
-    protected final Map<String, ComponentInfo<GenericDao<?, ? extends Serializable>>> _daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
-
-    protected ComponentInfo<? extends GenericDao<?, ? extends Serializable>> addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> clazz) {
-        return addDao(name, clazz, new ArrayList<Pair<String, Object>>(), true);
-    }
-
-    protected ComponentInfo<? extends GenericDao<?, ? extends Serializable>> addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> clazz, List<Pair<String, Object>> params, boolean singleton) {
-        ComponentInfo<GenericDao<?, ? extends Serializable>> componentInfo = new ComponentInfo<GenericDao<?, ? extends Serializable>>(name, clazz, params, singleton);
-        for (String key : componentInfo.getKeys()) {
-            _daos.put(key, componentInfo);
-        }
-        return componentInfo;
-    }
+public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
 
     protected void populateDaos() {
         addDao("StackMaidDao", StackMaidDaoImpl.class);
@@ -263,28 +247,13 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("OvsTunnelAccountDao", OvsTunnelAccountDaoImpl.class);
         addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
     }
-
-    Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();
-    Map<String, List<ComponentInfo<Adapter>>> _adapters = new HashMap<String, List<ComponentInfo<Adapter>>>();
-
+    
     @Override
     public synchronized Map<String, ComponentInfo<GenericDao<?, ?>>> getDaos() {
         if (_daos.size() == 0) {
             populateDaos();
         }
         return _daos;
-    }
-
-    protected ComponentInfo<Manager> addManager(String name, Class<? extends Manager> clazz, List<Pair<String, Object>> params, boolean singleton) {
-        ComponentInfo<Manager> info = new ComponentInfo<Manager>(name, clazz, params, singleton);
-        for (String key : info.getKeys()) {
-            _managers.put(key, info);
-        }
-        return info;
-    }
-    
-    protected ComponentInfo<Manager> addManager(String name, Class<? extends Manager> clazz) {
-        return addManager(name, clazz, new ArrayList<Pair<String, Object>>(), true);
     }
 
     protected void populateManagers() {
@@ -328,23 +297,6 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         info.addParameter("consoleproxy.sslEnabled", "true");
     }
 
-    protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
-        ArrayList<ComponentInfo<Adapter>> lst = new ArrayList<ComponentInfo<Adapter>>(adapters.size());
-        for (Pair<String, Class<? extends T>> adapter : adapters) {
-            @SuppressWarnings("unchecked")
-            Class<? extends Adapter> clazz = (Class<? extends Adapter>)adapter.second();
-            lst.add(new ComponentInfo<Adapter>(adapter.first(), clazz));
-        }
-        _adapters.put(interphace.getName(), lst);
-        return lst;
-    }
-    
-    protected <T> void addOneAdapter(Class<T> interphace, String name, Class<? extends T> adapterClass) {
-        List<Pair<String, Class<? extends T>>> adapters = new ArrayList<Pair<String, Class<? extends T>>>();
-        adapters.add(new Pair<String, Class<? extends T>>(name, adapterClass));
-        addAdapterChain(interphace, adapters);
-    }
-    
     @Override
     public synchronized Map<String, ComponentInfo<Manager>> getManagers() {
         if (_managers.size() == 0) {
@@ -370,5 +322,4 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         factories.put(EntityManager.class, EntityManagerImpl.class);
         return factories;
     }
-    
 }
