@@ -1499,6 +1499,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Virtual Network creation is not allowd if zone is security group enabled");
         }
         
+        if (zone.isSecurityGroupEnabled() && cmd.getAccountName() == null) {
+            throw new InvalidParameterValueException("Can't create a zone wide network if zone is security group enabled");
+        }
+        
         //If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
         ArrayList<String> networkConfigs = new ArrayList<String>();
         networkConfigs.add(gateway);
