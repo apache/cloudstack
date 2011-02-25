@@ -865,7 +865,7 @@ function initVMWizard() {
 						var availableSecondary = false;
 						if (virtualNetwork == null) {
 							$.ajax({
-								data: createURL("command=listNetworkOfferings&traffictype=Guest"),
+								data: createURL("command=listNetworkOfferings&guestiptype=Virtual"),
 								dataType: "json",
 								async: false,
 								success: function(json) {
