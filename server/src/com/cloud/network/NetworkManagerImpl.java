@@ -1529,12 +1529,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        //Don't allow to create guest virtual network with Vlan specified
+        if (networkOffering.getGuestType() == GuestIpType.Virtual && vlanId != null) {
+            throw new InvalidParameterValueException("Can't specify vlan when create network with Guest IP Type " + GuestIpType.Virtual);
+        }
+        
         //Regular user can create guest network only
         if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && networkOffering.getTrafficType() != TrafficType.Guest) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest);
         }
         
-        //Don't allow to specify cidr/gateway/vlan if the caller is a regular user
+        //Don't allow to specify cidr if the caller is a regular user
         if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && cidr != null) {
             throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange");
         }
