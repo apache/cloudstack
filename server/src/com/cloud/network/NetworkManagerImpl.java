@@ -1486,6 +1486,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Virtual Network creation is not allowd if zone is security group enabled");
         }
         
+        if (zone.isSecurityGroupEnabled() && cmd.getAccountName() == null) {
+            throw new InvalidParameterValueException("Can't create a zone wide network if zone is security group enabled");
+        }
+        
         String cidr = null;
         if (gateway != null && netmask != null) {
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
