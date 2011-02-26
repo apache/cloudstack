@@ -857,6 +857,7 @@ function initVMWizard() {
 						if(zoneObj.securitygroupsenabled == true && networks[i].securitygroupenabled == true) {
 						    continue;
 						}
+						
 						if (networks[i].type != 'Direct') {
 							continue;
 						}
@@ -894,7 +895,12 @@ function initVMWizard() {
 					success: function(json) {
 						var sharedNetworks = json.listnetworksresponse.network;
 						if (sharedNetworks != null && sharedNetworks.length > 0) {
-							for (var i = 0; i < sharedNetworks.length; i++) {
+							for (var i = 0; i < sharedNetworks.length; i++) {	
+							    //if zoneObj.securitygroupsenabled is true and users still choose to select network instead of security group, then UI won't show networks whose securitygroupenabled is true.
+						        if(zoneObj.securitygroupsenabled == true && sharedNetworks[i].securitygroupenabled == true) {
+						            continue;
+						        }
+						        							
 								if (sharedNetworks[i].type != 'Direct') {
 									continue;
 								}
