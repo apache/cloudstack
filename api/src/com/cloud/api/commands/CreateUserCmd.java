@@ -26,7 +26,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserResponse;
+import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a user for an account that already exists", responseObject=UserResponse.class)
 public class CreateUserCmd extends BaseCmd {
@@ -105,6 +107,25 @@ public class CreateUserCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Account account = UserContext.current().getCaller();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
     
     @Override

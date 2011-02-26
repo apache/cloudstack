@@ -27,6 +27,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 @Implementation(description="Enables static nat for given ip address", responseObject=SuccessResponse.class)
 public class EnableStaticNatCmd extends BaseCmd{
@@ -63,6 +65,16 @@ public class EnableStaticNatCmd extends BaseCmd{
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        UserVm userVm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
+        if (userVm != null) {
+            return userVm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override

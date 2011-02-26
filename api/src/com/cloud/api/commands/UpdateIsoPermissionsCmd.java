@@ -6,6 +6,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates iso permissions", responseObject=SuccessResponse.class)
 public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
@@ -16,6 +18,16 @@ public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
 	protected Logger getLogger() {
 		return Logger.getLogger(UpdateIsoPermissionsCmd.class.getName());    
 	}
+	
+    @Override
+    public long getEntityOwnerId() {
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 	
     @Override
     public void execute(){

@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a disk offering.", responseObject=DiskOfferingResponse.class)
 public class UpdateDiskOfferingCmd extends BaseCmd{
@@ -69,6 +70,11 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

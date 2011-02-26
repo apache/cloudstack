@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
+import com.cloud.user.Account;
 
 @Implementation(description="Creates a new Pod.", responseObject=PodResponse.class)
 public class CreatePodCmd extends BaseCmd {
@@ -93,6 +94,11 @@ public class CreatePodCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override

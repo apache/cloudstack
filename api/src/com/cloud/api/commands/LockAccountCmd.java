@@ -23,7 +23,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.user.Account;
 
@@ -63,17 +62,27 @@ public class LockAccountCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Account account = _accountService.getActiveAccount(getAccountName(), getDomainId());
+        if (account != null) {
+            return account.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 
     @Override
     public void execute(){
-        Account result = null;
+//        Account result = null;
         //result = _accountService.lockAccount(this);
-        if (result != null){
-            AccountResponse response = _responseGenerator.createAccountResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to lock account");
-        }
+//        if (result != null){
+//            AccountResponse response = _responseGenerator.createAccountResponse(result);
+//            response.setResponseName(getCommandName());
+//            this.setResponseObject(response);
+//        } else {
+//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to lock account");
+//        }
     }
 }

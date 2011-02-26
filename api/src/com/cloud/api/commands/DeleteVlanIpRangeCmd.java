@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.user.Account;
 
 @Implementation(description="Creates a VLAN IP range.", responseObject=SuccessResponse.class)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
@@ -55,6 +56,11 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 	
     @Override

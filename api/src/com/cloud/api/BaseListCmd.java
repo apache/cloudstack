@@ -37,6 +37,12 @@ public abstract class BaseListCmd extends BaseCmd {
     public Integer getPageSize() {
         return pageSize;
     }
+    
+    @Override
+    public long getEntityOwnerId() {
+        //no owner is needed for list command
+        return 0;
+    }
 
     public Long getPageSizeVal() {
         Long pageSize = null;

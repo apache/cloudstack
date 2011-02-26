@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.configuration.Configuration;
+import com.cloud.user.Account;
 
 @Implementation(description="Adds configuration value", responseObject=ConfigurationResponse.class)
 public class CreateCfgCmd extends BaseCmd {
@@ -91,6 +92,11 @@ public class CreateCfgCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

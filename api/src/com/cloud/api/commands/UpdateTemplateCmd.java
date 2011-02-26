@@ -24,6 +24,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates attributes of a template.", responseObject=TemplateResponse.class)
 public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
@@ -51,6 +52,16 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
     @SuppressWarnings("unchecked")
     public TemplateResponse getResponse() {
        return null;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
     
     @Override

@@ -28,8 +28,8 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Disables a user account", responseObject=UserResponse.class)
 public class DisableUserCmd extends BaseAsyncCmd {
@@ -67,9 +67,9 @@ public class DisableUserCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
-        if (account != null) {
-            return account.getId();
+        User user = _entityMgr.findById(User.class, getId());
+        if (user != null) {
+            return user.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked

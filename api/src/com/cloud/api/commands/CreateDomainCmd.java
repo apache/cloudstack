@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.domain.Domain;
+import com.cloud.user.Account;
 
 @Implementation(description="Creates a domain", responseObject=DomainResponse.class)
 public class CreateDomainCmd extends BaseCmd {
@@ -64,6 +65,11 @@ public class CreateDomainCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

@@ -24,9 +24,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
+import com.cloud.user.Account;
 
 @Implementation(description="Creates a disk offering.", responseObject=DiskOfferingResponse.class)
 public class CreateDiskOfferingCmd extends BaseCmd {
@@ -90,6 +90,11 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.response.CapabilitiesResponse;
+import com.cloud.user.Account;
 
 @Implementation(description="Lists capabilities", responseObject=CapabilitiesResponse.class)
 public class ListCapabilitiesCmd extends BaseCmd {
@@ -34,6 +35,11 @@ public class ListCapabilitiesCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

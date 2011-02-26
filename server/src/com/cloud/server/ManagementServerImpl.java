@@ -4741,65 +4741,80 @@ public class ManagementServerImpl implements ManagementServer {
 	
     @Override
     public SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd) {
-            Account account = UserContext.current().getCaller();
-            SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s != null) {
-                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
-            }
+        Account account = UserContext.current().getCaller();
+        SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+        if (s != null) {
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+        }
 
-            SSHKeysHelper keys = new SSHKeysHelper();
+        SSHKeysHelper keys = new SSHKeysHelper();
 
-            String name = cmd.getName();
-            String publicKey = keys.getPublicKey();
-            String fingerprint = keys.getPublicKeyFingerPrint();
-            String privateKey = keys.getPrivateKey();
+        String name = cmd.getName();
+        String publicKey = keys.getPublicKey();
+        String fingerprint = keys.getPublicKeyFingerPrint();
+        String privateKey = keys.getPrivateKey();
 
-            return createAndSaveSSHKeyPair(name, fingerprint, publicKey, privateKey);
+        return createAndSaveSSHKeyPair(name, fingerprint, publicKey, privateKey);
     }
 
     @Override
     public boolean deleteSSHKeyPair(DeleteSSHKeyPairCmd cmd) {
-            Account account = UserContext.current().getCaller();
-            SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s == null) {
-                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
-            }
-
-            return _sshKeyPairDao.deleteByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+        Account caller = UserContext.current().getCaller();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account owner = null;
+        
+        if (accountName != null && domainId != null) {
+            owner = _accountMgr.getActiveAccount(accountName, domainId);
+        }
+        
+        if (owner == null) {
+            owner = caller;
+        } else {
+            //check account permissions
+            _accountMgr.checkAccess(caller, owner);
+        }
+        
+        SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
+        if (s == null) {
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
+        }
+    
+        return _sshKeyPairDao.deleteByName(caller.getAccountId(), caller.getDomainId(), cmd.getName());
     }
 
     @Override
     public List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
-            Account account = UserContext.current().getCaller();
-
-            if (cmd.getName() != null && cmd.getName().length() > 0) {
-                return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            }
-
-            if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0) {
-                return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
-            }
-
-            return _sshKeyPairDao.listKeyPairs(account.getAccountId(), account.getDomainId());
+        Account account = UserContext.current().getCaller();
+    
+        if (cmd.getName() != null && cmd.getName().length() > 0) {
+            return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+        }
+    
+        if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0) {
+            return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
+        }
+    
+        return _sshKeyPairDao.listKeyPairs(account.getAccountId(), account.getDomainId());
     }
 
     @Override
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
-            Account account = UserContext.current().getCaller();
-            SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s != null) {
-                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
-            }
+        Account account = UserContext.current().getCaller();
+        SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+        if (s != null) {
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+        }
 
-            String name = cmd.getName();
-            String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
-            String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
+        String name = cmd.getName();
+        String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
+        String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
 
-            if (publicKey == null) {
-                throw new InvalidParameterValueException("Public key is invalid");
-            }
+        if (publicKey == null) {
+            throw new InvalidParameterValueException("Public key is invalid");
+        }
 
-            return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null);
+        return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null);
     }
     
     private SSHKeyPair createAndSaveSSHKeyPair(String name, String fingerprint, String publicKey, String privateKey) {

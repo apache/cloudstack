@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a Pod.", responseObject=PodResponse.class)
 public class UpdatePodCmd extends BaseCmd {
@@ -91,6 +92,11 @@ public class UpdatePodCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

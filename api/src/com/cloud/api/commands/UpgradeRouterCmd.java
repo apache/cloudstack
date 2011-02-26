@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.user.Account;
 
 @Implementation(description="Upgrades domain router to a new service offering", responseObject=DomainRouterResponse.class)
 public class UpgradeRouterCmd extends BaseCmd {
@@ -62,6 +63,16 @@ public class UpgradeRouterCmd extends BaseCmd {
 	public String getCommandName() {
 		 return s_name;
 	}
+	
+    @Override
+    public long getEntityOwnerId() {
+        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
+        if (router != null) {
+            return router.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 	
     @Override
     public void execute(){

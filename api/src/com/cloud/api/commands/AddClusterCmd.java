@@ -11,11 +11,10 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ClusterResponse;
-import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.host.Host;
 import com.cloud.org.Cluster;
+import com.cloud.user.Account;
 
 @Implementation(description="Adds a new cluster", responseObject=ClusterResponse.class)
 public class AddClusterCmd extends BaseCmd {
@@ -87,6 +86,11 @@ public class AddClusterCmd extends BaseCmd {
     
     public void setClusterType(String type) {
     	this.clusterType = type;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override

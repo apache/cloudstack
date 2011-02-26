@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a Zone.", responseObject=ZoneResponse.class)
 public class UpdateZoneCmd extends BaseCmd {
@@ -112,6 +113,11 @@ public class UpdateZoneCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

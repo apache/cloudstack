@@ -25,6 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
@@ -87,6 +88,16 @@ public class UpdateVMCmd extends BaseCmd{
     
     public static String getResultObjectName() {
     	return "virtualmachine";
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        UserVm userVm = _entityMgr.findById(UserVm.class, getId());
+        if (userVm != null) {
+            return userVm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override

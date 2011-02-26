@@ -31,6 +31,7 @@ import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
+import com.cloud.user.Account;
 
 @Implementation(description="Adds a new host.", responseObject=HostResponse.class)
 public class AddHostCmd extends BaseCmd {
@@ -110,6 +111,11 @@ public class AddHostCmd extends BaseCmd {
     @Override
     public String getCommandName() {
     	return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

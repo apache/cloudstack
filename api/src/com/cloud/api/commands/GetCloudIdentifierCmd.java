@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CloudIdentifierResponse;
+import com.cloud.user.Account;
 
 @Implementation(description="Retrieves a cloud identifier.", responseObject=CloudIdentifierResponse.class)
 public class GetCloudIdentifierCmd extends BaseCmd {
@@ -57,6 +58,11 @@ public class GetCloudIdentifierCmd extends BaseCmd {
 
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

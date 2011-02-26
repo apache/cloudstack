@@ -33,7 +33,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 
 
 @Implementation(description="Stops a router.", responseObject=DomainRouterResponse.class)
@@ -70,9 +69,9 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        UserVm vm = _entityMgr.findById(UserVm.class, getId());
-        if (vm != null) {
-            return vm.getAccountId();
+        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
+        if (router != null) {
+            return router.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked

@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.user.Account;
 
 @Implementation(description="Deletes a network offering.", responseObject=SuccessResponse.class)
 public class DeleteNetworkOfferingCmd extends BaseCmd{
@@ -56,6 +57,11 @@ public class DeleteNetworkOfferingCmd extends BaseCmd{
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

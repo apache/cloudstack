@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 
 @Implementation(responseObject=SuccessResponse.class, description="Updates a template visibility permissions. " +
 																						"A public template is visible to all accounts within the same domain. " +
@@ -38,6 +40,16 @@ public class UpdateTemplatePermissionsCmd extends UpdateTemplateOrIsoPermissions
 	protected Logger getLogger() {
 		return Logger.getLogger(UpdateTemplatePermissionsCmd.class.getName());    
 	}	
+	
+    @Override
+    public long getEntityOwnerId() {
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 	
     @Override
     public void execute(){

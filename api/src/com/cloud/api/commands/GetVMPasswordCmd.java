@@ -9,6 +9,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.GetVMPasswordResponse;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 @Implementation(responseObject=GetVMPasswordResponse.class, description="Returns an encrypted password for the VM")
 public class GetVMPasswordCmd extends BaseCmd {
@@ -45,6 +47,16 @@ public class GetVMPasswordCmd extends BaseCmd {
 		
 		this.setResponseObject(new GetVMPasswordResponse(getCommandName(), passwd));
 	}
+	
+    @Override
+    public long getEntityOwnerId() {
+        UserVm userVm = _entityMgr.findById(UserVm.class, getId());
+        if (userVm != null) {
+            return userVm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 
 	@Override
 	public String getCommandName() {

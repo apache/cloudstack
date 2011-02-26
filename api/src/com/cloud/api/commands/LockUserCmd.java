@@ -25,6 +25,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserResponse;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
 @Implementation(description="Locks a user account", responseObject=UserResponse.class)
@@ -55,6 +57,16 @@ public class LockUserCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        User user = _entityMgr.findById(User.class, getId());
+        if (user != null) {
+            return user.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 	
     @Override

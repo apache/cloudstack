@@ -30,6 +30,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
+import com.cloud.user.Account;
 
 @Implementation(description="Adds secondary storage.", responseObject=HostResponse.class)
 public class AddSecondaryStorageCmd extends BaseCmd {
@@ -65,6 +66,11 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     @Override
     public String getCommandName() {
     	return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

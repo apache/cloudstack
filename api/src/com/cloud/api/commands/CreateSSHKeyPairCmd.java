@@ -7,7 +7,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SSHKeyPairResponse;
+import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Create a new keypair and returns the private key", responseObject=SSHKeyPairResponse.class) 
 public class CreateSSHKeyPairCmd extends BaseCmd {
@@ -35,6 +37,17 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
 	/////////////////////////////////////////////////////
+	
+    @Override
+    public long getEntityOwnerId() {
+        Account account = UserContext.current().getCaller();
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 
 	@Override
 	public void execute() {

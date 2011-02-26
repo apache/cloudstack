@@ -26,7 +26,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SnapshotPolicyResponse;
+import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.user.Account;
 
 @Implementation(description="Creates a snapshot policy for the account.", responseObject=SnapshotPolicyResponse.class)
 public class CreateSnapshotPolicyCmd extends BaseCmd {
@@ -37,12 +39,6 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="The account of the snapshot policy. The account parameter must be used with the domainId parameter.")
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the snapshot policy.")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.INTERVAL_TYPE, type=CommandType.STRING, required=true, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
@@ -68,14 +64,6 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public String getIntervalType() {
         return intervalType;
@@ -105,6 +93,16 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+        if (volume != null) {
+            return volume.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
     
     @Override

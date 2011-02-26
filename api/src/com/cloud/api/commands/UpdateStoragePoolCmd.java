@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePool;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a storage pool.", responseObject=StoragePoolResponse.class)
 public class UpdateStoragePoolCmd extends BaseCmd {
@@ -63,6 +64,11 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

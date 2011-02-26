@@ -31,6 +31,8 @@ import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Registers an existing template into the Cloud.com cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
@@ -163,6 +165,25 @@ public class RegisterTemplateCmd extends BaseCmd {
 	public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.Template;
     }
+	
+    @Override
+    public long getEntityOwnerId() {
+        Account account = UserContext.current().getCaller();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+     } 	
 
     @Override
     public void execute() throws ResourceAllocationException{

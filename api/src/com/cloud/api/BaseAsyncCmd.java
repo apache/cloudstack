@@ -37,14 +37,6 @@ public abstract class BaseAsyncCmd extends BaseCmd {
 
     @Parameter(name="starteventid", type=CommandType.LONG)
     private Long startEventId;
-    
-
-    /**
-     * For async commands the API framework needs to know the owner of the object being acted upon.  This method is
-     * used to determine that information.
-     * @return the id of the account that owns the object being acted upon
-     */
-    public abstract long getEntityOwnerId();
 
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is

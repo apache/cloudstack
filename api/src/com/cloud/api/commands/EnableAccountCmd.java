@@ -62,6 +62,16 @@ public class EnableAccountCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Account account = _accountService.getActiveAccount(getAccountName(), getDomainId());
+        if (account != null) {
+            return account.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 
     @Override
     public void execute(){
