@@ -1584,7 +1584,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
         
-        if (zone.isSecurityGroupEnabled() && forVirtualNetwork) {
+        if (zone.isSecurityGroupEnabled() && zone.getNetworkType() != DataCenter.NetworkType.Basic && forVirtualNetwork) {
             throw new InvalidParameterValueException("Can't add virtual network into a zone with security group enabled");
         }
         
