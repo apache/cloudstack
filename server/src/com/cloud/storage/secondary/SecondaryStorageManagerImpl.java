@@ -1058,7 +1058,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
             if ((nic.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced)
-                || (nic.getTrafficType() == TrafficType.Guest && dc.getNetworkType() == NetworkType.Basic)) {
+                || (nic.getTrafficType() == TrafficType.Guest && (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()))) {
                 secVm.setPublicIpAddress(nic.getIp4Address());
                 secVm.setPublicNetmask(nic.getNetmask());
                 secVm.setPublicMacAddress(nic.getMacAddress());

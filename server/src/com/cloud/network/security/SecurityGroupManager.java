@@ -45,4 +45,6 @@ public interface SecurityGroupManager {
 	public String getSecurityGroupsNamesForVm(long vmId);
 
     public List<SecurityGroupVO> getSecurityGroupsForVm(long vmId);
+
+    public boolean isVmSecurityGroupEnabled(Long vmId);
 }

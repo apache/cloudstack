@@ -2704,16 +2704,5 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return _vmDao.search(sc, searchFilter);
     }
     
-    @Override
-    public boolean isVmSecurityGroupEnabled(Long vmId) {
-       List<NicVO> nics = _nicDao.listByVmId(vmId);
-       UserVmVO vm = _vmDao.findById(vmId);
-       for (NicVO nic : nics) {
-           Network network = _networkDao.findById(nic.getNetworkId());
-           if (network != null && network.isSecurityGroupEnabled() && vm.getHypervisorType() != HypervisorType.VMware) {
-               return true;
-           }
-       }
-       return false;
-    }
+   
 }

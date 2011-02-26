@@ -1447,7 +1447,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         DataCenter dc = dest.getDataCenter();
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
-        	if ((nic.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced) || (nic.getTrafficType() == TrafficType.Guest && dc.getNetworkType() == NetworkType.Basic)) {
+        	if ((nic.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced) || (nic.getTrafficType() == TrafficType.Guest && (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()))) {
         		proxy.setPublicIpAddress(nic.getIp4Address());
         		proxy.setPublicNetmask(nic.getNetmask());
         		proxy.setPublicMacAddress(nic.getMacAddress());

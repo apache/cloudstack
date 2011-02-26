@@ -57,6 +57,10 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -84,6 +88,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -91,7 +97,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value={SecurityGroupManager.class, SecurityGroupService.class})
 public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityGroupService, Manager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
@@ -110,6 +118,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Inject AgentManager _agentMgr;
 	@Inject VirtualMachineManager _itMgr;
 	@Inject UserVmManager _userVmMgr;
+	@Inject VMInstanceDao _vmDao;
+	@Inject NetworkManager _networkMgr;
 	ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -1307,8 +1317,16 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         return true;
     }
-    
-    private boolean isVmSecurityGroupEnabled(Long vmId) {
-        return _userVmMgr.isVmSecurityGroupEnabled(vmId);
+
+    @Override
+    public boolean isVmSecurityGroupEnabled(Long vmId) {
+        VirtualMachine vm = _vmDao.findById(vmId);
+        List<NicProfile> nics = _networkMgr.getNicProfiles(vm);
+        for (NicProfile nic : nics) {
+            if (nic.isSecurityGroupEnabled() && vm.getHypervisorType() != HypervisorType.VMware) {
+                return true;
+            }
+        }
+        return false;
     }
 }
