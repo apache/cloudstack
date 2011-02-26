@@ -34,7 +34,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 
 
 @Implementation(responseObject=DomainRouterResponse.class, description="Starts a router.")
@@ -73,9 +72,9 @@ public class StartRouterCmd extends BaseAsyncCmd {
     
     @Override
     public long getEntityOwnerId() {
-        UserVm vm = _entityMgr.findById(UserVm.class, getId());
-        if (vm != null) {
-            return vm.getAccountId();
+        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
+        if (router != null) {
+            return router.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked

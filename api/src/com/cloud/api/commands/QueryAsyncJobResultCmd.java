@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.AsyncJobResponse;
+import com.cloud.user.Account;
 
 @Implementation(description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)
 public class QueryAsyncJobResultCmd extends BaseCmd {
@@ -54,6 +55,11 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

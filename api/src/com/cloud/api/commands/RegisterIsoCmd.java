@@ -28,6 +28,8 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(responseObject=TemplateResponse.class, description="Registers an existing ISO into the Cloud.com Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
@@ -121,6 +123,25 @@ public class RegisterIsoCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
+	
+	@Override
+	public long getEntityOwnerId() {
+	    Account account = UserContext.current().getCaller();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+	  }	
 	
     @Override
     public void execute() throws ResourceAllocationException{

@@ -124,10 +124,11 @@ public class ApiDispatcher {
         String errorMsg = "";
         setupParameters(cmd, params);
         try {
+            UserContext ctx = UserContext.current();
+            ctx.setAccountId(cmd.getEntityOwnerId());
             if(cmd instanceof BaseAsyncCmd){
-                UserContext ctx = UserContext.current();
+                
                 BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
-                ctx.setAccountId(asyncCmd.getEntityOwnerId());
                 String startEventId = params.get("ctxStartEventId");
                 ctx.setStartEventId(Long.valueOf(startEventId));
                 

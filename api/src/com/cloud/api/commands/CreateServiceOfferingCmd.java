@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.user.Account;
 
 @Implementation(description="Creates a service offering.", responseObject=ServiceOfferingResponse.class)
 public class CreateServiceOfferingCmd extends BaseCmd {
@@ -112,6 +113,11 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     public String getCommandName() {
 		return _name;
 	}
+	
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
 
     @Override
     public void execute(){

@@ -30,7 +30,6 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
 public class DeleteAccountCmd extends BaseAsyncCmd {
@@ -69,9 +68,9 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = _entityMgr.findById(Account.class, getId());
         if (account != null) {
-            return account.getId();
+            return account.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked

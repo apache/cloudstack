@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.host.Host;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a host.", responseObject=HostResponse.class)
 public class UpdateHostCmd extends BaseCmd {
@@ -66,6 +67,11 @@ public class UpdateHostCmd extends BaseCmd {
    
     public static String getResultObjectName() {
     	return "updatehost";
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

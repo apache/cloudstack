@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a service offering.", responseObject=ServiceOfferingResponse.class)
 public class UpdateServiceOfferingCmd extends BaseCmd {
@@ -71,6 +72,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 	@Override
     public String getCommandName() {
         return s_name;
+    }
+	
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override

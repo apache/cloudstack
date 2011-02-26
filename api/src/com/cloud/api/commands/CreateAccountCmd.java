@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.UserResponse;
+import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 
 @Implementation(description="Creates an account", responseObject=UserResponse.class)
@@ -114,6 +115,12 @@ public class CreateAccountCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
     
     @Override
     public void execute(){

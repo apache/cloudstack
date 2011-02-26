@@ -12,8 +12,6 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = getResponseName();
 
-
-    
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////

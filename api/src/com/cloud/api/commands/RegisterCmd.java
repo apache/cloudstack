@@ -25,6 +25,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.RegisterResponse;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 
 @Implementation(responseObject=RegisterResponse.class, description="This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user")
 public class RegisterCmd extends BaseCmd {
@@ -53,6 +55,16 @@ public class RegisterCmd extends BaseCmd {
 
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        User user = _entityMgr.findById(User.class, getId());
+        if (user != null) {
+            return user.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override

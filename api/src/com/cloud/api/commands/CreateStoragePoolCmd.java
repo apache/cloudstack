@@ -32,6 +32,7 @@ import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
+import com.cloud.user.Account;
 
 @SuppressWarnings("rawtypes")
 @Implementation(description="Creates a storage pool.", responseObject=StoragePoolResponse.class)
@@ -104,6 +105,11 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override

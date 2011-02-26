@@ -30,6 +30,8 @@ import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.network.Network;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a network", responseObject=NetworkResponse.class)
 public class CreateNetworkCmd extends BaseCmd {
@@ -149,6 +151,25 @@ public class CreateNetworkCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Account account = UserContext.current().getCaller();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
     
     @Override

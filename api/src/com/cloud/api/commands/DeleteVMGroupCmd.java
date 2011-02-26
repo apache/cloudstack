@@ -25,6 +25,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.user.Account;
+import com.cloud.vm.InstanceGroup;
 
 @Implementation(description="Deletes a vm group", responseObject=SuccessResponse.class)
 public class DeleteVMGroupCmd extends BaseCmd{
@@ -53,6 +55,16 @@ public class DeleteVMGroupCmd extends BaseCmd{
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        InstanceGroup group = _entityMgr.findById(InstanceGroup.class, getId());
+        if (group != null) {
+            return group.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
     
     @Override

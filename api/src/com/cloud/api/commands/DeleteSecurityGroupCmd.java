@@ -9,6 +9,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.user.Account;
 
 @Implementation(description="Deletes security group", responseObject=SuccessResponse.class)
 public class DeleteSecurityGroupCmd extends BaseCmd {
@@ -54,6 +56,16 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        SecurityGroup group = _entityMgr.findById(SecurityGroup.class, getId());
+        if (group != null) {
+            return group.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 	
     @Override

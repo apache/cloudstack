@@ -67,6 +67,15 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+    @Override
+    public long getEntityOwnerId() {
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
 
     @Override
     public String getCommandName() {

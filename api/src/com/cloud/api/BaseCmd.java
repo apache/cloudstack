@@ -146,6 +146,13 @@ public abstract class BaseCmd {
     }
 
     public abstract String getCommandName();
+    
+    /**
+     * For commands the API framework needs to know the owner of the object being acted upon.  This method is
+     * used to determine that information.
+     * @return the id of the account that owns the object being acted upon
+     */
+    public abstract long getEntityOwnerId();
 
     public Object getResponseObject() {
         return _responseObject;

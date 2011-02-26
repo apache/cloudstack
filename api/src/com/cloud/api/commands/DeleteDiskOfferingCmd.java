@@ -25,6 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a disk offering.", responseObject=SuccessResponse.class)
 public class DeleteDiskOfferingCmd extends BaseCmd {
@@ -54,6 +55,11 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
 
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

@@ -28,6 +28,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
 public class UpdateNetworkOfferingCmd extends BaseCmd {
@@ -76,6 +77,11 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return _name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override

@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.configuration.Configuration;
+import com.cloud.user.Account;
 
 @Implementation(description="Updates a configuration.", responseObject=ConfigurationResponse.class)
 public class UpdateCfgCmd extends BaseCmd {
@@ -62,6 +63,11 @@ public class UpdateCfgCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override

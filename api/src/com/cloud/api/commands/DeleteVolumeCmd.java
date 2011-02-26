@@ -27,6 +27,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.storage.Volume;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a detached disk volume.", responseObject=SuccessResponse.class)
@@ -62,6 +64,16 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     public static String getResultObjectName() {
     	return "volume";
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Volume volume = _entityMgr.findById(Volume.class, getId());
+        if (volume != null) {
+            return volume.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 	
     @Override

@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.HypervisorResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.user.Account;
 
 @Implementation(description="List hypervisors", responseObject=HypervisorResponse.class)
 public class ListHypervisorsCmd extends BaseCmd {
@@ -57,6 +58,10 @@ public class ListHypervisorsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
     
     @Override
     public void execute(){

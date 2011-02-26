@@ -1687,6 +1687,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
+        sb.and("removed", sb.entity().getRemoved(), Op.NULL);
+        
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (!isSystem) {
@@ -1739,6 +1741,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (!isSystem && path != null && (isShared == null || !isShared)) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
+        
+        
 
         List<NetworkVO> networks = _networksDao.search(sc, searchFilter);
 

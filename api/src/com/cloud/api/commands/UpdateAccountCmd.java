@@ -71,6 +71,16 @@ public class UpdateAccountCmd extends BaseCmd{
     }
     
     @Override
+    public long getEntityOwnerId() {
+        Account account = _accountService.getActiveAccount(getAccountName(), getDomainId());
+        if (account != null) {
+            return account.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+    
+    @Override
     public void execute(){
         Account result = _accountService.updateAccount(this);
         if (result != null){
