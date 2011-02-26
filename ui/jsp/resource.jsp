@@ -191,13 +191,13 @@
                                             <ol>
                                                 <li>
                                                     <input type="radio" name="isolation_mode" value="false" id="advanced_virtual" class="radio" />
-                                                    <label class="label"><fmt:message key="label.virtual"/></label>
+                                                    <label class="label"><fmt:message key="label.vlan"/></label>
                                                     <span><fmt:message key="message.advanced.virtual"/></span>
                                                 </li>
                                                 
                                                 <li>
                                                     <input type="radio" name="isolation_mode" value="true" id="advanced_securitygroup" class="radio" />
-                                                    <label class="label"><fmt:message key="label.security.group"/></label>
+                                                    <label class="label"><fmt:message key="label.security.groups"/></label>
                                                     <span><fmt:message key="message.advanced.security.group"/></span>
                                                 </li>
                                             </ol>
