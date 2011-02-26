@@ -407,6 +407,8 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	    	throw new CloudRuntimeException("Pepare PXE server failed");
 	    }
 	    
+	    profile.addBootArgs("PxeBoot");
+	    
 	    return true;
 	}
 	

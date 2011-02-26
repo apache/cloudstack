@@ -252,3 +252,6 @@ registerSSHKeyPair=com.cloud.api.commands.RegisterSSHKeyPairCmd;15
 createSSHKeyPair=com.cloud.api.commands.CreateSSHKeyPairCmd;15
 deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
 listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
+
+### PXE server commands
+AddPxeServer=com.cloud.api.AddPxeServerCmd;1

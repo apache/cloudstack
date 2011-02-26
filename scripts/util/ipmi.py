@@ -80,7 +80,44 @@ def ping(args):
 	else:
 		return 0
 
-call_table = {"ping":ping}
+def boot_dev(args):
+	hostname = args.get("hostname")
+	usrname = args.get("usrname")
+	password = args.get("password")
+	dev = args.get("dev")
+
+	if hostname == None:
+		print "No hostname"
+		return 1
+
+	if dev == None:
+		print "No boot device specified"
+		return 1
+
+	o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "bootdev", dev)
+	if o.ret:
+		print o.stderr
+		return 1
+	else:
+		return 0
+
+def reboot(args):
+	hostname = args.get("hostname")
+	usrname = args.get("usrname")
+	password = args.get("password")
+
+	if hostname == None:
+		print "No hostname"
+		return 1
+
+	o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "reset")
+	if o.ret:
+		print o.stderr
+		return 1
+	else:
+		return 0
+
+call_table = {"ping":ping, "boot_dev":boot_dev, "reboot":reboot}
 def dispatch(args):
 	cmd = args[1]
 	params = args[2:]

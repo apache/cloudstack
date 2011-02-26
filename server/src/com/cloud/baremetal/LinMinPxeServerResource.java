@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -25,6 +26,7 @@ import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -36,6 +38,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.vm.VirtualMachine.State;
 
 public class LinMinPxeServerResource implements ServerResource {
 	private static final Logger s_logger = Logger.getLogger(LinMinPxeServerResource.class);
@@ -164,8 +167,8 @@ public class LinMinPxeServerResource implements ServerResource {
 
 	@Override
 	public PingCommand getCurrentStatus(long id) {
-		// TODO Auto-generated method stub
-		return null;
+		//TODO: check server
+		return new PingRoutingCommand(getType(), id, new HashMap<String, State>());
 	}
 	
 	protected ReadyAnswer execute(ReadyCommand cmd) {
