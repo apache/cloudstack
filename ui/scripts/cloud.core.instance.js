@@ -753,10 +753,12 @@ function initVMWizard() {
 	    return false;
     });  
 		
-	function vmWizardShowNetworkContainer($thisPopup, isVirtualNetworkNeeded) {	        
+	function vmWizardShowNetworkContainer($thisPopup) {	        
 	    $thisPopup.find("#step4").find("#network_container").show();
 	    $thisPopup.find("#step4").find("#securitygroup_container").hide();	
 		$thisPopup.find("#step4").find("#for_no_network_support").hide();
+	    
+	    var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 	    		    
 		$.ajax({
 			data: createURL("command=listNetworks&domainid="+g_domainid+"&account="+g_account+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
@@ -766,7 +768,7 @@ function initVMWizard() {
 				var networks = json.listnetworksresponse.network;
 								
 				// Setup Virtual Network
-				if(isVirtualNetworkNeeded == true) {
+				if(zoneObj.securitygroupsenabled == false) {
 				    var virtualNetwork = null;
 				    if (networks != null && networks.length > 0) {
 					    for (var i = 0; i < networks.length; i++) {
@@ -837,6 +839,10 @@ function initVMWizard() {
 				
 				if (networks != null && networks.length > 0) {
 					for (var i = 0; i < networks.length; i++) {
+						//if zoneObj.securitygroupsenabled is true and users still choose to select network instead of security group, then UI won't show networks whose securitygroupenabled is true.
+						if(zoneObj.securitygroupsenabled == true && networks[i].securitygroupenabled == true) {
+						    continue;
+						}
 						if (networks[i].type != 'Direct') {
 							continue;
 						}
@@ -1022,7 +1028,7 @@ function initVMWizard() {
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 						
 			if (zoneObj.securitygroupsenabled == false) {  //show network container				
-			    vmWizardShowNetworkContainer($thisPopup, true);	 //isVirtualNetworkNeeded == true
+			    vmWizardShowNetworkContainer($thisPopup);	 
 			} 
 			else if (zoneObj.securitygroupsenabled == true) {  // if security group is enabled			    
 			    var hasDedicatedDirectTaggedDefaultNetwork = false;
@@ -1053,7 +1059,7 @@ function initVMWizard() {
                     .dialog("option", "buttons", {	                    
                          "Yes": function() {
                              //present the current UI we have today	
-                             vmWizardShowNetworkContainer($thisPopup, false);  //isVirtualNetworkNeeded == false
+                             vmWizardShowNetworkContainer($thisPopup);  
                              $(this).dialog("close");
                          },
                          "No": function() {	                         
