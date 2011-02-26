@@ -194,5 +194,7 @@ public class ApiConstants {
     public static final String HOST_CPU_NUM = "hostcpunum";
     public static final String HOST_MEM_CAPACITY = "hostmemcapacity";
     public static final String HOST_MAC = "hostmac";
+    public static final String PXE_SERVER_TYPE = "pxeservertype";
+    
 }
  

@@ -1,6 +1,12 @@
 package com.cloud.vm;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -10,12 +16,16 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.baremetal.PrepareLinMinPxeServerCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
+import com.cloud.baremetal.LinMinPxeServerManager;
+import com.cloud.baremetal.PxeServerManager;
+import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -32,28 +42,36 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.IpAddrAllocator.IpAddr;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.crypt.RSAHelper;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager {
@@ -286,7 +304,30 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	}
 	
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-		return super.startVirtualMachine(cmd);
+	    long vmId = cmd.getEntityId();
+	    UserVmVO vm = _vmDao.findById(vmId);
+	    _vmDao.loadDetails(vm);
+	    
+		List<HostVO> servers = _hostDao.listBy(Host.Type.PxeServer, vm.getDataCenterId()); 
+	    if (servers.size() == 0) {
+	    	throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
+	    }
+	    HostVO pxeServer = servers.get(0);
+	    
+	    VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+	    if (template == null || template.getFormat() != Storage.ImageFormat.BAREMETAL) {
+	    	throw new InvalidParameterValueException("Invalid template with id = " + vm.getTemplateId());
+	    }
+	    
+		Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
+		//TODO: have to ugly harding code here
+		if (pxeServer.getResource().equalsIgnoreCase("com.cloud.baremetal.LinMinPxeServerResource")) {
+			params.put(Param.PxeSeverType, PxeServerType.LinMin);
+		} else {
+			throw new CloudRuntimeException("Unkown PXE server resource " + pxeServer.getResource());
+		}
+		
+		return startVirtualMachine(cmd, params);
 	}
 
 	@Override
@@ -331,6 +372,39 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	    
 	    if (owner == null || owner.getState() == Account.State.disabled) {
 	        throw new PermissionDeniedException("The owner of " + vm + " either does not exist or is disabled: " + vm.getAccountId());
+	    }
+	    
+	    if (profile.getTemplate() == null) {
+	    	s_logger.debug("This is a normal IPMI start, skip prepartion of PXE server");
+	    	return true;
+	    }
+	    
+	    s_logger.debug("This is a PXE start, prepare PXE server first");
+	    PxeServerType pxeType = (PxeServerType) profile.getParameter(Param.PxeSeverType);
+	    if (pxeType == null) {
+	    	throw new CloudRuntimeException("No PXE type specified");
+	    }
+	    
+	    PxeServerManager pxeMgr = null;
+	    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+	    if (pxeType == PxeServerType.LinMin) {
+	    	pxeMgr = locator.getManager(LinMinPxeServerManager.class);
+	    } else {
+	    	throw new CloudRuntimeException("Unsupport PXE type " + pxeType.toString());
+	    }
+	    
+	    if (pxeMgr == null) {
+	    	throw new CloudRuntimeException("No PXE manager find for type " + pxeType.toString());
+	    }
+	    
+	    List<HostVO> servers = _hostDao.listBy(Host.Type.PxeServer, vm.getDataCenterId()); 
+	    if (servers.size() == 0) {
+	    	throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
+	    }
+	    HostVO pxeServer = servers.get(0);
+	    
+	    if (!pxeMgr.prepare(profile, dest, context, pxeServer.getId())) {
+	    	throw new CloudRuntimeException("Pepare PXE server failed");
 	    }
 	    
 	    return true;

@@ -2106,6 +2106,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	
 	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="starting Vm", async=true)
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+		return startVirtualMachine(cmd, null);
+	}
+	
+	protected UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
 	    long vmId = cmd.getEntityId();
 	    UserVmVO vm = _vmDao.findById(vmId);
 	    _vmDao.loadDetails(vm);
@@ -2142,6 +2146,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    
 	    try {
 	        Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
+	        if (additonalParams != null) {
+	        	params.putAll(additonalParams);
+	        }
 	        params.put(VirtualMachineProfile.Param.VmPassword, password);
 			vm = _itMgr.start(vm, params, caller, owner);
 		} finally {

@@ -63,6 +63,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.StartupProxyCommand;
+import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
@@ -2363,6 +2364,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			type = Host.Type.ExternalFirewall;
 		} else if (startup instanceof StartupExternalLoadBalancerCommand) {
 			type = Host.Type.ExternalLoadBalancer;
+		} else if (startup instanceof StartupPxeServerCommand) {
+			type = Host.Type.PxeServer;
 		} else {
 			assert false : "Did someone add a new Startup command?";
 		}
@@ -2617,7 +2620,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		if (p == null) {
 			if (type != Host.Type.SecondaryStorage
 					&& type != Host.Type.ExternalFirewall
-					&& type != Host.Type.ExternalLoadBalancer) {
+					&& type != Host.Type.ExternalLoadBalancer
+					&& type != Host.Type.PxeServer) {
 
 				/*
 				 * s_logger.info("Unable to find the pod so we are creating one."
