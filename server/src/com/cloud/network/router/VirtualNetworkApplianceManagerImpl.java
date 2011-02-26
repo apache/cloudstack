@@ -789,7 +789,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         Long podId = dest.getPod().getId();
         
         //In Basic zone and Guest network we have to start domR per pod, not per network
-        if (dc.getNetworkType() == NetworkType.Basic && guestNetwork.getTrafficType() == TrafficType.Guest) {
+        if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest ) {
             router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
         } else {
             router = _routerDao.findByNetwork(guestNetwork.getId());

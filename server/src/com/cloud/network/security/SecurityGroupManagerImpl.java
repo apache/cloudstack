@@ -417,7 +417,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 	
 	protected void handleVmMigrated(VMInstanceVO vm) {
-	    if (vm.getType() == VirtualMachine.Type.User )
+	    if (vm.getType() == VirtualMachine.Type.User || !isVmSecurityGroupEnabled(vm.getId()))
             return;
 	    NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
 	    Commands cmds = new Commands(nrc);
