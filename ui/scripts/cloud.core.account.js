@@ -133,15 +133,12 @@ function bindAddAccountButton() {
     initDialog("dialog_add_account", 450);
                    
     var $dialogAddAccount = $("#dialog_add_account");
-        
-    //applyAutoComplete($field, commandString, jsonResponse1, jsonResponse2, objs);
-    applyAutoComplete($dialogAddAccount.find("#domain"), "listDomains", "listdomainsresponse", "domain");
-         
-    /*   
+    
+    var domainObjs = [];    
     $dialogAddAccount.find("#domain").autocomplete({
 		source: function(request, response) {			
 			$.ajax({
-			    data: createURL("command=listDomains&keyword=" + request.term),				
+			  data: createURL("command=listDomains&keyword=" + request.term),				
 				dataType: "json",
 				success: function(json) {	   
 					domainObjs = json.listdomainsresponse.domain;					
@@ -155,8 +152,22 @@ function bindAddAccountButton() {
 			});		
 		}
 	}); 
+     
+    /*   
+    $.ajax({
+	    data: createURL("command=listDomains"),
+		dataType: "json",
+		success: function(json) {			           
+			var domains = json.listdomainsresponse.domain;								
+			var $dropDownBox = $dialogAddAccount.find("#domain_dropdown").empty();									       		            							
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) 				
+					$dropDownBox.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 		
+			}					    	
+		}
+	});		    
     */
-                
+             
     $("#add_account_button").unbind("click").bind("click", function(event) {    		
 		$dialogAddAccount
 		.dialog('option', 'buttons', { 					
@@ -176,10 +187,10 @@ function bindAddAccountButton() {
 				var domainName = $thisDialog.find("#domain").val();
 				var domainId;
 				if(domainName != null && domainName.length > 0) { 				    
-				    if(autoCompleteItems != null && autoCompleteItems.length > 0) {									
-					    for(var i=0; i < autoCompleteItems.length; i++) {					        
-					      if(fromdb(autoCompleteItems[i].name) == domainName) {
-					          domainId = autoCompleteItems[i].id;
+				    if(domainObjs != null && domainObjs.length > 0) {									
+					    for(var i=0; i < domainObjs.length; i++) {					        
+					      if(fromdb(domainObjs[i].name) == domainName) {
+					          domainId = domainObjs[i].id;
 					          break;	
 					      }
 				        } 					   			    
