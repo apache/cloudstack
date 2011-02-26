@@ -120,6 +120,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             }
         }
         
+        if (config.isSecurityGroupEnabled()) {
+            config.setName("SecurityGroupEnabledNetwork");
+            config.setDisplayText("SecurityGroupEnabledNetwork");
+        }
+        
        return config;
     }
     

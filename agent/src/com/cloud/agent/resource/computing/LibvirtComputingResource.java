@@ -3189,8 +3189,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         /*FIX ME: */
-        InterfaceDef intf = intfs.get(intfs.size() - 1);
-        String brname = intf.getBrName();
+        String brname = null;
+        if (vmName.startsWith("r-")) {
+            InterfaceDef intf = intfs.get(0);
+            brname = intf.getBrName();
+        } else {
+            InterfaceDef intf = intfs.get(intfs.size() - 1);
+            brname = intf.getBrName();
+        }
         
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("default_network_rules_systemvm");
