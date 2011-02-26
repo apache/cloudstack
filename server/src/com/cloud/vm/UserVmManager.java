@@ -87,9 +87,4 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      * @return List of UserVMs.
      */
     List<UserVmVO> searchForUserVMs(Criteria c);
-
-    boolean isVmSecurityGroupEnabled(Long vmId);
-
-   
-
 }
