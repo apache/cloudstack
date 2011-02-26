@@ -90,6 +90,7 @@ def ipset(ipsetname, proto, start, end, ips):
 
 def destroy_network_rules_for_vm(vm_name):
     vmchain = vm_name
+    vmchain_default = None
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
@@ -98,13 +99,23 @@ def destroy_network_rules_for_vm(vm_name):
     destroy_ebtables_rules(vmchain)
     
     try:
-        execute("iptables -F " + vmchain_default)
-        execute("iptables -X " + vmchain_default)
+        if vmchain_default != None: 
+            execute("iptables -F " + vmchain_default)
     except:
-        logging.exception("Ignoring failure to delete  chain " + vmchain_default)
+        logging.debug("Ignoring failure to delete  chain " + vmchain_default)
     
     try:
+        if vmchain_default != None: 
+            execute("iptables -X " + vmchain_default)
+    except:
+        logging.debug("Ignoring failure to delete  chain " + vmchain_default)
+
+    try:
         execute("iptables -F " + vmchain)
+    except:
+        logging.debug("Ignoring failure to delete  chain " + vmchain)
+    
+    try:
         execute("iptables -X " + vmchain)
     except:
         logging.debug("Ignoring failure to delete  chain " + vmchain)
