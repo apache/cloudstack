@@ -427,17 +427,25 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 	
 	protected void handleVmMigrated(VMInstanceVO vm) {
-	    if (vm.getType() == VirtualMachine.Type.User || !isVmSecurityGroupEnabled(vm.getId()))
+	    if (!isVmSecurityGroupEnabled(vm.getId()))
             return;
-	    NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
-	    Commands cmds = new Commands(nrc);
-	    try {
-            _agentMgr.send(vm.getHostId(), cmds);
-        } catch (AgentUnavailableException e) {
-            s_logger.debug(e.toString());
-        } catch (OperationTimedoutException e) {
-          s_logger.debug(e.toString());
-        }
+	    if (vm.getType() != VirtualMachine.Type.User) {
+	        Commands cmds = null;
+	        NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
+	        cmds = new Commands(nrc);
+	        try {
+	            _agentMgr.send(vm.getHostId(), cmds);
+	        } catch (AgentUnavailableException e) {
+	            s_logger.debug(e.toString());
+	        } catch (OperationTimedoutException e) {
+	          s_logger.debug(e.toString());
+	        }
+
+	    } else {
+	        Set<Long> affectedVms = new HashSet<Long>();
+	        affectedVms.add(vm.getId());
+	        scheduleRulesetUpdateToHosts(affectedVms, true, null);
+	    }
 	}
 	
 	@Override @DB @SuppressWarnings("rawtypes")

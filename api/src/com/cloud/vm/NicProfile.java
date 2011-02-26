@@ -202,6 +202,7 @@ public class NicProfile {
         this.broadcastUri = broadcastUri;
         this.isolationUri = isolationUri;
         this.netmask = nic.getNetmask();
+        this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
         
         if (networkRate != null) {
             this.networkRate = networkRate;
