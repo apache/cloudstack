@@ -41,7 +41,8 @@ dictionary = {
 	'message.action.instance.reset.password': '<fmt:message key="message.action.instance.reset.password"/>',
 	'message.action.take.snapshot': '<fmt:message key="message.action.take.snapshot"/>',
 	'label.data.disk.offering': '<fmt:message key="label.data.disk.offering"/>',
-	'label.root.disk.offering': '<fmt:message key="label.root.disk.offering"/>'
+	'label.root.disk.offering': '<fmt:message key="label.root.disk.offering"/>',
+	'message.launch.vm.on.private.network': '<fmt:message key="message.launch.vm.on.private.network"/>'
 };	
 </script>
 
