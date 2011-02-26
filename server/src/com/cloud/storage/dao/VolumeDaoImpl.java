@@ -29,9 +29,12 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
+import com.cloud.dc.ClusterVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
@@ -263,6 +266,21 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
              throw new CloudRuntimeException("Caught: " + SELECT_HYPERTYPE_FROM_VOLUME, e);
          }
 	}
+    
+    @Override
+    public ImageFormat getImageFormat(Long volumeId) {
+        HypervisorType type = getHypervisorType(volumeId);
+        if ( type.equals(HypervisorType.KVM)) {
+            return ImageFormat.QCOW2;
+        } else if ( type.equals(HypervisorType.XenServer)) {
+            return ImageFormat.VHD;
+        } else if ( type.equals(HypervisorType.VMware)) {
+            return ImageFormat.OVA;
+        } else {
+            s_logger.warn("Do not support hypervisor " + type.toString());
+            return null;
+        }
+    }
     
 	protected VolumeDaoImpl() {
 	    AllFieldsSearch = createSearchBuilder();

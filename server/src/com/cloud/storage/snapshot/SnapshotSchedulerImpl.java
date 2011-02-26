@@ -26,7 +26,6 @@ import java.util.TimerTask;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
@@ -133,7 +132,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             }
         } finally {
             scanLock.releaseRef();
-        }
+        } 
     }
     
     private void checkStatusOfCurrentlyExecutingSnapshots() {
@@ -182,7 +181,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                         // If the snapshot was taken successfully on primary, it will retry backing it up.
                         // and cleanup the previous snapshot
                         // Set the userId to that of system.
-                        _snapshotManager.validateSnapshot(1L, snapshot);
+                        //_snapshotManager.validateSnapshot(1L, snapshot);
                         // In all cases, schedule the next snapshot job 
                         scheduleNextSnapshotJob(snapshotSchedule);
                     }
@@ -221,6 +220,9 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             if ( volume.getPoolId() == null) {
                 // this volume is not attached
                 continue;
+            }
+            if ( _snapshotPolicyDao.findById(policyId) == null ) {
+                _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
             }
             if (s_logger.isDebugEnabled()) {
                 Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
@@ -270,38 +272,46 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     }
 
     private Date scheduleNextSnapshotJob(SnapshotScheduleVO snapshotSchedule) {
-        Long policyId = snapshotSchedule.getPolicyId();
-        Long expectedId = snapshotSchedule.getId();
-        if (_snapshotScheduleDao.findById(expectedId) != null) {
-            // We need to acquire a lock and delete it, then release the lock.
-            // But I don't know how to.
-            _snapshotScheduleDao.expunge(expectedId);
+        if ( snapshotSchedule == null ) {
+            return null;
         }
+        Long policyId = snapshotSchedule.getPolicyId();
         if (policyId.longValue() == Snapshot.MANUAL_POLICY_ID) {
             // Don't need to schedule the next job for this.
             return null;
         }
         SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
+        if ( snapshotPolicy == null ) {
+            _snapshotScheduleDao.expunge(snapshotSchedule.getId());
+        }
         return scheduleNextSnapshotJob(snapshotPolicy);
     }
     
     @Override @DB
-    public Date scheduleNextSnapshotJob(SnapshotPolicyVO policyInstance) {
-        long policyId = policyInstance.getId();
-        Date nextSnapshotTimestamp = getNextScheduledTime(policyId, new Date());
-        SnapshotScheduleVO snapshotScheduleVO = new SnapshotScheduleVO(policyInstance.getVolumeId(), policyId, nextSnapshotTimestamp);
-        try{
-            _snapshotScheduleDao.persist(snapshotScheduleVO);
-        } catch (EntityExistsException e ) {
-            snapshotScheduleVO = _snapshotScheduleDao.findOneByVolume(policyInstance.getVolumeId());
-            try {
-                snapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheduleVO.getId());
-                snapshotScheduleVO.setPolicyId(policyId);
-                snapshotScheduleVO.setScheduledTimestamp(nextSnapshotTimestamp);
-                _snapshotScheduleDao.update(snapshotScheduleVO.getId(), snapshotScheduleVO);
+    public Date scheduleNextSnapshotJob(SnapshotPolicyVO policy) {
+        if ( policy == null) {
+            return null;
+        }
+        long policyId = policy.getId();
+        if ( policyId == Snapshot.MANUAL_POLICY_ID ) {
+            return null;
+        }
+        Date nextSnapshotTimestamp = getNextScheduledTime(policyId, _currentTimestamp);
+        SnapshotScheduleVO spstSchedVO = _snapshotScheduleDao.findOneByVolumePolicy(policy.getVolumeId(), policy.getId());
+        if ( spstSchedVO == null ) {
+            spstSchedVO = new SnapshotScheduleVO(policy.getVolumeId(), policyId, nextSnapshotTimestamp);
+            _snapshotScheduleDao.persist(spstSchedVO);
+        } else {
+            try{
+                spstSchedVO = _snapshotScheduleDao.acquireInLockTable(spstSchedVO.getId());
+                spstSchedVO.setPolicyId(policyId);
+                spstSchedVO.setScheduledTimestamp(nextSnapshotTimestamp);
+                spstSchedVO.setAsyncJobId(null);
+                spstSchedVO.setSnapshotId(null);
+                _snapshotScheduleDao.update(spstSchedVO.getId(), spstSchedVO);
             } finally {
-                if(snapshotScheduleVO != null ) {
-                    _snapshotScheduleDao.releaseFromLockTable(snapshotScheduleVO.getId());
+                if(spstSchedVO != null ) {
+                    _snapshotScheduleDao.releaseFromLockTable(spstSchedVO.getId());
                 }
             }
         }
@@ -316,7 +326,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         SnapshotScheduleVO schedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, false);
         boolean success = true;
         if (schedule != null) {
-            success = _snapshotScheduleDao.expunge(schedule.getId());
+            success = _snapshotScheduleDao.remove(schedule.getId());
         }
         if(!success){
             s_logger.debug("Error while deleting Snapshot schedule with Id: "+schedule.getId());

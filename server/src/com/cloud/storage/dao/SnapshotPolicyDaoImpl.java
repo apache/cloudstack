@@ -24,6 +24,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -36,11 +37,11 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
 	private final SearchBuilder<SnapshotPolicyVO> ActivePolicySearch;
 	
 	@Override
-	public SnapshotPolicyVO findOneByVolumeInterval(long volumeId, short interval) {
+	public SnapshotPolicyVO findOneByVolumeInterval(long volumeId, IntervalType intvType) {
 		SearchCriteria<SnapshotPolicyVO> sc = VolumeIdIntervalSearch.create();
         sc.setParameters("volumeId", volumeId);
-        sc.setParameters("interval", interval);
-		return findOneIncludingRemovedBy(sc);
+        sc.setParameters("interval", intvType.ordinal());
+		return findOneBy(sc);
 	}
 	
    @Override

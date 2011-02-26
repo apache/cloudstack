@@ -2,7 +2,6 @@
 -- Schema upgrade from 2.1 to 2.2;
 --;
 ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned NOT NULL DEFAULT 0;
-ALTER TABLE `cloud`.`snapshots` MODIFY COLUMN `id` bigint unsigned UNIQUE NOT NULL;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL;
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged';
@@ -335,6 +334,10 @@ CREATE TABLE  `cloud`.`upload` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `data_center_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `domain_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `size` bigint unsigned NOT NULL ;
+
 ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical size` bigint unsigned DEFAULT 0;
 
 ALTER TABLE `cloud`.`console_proxy` MODIFY COLUMN `public_mac_address` varchar(17);
@@ -518,4 +521,3 @@ CREATE TABLE `cloud`.`storage_pool_work` (
 -- Insert stuff?;
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', (SELECT max(id) + 1 or 200 from volumes));
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
-INSERT INTO `cloud`.`sequence` (name, value) VALUES ('snapshots_seq', (SELECT max(id) + 1 or 200 from snapshots));

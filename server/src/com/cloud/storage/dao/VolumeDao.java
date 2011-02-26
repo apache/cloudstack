@@ -23,6 +23,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
@@ -55,4 +56,5 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     HypervisorType getHypervisorType(long volumeId);
     
     List<VolumeVO> listVolumesToBeDestroyed();
+    ImageFormat getImageFormat(Long volumeId);
 }

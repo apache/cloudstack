@@ -108,6 +108,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
@@ -138,9 +139,11 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -961,6 +964,30 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		}
 	}
 
+	@Override
+    public Answer sendTo(Long dcId, HypervisorType type, Command cmd) {
+        List<ClusterVO> clusters = _clusterDao.listByDcHyType(dcId, type.toString());
+        int retry = 0;
+        for( ClusterVO cluster : clusters ) {
+            List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), null, dcId);
+            for ( HostVO host : hosts ) {
+                retry++;
+                if ( retry > _retry )  {
+                    return null;
+                }
+                Answer answer = null;
+                try {
+                    answer = easySend( host.getId(), cmd);
+                } catch (Exception e ) {
+                }
+                if ( answer != null ) {
+                    return answer;
+                }
+            }
+        }      
+        return null;
+    }
+	
 	@Override
 	@DB
 	public boolean deleteHost(long hostId) {

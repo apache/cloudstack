@@ -56,7 +56,7 @@ public class DiskProfile {
     }
     
     public DiskProfile(Volume vol, DiskOffering offering, HypervisorType hyperType) {
-        this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.getUseLocalStorage(), vol.getSize());
+        this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.isCustomized(), null);
         this.hyperType = hyperType;
     }
     

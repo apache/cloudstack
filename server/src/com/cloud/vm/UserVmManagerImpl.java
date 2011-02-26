@@ -19,7 +19,6 @@ package com.cloud.vm;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,7 +132,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -1194,106 +1192,107 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	
     	if (user == null) {
     		throw new InvalidParameterValueException("User " + userId + " does not exist");
-    	}
-
-    	Long volumeId = cmd.getVolumeId();
-    	Long snapshotId = cmd.getSnapshotId();
-    	if (volumeId == null) {
-    	    if (snapshotId == null) {
-                throw new InvalidParameterValueException("Failed to create private template record, neither volume ID nor snapshot ID were specified.");
-    	    }
-    	    SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-    	    if (snapshot == null) {
-                throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
-    	    }
-    	    volumeId = snapshot.getVolumeId();
-    	} else {
-    	    if (snapshotId != null) {
-                throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId + ") and snapshot ID (" + snapshotId + ")");
-    	    }
-    	}
-
-    	VolumeVO volume = _volsDao.findById(volumeId);
-    	if (volume == null) {
-            throw new InvalidParameterValueException("Volume with ID: " + volumeId + " does not exist");
-    	}
-
-        if (!isAdmin) {
-            if (account.getId() != volume.getAccountId()) {
-                throw new PermissionDeniedException("Unable to create a template from volume with id " + volumeId + ", permission denied.");
-            }
-        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new PermissionDeniedException("Unable to create a template from volume with id " + volumeId + ", permission denied.");
-        }
+    	}    	  	
 
         String name = cmd.getTemplateName();
         if ((name == null) || (name.length() > 32)) {
             throw new InvalidParameterValueException("Template name cannot be null and should be less than 32 characters");
         }
         
-        String uniqueName = Long.valueOf((userId == null)?1:userId).toString() + Long.valueOf(volumeId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
-
-        VMTemplateVO existingTemplate = _templateDao.findByTemplateNameAccountId(name, volume.getAccountId());
-        if (existingTemplate != null) {
-            throw new InvalidParameterValueException("Failed to create private template " + name + ", a template with that name already exists.");
-        }
-
-        AccountVO ownerAccount = _accountDao.findById(volume.getAccountId());
-        if (_accountMgr.resourceLimitExceeded(ownerAccount, ResourceType.template)) {
-        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-        	rae.setResourceType("template");
-        	throw rae;
-        }
         // do some parameter defaulting
-    	Integer bits = cmd.getBits();
-    	Boolean requiresHvm = cmd.getRequiresHvm();
-    	Boolean passwordEnabled = cmd.isPasswordEnabled();
-    	Boolean isPublic = cmd.isPublic();
-    	Boolean featured = cmd.isFeatured();
-
-    	HypervisorType hyperType = _volsDao.getHypervisorType(volumeId);
-    	int bitsValue = ((bits == null) ? 64 : bits.intValue());
-    	boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm.booleanValue());
-    	boolean passwordEnabledValue = ((passwordEnabled == null) ? false : passwordEnabled.booleanValue());
+        Integer bits = cmd.getBits();
+        Boolean requiresHvm = cmd.getRequiresHvm();
+        Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean isPublic = cmd.isPublic();
+        Boolean featured = cmd.isFeatured();
+        int bitsValue = ((bits == null) ? 64 : bits.intValue());
+        boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm.booleanValue());
+        boolean passwordEnabledValue = ((passwordEnabled == null) ? false : passwordEnabled.booleanValue());
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
-        }   
-        
-        if (!isAdmin || featured == null) {
-            featured = Boolean.FALSE;
         }
-
         boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new PermissionDeniedException("Failed to create template " + name + ", only private templates can be created.");
         }
-
-        // if the volume is a root disk, try to find out requiresHvm and bits if possible
-    	if (Volume.VolumeType.ROOT.equals(volume.getVolumeType())) {
-    	    Long instanceId = volume.getInstanceId();
-    	    if (instanceId != null) {
-    	        UserVm vm = _vmDao.findById(instanceId);
-    	        if (vm != null) {
-    	            VMTemplateVO origTemplate = _templateDao.findById(vm.getTemplateId());
-    	            if (!ImageFormat.ISO.equals(origTemplate.getFormat()) && !ImageFormat.RAW.equals(origTemplate.getFormat())) {
-    	                bitsValue = origTemplate.getBits();
-    	                requiresHvmValue = origTemplate.requiresHvm();
-    	            }
-    	        }
+        
+    	Long volumeId = cmd.getVolumeId();
+    	Long snapshotId = cmd.getSnapshotId();
+    	if ( (volumeId == null) && (snapshotId == null) ) {
+            throw new InvalidParameterValueException("Failed to create private template record, neither volume ID nor snapshot ID were specified.");
+    	}
+        if ( (volumeId != null) && (snapshotId != null) ) {
+            throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId + ") and snapshot ID (" + snapshotId + ")");
+        }
+        
+        long domainId;
+        long accountId;
+        HypervisorType hyperType;
+        VolumeVO volume = null;
+    	if (volumeId != null) { // create template from volume
+    	    volume = _volsDao.findById(volumeId);
+    	    if (volume == null) {
+    	        throw new InvalidParameterValueException("Failed to create private template record, unable to find volume " + volumeId);
     	    }
+            // If private template is created from Volume, check that the volume will not be active when the private template is created
+            if (!_storageMgr.volumeInactive(volume)) {
+                String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM, please stop the VM first" ;
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info(msg);
+                }
+                throw new CloudRuntimeException(msg);
+            }
+    	    domainId = volume.getDomainId();
+    	    accountId = volume.getAccountId();
+    	    hyperType = _volsDao.getHypervisorType(volumeId);
+    	} else {  // create template from snapshot
+            SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+            if (snapshot == null) {
+                throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
+            }
+            domainId = snapshot.getDomainId();
+            accountId = snapshot.getAccountId();
+            hyperType = snapshot.getHypervisorType();
+            volume = _volsDao.findById(snapshot.getVolumeId());
     	}
 
+        if (!isAdmin) {
+            if (account.getId() != accountId) {
+                throw new PermissionDeniedException("Unable to create a template permission denied.");
+            }
+        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+            throw new PermissionDeniedException("Unable to create a template permission denied.");
+        }
+
+        VMTemplateVO existingTemplate = _templateDao.findByTemplateNameAccountId(name, accountId);
+        if (existingTemplate != null) {
+            throw new InvalidParameterValueException("Failed to create private template " + name + ", a template with that name already exists.");
+        }
+
+        AccountVO ownerAccount = _accountDao.findById(accountId);
+        if (_accountMgr.resourceLimitExceeded(ownerAccount, ResourceType.template)) {
+        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
+        	rae.setResourceType("template");
+        	throw rae;
+        } 
+        
+        if (!isAdmin || featured == null) {
+            featured = Boolean.FALSE;
+        }
     	Long guestOSId = cmd.getOsTypeId();
     	GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
     	if (guestOS == null) {
     		throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
     	}
-
+    	
+        String uniqueName = Long.valueOf((userId == null)?1:userId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
     	Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
     	String description = cmd.getDisplayText();
-    	VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());    	
-    	boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM ;
-
+    	boolean isExtractable = false;   	
+    	if ( volume != null ) {
+    	    VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());            
+    	    isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM ;
+    	}
         privateTemplate = new VMTemplateVO(nextTemplateId,
                                            uniqueName,
                                            name,
@@ -1306,7 +1305,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                                            null,
                                            requiresHvmValue,
                                            bitsValue,
-                                           volume.getAccountId(),
+                                           accountId,
                                            null,
                                            description,
                                            passwordEnabledValue,
@@ -1326,66 +1325,48 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         long templateId = command.getEntityId();
         Long volumeId = command.getVolumeId();
         Long snapshotId = command.getSnapshotId();
-        SnapshotVO snapshot = null;
-
-        // Verify input parameters
-        if (snapshotId != null) {
-            snapshot = _snapshotDao.findById(snapshotId);
-
-            // Set the volumeId to that of the snapshot. All further input parameter checks will be done w.r.t the volume.
-            volumeId = snapshot.getVolumeId();
-        }
-        
-        // The volume below could be destroyed or removed.
-        VolumeVO volume = _volsDao.findById(volumeId);
-        String vmName = _storageMgr.getVmNameOnVolume(volume);
-
-        // If private template is created from Volume, check that the volume will not be active when the private template is created
-        if (snapshotId == null && !_storageMgr.volumeInactive(volume)) {
-            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM.";
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info(msg);
-            }
-            throw new CloudRuntimeException(msg);
-        }
-
         SnapshotCommand cmd = null;        
         VMTemplateVO privateTemplate = null;
-    	long zoneId = volume.getDataCenterId();
+  
     	String uniqueName = getRandomPrivateTemplateName();
 
-    	HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-        String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
-        if (secondaryStorageHost == null || secondaryStorageURL == null) {
-            throw new CloudRuntimeException("Did not find the secondary storage URL in the database for zoneId "
-                    + zoneId);
-        }
-
-        if (snapshotId != null) {
-            volume = _volsDao.findById(volumeId);
-            StringBuilder userFolder = new StringBuilder();
-            Formatter userFolderFormat = new Formatter(userFolder);
-            userFolderFormat.format("u%06d", snapshot.getAccountId());
+    	StoragePoolVO pool = null;
+    	HostVO secondaryStorageHost = null;
+    	long zoneId;
+    	Long accountId = null;
+        if (snapshotId != null) {  // create template from snapshot
+            SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+            if( snapshot == null ) {
+                throw new CloudRuntimeException("Unable to find Snapshot for Id " + snapshotId);
+            }
+            zoneId = snapshot.getDataCenterId();
+            secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+            if ( secondaryStorageHost == null ) {
+                throw new CloudRuntimeException("Can not find the secondary storage for zoneId " + zoneId);
+            }
+            String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
             String name = command.getTemplateName();
             String backupSnapshotUUID = snapshot.getBackupSnapshotId();
             if (backupSnapshotUUID == null) {
                 throw new CloudRuntimeException("Unable to create private template from snapshot " + snapshotId + " due to there is no backupSnapshotUUID for this snapshot");
             }
-
-            // We are creating a private template from a snapshot which has been
-            // backed up to secondary storage.
-            Long dcId = volume.getDataCenterId();
-            Long accountId = volume.getAccountId();
+            
+            Long dcId = snapshot.getDataCenterId();
+            accountId = snapshot.getAccountId();
+            volumeId = snapshot.getVolumeId();
 
             String origTemplateInstallPath = null;
-
-            cmd = new CreatePrivateTemplateFromSnapshotCommand(_storageMgr.getPrimaryStorageNameLabel(volume),
+            List<StoragePoolVO> storagePools = _storagePoolDao.listByDataCenterId(zoneId);
+            if( storagePools == null || storagePools.size() == 0) {
+                throw new CloudRuntimeException("Unable to find storage pools in zone " + zoneId);
+            }
+            pool = storagePools.get(0);
+            cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(),
                     secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
                     origTemplateInstallPath, templateId, name);
-        } else if (volumeId != null) {
-            volume = _volsDao.findById(volumeId);
+        } else if (volumeId != null) {           
+            VolumeVO volume = _volsDao.findById(volumeId);
             if( volume == null ) {
                 throw new CloudRuntimeException("Unable to find volume for Id " + volumeId);
             }
@@ -1393,14 +1374,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _templateDao.remove(templateId);
                 throw new CloudRuntimeException("Volume " + volumeId + " is empty, can't create template on it");
             }
-            Long instanceId = volume.getInstanceId();
-            if (instanceId != null){
-            	VMInstanceVO vm = _vmDao.findById(instanceId);
-            	State vmState = vm.getState();
-            	if( !vmState.equals(State.Stopped) && !vmState.equals(State.Destroyed)) {
-            		throw new CloudRuntimeException("Please put VM " + vm.getName() + " into Stopped state first");
-            	}
-            }           
+            String vmName = _storageMgr.getVmNameOnVolume(volume);
+            zoneId = volume.getDataCenterId(); 
+            secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+            if ( secondaryStorageHost == null ) {
+                throw new CloudRuntimeException("Can not find the secondary storage for zoneId " + zoneId);
+            }
+            String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
+
+            pool = _storagePoolDao.findById(volume.getPoolId());
             cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, volume.getAccountId(),
                     command.getTemplateName(), uniqueName, volume.getPath(), vmName);
 
@@ -1411,35 +1393,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // on the storage server to create the template
 
         // This can be sent to a KVM host too.
-        StoragePool pool = _storagePoolDao.findById(volume.getPoolId());
         CreatePrivateTemplateAnswer answer = null;
-        volume = _volsDao.acquireInLockTable(volumeId, 10);       
-        if( volume == null ) {
+        if( ! _volsDao.lockInLockTable(volumeId.toString(), 10)) {       
             throw new CloudRuntimeException("Creating template failed due to volume:" + volumeId + " is being used, try it later ");
         }
         try {
             answer = (CreatePrivateTemplateAnswer)_storageMgr.sendToPool(pool, cmd);
         } catch (StorageUnavailableException e) {
         } finally {
-            _volsDao.releaseFromLockTable(volumeId);
+            _volsDao.unlockFromLockTable(volumeId.toString());
         }
-
         if ((answer != null) && answer.getResult()) {
             privateTemplate = _templateDao.findById(templateId);
-            Long origTemplateId = volume.getTemplateId();
-            VMTemplateVO origTemplate = null;
-            if (origTemplateId != null) {
-                origTemplate = _templateDao.findById(origTemplateId);
-            }
-
-            if ((origTemplate != null) && !Storage.ImageFormat.ISO.equals(origTemplate.getFormat())) {
-                privateTemplate.setRequiresHvm(origTemplate.requiresHvm());
-                privateTemplate.setBits(origTemplate.getBits());
-            } else {
-                privateTemplate.setRequiresHvm(true);
-                privateTemplate.setBits(64);
-            }
-
             String answerUniqueName = answer.getUniqueName();
             if (answerUniqueName != null) {
                 privateTemplate.setUniqueName(answerUniqueName);
@@ -1454,11 +1419,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 // Specify RAW format makes it unusable for snapshots.
                 privateTemplate.setFormat(ImageFormat.RAW);
             }
-            
-            if(snapshot != null) {
-                privateTemplate.setHypervisorType(snapshot.getHypervisorType());
-            }
-            
+                        
             _templateDao.update(templateId, privateTemplate);
 
             // add template zone ref for this template
@@ -1476,7 +1437,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _usageEventDao.persist(usageEvent);
             
             // Increment the number of templates
-            _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.template);
+            _accountMgr.incrementResourceCount(accountId, ResourceType.template);
 
         } else {
 

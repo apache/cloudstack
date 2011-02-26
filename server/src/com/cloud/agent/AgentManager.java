@@ -37,6 +37,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
@@ -225,5 +226,7 @@ public interface AgentManager extends Manager {
 	Answer easySend(Long hostId, Command cmd, int timeout);
 
     boolean isHostNativeHAEnabled(long hostId);
+
+    Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
 }

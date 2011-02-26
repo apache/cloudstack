@@ -98,7 +98,7 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
 	    return asyncJobId;
 	}
 	
-	public void setAsyncJobId(long asyncJobId) {
+	public void setAsyncJobId(Long asyncJobId) {
 	    this.asyncJobId = asyncJobId;
 	}
 	

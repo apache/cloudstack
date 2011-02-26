@@ -923,6 +923,23 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         final Transaction txn = Transaction.currentTxn();
     	return txn.release(_table + id);
     }
+    
+    @Override @DB(txn=false)
+    public boolean lockInLockTable(final String id) {
+        return lockInLockTable(id, _timeoutSeconds);
+    }
+    
+    @Override
+    public boolean lockInLockTable(final String id, int seconds) {
+        Transaction txn = Transaction.currentTxn();
+        return txn.lock(_table + id, seconds);
+      }
+
+    @Override
+    public boolean unlockFromLockTable(final String id) {
+        final Transaction txn = Transaction.currentTxn();
+        return txn.release(_table + id);
+    }
 
     @Override @DB(txn=false)
     public List<T> listAllIncludingRemoved() {

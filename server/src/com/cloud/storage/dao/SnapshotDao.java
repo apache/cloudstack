@@ -21,6 +21,7 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Snapshot.Type;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
@@ -29,7 +30,7 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long> {
 	List<SnapshotVO> listByVolumeId(Filter filter, long volumeId);
 	SnapshotVO findNextSnapshot(long parentSnapId);
 	long getLastSnapshot(long volumeId, long snapId);
-    List<SnapshotVO> listByVolumeIdType(long volumeId, String type);
+    List<SnapshotVO> listByVolumeIdType(long volumeId, Type type);
     List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId);
     List<SnapshotVO> listByBackupUuid(long volumeId, String backupUuid);
 

@@ -91,17 +91,7 @@ public class DateUtil {
     	DAILY,
     	WEEKLY,
     	MONTHLY;
-        
-        private int max = 8;
-        
-        public void setMax(int max) {
-            this.max = max;
-        }
-        
-        public int getMax() {
-            return max;
-        }
-        
+               
         boolean equals(String intervalType) {
             return super.toString().equalsIgnoreCase(intervalType);
         }

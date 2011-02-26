@@ -37,7 +37,7 @@ public interface SnapshotSchedule {
 
     Long getAsyncJobId();
     
-    void setAsyncJobId(long asyncJobId);
+    void setAsyncJobId(Long asyncJobId);
     
     Long getSnapshotId();
     

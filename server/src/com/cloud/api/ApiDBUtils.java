@@ -258,25 +258,8 @@ public class ApiDBUtils {
     }
 
     public static String getSnapshotIntervalTypes(long snapshotId) {
-        String intervalTypes = "";
-
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        if (snapshot.getSnapshotType() == Snapshot.Type.MANUAL.ordinal()) {
-            return "MANUAL";
-        }
-
-        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforVolume(snapshot.getVolumeId());
-        for (SnapshotPolicyVO policy : policies) {
-            if (!intervalTypes.isEmpty()) {
-                intervalTypes += ",";
-            }
-            if (policy.getId() == Snapshot.MANUAL_POLICY_ID) {
-                intervalTypes += "MANUAL";
-            } else {
-                intervalTypes += DateUtil.getIntervalType(policy.getInterval()).toString();
-            }
-        }
-        return intervalTypes;
+        return snapshot.getType().name();
     }
 
     public static String getStoragePoolTags(long poolId) {

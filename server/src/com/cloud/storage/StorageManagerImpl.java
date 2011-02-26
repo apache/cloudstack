@@ -410,7 +410,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @DB
-    protected Pair<VolumeVO, String> createVolumeFromSnapshot(VolumeVO volume, SnapshotVO snapshot, long virtualsize) {
+    protected Pair<VolumeVO, String> createVolumeFromSnapshot(VolumeVO volume, SnapshotVO snapshot) {
         VolumeVO createdVolume = null;
         Long volumeId = volume.getId();
 
@@ -466,7 +466,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
                     }
                 }
-
                 s_logger.warn("Unable to create volume on pool " + pool.getName() + ", reason: " + details);
             }
 
@@ -515,18 +514,20 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // By default, assume failure.
         VolumeVO createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId); // Precondition: snapshot is not null and not removed.
-        Long origVolumeId = snapshot.getVolumeId();
-        VolumeVO originalVolume = _volsDao.findById(origVolumeId); // NOTE: Original volume could be destroyed and removed.
 
-        Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot, originalVolume.getSize());
+        Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         createdVolume = volumeDetails.first();
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
+<<<<<<< Updated upstream
         // Create an event
         Long templateId = originalVolume.getTemplateId();
         ;
         Long diskOfferingId = originalVolume.getDiskOfferingId();
+=======
+        Long diskOfferingId = volume.getDiskOfferingId();
+>>>>>>> Stashed changes
 
         if (createdVolume.getPath() != null) {
             Long offeringId = null;
@@ -537,9 +538,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
             }
 
+<<<<<<< Updated upstream
 //            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
 //                    volume.getId(), volume.getName(), offeringId, templateId, createdVolume.getSize());
 //            _usageEventDao.persist(usageEvent);
+=======
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
+                    volume.getId(), volume.getName(), offeringId, null, createdVolume.getSize());
+            _usageEventDao.persist(usageEvent);
+>>>>>>> Stashed changes
         }
         txn.commit();
         return createdVolume;
@@ -809,17 +816,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Long vmId = volume.getInstanceId();
         if (vmId != null) {
             UserVm vm = _userVmDao.findById(vmId);
-
             if (vm == null) {
-                return false;
+                return true;
             }
-
-            if (!vm.getState().equals(State.Stopped)) {
-                return false;
+            State state = vm.getState();
+            if (state.equals(State.Stopped) || state.equals(State.Destroyed) ) {
+                return true;
             }
         }
-
-        return true;
+        return false;
     }
 
     @Override
@@ -1449,17 +1454,28 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         } else {
             Long snapshotId = cmd.getSnapshotId();
+<<<<<<< Updated upstream
             Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
              
+=======
+            SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
+            diskOfferingId = cmd.getDiskOfferingId();
+>>>>>>> Stashed changes
             if (snapshotCheck == null) {
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
             
+<<<<<<< Updated upstream
             VolumeVO vol = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
             zoneId = vol.getDataCenterId();
             size = vol.getSize(); //we maintain size from org vol ; disk offering is used for tags purposes
             diskOfferingId = vol.getDiskOfferingId();
             
+=======
+            zoneId = snapshotCheck.getDataCenterId();
+            size = snapshotCheck.getSize(); //we maintain size from org vol ; disk offering is used for tags purposes
+
+>>>>>>> Stashed changes
             if (account != null) {
                 if (isAdmin(account.getType())) {
                     Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
@@ -1531,7 +1547,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (cmd.getSnapshotId() != null) {
             return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
         } else {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
             _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
             volume.setStatus(AsyncInstanceCreateStatus.Created);
             _volsDao.update(volume.getId(), volume);

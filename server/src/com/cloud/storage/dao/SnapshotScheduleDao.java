@@ -39,4 +39,6 @@ public interface SnapshotScheduleDao extends GenericDao<SnapshotScheduleVO, Long
 
     SnapshotScheduleVO findOneByVolume(long volumeId);
 
+    SnapshotScheduleVO findOneByVolumePolicy(long volumeId, long policyId);
+
 }

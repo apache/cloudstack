@@ -428,54 +428,6 @@ public class VolumeVO implements Volume {
         this.updated = updated;
     }
 
-    public Lun getLun() {
-	    return new Lun(hostip, iscsiName);
-	}
-	
-	public class Lun {
-	    private final String ip;
-	    private String iqn;
-	    private String lun;
-	    
-	    protected Lun(String ip, String iscsiName) {
-	        this.ip = ip;
-	        String[] str = iscsiName.split(":lu:");
-	        if (str != null && str.length == 2) {
-	            iqn = str[0];
-	            lun = str[1];
-	        } else {
-	            iqn = null;
-	            lun = null;
-	        }
-	    }
-	    
-	    public Lun(String ip, String iqn, String lun) {
-	        this.ip = ip;
-	        this.iqn = iqn;
-	        this.lun = lun;
-	    }
-	    
-	    public String getIp() {
-	        return ip;
-	    }
-	    
-	    public String getIqn() {
-	        return iqn;
-	    }
-	    
-	    public String getLun() {
-	        return lun;
-	    }
-	    
-	    public boolean isIscsi() {
-	        return lun != null;
-	    }
-	    
-	    protected String getIscsiName() {
-	        return iqn + ":lu:" + lun;
-	    }
-	}
-	
 	@Override
     public String toString() {
 	    return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();

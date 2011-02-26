@@ -26,6 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.utils.DateUtil.IntervalType;
 
 @Entity
 @Table(name="snapshot_policy")
@@ -56,11 +57,11 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     
     public SnapshotPolicyVO() { }
 
-    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, short interval, int maxSnaps) {
+    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps) {
     	this.volumeId = volumeId;
         this.schedule = schedule;
         this.timezone = timezone;
-        this.interval = interval;
+        this.interval = (short)intvType.ordinal();
         this.maxSnaps = maxSnaps;
         this.active = true;
     }

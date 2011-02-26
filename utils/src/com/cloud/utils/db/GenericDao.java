@@ -228,5 +228,11 @@ public interface GenericDao<T, ID extends Serializable> {
     boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
     
     <M> List<M> customSearch(SearchCriteria<M> sc, Filter filter);
+
+    boolean lockInLockTable(String id);
+
+    boolean lockInLockTable(String id, int seconds);
+
+    boolean unlockFromLockTable(String id);
     
 }

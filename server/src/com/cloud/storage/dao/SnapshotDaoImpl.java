@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Snapshot.Type;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -58,7 +59,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
-    public List<SnapshotVO> listByVolumeIdType(long volumeId, String type ) {
+    public List<SnapshotVO> listByVolumeIdType(long volumeId, Type type ) {
         return listByVolumeIdType(null, volumeId, type);
     }
 
@@ -81,10 +82,10 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return listIncludingRemovedBy(sc, null);
     }
     
-    public List<SnapshotVO> listByVolumeIdType(Filter filter, long volumeId, String type ) {
+    public List<SnapshotVO> listByVolumeIdType(Filter filter, long volumeId, Type type ) {
         SearchCriteria<SnapshotVO> sc = VolumeIdTypeSearch.create();
         sc.setParameters("volumeId", volumeId);
-        sc.setParameters("type", type);
+        sc.setParameters("type", type.ordinal());
         return listBy(sc, filter);
     }
 
@@ -95,7 +96,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         
         VolumeIdTypeSearch = createSearchBuilder();
         VolumeIdTypeSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getTypeDescription(), SearchCriteria.Op.EQ);
+        VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getsnapshotType(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.done();
         
         ParentIdSearch = createSearchBuilder();

@@ -24,6 +24,7 @@ import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VolumeVO;
+import com.cloud.utils.db.Filter;
 
 /**
 *
@@ -35,7 +36,7 @@ public interface SnapshotManager {
 	public static final int HOURLYMAX = 8;
 	public static final int DAILYMAX = 8;
 	public static final int WEEKLYMAX = 8;
-	public static final int MONTHLYMAX = 8;
+	public static final int MONTHLYMAX = 12;
 	public static final int DELTAMAX = 16;
 	
     /**
@@ -101,8 +102,6 @@ public interface SnapshotManager {
      */
     List<SnapshotVO> listSnapsforVolume(long volumeId);
 
-	SnapshotPolicyVO getPolicyForVolumeByInterval(long volumeId, short interval);
-
 	void deletePoliciesForVolume(Long volumeId);
 
     /**
@@ -116,11 +115,9 @@ public interface SnapshotManager {
 
     void validateSnapshot(Long userId, SnapshotVO snapshot);
 
-	ImageFormat getImageFormat(Long volumeId);
-
     SnapshotPolicyVO getPolicyForVolume(long volumeId);
 
-    boolean destroySnapshotBackUp(long snapshotId, long policyId);
+    boolean destroySnapshotBackUp(long snapshotId);
 
     /**
      * Create a snapshot of a volume
@@ -128,4 +125,8 @@ public interface SnapshotManager {
      * @return the Snapshot that was created
      */
 	SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long polocyId, Long snapshotId) throws ResourceAllocationException;
+
+    List<SnapshotPolicyVO> listPoliciesforSnapshot(long snapshotId);
+
+    List<SnapshotVO> listSnapsforPolicy(long policyId, Filter filter);
 }

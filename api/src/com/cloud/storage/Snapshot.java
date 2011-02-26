@@ -26,7 +26,20 @@ public interface Snapshot {
     public enum Type {
         MANUAL,
         RECURRING,
-        TEMPLATE;
+        TEMPLATE,
+        HOURLY,
+        DAILY,
+        WEEKLY,
+        MONTHLY;
+        private int max = 8;
+        
+        public void setMax(int max) {
+            this.max = max;
+        }
+        
+        public int getMax() {
+            return max;
+        }
         
         public String toString() {
             return this.name();
@@ -52,7 +65,7 @@ public interface Snapshot {
         }
     }
     
-    public static final long MANUAL_POLICY_ID = 1L;
+    public static final long MANUAL_POLICY_ID = 0L;
     
     Long getId();
     long getAccountId();
@@ -60,7 +73,10 @@ public interface Snapshot {
     String getPath();
     String getName();
     Date getCreated();
-    short getSnapshotType();
+    Type getType();
     Status getStatus();
     HypervisorType getHypervisorType();
+    boolean isRecursive();
+    short getsnapshotType();
+    
 }

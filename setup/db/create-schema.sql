@@ -351,7 +351,6 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('private_mac_address_seq', 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
-INSERT INTO `cloud`.`sequence` (name, value) VALUES ('snapshots_seq', 1);
 
 CREATE TABLE `cloud`.`volumes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
@@ -398,13 +397,16 @@ CREATE TABLE `cloud`.`volumes` (
 
 CREATE TABLE `cloud`.`snapshots` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
+  `data_center_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'the domain that the owner belongs to',
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume it belongs to. foreign key to volume table',
   `status` varchar(32) COMMENT 'snapshot creation status',
   `path` varchar(255) COMMENT 'Path',
   `name` varchar(255) NOT NULL COMMENT 'snapshot name',
   `snapshot_type` int(4) NOT NULL COMMENT 'type of snapshot, e.g. manual, recurring',
   `type_description` varchar(25) COMMENT 'description of the type of snapshot, e.g. manual, recurring',
+  `size` bigint unsigned NOT NULL COMMENT 'original disk size of snapshot',
   `created` datetime COMMENT 'Date Created',
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
@@ -1242,7 +1244,7 @@ CREATE TABLE  `cloud`.`launch_permission` (
 
 CREATE TABLE `cloud`.`snapshot_policy` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `volume_id` bigint unsigned NOT NULL unique,
+  `volume_id` bigint unsigned NOT NULL,
   `schedule` varchar(100) NOT NULL COMMENT 'schedule time of execution',
   `timezone` varchar(100) NOT NULL COMMENT 'the timezone in which the schedule time is specified',
   `interval` int(4) NOT NULL default 4 COMMENT 'backup schedule, e.g. hourly, daily, etc.',
@@ -1260,11 +1262,12 @@ CREATE TABLE  `cloud`.`snapshot_policy_ref` (
 
 CREATE TABLE  `cloud`.`snapshot_schedule` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `volume_id` bigint unsigned NOT NULL unique COMMENT 'The volume for which this snapshot is being taken',
+  `volume_id` bigint unsigned NOT NULL COMMENT 'The volume for which this snapshot is being taken',
   `policy_id` bigint unsigned NOT NULL COMMENT 'One of the policyIds for which this snapshot was taken',
   `scheduled_timestamp` datetime NOT NULL COMMENT 'Time at which the snapshot was scheduled for execution',
   `async_job_id` bigint unsigned COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
   `snapshot_id` bigint unsigned COMMENT 'If this schedule is being executed, then the corresponding snapshot has this id. Before that it is null',
+  UNIQUE (volume_id, policy_id),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

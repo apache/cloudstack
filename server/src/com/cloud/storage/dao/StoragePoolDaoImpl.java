@@ -158,7 +158,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	public List<StoragePoolVO> listByDataCenterId(long datacenterId) {
 		SearchCriteria<StoragePoolVO> sc = DatacenterSearch.create();
         sc.setParameters("datacenterId", datacenterId);
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
 	}
 
 

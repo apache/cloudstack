@@ -19,7 +19,6 @@
 package com.cloud.storage;
 
 import java.util.Date;
-import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,7 +28,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.TableGenerator;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
@@ -43,9 +41,15 @@ public class SnapshotVO implements Snapshot {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id = -1;
+    
+    @Column(name="data_center_id")
+    long dataCenterId;
 
     @Column(name="account_id")
     long accountId;
+    
+    @Column(name="domain_id")
+    long domainId;
 
     @Column(name="volume_id")
     Long volumeId;
@@ -68,7 +72,10 @@ public class SnapshotVO implements Snapshot {
 
     @Column(name="type_description")
     String typeDescription;
-
+    
+    @Column(name="size")
+    long size;
+    
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
 
@@ -87,13 +94,16 @@ public class SnapshotVO implements Snapshot {
     
     public SnapshotVO() { }
 
-    public SnapshotVO(long accountId, Long volumeId, String path, String name, short snapshotType, String typeDescription, HypervisorType hypervisorType) {
+    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
+        this.dataCenterId = dcId;
         this.accountId = accountId;
+        this.domainId = domainId;
         this.volumeId = volumeId;
         this.path = path;
         this.name = name;
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
+        this.size = size;
         this.status = Status.Creating;
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
@@ -104,9 +114,17 @@ public class SnapshotVO implements Snapshot {
         return id;
     }
 
+    public long getDataCenterId() {
+        return dataCenterId;
+    }
+
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    public long getDomainId() {
+        return domainId;
     }
 
     @Override
@@ -131,10 +149,17 @@ public class SnapshotVO implements Snapshot {
     public String getName() {
         return name;
     }
-
     @Override
-    public short getSnapshotType() {
+    public short getsnapshotType() {
         return snapshotType;
+    }
+    
+    @Override
+    public Type getType() {
+        if (snapshotType < 0 || snapshotType >= Type.values().length) {
+            return null;
+        }
+        return Type.values()[snapshotType];
     }
     
     @Override
@@ -144,6 +169,18 @@ public class SnapshotVO implements Snapshot {
     
     public void setSnapshotType(short snapshotType) {
         this.snapshotType = snapshotType;
+    }
+    
+    @Override
+    public boolean isRecursive(){
+        if ( snapshotType >= Type.DAILY.ordinal() && snapshotType <= Type.MONTHLY.ordinal() ) {
+            return true;
+        }
+        return false;
+    }
+
+    public long getSize() {
+        return size;
     }
 
     public String getTypeDescription() {
@@ -185,25 +222,14 @@ public class SnapshotVO implements Snapshot {
 	public void setPrevSnapshotId(long prevSnapshotId){
 		this.prevSnapshotId = prevSnapshotId;
 	}
-
-    public static Type getSnapshotType(Long policyId) {
-        if (policyId.equals(MANUAL_POLICY_ID)) {
-            return Type.MANUAL;
-        } else {
-        	return Type.RECURRING;
-        }
-    }
-    
+	   
     public static Type getSnapshotType(String snapshotType) {
-        if (Type.MANUAL.equals(snapshotType)) {
-            return Type.MANUAL;
-        }
-        if (Type.RECURRING.equals(snapshotType)) {
-            return Type.RECURRING;
-        }
-        if (Type.TEMPLATE.equals(snapshotType)) {
-            return Type.TEMPLATE;
+        for ( Type type : Type.values()) {
+            if ( type.equals(snapshotType)) {
+                return type;
+            }
         }
         return null;
     }
+
 }

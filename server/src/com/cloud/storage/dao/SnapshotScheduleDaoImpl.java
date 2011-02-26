@@ -38,6 +38,7 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
 	protected final SearchBuilder<SnapshotScheduleVO> executableSchedulesSearch;
 	protected final SearchBuilder<SnapshotScheduleVO> coincidingSchedulesSearch;
     private final SearchBuilder<SnapshotScheduleVO> VolumeIdSearch;
+    private final SearchBuilder<SnapshotScheduleVO> VolumeIdPolicyIdSearch;
 	// DB constraint: For a given volume and policyId, there will only be one entry in this table.
 	
 	
@@ -57,6 +58,11 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
+        
+        VolumeIdPolicyIdSearch = createSearchBuilder();
+        VolumeIdPolicyIdSearch.and("volumeId", VolumeIdPolicyIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdPolicyIdSearch.and("policyId", VolumeIdPolicyIdSearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
+        VolumeIdPolicyIdSearch.done();
 		
 	}
 	
@@ -80,6 +86,15 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         sc.setParameters("volumeId", volumeId);
         return findOneBy(sc);
     }
+    
+    
+    @Override
+    public SnapshotScheduleVO findOneByVolumePolicy(long volumeId, long policyId) {
+        SearchCriteria<SnapshotScheduleVO> sc = VolumeIdPolicyIdSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("policyId", policyId);
+        return findOneBy(sc);
+    }
 	/**
      * {@inheritDoc} 
      */
@@ -87,8 +102,6 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
     public List<SnapshotScheduleVO> getSchedulesToExecute(Date currentTimestamp) {
         SearchCriteria<SnapshotScheduleVO> sc = executableSchedulesSearch.create();
         sc.setParameters("scheduledTimestamp", currentTimestamp);
-        // Don't return manual snapshots. They will be executed through another code path.
-        sc.addAnd("policyId", SearchCriteria.Op.NEQ, 1L);
         return listBy(sc);
     }
     

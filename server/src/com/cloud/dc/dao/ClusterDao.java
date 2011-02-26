@@ -29,4 +29,5 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<ClusterVO> listByHyTypeWithoutGuid(String hyType);
     List<ClusterVO> listByZoneId(long zoneId);
     List<HypervisorType> getAvailableHypervisorInZone(long zoneId);
+    List<ClusterVO> listByDcHyType(long dcId, String hyType);
 }

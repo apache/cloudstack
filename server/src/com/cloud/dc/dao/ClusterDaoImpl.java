@@ -35,6 +35,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> HyTypeWithoutGuidSearch;
     protected final SearchBuilder<ClusterVO> AvailHyperSearch;
     protected final SearchBuilder<ClusterVO> ZoneSearch;
+    protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
     protected ClusterDaoImpl() {
         super();
         
@@ -42,6 +43,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         HyTypeWithoutGuidSearch.and("hypervisorType", HyTypeWithoutGuidSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         HyTypeWithoutGuidSearch.and("guid", HyTypeWithoutGuidSearch.entity().getGuid(), SearchCriteria.Op.NULL);
         HyTypeWithoutGuidSearch.done();
+        
+        ZoneHyTypeSearch = createSearchBuilder();
+        ZoneHyTypeSearch.and("hypervisorType", ZoneHyTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        ZoneHyTypeSearch.and("dataCenterId", ZoneHyTypeSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        ZoneHyTypeSearch.done();
         
         PodSearch = createSearchBuilder();
         PodSearch.and("pod", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -87,6 +93,14 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         SearchCriteria<ClusterVO> sc = HyTypeWithoutGuidSearch.create();
         sc.setParameters("hypervisorType", hyType);
         
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<ClusterVO> listByDcHyType(long dcId, String hyType) {
+        SearchCriteria<ClusterVO> sc = ZoneHyTypeSearch.create();
+        sc.setParameters("dataCenterId", dcId);
+        sc.setParameters("hypervisorType", hyType);
         return listBy(sc);
     }
     
