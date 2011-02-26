@@ -45,11 +45,21 @@ public interface DeploymentPlanner extends Adapter {
     boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
     
     public static class ExcludeList {
-        Set<Long> _dcIds;
-        Set<Long> _podIds;
-        Set<Long> _clusterIds;
-        Set<Long> _hostIds;
-        Set<Long> _poolIds;
+        private Set<Long> _dcIds;
+        private Set<Long> _podIds;
+        private Set<Long> _clusterIds;
+        private Set<Long> _hostIds;
+        private Set<Long> _poolIds;
+        
+        public ExcludeList(){        
+        }
+        
+        public ExcludeList(Set<Long> _dcIds, Set<Long> _podIds, Set<Long> _clusterIds, Set<Long> _hostIds, Set<Long> _poolIds){
+        	this._dcIds = _dcIds;
+        	this._podIds = _podIds;
+        	this._clusterIds = _clusterIds;
+        	this._poolIds = _poolIds;
+        }
         
         public boolean add(InsufficientCapacityException e) {
             Class<?> scope = e.getScope();
@@ -180,5 +190,45 @@ public interface DeploymentPlanner extends Adapter {
                               
             return false;
         }
+        
+        public boolean shouldAvoid(StoragePool pool) {
+            if (_dcIds != null && _dcIds.contains(pool.getDataCenterId())) {
+                return true;
+            }
+            
+            if (_podIds != null && _podIds.contains(pool.getPodId())) {
+                return true;
+            }
+            
+            if (_clusterIds != null && _clusterIds.contains(pool.getClusterId())) {
+                return true;
+            }
+            
+            if (_poolIds != null && _poolIds.contains(pool.getId())) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        public Set<Long> getDataCentersToAvoid(){
+        	return _dcIds;
+        }
+        
+        public Set<Long> getPodsToAvoid(){
+        	return _podIds;
+        }
+        
+        public Set<Long> getClustersToAvoid(){
+        	return _clusterIds;
+        }
+        
+        public Set<Long> getHostsToAvoid(){
+        	return _hostIds;
+        }
+        
+        public Set<Long> getPoolsToAvoid(){
+        	return _poolIds;
+        }        
     }
 }

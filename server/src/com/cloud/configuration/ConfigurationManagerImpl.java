@@ -1303,17 +1303,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         return createServiceOffering(userId, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, cmd.getTags(),cmd.getDomainId());
+                localStorageRequired, offerHA, cmd.getTags(),cmd.getDomainId(), cmd.getHostTag());
     }
 
     @Override
-    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, String tags, Long domainId) {
+    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, String tags, Long domainId, String hostTag) {
     	String networkRateStr = _configDao.getValue("network.throttling.rate");
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
     	int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
     	int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
     	tags = cleanupTags(tags);
-    	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, localStorageRequired, false, tags, false,domainId);
+    	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, localStorageRequired, false, tags, false,domainId, hostTag);
     	
     	if ((offering = _serviceOfferingDao.persist(offering)) != null) {
     		return offering;

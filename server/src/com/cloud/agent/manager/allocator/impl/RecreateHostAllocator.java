@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.manager.allocator.impl;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -31,15 +32,19 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.VMTemplateVO;
+import com.cloud.host.Host.Type;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -57,22 +62,26 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     @Inject ClusterDao _clusterDao;
     @Inject AgentManager _agentMgr;
     @Inject VolumeDao _volsDao;
+    @Inject DataCenterDao _dcDao;
+    @Inject HostDao _hostDao;
     
     @Override
-    public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
-        Host host = super.allocateTo(vm, offering, type, dc, pod, clusterId, template, avoid);
-        if (host != null) {
-            return host;
+    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm,DeploymentPlan plan, Type type,
+			ExcludeList avoid, int returnUpTo) {
+    	
+    	List<Host> hosts = super.allocateTo(vm, plan, type, avoid, returnUpTo);
+        if (hosts != null && !hosts.isEmpty()) {
+            return hosts;
         }
     
         s_logger.debug("First fit was unable to find a host");
         VirtualMachine.Type vmType = vm.getType();
         if (vmType == VirtualMachine.Type.User) {
-            s_logger.debug("vm is not a system vm so let's just return null");
-            return null;
+            s_logger.debug("vm is not a system vm so let's just return empty list");
+            return new ArrayList<Host>();
         }
         
+        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         List<PodCluster> pcs = _agentMgr.listByDataCenter(dc.getId());
         //getting rid of direct.attached.untagged.vlan.enabled config param: Bug 7204
         //basic network type for zone maps to direct untagged case
@@ -91,8 +100,14 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
             }
         }
         Set<Pair<Long, Long>> avoidPcs = new HashSet<Pair<Long, Long>>();
-        for (Host h : avoid) {
-            avoidPcs.add(new Pair<Long, Long>(h.getPodId(), h.getClusterId()));
+        Set<Long> hostIdsToAvoid = avoid.getHostsToAvoid();
+        if(hostIdsToAvoid != null){
+	        for (Long hostId : hostIdsToAvoid) {
+	        	Host h = _hostDao.findById(hostId);
+	        	if(h != null){
+	        		avoidPcs.add(new Pair<Long, Long>(h.getPodId(), h.getClusterId()));
+	        	}
+	        }
         }
         
         for (Pair<Long, Long> pcId : avoidPcs) {
@@ -101,16 +116,17 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         }
 
 		for (PodCluster p : pcs) {
-			clusterId = p.getCluster() == null ? null : p.getCluster().getId();
-			host = super.allocateTo(vm, offering, type, dc, p.getPod(),
-					clusterId, template, avoid);
-			if (host != null) {
-				return host;
+			long clusterId = p.getCluster() == null ? null : p.getCluster().getId();
+			DataCenterDeployment newPlan = new DataCenterDeployment(plan.getDataCenterId(), p.getPod().getId(), clusterId, null);
+			hosts = super.allocateTo(vm, newPlan, type, avoid, returnUpTo);
+			if (hosts != null && !hosts.isEmpty()) {
+				return hosts;
 			}
+
 		}
 
         s_logger.debug("Unable to find any available pods at all!");
-        return null;
+        return new ArrayList<Host>();
     }
     
     @Override

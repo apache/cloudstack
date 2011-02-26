@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
@@ -102,11 +103,14 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -171,6 +175,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Inject protected HighAvailabilityManager _haMgr;
     @Inject protected HostPodDao _podDao;
     @Inject protected DataCenterDao _dcDao;
+    @Inject protected StoragePoolDao _storagePoolDao;
     @Inject protected HypervisorGuruManager _hvGuruMgr;
     
     @Inject(adapter=DeploymentPlanner.class)
@@ -542,8 +547,27 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             ExcludeList avoids = new ExcludeList();
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
+
+            	//edit plan if this vm's ROOT volume is in READY state already
+                List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
                 
-                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
+                for (VolumeVO vol : vols) {
+                    Volume.State state = vol.getState();
+                    if (state == Volume.State.Ready) {
+                        StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+                        if (!pool.isInMaintenance()) {
+                            long rootVolDcId = pool.getDataCenterId();
+                            Long rootVolPodId = pool.getPodId();
+                            Long rootVolClusterId = pool.getClusterId();
+                            plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, vol.getPoolId());
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Root Volume " + vol + " is ready, changing deployment plan to use this pool's datacenterId: "+rootVolDcId +" , podId: "+rootVolPodId +" , and clusterId: "+rootVolClusterId);
+                            }
+                        }
+                    } 
+                }
+            	
+                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
                     dest = planner.plan(vmProfile, plan, avoids);
@@ -566,7 +590,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
                 
                 try {
-                    
                     _storageMgr.prepare(vmProfile, dest);
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     
@@ -579,6 +602,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
                     vm.setPodId(dest.getPod().getId());
+                    
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
                         throw new ConcurrentOperationException("Work steps have been changed: " + work);

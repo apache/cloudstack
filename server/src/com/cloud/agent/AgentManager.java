@@ -153,6 +153,8 @@ public interface AgentManager extends Manager {
 	
 	Long getGuestOSCategoryId(long hostId);
 	
+	String getHostTags(long hostId);
+	
 	/**
 	 * Find a host based on the type needed, data center to deploy in, pod
 	 * to deploy in, service offering, template, and list of host to avoid.
@@ -220,7 +222,7 @@ public interface AgentManager extends Manager {
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
 
-    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisor) 
+    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisor, List<String> hostTags) 
     	throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
 	Answer easySend(Long hostId, Command cmd, int timeout);

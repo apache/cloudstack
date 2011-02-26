@@ -17,16 +17,24 @@
  */
 package com.cloud.dc.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
+import com.cloud.capacity.CapacityVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value=ClusterDao.class)
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -36,6 +44,10 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> AvailHyperSearch;
     protected final SearchBuilder<ClusterVO> ZoneSearch;
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
+    
+    private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
+    private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
+    
     protected ClusterDaoImpl() {
         super();
         
@@ -115,5 +127,44 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         }
         
         return hypers;
+    }
+    
+    @Override
+    public Map<Long, List<Long>> getPodClusterIdMap(List<Long> clusterIds){
+    	Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        Map<Long, List<Long>> result = new HashMap<Long, List<Long>>();
+
+        try {
+            StringBuilder sql = new StringBuilder(GET_POD_CLUSTER_MAP_PREFIX);
+            if (clusterIds.size() > 0) {
+                for (Long clusterId : clusterIds) {
+                    sql.append(clusterId).append(",");
+                }
+                sql.delete(sql.length()-1, sql.length());
+                sql.append(GET_POD_CLUSTER_MAP_SUFFIX);
+            }
+            
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+            	Long podId = rs.getLong(1);
+            	Long clusterIdInPod  = rs.getLong(2);
+                if(result.containsKey(podId)){
+                   	List<Long> clusterList = result.get(podId);
+                	clusterList.add(clusterIdInPod);
+                	result.put(podId, clusterList);
+                }else{
+                	List<Long> clusterList = new ArrayList<Long>();
+                	clusterList.add(clusterIdInPod);
+                	result.put(podId, clusterList);
+                }
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + GET_POD_CLUSTER_MAP_PREFIX, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + GET_POD_CLUSTER_MAP_PREFIX, e);
+        }
     }
 }

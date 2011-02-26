@@ -193,5 +193,6 @@ public class ApiConstants {
     public static final String AVAILABILITY = "availability";
     public static final String NETWORKRATE = "networkrate";
     public static final String GUEST_IP_TYPE = "guestiptype";
+    public static final String HOST_TAGS = "hosttags";
 }
  

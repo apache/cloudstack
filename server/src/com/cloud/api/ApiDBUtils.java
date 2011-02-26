@@ -347,6 +347,11 @@ public class ApiDBUtils {
             return null;
         }
     }
+    
+    public static String getHostTags(long hostId) {
+    	return _agentMgr.getHostTags(hostId);    	
+    }
+    
 
     public static LoadBalancerVO findLoadBalancerById(Long loadBalancerId) {
         return _loadBalancerDao.findById(loadBalancerId);

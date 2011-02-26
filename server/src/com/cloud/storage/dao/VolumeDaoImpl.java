@@ -58,7 +58,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final GenericSearchBuilder<VolumeVO, SumCount> TotalSizeByPoolSearch;
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
-    
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     
     protected final Attribute _stateAttr;
@@ -160,6 +159,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", vmId);
 		sc.setParameters("destroyed", Volume.State.Destroy);
+		return listIncludingRemovedBy(sc);
+	}
+	
+	@Override
+	public List<VolumeVO> findReadyRootVolumesByInstance(long instanceId) {
+		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+		sc.setParameters("instanceId", instanceId);
+		sc.setParameters("state", Volume.State.Ready);
+		sc.setParameters("vType", Volume.VolumeType.ROOT.toString());		
 		return listIncludingRemovedBy(sc);
 	}
 	
@@ -326,7 +334,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         InstanceStatesSearch.and("instance", InstanceStatesSearch.entity().getInstanceId(), Op.EQ);
         InstanceStatesSearch.and("states", InstanceStatesSearch.entity().getState(), Op.IN);
         InstanceStatesSearch.done();
-        
+
         _stateAttr = _allAttributes.get("state");
         assert _stateAttr != null : "Couldn't get the state attribute";
 	}

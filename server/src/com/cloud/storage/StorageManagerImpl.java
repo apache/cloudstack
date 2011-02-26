@@ -175,6 +175,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -330,12 +331,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, final ServiceOffering offering,
             final VMInstanceVO vm, final VMTemplateVO template, final Set<StoragePool> avoid) {
+    	VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, (ServiceOfferingVO)offering, null, null);
         Enumeration<StoragePoolAllocator> en = _storagePoolAllocators.enumeration();
         while (en.hasMoreElements()) {
             final StoragePoolAllocator allocator = en.nextElement();
-            final StoragePool pool = allocator.allocateToPool(dskCh, dc, pod, clusterId, vm, template, avoid);
-            if (pool != null) {
-                return (StoragePoolVO) pool;
+            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, vmProfile, dc.getId(), pod.getId(), clusterId, avoid, 1);
+            if (poolList != null && !poolList.isEmpty()) {
+                return (StoragePoolVO) poolList.get(0);
             }
         }
         return null;
@@ -1560,7 +1562,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         if (capacities.size() == 0) {
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(),
+            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(),
                     storagePool.getAvailableBytes(), storagePool.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
             _capacityDao.persist(capacity);
         } else {
@@ -1587,7 +1589,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             provFactor = _overProvisioningFactor;
         }
         if (capacities.size() == 0) {
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), allocated,
+            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated,
                     storagePool.getCapacityBytes() * provFactor, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
             _capacityDao.persist(capacity);
         } else {
@@ -2346,17 +2348,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return toDiskProfile(vol, offering);
     }
 
-    protected StoragePool findStorage(DiskProfile dskCh, DeployDestination dest, VirtualMachineProfile<? extends VirtualMachine> vm,
-            List<? extends Volume> alreadyAllocated, Set<? extends StoragePool> avoid) {
-        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-            StoragePool pool = allocator.allocateTo(dskCh, vm, dest, alreadyAllocated, avoid);
-            if (pool != null) {
-                return pool;
-            }
-        }
-        return null;
-    }
-
     @Override
     public void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
@@ -2383,16 +2374,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
     }
 
+
     @Override
     public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException,
             InsufficientStorageCapacityException {
-        List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
+    	List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
         }
-
+        
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
-
+        
         for (VolumeVO vol : vols) {
             Volume.State state = vol.getState();
             if (state == Volume.State.Ready) {
@@ -2436,6 +2428,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             } else {
                 newVol = switchVolume(vol);
                 newVol.setRecreatable(true);
+                //update the volume->storagePool map since volumeId has changed
+            	if(dest.getStorageForDisks() != null && dest.getStorageForDisks().containsKey(vol)){
+            		StoragePool poolWithOldVol = dest.getStorageForDisks().get(vol);
+            		dest.getStorageForDisks().put(newVol, poolWithOldVol);
+            		dest.getStorageForDisks().remove(vol);
+            	}
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Created new volume " + newVol + " for old volume " + vol);
                 }
@@ -2503,13 +2501,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             template = _templateDao.findById(toBeCreated.getTemplateId());
         }
 
-        Set<StoragePool> avoids = new HashSet<StoragePool>();
-        StoragePool pool = null;
-        while ((pool = findStorage(diskProfile, dest, vm, alreadyCreated, avoids)) != null) {
+        if(dest.getStorageForDisks() != null){
+        	StoragePool pool = dest.getStorageForDisks().get(toBeCreated);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Trying to create in " + pool);
             }
-            avoids.add(pool);
             toBeCreated.setPoolId(pool.getId());
             try {
                 _volsDao.update(toBeCreated, Volume.Event.OperationRetry);
@@ -2522,8 +2518,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 VMTemplateStoragePoolVO tmpltStoredOn = null;
                 tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
                 if (tmpltStoredOn == null) {
-                    s_logger.debug("Skipping " + pool + " because we can't propragate template " + template);
-                    continue;
+                    s_logger.debug("Cannot use this pool " + pool + " because we can't propagate template " + template);
+                    return null;
                 }
                 cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
             } else {

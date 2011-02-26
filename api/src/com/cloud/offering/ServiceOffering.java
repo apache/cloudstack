@@ -72,6 +72,11 @@ public interface ServiceOffering {
      */
     boolean getUseLocalStorage();
     
-    Long getDomainId();
+    Long getDomainId();    
+    
+    /**
+     * @return tag that should be present on the host needed, optional parameter
+     */
+    String getHostTag();
     
 }

@@ -67,6 +67,8 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
     private String hypervisor;
 
+    @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
+    private List<String> hostTags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -102,6 +104,10 @@ public class AddHostCmd extends BaseCmd {
     
     public String getHypervisor() {
     	return hypervisor;
+    }
+    
+    public List<String> getHostTags() {
+        return hostTags;
     }
 
     /////////////////////////////////////////////////////

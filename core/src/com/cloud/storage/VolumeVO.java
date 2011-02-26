@@ -33,6 +33,7 @@ import javax.persistence.TemporalType;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -449,5 +450,19 @@ public class VolumeVO implements Volume {
 	
 	public void setChainInfo(String chainInfo) {
 		this.chainInfo = chainInfo;
+	}
+	
+	@Override
+    public int hashCode() {
+	    return  NumbersUtil.hash(id);
+	}
+	
+	@Override
+    public boolean equals(Object obj) {
+	    if (obj instanceof VolumeVO) {
+	        return id == ((VolumeVO)obj).id;
+	    } else {
+	        return false;
+	    }
 	}
 }

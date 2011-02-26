@@ -19,6 +19,10 @@
 package com.cloud.capacity.dao;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.ejb.Local;
 
@@ -29,6 +33,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = { CapacityDao.class })
 public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao {
@@ -39,6 +44,13 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String CLEAR_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type=2 OR capacity_type=3 OR capacity_type=6"; //clear storage and secondary_storage capacities
     private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6"; //clear non-storage and non-secondary_storage capacities
     private static final String CLEAR_NON_STORAGE_CAPACITIES2 = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6 AND capacity_type<>0 AND capacity_type<>1"; //clear non-storage and non-secondary_storage capacities
+
+    private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1 = "SELECT DISTINCT cluster_id  FROM `cloud`.`op_host_capacity` WHERE ";
+    private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART2 = " AND capacity_type = ? AND (total_capacity - used_capacity + reserved_capacity) >= ? " +
+    		"AND cluster_id IN (SELECT distinct cluster_id  FROM `cloud`.`op_host_capacity` WHERE ";
+    private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART3 = " AND capacity_type = ? AND (total_capacity - used_capacity + reserved_capacity) >= ?) " +
+    		"ORDER BY (total_capacity - used_capacity + reserved_capacity) DESC";
+    
     private SearchBuilder<CapacityVO> _hostIdTypeSearch;
 	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
     
@@ -139,4 +151,54 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	sc.setParameters("hostId", hostorPoolId);
     	return listBy(sc);
     }
+    
+    
+    @Override
+    public List<Long> orderClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone){
+    	Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+
+        StringBuilder sql = new StringBuilder(LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1);
+        if(isZone){
+        	sql.append("data_center_id = ?");
+        }else{
+        	sql.append("pod_id = ?");
+        }
+        sql.append(LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART2);
+        if(isZone){
+        	sql.append("data_center_id = ?");
+        }else{
+        	sql.append("pod_id = ?");
+        }
+        sql.append(LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART3);
+
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, id);
+            if(capacityTypeForOrdering == CapacityVO.CAPACITY_TYPE_CPU){
+            	pstmt.setShort(2, CapacityVO.CAPACITY_TYPE_CPU);
+            	pstmt.setLong(3, requiredCpu);
+            	pstmt.setLong(4, id);
+            	pstmt.setShort(5, CapacityVO.CAPACITY_TYPE_MEMORY);
+            	pstmt.setLong(6, requiredRam);
+            }else{
+            	pstmt.setShort(2, CapacityVO.CAPACITY_TYPE_MEMORY);
+            	pstmt.setLong(3, requiredRam);
+            	pstmt.setLong(4, id);
+            	pstmt.setShort(5, CapacityVO.CAPACITY_TYPE_CPU);
+            	pstmt.setLong(6, requiredCpu);
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }    
 }

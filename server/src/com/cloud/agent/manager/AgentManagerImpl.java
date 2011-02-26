@@ -109,6 +109,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
@@ -157,6 +158,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -178,6 +180,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.host.dao.HostTagsDao;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to
@@ -254,7 +257,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	protected ClusterDao _clusterDao = null;
 	@Inject
 	protected ClusterDetailsDao _clusterDetailsDao = null;
-
+    @Inject 
+    protected HostTagsDao _hostTagsDao = null;
+    
 	@Inject(adapter = DeploymentPlanner.class)
 	private Adapters<DeploymentPlanner> _planners;
 
@@ -516,8 +521,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				}
 			} catch (InsufficientServerCapacityException e) {
 
-			}
-
+			} 
 		}
 
 		s_logger.warn("findHost() could not find a non-null host.");
@@ -560,12 +564,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	}
 
 	protected AgentAttache handleDirectConnect(ServerResource resource,
-			StartupCommand[] startup, Map<String, String> details, boolean old)
+			StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags)
 			throws ConnectionException {
 		if (startup == null) {
 			return null;
 		}
-		HostVO server = createHost(startup, resource, details, old);
+		HostVO server = createHost(startup, resource, details, old, hostTags);
 		if (server == null) {
 			return null;
 		}
@@ -705,7 +709,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (resources != null) {
 				for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
 					ServerResource resource = entry.getKey();
-					AgentAttache attache = simulateStart(resource, entry.getValue(), true);
+					AgentAttache attache = simulateStart(resource, entry.getValue(), true, null);
 					if (attache != null) {
 						hosts.add(_hostDao.findById(attache.getId()));
 					}
@@ -756,8 +760,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		if (clusterName == null && clusterId == null) {
 			clusterName = "Standalone-" + url;
 		}
+		List<String> hostTags = cmd.getHostTags();
+		
 		return discoverHosts(dcId, podId, clusterId, clusterName, url,
-				username, password, cmd.getHypervisor());
+				username, password, cmd.getHypervisor(), hostTags);
 	}
 
 	@Override
@@ -767,13 +773,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Long dcId = cmd.getZoneId();
 		String url = cmd.getUrl();
 		return discoverHosts(dcId, null, null, null, url, null, null,
-				"SecondaryStorage");
+				"SecondaryStorage", null);
 	}
 
 	@Override
 	public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId,
 			String clusterName, String url, String username, String password,
-			String hypervisorType) throws IllegalArgumentException,
+			String hypervisorType, List<String> hostTags) throws IllegalArgumentException,
 			DiscoveryException, InvalidParameterValueException {
 		URI uri = null;
 
@@ -904,7 +910,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 						return null;
 					}
 					AgentAttache attache = simulateStart(resource,
-							entry.getValue(), true);
+							entry.getValue(), true, hostTags);
 					if (attache != null) {
 						hosts.add(_hostDao.findById(attache.getId()));
 					}
@@ -1703,7 +1709,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	}
 
 	protected AgentAttache simulateStart(ServerResource resource,
-			Map<String, String> details, boolean old)
+			Map<String, String> details, boolean old, List<String> hostTags)
 			throws IllegalArgumentException {
 		StartupCommand[] cmds = resource.initialize();
 		if (cmds == null) {
@@ -1718,7 +1724,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 //							.toString());
 		}
 		try {
-			attache = handleDirectConnect(resource, cmds, details, old);
+			attache = handleDirectConnect(resource, cmds, details, old, hostTags);
 		} catch (IllegalArgumentException ex) {
 			s_logger.warn("Unable to connect due to ", ex);
 			throw ex;
@@ -1840,6 +1846,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		}
 	}
 
+	@Override
+    public String getHostTags(long hostId){
+		List<String> hostTags = _hostTagsDao.gethostTags(hostId);
+		if (hostTags == null) {
+			return null;
+		} else {
+			return StringUtils.listToCsvTags(hostTags);
+		}
+    }
+	
 	@Override
 	public String getName() {
 		return _name;
@@ -2302,13 +2318,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			}
 		}
 
-		AgentAttache attache = simulateStart(resource, hostDetails, true);
+		AgentAttache attache = simulateStart(resource, hostDetails, true, null);
 		return _hostDao.findById(attache.getId());
 	}
 
 	public HostVO createHost(final StartupCommand startup,
 			ServerResource resource, Map<String, String> details,
-			boolean directFirst) throws IllegalArgumentException {
+			boolean directFirst, List<String> hostTags) throws IllegalArgumentException {
 		Host.Type type = null;
 
 		if (startup instanceof StartupStorageCommand) {
@@ -2374,7 +2390,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		}
 
 		server.setDetails(details);
-
+		server.setHostTags(hostTags);
+		
 		updateHost(server, startup, type, _nodeId);
 		if (resource != null) {
 			server.setResource(resource.getClass().getName());
@@ -2425,9 +2442,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 	public HostVO createHost(final StartupCommand[] startup,
 			ServerResource resource, Map<String, String> details,
-			boolean directFirst) throws IllegalArgumentException {
+			boolean directFirst, List<String> hostTags) throws IllegalArgumentException {
 		StartupCommand firstCmd = startup[0];
-		HostVO result = createHost(firstCmd, resource, details, directFirst);
+		HostVO result = createHost(firstCmd, resource, details, directFirst, hostTags);
 		if (result == null) {
 			return null;
 		}
@@ -2437,7 +2454,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	public AgentAttache handleConnect(final Link link,
 			final StartupCommand[] startup) throws IllegalArgumentException,
 			ConnectionException {
-		HostVO server = createHost(startup, null, null, false);
+		HostVO server = createHost(startup, null, null, false, null);
 		if (server == null) {
 			return null;
 		}
@@ -2776,12 +2793,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
 			if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
 				CapacityVO capacity = new CapacityVO(server.getId(),
-						server.getDataCenterId(), server.getPodId(), 0L,
+						server.getDataCenterId(), server.getPodId(), server.getClusterId(),0L,
 						server.getTotalSize(), CapacityVO.CAPACITY_TYPE_STORAGE);
 				_capacityDao.persist(capacity);
 
 				capacity = new CapacityVO(server.getId(),
-						server.getDataCenterId(), server.getPodId(), 0L,
+						server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
 						server.getTotalSize() * _overProvisioningFactor,
 						CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
 				_capacityDao.persist(capacity);
@@ -2824,7 +2841,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				CapacityVO capacity = new CapacityVO(
 						server.getId(),
 						server.getDataCenterId(),
-						server.getPodId(),
+						server.getPodId(), 
+						server.getClusterId(),
 						0L,
 						(long) (server.getCpus().longValue()
 								* server.getSpeed().longValue() * _cpuOverProvisioningFactor),
@@ -2866,7 +2884,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				_capacityDao.update(CapacityVOMem.getId(), CapacityVOMem);
 			} else {
 				CapacityVO capacity = new CapacityVO(server.getId(),
-						server.getDataCenterId(), server.getPodId(), 0L,
+						server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
 						server.getTotalMemory(),
 						CapacityVO.CAPACITY_TYPE_MEMORY);
 				_capacityDao.persist(capacity);
@@ -2927,7 +2945,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 					s_logger.debug("Simulating start for resource "
 							+ resource.getName() + " id " + id);
 				}
-				simulateStart(resource, details, false);
+				simulateStart(resource, details, false, null);
 			} catch (Exception e) {
 				s_logger.warn("Unable to simulate start on resource " + id
 						+ " name " + resource.getName(), e);

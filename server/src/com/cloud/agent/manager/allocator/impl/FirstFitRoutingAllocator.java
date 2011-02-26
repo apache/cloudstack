@@ -18,34 +18,31 @@
 
 package com.cloud.agent.manager.allocator.impl;
 
-import java.util.Set;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.ejb.Local;
-
 import org.apache.log4j.NDC;
-
 import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.VMTemplateVO;
+import com.cloud.host.Host.Type;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value={HostAllocator.class})
 public class FirstFitRoutingAllocator extends FirstFitAllocator {
     @Override
-    public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
+    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+			ExcludeList avoid, int returnUpTo) {
         try {
             NDC.push("FirstFitRoutingAllocator");
             if (type != Host.Type.Routing) {
                 // FirstFitRoutingAllocator is to find space on routing capable hosts only
-                return null;
+                return new ArrayList<Host>();
             }
             //all hosts should be of type routing anyway.
-            return super.allocateTo(vm, offering, type, dc, pod, clusterId, template, avoid);
+            return super.allocateTo(vmProfile, plan, type, avoid, returnUpTo);
         } finally {
             NDC.pop();
         }

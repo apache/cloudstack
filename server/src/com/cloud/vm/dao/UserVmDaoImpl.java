@@ -17,6 +17,10 @@
  */
 package com.cloud.vm.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -25,13 +29,21 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.capacity.CapacityVO;
+import com.cloud.host.HostVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -54,8 +66,14 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
+    protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
+    protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
+    
     protected SearchBuilder<UserVmVO> UserVmSearch;
     protected final Attribute _updateTimeAttr;
+   
+    private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
+
     
     protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
     
@@ -118,6 +136,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         AccountHostSearch.and("accountId", AccountHostSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountHostSearch.and("hostId", AccountHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         AccountHostSearch.done();
+
+        CountByAccountPod = createSearchBuilder(Long.class);
+        CountByAccountPod.select(null, Func.COUNT, null);
+        CountByAccountPod.and("account", CountByAccountPod.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountByAccountPod.and("pod", CountByAccountPod.entity().getPodId(), SearchCriteria.Op.EQ);
+        CountByAccountPod.done();
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -277,5 +301,29 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             return;
         }
         _detailsDao.persist(vm.getId(), details);
+    }
+	
+    @Override
+    public List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId){
+    	Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+
+        try {
+            String sql = LIST_PODS_HAVING_VMS_FOR_ACCOUNT;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, zoneId);
+            pstmt.setLong(2, accountId);
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
+        }
     }
 }

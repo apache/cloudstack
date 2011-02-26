@@ -18,6 +18,7 @@
 package com.cloud.host;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -132,6 +133,12 @@ public class HostVO implements Host {
     @Transient
     Map<String, String> details;
     
+    // This is a delayed load value.  If the value is null,
+    // then this field has not been loaded yet.
+    // Call host dao to load it.
+    @Transient
+    List<String> hostTags;
+
     @Override
     public String getStorageIpAddressDeux() {
 		return storageIpAddressDeux;
@@ -273,6 +280,14 @@ public class HostVO implements Host {
     
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public List<String> getHostTags() {
+        return hostTags;
+    }
+   
+    public void setHostTags(List<String> hostTags) {
+        this.hostTags = hostTags;
     }
 
     @Column(name="data_center_id", nullable=false)

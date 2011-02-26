@@ -283,7 +283,7 @@ public class AlertManagerImpl implements AlertManager {
             int totalPublicIPs = _publicIPAddressDao.countIPsForDashboard(dcId, false);
             int allocatedPublicIPs = _publicIPAddressDao.countIPsForDashboard(dcId, true);
 
-            CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, allocatedPublicIPs, totalPublicIPs, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
+            CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, null, allocatedPublicIPs, totalPublicIPs, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
             newCapacities.add(newPublicIPCapacity);
         }
 
@@ -296,7 +296,7 @@ public class AlertManagerImpl implements AlertManager {
             int totalPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, false);
             int allocatedPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, true);
 
-            CapacityVO newPrivateIPCapacity = new CapacityVO(null, dcId, podId, allocatedPrivateIPs, totalPrivateIPs, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
+            CapacityVO newPrivateIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedPrivateIPs, totalPrivateIPs, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
             newCapacities.add(newPrivateIPCapacity);
         }
 

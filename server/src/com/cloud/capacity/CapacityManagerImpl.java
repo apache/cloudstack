@@ -174,10 +174,22 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
         
     @DB
     @Override
-    public boolean allocateVmCapacity(long hostId, Integer cpu, long ram, boolean fromLastHost) {
+    public boolean allocateVmCapacity(VirtualMachine vm, boolean fromLastHost) {
+
+    	long hostId = vm.getHostId();
+    	
+    	ServiceOfferingVO svo = _offeringsDao.findById(vm.getServiceOfferingId());
+    	
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO capacityMem = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
 
+        if (capacityCpu == null || capacityMem == null || svo == null) {
+            return false;
+        }
+
+        int cpu = svo.getCpu() * svo.getSpeed();
+        long ram = svo.getRamSize() * 1024L * 1024L;    	
+    	
         Transaction txn = Transaction.currentTxn();
 
         try {
@@ -243,6 +255,90 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             return false;
         }               
     }
+    
+    @Override
+    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity){
+       	boolean hasCapacity = false;
+       	
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking if host: " + hostId + " has enough capacity for requested CPU: "+ cpu + " and requested RAM: "+ ram);
+        }
+       	
+       	CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
+       	CapacityVO capacityMem = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
+
+		long usedCpu = capacityCpu.getUsedCapacity();
+		long usedMem = capacityMem.getUsedCapacity();
+		long reservedCpu = capacityCpu.getReservedCapacity();
+		long reservedMem = capacityMem.getReservedCapacity();
+		long totalCpu = capacityCpu.getTotalCapacity();
+		long totalMem = capacityMem.getTotalCapacity();
+		long freeCpu = totalCpu - (reservedCpu + usedCpu);
+		long freeMem = totalMem - (reservedMem + usedMem);
+
+		String failureReason = "";
+		if (checkFromReservedCapacity) {
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug("Checking from reserved capacity of the host, looks like allocating to last host");
+	        }
+			/*alloc from reserved*/
+			if (reservedCpu >= cpu){ 
+				if(reservedMem >= ram) {
+					hasCapacity = true;
+				}else{
+					failureReason = "Host does not have enough reserved RAM available";
+				}
+			}else{
+				failureReason = "Host does not have enough reserved CPU available";
+			}		
+		} else {
+			/*alloc from free resource*/
+			if ((reservedCpu + usedCpu + cpu <= totalCpu)) {
+				if((reservedMem + usedMem + ram <= totalMem)){
+					hasCapacity = true;
+				}else{
+					failureReason = "Host does not have enough RAM available";
+				}
+			}else{
+				failureReason = "Host does not have enough CPU available";
+			}
+		}
+
+		if (hasCapacity) {
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug("Host has enough CPU and RAM available");
+	        }
+	        
+			s_logger.debug("STATS: Can alloc CPU from host: " + hostId + ", used: " + usedCpu + ", reserved: " +
+					reservedCpu + ", total: " + totalCpu +
+					"; requested cpu:" + cpu + ",alloc_from_last_host?:" + checkFromReservedCapacity);
+   		
+			s_logger.debug("STATS: Can alloc MEM from host: " + hostId + ", used: " + usedMem + ", reserved: " +
+   				reservedMem + ", total: " + totalMem + "; requested mem: " + ram + ",alloc_from_last_host?:" + checkFromReservedCapacity);
+       	} else {
+       		
+       		if (checkFromReservedCapacity) {
+       			s_logger.debug("STATS: Failed to alloc resource from host: " + hostId + " reservedCpu: " + reservedCpu + ", requested cpu: " + cpu +
+       					", reservedMem: " + reservedMem + ", requested mem: " + ram); 
+       		} else {
+       			s_logger.debug("STATS: Failed to alloc resource from host: " + hostId + " reservedCpu: " + reservedCpu + ", used cpu: " + usedCpu + ", requested cpu: " + cpu +
+       					", total cpu: " + totalCpu + 
+       					", reservedMem: " + reservedMem + ", used Mem: " + usedMem + ", requested mem: " + ram + ", total Mem:" + totalMem); 
+       			
+    	        if (s_logger.isDebugEnabled()) {
+    	            s_logger.debug("Free CPU: "+freeCpu + " , Requested CPU: "+cpu);
+    	            s_logger.debug("Free RAM: "+freeMem + " , Requested RAM: "+ram);
+    	        }
+       		}
+       		
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug(failureReason + ", cannot allocate to this host.");
+	        }
+        }
+       	
+    	return hasCapacity;
+     
+       }
 
     public class HostCapacityCollector implements Runnable {
 
@@ -381,6 +477,16 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             if (event == Event.DestroyRequested) {
                 releaseVmCapacity(vm, true, false, vm.getLastHostId());
             }
+        }
+        
+
+    	if((newState == State.Starting || newState == State.Migrating) && vm.getHostId() != null){
+    		boolean fromLastHost = false;
+    		if(vm.getLastHostId() == vm.getHostId()){
+    			s_logger.debug("VM starting again on the last host it was stopped on");
+    			fromLastHost = true;
+    		}
+    		allocateVmCapacity(vm,fromLastHost);
         }
         
         return true;

@@ -17,18 +17,19 @@
  */
 package com.cloud.agent.manager.allocator.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VirtualMachine;
@@ -47,14 +48,19 @@ public class TestingAllocator implements HostAllocator {
     String _name;
 
     @Override
-    public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
+    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+			ExcludeList avoid, int returnUpTo) {
+    	List<Host> availableHosts = new ArrayList<Host>();
+    	Host host = null;    	
         if (type == Host.Type.Routing && _routingHost != null) {
-            return _hostDao.findById(_routingHost);
+        	host = _hostDao.findById(_routingHost);
         } else if (type == Host.Type.Storage && _storageHost != null) {
-            return _hostDao.findById(_storageHost);
+        	host = _hostDao.findById(_storageHost);
         }
-        return null;
+        if(host != null){
+        	availableHosts.add(host);
+        }
+        return availableHosts;
     }
 
     @Override

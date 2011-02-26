@@ -57,4 +57,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     
     List<VolumeVO> listVolumesToBeDestroyed();
     ImageFormat getImageFormat(Long volumeId);
+    
+    List<VolumeVO> findReadyRootVolumesByInstance(long instanceId);
 }

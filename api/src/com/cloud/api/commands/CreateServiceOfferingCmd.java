@@ -65,6 +65,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
     private Long domainId; 
     
+    @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.STRING, description="the host tag for this service offering.")
+    private String hostTag;
+
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +109,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 		return domainId;
 	}
 
+    public String getHostTag() {
+        return hostTag;
+    }	
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

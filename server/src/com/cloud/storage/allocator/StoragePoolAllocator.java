@@ -19,17 +19,12 @@ package com.cloud.storage.allocator;
 
 import java.util.List;
 import java.util.Set;
-
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -39,9 +34,20 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 public interface StoragePoolAllocator extends Adapter {
 	
-	StoragePool allocateToPool(DiskProfile dskCh, DataCenterVO dc, HostPodVO pod, Long cluster, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids);
+	//keeping since storageMgr is using this API for some existing functionalities
+	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vm, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo);	
 	
 	String chooseStorageIp(VirtualMachine vm, Host host, Host storage);
-	
-	StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, List<? extends Volume> disks, Set<? extends StoragePool> avoids);
+
+	/** 
+	* Determines which storage pools are suitable for the guest virtual machine 
+	* 
+	* @param DiskProfile dskCh
+	* @param VirtualMachineProfile vmProfile
+	* @param DeploymentPlan plan
+	* @param ExcludeList avoid
+	* @param int returnUpTo (use -1 to return all possible pools)
+	* @return List<StoragePool> List of storage pools that are suitable for the VM 
+	**/ 
+	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);	
 }

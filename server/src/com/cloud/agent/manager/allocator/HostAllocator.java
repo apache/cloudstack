@@ -17,21 +17,39 @@
  */
 package com.cloud.agent.manager.allocator;
 
-import java.util.Set;
-
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import java.util.List;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface HostAllocator extends Adapter {
+
+	/**
+	 * Checks if the VM can be upgraded to the specified ServiceOffering
+	 * @param UserVm vm
+	 * @param ServiceOffering offering
+	 * @return boolean true if the VM can be upgraded
+	 **/
 	boolean isVirtualMachineUpgradable(final UserVm vm, final ServiceOffering offering);
-	Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Type type, DataCenterVO dc, HostPodVO pod, Long clusterId, VMTemplateVO template, Set<Host> avoid);
+
+	/** 
+	* Determines which physical hosts are suitable to 
+	* allocate the guest virtual machines on 
+	* 
+	* @param VirtualMachineProfile vmProfile
+	* @param DeploymentPlan plan
+	* @param Type type
+	* @param ExcludeList avoid
+	* @param int returnUpTo (use -1 to return all possible hosts)
+	* @return List<Host> List of hosts that are suitable for VM allocation
+	**/ 
 	
+	public List<Host> allocateTo(VirtualMachineProfile<?extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo);
+		
 }

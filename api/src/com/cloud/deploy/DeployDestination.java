@@ -47,6 +47,11 @@ public class DeployDestination {
         _host = host;
     }
     
+    public DeployDestination(DataCenter dc, Pod pod, Cluster cluster, Host host, Map<Volume, StoragePool> storage) {
+        this(dc,pod,cluster,host);
+        _storage = storage;
+    }
+
     public DeployDestination() {
     }
     
@@ -84,6 +89,22 @@ public class DeployDestination {
     
     @Override
     public String toString() {
-        return new StringBuilder("Dest[").append(_dc.getId()).append("-").append(_pod.getId()).append("-").append(_cluster.getId()).append("-").append(_host.getId()).append("]").toString();
+    	StringBuilder destination = new StringBuilder("Dest[Zone(Id)-Pod(Id)-Cluster(Id)-Host(Id)-Storage(Volume(Id|Type-->Pool(Id))] : Dest[");
+    	destination.append("Zone(").append(_dc.getId()).append(")").append("-");
+    	destination.append("Pod(").append(_pod.getId()).append(")").append("-");
+    	destination.append("Cluster(").append(_cluster.getId()).append(")").append("-");
+    	destination.append("Host(").append(_host.getId()).append(")").append("-");
+    	destination.append("Storage(");
+    	if(_storage != null){
+    		String storageStr = "";
+    		for(Volume vol : _storage.keySet()){
+    			if(!storageStr.equals("")){
+    				storageStr = storageStr + ", ";
+    			}
+    			storageStr = storageStr + "Volume(" + vol.getId() + "|"+ vol.getVolumeType().name() + "-->Pool("+_storage.get(vol).getId()+")";
+    		}
+    		destination.append(storageStr);
+    	}
+        return destination.append(")]").toString();
     }
 }

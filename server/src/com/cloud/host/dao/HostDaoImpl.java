@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -45,6 +46,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -90,6 +92,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final Attribute _pingTimeAttr;
     
     protected final DetailsDaoImpl _detailsDao = ComponentLocator.inject(DetailsDaoImpl.class);
+    protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
 
     public HostDaoImpl() {
     
@@ -327,7 +330,39 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("dc", dcId);
         return listBy(sc);
     }
-    
+
+    @Override
+    public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
+                
+        SearchBuilder<HostTagVO> hostTagSearch = _hostTagsDao.createSearchBuilder();
+        HostTagVO tagEntity = hostTagSearch.entity();
+        hostTagSearch.and("tag",tagEntity.getTag(), SearchCriteria.Op.EQ);
+        
+        SearchBuilder<HostVO> hostSearch = createSearchBuilder();
+        HostVO entity = hostSearch.entity();
+        hostSearch.and("type", entity.getType(), SearchCriteria.Op.EQ);
+        hostSearch.and("pod", entity.getPodId(), SearchCriteria.Op.EQ);
+        hostSearch.and("dc", entity.getDataCenterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);        
+        hostSearch.join("hostTagSearch", hostTagSearch, entity.getId(), tagEntity.getHostId(), JoinBuilder.JoinType.INNER);
+        
+        
+        SearchCriteria<HostVO> sc = hostSearch.create();
+        sc.setJoinParameters("hostTagSearch", "tag", hostTag);
+        sc.setParameters("type", type.toString());
+        if (podId != null) {
+            sc.setParameters("pod", podId);
+        }
+        if (clusterId != null) {
+            sc.setParameters("cluster", clusterId);
+        }
+        sc.setParameters("dc", dcId);
+        sc.setParameters("status", Status.Up.toString());
+        
+        return listBy(sc);
+    }        
+
     @Override
     public List<HostVO> listByCluster(long clusterId) {
         SearchCriteria<HostVO> sc = ClusterSearch.create();
@@ -379,7 +414,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         Map<String, String> details =_detailsDao.findDetails(host.getId());
         host.setDetails(details);
     }
-    
+
+    @Override
+    public void loadHostTags(HostVO host){
+    	List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
+    	host.setHostTags(hostTags);
+     }    
+
     @Override
     public boolean updateStatus(HostVO host, Event event, long msId) {
         Status oldStatus = host.getStatus();
@@ -554,6 +595,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         _detailsDao.persist(host.getId(), details);
     }
+
+    protected void saveHostTags(HostVO host) {
+        List<String> hostTags = host.getHostTags();
+        if (hostTags == null || (hostTags != null && hostTags.isEmpty())) {
+            return;
+        }
+        _hostTagsDao.persist(host.getId(), hostTags);
+    }    
     
     @Override @DB
     public HostVO persist(HostVO host) {
@@ -574,6 +623,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         
         saveDetails(host);
         loadDetails(dbHost);
+        saveHostTags(host);
+        loadHostTags(dbHost);
         
         txn.commit();
      
@@ -591,6 +642,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         
         saveDetails(host);
+        saveHostTags(host);
         
         txn.commit();
      

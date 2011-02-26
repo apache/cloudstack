@@ -29,10 +29,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.server.StatsCollector;
@@ -47,7 +46,6 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -126,25 +124,48 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	
 	protected boolean poolIsCorrectType(DiskProfile dskCh, StoragePool pool, VMInstanceVO vm) {
 		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh, vm);
+		if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Is localStorageAllocationNeeded? "+ localStorageAllocationNeeded);
+            s_logger.debug("Is storage pool shared? "+ pool.getPoolType().isShared());
+        }
+		
 		return ((!localStorageAllocationNeeded && pool.getPoolType().isShared()) || (localStorageAllocationNeeded && !pool.getPoolType().isShared()));
 	}
 	
-	protected boolean checkPool(Set<? extends StoragePool> avoid, StoragePoolVO pool, DiskProfile dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, 
+	protected boolean checkPool(ExcludeList avoid, StoragePoolVO pool, DiskProfile dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, 
 			VMInstanceVO vm, StatsCollector sc) {
-		if (avoid.contains(pool)) {
+		
+		if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName()+ " ,poolId: "+ pool.getId());
+        }
+		
+		if (avoid.shouldAvoid(pool)) {
+			if (s_logger.isDebugEnabled()) {
+                s_logger.debug("StoragePool is in avoid set, skipping this pool");
+            }			
 			return false;
 		}
         if(dskCh.getType().equals(VolumeType.ROOT) && pool.getPoolType().equals(StoragePoolType.Iscsi)){
+    		if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Disk needed for ROOT volume, but StoragePoolType is Iscsi, skipping this and trying other available pools");
+            }	
             return false;
         }
         
         //by default, all pools are up when successfully added
 		//don't return the pool if not up (if in maintenance/prepareformaintenance/errorinmaintenance)
-        if(!pool.getStatus().equals(StoragePoolStatus.Up))
+        if(!pool.getStatus().equals(StoragePoolStatus.Up)){
+    		if (s_logger.isDebugEnabled()) {
+                s_logger.debug("StoragePool status is not UP, status is: "+pool.getStatus().name()+", skipping this pool");
+            }
         	return false;
+        }
         
 		// Check that the pool type is correct
 		if (!poolIsCorrectType(dskCh, pool, vm)) {
+    		if (s_logger.isDebugEnabled()) {
+                s_logger.debug("StoragePool is not of correct type, skipping this pool");
+            }
 			return false;
 		}
 		
@@ -154,6 +175,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		Long clusterId = pool.getClusterId();
 		ClusterVO cluster = _clusterDao.findById(clusterId);
 		if (!(cluster.getHypervisorType() == dskCh.getHypersorType())) {
+    		if (s_logger.isDebugEnabled()) {
+                s_logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
+            }
 			return false;
 		}
 
@@ -229,7 +253,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		if ((pool.getCapacityBytes() * storageOverprovisioningFactor) < (totalAllocatedSize + askingSize)) {
 			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("Found pool " + pool.getId() + " for storage, maxSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalSize : " + totalAllocatedSize + ", askingSize : " + askingSize);
+				s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage, not enough storage, maxSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalSize : " + totalAllocatedSize + ", askingSize : " + askingSize);
 			}
 
 			return false;
@@ -243,12 +267,17 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		return storage.getStorageIpAddress();
 	}
 	
+	
 	@Override
-	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, List<? extends Volume> disks, Set<? extends StoragePool> avoids) {
+	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vm, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo) {
 	    
-	    VMInstanceVO instance = (VMInstanceVO)(vm.getVirtualMachine());
+	    ExcludeList avoid = new ExcludeList();
+	    for(StoragePool pool : avoids){
+	    	avoid.addPool(pool.getId());
+	    }
 	    
-	    VMTemplateVO template = _templateDao.findById(instance.getTemplateId());
-	    return allocateToPool(dskCh, (DataCenterVO)dest.getDataCenter(), (HostPodVO)dest.getPod(), dest.getCluster().getId(), instance, template, avoids);
+	    DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, null);
+	    return allocateToPool(dskCh, vm, plan, avoid, returnUpTo);
 	}
+
 }

@@ -17,36 +17,36 @@
  */
 package com.cloud.storage.allocator;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=StoragePoolAllocator.class)
 public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implements StoragePoolAllocator {
     boolean _useLocalStorage;
 
     @Override
-    public StoragePool allocateToPool(DiskProfile dskCh, DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         if (!_useLocalStorage) {
             return null;
         }
         
-        return super.allocateToPool(dskCh, dc, pod, clusterId, vm, template, avoids);
+        return super.allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
     }
 
     @Override

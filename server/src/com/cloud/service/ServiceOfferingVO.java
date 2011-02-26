@@ -50,6 +50,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     
     @Column(name="ha_enabled")
     private boolean offerHA;
+
+    @Column(name="host_tag")
+    private String hostTag;
     
     protected ServiceOfferingVO() {
         super();
@@ -75,7 +78,12 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.offerHA = offerHA;
     }
 
-	@Override
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId, String hostTag) {
+        this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, useLocalStorage, recreatable, tags, systemUse, domainId);
+        this.hostTag = hostTag;
+    }       
+
+    @Override
 	public boolean getOfferHA() {
 	    return offerHA;
 	}
@@ -140,4 +148,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 		return multicastRateMbps;
 	}
 
+	public void setHostTag(String hostTag) {
+		this.hostTag = hostTag;
+	}	
+	
+	public String getHostTag() {
+		return hostTag;
+	}	
 }

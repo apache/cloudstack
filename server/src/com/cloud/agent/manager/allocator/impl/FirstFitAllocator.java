@@ -33,6 +33,8 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -60,6 +62,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.capacity.CapacityManager;
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -80,134 +83,97 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
     float _factor = 1;
     protected String _allocationAlgorithm = "random";
+    @Inject CapacityManager _capacityMgr;
     
 	@Override
-	public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Type type, DataCenterVO dc,
-			HostPodVO pod, Long clusterId, VMTemplateVO template,
-			Set<Host> avoid) {
+	public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+			ExcludeList avoid, int returnUpTo) {
+
+		long dcId = plan.getDataCenterId();
+		long podId = plan.getPodId();
+		long clusterId = plan.getClusterId();
+		ServiceOffering offering = vmProfile.getServiceOffering();
+		VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
 
         if (type == Host.Type.Storage) {
             // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of routing or not
-            return null;
+        	return new ArrayList<Host>();
         }
         
-        s_logger.debug("Looking for hosts in dc: " + dc.getId() + "  pod:" + pod.getId() + "  cluster:" + clusterId);
+        String hostTag = offering.getHostTag();
+        if(hostTag != null){
+        	s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having host tag:" + hostTag);
+        }else{
+        	s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+        }
 
-        List<HostVO> clusterHosts = _hostDao.listBy(type, clusterId, pod.getId(), dc.getId());
-        Iterator<HostVO> it = clusterHosts.iterator();
-        while (it.hasNext()) {
-        	HostVO host = it.next();
-        	if (avoid.contains(host)) {
-			it.remove();
-        	} else {
-        	    if (s_logger.isDebugEnabled()) {
-        	        s_logger.debug("Adding host " + host + " as possible pod host");
-        	    }
-        	}
-        }   
-        return allocateTo(offering, template, avoid, clusterHosts);
+        List<HostVO> clusterHosts = new ArrayList<HostVO>();
+        if(hostTag != null){
+        	clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag);
+        }else{
+        	clusterHosts = _hostDao.listBy(type, clusterId, podId, dcId);
+        }
+
+        return allocateTo(offering, template, avoid, clusterHosts, returnUpTo);
     }
 
-    protected Host allocateTo(ServiceOffering offering, VMTemplateVO template, Set<Host> avoid, List<HostVO> hosts) {
+    protected List<Host> allocateTo(ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<HostVO> hosts, int returnUpTo) {
         if (_allocationAlgorithm.equals("random")) {
         	// Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
         }
     	
     	if (s_logger.isDebugEnabled()) {
-        	StringBuffer sb = new StringBuffer();
-            for(Host h : avoid) {
-            	sb.append(h.getName()).append(" ");
-            }
-            s_logger.debug("Found " + hosts.size() + " hosts for allocation and a avoid set of [" + sb + "]");
+            s_logger.debug("FirstFitAllocator has " + hosts.size() + " hosts to check for allocation: "+hosts);
         }
         
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
-        }
-
         // We will try to reorder the host lists such that we give priority to hosts that have
         // the minimums to support a VM's requirements
         hosts = prioritizeHosts(template, hosts);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization");
+            s_logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: "+ hosts);
         }
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
+        }
+        
+        List<Host> suitableHosts = new ArrayList<Host>();
+
         for (HostVO host : hosts) {
-            if (avoid.contains(host)) {
+        	if(suitableHosts.size() == returnUpTo){
+        		break;
+        	}
+            if (avoid.shouldAvoid(host)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("host " + host.getName() + " is in avoid set, skip and try other available hosts");
+                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" is in avoid set, skipping this and trying other available hosts");
                 }
                 continue;
             }
 
-            long usedMemory = 0;
-            double totalSpeed = 0d;
-
-            List<DomainRouterVO> domainRouters = _routerDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + domainRouters.size() + " router domains on host " + host.getId());
-            }
-            for (DomainRouterVO router : domainRouters) {
-                usedMemory += 0;//FIXME or more like get rid of me router.getRamSize() * 1024L * 1024L;
-            }
-
-            List<ConsoleProxyVO> proxys = _consoleProxyDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + proxys.size() + " console proxy on host " + host.getId());
-            }
-            for(ConsoleProxyVO proxy : proxys) {
-                usedMemory += 0; // FIXME or get ird of me totally proxy.getRamSize() * 1024L * 1024L;
-            }
-            
-            List<SecondaryStorageVmVO> secStorageVms = _secStorgaeVmDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + secStorageVms.size() + " secondary storage VM on host " + host.getId());
-            }
-            for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
-                usedMemory += 0; // FIXME or get rid of me  secStorageVm.getRamSize() * 1024L * 1024L;
-            }
-            		
-            List<UserVmVO> vms = _vmDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + vms.size() + " user VM on host " + host.getId());
-            }
-            
-            for (UserVmVO vm : vms) {
-                ServiceOffering so = _offeringDao.findById(vm.getServiceOfferingId());
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("vm " + vm.getId() + ": speed=" + (so.getCpu() * so.getSpeed()) + "Mhz, RAM=" + so.getRamSize() + "MB");
-                }
-                usedMemory += so.getRamSize() * 1024L * 1024L;
-                totalSpeed += so.getCpu() * (so.getSpeed() * 0.99);
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                long availableSpeed = (long)(host.getCpus() * host.getSpeed() * _factor);
-                double desiredSpeed = offering.getCpu() * (offering.getSpeed() * 0.99);
-                long coreSpeed = host.getSpeed();
-                s_logger.debug("Host " + host.getId() + ": available speed=" + availableSpeed + "Mhz, core speed=" + coreSpeed + "Mhz, used speed=" + totalSpeed + "Mhz, desired speed=" + desiredSpeed +
-                        "Mhz, desired cores: " + offering.getCpu() + ", available cores: " + host.getCpus() + ", RAM=" + host.getTotalMemory() +
-                        ", avail RAM=" + (host.getTotalMemory() - usedMemory) + ", desired RAM=" + (offering.getRamSize() * 1024L * 1024L));
-            }
-
             boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
-            boolean coreSpeedGood = host.getSpeed().doubleValue() >= (offering.getSpeed() * 0.99);
-            boolean totalSpeedGood = ((host.getCpus().doubleValue() * host.getSpeed().doubleValue() * _factor) - totalSpeed) >= (offering.getCpu() * (offering.getSpeed() * 0.99));
-            boolean memoryGood = (host.getTotalMemory() - usedMemory) >= (offering.getRamSize() * 1024L * 1024L);
-            if (numCpusGood && totalSpeedGood && coreSpeedGood && memoryGood) {
+    		int cpu_requested = offering.getCpu() * offering.getSpeed();
+    		long ram_requested = offering.getRamSize() * 1024L * 1024L;	
+    		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false);
+
+            if (numCpusGood && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("found host " + host.getId());
+                    s_logger.debug("Found a suitable host, adding to list: " + host.getId());
                 }
-                return host;
+                suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("not using host " + host.getId() + "; numCpusGood: " + numCpusGood + ", coreSpeedGood: " + coreSpeedGood + ", totalSpeedGood: " + totalSpeedGood + ", memoryGood: " + memoryGood);
+                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + ", host has capacity?" + hostHasCapacity);
                 }
             }
         }
-        return null;
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Host Allocator returning "+suitableHosts.size() +" suitable hosts");
+        }
+        
+        return suitableHosts;
     }
 
     @Override

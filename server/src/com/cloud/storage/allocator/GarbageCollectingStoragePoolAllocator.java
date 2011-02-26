@@ -17,9 +17,8 @@
  */
 package com.cloud.storage.allocator;
 
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -27,14 +26,15 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=StoragePoolAllocator.class)
 public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAllocator {
@@ -60,13 +60,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     }
     
     @Override
-    public StoragePool allocateToPool(DiskProfile dskCh,
-                                      DataCenterVO dc,
-                                      HostPodVO pod,
-                                      Long clusterId,
-                                      VMInstanceVO vm,
-                                      VMTemplateVO template,
-                                      Set<? extends StoragePool> avoid) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
     	
     	if (!_storagePoolCleanupEnabled) {
     		s_logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
@@ -75,7 +69,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     	
     	// Clean up all storage pools
     	_storageMgr.cleanupStorage(false);
-    	
+    	VMInstanceVO vm = (VMInstanceVO)(vmProfile.getVirtualMachine());
     	// Determine what allocator to use
     	StoragePoolAllocator allocator;
     	if (localStorageAllocationNeeded(dskCh, vm)) {
@@ -85,12 +79,9 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     	}
 
     	// Try to find a storage pool after cleanup
-        Set<StoragePool> myAvoids = new HashSet<StoragePool>();
-        for (StoragePool pool : avoid) {
-            myAvoids.add(pool);
-        }
+        ExcludeList myAvoids = new ExcludeList(avoid.getDataCentersToAvoid(), avoid.getPodsToAvoid(), avoid.getClustersToAvoid(), avoid.getHostsToAvoid(), avoid.getPoolsToAvoid());
         
-        return allocator.allocateToPool(dskCh, dc, pod, clusterId, vm, template, myAvoids);
+        return allocator.allocateToPool(dskCh, vmProfile, plan, myAvoids, returnUpTo);
     }
 
     @Override

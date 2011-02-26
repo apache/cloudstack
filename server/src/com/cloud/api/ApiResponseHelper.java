@@ -414,6 +414,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         	offeringResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
             offeringResponse.setDomainId(offering.getDomainId());
         }
+        offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setObjectName("serviceoffering");
 
         return offeringResponse;
@@ -538,6 +539,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
             hostResponse.setMemoryAllocated(mem);
             hostResponse.setMemoryUsed(mem);
+            hostResponse.setHostTags(ApiDBUtils.getHostTags(host.getId()));
         } else if (host.getType().toString().equals("Storage")) {
             hostResponse.setDiskSizeTotal(host.getTotalSize());
             hostResponse.setDiskSizeAllocated(0L);

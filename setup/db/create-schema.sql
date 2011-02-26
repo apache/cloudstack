@@ -987,6 +987,7 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   `host_id` bigint unsigned,
   `data_center_id` bigint unsigned NOT NULL,
   `pod_id` bigint unsigned,
+  `cluster_id` bigint unsigned COMMENT 'foreign key to cluster',
   `used_capacity` bigint unsigned NOT NULL,
   `reserved_capacity` bigint unsigned NOT NULL,
   `total_capacity` bigint unsigned NOT NULL,
@@ -996,7 +997,9 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   CONSTRAINT `fk_op_host_capacity__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
   INDEX `i_op_host_capacity__pod_id`(`pod_id`),
   CONSTRAINT `fk_op_host_capacity__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
-  INDEX `i_op_host_capacity__data_center_id`(`data_center_id`)
+  INDEX `i_op_host_capacity__data_center_id`(`data_center_id`),
+  CONSTRAINT `fk_op_host_capacity__cluster_id` FOREIGN KEY `fk_op_host_capacity__cluster_id` (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`) ON DELETE CASCADE,
+  INDEX `i_op_host_capacity__cluster_id`(`cluster_id`)  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`alert` (

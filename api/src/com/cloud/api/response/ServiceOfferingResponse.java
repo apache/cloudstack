@@ -60,6 +60,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the offering")
     private String domain;
     
+    @SerializedName(ApiConstants.HOST_TAGS) @Param(description="the host tag for the service offering")
+    private String hostTag;    
+
     public Long getId() {
         return id;
     }
@@ -156,6 +159,12 @@ public class ServiceOfferingResponse extends BaseResponse {
 		this.domain = domain;
 	}
 	
-	
+	public String getHostTag() {
+		return hostTag;
+	}
+
+	public void setHostTag(String hostTag) {
+		this.hostTag = hostTag;
+	}
 
 }

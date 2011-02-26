@@ -319,7 +319,7 @@ public class StatsCollector {
                             capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);    
                             List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
                             if (capacities.size() == 0){ // Create a new one
-                                CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), capacityType);
+                                CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId(), stats.getByteUsed(), stats.getCapacityBytes(), capacityType);
                                 _capacityDao.persist(capacity);
                             }else{ //Update if it already exists.                             
                                 CapacityVO capacity = capacities.get(0);

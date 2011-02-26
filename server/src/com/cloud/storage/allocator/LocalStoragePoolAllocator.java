@@ -17,10 +17,9 @@
  */
 package com.cloud.storage.allocator;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -30,14 +29,13 @@ import org.apache.log4j.Logger;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
@@ -54,7 +52,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -89,54 +86,69 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     }
     
     @Override
-    public StoragePool allocateToPool(DiskProfile dskCh,
-                                      DataCenterVO dc,
-                                      HostPodVO pod,
-                                      Long clusterId,
-                                      VMInstanceVO vm,
-                                      VMTemplateVO template,
-                                      Set<? extends StoragePool> avoid) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+
+    	VMInstanceVO vm = (VMInstanceVO)(vmProfile.getVirtualMachine());
+    	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
     	
     	// Check that the allocator type is correct
         if (!allocatorIsCorrectType(dskCh, vm)) {
-        	return null;
+        	return suitablePools;
         }
 
-        Set<StoragePool> myAvoids = new HashSet<StoragePool>(avoid);
-        VirtualMachineProfile<VMInstanceVO> vmc = new VirtualMachineProfileImpl<VMInstanceVO>(vm.getType());
-        StoragePool pool = null;
-        while ((pool = super.allocateToPool(dskCh, dc, pod, clusterId, vm, template, myAvoids)) != null) {
-            myAvoids.add(pool);
+        ExcludeList myAvoids = new ExcludeList(avoid.getDataCentersToAvoid(), avoid.getPodsToAvoid(), avoid.getClustersToAvoid(), avoid.getHostsToAvoid(), avoid.getPoolsToAvoid());
+
+    	if (s_logger.isDebugEnabled()) {
+   		 s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
+    	}
+    	
+        List<StoragePool> availablePool;
+        while (!(availablePool = super.allocateToPool(dskCh, vmProfile, plan, myAvoids, 1)).isEmpty()) {
+        	StoragePool pool = availablePool.get(0);
+        	myAvoids.addPool(pool.getId());
             if (pool.getPoolType().isShared()) {
-                return pool;
+            	suitablePools.add(pool);
+            }else{
+	        	List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());
+	        	assert(hostsInSPool.size() == 1) : "Local storage pool should be one host per pool";
+	        	
+	        	StoragePoolHostVO spHost = hostsInSPool.get(0);
+	        	
+	        	SearchCriteria<Long> sc = VmsOnPoolSearch.create();
+	        	sc.setJoinParameters("volumeJoin", "poolId", pool.getId());
+	        	sc.setParameters("state", State.Expunging);
+	        	List<Long> vmsOnHost = _vmInstanceDao.customSearchIncludingRemoved(sc, null);
+	            
+	        	if(s_logger.isDebugEnabled()) {
+	        		s_logger.debug("Found " + vmsOnHost.size() + " VM instances are alloacated at host " + spHost.getHostId() + " with local storage pool " + pool.getName());
+	        		for(Long vmId : vmsOnHost) {
+	                    s_logger.debug("VM " + vmId + " is allocated on host " + spHost.getHostId() + " with local storage pool " + pool.getName());
+	                }
+	        	}
+	        	
+	        	if(hostHasCpuMemoryCapacity(spHost.getHostId(), vmsOnHost, vm)) {
+	        		s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
+	        		suitablePools.add(pool);
+	            }else{
+	            	s_logger.debug("Found pool " + pool.getId() + " but host doesn't fit, skipping this pool");
+	            }
             }
             
-        	List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());
-        	assert(hostsInSPool.size() == 1) : "Local storage pool should be one host per pool";
-        	
-        	StoragePoolHostVO spHost = hostsInSPool.get(0);
-        	
-        	SearchCriteria<Long> sc = VmsOnPoolSearch.create();
-        	sc.setJoinParameters("volumeJoin", "poolId", pool.getId());
-        	sc.setParameters("state", State.Expunging);
-        	List<Long> vmsOnHost = _vmInstanceDao.customSearchIncludingRemoved(sc, null);
-            
-        	if(s_logger.isDebugEnabled()) {
-        		s_logger.debug("Found " + vmsOnHost.size() + " VM instances are alloacated at host " + spHost.getHostId() + " with local storage pool " + pool.getName());
-        		for(Long vmId : vmsOnHost) {
-                    s_logger.debug("VM " + vmId + " is allocated on host " + spHost.getHostId() + " with local storage pool " + pool.getName());
-                }
+        	if(suitablePools.size() == returnUpTo){
+        		break;
         	}
-        	
-        	if(hostHasCpuMemoryCapacity(spHost.getHostId(), vmsOnHost, vm)) {
-                return pool;
-            }
-        	
-            s_logger.debug("Found pool " + pool.getId() + " but host doesn't fit.");
         }
         
-        s_logger.debug("Unable to find storage pool to fit the vm");
-        return null;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("LocalStoragePoolAllocator returning "+suitablePools.size() +" suitable storage pools");
+        }
+        
+        if(suitablePools.isEmpty()){
+        	if (s_logger.isDebugEnabled()) {
+        		 s_logger.debug("Unable to find storage pool to fit the vm");
+        	}
+		}
+        return suitablePools;
     }
     
     private boolean hostHasCpuMemoryCapacity(long hostId, List<Long> vmOnHost, VMInstanceVO vm) {

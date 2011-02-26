@@ -17,22 +17,24 @@
  */
 package com.cloud.storage.allocator;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=StoragePoolAllocator.class)
 public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
@@ -44,33 +46,47 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
     }
     
     @Override
-    public StoragePool allocateToPool(DiskProfile dskCh,
-			 DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm,
-			VMTemplateVO template, Set<? extends StoragePool> avoid) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+
+    	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
     	
+    	VMInstanceVO vm = (VMInstanceVO)(vmProfile.getVirtualMachine());
+    	VMTemplateVO template = _templateDao.findById(vm.getTemplateId());    	
     	// Check that the allocator type is correct
         if (!allocatorIsCorrectType(dskCh, vm)) {
-        	return null;
+        	return suitablePools;
         }
-    	
-    	List<StoragePoolVO> pools = _storagePoolDao.listBy(dc.getId(), pod.getId(), clusterId);
+		long dcId = plan.getDataCenterId();
+		long podId = plan.getPodId();
+		long clusterId = plan.getClusterId();
+        s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+    	List<StoragePoolVO> pools = _storagePoolDao.listBy(dcId, podId, clusterId);
         if (pools.size() == 0) {
         	if (s_logger.isDebugEnabled()) {
-    			s_logger.debug("No storage pools available for pod id : " + pod.getId());
+        		s_logger.debug("No storage pools available for allocation, returning");
     		}
-            return null;
+            return suitablePools;
         }
         
         StatsCollector sc = StatsCollector.getInstance();
         
         Collections.shuffle(pools);
-
+    	if (s_logger.isDebugEnabled()) {
+            s_logger.debug("RandomStoragePoolAllocator has " + pools.size() + " pools to check for allocation");
+        }
         for (StoragePoolVO pool: pools) {
+        	if(suitablePools.size() == returnUpTo){
+        		break;
+        	}        	
         	if (checkPool(avoid, pool, dskCh, template, null, vm, sc)) {
-        		return pool;
+        		suitablePools.add(pool);
         	}
         }
-        
-        return null;
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("RandomStoragePoolAllocator returning "+suitablePools.size() +" suitable storage pools");
+        }
+
+        return suitablePools;
     }
 }
