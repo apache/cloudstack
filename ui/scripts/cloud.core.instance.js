@@ -767,7 +767,7 @@ function initVMWizard() {
 	    return false;
     });  
 		
-	function vmWizardShowNetworkContainer($thisPopup) {	        
+	function vmWizardShowNetworkContainer($thisPopup, isVirtualNetworkNeeded) {	        
 	    $thisPopup.find("#step4").find("#network_container").show();
 	    $thisPopup.find("#step4").find("#securitygroup_container").hide();	
 		$thisPopup.find("#step4").find("#for_no_network_support").hide();
@@ -778,66 +778,69 @@ function initVMWizard() {
 			async: false,
 			success: function(json) {
 				var networks = json.listnetworksresponse.network;
-				var virtualNetwork = null;
-				if (networks != null && networks.length > 0) {
-					for (var i = 0; i < networks.length; i++) {
-						if (networks[i].type == 'Virtual') {
-							virtualNetwork = networks[i];
-						}
-					}
-				}
-				var $virtualNetworkElement = $thisPopup.find("#network_virtual_container");
-	
-				// Setup Virtual Networks
-				var requiredVirtual = false;
-				var defaultNetworkAdded = false;
-				var availableSecondary = false;
-				if (virtualNetwork == null) {
-					$.ajax({
-						data: createURL("command=listNetworkOfferings&guestiptype=Virtual"),
-						dataType: "json",
-						async: false,
-						success: function(json) {
-							var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-							if (networkOfferings != null && networkOfferings.length > 0) {
-								for (var i = 0; i < networkOfferings.length; i++) {
-									if (networkOfferings[i].isdefault == true && networkOfferings[i].availability != "Unavailable") {
-										// Create a virtual network
-										var networkName = "Virtual Network";
-		                                var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.";				
-										$.ajax({
-											data: createURL("command=createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
-											dataType: "json",
-											async: false,
-											success: function(json) {
-												var network = json.createnetworkresponse.network;														
-												$virtualNetworkElement.show();
-												if (network.networkofferingavailability == 'Required') {
-													requiredVirtual = true;
-													$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
-												}
-												defaultNetworkAdded = true;
-												$virtualNetworkElement.find("#network_virtual").data("id", network.id).data("jsonObj", network);														 
-											}
-										});
-									}
-								}
-							}
-						}
-					});
-				} else {
-					if (virtualNetwork.networkofferingavailability != 'Unavailable') {
-						$virtualNetworkElement.show();
-						if (virtualNetwork.networkofferingavailability == 'Required') {
-							requiredVirtual = true;
-							$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
-						}
-						defaultNetworkAdded = true;
-						$virtualNetworkElement.data("id", virtualNetwork.id);
-						$virtualNetworkElement.find("#network_virtual").data("id", virtualNetwork.id).data("jsonObj", virtualNetwork);
-					} else {
-						$virtualNetworkElement.hide();
-					}
+								
+				// Setup Virtual Network
+				if(isVirtualNetworkNeeded == true) {
+				    var virtualNetwork = null;
+				    if (networks != null && networks.length > 0) {
+					    for (var i = 0; i < networks.length; i++) {
+						    if (networks[i].type == 'Virtual') {
+							    virtualNetwork = networks[i];
+						    }
+					    }
+				    }
+				    var $networkVirtualContainer = $thisPopup.find("#network_virtual_container");				
+				    var requiredVirtual = false;
+				    var defaultNetworkAdded = false;
+				    var availableSecondary = false;
+				    if (virtualNetwork == null) {
+					    $.ajax({
+						    data: createURL("command=listNetworkOfferings&guestiptype=Virtual"),
+						    dataType: "json",
+						    async: false,
+						    success: function(json) {
+							    var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+							    if (networkOfferings != null && networkOfferings.length > 0) {
+								    for (var i = 0; i < networkOfferings.length; i++) {
+									    if (networkOfferings[i].isdefault == true && networkOfferings[i].availability != "Unavailable") {
+										    // Create a virtual network
+										    var networkName = "Virtual Network";
+		                                    var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.";				
+										    $.ajax({
+											    data: createURL("command=createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
+											    dataType: "json",
+											    async: false,
+											    success: function(json) {
+												    var network = json.createnetworkresponse.network;														
+												    $networkVirtualContainer.show();
+												    if (network.networkofferingavailability == 'Required') {
+													    requiredVirtual = true;
+													    $networkVirtualContainer.find("#network_virtual").attr('disabled', true);
+												    }
+												    defaultNetworkAdded = true;
+												    $networkVirtualContainer.find("#network_virtual").data("id", network.id).data("jsonObj", network);														 
+											    }
+										    });
+									    }
+								    }
+							    }
+						    }
+					    });
+				    } 
+				    else {
+					    if (virtualNetwork.networkofferingavailability != 'Unavailable') {
+						    $networkVirtualContainer.show();
+						    if (virtualNetwork.networkofferingavailability == 'Required') {
+							    requiredVirtual = true;
+							    $networkVirtualContainer.find("#network_virtual").attr('disabled', true);
+						    }
+						    defaultNetworkAdded = true;
+						    $networkVirtualContainer.data("id", virtualNetwork.id);
+						    $networkVirtualContainer.find("#network_virtual").data("id", virtualNetwork.id).data("jsonObj", virtualNetwork);
+					    } else {
+						    $networkVirtualContainer.hide();
+					    }
+				    }
 				}
 				
 				// Setup Direct Networks
@@ -1032,8 +1035,8 @@ function initVMWizard() {
 			
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 						
-			if (zoneObj.securitygroupsenabled == false) { //show network container				
-			    vmWizardShowNetworkContainer($thisPopup);	
+			if (zoneObj.securitygroupsenabled == false) {  //show network container				
+			    vmWizardShowNetworkContainer($thisPopup, true);	 //isVirtualNetworkNeeded == true
 			} 
 			else if (zoneObj.securitygroupsenabled == true) {  // if security group is enabled			    
 			    var hasDedicatedDirectTaggedDefaultNetwork = false;
@@ -1064,7 +1067,7 @@ function initVMWizard() {
                     .dialog("option", "buttons", {	                    
                          "Yes": function() {
                              //present the current UI we have today	
-                             vmWizardShowNetworkContainer($thisPopup);	
+                             vmWizardShowNetworkContainer($thisPopup, false);  //isVirtualNetworkNeeded == false
                              $(this).dialog("close");
                          },
                          "No": function() {	                         
