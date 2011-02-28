@@ -132,7 +132,11 @@ function initAddDomainDialog() {
 	   
     $("#add_domain_button").unbind("click").bind("click", function(event) { 
         $dialogAddDomain.find("#add_domain_name").val("");
-        //$dialogAddDomain.find("#parent_domain").val($("#right_panel_content").find("#tab_content_details").find("#name").text());
+        
+        $dialogAddDomain.find("#parent_domain").val($("#right_panel_content").find("#tab_content_details").find("#name").text()); 
+        var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+        var jsonObj = $midmenuItem1.data("jsonObj");
+        autoCompleteDomains.push(jsonObj);
         
         applyAutoCompleteToDomainField($dialogAddDomain.find("#parent_domain"));      
         /*
