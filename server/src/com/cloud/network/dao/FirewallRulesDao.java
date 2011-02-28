@@ -28,7 +28,10 @@ import com.cloud.utils.db.GenericDao;
  * Data Access Object for user_ip_address and ip_forwarding tables
  */
 public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
-    List<FirewallRuleVO> listByIpAndNotRevoked(long ipAddressId, FirewallRule.Purpose purpose);
+    
+    List<FirewallRuleVO> listByIpAndPurposeAndNotRevoked(long ipAddressId, FirewallRule.Purpose purpose);
+    
+    List<FirewallRuleVO> listByNetworkAndPurposeAndNotRevoked(long networkId, FirewallRule.Purpose purpose);
     
     boolean setStateToAdd(FirewallRuleVO rule);
     
@@ -38,7 +41,7 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     
     List<? extends FirewallRule> listByIpAndPurpose(long ipAddressId, FirewallRule.Purpose purpose);
     
-    List<FirewallRuleVO> listByNetworkIdAndPurpose(long networkId, FirewallRule.Purpose purpose);
+    List<FirewallRuleVO> listByNetworkAndPurpose(long networkId, FirewallRule.Purpose purpose);
     
     List<FirewallRuleVO> listStaticNatByVmId(long vmId);
 

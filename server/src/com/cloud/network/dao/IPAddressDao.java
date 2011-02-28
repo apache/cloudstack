@@ -46,7 +46,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 
 	int countIPsForDashboard(long dcId, boolean onlyCountAllocated);
 	
-	List<IPAddressVO> listByAssociatedVmId(long vmId);
+	IPAddressVO findByAssociatedVmId(long vmId);
 	
 	IPAddressVO findByAccountAndIp(long accountId, String ipAddress);
 }

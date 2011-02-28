@@ -1110,51 +1110,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserContext ctx = UserContext.current();
         ctx.setAccountId(vm.getAccountId());
         
-	    try {
-	        
+	    try { 
 	        if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
                 s_logger.info("Did not expunge " + vm);
                 return false;
             }
 	        
-            _networkGroupMgr.removeInstanceFromGroups(vm.getId());
-            
-            removeInstanceFromInstanceGroup(vm.getId());
-            
-            //Cleanup LB/PF rules before expunging the vm
-            long vmId = vm.getId();
-            
-            //cleanup port forwarding rules
-            if (_rulesMgr.revokePortForwardingRulesForVm(vmId)) {
-                s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
-            } else {
-                s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
-            }
-            
-            //cleanup static nat rules
-            if (_rulesMgr.revokeStaticNatRulesForVm(vmId)) {
-                s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
-            } else {
-                s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
-            }
-            
-            //cleanup load balancer rules
-            if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
-                s_logger.debug("Removed vm id=" + vmId + " from all load balancers as a part of expunge process");
-            } else {
-                s_logger.warn("Fail to remove vm id=" + vmId + " from load balancers as a part of expunge process");
-            }
-            
-            //If vm is assigned to static nat ip address, remove the mapping
-            List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVmId(vmId);
-            if (ips != null) {
-                for (IPAddressVO ip : ips) {
-                    ip.setOneToOneNat(false);
-                    ip.setAssociatedWithVmId(null);
-                    _ipAddressDao.update(ip.getId(), ip);
-                    s_logger.debug("Disabled 1-1 nat for ip address " + ip + " as a part of vm " + vm + " expunge");
-                }
-            }
+	        //Cleanup vm resources - all the PF/LB/StaticNat rules associated with vm
+	        s_logger.debug("Starting cleaning up vm " + vm + " resources...");
+	        if (cleanupVmResources(vm.getId())) {
+	            s_logger.debug("Successfully cleaned up vm " + vm + " resources as a part of expunge process");
+	        } else {
+	            s_logger.warn("Failed to cleanup resources as a part of vm " + vm + " expunge");
+	            return false;
+	        }
  
             _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
             return true;
@@ -1168,6 +1137,50 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.warn("Concurrent operations on expunging " + vm, e);
             return false;
         }
+    }
+    
+    private boolean cleanupVmResources(long vmId) {
+        boolean success = true;
+        
+        //Remove vm from security groups
+        _networkGroupMgr.removeInstanceFromGroups(vmId);
+        
+        //Remove vm from instance group
+        removeInstanceFromInstanceGroup(vmId);
+        
+        //cleanup port forwarding rules
+        if (_rulesMgr.revokePortForwardingRulesForVm(vmId)) {
+            s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
+        } else {
+            success = false;
+            s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
+        }
+        
+        //cleanup load balancer rules
+        if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
+            s_logger.debug("Removed vm id=" + vmId + " from all load balancers as a part of expunge process");
+        } else {
+            success = false;
+            s_logger.warn("Fail to remove vm id=" + vmId + " from load balancers as a part of expunge process");
+        }
+        
+        //If vm is assigned to static nat, disable static nat for the ip address
+        IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
+        try {
+            if (ip != null) {
+                if (_rulesMgr.disableOneToOneNat(ip.getId())) {
+                    s_logger.debug("Disabled 1-1 nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
+                } else {
+                    s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
+                    success = false;
+                }
+            }
+        } catch (ResourceUnavailableException e) {
+            success = false;
+            s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge because resource is unavailable", e);
+        }
+
+        return success;
     }
 
     @Override

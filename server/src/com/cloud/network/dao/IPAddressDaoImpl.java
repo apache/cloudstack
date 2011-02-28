@@ -200,11 +200,11 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
     
     @Override
-    public List<IPAddressVO> listByAssociatedVmId(long vmId) {
+    public IPAddressVO findByAssociatedVmId(long vmId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("associatedWithVmId", vmId);
         
-        return listBy(sc);
+        return findOneBy(sc);
     }
 
     @Override

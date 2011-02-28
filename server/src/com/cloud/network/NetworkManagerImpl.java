@@ -439,8 +439,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
-                publicIps.add(publicIp);
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
+                    publicIps.add(publicIp);
             }
         }
 
@@ -467,7 +467,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     markPublicIpAsAllocated(addr);
                     
                 } else if (addr.getState() == IpAddress.State.Releasing) {
-                    unassignPublicIpAddress(addr);
+                    //Cleanup all the resources for ip address if there are any, and only then unassign ip in the system
+                    if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
+                        unassignPublicIpAddress(addr);
+                    } else {
+                        success = false;
+                        s_logger.warn("Failed to release resources for ip address id=" + addr.getId());
+                    }
                 }
             }
         }
@@ -607,8 +613,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean releasePublicIpAddress(long addrId, long userId, Account caller) {
+        
+        //mark ip address as Releasing
         IPAddressVO ip = _ipAddressDao.markAsUnavailable(addrId);
-        assert (ip != null) : "Unable to mark the ip address id=" + addrId + " owned by " + ip.getAccountId() + " as unavailable.";
+        assert (ip != null) : "Unable to mark the ip address id=" + addrId + " as unavailable.";
         if (ip == null) {
             return true;
         }
@@ -618,22 +626,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         boolean success = true;
-        try {
-            if (!_rulesMgr.revokeAllRules(addrId, userId, caller)) {
-                s_logger.warn("Unable to revoke all the port forwarding rules for ip " + ip);
-                success = false;
-            }
-        } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to revoke all the port forwarding rules for ip " + ip, e);
+        
+        //Cleanup all ip address resources - PF/LB/Static nat rules
+        if (cleanupIpResources(addrId, userId, caller)) {
+            unassignPublicIpAddress(ip);
+        } else {
             success = false;
+            s_logger.warn("Failed to release resources for ip address id=" + addrId);
         }
 
-        if (!_lbMgr.removeAllLoadBalanacers(addrId, caller, userId)) {
-            s_logger.warn("Unable to revoke all the load balancer rules for ip " + ip);
-            success = false;
-        }
-
-        if (ip.getAssociatedWithNetworkId() != null) {
+        if (ip.getAssociatedWithNetworkId() != null) {    
             Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
                 if (!applyIpAssociations(network, true)) {
@@ -641,7 +643,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     success = false;
                 }
             } catch (ResourceUnavailableException e) {
-                throw new CloudRuntimeException("We should nver get to here because we used true when applyIpAssociations", e);
+                throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
             }
         }
 
@@ -1762,7 +1764,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<UserVmVO> userVms = _vmDao.listByNetworkId(networkId);
         
         for (UserVmVO vm : userVms) {
-            if (!(vm.getState() == VirtualMachine.State.Error || vm.getState() == VirtualMachine.State.Expunging)) {
+            if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
                 throw new InvalidParameterValueException("Can't delete the network, not all user vms are expunged");
             }
         }
@@ -1835,8 +1837,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.commit();
     }
 
-    @DB
-    @Override
+    @Override @DB
     public boolean destroyNetwork(long networkId, ReservationContext context) {
         Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());
         
@@ -1858,17 +1859,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
 
-        // release ip addresses associated with the network if there are any - for Virtual case
-        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
-        if (ipsToRelease != null && !ipsToRelease.isEmpty()) {
-            for (IPAddressVO ip : ipsToRelease) {
-                //delete load balancer rules associated with the ip address before unassigning it
-                _lbMgr.removeAllLoadBalanacers(ip.getId(), callerAccount, context.getCaller().getId());
-                unassignPublicIpAddress(ip);
-            }
-
-            s_logger.debug("Ip addresses associated with network " + networkId + " are unassigned successfully as a part of network id=" + networkId + " destroy");
-        }
+        cleanupNetworkResources(networkId, callerAccount, context.getCaller().getId());
 
         for (NetworkElement element : _networkElements) {
             try {
@@ -1911,6 +1902,52 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
+        return success;
+    }
+    
+    private boolean cleanupNetworkResources(long networkId, Account caller, long callerUserId) {
+        boolean success = true;
+        Network network = getNetwork(networkId);
+        
+        //remove all PF/Static Nat rules for the network
+        try {
+            if (_rulesMgr.revokeAllRulesForNetwork(networkId, callerUserId, caller)) {
+                s_logger.debug("Successfully cleaned up portForwarding/staticNat rules for network id=" + networkId);
+            } else {
+                success = false;
+                s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup");
+            }
+        } catch (ResourceUnavailableException ex) {
+            success = false;
+            //shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
+        }
+        
+        //remove all LB rules for the network
+        if (_lbMgr.removeAllLoadBalanacersForNetwork(networkId, caller, callerUserId)) {
+            s_logger.debug("Successfully cleaned up load balancing rules for network id=" + networkId);
+        } else {
+            //shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            success = false;
+            s_logger.warn("Failed to cleanup LB rules as a part of network id=" + networkId + " cleanup");
+        }
+        
+        //release all ip addresses
+        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
+        for (IPAddressVO ipToRelease : ipsToRelease) {
+            IPAddressVO ip = _ipAddressDao.markAsUnavailable(ipToRelease.getId());
+            assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
+        }
+        
+        try {
+            if (!applyIpAssociations(network, true)) {
+                s_logger.warn("Unable to apply ip address associations for " + network);
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
+        }
+        
         return success;
     }
 
@@ -2001,7 +2038,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // This method restarts all network elements belonging to the network
+        // This method restarts all network elements belonging to the network and re-applies all the rules
         Long networkId = cmd.getNetworkId();
         NetworkVO network = _networksDao.findById(networkId);
         Account owner = _accountMgr.getAccount(network.getAccountId());
@@ -2011,51 +2048,61 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
         
         _accountMgr.checkAccess(callerAccount, network);
+        
+        boolean success = true;
 
         s_logger.debug("Restarting network " + networkId + "...");
         for (NetworkElement element : _networkElements) {
             //stop and start the network element
             if (!element.restart(network, context)) {
                 s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
-                return false;
+                success = false;
             }   
         }
             
         //associate all ip addresses
         if (!applyIpAssociations(network, false)) {
             s_logger.warn("Failed to apply ip addresses as a part of network id" + networkId + " restart");
-            return false;
+            success = false;
         }
         
         //apply port forwarding rules
         if (!_rulesMgr.applyPortForwardingRulesForNetwork(networkId, false, context.getAccount())) {
             s_logger.warn("Failed to reapply port forwarding rule(s) as a part of network id=" + networkId + " restart");
+            success = false;
         }
         
         //apply static nat rules
         if (!_rulesMgr.applyStaticNatRulesForNetwork(networkId, false, context.getAccount())) {
             s_logger.warn("Failed to reapply static nat rule(s) as a part of network id=" + networkId + " restart");
+            success = false;
         }
         
         //apply load balancer rules
         if (!_lbMgr.applyLoadBalancersForNetwork(networkId)) {
             s_logger.warn("Failed to reapply load balancer rules as a part of network id=" + networkId + " restart");
-            return false;
+            success = false;
         }
         
         //apply vpn rules
         List<? extends RemoteAccessVpn> vpnsToReapply = _vpnMgr.listRemoteAccessVpns(networkId);
         if (vpnsToReapply != null) {
             for (RemoteAccessVpn vpn : vpnsToReapply) {
+                //Start remote access vpn per ip
                 if (_vpnMgr.startRemoteAccessVpn(vpn.getServerAddressId()) == null) {
-                    s_logger.warn("Failed to reapply load balancer rules as a part of network id=" + networkId + " restart");
-                    return false;
+                    s_logger.warn("Failed to reapply vpn rules as a part of network id=" + networkId + " restart");
+                    success = false;
                 }
             }
         }
         
-        s_logger.debug("Network id=" + networkId + " is restarted successfully.");
-        return true;
+        if (success) {
+            s_logger.debug("Network id=" + networkId + " is restarted successfully.");
+        } else {
+            s_logger.warn("Network id=" + networkId + " failed to restart.");
+        }
+        
+        return success;
     }
 
     @Override
@@ -2371,5 +2418,38 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return false;
+    }
+    
+    private boolean cleanupIpResources(long ipId, long userId, Account caller) {
+        boolean success = true;
+        
+        try {
+            s_logger.debug("Revoking all PF/StaticNat rules as a part of public IP id=" + ipId + " release...");
+            if (!_rulesMgr.revokeAllRulesForIp(ipId, userId, caller)) {
+                s_logger.warn("Unable to revoke all the port forwarding rules for ip id=" + ipId + " as a part of ip release");
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to revoke all the port forwarding rules for ip id=" + ipId + " as a part of ip release", e);
+            success = false;
+        }
+
+        s_logger.debug("Revoking all LB rules as a part of public IP id=" + ipId + " release...");
+        if (!_lbMgr.removeAllLoadBalanacersForIp(ipId, caller, userId)) {
+            s_logger.warn("Unable to revoke all the load balancer rules for ip id=" + ipId + " as a part of ip release");
+            success = false;
+        }
+        
+        //remote access vpn can be enabled only for static nat ip, so this part should never be executed under normal conditions
+        //only when ip address failed to be cleaned up as a part of account destroy and was marked as Releasing, this part of the code would be triggered
+        s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
+        try {
+            _vpnMgr.destroyRemoteAccessVpn(ipId);
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
+            success = false;
+        }
+        
+        return success;
     }
 }

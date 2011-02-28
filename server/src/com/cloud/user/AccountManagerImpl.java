@@ -886,7 +886,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 }
             }
             
-          //delete remote access vpns and associated users
+            //delete remote access vpns and associated users
             List<RemoteAccessVpnVO> remoteAccessVpns = _remoteAccessVpnDao.findByAccount(accountId);
             List<VpnUserVO> vpnUsers = _vpnUser.listByAccount(accountId);
             
@@ -921,7 +921,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 }
             }
             
-            //delete account specific vlans - only when networks are cleaned up successfully
+            //delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned up successfully
             if (networksDeleted) {
                 if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)){
                     accountCleanupNeeded = true;

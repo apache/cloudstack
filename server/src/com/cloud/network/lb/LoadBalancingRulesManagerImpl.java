@@ -302,7 +302,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         
         if (apply) {
             try {
-                applyLoadBalancerConfig(loadBalancerId);
+                if (!applyLoadBalancerConfig(loadBalancerId)) {
+                    s_logger.warn("Unable to apply the load balancer config");
+                    return false;
+                } 
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
                 return false;
@@ -443,8 +446,23 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
 
     @Override
-    public boolean removeAllLoadBalanacers(long ipId, Account caller, long callerUserId) {   
-        List<FirewallRuleVO> rules = _rulesDao.listByIpAndNotRevoked(ipId, Purpose.LoadBalancing);
+    public boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId) {   
+        List<FirewallRuleVO> rules = _rulesDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.LoadBalancing);
+        if (rules != null)
+        s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
+        for (FirewallRule rule : rules) {  
+            boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId);
+            if (result == false) {
+                s_logger.warn("Unable to remove load balancer rule " + rule.getId());
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    @Override
+    public boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId) {   
+        List<FirewallRuleVO> rules = _rulesDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.LoadBalancing);
         if (rules != null)
         s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
         for (FirewallRule rule : rules) {  

@@ -59,6 +59,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         
         ActiveRulesSearch = createSearchBuilder();
         ActiveRulesSearch.and("ipId", ActiveRulesSearch.entity().getSourceIpAddressId(), Op.EQ);
+        ActiveRulesSearch.and("networkId", ActiveRulesSearch.entity().getNetworkId(), Op.EQ);
         ActiveRulesSearch.and("state", ActiveRulesSearch.entity().getState(), Op.NEQ);
         ActiveRulesSearch.and("purpose", ActiveRulesSearch.entity().getPurpose(), Op.EQ);
         ActiveRulesSearch.done();
@@ -105,8 +106,18 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
     
     @Override
-    public List<PortForwardingRuleVO> listByIp(long ipId) {
+    public List<PortForwardingRuleVO> listByNetworkAndNotRevoked(long networkId) {
         SearchCriteria<PortForwardingRuleVO> sc = ActiveRulesSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("state", State.Revoke);
+        sc.setParameters("purpose", Purpose.PortForwarding);
+        
+        return listBy(sc, null);
+    }
+    
+    @Override
+    public List<PortForwardingRuleVO> listByIp(long ipId) {
+        SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipId", ipId);
         sc.setParameters("purpose", Purpose.PortForwarding);
         
@@ -114,7 +125,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
     
     @Override
-    public List<PortForwardingRuleVO> listByNetworkId(long networkId) {
+    public List<PortForwardingRuleVO> listByNetwork(long networkId) {
         SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         sc.setParameters("purpose", Purpose.PortForwarding);

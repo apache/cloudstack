@@ -26,18 +26,20 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
     List<PortForwardingRuleVO> listForApplication(long ipId);
     
     /**
-     * Find all port forwarding rules that have not been revoked.
+     * Find all port forwarding rules for the ip address that have not been revoked.
      * 
      * @param ip ip address 
      * @return List of PortForwardingRuleVO
      */
     List<PortForwardingRuleVO> listByIpAndNotRevoked(long ipId);
     
+    List<PortForwardingRuleVO> listByNetworkAndNotRevoked(long networkId);
+    
     List<PortForwardingRuleVO> listByIp(long ipId);
 
 	List<PortForwardingRuleVO> listByVm(Long vmId);
 	
-	List<PortForwardingRuleVO> listByNetworkId(long networkId);
+	List<PortForwardingRuleVO> listByNetwork(long networkId);
 	
 	List<PortForwardingRuleVO> listByAccount(long accountId);
 }

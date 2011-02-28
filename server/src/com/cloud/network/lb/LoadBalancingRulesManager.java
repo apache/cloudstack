@@ -24,7 +24,8 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.user.Account;
 
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
-    boolean removeAllLoadBalanacers(long ipId, Account caller, long callerUserId);
+    boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
+    boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId);
     List<LbDestination> getExistingDestinations(long lbId);
     
     /**
