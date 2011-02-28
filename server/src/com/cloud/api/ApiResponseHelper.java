@@ -1256,7 +1256,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
                if (network != null) {
                    TrafficType trafficType = TrafficType.Public;
-                   if(zone.getNetworkType() == NetworkType.Basic) {
+                   if(zone.getNetworkType() == NetworkType.Basic || zone.isSecurityGroupEnabled()) {
                        trafficType = TrafficType.Guest;
                    }                  
                    if (network.getTrafficType() == trafficType) {

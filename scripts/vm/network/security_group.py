@@ -201,7 +201,6 @@ def default_network_rules_systemvm(vm_name, brname):
     except:
         execute("iptables -F " + vmchain)
 
-  
     for vif in vifs:
         try:
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
@@ -430,12 +429,12 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
         logging.debug("Rules already programmed for vm " + vm_name)
         return 'true'
     
+    if changes[0] or changes[2]:
+        default_network_rules(vmName, vm_id, vm_ip, vmMac, vif, brname)
+
     if rules == "" or rules == None:
         write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
         return 'true'
-
-    if changes[0] or changes[2]:
-        default_network_rules(vmName, vm_id, vm_ip, vmMac, vif, brname)
 
     lines = rules.split(';')[:-1]
 
@@ -462,27 +461,25 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
         if ips:    
             if protocol == 'all':
                 for ip in ips:
-                    iptables = "iptables -I " + vmchain + " -m state --state NEW -s " + ip + " -j ACCEPT"
+                    execute("iptables -I " + vmchain + " -m state --state NEW -s " + ip + " -j ACCEPT")
             elif protocol != 'icmp':
                 for ip in ips:
-                    iptables = "iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -s " + ip + " -j ACCEPT"
+                    execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -s " + ip + " -j ACCEPT")
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
                     for ip in ips:
-                        iptables = "iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -s " + ip + " -j ACCEPT"
-            execute(iptables)
+                        execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -s " + ip + " -j ACCEPT")
         
         if allow_any and protocol != 'all':
             if protocol != 'icmp':
-                iptables = "iptables -I " + vmchain + " -p " + protocol + " -m " +  protocol + " --dport " + range + " -m state --state NEW -j ACCEPT"
+                execute("iptables -I " + vmchain + " -p " + protocol + " -m " +  protocol + " --dport " + range + " -m state --state NEW -j ACCEPT")
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = "iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -j ACCEPT"
-            execute(iptables)
+                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -j ACCEPT")
 
     iptables =  "iptables -A " + vmchain + " -j DROP"       
     execute(iptables)
