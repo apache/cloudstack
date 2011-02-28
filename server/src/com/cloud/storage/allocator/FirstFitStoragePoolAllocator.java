@@ -18,6 +18,7 @@
 package com.cloud.storage.allocator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import javax.ejb.Local;
@@ -62,7 +63,7 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
 		long clusterId = plan.getClusterId();
 
         if(dskCh.getTags() != null && dskCh.getTags().length != 0){
-        	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + dskCh.getTags());
+        	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()));
         }else{
         	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
