@@ -78,14 +78,16 @@ function initAddDiskOfferingDialog() {
         
     $dialogAddDisk.find("#public_dropdown").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
-            $dialogAddDisk.find("#domain_dropdown_container").hide();  
+            $dialogAddDisk.find("#domain_container").hide();  
         }
         else {  //private zone
-            $dialogAddDisk.find("#domain_dropdown_container").show();  
+            $dialogAddDisk.find("#domain_container").show();  
         }
         return false;
     });
     
+    applyAutoCompleteToDomainField($dialogAddDisk.find("#domain"));   
+    /*
     $.ajax({
 	  data: createURL("command=listDomains"),
 		dataType: "json",
@@ -102,6 +104,7 @@ function initAddDiskOfferingDialog() {
 			} 
 		}
 	});   
+    */
         
     $("#add_diskoffering_button").unbind("click").bind("click", function(event) {    
 		$dialogAddDisk.find("#disk_name").val("");
@@ -112,46 +115,65 @@ function initAddDiskOfferingDialog() {
 		$dialogAddDisk
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 
-			    var thisDialog = $(this);
+			    var $thisDialog = $(this);
 												    		
 				// validate values
 				var isValid = true;					
-				isValid &= validateString("Name", thisDialog.find("#add_disk_name"), thisDialog.find("#add_disk_name_errormsg"));
-				isValid &= validateString("Description", thisDialog.find("#add_disk_description"), thisDialog.find("#add_disk_description_errormsg"));
+				isValid &= validateString("Name", $thisDialog.find("#add_disk_name"), $thisDialog.find("#add_disk_name_errormsg"));
+				isValid &= validateString("Description", $thisDialog.find("#add_disk_description"), $thisDialog.find("#add_disk_description_errormsg"));
 				
 				if($("#add_disk_disksize_container").css("display") != "none")
-				    isValid &= validateInteger("Disk size", thisDialog.find("#add_disk_disksize"), thisDialog.find("#add_disk_disksize_errormsg"), 0, null, false); //required
+				    isValid &= validateInteger("Disk size", $thisDialog.find("#add_disk_disksize"), $thisDialog.find("#add_disk_disksize_errormsg"), 0, null, false); //required
+				
+				if($thisDialog.find("#domain_container").css("display") != "none") {
+				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
+				    var domainName = $thisDialog.find("#domain").val();
+				    var domainId;
+				    if(domainName != null && domainName.length > 0) { 				    
+				        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+					        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+					          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					              domainId = autoCompleteDomains[i].id;
+					              break;	
+					          }
+				            } 					   			    
+				        }					    				    
+				        if(domainId == null) {
+				            showError(false, $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+				            isValid &= false;
+				        }				    
+				    }				
+				}
 								
-				isValid &= validateString("Tags", thisDialog.find("#add_disk_tags"), thisDialog.find("#add_disk_tags_errormsg"), true);	//optional	
+				isValid &= validateString("Tags", $thisDialog.find("#add_disk_tags"), $thisDialog.find("#add_disk_tags_errormsg"), true);	//optional	
 				if (!isValid) 
 				    return;		
-				thisDialog.dialog("close");
+				$thisDialog.dialog("close");
 				    
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;		
 			
 				var array1 = [];					
-				var name = trim(thisDialog.find("#add_disk_name").val());
+				var name = $thisDialog.find("#add_disk_name").val();
 				array1.push("&name="+todb(name));
 				
-				var description = trim(thisDialog.find("#add_disk_description").val());	
+				var description = $thisDialog.find("#add_disk_description").val();	
 				array1.push("&displaytext="+todb(description));
 				
-				var customized = thisDialog.find("#customized").val();				
+				var customized = $thisDialog.find("#customized").val();				
 				array1.push("&customized="+customized);
 				
 				if($("#add_disk_disksize_container").css("display") != "none") {		
-				    var disksize = trim(thisDialog.find("#add_disk_disksize").val());
+				    var disksize = $thisDialog.find("#add_disk_disksize").val();
 				    array1.push("&disksize="+disksize);
 				}
 				
-				var tags = trim(thisDialog.find("#add_disk_tags").val());
+				var tags = $thisDialog.find("#add_disk_tags").val();
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));								
 				
-				if(thisDialog.find("#domain_dropdown_container").css("display") != "none") {
-	                var domainId = thisDialog.find("#domain_dropdown").val();
-	                array1.push("&domainid="+domainId);	
-	            }
+				if($thisDialog.find("#domain_container").css("display") != "none") {                
+	                array1.push("&domainid="+domainId);		
+	            }   
 					
 				$.ajax({
 				  data: createURL("command=createDiskOffering&isMirrored=false" + array1.join("")),

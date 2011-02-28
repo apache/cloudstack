@@ -66,14 +66,16 @@ function initAddServiceOfferingDialog() {
     var $dialogAddService = $("#dialog_add_service");
     $dialogAddService.find("#public_dropdown").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
-            $dialogAddService.find("#domain_dropdown_container").hide();  
+            $dialogAddService.find("#domain_container").hide();  
         }
         else {  //private zone
-            $dialogAddService.find("#domain_dropdown_container").show();  
+            $dialogAddService.find("#domain_container").show();  
         }
         return false;
     });
-           
+    
+    applyAutoCompleteToDomainField($dialogAddService.find("#domain"));   
+    /*       
 	$.ajax({
 	  data: createURL("command=listDomains"),
 		dataType: "json",
@@ -90,6 +92,7 @@ function initAddServiceOfferingDialog() {
 			} 
 		}
 	});   
+	*/
 		         
     $("#add_serviceoffering_button").unbind("click").bind("click", function(event) {    
 		$dialogAddService.find("#add_service_name").val("");
@@ -102,52 +105,72 @@ function initAddServiceOfferingDialog() {
 		$dialogAddService
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 	
-			    var thisDialog = $(this);
+			    var $thisDialog = $(this);
 							
 				// validate values
 				var isValid = true;					
-				isValid &= validateString("Name", thisDialog.find("#add_service_name"), thisDialog.find("#add_service_name_errormsg"));
-				isValid &= validateString("Display Text", thisDialog.find("#add_service_display"), thisDialog.find("#add_service_display_errormsg"));
-				isValid &= validateInteger("# of CPU Core", thisDialog.find("#add_service_cpucore"), thisDialog.find("#add_service_cpucore_errormsg"), 1, 1000);		
-				isValid &= validateInteger("CPU", thisDialog.find("#add_service_cpu"), thisDialog.find("#add_service_cpu_errormsg"), 100, 100000);		
-				isValid &= validateInteger("Memory", thisDialog.find("#add_service_memory"), thisDialog.find("#add_service_memory_errormsg"), 64, 1000000);	
-				isValid &= validateString("Tags", thisDialog.find("#add_service_tags"), thisDialog.find("#add_service_tags_errormsg"), true);	//optional							
+				isValid &= validateString("Name", $thisDialog.find("#add_service_name"), $thisDialog.find("#add_service_name_errormsg"));
+				isValid &= validateString("Display Text", $thisDialog.find("#add_service_display"), $thisDialog.find("#add_service_display_errormsg"));
+				isValid &= validateInteger("# of CPU Core", $thisDialog.find("#add_service_cpucore"), $thisDialog.find("#add_service_cpucore_errormsg"), 1, 1000);		
+				isValid &= validateInteger("CPU", $thisDialog.find("#add_service_cpu"), $thisDialog.find("#add_service_cpu_errormsg"), 100, 100000);		
+				isValid &= validateInteger("Memory", $thisDialog.find("#add_service_memory"), $thisDialog.find("#add_service_memory_errormsg"), 64, 1000000);	
+				isValid &= validateString("Tags", $thisDialog.find("#add_service_tags"), $thisDialog.find("#add_service_tags_errormsg"), true);	//optional							
+				
+				if($thisDialog.find("#domain_container").css("display") != "none") {
+				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
+				    var domainName = $thisDialog.find("#domain").val();
+				    var domainId;
+				    if(domainName != null && domainName.length > 0) { 				    
+				        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+					        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+					          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					              domainId = autoCompleteDomains[i].id;
+					              break;	
+					          }
+				            } 					   			    
+				        }					    				    
+				        if(domainId == null) {
+				            showError(false, $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+				            isValid &= false;
+				        }				    
+				    }				
+				}
+				
 				if (!isValid) 
 				    return;										
-				thisDialog.dialog("close");
+				$thisDialog.dialog("close");
 									
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;			
 									
 				var array1 = [];						
-				var name = trim(thisDialog.find("#add_service_name").val());
+				var name = $thisDialog.find("#add_service_name").val();
 				array1.push("&name="+todb(name));	
 				
-				var display = trim(thisDialog.find("#add_service_display").val());
+				var display = $thisDialog.find("#add_service_display").val();
 				array1.push("&displayText="+todb(display));	
 				
-				var storagetype = trim(thisDialog.find("#add_service_storagetype").val());
+				var storagetype = $thisDialog.find("#add_service_storagetype").val();
 				array1.push("&storageType="+storagetype);	
 				
-				var core = trim(thisDialog.find("#add_service_cpucore").val());
+				var core = $thisDialog.find("#add_service_cpucore").val();
 				array1.push("&cpuNumber="+core);	
 				
-				var cpu = trim(thisDialog.find("#add_service_cpu").val());
+				var cpu = $thisDialog.find("#add_service_cpu").val();
 				array1.push("&cpuSpeed="+cpu);	
 				
-				var memory = trim(thisDialog.find("#add_service_memory").val());
+				var memory = $thisDialog.find("#add_service_memory").val();
 				array1.push("&memory="+memory);	
 					
-				var offerha = thisDialog.find("#add_service_offerha").val();	
+				var offerha = $thisDialog.find("#add_service_offerha").val();	
 				array1.push("&offerha="+offerha);								
 									
-				var tags = thisDialog.find("#add_service_tags").val();
+				var tags = $thisDialog.find("#add_service_tags").val();
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));	
 				
-				if(thisDialog.find("#domain_dropdown_container").css("display") != "none") {
-	                var domainId = thisDialog.find("#domain_dropdown").val();
-	                array1.push("&domainid="+domainId);	
-	            }
+				if($thisDialog.find("#domain_container").css("display") != "none") {                
+	                array1.push("&domainid="+domainId);		
+	            }            
 								
 				$.ajax({
 				  data: createURL("command=createServiceOffering"+array1.join("")),
