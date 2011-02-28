@@ -48,7 +48,6 @@
 	<classpathentry exported="true" kind="lib" path="vmware-lib-xml-apis.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-vim.jar"/>
 	<classpathentry exported="true" kind="lib" path="vmware-vim25.jar"/>
-	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="/home/dev/tools/junit/junit-4.8.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
