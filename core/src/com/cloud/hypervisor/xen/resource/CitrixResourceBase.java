@@ -3499,8 +3499,8 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        Connection conn = getConnection();
         try {
+            Connection conn = getConnection();
             if (!pingxenserver()) {
                 Thread.sleep(1000);
                 if (!pingxenserver()) {

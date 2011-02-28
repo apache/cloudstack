@@ -412,14 +412,15 @@ public class XenServerConnectionPool {
                 // wait 2 second
                 forceSleep(2);
             }
+            throw new CloudRuntimeException("Unable to reset master of slave " + slaveIp
+                    + " to " + masterIp + "after 30 retry");
         } catch (Exception e) {
-
+            throw new CloudRuntimeException("Unable to reset master of slave " + slaveIp
+                    + " to " + masterIp + " due to " + e.toString());
         } finally {
             localLogout(slaveConn);
             slaveConn = null;
         }
-        throw new CloudRuntimeException("Unable to reset master of slave " + slaveIp
-                    + " to " + masterIp + "after 30 retry");
     }
 
     protected void ensurePoolIntegrity(Connection conn,
