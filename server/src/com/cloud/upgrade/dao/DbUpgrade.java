@@ -18,6 +18,7 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.sql.Connection;
 
 public interface DbUpgrade {
     String[] getUpgradableVersionRange();
@@ -35,7 +36,7 @@ public interface DbUpgrade {
     /**
      * Performs the actual data migration.
      */
-    void performDataMigration();
+    void performDataMigration(Connection conn);
     
     /**
      * 

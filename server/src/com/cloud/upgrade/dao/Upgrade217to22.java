@@ -18,8 +18,15 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade217to22 implements DbUpgrade {
@@ -34,12 +41,62 @@ public class Upgrade217to22 implements DbUpgrade {
         return file;
     }
     
-    protected void upgradeNetworks() {
+    @DB
+    protected void upgradeDataCenter() {
         
     }
     
+    protected void upgradeNetworks(Connection conn) {
+        String getAccountsSql = "SELECT id, domain_id FROM accounts WHERE removed IS NULL AND id > 1";
+        String getDataCenterSql = "SELECT id FROM data_center";
+        String getNextNetworkSequenceSql = "SELECT value from sequence where name='networks_seq'";
+        String advanceNetworkSequenceSql = "UPDATE sequence set value=value+1 where name='networks_seq'";
+        String insertNetworkSql = "INSERT INTO NETWORKS(id, name, display_text, traffic_type, broadcast_domain_type, gateway, cidr, mode, network_offering_id, data_center_id, guru_name, state, domain_id, account_id, dns1, dns2, guest_type, shared, is_default, created) " + 
+                                                "VALUES(?,  ?,    ?,            ?,            ?,                     ?,       ?,    ?,    ?,                   ?,              ?,         ?,     ?,         ?,          ?,    ?,    ,          false,  true,       now())"; 
+        PreparedStatement pstmt;
+        try {
+            pstmt = conn.prepareStatement(getAccountsSql);
+            ResultSet rs = pstmt.executeQuery();
+            ArrayList<Pair<Long, Long>> accountIds = new ArrayList<Pair<Long, Long>>();
+            while (rs.next()) {
+                accountIds.add(new Pair<Long, Long>(rs.getLong(1), rs.getLong(2)));
+            }
+            rs.close();
+            pstmt.close();
+            pstmt = conn.prepareStatement(getDataCenterSql);
+            rs = pstmt.executeQuery();
+            ArrayList<Long> dataCenterIds = new ArrayList<Long>();
+            while (rs.next()) {
+                dataCenterIds.add(rs.getLong(1));
+            }
+            rs.close();
+            pstmt.close();
+            
+            for (Pair<Long, Long> accountId : accountIds) {
+                for (Long dataCenterId : dataCenterIds) {
+                    pstmt = conn.prepareStatement(getNextNetworkSequenceSql);
+                    rs = pstmt.executeQuery();
+                    rs.next();
+                    long seq = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    
+                    pstmt = conn.prepareStatement(advanceNetworkSequenceSql);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    
+                    pstmt = conn.prepareStatement(insertNetworkSql);
+                }
+            }
+            
+            
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to perform upgrade", e);
+        }
+    }
+    
     @Override
-    public void performDataMigration() {
+    public void performDataMigration(Connection conn) {
     }
 
     @Override

@@ -173,11 +173,17 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             s_logger.info("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
             Transaction txn = Transaction.currentTxn();
             txn.start();
+            Connection conn;
+            try {
+                conn = txn.getConnection();
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to upgrade the database", e);
+            }
             File script = upgrade.getPrepareScript();
             if (script != null) {
                 runScript(script);
             }
-            upgrade.performDataMigration();
+            upgrade.performDataMigration(conn);
             VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
             persist(version);
             txn.commit();
