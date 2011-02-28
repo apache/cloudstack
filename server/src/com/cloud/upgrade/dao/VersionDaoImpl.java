@@ -152,6 +152,10 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         if (upgrades == null) {
             throw new ConfigurationException("There is no upgrade path from " + dbVersion + " to " + currentVersion);
         }
+
+        if (Version.compare(currentVersion, upgrades[upgrades.length - 1].getUpgradedVersion()) == 0) {
+            throw new ConfigurationException("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() + " but our management server code version is at " + currentVersion);
+        }
         
         boolean supportsRollingUpgrade = true;
         for (DbUpgrade upgrade : upgrades) {
@@ -170,7 +174,9 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             Transaction txn = Transaction.currentTxn();
             txn.start();
             File script = upgrade.getPrepareScript();
-            runScript(script);
+            if (script != null) {
+                runScript(script);
+            }
             upgrade.performDataMigration();
             VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
             persist(version);
@@ -183,7 +189,9 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             Transaction txn = Transaction.currentTxn();
             txn.start();
             File script = upgrade.getCleanupScript();
-            runScript(script);
+            if (script != null) {
+                runScript(script);
+            }
             version.setStep(Step.Complete);
             version.setUpdated(new Date());
             update(version.getId(), version);

@@ -232,9 +232,6 @@
       -->
       <!--bootclasspath refid="test.classpath"/-->
       <classpath refid="test.classpath"/>
-      <permissions>
-        <grant class="java.security.AllPermission"/>
-      </permissions>
       <jvmarg value="${debug.jvmarg}"/>
       <batchtest todir="${unittest.dir}">
         <formatter type="plain"/>

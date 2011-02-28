@@ -18,13 +18,6 @@
 package com.cloud.upgrade.dao;
 
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import javax.naming.ConfigurationException;
 
 import junit.framework.TestCase;
@@ -34,10 +27,8 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.cloud.upgrade.dao.VersionVO.Step;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.ScriptRunner;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.DbTestUtils;
 
 public class VersionDaoImplTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(VersionDaoImplTest.class);
@@ -47,39 +38,9 @@ public class VersionDaoImplTest extends TestCase {
     public void setUp() throws Exception {
         VersionVO version = new VersionVO("2.1.7");
         version.setStep(Step.Cleanup);
-        executeScript("VersionDaoImplTest/clean-db.sql");
+        DbTestUtils.executeScript("VersionDaoImplTest/clean-db.sql", false, true);
     }
     
-    protected void executeScript(String file) {
-        File cleanScript = PropertiesUtil.findConfigFile(file);
-        if (cleanScript == null) {
-            throw new RuntimeException("Unable to clean the database because I can't find " + file);
-        }
-        
-        Connection conn = Transaction.getStandaloneConnection();
-        
-        ScriptRunner runner = new ScriptRunner(conn, false, true);
-        FileReader reader;
-        try {
-            reader = new FileReader(cleanScript);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("Unable to read " + file, e);
-        } 
-        try {
-            runner.runScript(reader);
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to read " + file, e);
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable to execute " + file, e);
-        }
-        
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable to close DB connection", e);
-        }
-    }
-
     @Override
     @After
     public void tearDown() throws Exception {
@@ -87,7 +48,7 @@ public class VersionDaoImplTest extends TestCase {
     
     public void test217to22Upgrade() {
         s_logger.debug("Finding sample data from 2.1.7");
-        executeScript("VersionDaoImplTest/2.1.7/2.1.7.sample.sql");
+        DbTestUtils.executeScript("VersionDaoImplTest/2.1.7/2.1.7.sample.sql", false, true);
 
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         
