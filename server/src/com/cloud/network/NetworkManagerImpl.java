@@ -2067,6 +2067,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network with id=" + networkId + " doesn't exist");
         }
         
+        //Don't allow to restart network if it's not in Implemented/Setup state
+        if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
+            throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
+        }
+        
         Account owner = _accountMgr.getAccount(network.getAccountId());
         ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
         
