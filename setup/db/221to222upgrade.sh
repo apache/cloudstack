@@ -3,6 +3,12 @@
 #######
 # mysql phase 1
 
+pgrep mysqld
+if [ $? -ne 0 ]; then
+   echo "Mysqld is not running"
+   exit 1
+fi
+
 echo Running upgrade for database: cloud from 2.2.1 to 2.2.2
 mysql -u root -C cloud < 221to222.sql
 if [ $? -gt 0 ]
