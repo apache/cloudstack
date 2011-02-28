@@ -2,5 +2,5 @@
 /usr/bin/cloud-migrate-databases
 /usr/bin/cloud-set-guest-password
 /usr/share/cloud/setup/*.sql
-/usr/share/cloud/setup/deploy-db-dev.sh
+/usr/share/cloud/setup/*.sh
 /usr/share/cloud/setup/server-setup.xml
