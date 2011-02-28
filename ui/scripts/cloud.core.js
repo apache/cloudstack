@@ -1052,7 +1052,7 @@ function getMidmenuId(jsonObj) {
 }
 
 var autoCompleteDomains = [];
-function applyAutoCompleteToDomainField($field, commandString, jsonResponse1, jsonResponse2) {  
+function applyAutoCompleteToDomainField($field) {  
     $field.autocomplete({
 		source: function(request, response) {			
 			$.ajax({
