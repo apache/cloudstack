@@ -1442,7 +1442,8 @@ function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 
 var directNetworkActionMap = {       
     "label.action.delete.network": {              
-        isAsyncJob: false,    
+        isAsyncJob: true,    
+        asyncJobResponse: "deletenetworkresponse", 
         dialogBeforeActionFn : doDeleteNetwork,        
         inProcessText: "label.action.delete.network.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
