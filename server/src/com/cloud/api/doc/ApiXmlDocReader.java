@@ -110,7 +110,6 @@ public class ApiXmlDocReader {
 			} 
 		}
 		
-		
 		 try {
 		    FileWriter fstream = new FileWriter(dirName + "/diff.txt");
 	        BufferedWriter out = new BufferedWriter(fstream);
@@ -130,12 +129,25 @@ public class ApiXmlDocReader {
 			out.write("\nRemoved commands:\n");
 			for (Command c : removedCommands) {
 			    if (c.getDescription() != null && !c.getDescription().isEmpty()) {
-			        out.write("\n    " + c.getName() + " (" + c.getDescription() + ")\n");
+			        out.write("\n\t" + c.getName() + " (" + c.getDescription() + ")\n");
 			    } else {
-			        out.write("\n    " + c.getName() + "\n");
+			        out.write("\n\t" + c.getName() + "\n");
 			    }
 				
 			}
+			
+			out.write("\n Changes in command type (sync versus async");
+			//Verify if the command was sync and became async and vice versa
+	        for (String key : stableCommands.keySet()) {
+	            if (commands.get(key).isAsync() != oldCommands.get(key).isAsync()) {
+	                String type = "Sync";
+	                if (commands.get(key).isAsync()) {
+	                    type = "Async";
+	                }
+	                out.write("\n\t" + stableCommands.get(key).getName() + " became " + type);
+	            }
+	        }
+			
 
 			//Print differences between commands arguments
 			out.write("\nChanges in commands arguments:\n");

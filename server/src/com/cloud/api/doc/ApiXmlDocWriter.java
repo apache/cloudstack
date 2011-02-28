@@ -314,6 +314,13 @@ public class ApiXmlDocWriter {
         request = setRequestFields(fields);
         
         
+        //Set Async information for the command
+        if (superName.equals(BaseAsyncCmd.class.getName()) || superName.equals(BaseAsyncCreateCmd.class.getName())) {
+            apiCommand.setAsync(true);
+        } else {
+            apiCommand.setAsync(false);
+        }
+        
         //Get response parameters
         Class<?> responseClas = impl.responseObject();
         Field[] responseFields = responseClas.getDeclaredFields();
