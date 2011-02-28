@@ -359,9 +359,13 @@ dictionary = {
 					<div id="add_domain_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>	
 				<li>
-					<label><fmt:message key="label.parent.domain"/>:</label>
+					<label><fmt:message key="label.parent.domain"/>:</label>					
+					<input class="text" type="text" id="parent_domain" />
+                	<div id="parent_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+					<!--  
 					<select class="select" id="domain_dropdown">						
 					</select>
+					-->
 				</li>		
 			</ol>
 		</form>

@@ -130,9 +130,12 @@ function initAddDomainDialog() {
     
     var $dialogAddDomain = $("#dialog_add_domain");              
 	   
-    $("#add_domain_button").unbind("click").bind("click", function(event) {     
+    $("#add_domain_button").unbind("click").bind("click", function(event) { 
         $dialogAddDomain.find("#add_domain_name").val("");
+        //$dialogAddDomain.find("#parent_domain").val($("#right_panel_content").find("#tab_content_details").find("#name").text());
         
+        applyAutoCompleteToDomainField($dialogAddDomain.find("#parent_domain"));      
+        /*
         $.ajax({
 	      data: createURL("command=listDomains"),
 		    dataType: "json",
@@ -152,6 +155,7 @@ function initAddDomainDialog() {
                     $domainDropdown1.val(domainId);			    		    
 		    }
 	    });  
+        */
         
 		$dialogAddDomain
 		.dialog('option', 'buttons', { 					
@@ -161,6 +165,25 @@ function initAddDomainDialog() {
 				// validate values
 				var isValid = true;					
 				isValid &= validateString("Name", $thisDialog.find("#add_domain_name"), $thisDialog.find("#add_domain_name_errormsg"));					
+				
+				isValid &= validateString("Parent Domain", $thisDialog.find("#parent_domain"), $thisDialog.find("#parent_domain_errormsg"), false);                             //required	
+				var domainName = $thisDialog.find("#parent_domain").val();
+				var parentDomainId;
+				if(domainName != null && domainName.length > 0) { 				    
+				    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+					    for(var i=0; i < autoCompleteDomains.length; i++) {					        
+					      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					          parentDomainId = autoCompleteDomains[i].id;
+					          break;	
+					      }
+				        } 					   			    
+				    }					    				    
+				    if(parentDomainId == null) {
+				        showError(false, $thisDialog.find("#parent_domain"), $thisDialog.find("#parent_domain_errormsg"), g_dictionary["label.not.found"]);
+				        isValid &= false;
+				    }				    
+				}				
+				
 				if (!isValid) 
 				    return;
 				 
@@ -169,8 +192,7 @@ function initAddDomainDialog() {
 				var array1 = [];	
 				var name = trim($thisDialog.find("#add_domain_name").val());	
 				array1.push("&name="+todb(name));
-																		
-				var parentDomainId = $thisDialog.find("#domain_dropdown").val();				
+								
 				array1.push("&parentdomainid="+parentDomainId);	
 						
 				$.ajax({
@@ -295,17 +317,7 @@ function domainJsonToDetailsTab() {
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	 
-    */
-     
+        
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
     var noAvailableActions = true;

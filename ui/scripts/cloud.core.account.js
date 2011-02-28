@@ -169,8 +169,8 @@ function bindAddAccountButton() {
 				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), false); //required	
 				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), false);    //required	
 				isValid &= validateString("Account", $thisDialog.find("#add_user_account"), $thisDialog.find("#add_user_account_errormsg"), true);         //optional
-				isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
 				
+				isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
 				var domainName = $thisDialog.find("#domain").val();
 				var domainId;
 				if(domainName != null && domainName.length > 0) { 				    
@@ -215,13 +215,13 @@ function bindAddAccountButton() {
 			    array1.push("&account="+todb(account));
 					
 				var accountType = $thisDialog.find("#add_user_account_type").val();	
-								
-				//var domainId = $thisDialog.find("#domain_dropdown").val();				
-											
+																
 				if (parseInt(domainId) != rootDomainId && accountType == "1") {
 					accountType = "2"; // Change to domain admin 
 				}
-				array1.push("&accounttype="+accountType);			
+				array1.push("&accounttype="+accountType);	
+				
+				//var domainId = $thisDialog.find("#domain_dropdown").val();				
 				array1.push("&domainid="+domainId);
 								
 				var timezone = $thisDialog.find("#add_user_timezone").val();	
