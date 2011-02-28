@@ -24,6 +24,7 @@ public class Command {
 	
 	private String name;
 	private String description;
+	private boolean isAsync;
 	private ArrayList<Argument> request;
 	private ArrayList<Argument> response;
 	
@@ -66,7 +67,15 @@ public class Command {
 		this.response = response;
 	}
 	
-	public Argument getReqArgByName(String name){
+	public boolean isAsync() {
+        return isAsync;
+    }
+
+    public void setAsync(boolean isAsync) {
+        this.isAsync = isAsync;
+    }
+
+    public Argument getReqArgByName(String name){
 		for (Argument a : this.getRequest()) {
 			if (a.getName().equals(name)) {
                 return a;
