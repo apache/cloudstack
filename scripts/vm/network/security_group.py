@@ -28,32 +28,7 @@ def can_bridge_firewall(privnic):
         print "no ebtables on your host machine"
         exit(2)
 
-    try:
-        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-arptables", "1").stdout.strip()
-        if len(alreadySetup) == 0:
-            script = """
-                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-arptables 1
-                        save"""
-            augtool < script
-
-        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-iptables", "1").stdout.strip()
-        if len(alreadySetup) == 0:
-            script = """
-                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-iptables 1
-                        save"""
-            augtool < script
-
-        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-ip6tables", "1").stdout.strip()
-        if len(alreadySetup) == 0:
-            script = """
-                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-ip6tables 1
-                        save"""
-            augtool < script
-        execute("sysctl -p /etc/sysctl.conf")
-    except:
-        print "failed to turn on bridge netfilter"
-        exit(3)
-
+    
     if not os.path.exists('/var/run/cloud'):
         os.makedirs('/var/run/cloud')
  
@@ -192,7 +167,7 @@ def default_network_rules_systemvm(vm_name, brname):
     vifs = getVifs(vm_name)
     domid = getvmId(vm_name)
     vmchain = vm_name
-    brfw = "BRIDGE-FIREWALL-" + brname
+    brfw = "BF-" + brname
  
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
   
@@ -203,8 +178,8 @@ def default_network_rules_systemvm(vm_name, brname):
 
     for vif in vifs:
         try:
-            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
-            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j " +  vmchain)
+            execute("iptables -A " + brfw + "-OUT" +  " -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
+            execute("iptables -A " + brfw + "-IN" + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j " +  vmchain)
         except:
             logging.debug("Failed to program default rules")
             return 'false'
@@ -221,7 +196,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
         return False 
 
     vmName = vm_name 
-    brfw = "BRIDGE-FIREWALL-" + brname
+    brfw = "BF-" + brname
     domID = getvmId(vm_name)
     delete_rules_for_vm_in_bridge_firewall_chain(vmName)
     vmchain = vm_name
@@ -240,8 +215,8 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
         execute("iptables -F " + vmchain_default)
 
     try:
-        execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " +  vmchain_default)
-        execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-in " +  vif + " -j " + vmchain_default)
+        execute("iptables -A " + brfw + "-OUT" + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " +  vmchain_default)
+        execute("iptables -A " + brfw + "-IN" + " -m physdev --physdev-is-bridged --physdev-in " +  vif + " -j " + vmchain_default)
         execute("iptables -A  " + vmchain_default + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
         #allow dhcp
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -p udp --dport 67 --sport 68 -j ACCEPT")
@@ -250,6 +225,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
         #don't let vm spoof its ip address
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif  + " --source " +  vm_ip +  " -j ACCEPT")
         execute("iptables -A " + vmchain_default + " -j " +  vmchain)
+        execute("iptables -A " + vmchain + " -j DROP")
     except:
         logging.debug("Failed to program default rules for vm " + vm_name)
         return 'false'
@@ -439,7 +415,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
     lines = rules.split(';')[:-1]
 
     logging.debug("    programming network rules for  IP: " + vm_ip + " vmname=" + vm_name)
-    #iptables('-F', vmchain)
+    execute("iptables -F " + vmchain)
     
     for line in lines:
 	
@@ -509,11 +485,49 @@ def getvmId(vmName):
     return bash("-c", cmd).stdout.strip()
     
 def addFWFramework(brname):
-    brfw = "BRIDGE-FIREWALL-" + brname
+    try:
+        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-arptables", "1").stdout.strip()
+        if len(alreadySetup) == 0:
+            script = """
+                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-arptables 1
+                        save"""
+            augtool < script
+
+        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-iptables", "1").stdout.strip()
+        if len(alreadySetup) == 0:
+            script = """
+                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-iptables 1
+                        save"""
+            augtool < script
+
+        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-ip6tables", "1").stdout.strip()
+        if len(alreadySetup) == 0:
+            script = """
+                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-ip6tables 1
+                        save"""
+            augtool < script
+        execute("sysctl -p /etc/sysctl.conf")
+    except:
+        logging.debug("failed to turn on bridge netfilter")
+        return False
+
+    brfw = "BF-" + brname
     try:
         execute("iptables -L " + brfw)
     except:
         execute("iptables -N " + brfw)
+
+    brfwout = brfw + "-OUT"
+    try:
+        execute("iptables -L " + brfwout)
+    except:
+        execute("iptables -N " + brfwout)
+
+    brfwin = brfw + "-IN"
+    try:
+        execute("iptables -L " + brfwin)
+    except:
+        execute("iptables -N " + brfwin)
 
     try:
         refs = execute("iptables -n -L  " + brfw + " |grep " + brfw + " | cut -d \( -f2 | awk '{print $1}'").strip()
@@ -523,6 +537,8 @@ def addFWFramework(brname):
             phydev = execute("brctl show |grep " + brname + " | awk '{print $4}'").strip()
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + phydev + " -j ACCEPT")
             execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-in -j " + brfwin)
             execute("iptables -A FORWARD -i " + brname + " -j DROP")
             execute("iptables -A FORWARD -o " + brname + " -j DROP")
     
