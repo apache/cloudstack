@@ -475,7 +475,7 @@ $(document).ready(function() {
 	            }
             	
             	
-            	applyAutoComplete($advancedSearchPopup.find("#domain"), "listDomains", "listdomainsresponse", "domain");         
+            	applyAutoCompleteToDomainField($advancedSearchPopup.find("#domain"), "listDomains", "listdomainsresponse", "domain");         
                 	
 	            var domainSelect = $advancedSearchPopup.find("#adv_search_domain");	
 	            if(domainSelect.length>0 && $advancedSearchPopup.find("#adv_search_domain_li").css("display")!="none") {	                		

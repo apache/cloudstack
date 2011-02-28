@@ -41,10 +41,10 @@ function vmGetSearchParams() {
 	        var domainName = $advancedSearchPopup.find("#domain").val();
 	        if (domainName != null && domainName.length > 0) { 	
 				var domainId;							    
-			    if(autoCompleteItems != null && autoCompleteItems.length > 0) {									
-				    for(var i=0; i < autoCompleteItems.length; i++) {					        
-				      if(fromdb(autoCompleteItems[i].name).toLowerCase() == domainName.toLowerCase()) {
-				          domainId = autoCompleteItems[i].id;
+			    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+				    for(var i=0; i < autoCompleteDomains.length; i++) {					        
+				      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				          domainId = autoCompleteDomains[i].id;
 				          break;	
 				      }
 			        } 					   			    

@@ -1051,20 +1051,20 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-var autoCompleteItems = [];
-function applyAutoComplete($field, commandString, jsonResponse1, jsonResponse2) {  
+var autoCompleteDomains = [];
+function applyAutoCompleteToDomainField($field, commandString, jsonResponse1, jsonResponse2) {  
     $field.autocomplete({
 		source: function(request, response) {			
 			$.ajax({
-			    data: createURL("command="+commandString+"&keyword=" + request.term),				
+			    data: createURL("command=listDomains&keyword=" + request.term),				
 				dataType: "json",
 				async: false,
 				success: function(json) {					   
-					autoCompleteItems = json[jsonResponse1][jsonResponse2];					
+					autoCompleteDomains = json.listdomainsresponse.domain;					
 					var array1 = [];				
-					if(autoCompleteItems != null && autoCompleteItems.length > 0) {									
-						for(var i=0; i < autoCompleteItems.length; i++) 					        
-							array1.push(fromdb(autoCompleteItems[i].name));		   					   			    
+					if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+						for(var i=0; i < autoCompleteDomains.length; i++) 					        
+							array1.push(fromdb(autoCompleteDomains[i].name));		   					   			    
 					}					
 					response(array1);
 				}

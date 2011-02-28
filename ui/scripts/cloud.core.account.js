@@ -134,7 +134,7 @@ function bindAddAccountButton() {
                    
     var $dialogAddAccount = $("#dialog_add_account");
     
-    applyAutoComplete($dialogAddAccount.find("#domain"), "listDomains", "listdomainsresponse", "domain");         
+    applyAutoCompleteToDomainField($dialogAddAccount.find("#domain"), "listDomains", "listdomainsresponse", "domain");         
     /*   
     $dialogAddAccount.find("#domain").autocomplete({
 		source: function(request, response) {			
@@ -174,10 +174,10 @@ function bindAddAccountButton() {
 				var domainName = $thisDialog.find("#domain").val();
 				var domainId;
 				if(domainName != null && domainName.length > 0) { 				    
-				    if(autoCompleteItems != null && autoCompleteItems.length > 0) {									
-					    for(var i=0; i < autoCompleteItems.length; i++) {					        
-					      if(fromdb(autoCompleteItems[i].name).toLowerCase() == domainName.toLowerCase()) {
-					          domainId = autoCompleteItems[i].id;
+				    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+					    for(var i=0; i < autoCompleteDomains.length; i++) {					        
+					      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					          domainId = autoCompleteDomains[i].id;
 					          break;	
 					      }
 				        } 					   			    
