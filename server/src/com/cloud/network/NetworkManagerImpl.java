@@ -1102,16 +1102,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
 
+            boolean success = true;
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to implmenet " + network);
                 }
                 element.implement(network, offering, dest, context);
+                //reapply all the firewall/staticNat/lb rules
+                s_logger.debug("Applying network rules as a part of network " +  network + " implement...");
+                if (!restartNetwork(networkId, false, context)) {
+                    success = false;
+                    s_logger.warn("Failed to reapply network rules as a part of network " + network + " implement");
+                }
             }
-
-            network.setState(Network.State.Implemented);
-            _networksDao.update(network.getId(), network);
-            implemented.set(guru, network);
+            
+            //only when all the network rules got re-implemented successfully, assume that the network is Impelemented
+            if (success) {
+                network.setState(Network.State.Implemented);
+                _networksDao.update(network.getId(), network);
+                implemented.set(guru, network);
+            } else {
+                s_logger.warn("Failed to implement the network " + network + " as some network rules failed to reapply");
+            }
+  
             return implemented;
         } finally {
             if (implemented.first() == null) {
@@ -2114,29 +2127,60 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
     }
+    
+  
 
     @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_RESTART, eventDescription="restarting network", async=true)
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // This method restarts all network elements belonging to the network and re-applies all the rules
         Long networkId = cmd.getNetworkId();
-        NetworkVO network = _networksDao.findById(networkId);
-        Account owner = _accountMgr.getAccount(network.getAccountId());
+        
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         Account callerAccount = _accountMgr.getActiveAccount(caller.getAccountId());
         
+        
+        
+        //Check if network exists
+        NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Network with id=" + networkId + " doesn't exist");
+        }
+        
+        Account owner = _accountMgr.getAccount(network.getAccountId());
         ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
         
         _accountMgr.checkAccess(callerAccount, network);
         
         boolean success = true;
 
+        //Restart network - network elements restart is required
+        success = restartNetwork(networkId, true, context);
+        
+        if (success) {
+            s_logger.debug("Network id=" + networkId + " is restarted successfully.");
+        } else {
+            s_logger.warn("Network id=" + networkId + " failed to restart.");
+        }
+        
+        return success;
+    }
+    
+    private boolean restartNetwork(long networkId, boolean restartElements, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        boolean success = true;
+        
+        NetworkVO network = _networksDao.findById(networkId);
+        
         s_logger.debug("Restarting network " + networkId + "...");
-        for (NetworkElement element : _networkElements) {
-            //stop and start the network element
-            if (!element.restart(network, context)) {
-                s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
-                success = false;
-            }   
+        
+        if (restartElements) {
+            s_logger.debug("Restarting network elements for the network " + network);
+            for (NetworkElement element : _networkElements) {
+                //stop and start the network element
+                if (!element.restart(network, context)) {
+                    s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
+                    success = false;
+                }   
+            }
         }
             
         //associate all ip addresses
@@ -2173,12 +2217,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     success = false;
                 }
             }
-        }
-        
-        if (success) {
-            s_logger.debug("Network id=" + networkId + " is restarted successfully.");
-        } else {
-            s_logger.warn("Network id=" + networkId + " failed to restart.");
         }
         
         return success;
