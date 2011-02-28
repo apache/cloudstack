@@ -42,7 +42,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     private static final Logger s_logger = Logger.getLogger(FirewallRulesDaoImpl.class);
     
     protected final SearchBuilder<FirewallRuleVO> AllFieldsSearch;
-    protected final SearchBuilder<FirewallRuleVO> IpNotRevokedSearch;
+    protected final SearchBuilder<FirewallRuleVO> NotRevokedSearch;
     protected final SearchBuilder<FirewallRuleVO> ReleaseSearch;
     protected SearchBuilder<FirewallRuleVO> VmSearch;
     
@@ -60,11 +60,12 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.done();
         
-        IpNotRevokedSearch = createSearchBuilder();
-        IpNotRevokedSearch.and("ipId", IpNotRevokedSearch.entity().getSourceIpAddressId(), Op.EQ);
-        IpNotRevokedSearch.and("state", IpNotRevokedSearch.entity().getState(), Op.NEQ);
-        IpNotRevokedSearch.and("purpose", IpNotRevokedSearch.entity().getPurpose(), Op.EQ);
-        IpNotRevokedSearch.done();
+        NotRevokedSearch = createSearchBuilder();
+        NotRevokedSearch.and("ipId", NotRevokedSearch.entity().getSourceIpAddressId(), Op.EQ);
+        NotRevokedSearch.and("state", NotRevokedSearch.entity().getState(), Op.NEQ);
+        NotRevokedSearch.and("purpose", NotRevokedSearch.entity().getPurpose(), Op.EQ);
+        NotRevokedSearch.and("networkId", NotRevokedSearch.entity().getNetworkId(), Op.EQ);
+        NotRevokedSearch.done();
         
         ReleaseSearch = createSearchBuilder();
         ReleaseSearch.and("protocol", ReleaseSearch.entity().getProtocol(), Op.EQ);
@@ -96,8 +97,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     @Override
-    public List<FirewallRuleVO> listByIpAndNotRevoked(long ipId, FirewallRule.Purpose purpose) {
-        SearchCriteria<FirewallRuleVO> sc = IpNotRevokedSearch.create();
+    public List<FirewallRuleVO> listByIpAndPurposeAndNotRevoked(long ipId, FirewallRule.Purpose purpose) {
+        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
         sc.setParameters("ipId", ipId);
         sc.setParameters("state", State.Revoke);
         
@@ -108,9 +109,21 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         return listBy(sc);
     }
     
+    @Override
+    public List<FirewallRuleVO> listByNetworkAndPurposeAndNotRevoked(long networkId, FirewallRule.Purpose purpose) {
+        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("state", State.Revoke);
+        
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+        
+        return listBy(sc);
+    }
     
     @Override
-    public List<FirewallRuleVO> listByNetworkIdAndPurpose(long networkId, FirewallRule.Purpose purpose) {
+    public List<FirewallRuleVO> listByNetworkAndPurpose(long networkId, FirewallRule.Purpose purpose) {
         SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("purpose", purpose);
         sc.setParameters("networkId", networkId);

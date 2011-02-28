@@ -92,6 +92,9 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         if (ownerId == null) {
             IpAddress ip = getIpAddress(id);
+            if (ip == null) {
+                throw new InvalidParameterValueException("Unable to find ip address by id=" + id);
+            }
             ownerId = ip.getAccountId();
         }
         return ownerId;

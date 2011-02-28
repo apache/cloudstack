@@ -55,7 +55,7 @@ public interface RulesService {
     
     boolean enableOneToOneNat(long ipAddressId, long vmId) throws NetworkRuleConflictException;
     
-    boolean disableOneToOneNat(long ipAddressId);
+    boolean disableOneToOneNat(long ipAddressId) throws ResourceUnavailableException;
     
     PortForwardingRule getPortForwardigRule(long ruleId);
     FirewallRule getFirewallRule(long ruleId);

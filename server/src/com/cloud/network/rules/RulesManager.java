@@ -63,7 +63,9 @@ public interface RulesManager extends RulesService {
     void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
     void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
     
-    boolean revokeAllRules(long ipId, long userId, Account caller) throws ResourceUnavailableException;
+    boolean revokeAllRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException;
+    
+    boolean revokeAllRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
     
     List<? extends FirewallRule> listFirewallRulesByIp(long ipAddressId);
     

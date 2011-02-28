@@ -18,8 +18,10 @@
 package com.cloud.network.rules;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -43,7 +45,6 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -91,7 +92,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
         assert newRule.getSourceIpAddressId() == ipAddress.getId() : "You passed in an ip address that doesn't match the address in the new rule";
         
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(newRule.getSourceIpAddressId(), null);
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(newRule.getSourceIpAddressId(), null);
         assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for network conflicts so we should at least have one rule at this point.";
         
         for (FirewallRuleVO rule : rules) {
@@ -409,7 +410,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } 
         
         if (!ipAddress.isOneToOneNat()) {
-            List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ipId, Purpose.PortForwarding);
+            List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.PortForwarding);
             if (rules != null && !rules.isEmpty()) {
                 throw new NetworkRuleConflictException("Failed to enable static nat for the ip address id=" + ipId + " as it already has firewall rules assigned");
             }
@@ -420,10 +421,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } 
         
         //If there is public ip address already associated with the vm, throw an exception
-        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVmId(vmId);
+        IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
         
-        if (!ips.isEmpty()) {
-            throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + " is already associated with ip id=" + ips.get(0).getId());
+        if (ip != null) {
+            throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + " is already associated with ip id=" + ip.getId());
         }
 
         ipAddress.setOneToOneNat(true);
@@ -540,6 +541,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     	}
     	
     	List<PortForwardingRuleVO> rules = _forwardingDao.listByVm(vmId);
+    	Set<Long> ipsToReprogram = new HashSet<Long>();
     	
     	if (rules == null || rules.isEmpty()) {
     	    s_logger.debug("No port forwarding rules are found for vm id=" + vmId);
@@ -547,8 +549,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     	
     	for (PortForwardingRuleVO rule : rules) {
-    		revokePortForwardingRuleInternal(rule.getId(), _accountMgr.getSystemAccount(), Account.ACCOUNT_ID_SYSTEM, true);
+    	    //Mark port forwarding rule as Revoked, but don't revoke it yet (apply=false)
+    		revokePortForwardingRuleInternal(rule.getId(), _accountMgr.getSystemAccount(), Account.ACCOUNT_ID_SYSTEM, false);
+    		ipsToReprogram.add(rule.getSourceIpAddressId());
     	}
+    	
+    	//apply rules for all ip addresses
+        for (Long ipId : ipsToReprogram) {
+            s_logger.debug("Applying port forwarding rules for ip address id=" + ipId + " as a part of vm expunge");
+            applyPortForwardingRules(ipId, true, _accountMgr.getSystemAccount());
+        }
+    	
         return true;
     }
     
@@ -561,6 +572,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         List<FirewallRuleVO> rules = _firewallDao.listStaticNatByVmId(vm.getId());
+        Set<Long> ipsToReprogram = new HashSet<Long>();
         
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No static nat rules are found for vm id=" + vmId);
@@ -568,8 +580,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         for (FirewallRuleVO rule : rules) {
-            revokeStaticNatRuleInternal(rule.getId(), _accountMgr.getSystemAccount(), Account.ACCOUNT_ID_SYSTEM, true);
+            //mark static nat as Revoked, but don't revoke it yet (apply = false)
+            revokeStaticNatRuleInternal(rule.getId(), _accountMgr.getSystemAccount(), Account.ACCOUNT_ID_SYSTEM, false);
+            ipsToReprogram.add(rule.getSourceIpAddressId());
         }
+        
+        //apply rules for all ip addresses
+        for (Long ipId : ipsToReprogram) {
+            s_logger.debug("Applying static nat rules for ip address id=" + ipId + " as a part of vm expunge");
+            applyStaticNatRules(ipId, true, _accountMgr.getSystemAccount());
+        }
+        
         return true;
     }
 
@@ -744,7 +765,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public boolean applyStaticNatRulesForNetwork(long networkId, boolean continueOnError, Account caller){
-        List<FirewallRuleVO> rules = _firewallDao.listByNetworkIdAndPurpose(networkId, Purpose.StaticNat);
+        List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.StaticNat);
         List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
         
         if (rules.size() == 0) {
@@ -756,15 +777,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, rules.toArray(new FirewallRule[rules.size()]));
         }
         
-        for (FirewallRuleVO rule : rules) {  
-            IpAddress sourceIp = _ipAddressDao.findById(rule.getSourceIpAddressId());
-            
-            UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
-            
-            Nic guestNic = _networkMgr.getNicInNetworkIncludingRemoved(vm.getId(), networkId);
-            String dstIp = guestNic.getIp4Address();
-            
-            staticNatRules.add(new StaticNatRuleImpl(rule, dstIp));
+        for (FirewallRuleVO rule : rules) {       
+            staticNatRules.add(buildStaticNatRule(rule));
         } 
         
         try {
@@ -885,40 +899,84 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @Override
-    public boolean revokeAllRules(long ipId, long userId, Account caller) throws ResourceUnavailableException {
+    public boolean revokeAllRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException {
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
         
-        //revoke all port forwarding rules
+        
         List<PortForwardingRuleVO> pfRules = _forwardingDao.listByIpAndNotRevoked(ipId);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + pfRules.size() + " port forwarding rules for ip id=" + ipId);
         }
 
         for (PortForwardingRuleVO rule : pfRules) {
-            revokePortForwardingRuleInternal(rule.getId(), caller, userId, true);
+            //Mark all PF rules as Revoke, but don't revoke them yet
+            revokePortForwardingRuleInternal(rule.getId(), caller, userId, false);
         }
       
-        applyPortForwardingRules(ipId, true, null);
-        
-        //revoke all all static nat rules
-        List<FirewallRuleVO> staticNatRules = _firewallDao.listByIpAndNotRevoked(ipId, Purpose.StaticNat);
+        List<FirewallRuleVO> staticNatRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.StaticNat);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing " + pfRules.size() + " static nat rules for ip id=" + ipId);
+            s_logger.debug("Releasing " + staticNatRules.size() + " static nat rules for ip id=" + ipId);
         }
 
         for (FirewallRuleVO rule : staticNatRules) {
-            revokeStaticNatRuleInternal(rule.getId(), caller, userId, true);
+            //Mark all static nat rules as Revoke, but don't revoke them yet
+            revokeStaticNatRuleInternal(rule.getId(), caller, userId, false);
         }
+        
+        //revoke all port forwarding rules
+        applyPortForwardingRules(ipId, true, caller);
       
-        applyStaticNatRules(ipId, true, null);
+        //revoke all all static nat rules
+        applyStaticNatRules(ipId, true, caller);
         
         
         // Now we check again in case more rules have been inserted.
         rules.addAll(_forwardingDao.listByIpAndNotRevoked(ipId));
-        rules.addAll(_firewallDao.listByIpAndPurpose(ipId, Purpose.StaticNat));
+        rules.addAll(_firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.StaticNat));
         
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully released rules for ip id=" + ipId + " and # of rules now = " + rules.size());
+        }
+        
+        return rules.size() == 0;
+    }
+    
+    @Override
+    public boolean revokeAllRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
+        List<FirewallRule> rules = new ArrayList<FirewallRule>();
+        
+        List<PortForwardingRuleVO> pfRules = _forwardingDao.listByNetwork(networkId);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + pfRules.size() + " port forwarding rules for network id=" + networkId);
+        }
+        
+        List<FirewallRuleVO> staticNatRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.StaticNat);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + staticNatRules.size() + " static nat rules for network id=" + networkId);
+        }
+        
+        //Mark all pf rules (Active and non-Active) to be revoked, but don't revoke it yet - pass apply=false 
+        for (PortForwardingRuleVO rule : pfRules) {
+            revokePortForwardingRuleInternal(rule.getId(), caller, userId, false);
+        }
+
+        //Mark all static nat rules (Active and non-Active) to be revoked, but don't revoke it yet - pass apply=false 
+        for (FirewallRuleVO rule : staticNatRules) {
+            revokeStaticNatRuleInternal(rule.getId(), caller, userId, false);
+        }
+      
+        //revoke all PF rules for the network
+        applyPortForwardingRulesForNetwork(networkId, true, caller);
+        
+        //revoke all all static nat rules for the network
+        applyStaticNatRulesForNetwork(networkId, true, caller);
+        
+        // Now we check again in case more rules have been inserted.
+        rules.addAll(_forwardingDao.listByNetworkAndNotRevoked(networkId));
+        rules.addAll(_firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.StaticNat));
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully released rules for network id=" + networkId + " and # of rules now = " + rules.size());
         }
         
         return rules.size() == 0;
@@ -1017,11 +1075,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public List<PortForwardingRuleVO> listByNetworkId(long networkId) {
-        return _forwardingDao.listByNetworkId(networkId);
+        return _forwardingDao.listByNetwork(networkId);
     }
     
     @Override
-    public boolean disableOneToOneNat(long ipId){
+    public boolean disableOneToOneNat(long ipId) throws ResourceUnavailableException{
+        boolean success = true;
+        
         Account caller = UserContext.current().getCaller();
         
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
@@ -1031,17 +1091,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("One to one nat is not enabled for the ip id=" + ipId);
         }
        
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ipId, Purpose.StaticNat);
-        if (rules != null) {
-            for (FirewallRuleVO rule : rules) {
-                rule.setState(State.Revoke);
-                _firewallDao.update(rule.getId(), rule);
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
-                _usageEventDao.persist(usageEvent);
-            }
+        if (!revokeAllRulesForIp(ipId, UserContext.current().getCallerUserId(), caller)) {
+            s_logger.warn("Unable to revoke all static nat rules for ip " + ipAddress);
+            success = false;
         }
         
-        if (applyStaticNatRules(ipId, true, caller)) {
+        if (success) {
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
@@ -1061,27 +1116,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     public FirewallRule getFirewallRule(long ruleId) {
         return _firewallDao.findById(ruleId);
-    }
-    
-    protected Pair<Network, Ip> getUserVmGuestIpAddress(UserVm vm, boolean includeRemovedNics) {
-        Ip dstIp = null;
-        List<? extends Nic> nics;
-        
-        if (includeRemovedNics) {
-           nics = _networkMgr.getNicsIncludingRemoved(vm);
-        } else {
-            nics = _networkMgr.getNics(vm);
-        }
-        
-        for (Nic nic : nics) {
-            Network ntwk = _networkMgr.getNetwork(nic.getNetworkId());
-            if (ntwk.getGuestType() == GuestIpType.Virtual && nic.getIp4Address() != null) {
-                dstIp = new Ip(nic.getIp4Address());
-                return new Pair<Network, Ip>(ntwk, dstIp);
-            }
-        }
-        
-        throw new CloudRuntimeException("Unable to find ip address to map to in " + vm.getId());
     }
     
     @Override
