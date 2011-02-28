@@ -452,8 +452,12 @@ dictionary = {
                     </select>
                 </li>
                 <li id="adv_search_domain_li" style="display: none;">
+                    <input class="text textwatermark" type="text" id="domain" value='<fmt:message key="label.by.domain" />' />
+                    <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    <!--
                     <select class="select" id="adv_search_domain">
                     </select>
+                    -->
                 </li>
                 <li id="adv_search_account_li" style="display: none;">
                     <input class="text textwatermark" type="text" id="adv_search_account" value='<fmt:message key="label.by.account" />' />

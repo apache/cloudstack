@@ -34,10 +34,27 @@ function eventGetSearchParams() {
 	    if (level!=null && level.length > 0) 
 			moreCriteria.push("&level="+todb(level));	
 		
-		if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {
-		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
-		    if (domainId!=null && domainId.length > 0) 
-			    moreCriteria.push("&domainid="+todb(domainId));	
+		if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none"
+	        && $advancedSearchPopup.find("#domain").hasClass("textwatermark") == false) {
+	        var domainName = $advancedSearchPopup.find("#domain").val();
+	        if (domainName != null && domainName.length > 0) { 	
+				var domainId;							    
+			    if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+				    for(var i=0; i < autoCompleteDomains.length; i++) {					        
+				      if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				          domainId = autoCompleteDomains[i].id;
+				          break;	
+				      }
+			        } 					   			    
+			    } 	     	
+	            if(domainId == null) { 
+			        showError(false, $advancedSearchPopup.find("#domain"), $advancedSearchPopup.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+			    }
+			    else { //e.g. domainId == 5 (number)
+			        showError(true, $advancedSearchPopup.find("#domain"), $advancedSearchPopup.find("#domain_errormsg"), null)
+			        moreCriteria.push("&domainid="+todb(domainId));	
+			    }
+			}
 	    }
     	
     	if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none" 
