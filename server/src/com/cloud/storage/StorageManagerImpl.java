@@ -520,14 +520,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-<<<<<<< Updated upstream
-        // Create an event
-        Long templateId = originalVolume.getTemplateId();
-        ;
-        Long diskOfferingId = originalVolume.getDiskOfferingId();
-=======
         Long diskOfferingId = volume.getDiskOfferingId();
->>>>>>> Stashed changes
 
         if (createdVolume.getPath() != null) {
             Long offeringId = null;
@@ -538,15 +531,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
             }
 
-<<<<<<< Updated upstream
-//            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
-//                    volume.getId(), volume.getName(), offeringId, templateId, createdVolume.getSize());
-//            _usageEventDao.persist(usageEvent);
-=======
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
                     volume.getId(), volume.getName(), offeringId, null, createdVolume.getSize());
             _usageEventDao.persist(usageEvent);
->>>>>>> Stashed changes
         }
         txn.commit();
         return createdVolume;
@@ -1454,28 +1441,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         } else {
             Long snapshotId = cmd.getSnapshotId();
-<<<<<<< Updated upstream
-            Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
-             
-=======
             SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
             diskOfferingId = cmd.getDiskOfferingId();
->>>>>>> Stashed changes
             if (snapshotCheck == null) {
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
-            
-<<<<<<< Updated upstream
-            VolumeVO vol = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
-            zoneId = vol.getDataCenterId();
-            size = vol.getSize(); //we maintain size from org vol ; disk offering is used for tags purposes
-            diskOfferingId = vol.getDiskOfferingId();
-            
-=======
             zoneId = snapshotCheck.getDataCenterId();
             size = snapshotCheck.getSize(); //we maintain size from org vol ; disk offering is used for tags purposes
 
->>>>>>> Stashed changes
             if (account != null) {
                 if (isAdmin(account.getType())) {
                     Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
