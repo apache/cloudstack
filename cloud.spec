@@ -510,7 +510,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
 %dir %{_datadir}/%{name}/setup
 %{_datadir}/%{name}/setup/*.sql
-%{_datadir}/%{name}/setup/deploy-db-dev.sh
+%{_datadir}/%{name}/setup/*.sh
 %{_datadir}/%{name}/setup/server-setup.xml
 
 %files client
