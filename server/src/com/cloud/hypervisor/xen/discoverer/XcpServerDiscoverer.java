@@ -279,7 +279,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
                 details.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
                 params.put(Config.InstanceName.toString().toLowerCase(), _instance);
-                params.put(Config.InstanceName.toString().toLowerCase(), _instance);
+                details.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {
                     resource.configure("Xen Server", params);
                 } catch (ConfigurationException e) {
