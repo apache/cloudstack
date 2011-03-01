@@ -76,7 +76,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.test.IPRangeConfig;
@@ -749,7 +748,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultDirectNetworkOffering, 
                 "Direct", 
                 TrafficType.Guest, 
-                false, false, null, null, null, true, 
+                false, true, null, null, null, true, 
                 Availability.Required, 
                 true, true, true, //services - all true except for firewall/lb/vpn and gateway
                 false, false, false, false, GuestIpType.Direct);

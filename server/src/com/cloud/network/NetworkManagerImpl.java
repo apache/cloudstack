@@ -716,7 +716,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 "Direct", 
                 TrafficType.Guest, 
                 false, 
-                false, 
+                true, 
                 null, 
                 null, 
                 null, 
@@ -1565,8 +1565,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //Don't allow to specify cidr if the caller is a regular user
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && cidr != null) {
-            throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange");
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && (cidr != null || vlanId != null)) {
+            throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange/vlanId");
         }
         
         //For non-root admins check cidr limit - if it's allowed by global config value
@@ -1580,8 +1580,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        // VlanId can be specified by regular user only when network offering supports it
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && vlanId != null && !networkOffering.getSpecifyVlan()) {
+        // VlanId can be specified only when network offering supports it
+        if (vlanId != null && !networkOffering.getSpecifyVlan()) {
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
         }
 

@@ -1555,6 +1555,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String vlanId = cmd.getVlan();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
+        String networkVlanId = null;
         
         // If an account name and domain ID are specified, look up the account
         String accountName = cmd.getAccountName();
@@ -1616,6 +1617,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (endIP == null && startIP != null) {
             endIP = startIP;
         }
+        
+        //if vlan is specified, throw an error if it's not equal to network's vlanId
+        URI uri = network.getBroadcastUri();
+        if (uri != null) {
+            String[] vlan = uri.toString().split("vlan:\\/\\/");
+            networkVlanId = vlan[1];
+        }
+        
+        if (vlanId != null && !networkVlanId.equalsIgnoreCase(vlanId)) {
+            throw new InvalidParameterValueException("Vlan doesn't match vlan of the network");
+        }
           
         if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || network.isSecurityGroupEnabled()) {
             if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
@@ -1645,10 +1657,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             zoneId = networkZoneId;
             
             //set vlanId if it's not null for the network
-            URI uri = network.getBroadcastUri();
-            if (uri != null) {
-                String[] vlan = uri.toString().split("vlan:\\/\\/");
-                vlanId = vlan[1];
+            if (networkVlanId != null) {
+                vlanId = networkVlanId;
             }
         }
         
