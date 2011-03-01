@@ -1605,7 +1605,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return true;
         } else {
             s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state " + router.getState());
-            throw new CloudRuntimeException("Unable to apply firewall rules, domR is not in right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to apply firewall rules, virtual router is not in the right state", VirtualRouter.class, router.getId());
         }
     } 
 

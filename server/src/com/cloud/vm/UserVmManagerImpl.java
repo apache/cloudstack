@@ -1126,7 +1126,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
             return true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to expunging " + vm, e);
+            s_logger.warn("Unable to expunge  " + vm, e);
             return false;
         } catch (OperationTimedoutException e) {
             s_logger.warn("Operation time out on expunging " + vm, e);

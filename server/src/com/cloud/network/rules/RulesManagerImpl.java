@@ -535,6 +535,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public boolean revokePortForwardingRulesForVm(long vmId) {
+        boolean success = true;
     	UserVmVO vm = _vmDao.findByIdIncludingRemoved(vmId);
     	if (vm == null) {
     		return false;
@@ -557,15 +558,20 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     	//apply rules for all ip addresses
         for (Long ipId : ipsToReprogram) {
             s_logger.debug("Applying port forwarding rules for ip address id=" + ipId + " as a part of vm expunge");
-            applyPortForwardingRules(ipId, true, _accountMgr.getSystemAccount());
+            if (!applyPortForwardingRules(ipId, true, _accountMgr.getSystemAccount())) {
+                s_logger.warn("Failed to apply port forwarding rules for ip id=" + ipId);
+                success = false;
+            }
         }
     	
-        return true;
+        return success;
     }
     
     
     @Override
     public boolean revokeStaticNatRulesForVm(long vmId) {
+        boolean success = true;
+        
         UserVmVO vm = _vmDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             return false;
@@ -588,10 +594,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         //apply rules for all ip addresses
         for (Long ipId : ipsToReprogram) {
             s_logger.debug("Applying static nat rules for ip address id=" + ipId + " as a part of vm expunge");
-            applyStaticNatRules(ipId, true, _accountMgr.getSystemAccount());
+            if (!applyStaticNatRules(ipId, true, _accountMgr.getSystemAccount())) {
+                success = false;
+                s_logger.warn("Failed to apply static nat rules for ip id=" + ipId);
+            }
         }
         
-        return true;
+        return success;
     }
 
     @Override

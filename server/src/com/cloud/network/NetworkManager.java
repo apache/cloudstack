@@ -177,8 +177,6 @@ public interface NetworkManager extends NetworkService {
     Map<Capability, String> getServiceCapability(long zoneId, Service service);
     
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
-
-    boolean deleteNetworkInternal(long networkId, ReservationContext context);
     
     boolean isServiceSupported(long networkId, Network.Service service);
 

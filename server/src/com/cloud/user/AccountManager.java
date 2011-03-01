@@ -111,7 +111,7 @@ public interface AccountManager extends AccountService {
     
     void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
 
-	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) throws ConcurrentOperationException, ResourceUnavailableException;
+	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
 
 	@Override
     UserVO createUser(CreateUserCmd cmd);

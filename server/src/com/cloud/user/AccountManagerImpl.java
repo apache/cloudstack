@@ -791,33 +791,28 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
-        
-        try {        	
-            if (!_accountDao.remove(accountId)) {
-                s_logger.error("Unable to delete account " + accountId);
-                return false;
-            }
-
-            List<UserVO> users = _userDao.listByAccount(accountId);
-
-            for(UserVO user : users){
-            	_userDao.remove(user.getId());
-            }
-            
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Remove account " + accountId);
-            }
-
-            cleanupAccount(account, callerUserId, caller);
-            return true;
-        } catch (Exception e) {
-            s_logger.error("exception deleting account: " + accountId, e);            
+             	
+        if (!_accountDao.remove(accountId)) {
+            s_logger.error("Unable to delete account " + accountId);
             return false;
         }
+
+        List<UserVO> users = _userDao.listByAccount(accountId);
+
+        for(UserVO user : users){
+        	_userDao.remove(user.getId());
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Remove account " + accountId);
+        }
+
+        return cleanupAccount(account, callerUserId, caller);
+        
     }
     
     @Override
-    public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) throws ConcurrentOperationException, ResourceUnavailableException{
+    public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller){
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
         
@@ -874,11 +869,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
                 if(!volume.getState().equals(Volume.State.Destroy)) {
-                    _storageMgr.destroyVolume(volume);
-                    if(volume.getPoolId() != null){
+                    try {
+                        _storageMgr.destroyVolume(volume);
+                        if(volume.getPoolId() != null){
                         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
                                 volume.getName());
                         _usageEventDao.persist(usageEvent);
+                        }
+                    }catch (ConcurrentOperationException ex) {
+                        s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
+                        accountCleanupNeeded = true;
                     }
                 }
             }
@@ -891,9 +891,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername());
             }
             
-            for(RemoteAccessVpnVO vpn : remoteAccessVpns) {
-                _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId());
+            try {
+                for(RemoteAccessVpnVO vpn : remoteAccessVpns) {
+                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId());
+                }
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
+                accountCleanupNeeded = true;
             }
+            
             
             //Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
@@ -908,7 +914,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     
                     ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), account);
                     
-                    if (!_networkMgr.deleteNetworkInternal(network.getId(), context)) {
+                    if (!_networkMgr.destroyNetwork(network.getId(), context)) {
                         s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId +" cleanup.");
                         accountCleanupNeeded = true;
                         networksDeleted = false;
