@@ -22,4 +22,6 @@ alter table networks add column `is_security_group_enabled` tinyint NOT NULL DEF
 update networks set is_security_group_enabled=0;
 alter table data_center add column `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not';
 update data_center set is_security_group_enabled=0;
+update data_center set dns_provider='DhcpServer', dhcp_provider='DhcpServer', userdata_provider='DhcpServer', lb_provider=null, firewall_provider=null, vpn_provider=null, gateway_provider=null where networktype='Basic';
+
 
