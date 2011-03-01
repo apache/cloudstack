@@ -1073,6 +1073,39 @@ function applyAutoCompleteToDomainField($field) {
 	}); 
 }
 
+function applyAutoCompleteToDomainChildrenField($field, parentDomainId) {  
+    $field.autocomplete({
+		source: function(request, response) {			
+			var array1 = [];
+			$.ajax({
+			    data: createURL("command=listDomainChildren&id="+parentDomainId+"&isrecursive=true&keyword=" + request.term),				
+				dataType: "json",
+				async: false,
+				success: function(json) {	
+					autoCompleteDomains = json.listdomainchildrenresponse.domain;								
+					if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+						for(var i=0; i < autoCompleteDomains.length; i++) 					        
+							array1.push(fromdb(autoCompleteDomains[i].name));		   					   			    
+					}								
+				}
+			});	
+			$.ajax({
+			    data: createURL("command=listDomains&id="+parentDomainId+"&keyword=" + request.term),				
+				dataType: "json",
+				async: false,
+				success: function(json) {	
+					var items = json.listdomainsresponse.domain;									
+					if(items != null && items.length > 0) {	
+					    autoCompleteDomains.push(items[0]);					
+					    array1.push(fromdb(items[0].name));										   			    
+					}	
+				}
+			});	
+			response(array1);	
+		}
+	}); 
+}
+
 //var lastSearchType;
 var currentCommandString;
 var searchParams;

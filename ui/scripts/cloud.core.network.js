@@ -524,7 +524,7 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>');				
 			}			
 			
-			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#domain_container", "#add_publicip_vlan_account_container". 
 			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); 	
 			
 			return false;
@@ -533,11 +533,11 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 	
 	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(function(event) {	   
 	    if($(this).val() == "zone-wide") {
-	        $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_domain_container").hide();
+	        $dialogAddIpRangeToPublicNetwork.find("#domain_container").hide();
 			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_account_container").hide();    
 	    } 
 	    else if($(this).val() == "account-specific") { 
-	        $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_domain_container").show();
+	        $dialogAddIpRangeToPublicNetwork.find("#domain_container").show();
 			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_account_container").show();    
 	    }		    
 	    return false;
@@ -549,12 +549,12 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
             $("#public_network_page").find("#tab_ipallocation").click();
        
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();            		
-	    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 	
-       
-		var domainSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_domain").empty();	
+	    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#domain_container", "#add_publicip_vlan_account_container". 	
+       		
 		if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
+		    applyAutoCompleteToDomainChildrenField($dialogAddIpRangeToPublicNetwork.find("#domain"), zoneObj.domainid);		    
+		    /*
 		    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
-		        									
 		    function populateDomainDropdown(id) {					        
                 $.ajax({
                     data: createURL("command=listDomainChildren&id="+id),
@@ -571,11 +571,13 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 	                    }				
                     }
                 }); 
-            }	
-            
+            }	            
             populateDomainDropdown(zoneObj.domainid);
+            */
         }
         else { //list all domains            
+             applyAutoCompleteToDomainField($dialogAddIpRangeToPublicNetwork.find("#domain"));
+             /*
              $.ajax({
                 data: createURL("command=listDomains"),
                 dataType: "json",
@@ -588,6 +590,7 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
                     }
                 }    
             });  
+            */
         }   
 		
 		$dialogAddIpRangeToPublicNetwork
@@ -610,6 +613,33 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"), false); //required
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"), false); //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true); //optional
+				
+				if($thisDialog.find("#domain_container").css("display") != "none") {
+				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
+				    var domainName = $thisDialog.find("#domain").val();
+				    var domainId;
+				    if(domainName != null && domainName.length > 0) { 		
+				        var items;
+				        if(zoneObj.domainid != null)
+				            items = autoCompleteDomains;
+				        else
+				            items = autoCompleteDomains;
+				    		    
+				        if(items != null && items.length > 0) {									
+					        for(var i=0; i < items.length; i++) {					        
+					          if(fromdb(items[i].name).toLowerCase() == domainName.toLowerCase()) {
+					              domainId = items[i].id;
+					              break;	
+					          }
+				            } 					   			    
+				        }					    				    
+				        if(domainId == null) {
+				            showError(false, $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+				            isValid &= false;
+				        }				    
+				    }	
+				}			
+				
 				if (!isValid) 
 				    return;		
 				 
@@ -625,8 +655,8 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				}
 								
 				var scopeParams = "";
-				if($dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").val() == "account-specific") {
-				    scopeParams = "&domainId="+trim($thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());  
+				if($thisDialog.find("#domain_container").css("display") != "none") {
+				    scopeParams = "&domainId="+domainId+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());  
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
 				}
@@ -1198,11 +1228,11 @@ function bindAddNetworkButton($button) {
          
 	$dialogAddNetworkForZone.find("#add_publicip_vlan_scope").change(function(event) {		    
 	    if($(this).val() == "zone-wide") {
-	        $dialogAddNetworkForZone.find("#add_publicip_vlan_domain_container").hide();
+	        $dialogAddNetworkForZone.find("#domain_container").hide();
 			$dialogAddNetworkForZone.find("#add_publicip_vlan_account_container").hide();    
 	    } 
 	    else if($(this).val() == "account-specific") { 
-	        $dialogAddNetworkForZone.find("#add_publicip_vlan_domain_container").show();
+	        $dialogAddNetworkForZone.find("#domain_container").show();
 			$dialogAddNetworkForZone.find("#add_publicip_vlan_account_container").show();    
 	    }		    
 	    return false;
@@ -1217,11 +1247,11 @@ function bindAddNetworkButton($button) {
 		if (zoneObj.networktype == 'Basic') {
 			
 		} 
-		else {	
-			var domainSelect = $dialogAddNetworkForZone.find("#add_publicip_vlan_domain").empty();	
+		else {				
 			if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
+			    applyAutoCompleteToDomainChildrenField($dialogAddNetworkForZone.find("#domain"), zoneObj.domainid);	
+			    /*
 			    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
-			        									
 			    function populateDomainDropdown(id) {					        
                     $.ajax({
 	                    data: createURL("command=listDomainChildren&id="+id),
@@ -1239,11 +1269,13 @@ function bindAddNetworkButton($button) {
 	                    }
                     }); 
                 }	
-                
                 populateDomainDropdown(zoneObj.domainid);
+                */
             }
-            else { //list all domains            
-                 $.ajax({
+            else { //list all domains     
+                applyAutoCompleteToDomainField($dialogAddNetworkForZone.find("#domain"));
+                /*       
+                $.ajax({
                     data: createURL("command=listDomains"),
                     dataType: "json",
                     success: function(json) {           
@@ -1255,6 +1287,7 @@ function bindAddNetworkButton($button) {
                         }
                     }    
                 });  
+                */
             }   
 		}
 
@@ -1277,6 +1310,33 @@ function bindAddNetworkButton($button) {
 				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
+				
+				if($thisDialog.find("#domain_container").css("display") != "none") {
+				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
+				    var domainName = $thisDialog.find("#domain").val();
+				    var domainId;
+				    if(domainName != null && domainName.length > 0) { 				    
+				        var items;
+				        if(zoneObj.domainid != null)
+				            items = autoCompleteDomains;
+				        else
+				            items = autoCompleteDomains;
+				        
+				        if(items != null && items.length > 0) {									
+					        for(var i=0; i < items.length; i++) {					        
+					          if(fromdb(items[i].name).toLowerCase() == domainName.toLowerCase()) {
+					              domainId = items[i].id;
+					              break;	
+					          }
+				            } 					   			    
+				        }					    				    
+				        if(domainId == null) {
+				            showError(false, $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+				            isValid &= false;
+				        }				    
+				    }						
+				}
+				
 				if (!isValid) 
 				    return;		
 				    				
@@ -1290,8 +1350,8 @@ function bindAddNetworkButton($button) {
 				}
 								
 				var scopeParams = "";
-				if($dialogAddNetworkForZone.find("#add_publicip_vlan_scope").val()=="account-specific") {
-				    scopeParams = "&domainId="+trim($thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());  
+				if($thisDialog.find("#domain_container").css("display") != "none") {
+				    scopeParams = "&domainId="+domainId+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());  
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
 				}

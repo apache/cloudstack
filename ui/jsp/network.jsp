@@ -871,7 +871,7 @@ dictionary = {
                 </select>
             </li>
             <li style="display: none" id="add_publicip_vlan_vlan_container">
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.vlan.id"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
                 <div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -887,14 +887,19 @@ dictionary = {
                     -->
                 </select>
             </li>
-            <li style="display: none" id="add_publicip_vlan_domain_container">
-                <label for="user_name">
+            <li style="display: none" id="domain_container">
+                <label>
                     <fmt:message key="label.domain"/>:</label>
-                <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
+                
+                <input class="text" type="text" id="domain" />
+                <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                <!--  
+                <select class="select" id="add_publicip_vlan_domain">
                 </select>
+                -->
             </li>
             <li style="display: none" id="add_publicip_vlan_account_container">
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.account"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account" />
                 <div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg"
@@ -902,7 +907,7 @@ dictionary = {
                 </div>
             </li>
             <li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.gateway"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway" />
                 <div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg"
@@ -910,7 +915,7 @@ dictionary = {
                 </div>
             </li>
             <li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.netmask"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask" />
                 <div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg"
@@ -918,7 +923,7 @@ dictionary = {
                 </div>
             </li>
             <li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.ip.range"/>:</label>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
                     id="add_publicip_vlan_startip" /><span>-</span>
@@ -1135,7 +1140,7 @@ dictionary = {
         <form action="#" method="post" id="form_acquire">
         <ol>         
             <li style="display: none" id="vlan_id_container">
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.vlan.id"/>:</label>
                 <input class="text" type="text" id="vlan_id" />
                 <div id="vlan_id_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -1158,7 +1163,7 @@ dictionary = {
                 </div>
             </li>                       
             <li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.ip.range"/>:</label>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
                     id="add_publicip_vlan_startip" /><span>-</span>
@@ -1200,21 +1205,21 @@ dictionary = {
         <form action="#" method="post" id="form_acquire">
         <ol>            
 			<li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.network.name"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_network_name" id="add_publicip_vlan_network_name" />
                 <div id="add_publicip_vlan_network_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
 			<li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.network.desc"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
                 <div id="add_publicip_vlan_network_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
 			<li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.is.default"/>?</label>
                 <select class="select" name="add_publicip_vlan_default" id="add_publicip_vlan_default">
                     <option value="false">No</option>
@@ -1229,7 +1234,7 @@ dictionary = {
                 </select>
             </li>
             <li id="add_publicip_vlan_vlan_container">
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.vlan.id"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
                 <div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -1245,14 +1250,19 @@ dictionary = {
                     -->                      
                 </select>
             </li>           
-            <li style="display: none" id="add_publicip_vlan_domain_container">
-                <label for="user_name">
+            <li style="display: none" id="domain_container">
+                <label>
                     <fmt:message key="label.domain"/>:</label>
-                <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
+                    
+                <input class="text" type="text" id="domain" />
+                <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
+                <!--  
+                <select class="select" id="add_publicip_vlan_domain">
                 </select>
+                -->    
             </li>
             <li style="display: none" id="add_publicip_vlan_account_container">
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.account"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account" />
                 <div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg"
@@ -1260,7 +1270,7 @@ dictionary = {
                 </div>
             </li>
             <li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.gateway"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway" />
                 <div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg"
@@ -1268,7 +1278,7 @@ dictionary = {
                 </div>
             </li>
             <li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.netmask"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask" />
                 <div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg"
@@ -1276,7 +1286,7 @@ dictionary = {
                 </div>
             </li>
             <li>
-                <label for="user_name">
+                <label>
                     <fmt:message key="label.ip.range"/>:</label>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
                     id="add_publicip_vlan_startip" /><span>-</span>
