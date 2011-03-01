@@ -4018,7 +4018,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
     
     protected boolean can_bridge_firewall(Connection conn) {   
-        return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
+        return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid, "instance", _instance));
     }
     
     private Answer execute(OvsDestroyTunnelCommand cmd) {
@@ -5857,7 +5857,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             return new Answer(cmd, true, null);
         }
         Connection conn = getConnection();
-        String result = callHostPlugin(conn, "vmops","cleanup_rules");
+        String result = callHostPlugin(conn, "vmops","cleanup_rules", "instance", _instance);
         int numCleaned = Integer.parseInt(result);
         if (result == null || result.isEmpty() || (numCleaned < 0)) {
             s_logger.warn("Failed to cleanup rules for host " + _host.ip);
