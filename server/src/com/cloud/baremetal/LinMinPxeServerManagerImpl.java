@@ -38,6 +38,9 @@ public class LinMinPxeServerManagerImpl extends PxeServerManagerImpl implements 
 	public Host addPxeServer(AddPxeServerCmd cmd) throws InvalidParameterValueException, CloudRuntimeException {
 		long zoneId = cmd.getZoneId();
 		Long podId = cmd.getPod();
+		String apiUsername;
+		String apiPassword;
+		String apid;
 
 		DataCenterVO zone = _dcDao.findById(zoneId);
 		if (zone == null) {
@@ -57,6 +60,21 @@ public class LinMinPxeServerManagerImpl extends PxeServerManagerImpl implements 
 			throw new InvalidParameterValueException(e.getMessage());
 		}
 		
+		apiUsername = cmd.getLinMinUsername();
+		apiPassword = cmd.getLinMinPassword();
+		apid = cmd.getLinMinApid();
+		if (apiUsername == null) {
+			throw new InvalidParameterValueException("No LinMin username specified, without it I can user LinMin API");
+		}
+		
+		if (apiPassword == null) {
+			throw new InvalidParameterValueException("No LinMin password specified, without it I can user LinMin API");
+		}
+		
+		if (apid == null) {
+			throw new InvalidParameterValueException("No LinMin apid specified, without it I can user LinMin API");
+		}
+		
 		String ipAddress = uri.getHost();
 		String username = cmd.getUsername();
 		String password = cmd.getPassword();
@@ -69,6 +87,9 @@ public class LinMinPxeServerManagerImpl extends PxeServerManagerImpl implements 
 		params.put("password", password);
 		params.put("guid", guid);
 		params.put("pod", Long.toString(cmd.getPod()));
+		params.put("apiUsername", apiUsername);
+		params.put("apiPassword", apiPassword);
+		params.put("apid", apid);
 		
 		ServerResource resource = null;
 		try {

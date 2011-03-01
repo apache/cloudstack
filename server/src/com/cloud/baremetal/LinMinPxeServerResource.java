@@ -49,6 +49,9 @@ public class LinMinPxeServerResource implements ServerResource {
 	String _ip;
 	String _zoneId;
 	String _podId;
+	String _apiUsername;
+	String _apiPassword;
+	String _apid;
 	
 	class XmlReturn {
 		NodeList nList;
@@ -88,6 +91,9 @@ public class LinMinPxeServerResource implements ServerResource {
 		_password = (String)params.get("password");
 		_zoneId = (String)params.get("zone");
 		_podId = (String)params.get("pod");
+		_apiUsername = (String)params.get("apiUsername");
+		_apiPassword = (String)params.get("apiPassword");
+		_apid = (String)params.get("apid");
 		
 		if (_guid == null) {
 			throw new ConfigurationException("No Guid specified");
@@ -111,6 +117,18 @@ public class LinMinPxeServerResource implements ServerResource {
 		
 		if (_password == null) {
 			throw new ConfigurationException("No password specified");
+		}
+		
+		if (_apiUsername == null) {
+			throw new ConfigurationException("No API username specified");
+		}
+		
+		if (_apiPassword == null) {
+			throw new ConfigurationException("No API password specified");
+		}
+		
+		if (_apid == null) {
+			throw new ConfigurationException("No A specified");
 		}
 		
 		com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_ip, 22);
@@ -212,19 +230,16 @@ public class LinMinPxeServerResource implements ServerResource {
 	
 	
 	protected PrepareLinMinPxeServerAnswer execute(PrepareLinMinPxeServerCommand cmd) {
-		String apiUserName = "root";
-		String apiPassword = "password";
-		String apid = "2ad644fb479871a0f5543dd6d29fe9ed";
 		StringBuffer askApid = new StringBuffer();
 		
 		askApid.append("http://");
 		askApid.append(_ip);
 		askApid.append("/tftpboot/www/lbmp-API.php?actiontype=provision&apid=");
-		askApid.append(apid);
+		askApid.append(_apid);
 		askApid.append("&auth_user=");
-		askApid.append(apiUserName);
+		askApid.append(_apiUsername);
 		askApid.append("&auth_user_pw=");
-		askApid.append(apiPassword);
+		askApid.append(_apiPassword);
 		askApid.append("&rtn_format=XML&action=authorize");
 		InputSource s = httpCall(askApid.toString());
 		if (s == null) {

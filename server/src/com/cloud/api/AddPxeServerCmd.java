@@ -47,6 +47,15 @@ public class AddPxeServerCmd extends BaseCmd {
 	
 	@Parameter(name=ApiConstants.PXE_SERVER_TYPE, type=CommandType.STRING, required = true, description="Type of PXE server. Current values are LinMin, DMCD")
 	private String type;
+	
+	@Parameter(name=ApiConstants.LINMIN_USERNAME, type=CommandType.STRING, required = false, description="Optional, username uses to access LinMin API")
+	private String linminUsername;
+	
+	@Parameter(name=ApiConstants.LINMIN_PASSWORD, type=CommandType.STRING, required = false, description="Optional, password uses to access LinMin API")
+	private String linminPassword;
+	
+	@Parameter(name=ApiConstants.LINMIN_APID, type=CommandType.STRING, required = false, description="Optional, APID uses to access LinMin API")
+	private String linminApid;
 
 	///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
@@ -74,6 +83,18 @@ public class AddPxeServerCmd extends BaseCmd {
 	
 	public Long getPod() {
 		return podId;
+	}
+	
+	public String getLinMinUsername() {
+		return linminUsername;
+	}
+	
+	public String getLinMinPassword() {
+		return linminPassword;
+	}
+	
+	public String getLinMinApid() {
+		return linminApid;
 	}
 	 
 	/////////////////////////////////////////////////////
