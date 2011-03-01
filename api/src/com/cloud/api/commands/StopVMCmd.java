@@ -29,6 +29,7 @@ import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -107,7 +108,14 @@ public class StopVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException{
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result = _userVmService.stopVirtualMachine(getId(), isForced());
+        UserVm result;
+        
+        if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
+        	result = _bareMetalVmService.stopVirtualMachine(getId(), isForced());
+        } else {
+        	result = _userVmService.stopVirtualMachine(getId(), isForced());
+        }
+        
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);
             response.setResponseName(getCommandName());

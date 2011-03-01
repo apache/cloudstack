@@ -154,6 +154,12 @@ public class Script implements Callable<String> {
         return execute(new OutputInterpreter.OutputLogger(_logger));
     }
 
+    @Override
+    public String toString() {
+    	String[] command = _command.toArray(new String[_command.size()]);
+    	return buildCommandLine(command);
+    }
+    
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
 

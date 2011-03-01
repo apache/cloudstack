@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -94,7 +95,13 @@ public class RebootVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result = _userVmService.rebootVirtualMachine(this);
+        UserVm result;
+        if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
+        	result = _bareMetalVmService.rebootVirtualMachine(this);
+        } else {
+        	result = _userVmService.rebootVirtualMachine(this);
+        }
+        
         if (result !=null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);
             response.setResponseName(getCommandName());

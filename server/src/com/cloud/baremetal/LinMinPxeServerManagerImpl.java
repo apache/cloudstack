@@ -37,18 +37,16 @@ public class LinMinPxeServerManagerImpl extends PxeServerManagerImpl implements 
 	@Override
 	public Host addPxeServer(AddPxeServerCmd cmd) throws InvalidParameterValueException, CloudRuntimeException {
 		long zoneId = cmd.getZoneId();
+		Long podId = cmd.getPod();
 
 		DataCenterVO zone = _dcDao.findById(zoneId);
-		String zoneName;
 		if (zone == null) {
 			throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
-		} else {
-			zoneName = zone.getName();
-		}
+		} 
 		
-		List<HostVO> pxeServers = _hostDao.listByTypeDataCenter(Host.Type.PxeServer, zoneId);
+		List<HostVO> pxeServers = _hostDao.listBy(Host.Type.PxeServer, null, podId, zoneId);
 		if (pxeServers.size() != 0) {
-			throw new InvalidParameterValueException("Already had a PXE server in zone: " + zoneName);
+			throw new InvalidParameterValueException("Already had a PXE server in Pod: " + podId + " zone: " + zoneId);
 		}
 		
 		URI uri;
@@ -65,10 +63,12 @@ public class LinMinPxeServerManagerImpl extends PxeServerManagerImpl implements 
 		String guid = getPxeServerGuid(Long.toString(zoneId), PxeServerType.LinMin.getName(), ipAddress);
 		Map params = new HashMap<String, String>();
 		params.put("zone", Long.toString(zoneId));
+		params.put("pod", podId.toString());
 		params.put("ip", ipAddress);
 		params.put("username", username);
 		params.put("password", password);
 		params.put("guid", guid);
+		params.put("pod", Long.toString(cmd.getPod()));
 		
 		ServerResource resource = null;
 		try {

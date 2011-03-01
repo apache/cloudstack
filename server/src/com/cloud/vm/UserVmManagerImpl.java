@@ -2683,4 +2683,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         return _vmDao.search(sc, searchFilter);
     }
+
+	@Override
+	public HypervisorType getHypervisorTypeOfUserVM(long vmid) {
+		UserVmVO userVm = _vmDao.findById(vmid);
+		if (userVm == null) {
+    	    throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmid);
+    	}
+		
+		return userVm.getHypervisorType();
+	}
 }

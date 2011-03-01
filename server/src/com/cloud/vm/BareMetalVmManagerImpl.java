@@ -16,6 +16,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.baremetal.PrepareLinMinPxeServerCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.AttachVolumeCmd;
@@ -271,7 +272,9 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 		if (_itMgr.allocate(vm, template, offering, null, null, networks, null, plan, cmd.getHypervisor(), owner) == null) {
 			return null;
 		}
-
+		
+		// startVirtualMachine() will retrieve this property
+		vm.setDetail("pxeboot", "true");
 		_vmDao.saveDetails(vm);
 
 		if (s_logger.isDebugEnabled()) {
@@ -374,16 +377,12 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	        throw new PermissionDeniedException("The owner of " + vm + " either does not exist or is disabled: " + vm.getAccountId());
 	    }
 	    
-	    if (profile.getTemplate() == null) {
+	    PxeServerType pxeType = (PxeServerType) profile.getParameter(Param.PxeSeverType);
+	    if (pxeType == null) {
 	    	s_logger.debug("This is a normal IPMI start, skip prepartion of PXE server");
 	    	return true;
 	    }
-	    
 	    s_logger.debug("This is a PXE start, prepare PXE server first");
-	    PxeServerType pxeType = (PxeServerType) profile.getParameter(Param.PxeSeverType);
-	    if (pxeType == null) {
-	    	throw new CloudRuntimeException("No PXE type specified");
-	    }
 	    
 	    PxeServerManager pxeMgr = null;
 	    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -444,5 +443,15 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 		}
 
 		return true;
+	}
+
+	@Override
+	public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
+		super.finalizeStop(profile, answer);
+	}
+
+	@Override
+	public UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException {
+		return super.destroyVm(vmId);
 	}
 }

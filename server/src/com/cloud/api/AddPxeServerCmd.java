@@ -33,6 +33,9 @@ public class AddPxeServerCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external firewall appliance.")
 	private Long zoneId;
 	
+	@Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external firewall appliance.")
+	private Long podId;
+	
 	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the PXE server appliance.")
 	private String url;	 
 	
@@ -67,6 +70,10 @@ public class AddPxeServerCmd extends BaseCmd {
 	
 	public String getType() {
 		return type;
+	}
+	
+	public Long getPod() {
+		return podId;
 	}
 	 
 	/////////////////////////////////////////////////////

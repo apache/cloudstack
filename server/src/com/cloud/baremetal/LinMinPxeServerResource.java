@@ -48,6 +48,7 @@ public class LinMinPxeServerResource implements ServerResource {
 	String _password;
 	String _ip;
 	String _zoneId;
+	String _podId;
 	
 	class XmlReturn {
 		NodeList nList;
@@ -86,6 +87,7 @@ public class LinMinPxeServerResource implements ServerResource {
 		_username = (String)params.get("username");
 		_password = (String)params.get("password");
 		_zoneId = (String)params.get("zone");
+		_podId = (String)params.get("pod");
 		
 		if (_guid == null) {
 			throw new ConfigurationException("No Guid specified");
@@ -93,6 +95,10 @@ public class LinMinPxeServerResource implements ServerResource {
 		
 		if (_zoneId == null) {
 			throw new ConfigurationException("No Zone specified");
+		}
+		
+		if (_podId == null) {
+			throw new ConfigurationException("No Pod specified");
 		}
 		
 		if (_ip == null) {
@@ -157,7 +163,7 @@ public class LinMinPxeServerResource implements ServerResource {
 		StartupPxeServerCommand cmd = new StartupPxeServerCommand();
 		cmd.setName(_name);
 		cmd.setDataCenter(_zoneId);
-		cmd.setPod("");
+		cmd.setPod(_podId);
 		cmd.setPrivateIpAddress(_ip);
 		cmd.setStorageIpAddress("");
 		cmd.setVersion("");

@@ -33,6 +33,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -104,7 +105,13 @@ public class StartVMCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException{
         try {
             UserContext.current().setEventDetails("Vm Id: "+getId());
-            UserVm result = _userVmService.startVirtualMachine(this);
+            UserVm result;
+            if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
+            	result = _bareMetalVmService.startVirtualMachine(this);
+            } else {
+            	result = _userVmService.startVirtualMachine(this);
+            }
+            
             if (result != null){
                 UserVmResponse response = _responseGenerator.createUserVmResponse(result);
                 response.setResponseName(getCommandName());

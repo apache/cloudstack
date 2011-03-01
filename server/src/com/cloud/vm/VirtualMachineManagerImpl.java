@@ -841,8 +841,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
         
         try {
-            _storageMgr.release(profile);
-            s_logger.debug("Successfully released storage resources for the vm " + vm);
+			if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+				_storageMgr.release(profile);
+				s_logger.debug("Successfully released storage resources for the vm " + vm);
+			}
         } catch (Exception e) {
             s_logger.warn("Unable to release storage resources.", e);
         }

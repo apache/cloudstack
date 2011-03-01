@@ -42,6 +42,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
@@ -170,4 +171,6 @@ public interface UserVmService {
      * @return List of UserVMs.
      */
     List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
+    
+    HypervisorType getHypervisorTypeOfUserVM(long vmid);
 }
