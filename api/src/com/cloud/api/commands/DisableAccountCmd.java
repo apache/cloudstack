@@ -30,6 +30,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Disables an account", responseObject=AccountResponse.class)
 public class DisableAccountCmd extends BaseAsyncCmd {
@@ -92,6 +93,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
+        UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
     	Account result = null;
     	if(lockRequested)
     		result = _accountService.lockAccount(this);

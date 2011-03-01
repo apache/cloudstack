@@ -2648,6 +2648,7 @@ public class ManagementServerImpl implements ManagementServer {
         	if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
+        	EventUtils.saveEvent(user.getId(), user.getAccountId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
             return user;
         } else {
         	if (s_logger.isDebugEnabled()) {

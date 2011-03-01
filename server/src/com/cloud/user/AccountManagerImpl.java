@@ -56,6 +56,7 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
@@ -983,7 +984,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     /////////////////////////////////////////////////////
 
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_ACCOUNT_CREATE, eventDescription="creating Account")
     public UserAccount createAccount(CreateAccountCmd cmd) {
         Long accountId = null;
         String username = cmd.getUsername();
@@ -1343,7 +1344,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DELETE, eventDescription = "deleting account", async=true)
     //This method deletes the account
     public boolean deleteUserAccount(DeleteAccountCmd cmd) {
         UserContext ctx = UserContext.current();
@@ -1404,7 +1405,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "locking account", async=true)
     public AccountVO lockAccount(DisableAccountCmd cmd) {
         Account adminAccount = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
@@ -1431,7 +1432,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "disabling account", async=true)
     public AccountVO disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();

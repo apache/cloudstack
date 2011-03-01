@@ -29,6 +29,7 @@ import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates an account", responseObject=UserResponse.class)
 public class CreateAccountCmd extends BaseCmd {
@@ -124,6 +125,7 @@ public class CreateAccountCmd extends BaseCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
         UserAccount user = _accountService.createAccount(this);
         if (user != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(user);

@@ -30,6 +30,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
 public class DeleteAccountCmd extends BaseAsyncCmd {
@@ -89,6 +90,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Account Id: "+getId());
         boolean result = _accountService.deleteUserAccount(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
