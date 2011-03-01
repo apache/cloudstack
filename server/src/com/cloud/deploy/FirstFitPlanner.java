@@ -293,7 +293,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			if(podClusterMap.containsKey(pod)){
 				List<Long> clustersOfThisPod = (List<Long>)podClusterMap.get(pod);
 				if(clustersOfThisPod != null){
-					reorderedClusters.addAll(clustersOfThisPod);
+					for(Long clusterId : clusterIds){
+						if(clustersOfThisPod.contains(clusterId)){
+							reorderedClusters.add(clusterId);
+						}
+					}
 					clusterIds.removeAll(clustersOfThisPod);
 				}
 			}
