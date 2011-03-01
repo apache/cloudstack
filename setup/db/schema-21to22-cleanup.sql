@@ -88,6 +88,7 @@ ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `vlan_id`;
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `ram_size`;
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `guid`;
 
+#ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__network_id` FOREIGN KEY `fk_vlan__network_id`(`network_id`) REFERENCES `networks`(`id`);
 
 DROP TABLE `cloud`.`vm_disk`;
 
