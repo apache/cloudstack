@@ -40,6 +40,18 @@ public class Upgrade217to22 implements DbUpgrade {
         return file;
     }
     
+    protected void upgradeStoragePools(Connection conn) {
+        PreparedStatement pstmt;
+        try {
+            pstmt = conn.prepareStatement("UPDATE storage_pool SET status='Up'");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch(SQLException e) {
+            throw new CloudRuntimeException("Can't upgrade storage pool ", e);
+        }
+        
+    }
+    
     protected void upgradeDataCenter(Connection conn) {
         PreparedStatement pstmt;
         try {
@@ -127,6 +139,8 @@ public class Upgrade217to22 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         upgradeDataCenter(conn);
+        upgradeNetworks(conn);
+        upgradeStoragePools(conn);
     }
 
     @Override
