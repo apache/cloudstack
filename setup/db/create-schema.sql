@@ -401,6 +401,7 @@ CREATE TABLE `cloud`.`snapshots` (
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
   `domain_id` bigint unsigned NOT NULL COMMENT 'the domain that the owner belongs to',
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume it belongs to. foreign key to volume table',
+  `disk_offering_id` bigint unsigned NOT NULL COMMENT ,
   `status` varchar(32) COMMENT 'snapshot creation status',
   `path` varchar(255) COMMENT 'Path',
   `name` varchar(255) NOT NULL COMMENT 'snapshot name',

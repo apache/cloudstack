@@ -1191,7 +1191,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // user
         Type snapshotType = getSnapshotType(policyId);
         HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
-        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), null, snapshotName,
+        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), null, snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
         return _snapshotDao.persist(snapshotVO); 
     }

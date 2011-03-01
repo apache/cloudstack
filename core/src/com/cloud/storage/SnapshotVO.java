@@ -53,6 +53,9 @@ public class SnapshotVO implements Snapshot {
 
     @Column(name="volume_id")
     Long volumeId;
+    
+    @Column(name="disk_offering_id")
+    Long diskOfferingId;
 
     @Expose
     @Column(name="path")
@@ -94,11 +97,12 @@ public class SnapshotVO implements Snapshot {
     
     public SnapshotVO() { }
 
-    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
+    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
         this.dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
         this.volumeId = volumeId;
+        this.diskOfferingId = diskOfferingId;
         this.path = path;
         this.name = name;
         this.snapshotType = snapshotType;
@@ -130,6 +134,10 @@ public class SnapshotVO implements Snapshot {
     @Override
     public long getVolumeId() {
         return volumeId;
+    }
+
+    public long getDiskOfferingId() {
+        return diskOfferingId;
     }
 
     public void setVolumeId(Long volumeId) {

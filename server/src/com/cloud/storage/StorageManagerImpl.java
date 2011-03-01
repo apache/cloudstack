@@ -1395,7 +1395,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             throw new InvalidParameterValueException("Either disk Offering Id or snapshot Id must be passed whilst creating volume");
         }
 
-        if (cmd.getSnapshotId() == null) {
+        if (cmd.getSnapshotId() == null) {// create a new volume
             zoneId = cmd.getZoneId();
             if ((zoneId == null)) {
                 throw new InvalidParameterValueException("Missing parameter, zoneid must be specified.");
@@ -1441,15 +1441,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
                 size = (size * 1024 * 1024 * 1024);// custom size entered is in GB, to be converted to bytes
             }
-        } else {
+        } else {  // create volume from snapshot
             Long snapshotId = cmd.getSnapshotId();
             SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
-            diskOfferingId = cmd.getDiskOfferingId();
+            diskOfferingId = (cmd.getDiskOfferingId() != null) ? cmd.getDiskOfferingId() : snapshotCheck.getDiskOfferingId();
             if (snapshotCheck == null) {
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
             zoneId = snapshotCheck.getDataCenterId();
-            size = snapshotCheck.getSize(); //we maintain size from org vol ; disk offering is used for tags purposes
+            size = snapshotCheck.getSize(); //; disk offering is used for tags purposes
 
             if (account != null) {
                 if (isAdmin(account.getType())) {
