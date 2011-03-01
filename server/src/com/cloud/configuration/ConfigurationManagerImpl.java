@@ -1619,13 +1619,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         //if vlan is specified, throw an error if it's not equal to network's vlanId
-        URI uri = network.getBroadcastUri();
-        if (uri != null) {
-            String[] vlan = uri.toString().split("vlan:\\/\\/");
-            networkVlanId = vlan[1];
+        if (network != null) {
+            URI uri = network.getBroadcastUri();
+            if (uri != null) {
+                String[] vlan = uri.toString().split("vlan:\\/\\/");
+                networkVlanId = vlan[1];
+            }
         }
         
-        if (vlanId != null && !networkVlanId.equalsIgnoreCase(vlanId)) {
+        if (vlanId != null && networkVlanId != null && !networkVlanId.equalsIgnoreCase(vlanId)) {
             throw new InvalidParameterValueException("Vlan doesn't match vlan of the network");
         }
           
