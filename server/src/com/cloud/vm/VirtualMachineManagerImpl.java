@@ -829,7 +829,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             } finally {
                 if (!stopped) {
                     if (!forced) {
+                        s_logger.warn("Unable to stop vm " + vm);
                         stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                        return false;
                     } else {
                         s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
                     }
