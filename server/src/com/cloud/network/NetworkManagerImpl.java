@@ -713,7 +713,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 "Direct", 
                 TrafficType.Guest, 
                 false, 
-                false, 
+                true, 
                 null, 
                 null, 
                 null, 
@@ -1519,9 +1519,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
             }
         }
+        
+        //Don't allow to create guest virtual network with Vlan specified
+        if (networkOffering.getGuestType() == GuestIpType.Virtual && vlanId != null) {
+            throw new InvalidParameterValueException("Can't specify vlan when create network with Guest IP Type " + GuestIpType.Virtual);
+        }
+        
+        //Regular user can create guest Virtual network only
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getGuestType() != GuestIpType.Virtual || networkOffering.getTrafficType() != TrafficType.Guest)) {
+            throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest);
+        }
+        
+        //Don't allow to specify cidr if the caller is a regular user
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && (cidr != null || vlanId != null)) {
+            throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange/vlanId");
+        }
+        
 
         // VlanId can be specified only when network offering supports it
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && vlanId != null && !networkOffering.getSpecifyVlan()) {
+        if (vlanId != null && !networkOffering.getSpecifyVlan()) {
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
         }
 

@@ -753,7 +753,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultDirectNetworkOffering, 
                 "Direct", 
                 TrafficType.Guest, 
-                false, false, null, null, null, true, 
+                false, true, null, null, null, true, 
                 Availability.Required, 
                 true, true, true, //services - all true except for firewall/lb/vpn and gateway
                 false, false, false, false, GuestIpType.Direct);
