@@ -667,8 +667,8 @@ $(document).ready(function() {
 	// FUNCTION: logs the user in
 	function login() {
 		var array1 = [];
-		var username = encodeURIComponent($("#account_username").val());
-		array1.push("&username="+username);
+		var username = $("#account_username").val();
+		array1.push("&username="+encodeURIComponent(username));
 		
 		var password = $("#account_password").val();
 		if (md5Hashed) {
