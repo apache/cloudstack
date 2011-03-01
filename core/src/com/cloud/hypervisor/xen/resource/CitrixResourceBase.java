@@ -574,7 +574,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 		return null;
     }
     
-<<<<<<< HEAD
     private synchronized Network createTunnelNetwork(Connection conn, long account) {
         try {
             String nwName = "OVSTunnel" + account;
