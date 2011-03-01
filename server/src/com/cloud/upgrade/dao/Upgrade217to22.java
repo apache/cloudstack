@@ -26,7 +26,6 @@ import java.util.ArrayList;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade217to22 implements DbUpgrade {
@@ -41,9 +40,39 @@ public class Upgrade217to22 implements DbUpgrade {
         return file;
     }
     
-    @DB
-    protected void upgradeDataCenter() {
-        
+    protected void upgradeDataCenter(Connection conn) {
+        PreparedStatement pstmt;
+        try {
+            pstmt = conn.prepareStatement("SELECT value FROM configuration WHERE name='direct.attach.untagged.vlan.enabled'");
+            ResultSet rs = pstmt.executeQuery();
+            boolean basicZone = !(rs.next() && Boolean.parseBoolean(rs.getString(1)));
+            rs.close();
+            pstmt.close();
+            pstmt = conn.prepareStatement("UPDATE data_center SET networktype=?, dns_provider=?, gateway_provider=?, firewall_provider=?, dhcp_provider=?, lb_provider=?, vpn_provider=?, userdata_provider=?");
+            if (basicZone) {
+                pstmt.setString(1, "Basic");
+                pstmt.setString(2, "DhcpServer");
+                pstmt.setString(3, null);
+                pstmt.setString(4, null);
+                pstmt.setString(5, "DhcpServer");
+                pstmt.setString(6, null);
+                pstmt.setString(7, null);
+                pstmt.setString(8, "DhcpServer");
+            } else {
+                pstmt.setString(1, "Advanced");
+                pstmt.setString(2, "VirtualRouter");
+                pstmt.setString(3, "VirtualRouter");
+                pstmt.setString(4, "VirtualRouter");
+                pstmt.setString(5, "VirtualRouter");
+                pstmt.setString(6, "VirtualRouter");
+                pstmt.setString(7, "VirtualRouter");
+                pstmt.setString(8, "VirtualRouter");
+            }
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't update data center ", e);
+        }
     }
     
     protected void upgradeNetworks(Connection conn) {
@@ -97,6 +126,7 @@ public class Upgrade217to22 implements DbUpgrade {
     
     @Override
     public void performDataMigration(Connection conn) {
+        upgradeDataCenter(conn);
     }
 
     @Override

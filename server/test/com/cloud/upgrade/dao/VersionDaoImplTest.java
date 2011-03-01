@@ -18,6 +18,11 @@
 package com.cloud.upgrade.dao;
 
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import javax.naming.ConfigurationException;
 
 import junit.framework.TestCase;
@@ -29,6 +34,8 @@ import org.junit.Before;
 import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DbTestUtils;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VersionDaoImplTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(VersionDaoImplTest.class);
@@ -60,6 +67,31 @@ public class VersionDaoImplTest extends TestCase {
         } catch (ConfigurationException e) {
             s_logger.warn("Exception: ", e);
             assert false : "The test failed.  Check logs"; 
+        }
+        
+        Connection conn = Transaction.getStandaloneConnection();
+        PreparedStatement pstmt;
+        try {
+            pstmt = conn.prepareStatement("SELECT version FROm version");
+            ResultSet rs = pstmt.executeQuery();
+            assert rs.next() : "No version selected";
+            assert rs.getString(1).equals("2.2.1") : "VERSION stored is not 2.2.1: " + rs.getString(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM network_offerings");
+            rs = pstmt.executeQuery();
+            assert rs.next() : "Unable to get the count of network offerings.";
+            assert (rs.getInt(1) == 7) : "Didn't find 7 network offerings but found " + rs.getInt(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT DISTINCT networktype FROM data_center");
+            rs = pstmt.executeQuery();
+            assert rs.next()  && rs.getString(1).equals("Advanced") : "Network type is not advanced? " + rs.getString(1);
+            assert !rs.next() : "Why do we have another one? " + rs.getString(1);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Problem checking upgrade version", e);
         }
     }
     
