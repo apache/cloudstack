@@ -33,8 +33,10 @@ public abstract class InsufficientCapacityException extends Exception {
         super();
     }
     
-    public InsufficientCapacityException(String msg, Class<?> type, Long id) {
+    public InsufficientCapacityException(String msg, Class<?> scope, Long id) {
         super(msg);
+        this.scope = scope;
+        this.id = id;
     }
     
     /**
