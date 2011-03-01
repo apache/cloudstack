@@ -78,7 +78,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         DataCenter dc = dest.getDataCenter();
         String provider = dc.getGatewayProvider();
         
-        if (provider.equalsIgnoreCase(Provider.JuniperSRX.getName()) && ipType == GuestIpType.Virtual) {
+        if (provider != null && provider.equalsIgnoreCase(Provider.JuniperSRX.getName()) && ipType == GuestIpType.Virtual) {
             return true;
         } else {
             if (dc.getNetworkType() == NetworkType.Basic) {

@@ -85,7 +85,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
-        boolean result = (ipType == GuestIpType.Virtual && provider.equals(Provider.VirtualRouter.getName()));
+        boolean result = (provider != null && ipType == GuestIpType.Virtual && provider.equals(Provider.VirtualRouter.getName()));
         if (!result) {
             s_logger.trace("Virtual router element only takes care of guest ip type " + GuestIpType.Virtual + " for provider " + Provider.VirtualRouter.getName());
         }
