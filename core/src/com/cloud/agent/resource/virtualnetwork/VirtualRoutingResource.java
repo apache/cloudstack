@@ -582,7 +582,7 @@ public class VirtualRoutingResource implements Manager {
         _sleep = NumbersUtil.parseInt(value, 10) * 1000;
 
         value = (String)params.get("ssh.retry");
-        _retry = NumbersUtil.parseInt(value, 24);
+        _retry = NumbersUtil.parseInt(value, 36);
 
         value = (String)params.get("ssh.port");
         _port = NumbersUtil.parseInt(value, 3922);
