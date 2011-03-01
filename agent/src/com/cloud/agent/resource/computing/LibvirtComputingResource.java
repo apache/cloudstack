@@ -1136,7 +1136,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			
 			final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
 			command.add("-d", snapshotDestPath);
-			command.add("-n", cmd.getSnapshotName());
 			command.add("-f");
 			command.execute();
     	} catch (LibvirtException e) {

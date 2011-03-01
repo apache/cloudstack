@@ -531,11 +531,11 @@ public class ApiDBUtils {
     }
     
     public static boolean isSecurityGroupEnabledInZone(long zoneId) {
-        Network network = _networkMgr.getNetworkWithSecurityGroupEnabled(zoneId);
-        if (network != null) {
-            return true;
-        } else {
+        DataCenterVO dc = _zoneDao.findById(zoneId);
+        if (dc == null) {
             return false;
+        } else {
+            return dc.isSecurityGroupEnabled();
         }
     }
     

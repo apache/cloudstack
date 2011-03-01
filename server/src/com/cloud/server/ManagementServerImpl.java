@@ -4209,15 +4209,16 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd) {
         Map<String, Object> capabilities = new HashMap<String, Object>();
-        String securityGroupsEnabled = "false";
-        Network net = _networkMgr.getNetworkWithSecurityGroupEnabled(null);
-        if (net != null) {
-            securityGroupsEnabled = "true";
+        
+        boolean securityGroupsEnabled = false;
+        List<DataCenterVO> dc = _dcDao.listSecurityGroupEnabledZones();
+        if (dc != null && !dc.isEmpty()) {
+            securityGroupsEnabled = true;
         }
         
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
-        capabilities.put("securityGroupsEnabled", (securityGroupsEnabled == null || securityGroupsEnabled.equals("false") ? false : true)); 
+        capabilities.put("securityGroupsEnabled", securityGroupsEnabled); 
         capabilities.put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
         capabilities.put("cloudStackVersion", getVersion());
         return capabilities;
