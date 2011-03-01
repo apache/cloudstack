@@ -1767,11 +1767,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_DELETE, eventDescription="deleting network", async=true)
     public boolean deleteNetwork(long networkId){   
-        //Don't allow to delete network via api call when it has vms assigned to it
-        int nicCount = getActiveNicsInNetwork(networkId);
-        if (nicCount > 0) {
-            throw new InvalidParameterValueException("Unable to remove the network id=" + networkId + " as it has active Nics.");
-        }
         
         Account caller = UserContext.current().getCaller(); 
 
@@ -1791,26 +1786,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             _accountMgr.checkAccess(caller, owner);
         }
-        
-        //Make sure that there are no user vms in the network that are not Expunged/Error
-        List<UserVmVO> userVms = _vmDao.listByNetworkId(networkId);
-        
-        for (UserVmVO vm : userVms) {
-            if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
-                throw new InvalidParameterValueException("Can't delete the network, not all user vms are expunged");
-            }
-        }
 
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
         
-        return deleteNetworkInternal(networkId, context);
-    }
-    
-    @Override
-    @DB
-    public boolean deleteNetworkInternal(long networkId, ReservationContext context){
-        return this.destroyNetwork(networkId, context);
+        return destroyNetwork(networkId, context);
     }
 
     @Override
@@ -1877,6 +1857,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network == null) {
             s_logger.debug("Unable to find network with id: " + networkId);
             return false;
+        }
+        
+        //Don't allow to delete network via api call when it has vms assigned to it
+        int nicCount = getActiveNicsInNetwork(networkId);
+        if (nicCount > 0) {
+            s_logger.debug("Unable to remove the network id=" + networkId + " as it has active Nics.");
+            return false;
+        }
+        
+        //Make sure that there are no user vms in the network that are not Expunged/Error
+        List<UserVmVO> userVms = _vmDao.listByNetworkId(networkId);
+        
+        for (UserVmVO vm : userVms) {
+            if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
+                s_logger.warn("Can't delete the network, not all user vms are expunged. Vm " + vm + " is in " + vm.getState() + " state");
+                return false;
+            }
         }
 
         // Shutdown network first
