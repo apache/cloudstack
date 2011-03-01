@@ -65,4 +65,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 	List<DataCenterVO> listPublicZones();
 
 	List<DataCenterVO> findChildZones(Object[] ids);
+
+    List<DataCenterVO> listSecurityGroupEnabledZones();
 }

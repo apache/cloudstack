@@ -42,8 +42,7 @@ create_snapshot() {
 
 destroy_snapshot() {
   local disk=$1
-  local snapshotname=$2
-  local deleteDir=$3
+  local deleteDir=$2
   local failed=0
 
   if [ -d $disk ]
@@ -55,7 +54,7 @@ destroy_snapshot() {
 
      if [ "$deleteDir" == "1" ]
      then
-	rm -rf %disk >& /dev/null
+	rm -rf $disk >& /dev/null
      fi
 
      return $failed
