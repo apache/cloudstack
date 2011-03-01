@@ -210,7 +210,10 @@ function bindAddAccountButton() {
 				var username = $thisDialog.find("#add_user_username").val();
 				array1.push("&username="+todb(username));
 				
-				var password = $.md5($thisDialog.find("#add_user_password").val());
+				var password = $thisDialog.find("#add_user_password").val();
+				if (md5Hashed) {
+			        password = $.md5(password);
+		        } 				
 				array1.push("&password="+password);
 				
 				var email = $thisDialog.find("#add_user_email").val();				
@@ -313,7 +316,10 @@ function bindAddUserButton() {
 				var username = $thisDialog.find("#add_user_username").val();
 				array1.push("&username="+todb(username));
 				
-				var password = $.md5($thisDialog.find("#add_user_password").val());
+				var password = $thisDialog.find("#add_user_password").val();
+				if (md5Hashed) {
+			        password = $.md5(password);
+		        } 
 				array1.push("&password="+password);
 				
 				var email = $thisDialog.find("#add_user_email").val();
@@ -977,7 +983,10 @@ function doChangePassword($actionLink, $subgridItem) {
 			isValid &= validateString("Password", thisDialog.find("#change_password_password1"), thisDialog.find("#change_password_password1_errormsg"), false); //required						      		   	
 			if (!isValid) return;
 																	
-			var password = $.md5(thisDialog.find("#change_password_password1").val());						   					
+			var password = thisDialog.find("#change_password_password1").val();	
+			if (md5Hashed) {
+		        password = $.md5(password);
+	        } 					   					
 											
 			thisDialog.dialog("close");
 			$.ajax({
