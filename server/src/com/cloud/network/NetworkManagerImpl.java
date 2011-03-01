@@ -2438,7 +2438,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean zoneIsConfiguredForExternalNetworking(long zoneId) {
         DataCenterVO zone = _dcDao.findById(zoneId);
 
-        return (zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getLoadBalancerProvider().equals(
+        return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getLoadBalancerProvider().equals(
                 Network.Provider.F5BigIp.getName()));
 
     }

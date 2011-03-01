@@ -77,13 +77,13 @@ public class DataCenterVO implements DataCenter {
     NetworkType networkType;
     
     @Column(name="dns_provider")
-    private String dnsProvider = Provider.VirtualRouter.getName();
+    private String dnsProvider;
     
     @Column(name="dhcp_provider")
-    private String dhcpProvider = Provider.VirtualRouter.getName(); 
+    private String dhcpProvider;
     
     @Column(name="gateway_provider")
-    private String gatewayProvider = Provider.VirtualRouter.getName();
+    private String gatewayProvider;
     
     @Column(name="vpn_provider")
     private String vpnProvider;
@@ -166,14 +166,23 @@ public class DataCenterVO implements DataCenter {
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
+        
         this.securityGroupEnabled = securityGroupEnabled;
-        loadBalancerProvider = Provider.VirtualRouter.getName();
-        firewallProvider = Provider.VirtualRouter.getName();
-        dhcpProvider = Provider.VirtualRouter.getName();
-        dnsProvider = Provider.VirtualRouter.getName();
-        gatewayProvider = Provider.VirtualRouter.getName();
-        vpnProvider = Provider.VirtualRouter.getName();
-        userDataProvider = Provider.VirtualRouter.getName();
+        
+        if (zoneType == NetworkType.Advanced) {
+            loadBalancerProvider = Provider.VirtualRouter.getName();
+            firewallProvider = Provider.VirtualRouter.getName();
+            dhcpProvider = Provider.VirtualRouter.getName();
+            dnsProvider = Provider.VirtualRouter.getName();
+            gatewayProvider = Provider.VirtualRouter.getName();
+            vpnProvider = Provider.VirtualRouter.getName();
+            userDataProvider = Provider.VirtualRouter.getName();
+        } else if (zoneType == NetworkType.Basic){
+            dhcpProvider = Provider.DhcpServer.getName();
+            dnsProvider = Provider.DhcpServer.getName();
+            userDataProvider = Provider.DhcpServer.getName();
+        }
+        
     }
     
     @Override
