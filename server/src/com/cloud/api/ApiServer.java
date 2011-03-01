@@ -336,6 +336,7 @@ public class ApiServer implements HttpRequestHandler {
             	short accountType = userAccount.getType();
             	
             	if (!isCommandAvailable(accountType, commandName)) {
+            		s_logger.info("Account does not have the required priviledges to execute the command: " + commandName);
             		return false;
             	}
             	return true;
@@ -408,6 +409,7 @@ public class ApiServer implements HttpRequestHandler {
     		}           
 
             if (!isCommandAvailable(account.getType(), commandName)) {
+            	s_logger.info("Account does not have the required priviledges to execute the command: " + commandName);
         		return false;
         	}
 
