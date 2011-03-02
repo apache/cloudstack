@@ -402,39 +402,36 @@ CREATE TABLE `cloud`.`guest_os_hypervisor` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 --drop network group related constraints/indexes;
---ALTER TABLE `cloud`.`network_group` drop foreign key `fk_network_group__account_id`;
---ALTER TABLE `cloud`.`network_group` drop foreign key `fk_network_group__domain_id`;
---alter table `cloud`.`network_group` drop index `i_network_group_name`;
+ALTER TABLE `cloud`.`network_group` drop foreign key `fk_network_group__domain_id`;
+alter table `cloud`.`network_group` drop index `i_network_group_name`;
 
---ALTER TABLE `cloud`.`network_ingress_rule` drop foreign key `fk_network_ingress_rule___network_group_id`;
---ALTER TABLE `cloud`.`network_ingress_rule` drop foreign key `fk_network_ingress_rule___allowed_network_id`;
---ALTER TABLE `cloud`.`network_ingress_rule` drop index `i_network_ingress_rule_network_id`;
---ALTER TABLE `cloud`.`network_ingress_rule` drop index `i_network_ingress_rule_allowed_network`;
+ALTER TABLE `cloud`.`network_ingress_rule` drop foreign key `fk_network_ingress_rule___network_group_id`;
+ALTER TABLE `cloud`.`network_ingress_rule` drop foreign key `fk_network_ingress_rule___allowed_network_id`;
+ALTER TABLE `cloud`.`network_ingress_rule` drop index `i_network_ingress_rule_network_id`;
+ALTER TABLE `cloud`.`network_ingress_rule` drop index `i_network_ingress_rule_allowed_network`;
 
---ALTER TABLE `cloud`.`network_group_vm_map` drop foreign key `fk_network_group_vm_map___network_group_id`;
---ALTER TABLE `cloud`.`network_group_vm_map` drop foreign key `fk_network_group_vm_map___instance_id`;
+ALTER TABLE `cloud`.`network_group_vm_map` drop foreign key `fk_network_group_vm_map___network_group_id`;
+ALTER TABLE `cloud`.`network_group_vm_map` drop foreign key `fk_network_group_vm_map___instance_id`;
 
---rename tables/columns;
---ALTER TABLE `cloud`.`network_group` RENAME TO `security_group`;
---ALTER TABLE `cloud`.`network_ingress_rule` RENAME TO `security_ingress_rule`;
---ALTER TABLE `cloud`.`security_ingress_rule` CHANGE COLUMN `network_group_id` `security_group_id` bigint unsigned NOT NULL;
---ALTER TABLE `cloud`.`security_ingress_rule` CHANGE COLUMN `allowed_network_group` `allowed_security_group` varchar(255);
---ALTER TABLE `cloud`.`security_ingress_rule` CHANGE COLUMN `allowed_nw_grp_acct` `allowed_sec_grp_acct` varchar(100);
---ALTER TABLE `cloud`.`network_group_vm_map` RENAME TO `security_group_vm_map`;
---ALTER TABLE `cloud`.`security_group_vm_map` CHANGE COLUMN `network_group_id` `security_group_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`network_group` RENAME TO `security_group`;
+ALTER TABLE `cloud`.`network_ingress_rule` RENAME TO `security_ingress_rule`;
+ALTER TABLE `cloud`.`security_ingress_rule` CHANGE COLUMN `network_group_id` `security_group_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`security_ingress_rule` CHANGE COLUMN `allowed_network_group` `allowed_security_group` varchar(255);
+ALTER TABLE `cloud`.`security_ingress_rule` CHANGE COLUMN `allowed_net_grp_acct` `allowed_sec_grp_acct` varchar(100);
+ALTER TABLE `cloud`.`network_group_vm_map` RENAME TO `security_group_vm_map`;
+ALTER TABLE `cloud`.`security_group_vm_map` CHANGE COLUMN `network_group_id` `security_group_id` bigint unsigned NOT NULL;
 
---recreate indexes/constraints;
---ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group___account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
---ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group__domain_id` FOREIGN KEY `fk_security_group__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
---ALTER TABLE `cloud`.`security_group` ADD INDEX `i_security_group_name`(`name`);
+ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group___account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group__domain_id` FOREIGN KEY `fk_security_group__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
+ALTER TABLE `cloud`.`security_group` ADD INDEX `i_security_group_name`(`name`);
 
---ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `fk_security_ingress_rule___security_group_id` FOREIGN KEY `fk_security_ingress_rule__security_group_id` (`security_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
---ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `fk_security_ingress_rule___allowed_network_id` FOREIGN KEY `fk_security_ingress_rule__allowed_network_id` (`allowed_network_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
---ALTER TABLE `cloud`.`security_ingress_rule` ADD INDEX `i_security_ingress_rule_network_id`(`security_group_id`);
---ALTER TABLE `cloud`.`security_ingress_rule` ADD INDEX `i_security_ingress_rule_allowed_network`(`allowed_network_id`);
+ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `fk_security_ingress_rule___security_group_id` FOREIGN KEY `fk_security_ingress_rule__security_group_id` (`security_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `fk_security_ingress_rule___allowed_network_id` FOREIGN KEY `fk_security_ingress_rule__allowed_network_id` (`allowed_network_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`security_ingress_rule` ADD INDEX `i_security_ingress_rule_network_id`(`security_group_id`);
+ALTER TABLE `cloud`.`security_ingress_rule` ADD INDEX `i_security_ingress_rule_allowed_network`(`allowed_network_id`);
 
---ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___security_group_id` FOREIGN KEY `fk_security_group_vm_map___security_group_id` (`network_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
---ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___instance_id` FOREIGN KEY `fk_security_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___security_group_id` FOREIGN KEY `fk_security_group_vm_map___security_group_id` (`security_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___instance_id` FOREIGN KEY `fk_security_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
 --n/w to sec grps ends --;
 
 CREATE TABLE `cloud`.`instance_group` (
