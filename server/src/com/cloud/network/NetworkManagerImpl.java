@@ -972,6 +972,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Integer networkRate = _configMgr.getNetworkRate(no.getId());
             vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate));
         }
+        
+        if (nics.size() != networks.size()) {
+            s_logger.warn("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
+            throw new CloudRuntimeException("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
+        }
 
         if (nics.size() == 1) {
             nics.get(0).setDefaultNic(true);
