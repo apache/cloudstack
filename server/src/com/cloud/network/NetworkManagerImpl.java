@@ -721,7 +721,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 null, 
                 null, 
                 true, 
-                Availability.Required, 
+                Availability.Optional, 
                 //services - all true except for firewall/lb/vpn and gateway services
                 true, true, true, false, false,false, false, GuestIpType.Direct);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);

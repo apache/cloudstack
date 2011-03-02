@@ -2589,8 +2589,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
     
-    
-    
     @Override
     public NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd) {
         String displayText = cmd.getDisplayText();
@@ -2600,9 +2598,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Availability availability = null;
         
         // Verify input parameters
-        NetworkOfferingVO offeringHandle = _networkOfferingDao.findById(id);
-        if (offeringHandle == null) {
+        NetworkOfferingVO offeringToUpdate = _networkOfferingDao.findById(id);
+        if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("unable to find network offering " + id);
+        }
+        
+        //Don't allow to update system network offering
+        if (offeringToUpdate.isSystemOnly()) {
+            throw new InvalidParameterValueException("Can't update system network offerings");
         }
 
         NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
