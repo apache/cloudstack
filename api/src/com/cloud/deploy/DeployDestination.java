@@ -89,11 +89,33 @@ public class DeployDestination {
     
     @Override
     public String toString() {
+        
+        Long dcId = null;
+        Long podId = null;
+        Long clusterId = null;
+        Long hostId = null;
+        
+        if (_dc != null) {
+            dcId = _dc.getId();
+        } 
+        
+        if (_pod != null) {
+            podId = _pod.getId();
+        }
+        
+        if (_cluster != null) {
+            clusterId = _cluster.getId();
+        }
+        
+        if (_host != null) {
+            hostId = _host.getId();
+        }
+        
     	StringBuilder destination = new StringBuilder("Dest[Zone(Id)-Pod(Id)-Cluster(Id)-Host(Id)-Storage(Volume(Id|Type-->Pool(Id))] : Dest[");
-    	destination.append("Zone(").append(_dc.getId()).append(")").append("-");
-    	destination.append("Pod(").append(_pod.getId()).append(")").append("-");
-    	destination.append("Cluster(").append(_cluster.getId()).append(")").append("-");
-    	destination.append("Host(").append(_host.getId()).append(")").append("-");
+    	destination.append("Zone(").append(dcId).append(")").append("-");
+    	destination.append("Pod(").append(podId).append(")").append("-");
+    	destination.append("Cluster(").append(clusterId).append(")").append("-");
+    	destination.append("Host(").append(hostId).append(")").append("-");
     	destination.append("Storage(");
     	if(_storage != null){
     		String storageStr = "";
