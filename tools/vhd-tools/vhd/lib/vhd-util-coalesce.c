@@ -134,17 +134,23 @@ vhd_util_coalesce(int argc, char **argv)
 
 	name  = NULL;
 	pname = NULL;
+	int pflag = 0;
 	parent.file = NULL;
 
 	if (!argc || !argv)
 		goto usage;
 
 	optind = 0;
-	while ((c = getopt(argc, argv, "n:h")) != -1) {
+	while ((c = getopt(argc, argv, "n:p:h")) != -1) {
 		switch (c) {
 		case 'n':
 			name = optarg;
 			break;
+		case 'p':
+                        pflag = 1;
+			pname = optarg;
+			break;
+
 		case 'h':
 		default:
 			goto usage;
@@ -160,11 +166,13 @@ vhd_util_coalesce(int argc, char **argv)
 		return err;
 	}
 
-	err = vhd_parent_locator_get(&vhd, &pname);
-	if (err) {
-		printf("error finding %s parent: %d\n", name, err);
-		vhd_close(&vhd);
-		return err;
+    	if (pname == NULL) {
+		err = vhd_parent_locator_get(&vhd, &pname);
+		if (err) {
+			printf("error finding %s parent: %d\n", name, err);
+			vhd_close(&vhd);
+			return err;
+		}
 	}
 
 	if (vhd_parent_raw(&vhd)) {
@@ -204,7 +212,9 @@ vhd_util_coalesce(int argc, char **argv)
 	err = 0;
 
  done:
-	free(pname);
+        if (pflag==0) {
+		free(pname);
+	}
 	vhd_close(&vhd);
 	if (parent.file)
 		vhd_close(&parent);
@@ -213,6 +223,6 @@ vhd_util_coalesce(int argc, char **argv)
 	return err;
 
 usage:
-	printf("options: <-n name> [-h help]\n");
+	printf("options: <-n name> [ -p parent name] [-h help]\n");
 	return -EINVAL;
 }
