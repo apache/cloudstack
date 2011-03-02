@@ -4718,17 +4718,22 @@ public class ManagementServerImpl implements ManagementServer {
             }
             return hypers.split(",");
         } else {
-            String[] result = null;
+            int i = 0;
             List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
             if(clustersForZone != null && clustersForZone.size() > 0) {
-                result = new String[clustersForZone.size()];
-                int i = 0;
+                Set<String> result = new HashSet<String>();
                 for(ClusterVO cluster : clustersForZone) {
-                    result[i++] = cluster.getHypervisorType().toString();
+                    result.add(cluster.getHypervisorType().toString());
                 }
+                
+                String[] resultArray = new String[result.size()];
+                for(String entity : result) {
+                    resultArray[i++] = entity;
+                }
+                return resultArray;
             }
-            return result;
         }
+        return null;
     }
 
 	@Override
