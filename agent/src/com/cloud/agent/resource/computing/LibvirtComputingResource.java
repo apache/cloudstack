@@ -35,12 +35,9 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.SortedMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -126,6 +123,7 @@ import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
@@ -164,7 +162,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
@@ -288,6 +285,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected String _pool;
 	protected String _localGateway;
 	private boolean _can_bridge_firewall;
+	protected String _localStoragePath;
 	private Pair<String, String> _pifs;
 	private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 	
@@ -542,6 +540,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	} else {
         		_privNwName = "cloud-private";
         	}
+        }
+        
+        _localStoragePath = (String)params.get("local.storage.path");
+        if (_localStoragePath == null) {
+            _localStoragePath = "/var/lib/libvirt/images/";
         }
         
          value = (String)params.get("scripts.timeout");
@@ -1309,7 +1312,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
          StoragePool primaryPool = null;
          StorageVol tmplVol = null;
          StorageVol primaryVol = null;
-         String result;
          Connect conn = null;
          try {
              conn = LibvirtConnection.getConnection();
@@ -2370,14 +2372,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
  
         final List<Object> info = getHostInfo();
-      
+
         final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM, RouterPrivateIpStrategy.HostLocal, changes);
         fillNetworkInformation(cmd);
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.setPool(_pool);
         cmd.setCluster(_clusterId);
-
-        return new StartupCommand[]{cmd};
+        
+        StartupStorageCommand sscmd = null;
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+            com.cloud.agent.api.StoragePoolInfo pi = _storageResource.initializeLocalStorage(conn, _localStoragePath, cmd.getPrivateIpAddress());
+            sscmd = new StartupStorageCommand();
+            sscmd.setPoolInfo(pi);
+            sscmd.setGuid(pi.getUuid());
+            sscmd.setDataCenter(_dcId);
+            sscmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
+        } catch (LibvirtException e) {
+            
+        }
+       
+        if (sscmd != null) {
+            return new StartupCommand[]{cmd, sscmd};
+        } else {
+            return new StartupCommand[]{cmd};
+        }
 	}
 	
 	protected HashMap<String, State> sync() {

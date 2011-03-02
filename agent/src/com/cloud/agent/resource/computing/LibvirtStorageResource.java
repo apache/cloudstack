@@ -15,13 +15,16 @@ import org.libvirt.StoragePoolInfo;
 import org.libvirt.StorageVol;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
+import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.computing.KVMHABase.PoolType;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef.poolType;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef.volFormat;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.script.Script;
 
@@ -372,6 +375,65 @@ public class LibvirtStorageResource {
 
             }
         }
+    }
+    public com.cloud.agent.api.StoragePoolInfo initializeLocalStorage(Connect conn, String localStoragePath, String hostIp) {
+        if (!(_storageLayer.exists(localStoragePath) && _storageLayer.isDirectory(localStoragePath))) {
+            return null;
+        }
+        
+        File path = new File(localStoragePath);
+        if (!(path.canWrite() && path.canRead() && path.canExecute())) {
+            return null;
+        }
+        String lh = hostIp + localStoragePath;
+        String uuid = UUID.nameUUIDFromBytes(lh.getBytes()).toString();
+        StoragePool pool = null;
+        try {
+            pool = conn.storagePoolLookupByUUIDString(uuid);
+        } catch (LibvirtException e) {
+            
+        }
+        
+        if (pool == null) {
+            LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.DIR, uuid, uuid,
+                    null, null, localStoragePath);
+            try {
+                pool = conn.storagePoolDefineXML(spd.toString(), 0);
+                pool.create(0);
+            } catch (LibvirtException e) {
+                if (pool != null) {
+                    try {
+                        pool.destroy();
+                        pool.undefine();
+                    } catch (LibvirtException e1) {
+                    }
+                    pool = null;
+                }
+            }
+        }
+        
+        if (pool == null) {
+            return null;
+        }
+        
+        try {
+            StoragePoolInfo spi = pool.getInfo();
+            if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+                pool.create(0);
+            }
+            
+            spi = pool.getInfo();
+            if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+                return null;
+            }
+            com.cloud.agent.api.StoragePoolInfo pInfo = new com.cloud.agent.api.StoragePoolInfo(uuid, hostIp, localStoragePath, localStoragePath, StoragePoolType.Filesystem, spi.capacity, spi.available);
+
+            return pInfo;
+        } catch (LibvirtException e) {
+
+        }
+
+        return null;
     }
     
 }

@@ -60,6 +60,7 @@ import com.cloud.ha.HighAvailabilityManagerImpl;
 import com.cloud.ha.dao.HighAvailabilityDaoImpl;
 import com.cloud.host.dao.DetailsDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
 import com.cloud.maid.StackMaidManagerImpl;
 import com.cloud.maid.dao.StackMaidDaoImpl;
@@ -246,6 +247,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("OvsTunnelDao", OvsTunnelDaoImpl.class);
         addDao("OvsTunnelAccountDao", OvsTunnelAccountDaoImpl.class);
         addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
+        addDao("HostTagsDao", HostTagsDaoImpl.class);
     }
     
     @Override

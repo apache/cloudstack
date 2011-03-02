@@ -85,7 +85,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	public DeployDestination plan(VirtualMachineProfile vmProfile,
 			DeploymentPlan plan, ExcludeList avoid)
 			throws InsufficientServerCapacityException {
-	    String _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
+ 	    String _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
 		VirtualMachine vm = vmProfile.getVirtualMachine();
 		ServiceOffering offering = vmProfile.getServiceOffering();
 		DataCenter dc = _dcDao.findById(vm.getDataCenterId());
@@ -430,7 +430,19 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	            }
 			}
 			DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
-			DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
+	         DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
+
+	         boolean useLocalStorage = false;
+			if (vmProfile.getType() != VirtualMachine.Type.User) {
+			    String ssvmUseLocalStorage = _configDao.getValue(Config.SystemVMUseLocalStorage.key());
+			    if (ssvmUseLocalStorage.equalsIgnoreCase("true")) {
+			        useLocalStorage = true;
+			    }
+			} else {
+			    useLocalStorage = diskOffering.getUseLocalStorage();
+			}
+			diskProfile.setUseLocalStorage(useLocalStorage);
+			
 			
 			boolean foundPotentialPools = false;
 			

@@ -102,6 +102,9 @@ public class DiskProfile {
         return useLocalStorage;
     }
     
+    public void setUseLocalStorage(boolean useLocalStorage) {
+        this.useLocalStorage = useLocalStorage;
+    }
     /**
      * @return Is this volume recreatable?  A volume is recreatable if the disk's content can be
      * reconstructed from the template.
