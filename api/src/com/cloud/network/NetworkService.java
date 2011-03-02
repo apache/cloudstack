@@ -25,6 +25,7 @@ import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,6 +36,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.vm.ReservationContext;
 
 
 public interface NetworkService {

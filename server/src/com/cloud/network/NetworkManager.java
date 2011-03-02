@@ -20,7 +20,6 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
@@ -181,5 +180,7 @@ public interface NetworkManager extends NetworkService {
     boolean isServiceSupported(long networkId, Network.Service service);
 
     Network getNetworkWithSecurityGroupEnabled(Long zoneId);
+    
+    boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
 }

@@ -2080,8 +2080,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         Account callerAccount = _accountMgr.getActiveAccount(caller.getAccountId());
         
-        
-        
         //Check if network exists
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
@@ -2110,6 +2108,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return success;
+    }
+    
+    @Override
+    public boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+        
+        //Check if network exists
+        NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Network with id=" + networkId + " doesn't exist");
+        }
+        
+        //implement the network
+        s_logger.debug("Starting network " + network + "...");
+        Pair<NetworkGuru, NetworkVO> implementedNetwork = implementNetwork(networkId, dest, context);
+        if (implementedNetwork.first() == null) {
+            s_logger.warn("Failed to start the network " + network);
+            return false;
+        } else {
+            return true;   
+        }
     }
     
     private boolean restartNetwork(long networkId, boolean restartElements, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {

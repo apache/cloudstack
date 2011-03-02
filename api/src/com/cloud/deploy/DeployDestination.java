@@ -84,6 +84,27 @@ public class DeployDestination {
     
     @Override
     public String toString() {
-        return new StringBuilder("Dest[").append(_dc.getId()).append("-").append(_pod.getId()).append("-").append(_cluster.getId()).append("-").append(_host.getId()).append("]").toString();
+        Long dcId = null;
+        Long podId = null;
+        Long clusterId = null;
+        Long hostId = null;
+        
+        if (_dc != null) {
+            dcId = _dc.getId();
+        } 
+        
+        if (_pod != null) {
+            podId = _pod.getId();
+        }
+        
+        if (_cluster != null) {
+            clusterId = _cluster.getId();
+        }
+        
+        if (_host != null) {
+            hostId = _host.getId();
+        }
+        
+        return new StringBuilder("Dest[").append(dcId).append("-").append(podId).append("-").append(clusterId).append("-").append(hostId).append("]").toString();
     }
 }

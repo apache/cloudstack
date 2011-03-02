@@ -67,6 +67,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -155,6 +156,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -1312,6 +1314,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public VirtualRouter startRouter(long routerId, boolean restartNetwork) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         Account account = UserContext.current().getCaller();
+        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -1319,6 +1322,24 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
         _accountMgr.checkAccess(account, router);
+        
+        Account owner = _accountMgr.getAccount(router.getAccountId());
+        
+        //Check if all networks are implemented for the domR; if not - implement them
+        DataCenter dc = _dcDao.findById(router.getDataCenterId());
+        HostPodVO pod = _podDao.findById(router.getPodId());
+        DeployDestination dest = new DeployDestination(dc, pod, null, null);
+        
+        ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
+        
+        List<NicVO> nics = _nicDao.listByVmId(routerId);
+        
+        for (NicVO nic : nics) {
+            if (!_networkMgr.startNetwork(nic.getNetworkId(), dest, context)) {
+                s_logger.warn("Failed to start network id=" + nic.getNetworkId() + " as a part of domR start");
+                throw new CloudRuntimeException("Failed to start network id=" + nic.getNetworkId() + " as a part of domR start");
+            }
+        }
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
         Map<Param, Object> params = new HashMap<Param, Object>();
