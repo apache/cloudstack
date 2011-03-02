@@ -749,7 +749,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Direct", 
                 TrafficType.Guest, 
                 false, true, null, null, null, true, 
-                Availability.Required, 
+                Availability.Optional, 
                 true, true, true, //services - all true except for firewall/lb/vpn and gateway
                 false, false, false, false, GuestIpType.Direct);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
