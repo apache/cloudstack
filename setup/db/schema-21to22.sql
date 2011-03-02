@@ -1,10 +1,14 @@
 --;
 -- Schema upgrade from 2.1 to 2.2;
 --;
-ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned NOT NULL DEFAULT 0;
+
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL;
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged';
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template is belonged to';
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `extractable` int(1) unsigned NOT NULL default 0 COMMENT 'Is this template extractable';
+ALTER TABLE `cloud`.`template_spool_ref` ADD CONSTRAINT `fk_template_spool_ref__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template`(`id`);    
+ALTER TABLE `cloud`.`template_spool_ref` ADD CONSTRAINT `fk_template_spool_ref__pool_id` FOREIGN KEY (`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE;
 
 -- NOTE for tables below;
 -- these 2 tables were used in 2.1, but are not in 2.2;
