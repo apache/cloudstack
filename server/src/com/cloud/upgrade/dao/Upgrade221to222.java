@@ -26,13 +26,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class Upgrade221to222 implements DbUpgrade {
 
     @Override
-    public File getPrepareScript() {
+    public File[] getPrepareScripts() {
         File file = PropertiesUtil.findConfigFile("schema-221to222.sql");
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-221to222.sql");
         }
         
-        return file;
+        return new File[] {file};
     }
         
     @Override
@@ -41,13 +41,13 @@ public class Upgrade221to222 implements DbUpgrade {
     }
 
     @Override
-    public File getCleanupScript() {
+    public File[] getCleanupScripts() {
         File file = PropertiesUtil.findConfigFile("schema-221to222-cleanup.sql");
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-221to222-cleanup.sql");
         }
         
-        return file;
+        return new File[] {file};
     }
 
     @Override

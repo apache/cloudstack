@@ -224,7 +224,7 @@ public class Upgrade217to22 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         upgradeDataCenter(conn);
-        upgradeNetworks(conn);
+    //    upgradeNetworks(conn);
         upgradeStoragePools(conn);
     }
 
