@@ -24,6 +24,6 @@ alter table data_center add column `is_security_group_enabled` tinyint NOT NULL 
 update data_center set is_security_group_enabled=0;
 update data_center set dns_provider='DhcpServer', dhcp_provider='DhcpServer', userdata_provider='DhcpServer', lb_provider=null, firewall_provider=null, vpn_provider=null, gateway_provider=null where networktype='Basic';
 update network_offerings set specify_vlan=1 where system_only=0 and guest_type='Direct';
-
+update networks set traffic_type='Guest' where network_offering_id in (select id from network_offerings where system_only=0);
 
 
