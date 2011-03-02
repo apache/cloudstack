@@ -560,7 +560,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
-                    dest = planner.plan(vmProfile, plan, avoids);
+					if (planner.canHandle(vmProfile, plan, avoids)) {
+						dest = planner.plan(vmProfile, plan, avoids);
+					} else {
+						continue;
+					}
                     if (dest != null) {
                         avoids.addHost(dest.getHost().getId());
                         journal.record("Deployment found ", vmProfile, dest);

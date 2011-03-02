@@ -66,17 +66,20 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
     private String hypervisor;
     
-    @Parameter(name=ApiConstants.HOST_CPU_CAPACITY, type=CommandType.LONG, description="HZ per CPU of host")
+    @Parameter(name=ApiConstants.HOST_CPU_CAPACITY, type=CommandType.LONG, description="Only for hypervisor is BareMetal, HZ per CPU of host")
     private Long cpuCapacity;
     
-    @Parameter(name=ApiConstants.HOST_CPU_NUM, type=CommandType.LONG, description="number of CPU on host")
+    @Parameter(name=ApiConstants.HOST_CPU_NUM, type=CommandType.LONG, description="Only for hypervisor is BareMetal, number of CPU on host")
     private Long cpuNum;
     
-    @Parameter(name=ApiConstants.HOST_MEM_CAPACITY, type=CommandType.LONG, description="memory capacity of host")
+    @Parameter(name=ApiConstants.HOST_MEM_CAPACITY, type=CommandType.LONG, description="Only for hypervisor is BareMetal, memory capacity of host(in MB)")
     private Long memCapacity;
     
-    @Parameter(name=ApiConstants.HOST_MAC, type=CommandType.STRING, required=true, description="Mac of PXE nic")
+    @Parameter(name=ApiConstants.HOST_MAC, type=CommandType.STRING, description="Only for hypervisor is BareMetal, Mac of PXE nic")
     private String mac;
+    
+    @Parameter(name=ApiConstants.HOST_TAG, type=CommandType.STRING, description="Only for hypervisor is BareMetal, Tag of host")
+    private String hostTag;
     
     
 
@@ -131,6 +134,10 @@ public class AddHostCmd extends BaseCmd {
     
     public String getMac() {
     	return mac;
+    }
+    
+    public String getHostTag() {
+    	return hostTag;
     }
     
     /////////////////////////////////////////////////////

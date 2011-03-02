@@ -139,5 +139,4 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     public int getMulticastRateMbps() {
 		return multicastRateMbps;
 	}
-
 }

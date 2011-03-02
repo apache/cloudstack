@@ -20,6 +20,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -27,6 +28,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -43,7 +45,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value=DeploymentPlanner.class)
 public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);
-	@Inject private HostDao _hostDao;
+	@Inject protected HostDao _hostDao;
 	@Inject private CapacityDao _capacityDao;
 	@Inject private DataCenterDao _dcDao;
 	@Inject private HostPodDao _podDao;
@@ -285,5 +287,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     	long guestOSCategoryId = guestOS.getCategoryId();
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	return guestOSCategory.getName();
+    }
+    
+    @Override
+	public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
+    	return vm.getHypervisorType() != HypervisorType.BareMetal;
     }
 }

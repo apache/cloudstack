@@ -73,5 +73,4 @@ public interface ServiceOffering {
     boolean getUseLocalStorage();
     
     Long getDomainId();
-    
 }

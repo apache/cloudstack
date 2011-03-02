@@ -64,15 +64,15 @@ public class LinMinPxeServerManagerImpl extends PxeServerManagerImpl implements 
 		apiPassword = cmd.getLinMinPassword();
 		apid = cmd.getLinMinApid();
 		if (apiUsername == null) {
-			throw new InvalidParameterValueException("No LinMin username specified, without it I can user LinMin API");
+			throw new InvalidParameterValueException("No LinMin username specified, without it I can not use LinMin API");
 		}
 		
 		if (apiPassword == null) {
-			throw new InvalidParameterValueException("No LinMin password specified, without it I can user LinMin API");
+			throw new InvalidParameterValueException("No LinMin password specified, without it I can not use LinMin API");
 		}
 		
 		if (apid == null) {
-			throw new InvalidParameterValueException("No LinMin apid specified, without it I can user LinMin API");
+			throw new InvalidParameterValueException("No LinMin apid specified, without it I can not use LinMin API");
 		}
 		
 		String ipAddress = uri.getHost();

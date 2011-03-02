@@ -229,4 +229,8 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 	public Map<Param, Object> getParameters() {
 	    return _params;
 	}
+
+	public void setServiceOffering(ServiceOfferingVO offering) {
+		_offering = offering;
+	}
 }

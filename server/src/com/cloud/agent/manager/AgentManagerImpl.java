@@ -754,6 +754,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Long cpuCapacity = cmd.getCpuCapacity();
 		Long cpuNum = cmd.getCpuNum();
 		String mac = cmd.getMac();
+		String hostTag = cmd.getHostTag();
 		Map<String, String>bareMetalParams = new HashMap<String, String>();
 		
 		// this is for standalone option
@@ -779,6 +780,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			bareMetalParams.put("cpuCapacity", cpuCapacity.toString());
 			bareMetalParams.put("memCapacity", memCapacity.toString());
 			bareMetalParams.put("mac", mac);
+			if (hostTag != null) {
+				bareMetalParams.put("hostTag", hostTag);
+			}
 		}
 		
 		
