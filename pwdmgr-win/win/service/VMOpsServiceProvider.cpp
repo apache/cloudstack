@@ -14,9 +14,47 @@
 #include <iptypes.h>
 #include <iphlpapi.h>
 #include <wininet.h>
+#include <list>
 
 using namespace VMOps;
 
+/////////////////////////////////////////////////////////////////////////////
+// Helpers
+//
+bool IsAddressAlreadyInList(const IP_ADDRESS_STRING& addr, std::list<IP_ADDRESS_STRING>& listDhCPServers)
+{
+	for(std::list<IP_ADDRESS_STRING>::iterator it = listDhCPServers.begin(); it != listDhCPServers.end(); it++)
+	{
+		if(strcmpi(addr.String, (*it).String) == 0)
+			return true;
+	}
+
+	return false;
+}
+
+void GetDHCPServers(std::list<IP_ADDRESS_STRING>& listDhCPServers)
+{
+	ULONG ulSize = 0;
+	GetAdaptersInfo(NULL, &ulSize);
+
+	PIP_ADAPTER_INFO pHead = (PIP_ADAPTER_INFO)new BYTE[ulSize];
+	PIP_ADAPTER_INFO pAdapterInfo = pHead;
+	GetAdaptersInfo(pAdapterInfo, &ulSize);
+
+	while(pAdapterInfo->Next != NULL)
+	{
+		if(pAdapterInfo->DhcpEnabled && !IsAddressAlreadyInList(pAdapterInfo->DhcpServer.IpAddress, listDhCPServers))
+			listDhCPServers.push_back(pAdapterInfo->DhcpServer.IpAddress);
+
+		pAdapterInfo = pAdapterInfo->Next;
+	}
+
+	delete [](LPBYTE)pHead;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CVMOpsServiceProvider
+//
 CVMOpsServiceProvider::CVMOpsServiceProvider()
 {
 	m_pWatcher = NULL;
@@ -85,6 +123,35 @@ HERROR CVMOpsServiceProvider::SetPassword(LPCTSTR lpszUserName, LPCTSTR lpszPass
 	}
 	return HERROR_SUCCESS;
 }
+
+HERROR CVMOpsServiceProvider::GetNextPasswordProvider(LPSTR lpszBuf, LPDWORD pdwLength)
+{
+	if(m_lstProviders.size() == 0)
+	{
+		IP_ADDRESS_STRING addr;
+		memset(&addr, 0, sizeof(addr));
+		DWORD dwLength = sizeof(addr.String);
+		GetDefaultGateway(addr.String, &dwLength);
+
+		if(addr.String[0] != 0)
+			m_lstProviders.push_back(addr);
+
+		GetDHCPServers(m_lstProviders);
+	}
+
+	if(m_lstProviders.size() > 0)
+	{
+		strcpy(lpszBuf, (*(m_lstProviders.begin())).String);
+		m_lstProviders.pop_front();
+	}
+	else
+	{
+		lpszBuf[0] = 0;
+	}
+
+	return HERROR_SUCCESS;
+}
+
 
 HERROR CVMOpsServiceProvider::GetDefaultGateway(LPSTR lpszBuf, LPDWORD pdwLength)
 {

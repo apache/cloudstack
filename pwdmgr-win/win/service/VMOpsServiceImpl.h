@@ -12,6 +12,8 @@
 #include "ThreadUtil.h"
 
 #include <stdio.h>
+#include <IPHlpApi.h>
+#include <list>
 
 namespace VMOps {
 
@@ -35,6 +37,7 @@ public :
 
 public :
 	HERROR SetPassword(LPCTSTR lpszUserName, LPCTSTR lpszPassword);
+	HERROR GetNextPasswordProvider(LPSTR lpszBuf, LPDWORD pdwLength);
 	HERROR GetDefaultGateway(LPSTR lpszBuf, LPDWORD pdwLength);
 	HERROR SimpleHttpGet(LPCTSTR lpszUrl, LPCTSTR lpszHeaders, 
 		LPVOID pOutputBuffer, DWORD dwBytesToRead, DWORD* pdwBytesRead);
@@ -44,6 +47,8 @@ public :
 
 protected :
 	CVMOpsStartupWatcher* m_pWatcher;
+
+	std::list<IP_ADDRESS_STRING> m_lstProviders;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -62,7 +67,7 @@ protected :
 	virtual DWORD ThreadRun();
 
 	BOOL DoStartupConfig();
-	BOOL GetDomRUrl(LPTSTR lpszUrl);
+	BOOL GetPasswordProviderUrl(LPTSTR lpszUrl);
 
 protected :
 	CVMOpsServiceProvider* m_pProvider;

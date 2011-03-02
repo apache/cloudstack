@@ -74,13 +74,13 @@ DWORD CVMOpsStartupWatcher::ThreadRun()
 	return 0;
 }
 
-BOOL CVMOpsStartupWatcher::GetDomRUrl(LPTSTR lpszUrl)
+BOOL CVMOpsStartupWatcher::GetPasswordProviderUrl(LPTSTR lpszUrl)
 {
 	// asumming we have enough space in lpszUrl
 	char achBuf[256];
 	achBuf[0] = 0;
 	DWORD dwLength = sizeof(achBuf);
-	if(m_pProvider->GetDefaultGateway(achBuf, &dwLength) == HERROR_SUCCESS)
+	if(m_pProvider->GetNextPasswordProvider(achBuf, &dwLength) == HERROR_SUCCESS)
 	{
 		USES_CONVERSION;
 
@@ -92,6 +92,7 @@ BOOL CVMOpsStartupWatcher::GetDomRUrl(LPTSTR lpszUrl)
 	}
 	return FALSE;
 }
+
 
 BOOL CVMOpsStartupWatcher::DoStartupConfig()
 {
@@ -107,7 +108,7 @@ BOOL CVMOpsStartupWatcher::DoStartupConfig()
 	char achResult[256];
 
 	memset(achUrl, 0, sizeof(achUrl));
-	GetDomRUrl(achUrl);
+	GetPasswordProviderUrl(achUrl);
 
 	if(achUrl[0] != 0)
 	{
@@ -120,7 +121,7 @@ BOOL CVMOpsStartupWatcher::DoStartupConfig()
 			achResult, dwBytesToRead, &dwBytesRead) == HERROR_SUCCESS)
 		{
 			achResult[dwBytesRead] = 0;
-			//Trim whitespace at tail
+			// Trim whitespace at tail
 			int nPos = strlen(achResult) - 1;
 			while(nPos > 0)
 			{
