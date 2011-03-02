@@ -2,7 +2,9 @@
 <%
 long milliseconds = new Date().getTime();
 %>
+<!--  
 <script type="text/javascript" src="scripts/cloud.core.configuration.js?t=<%=milliseconds%>"></script>
+-->
 	
 <!-- Content Panel -->
 <!-- Submenu -->
@@ -443,15 +445,19 @@ long milliseconds = new Date().getTime();
 					<select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">					
 					</select>
 				</li>
-				<li style="display:none" id="add_publicip_vlan_domain_container">
-					<label for="user_name">Domain:</label>
+				<li style="display:none" id="domain_container">
+					<label>Domain:</label>
+					<input class="text" type="text" id="domain" />
+                	<div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    <!--  
 					<select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">					
 					</select>
+					-->
 				</li>
-				<li style="display:none" id="add_publicip_vlan_account_container">
+				<li style="display:none" id="account_container">
 					<label for="user_name">Account:</label>
-					<input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account"/>
-					<div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+					<input class="text" type="text" id="account"/>
+					<div id="account_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
 					<label for="user_name">Gateway:</label>

@@ -67,6 +67,62 @@ function initializeTestTool() {
 	});
 }
 
+//autoComplete 
+var autoCompleteDomains = [];
+function applyAutoCompleteToDomainField($field) {  
+    $field.autocomplete({
+		source: function(request, response) {			
+			$.ajax({
+			    data: "command=listDomains&keyword=" + request.term +"&response=json",				
+				dataType: "json",
+				async: false,
+				success: function(json) {					   
+					autoCompleteDomains = json.listdomainsresponse.domain;					
+					var array1 = [];				
+					if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+						for(var i=0; i < autoCompleteDomains.length; i++) 					        
+							array1.push(fromdb(autoCompleteDomains[i].name));		   					   			    
+					}					
+					response(array1);
+				}
+			});		
+		}
+	}); 
+}
+
+function applyAutoCompleteToDomainChildrenField($field, parentDomainId) {  
+    $field.autocomplete({
+		source: function(request, response) {			
+			var array1 = [];
+			$.ajax({
+			    data: "command=listDomainChildren&id="+parentDomainId+"&isrecursive=true&keyword=" + request.term +"&response=json",							
+				dataType: "json",
+				async: false,
+				success: function(json) {	
+					autoCompleteDomains = json.listdomainchildrenresponse.domain;								
+					if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+						for(var i=0; i < autoCompleteDomains.length; i++) 					        
+							array1.push(fromdb(autoCompleteDomains[i].name));		   					   			    
+					}								
+				}
+			});	
+			$.ajax({
+			    data: "command=listDomains&id="+parentDomainId+"&keyword=" + request.term +"&response=json",						
+				dataType: "json",
+				async: false,
+				success: function(json) {	
+					var items = json.listdomainsresponse.domain;									
+					if(items != null && items.length > 0) {	
+					    autoCompleteDomains.push(items[0]);					
+					    array1.push(fromdb(items[0].name));										   			    
+					}	
+				}
+			});	
+			response(array1);	
+		}
+	}); 
+}
+
 // Role Functions
 function isAdmin() {
 	return (g_role == 1);

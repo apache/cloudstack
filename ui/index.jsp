@@ -49,6 +49,8 @@ long milliseconds = new Date().getTime();
 	<script type="text/javascript" src="scripts/cloud.core.js?t=<%=milliseconds%>"></script>
 	<script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=milliseconds%>"></script>
 		
+	<script type="text/javascript" src="scripts/cloud.core.configuration.js?t=<%=milliseconds%>"></script>	
+		
 	<!-- Favicon -->
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 	

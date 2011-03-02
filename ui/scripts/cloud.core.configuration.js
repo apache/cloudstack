@@ -613,8 +613,8 @@ function showConfigurationTab() {
 		var id = $(this).data("id");
 		
 		// reset dialog
-		dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
-		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
+		dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container, #domain_container, #account_container").hide();
+		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #account").val("");
 		dialogAddVlanForZone.find("#add_publicip_vlan_zone_name").text($(this).data("name"));
 		
 		if (getNetworkType() == 'vnet') {
@@ -640,6 +640,8 @@ function showConfigurationTab() {
 				}
 			});
 			
+			applyAutoCompleteToDomainField(dialogAddVlanForZone.find("#domain")); 
+			/*
 			var domainSelect = dialogAddVlanForZone.find("#add_publicip_vlan_domain").empty();	
 			$.ajax({
 				data: "command=listDomains&response=json",
@@ -654,6 +656,7 @@ function showConfigurationTab() {
 					} 
 				}
 			});
+			*/
 		}
 
 		dialogAddVlanForZone
@@ -669,7 +672,7 @@ function showConfigurationTab() {
 					isTagged = thisDialog.find("#add_publicip_vlan_tagged").val() == "tagged";
 				}
 				
-				isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
+				isValid &= validateString("Account", thisDialog.find("#account"), thisDialog.find("#account_errormsg"), true); //optional
 				
 				if (isTagged) {
 					isValid &= validateNumber("VLAN", thisDialog.find("#add_publicip_vlan_vlan"), thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
@@ -678,26 +681,66 @@ function showConfigurationTab() {
 				isValid &= validateIp("Netmask", thisDialog.find("#add_publicip_vlan_netmask"), thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
 				isValid &= validateIp("Start IP Range", thisDialog.find("#add_publicip_vlan_startip"), thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", thisDialog.find("#add_publicip_vlan_endip"), thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
-				if (!isValid) return;							
+					
+				var domainId;	
+				if(thisDialog.find("#domain_container").css("display") != "none") {
+				    isValid &= validateString("Domain", thisDialog.find("#domain"), thisDialog.find("#domain_errormsg"), false);                             //required	
+				    var domainName = thisDialog.find("#domain").val();				    
+				    if(domainName != null && domainName.length > 0) { 				    
+				        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+					        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+					          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					              domainId = autoCompleteDomains[i].id;
+					              break;	
+					          }
+				            } 					   			    
+				        }	       		    				    
+				        if(domainId == null) {
+				            showError(false, thisDialog.find("#domain"), thisDialog.find("#domain_errormsg"), "Not Found");
+				            isValid &= false;
+				        }				    
+				    }				
+				}				
 				
+				if (!isValid) 
+				    return;							
+				
+				var array1 = [];
+				array1.push("&zoneId="+id);				
+								
 				var vlan = trim(thisDialog.find("#add_publicip_vlan_vlan").val());
 				if (isTagged) {
 					vlan = "&vlan="+vlan;
 				} else {
 					vlan = "&vlan=untagged";
 				}
-				
-				var scopeParams = "";
-				if(dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")
-				    scopeParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());    
-				
-				var type = "true";
-				if (getNetworkType() == "vlan") type = trim(thisDialog.find("#add_publicip_vlan_type").val());
+				array1.push(vlan);
+								
+				var type = "true";	
+				if (getNetworkType() == "vlan") 
+				    type = trim(thisDialog.find("#add_publicip_vlan_type").val());				    
+				array1.push("&forVirtualNetwork="+type);    
+				    
 				var gateway = trim(thisDialog.find("#add_publicip_vlan_gateway").val());
-				var netmask = trim(thisDialog.find("#add_publicip_vlan_netmask").val());
-				var startip = trim(thisDialog.find("#add_publicip_vlan_startip").val());
-				var endip = trim(thisDialog.find("#add_publicip_vlan_endip").val());					
+				array1.push("&gateway="+encodeURIComponent(gateway));
 				
+				var netmask = trim(thisDialog.find("#add_publicip_vlan_netmask").val());
+				array1.push("&netmask="+encodeURIComponent(netmask));
+				
+				var startip = trim(thisDialog.find("#add_publicip_vlan_startip").val());
+				array1.push("&startip="+encodeURIComponent(startip));
+				
+				var endip = trim(thisDialog.find("#add_publicip_vlan_endip").val());	
+				array1.push("&endip="+encodeURIComponent(endip));				
+								
+				if(thisDialog.find("#domain_container").css("display") != "none") {                
+	                array1.push("&domainid="+domainId);		
+	            }  
+	            
+	            if(thisDialog.find("#account_container").css("display") != "none") {                
+	                array1.push("&account="+trim(thisDialog.find("#account").val()));		
+	            } 	             
+								
 				thisDialog.dialog("close"); 
 									
 				var template = $("#vlan_ip_range_template").clone(true);
@@ -712,7 +755,7 @@ function showConfigurationTab() {
 		        template.fadeIn("slow");					
 				
 				$.ajax({
-					data: "command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)+"&response=json",
+					data: "command=createVlanIpRange"+array1.join("")+"&response=json",
 					dataType: "json",
 					success: function(json) {
 						var vlan = json.createvlaniprangeresponse;
@@ -1024,7 +1067,7 @@ function showConfigurationTab() {
 			
 	if (getNetworkType() != "vnet") {
 		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {
-			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#domain_container", "#account_container". 
 			dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 	
 			
 			if (dialogAddVlanForZone.find("#add_publicip_vlan_type").val() == "false") { //direct VLAN (only tagged option)		
@@ -1050,11 +1093,11 @@ function showConfigurationTab() {
 	
 	dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(function(event) {
 	    if($(this).val() == "zone-wide") {
-	        dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").hide();
-			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").hide();    
+	        dialogAddVlanForZone.find("#domain_container").hide();
+			dialogAddVlanForZone.find("#account_container").hide();    
 	    } else { // account-specific
-	        dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").show();
-			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").show();    
+	        dialogAddVlanForZone.find("#domain_container").show();
+			dialogAddVlanForZone.find("#account_container").show();    
 	    }		    
 	    return false;
 	});
