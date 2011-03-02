@@ -80,7 +80,7 @@ BOOL CVMOpsStartupWatcher::GetPasswordProviderUrl(LPTSTR lpszUrl)
 	char achBuf[256];
 	achBuf[0] = 0;
 	DWORD dwLength = sizeof(achBuf);
-	if(m_pProvider->GetNextPasswordProvider(achBuf, &dwLength) == HERROR_SUCCESS)
+	if(m_pProvider->GetNextPasswordProvider(achBuf, &dwLength) == HERROR_SUCCESS && achBuf[0] != 0)
 	{
 		USES_CONVERSION;
 
@@ -112,7 +112,7 @@ BOOL CVMOpsStartupWatcher::DoStartupConfig()
 
 	if(achUrl[0] != 0)
 	{
-		CLogger::GetInstance()->Log("INFO", "Contact default gateway at : %ws", achUrl);
+		CLogger::GetInstance()->Log("INFO", "Contact password provider at : %ws", achUrl);
 
 		memset(achResult, 0, sizeof(achResult));
 		DWORD dwBytesToRead = sizeof(achResult) - 1;
@@ -158,7 +158,7 @@ BOOL CVMOpsStartupWatcher::DoStartupConfig()
 		}
 		else 
 		{
-			CLogger::GetInstance()->Log("ERROR", "Unable to contact default gateway at : %ws", achUrl);
+			CLogger::GetInstance()->Log("ERROR", "Unable to contact password provider at : %ws", achUrl);
 			return FALSE;
 		}
 

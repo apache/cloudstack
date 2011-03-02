@@ -235,9 +235,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:VMOps VM Instance Manager"
+        "ProductName" = "8:Cloud.com VM Instance Manager"
         "ProductCode" = "8:{CF1EDAC1-1EF6-495A-8211-8EECEE496060}"
-        "PackageCode" = "8:{0AD84965-2422-4BDC-8573-3A25C949D70D}"
+        "PackageCode" = "8:{BC086418-B24B-4152-AA2B-12178382DD18}"
         "UpgradeCode" = "8:{24149E96-AFD7-4183-8507-7778FC637D39}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -245,15 +245,15 @@
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:TRUE"
         "ProductVersion" = "8:1.0.0"
-        "Manufacturer" = "8:VMOps, Inc."
+        "Manufacturer" = "8:Cloud.com, Inc."
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:Setup VMOps VM Instance Manager"
+        "Title" = "8:Setup Cloud.com VM Instance Manager"
         "Subject" = "8:"
-        "ARPCONTACT" = "8:VMOps, Inc."
+        "ARPCONTACT" = "8:Cloud.com, Inc."
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:"
-        "ARPURLINFOABOUT" = "8:http://www.vmops.com/"
+        "ARPURLINFOABOUT" = "8:http://www.cloud.com/"
         "ARPPRODUCTICON" = "8:"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
@@ -384,8 +384,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "UpdateText"
@@ -429,8 +428,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -452,8 +450,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"
@@ -501,8 +498,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -533,8 +529,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ShowProgress"
@@ -578,8 +573,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ShowProgress"
@@ -629,8 +623,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -652,8 +645,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "InstallAllUsersVisible"
@@ -688,8 +680,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"
@@ -752,8 +743,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+                            "Setting" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }

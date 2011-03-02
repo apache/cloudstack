@@ -143,6 +143,9 @@ HERROR CVMOpsServiceProvider::GetNextPasswordProvider(LPSTR lpszBuf, LPDWORD pdw
 	{
 		strcpy(lpszBuf, (*(m_lstProviders.begin())).String);
 		m_lstProviders.pop_front();
+
+		if(strcmpi(lpszBuf, "0.0.0.0") == 0)
+			lpszBuf[0] = 0;
 	}
 	else
 	{

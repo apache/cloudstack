@@ -1,8 +1,8 @@
 //
 // VMOpsError.h
-// VMOps common error codes
+// Common error codes
 //
-// Copyright (C) VMOps Inc.
+// Copyright (C) Cloud.com Inc.
 // All rights reserved.
 //
 #ifndef __VMOpsError_H__

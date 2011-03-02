@@ -29,10 +29,10 @@ public :
 	{
 		CAtlServiceModuleT< CVMOpsInstanceManagerModule, IDS_SERVICENAME >::PreMessageLoop(nShowCmd);
 
-		// m_serviceProvider.SetPassword(_T("Administrator"), _T("password@vmops.com"));
 		CLogger::GetInstance()->Initialize();
 		m_serviceProvider.Start();
 
+		SetServiceStatus(SERVICE_RUNNING);
 		return S_OK;
 	}
 
@@ -109,7 +109,7 @@ public :
 		}
 
 		SC_HANDLE hService = ::CreateService(
-			hSCM, m_szServiceName, _T("VMOps Instance Manager"), 
+			hSCM, m_szServiceName, _T("Cloud.com VM Instance Manager"), 
 			SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
 			/*SERVICE_DEMAND_START*/ SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
 			szFilePath, NULL, NULL, _T("RPCSS\0"), NULL, NULL);

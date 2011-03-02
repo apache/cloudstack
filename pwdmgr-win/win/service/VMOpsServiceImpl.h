@@ -1,8 +1,8 @@
 //
 // VMOpsServiceImpl.h
-// VMOps instance manager implementation
+// Cloud.com instance manager implementation
 //
-// Copyright (C) VMOps Inc.
+// Copyright (C) Cloud.com Inc.
 // All rights reserved.
 //
 #ifndef __VMOpsServiceImpl_H__

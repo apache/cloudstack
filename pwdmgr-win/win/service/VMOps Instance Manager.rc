@@ -16,13 +16,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -59,8 +57,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 1,0,0,2
+ PRODUCTVERSION 2,0,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -75,14 +73,14 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "VMOps Inc."
-            VALUE "FileDescription", "VMOps Instance Management Service"
-            VALUE "FileVersion", "1.0.0.1"
-            VALUE "InternalName", "VMOps Instance Manager.exe"
-            VALUE "LegalCopyright", "(c) VMOps Inc.  All rights reserved."
-            VALUE "OriginalFilename", "VMOps Instance Manager.exe"
-            VALUE "ProductName", "VMOps Cloud Service"
-            VALUE "ProductVersion", "1.0.0.1"
+            VALUE "CompanyName", "Cloud.com Inc."
+            VALUE "FileDescription", "Cloud.com Instance Management Service"
+            VALUE "FileVersion", "1.0.0.2"
+            VALUE "InternalName", "Cloud.com Instance Manager.exe"
+            VALUE "LegalCopyright", "(c) Cloud.com Inc.  All rights reserved."
+            VALUE "OriginalFilename", "Cloud.com Instance Manager.exe"
+            VALUE "ProductName", "Cloud.com CloudStack"
+            VALUE "ProductVersion", "2.0.2.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -104,12 +102,12 @@ IDR_VMOPSINSTANCEMANAGER REGISTRY                "VMOps Instance Manager.rgs"
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
-    IDS_SERVICENAME         "VMOpsInstanceMgr"
+    IDS_SERVICENAME         "Cloud.com Instance Manager"
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

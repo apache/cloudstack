@@ -1,7 +1,7 @@
 //
 // ThreadUtl.h
 //
-// Copyright (C) VMOps Inc.
+// Copyright (C) Cloud.com Inc.
 // All rights reserved.
 //
 
