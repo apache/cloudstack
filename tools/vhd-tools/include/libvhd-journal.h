@@ -35,7 +35,7 @@
 #define VHD_JOURNAL_DATA           0x02
 
 #define VHD_JOURNAL_HEADER_COOKIE  "vjournal"
-#define VHD_JOURNAL_ENTRY_COOKIE   0xaaaa12344321aaaa
+#define VHD_JOURNAL_ENTRY_COOKIE   0xaaaa12344321aaaaLLU
 
 typedef struct vhd_journal_header {
 	char                       cookie[8];
