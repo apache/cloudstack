@@ -2607,6 +2607,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (offeringToUpdate.isSystemOnly()) {
             throw new InvalidParameterValueException("Can't update system network offerings");
         }
+        
+        //Don't allow to update default Direct network offering
+        if (offeringToUpdate.isDefault() && offeringToUpdate.getGuestType() == GuestIpType.Direct) {
+            throw new InvalidParameterValueException("Can't update Default Direct network offering");
+        }
 
         NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
 
