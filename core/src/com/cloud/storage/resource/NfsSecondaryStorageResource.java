@@ -167,7 +167,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
 	}
     
-    private String allowOutgoingOnPrivate(String destCidr) {
+    public String allowOutgoingOnPrivate(String destCidr) {
     	
     	Script command = new Script("/bin/bash", s_logger);
     	String intf = "eth1";
