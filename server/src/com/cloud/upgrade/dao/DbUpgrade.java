@@ -31,7 +31,7 @@ public interface DbUpgrade {
      * @return the script to prepare the database schema for the 
      * data migration step.
      */
-    File getPrepareScript();
+    File[] getPrepareScripts();
     
     /**
      * Performs the actual data migration.
@@ -42,5 +42,5 @@ public interface DbUpgrade {
      * 
      * @return
      */
-    File getCleanupScript();
+    File[] getCleanupScripts();
 }

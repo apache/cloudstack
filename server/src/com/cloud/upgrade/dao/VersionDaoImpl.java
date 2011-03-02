@@ -54,10 +54,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements VersionDao {
     private static final Logger s_logger = Logger.getLogger(VersionDaoImpl.class);
     
-    static HashMap<Pair<String, String>, DbUpgrade[]> s_upgradeMap = new HashMap<Pair<String, String>, DbUpgrade[]>();
-    static {
-        s_upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.1"), new DbUpgrade[] { new Upgrade217to22() });
-    }
+    protected HashMap<Pair<String, String>, DbUpgrade[]> _upgradeMap = new HashMap<Pair<String, String>, DbUpgrade[]>();
     
     String _dumpPath = null;
     
@@ -66,6 +63,8 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
     
     protected VersionDaoImpl() {
         super();
+        
+        _upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.1"), new DbUpgrade[] { new Upgrade217to22() });
         
         CurrentVersionSearch = createSearchBuilder(String.class);
         CurrentVersionSearch.select(null, Func.FIRST, CurrentVersionSearch.entity().getVersion());
@@ -148,7 +147,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
     protected void upgrade(String dbVersion, String currentVersion) throws ConfigurationException {
         s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
         
-        DbUpgrade[] upgrades = s_upgradeMap.get(new Pair<String, String>(dbVersion, currentVersion));
+        DbUpgrade[] upgrades = _upgradeMap.get(new Pair<String, String>(dbVersion, currentVersion));
         if (upgrades == null) {
             throw new ConfigurationException("There is no upgrade path from " + dbVersion + " to " + currentVersion);
         }
@@ -179,9 +178,11 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Unable to upgrade the database", e);
             }
-            File script = upgrade.getPrepareScript();
-            if (script != null) {
-                runScript(script);
+            File[] scripts = upgrade.getPrepareScripts();
+            if (scripts != null) {
+                for (File script : scripts) {
+                    runScript(script);
+                }
             }
             upgrade.performDataMigration(conn);
             VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
@@ -194,9 +195,11 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             VersionVO version = findByVersion(upgrade.getUpgradedVersion(), Step.Upgrade);
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            File script = upgrade.getCleanupScript();
-            if (script != null) {
-                runScript(script);
+            File[] scripts = upgrade.getCleanupScripts();
+            if (scripts != null) {
+                for (File script : scripts) {
+                    runScript(script);
+                }
             }
             version.setStep(Step.Complete);
             version.setUpdated(new Date());

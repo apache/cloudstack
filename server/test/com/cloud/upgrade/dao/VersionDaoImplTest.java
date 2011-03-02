@@ -90,8 +90,23 @@ public class VersionDaoImplTest extends TestCase {
             rs = pstmt.executeQuery();
             assert rs.next()  && rs.getString(1).equals("Advanced") : "Network type is not advanced? " + rs.getString(1);
             assert !rs.next() : "Why do we have another one? " + rs.getString(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM disk_offering WHERE removed IS NULL AND system_used=1 AND type='Service' AND recreatable=1");
+            rs = pstmt.executeQuery();
+            assert (rs.next() && rs.getInt(1) == 3) : "DiskOffering for system VMs are incorrect.  Expecting 3 but got " + rs.getInt(1);
+            rs.close();
+            pstmt.close();
+            
+            
         } catch (SQLException e) {
             throw new CloudRuntimeException("Problem checking upgrade version", e);
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+            }
         }
     }
     
