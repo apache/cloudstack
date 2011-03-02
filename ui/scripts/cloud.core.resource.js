@@ -1174,6 +1174,8 @@ function initAddZoneWizard() {
                 break;
             
             case "advanced_virtual":  
+                $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").show();
+            
                 //virtual VLAN: createVlanIpRange&forVirtualNetwork=true    //Advanced Zone - when securitygroup is NOT enabled                     
                 $thisWizard.find("#step4").find("#create_virtual_vlan").show();                 
 		        $addZoneWizard.find("#step4").find("#create_virtual_vlan").find("#add_publicip_vlan_scope").change(); 	
@@ -1183,6 +1185,8 @@ function initAddZoneWizard() {
                 break;
             
             case "advanced_securitygroup":
+                $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").hide();
+                
                 //direct VLAN: createVlanIpRange&forVirtualNetwork=false   //Advanced Zone - when securitygroup is enabled               
                 $thisWizard.find("#step4").find("#create_direct_vlan").show();  
                 $thisWizard.find("#step4").find("#create_direct_vlan").find("#vlan_id_container").show(); 
