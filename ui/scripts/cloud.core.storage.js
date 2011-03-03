@@ -308,23 +308,51 @@ function showStorageTab(domainId, targetTab) {
 	         
             var commandString;            
 			var advanced = submenuContent.find("#search_button").data("advanced");                    
-			if (advanced != null && advanced) {		
-			    var name = submenuContent.find("#advanced_search #adv_search_name").val();	    
+			if (advanced != null && advanced) {	
+			    var moreCriteria = [];
+			    	
+			    var name = submenuContent.find("#advanced_search #adv_search_name").val();	 
+			    if (name!=null && trim(name).length > 0) 
+					moreCriteria.push("&name="+encodeURIComponent(trim(name)));		
+			       
 			    var zone = submenuContent.find("#advanced_search #adv_search_zone").val();
-			    var pod = submenuContent.find("#advanced_search #adv_search_pod").val();
-			    var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
-			    var account = submenuContent.find("#advanced_search #adv_search_account").val();
-			    var moreCriteria = [];								
-				if (name!=null && trim(name).length > 0) 
-					moreCriteria.push("&name="+encodeURIComponent(trim(name)));										
 			    if (zone!=null && zone.length > 0) 
 					moreCriteria.push("&zoneId="+zone);		
-			    if (pod!=null && pod.length > 0) 
-					moreCriteria.push("&podId="+pod);	
-				if (domainId!=null && domainId.length > 0) 
-					moreCriteria.push("&domainid="+domainId);		
-				if (account!=null && account.length > 0) 
-					moreCriteria.push("&account="+account);			
+				
+				if (submenuContent.find("#adv_search_pod_li").css("display") != "none") {		
+			        var pod = submenuContent.find("#advanced_search #adv_search_pod").val();
+			        if (pod!=null && pod.length > 0) 
+					    moreCriteria.push("&podId="+pod);	
+				}
+					
+			    if (submenuContent.find("#adv_search_domain_li").css("display") != "none") {
+	                var domainName = submenuContent.find("#domain").val();
+	                if (domainName != null && domainName.length > 0) { 	
+				        var domainId;							    
+			            if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+				            for(var i=0; i < autoCompleteDomains.length; i++) {					        
+				              if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				                  domainId = autoCompleteDomains[i].id;
+				                  break;	
+				              }
+			                } 					   			    
+			            } 	     	
+	                    if(domainId == null) { 
+			                showError(false, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+			            }
+			            else { //e.g. domainId == 5 (number)
+			                showError(true, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), null)
+			                moreCriteria.push("&domainid="+todb(domainId));	
+			            }
+			        }
+	            }   
+				
+				if (submenuContent.find("#adv_search_account_li").css("display") != "none") {    	
+			        var account = submenuContent.find("#advanced_search #adv_search_account").val();
+				    if (account!=null && account.length > 0) 
+					    moreCriteria.push("&account="+account);	
+				}	
+						
 				commandString = "command=listVolumes&page=" + currentPage + moreCriteria.join("") + "&response=json";		
 			} else {    
 			     var moreCriteria = [];		
