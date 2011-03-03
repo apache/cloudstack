@@ -1764,7 +1764,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
             // If this command is from the agent simulator, don't do the CIDR
             // check
-            if (scc.getAgentTag() != null && startup.getAgentTag().equalsIgnoreCase("vmops-simulator"))
+            if (scc.getAgentTag() != null && startup.getAgentTag().equalsIgnoreCase("agent-simulator"))
                 doCidrCheck = false;
 
             // If this command is from a KVM agent, or from an agent that has a

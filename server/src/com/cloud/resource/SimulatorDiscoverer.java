@@ -1,4 +1,18 @@
 /**
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * 
+ * This software is licensed under the GNU General Public License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 package com.cloud.resource;
@@ -15,10 +29,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentResourceBase;
 import com.cloud.agent.SimulatorManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -40,18 +52,10 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer {
 	private static final Logger s_logger = Logger
 			.getLogger(SimulatorDiscoverer.class);
 	
-	@Inject
-	protected HostDao _hostDao;
-	@Inject
-	protected VMTemplateDao _tmpltDao = null;
-	@Inject
-	protected VMTemplateHostDao _vmTemplateHostDao = null;
-	@Inject
-	protected VMTemplateZoneDao _vmTemplateZoneDao = null;
-	@Inject
-	protected VMTemplateDao _vmTemplateDao = null;
-	@Inject
-	protected ConfigurationDao _configDao = null;
+	@Inject protected HostDao _hostDao;
+	@Inject protected VMTemplateDao _vmTemplateDao;
+    @Inject protected VMTemplateHostDao _vmTemplateHostDao;
+    @Inject protected VMTemplateZoneDao _vmTemplateZoneDao;
 	
 	/**
 	 * Finds ServerResources of an in-process simulator
@@ -135,14 +139,13 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer {
 	public void postDiscovery(List<HostVO> hosts, long msId) {
 
 		for (HostVO h : hosts) {
-			_hostDao.disconnect(h, Event.AgentDisconnected, msId);
 			associateSystemVmTemplate(h.getId(), h.getDataCenterId());
 			associateTemplatesToZone(h.getId(), h.getDataCenterId());
 		}
 	}
 	
     protected void associateSystemVmTemplate(long hostId, long dcId) {
-    	VMTemplateVO tmplt = _tmpltDao.findById(TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID);
+    	VMTemplateVO tmplt = _vmTemplateDao.findById(TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID);
     	if (tmplt == null) {
     		throw new CloudRuntimeException("Cannot find routing template in vm_template table. Check your configuration");
     	}
