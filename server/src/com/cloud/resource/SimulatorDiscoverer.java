@@ -28,7 +28,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentResourceBase;
-import com.cloud.agent.SimulatorManager;
+import com.cloud.agent.SimulatorManagerImpl;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -125,7 +125,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer {
 			Map<String, Object> params) {
 		try {
 			s_logger.error("Creating Resources ...");
-			SimulatorManager simMgr = SimulatorManager.getInstance();
+			SimulatorManagerImpl simMgr = SimulatorManagerImpl.getInstance();
 			simMgr.start();
 			return simMgr.createServerResources(params);
 		} catch (Exception ex) {
