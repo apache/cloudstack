@@ -19,7 +19,6 @@
 package com.cloud.hypervisor.xen.resource;
 
 import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,14 +43,8 @@ import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -67,7 +60,6 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.IpConfigurationMode;
 import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 
@@ -112,16 +104,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         File file = new File(patchfilePath);
         files.add(file);
 
-        // no premimum overriding anymore after FOSS/premium merge
-/*        
-        patch = "premium-scripts/vm/hypervisor/xenserver/xenserver56/patch";
-        patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file " + patch);
-        }
-        file = new File(patchfilePath);
-        files.add(file);
-*/        
         return files;
     }
 
@@ -376,44 +358,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         return true;
     }
     
-    @Override
-    public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
-        Connection conn = getConnection();
-        String volumeUUID = cmd.getVolumePath();
-        StorageFilerTO poolTO = cmd.getPool();
-        String secondaryStorageURL = cmd.getSecondaryStorageURL();
-        boolean toSecondaryStorage = cmd.toSecondaryStorage();
-        try {
-            URI uri = new URI(secondaryStorageURL);
-            String remoteVolumesMountPath = uri.getHost() + ":" + uri.getPath() + "/volumes/";
-            String volumeFolder = String.valueOf(cmd.getVolumeId()) + "/";
-            String mountpoint = remoteVolumesMountPath + volumeFolder;
-            SR primaryStoragePool = getStorageRepository(conn, poolTO);
-            String srUuid = primaryStoragePool.getUuid(conn);         
-            if (toSecondaryStorage) {
-                VDI vdi = VDI.getByUuid(conn, volumeUUID);
-                String vdiParent = vdi.getSmConfig(conn).get("vhd-parent");
-                if( vdiParent != null && !vdiParent.isEmpty() ) {
-                    return super.execute(cmd);
-                }
-                // Create the volume folder
-                if (!createSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder)) {
-                    throw new InternalErrorException("Failed to create the volume folder.");
-                }
-                String uuid = copy_vhd_to_secondarystorage(conn, mountpoint, volumeUUID, srUuid);              
-                return new CopyVolumeAnswer(cmd, true, null, null, uuid);
-            } else {
-                String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, srUuid);
-                deleteSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder);
-                return new CopyVolumeAnswer(cmd, true, null, srUuid, uuid);
-            }
-        } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new CopyVolumeAnswer(cmd, false, msg, null, null);
-        } 
-    }
-
     @Override
     protected SetupAnswer execute(SetupCommand cmd) {
         Connection conn = getConnection();
