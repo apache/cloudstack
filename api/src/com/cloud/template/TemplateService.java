@@ -72,4 +72,6 @@ public interface TemplateService {
      * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
      */
     Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
+    
+    VirtualMachineTemplate getTemplate(long templateId);
 }

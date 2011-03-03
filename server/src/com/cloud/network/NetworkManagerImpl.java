@@ -2330,7 +2330,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
+    public NetworkVO getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
         // find system public network offering
         Long networkOfferingId = null;
         List<NetworkOfferingVO> offerings = _networkOfferingDao.listSystemNetworkOfferings();
@@ -2353,7 +2353,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public Network getNetworkWithSecurityGroupEnabled(Long zoneId) {
+    public NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId) {
         List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
         if (networks == null || networks.isEmpty()) {
             return null;

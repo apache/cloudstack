@@ -2766,4 +2766,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             return false;
         }
     }
+    
+    @Override
+    public ServiceOffering getServiceOffering(long serviceOfferingId) {
+        return _serviceOfferingDao.findById(serviceOfferingId);
+    }
 }

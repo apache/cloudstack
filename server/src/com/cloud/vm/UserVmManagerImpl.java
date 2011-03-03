@@ -74,7 +74,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
-import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -108,6 +108,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -119,6 +120,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.vpn.PasswordResetElement;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
@@ -1834,32 +1836,171 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return true;
     }
     
-	@Override @DB @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="deploying Vm", create=true)
-    public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
+    @Override
+    public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, 
+                                            Account owner, String hostName, String displayName, Long diskOfferingId, 
+                                            Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair) 
+                                            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+        
         Account caller = UserContext.current().getCaller();
+        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
         
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        List<Long> networkList = cmd.getNetworkIds();
-        String group = cmd.getGroup();
+        //Verify that caller can perform actions in behalf of vm owner
+        _accountMgr.checkAccess(caller, owner);
         
-        Account owner = _accountDao.findActiveAccount(accountName, domainId);
-        if (owner == null) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+        //Get default guest network in Basic zone
+        NetworkVO defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+        
+        if (defaultNetwork == null) {
+            throw new InvalidParameterValueException("Unable to find a default network to start a vm");
+        } else {
+            networkList.add(defaultNetwork);
         }
+        
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, caller, diskOfferingId, 
+                                    diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller);
+    }
+    
+    
+    @Override
+    public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList, 
+            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, 
+            HypervisorType hypervisor, String userData, String sshKeyPair) 
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+        
+        Account caller = UserContext.current().getCaller();
+        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        
+        //Verify that caller can perform actions in behalf of vm owner
+        _accountMgr.checkAccess(caller, owner);
+        
+        //If no network is specified, find system security group enabled network
+        if (networkIdList == null || networkIdList.isEmpty()) {
+            NetworkVO networkWithSecurityGroup = _networkMgr.getNetworkWithSecurityGroupEnabled(zone.getId());
+            if (networkWithSecurityGroup == null) {
+                throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
+            }
+            
+            networkList.add(networkWithSecurityGroup);
+            
+        } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {    
+            //Only one network can be specified, and it should be security group enabled
+            if (networkIdList.size() > 1) {
+                throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
+            }
+      
+            NetworkVO network = _networkDao.findById(networkIdList.get(0).longValue());
+            
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+            }
+            
+            if (!network.isSecurityGroupEnabled()) {
+                throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());  
+            }
+            
+            networkList.add(network);
+            
+        } else {
+            //Verify that all the networks are Direct/Guest/AccountSpecific; can't create combination of SG enabled network and regular networks
+            for (Long networkId : networkIdList) {
+                NetworkVO network = _networkDao.findById(networkId);
+                
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                }
+                
+                if (network.isSecurityGroupEnabled() && networkIdList.size() > 1) {
+                    throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
+                }
+                
+                if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != GuestIpType.Direct || (network.isShared() && !network.isSecurityGroupEnabled())) {
+                    throw new InvalidParameterValueException("Can specify only Direct Guest Account specific networks when deploy vm in Security Group enabled zone");
+                }
+                
+                //Perform account permission check
+                if (!network.isShared()) {
+                    //Check account permissions
+                    List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
+                    if (networkMap == null || networkMap.isEmpty()) {
+                        throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
+                    }
+                } 
+                
+                networkList.add(network);
+            }
+        }
+        
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
+                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller);
+    }
+    
+    
+    @Override
+    public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName, 
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair) 
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+        
+        Account caller = UserContext.current().getCaller();
+        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        
+        //Verify that caller can perform actions in behalf of vm owner
+        _accountMgr.checkAccess(caller, owner);
+        
+        //if no network is passed in, find Account specific Guest Virtual network
+        if (networkIdList == null || networkIdList.isEmpty()) {
+            List<NetworkVO> networks = _networkDao.listByOwner(owner.getId());
+            NetworkVO guestVirtualNetwork = null;
+            for (NetworkVO network : networks) {
+                if (!network.isShared() && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Virtual) {
+                    guestVirtualNetwork = network;
+                    break;
+                }
+            }
+            
+            if (guestVirtualNetwork == null) {
+                throw new InvalidParameterValueException("Unable to find Guest Virtual network for account id=" + owner.getId() + "; please specify networkId(s)");
+            }
+            
+            networkList.add(guestVirtualNetwork);
+            
+        } else {
+            for (Long networkId : networkIdList) {         
+                NetworkVO network = _networkDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                }
+                
+                //Perform account permission check
+                if (!network.isShared()) {
+                    List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
+                    if (networkMap == null || networkMap.isEmpty()) {
+                        throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
+                    }
+                } 
+                
+                networkList.add(network);
+            }
+        }
+        
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, caller, diskOfferingId, 
+                diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller);
+    }
+    
+    
+    
+	@DB @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="deploying Vm", create=true)
+    protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId, 
+                                        Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller) 
+	                                    throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
         
         _accountMgr.checkAccess(caller, owner);
         long accountId = owner.getId();
-
-        DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
-        if (dc == null) {
-            throw new InvalidParameterValueException("Unable to find zone: " + cmd.getZoneId());
-        }
         
-        if (dc.getDomainId() != null) {
-            DomainVO domain = _domainDao.findById(dc.getDomainId());
+        if (zone.getDomainId() != null) {
+            DomainVO domain = _domainDao.findById(zone.getDomainId());
             if (domain == null) {
-                throw new CloudRuntimeException("Unable to find the domain " + dc.getDomainId() + " for the zone: " + dc);
+                throw new CloudRuntimeException("Unable to find the domain " + zone.getDomainId() + " for the zone: " + zone);
             }
             _accountMgr.checkAccess(caller, domain);
             _accountMgr.checkAccess(owner, domain);
@@ -1880,19 +2021,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment",-1);
         }
         
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(cmd.getServiceOfferingId());
-        if (offering == null || offering.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + cmd.getServiceOfferingId());
-        }
-        
-        VMTemplateVO template = _templateDao.findById(cmd.getTemplateId());
-        // Make sure a valid template ID was specified
-        if (template == null || template.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to use template " + cmd.getTemplateId());
-        }
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOffering.getId());
         
         if (template.getTemplateType().equals(TemplateType.SYSTEM)) {
-        	throw new InvalidParameterValueException("Unable to use system template " + cmd.getTemplateId()+" to deploy a user vm");
+        	throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
         }
         
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
@@ -1906,16 +2038,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<Pair<DiskOfferingVO, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>();
         
         if (isIso) {
-            if (cmd.getDiskOfferingId() == null) {
+            if (diskOfferingId == null) {
                 throw new InvalidParameterValueException("Installing from ISO requires a disk offering to be specified for the root disk.");
             }
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (diskOffering == null) {
-                throw new InvalidParameterValueException("Unable to find disk offering " + cmd.getDiskOfferingId());
+                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
             }
             Long size = null;
             if (diskOffering.getDiskSize() == 0) {
-                size = cmd.getSize();
+                size = diskSize;
                 if (size == null) {
                     throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
                 }
@@ -1924,14 +2056,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             rootDiskOffering.second(size);
         } else {
             rootDiskOffering.first(offering);
-            if (cmd.getDiskOfferingId() != null) {
-                DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
+            if (diskOfferingId != null) {
+                DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
                 if (diskOffering == null) {
-                    throw new InvalidParameterValueException("Unable to find disk offering " + cmd.getDiskOfferingId());
+                    throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
                 }
                 Long size = null;
                 if (diskOffering.getDiskSize() == 0) {
-                    size = cmd.getSize();
+                    size = diskSize;
                     if (size == null) {
                         throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
                     }
@@ -1940,7 +2072,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        String userData = cmd.getUserData();
         byte [] decodedUserData = null;
         if (userData != null) {
             if (userData.length() >= 2 * MAX_USER_DATA_LENGTH_BYTES) {
@@ -1957,11 +2088,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         // Find an SSH public key corresponding to the key pair name, if one is given
         String sshPublicKey = null;
-        if (cmd.getSSHKeyPairName() != null && !cmd.getSSHKeyPairName().equals("")) {
+        if (sshKeyPair != null && !sshKeyPair.equals("")) {
             Account account = UserContext.current().getCaller();
-        	SSHKeyPair pair = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getSSHKeyPairName());
+        	SSHKeyPair pair = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), sshKeyPair);
     		if (pair == null) {
-                throw new InvalidParameterValueException("A key pair with name '" + cmd.getSSHKeyPairName() + "' was not found.");
+                throw new InvalidParameterValueException("A key pair with name '" + sshKeyPair + "' was not found.");
             }
     		
     		sshPublicKey = pair.getPublicKey();
@@ -1969,74 +2100,23 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         _accountMgr.checkAccess(caller, template);
         
-        DataCenterDeployment plan = new DataCenterDeployment(dc.getId());
+        DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
         
         s_logger.debug("Allocating in the DB for vm");
           
-        if (dc.getNetworkType() == NetworkType.Basic && networkList == null) {
-            Network defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(dc.getId(), TrafficType.Guest);
-            if (defaultNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default network to start a vm");
-            } else {
-                networkList = new ArrayList<Long>();
-                networkList.add(defaultNetwork.getId());
-            }
-        }
-        
-        List<Long> sgs = cmd.getSecurityGroupIdList();
-        if (sgs != null && !sgs.isEmpty()) {
-            if (networkList == null || networkList.isEmpty()) {
-                Network networkWithSecurityGroup = _networkMgr.getNetworkWithSecurityGroupEnabled(dc.getId());
-                if (networkWithSecurityGroup == null) {
-                    throw new InvalidParameterValueException("No network with security enabled");
-                }
-                networkList = new ArrayList<Long>();
-                networkList.add(networkWithSecurityGroup.getId());
-            } else {
-                if (networkList.size() > 1) {
-                    throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
-                }
-                
-                Network net = _networkMgr.getNetwork(networkList.get(0).longValue());
-                if (!net.isSecurityGroupEnabled()) {
-                    throw new InvalidParameterValueException("need to enable security group for network: " + net.getId());  
-                }
-            }
-        }
-        
-        if (networkList == null || networkList.isEmpty()) {
-            Network networkWithSecurityGroup = _networkMgr.getNetworkWithSecurityGroupEnabled(dc.getId());
-            if (networkWithSecurityGroup != null) {
-                networkList = new ArrayList<Long>();
-                networkList.add(networkWithSecurityGroup.getId());
-            } else {
-                throw new InvalidParameterValueException("NetworkIds have to be specified");
-            }
-        }
-        
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
         short defaultNetworkNumber = 0;
-        for (Long networkId : networkList) {
-            NetworkVO network = _networkDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
-            } else {
-                if (!network.isShared()) {
-                    //Check account permissions
-                    List<NetworkVO> networkMap = _networkDao.listBy(accountId, networkId);
-                    if (networkMap == null || networkMap.isEmpty()) {
-                        throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
-                    }
-                } 
-                
-                if (network.isDefault()) {
-                    defaultNetworkNumber++;
-                }
-                networks.add(new Pair<NetworkVO, NicProfile>(network, null));
+        for (NetworkVO network : networkList) {
+            
+            if (network.isDefault()) {
+                defaultNetworkNumber++;
             }
+            
+            networks.add(new Pair<NetworkVO, NicProfile>(network, null));
         }
         
-        //at least one network default network has to be set
+        //Verify network information - network default network has to be set; and vm can't have more than one default network
+        //This is a part of business logic because default network is required by Agent Manager in order to configure default gateway for the vm
         if (defaultNetworkNumber == 0) {
             throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
         } else if (defaultNetworkNumber >1) {
@@ -2045,7 +2125,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         long id = _vmDao.getNextInSequence(Long.class, "id");
         
-        String hostName = cmd.getName();
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
         if (hostName == null) {
             hostName = instanceName;
@@ -2059,13 +2138,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         HypervisorType hypervisorType = null;
         if (template == null || template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
-            hypervisorType = cmd.getHypervisor();
+            hypervisorType = hypervisor;
         } else {
             hypervisorType = template.getHypervisorType();
         }
         
-        UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), hypervisorType,
-                                   template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
+        UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType,
+                                   template.getGuestOSId(), offering.getOfferHA(), owner.getDomainId(), owner.getId(), offering.getId(), userData, hostName);
 
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);
@@ -2075,7 +2154,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             vm.setIsoId(template.getId());
         }
 
-        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
+        if (_itMgr.allocate(vm, _templateDao.findById(template.getId()), offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, hypervisorType, owner) == null) {
             return null;
         }
         
@@ -2085,13 +2164,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug("Successfully allocated DB entry for " + vm);
         }
         UserContext.current().setEventDetails("Vm Id: "+vm.getId());
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, dc.getId(), vm.getId(), vm.getName(), offering.getId(), template.getId(), hypervisorType.toString());
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getName(), offering.getId(), template.getId(), hypervisorType.toString());
         _usageEventDao.persist(usageEvent);
         
         _accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
         
         //Assign instance to the group
-        try{
+        try {
             if (group != null) {
                 boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
                 if (!addToGroup) {

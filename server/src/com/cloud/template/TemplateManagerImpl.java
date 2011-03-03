@@ -1307,4 +1307,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	return delete(userId, templateId, zoneId);
 	}
+	
+	@Override
+	public VirtualMachineTemplate getTemplate(long templateId) {
+	    return _tmpltDao.findById(templateId);
+	}
 }

@@ -187,5 +187,9 @@ public interface ConfigurationService {
     Account getVlanAccount(long vlanId);
     
     List<? extends NetworkOffering> listNetworkOfferings(TrafficType trafficType, boolean systemOnly);
+
+    DataCenter getZone(long id);
+    
+    ServiceOffering getServiceOffering(long serviceOfferingId);
    
 }

@@ -125,7 +125,7 @@ public interface NetworkManager extends NetworkService {
 
 	boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 	
-	Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+	NetworkVO getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 	
 	List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
 	
@@ -179,7 +179,7 @@ public interface NetworkManager extends NetworkService {
     
     boolean isServiceSupported(long networkId, Network.Service service);
 
-    Network getNetworkWithSecurityGroupEnabled(Long zoneId);
+    NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId);
     
     boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     

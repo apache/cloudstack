@@ -30,12 +30,17 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -50,51 +55,54 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DISK_OFFERING_ID, type=CommandType.LONG, description="the ID of the disk offering for the virtual machine. If the template is of ISO format, the diskOfferingId is for the root disk volume. Otherwise this parameter is used to dinidcate the offering for the data disk volume. If the templateId parameter passed is from a Template object, the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
-    private Long diskOfferingId;
-
-    @Parameter(name=ApiConstants.DISPLAY_NAME, type=CommandType.STRING, description="an optional user generated name for the virtual machine")
-    private String displayName;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="availability zone for the virtual machine")
+    private Long zoneId;
+    
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine")
+    private Long serviceOfferingId;
+    
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, required=true, description="the ID of the template for the virtual machine")
+    private Long templateId;
     
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="host name for the virtual machine")
     private String name;
-
+    
+    @Parameter(name=ApiConstants.DISPLAY_NAME, type=CommandType.STRING, description="an optional user generated name for the virtual machine")
+    private String displayName;
+    
+    //Owner information
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
+    private String accountName;
+    
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
     private Long domainId;
+    
+    //Network information
+    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine")
+    private List<Long> networkIds;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support")
+    private List<Long> securityGroupIdList;
+
+    //DataDisk information
+    @Parameter(name=ApiConstants.DISK_OFFERING_ID, type=CommandType.LONG, description="the ID of the disk offering for the virtual machine. If the template is of ISO format, the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the offering for the data disk volume. If the templateId parameter passed is from a Template object, the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
+    private Long diskOfferingId;
+    
+    @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
+    private Long size;
 
     @Parameter(name=ApiConstants.GROUP, type=CommandType.STRING, description="an optional group for the virtual machine")
     private String group;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor on which to deploy the virtual machine")
     private String hypervisor;
-
-    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support")
-    private List<Long> securityGroupIdList;
-
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine")
-    private Long serviceOfferingId;
-
-    @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
-    private Long size;
-
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, required=true, description="the ID of the template for the virtual machine")
-    private Long templateId;
-
+   
     @Parameter(name=ApiConstants.USER_DATA, type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding.")
     private String userData;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="availability zone for the virtual machine")
-    private Long zoneId;
-    
-    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine")
-    private List<Long> networkIds;
-
-    @Parameter(name="keypair", type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine")
+    @Parameter(name=ApiConstants.SSH_KEYPAIR, type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine")
     private String sshKeyPairName;
-
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -252,9 +260,50 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-            UserVm result = _userVmService.createVirtualMachine(this);
-            if (result != null){
-                setEntityId(result.getId());
+            
+            //Verify that all objects exist before passing them to the service
+            Account owner = _accountService.getActiveAccount(getAccountName(), getDomainId());
+            if (owner == null) {
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            }
+            
+            DataCenter zone = _configService.getZone(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+            }
+            
+            ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
+            if (serviceOffering == null) {
+                throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+            }
+            
+            VirtualMachineTemplate template = _templateService.getTemplate(templateId);
+            // Make sure a valid template ID was specified
+            if (template == null) {
+                throw new InvalidParameterValueException("Unable to use template " + templateId);
+            }
+            
+            UserVm vm = null;
+            
+            if (zone.getNetworkType() == NetworkType.Basic){
+                if (getNetworkIds() != null) {
+                    throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
+                } else {
+                    vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, securityGroupIdList, owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+                }
+            } else {
+                if (zone.isSecurityGroupEnabled()) {
+                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), securityGroupIdList, owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+                } else {
+                    if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
+                        throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
+                    }
+                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+                }  
+            }
+            
+            if (vm != null){
+                setEntityId(vm.getId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
             }

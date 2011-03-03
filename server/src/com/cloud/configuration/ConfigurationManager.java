@@ -19,7 +19,6 @@ package com.cloud.configuration;
 
 import java.util.List;
 
-import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -178,14 +177,13 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     
     void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException;
     
-    DataCenterVO getZone(long id);
-    
     HostPodVO getPod(long id);
     
     ClusterVO getCluster(long id);
     
     boolean deleteAccountSpecificVirtualRanges(long accountId);
     
+    DataCenterVO getZone(long id);
     
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
