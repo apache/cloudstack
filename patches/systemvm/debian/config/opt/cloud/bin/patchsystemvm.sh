@@ -57,6 +57,18 @@ routing_svcs() {
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 
+dhcpsrvr_svcs() {
+   chkconfig cloud off
+   chkconfig cloud-passwd-srvr on ; 
+   chkconfig haproxy off ; 
+   chkconfig dnsmasq on
+   chkconfig ssh on
+   chkconfig nfs-common off
+   chkconfig portmap off
+   echo "cloud-passwd-srvr ssh dnsmasq apache2" > /var/cache/cloud/enabled_svcs
+   echo "cloud nfs-common haproxy portmap" > /var/cache/cloud/disabled_svcs
+}
+
 CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="router"
 PATCH_MOUNT=$1
@@ -95,6 +107,16 @@ then
   if [ $? -gt 0 ]
   then
     printf "Failed to execute routing_svcs\n" >$logfile
+    exit 6
+  fi
+fi
+
+if [ "$TYPE" == "dhcpsrvr" ]
+then
+  dhcpsrvr_svcs
+  if [ $? -gt 0 ]
+  then
+    printf "Failed to execute dhcpsrvr_svcs\n" >$logfile
     exit 6
   fi
 fi
