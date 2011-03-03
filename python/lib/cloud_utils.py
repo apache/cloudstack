@@ -820,14 +820,10 @@ class SetupFirewall2(ConfigTask):
 		if distro in (Fedora, CentOS, RHEL6):
 			if not os.path.exists("/etc/sysconfig/iptables"): return True
 			if ":on" not in chkconfig("--list","iptables").stdout: return True
-			rule = "FORWARD -i %s -o %s -j ACCEPT"%(self.brname,self.brname)
-			if rule in iptablessave().stdout: return True
 			return False
 		else:
 			if "Status: active" not in ufw.status().stdout: return True
 			if not os.path.exists("/etc/ufw/before.rules"): return True
-			rule = "-A ufw-before-forward -i %s -o %s -j ACCEPT"%(self.brname,self.brname)
-			if rule in file("/etc/ufw/before.rules").read(-1): return True
 			return False
 		
 	def execute(self):
@@ -837,7 +833,6 @@ class SetupFirewall2(ConfigTask):
 		if distro in (Fedora , CentOS, RHEL6):
 			
 			for rule in (
-				"-I FORWARD -i %s -o %s -j ACCEPT"%(self.brname,self.brname),
 				"-I INPUT 1 -p tcp --dport 5900:6100 -j ACCEPT",
 				"-I INPUT 1 -p tcp --dport 49152:49216 -j ACCEPT",
 				):
@@ -847,14 +842,6 @@ class SetupFirewall2(ConfigTask):
 			
 		else:
 			
-			rule = "-A ufw-before-forward -i %s -o %s -j ACCEPT"%(self.brname,self.brname)
-			text = file("/etc/ufw/before.rules").readlines()
-			newtext = []
-			for line in text:
-				if line.startswith("COMMIT"):
-					newtext.append(rule + "\n")
-				newtext.append(line)
-			file("/etc/ufw/before.rules","w").writelines(newtext)
 			ufw.allow.proto.tcp("from","any","to","any","port","5900:6100")
 			ufw.allow.proto.tcp("from","any","to","any","port","49152:49216")
 
