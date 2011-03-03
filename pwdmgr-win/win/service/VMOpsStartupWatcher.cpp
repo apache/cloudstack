@@ -153,7 +153,8 @@ BOOL CVMOpsStartupWatcher::DoStartupConfig()
 			}
 			else
 			{
-				CLogger::GetInstance()->Log("INFO", "No need to set password");
+				CLogger::GetInstance()->Log("INFO", "No need to set password, because %ws said so with response %s", achUrl, achResult);
+				return FALSE;
 			}
 		}
 		else 

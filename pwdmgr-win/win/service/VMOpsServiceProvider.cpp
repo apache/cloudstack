@@ -135,6 +135,8 @@ HERROR CVMOpsServiceProvider::GetNextPasswordProvider(LPSTR lpszBuf, LPDWORD pdw
 	{
 		CLogger::GetInstance()->Log("INFO", "Building available password provider list");
 
+		// don't need to add default gateway to password provider list any more
+#if 0
 		IP_ADDRESS_STRING addr;
 		memset(&addr, 0, sizeof(addr));
 		DWORD dwLength = sizeof(addr.String);
@@ -145,6 +147,7 @@ HERROR CVMOpsServiceProvider::GetNextPasswordProvider(LPSTR lpszBuf, LPDWORD pdw
 			CLogger::GetInstance()->Log("INFO", "Add default gateway: %s", addr.String);
 			m_lstProviders.push_back(addr);
 		}
+#endif
 
 		GetDHCPServers(m_lstProviders);
 	}
