@@ -136,9 +136,13 @@ long milliseconds = new Date().getTime();
                             </select>                            
                         </li>
                         <li id="adv_search_domain_li" style="display: none;">
-                            <label for="filter">Domain:</label>
+                            <label for="filter">Domain:</label>                            
+                            <input class="text" type="text" id="domain" />
+		                	<div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                            <!--  
                             <select class="select" id="adv_search_domain">
                             </select>
+                            -->
                         </li>
                         <li id="adv_search_account_li" style="display: none;">
                             <label for="filter">Account:</label>

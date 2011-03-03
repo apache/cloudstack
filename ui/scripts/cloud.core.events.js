@@ -43,25 +43,52 @@ function showEventsTab(showEvents) {
             var commandString;            
 			var advanced = submenuContent.find("#search_button").data("advanced");                    
 			if (advanced != null && advanced) {		
+			    var moreCriteria = [];	
+			    
 			    var type = submenuContent.find("#advanced_search #adv_search_type").val();	
-			    var level = submenuContent.find("#advanced_search #adv_search_level").val();
-			    var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();	
-			    var account = submenuContent.find("#advanced_search #adv_search_account").val();
-			    var startdate = submenuContent.find("#advanced_search #adv_search_startdate").val();	
-			    var enddate = submenuContent.find("#advanced_search #adv_search_enddate").val();	
-			    var moreCriteria = [];								
-				if (type!=null && trim(type).length > 0) 
+			    if (type!=null && trim(type).length > 0) 
 					moreCriteria.push("&type="+encodeURIComponent(trim(type)));		
+			    
+			    var level = submenuContent.find("#advanced_search #adv_search_level").val();
 			    if (level!=null && level.length > 0) 
 					moreCriteria.push("&level="+encodeURIComponent(trim(level)));	
-				if (domainId!=null && domainId.length > 0) 
-					moreCriteria.push("&domainid="+domainId);					
-				if (account!=null && account.length > 0) 
-					moreCriteria.push("&account="+account);					
-				if (startdate!=null && startdate.length > 0) 
+					
+			    if (submenuContent.find("#adv_search_domain_li").css("display") != "none") {
+	                var domainName = submenuContent.find("#domain").val();
+	                if (domainName != null && domainName.length > 0) { 	
+				        var domainId;							    
+			            if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+				            for(var i=0; i < autoCompleteDomains.length; i++) {					        
+				              if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				                  domainId = autoCompleteDomains[i].id;
+				                  break;	
+				              }
+			                } 					   			    
+			            } 	     	
+	                    if(domainId == null) { 
+			                showError(false, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+			            }
+			            else { //e.g. domainId == "5" 
+			                showError(true, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), null)
+			                moreCriteria.push("&domainid="+todb(domainId));	
+			            }
+			        }
+	            }   
+				
+				if (submenuContent.find("#adv_search_account_li").css("display") != "none") {    	
+			        var account = submenuContent.find("#advanced_search #adv_search_account").val();
+			        if (account!=null && account.length > 0) 
+					    moreCriteria.push("&account="+account);	
+				}		
+					
+			    var startdate = submenuContent.find("#advanced_search #adv_search_startdate").val();
+			    if (startdate!=null && startdate.length > 0) 
 					moreCriteria.push("&startdate="+encodeURIComponent(startdate));		
+						
+			    var enddate = submenuContent.find("#advanced_search #adv_search_enddate").val();	
 				if (enddate!=null && enddate.length > 0) 
 					moreCriteria.push("&enddate="+encodeURIComponent(enddate));		
+					
 				commandString = "command=listEvents&page="+currentPage+moreCriteria.join("")+"&response=json";   
 			} else {          	 
                 var searchInput = submenuContent.find("#search_input").val();            
