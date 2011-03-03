@@ -41,11 +41,16 @@ void GetDHCPServers(std::list<IP_ADDRESS_STRING>& listDhCPServers)
 	PIP_ADAPTER_INFO pAdapterInfo = pHead;
 	GetAdaptersInfo(pAdapterInfo, &ulSize);
 
-	while(pAdapterInfo->Next != NULL)
+	while(pAdapterInfo != NULL)
 	{
-		if(pAdapterInfo->DhcpEnabled && !IsAddressAlreadyInList(pAdapterInfo->DhcpServer.IpAddress, listDhCPServers))
-			listDhCPServers.push_back(pAdapterInfo->DhcpServer.IpAddress);
-
+		if(pAdapterInfo->DhcpEnabled && !IsAddressAlreadyInList(pAdapterInfo->DhcpServer.IpAddress, listDhCPServers)) 
+		{
+			if(pAdapterInfo->DhcpServer.IpAddress.String[0] != 0)
+			{
+				CLogger::GetInstance()->Log("INFO", "Add DHCP server: %s", pAdapterInfo->DhcpServer.IpAddress.String);
+				listDhCPServers.push_back(pAdapterInfo->DhcpServer.IpAddress);
+			}
+		}
 		pAdapterInfo = pAdapterInfo->Next;
 	}
 
@@ -128,13 +133,18 @@ HERROR CVMOpsServiceProvider::GetNextPasswordProvider(LPSTR lpszBuf, LPDWORD pdw
 {
 	if(m_lstProviders.size() == 0)
 	{
+		CLogger::GetInstance()->Log("INFO", "Building available password provider list");
+
 		IP_ADDRESS_STRING addr;
 		memset(&addr, 0, sizeof(addr));
 		DWORD dwLength = sizeof(addr.String);
 		GetDefaultGateway(addr.String, &dwLength);
 
 		if(addr.String[0] != 0)
+		{
+			CLogger::GetInstance()->Log("INFO", "Add default gateway: %s", addr.String);
 			m_lstProviders.push_back(addr);
+		}
 
 		GetDHCPServers(m_lstProviders);
 	}
