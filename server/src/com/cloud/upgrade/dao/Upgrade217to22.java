@@ -50,7 +50,43 @@ public class Upgrade217to22 implements DbUpgrade {
         } catch(SQLException e) {
             throw new CloudRuntimeException("Can't upgrade storage pool ", e);
         }
-        
+    }
+    
+    protected long insertNetworkOffering(Connection conn, String name, String displayText, 
+                                         String trafficType, boolean systemOnly, boolean defaultNetworkOffering,
+                                         String availability, boolean dns_service, boolean gateway_service, 
+                                         boolean firewall_service, boolean lb_service, 
+                                         boolean userdata_service, boolean vpn_service, 
+                                         boolean dhcp_service, String guest_type) {
+        String insertSql = 
+            "INSERT INTO network_offerings (name, display_text, nw_rate, mc_rate, concurrent_connections, traffic_type, tags, system_only, specify_vlan, service_offering_id, created, removed, default, availability, dns_service, gateway_service, firewall_service, lb_service, userdata_service, vpn_service, dhcp_service, guest_type) " +
+                                   "VALUES (?,    ?,            NULL,    NULL,    NULL,                   ?,            NULL, ?,           0,            NULL,                now(),   NULL,    ?,       ?,            ?,           ?,               ?,                ?,          ?,                ?,           ?,            ?)";
+        try {
+            PreparedStatement pstmt = conn.prepareStatement(insertSql);
+            int i = 1;
+            pstmt.setString(i++, name);
+            pstmt.setString(i++, displayText);
+            pstmt.setString(i++, trafficType);
+            pstmt.setBoolean(i++, systemOnly);
+            pstmt.setBoolean(i++, defaultNetworkOffering);
+            pstmt.setString(i++, availability);
+            pstmt.setBoolean(i++, dns_service);
+            pstmt.setBoolean(i++, gateway_service);
+            pstmt.setBoolean(i++, firewall_service);
+            pstmt.setBoolean(i++, lb_service);
+            pstmt.setBoolean(i++, userdata_service);
+            pstmt.setBoolean(i++, vpn_service);
+            pstmt.setBoolean(i++, dhcp_service);
+            pstmt.setString(i++, guest_type);
+            pstmt.executeUpdate();
+            ResultSet rs = pstmt.getGeneratedKeys();
+            rs.close();
+            pstmt.close();
+            long id = rs.getLong(1);
+            return id;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to insert network offering ", e);
+        }        
     }
     
     protected void insertNetwork(Connection conn, String name, String displayText, String trafficType, String broadcastDomainType, String broadcastUri,
@@ -59,8 +95,8 @@ public class Upgrade217to22 implements DbUpgrade {
                                  String networkDomain, boolean isDefault) {
         String getNextNetworkSequenceSql = "SELECT value from sequence where name='networks_seq'";
         String advanceNetworkSequenceSql = "UPDATE sequence set value=value+1 where name='networks_seq'";
-        String insertNetworkSql = "INSERT INTO NETWORKS(id, name, display_text, traffic_type, broadcast_domain_type, gateway, cidr, mode, network_offering_id, data_center_id, guru_name, state, domain_id, account_id, dns1, dns2, guest_type, shared, is_default, created, network_domain) " + 
-                                                "VALUES(?,  ?,    ?,            ?,            ?,                     ?,       ?,    ?,    ?,                   ?,              ?,         ?,     ?,         ?,          ?,    ?,    ,          false,  true,       now(), ?)"; 
+        String insertNetworkSql = "INSERT INTO networks(id, name, display_text, traffic_type, broadcast_domain_type, gateway, cidr, mode, network_offering_id, data_center_id, guru_name, state, domain_id, account_id, dns1, dns2, guest_type, shared, is_default, created, network_domain, related) " + 
+                                                "VALUES(?,  ?,    ?,            ?,            ?,                     ?,       ?,    ?,    ?,                   ?,              ?,         ?,     ?,         ?,          ?,    ?,    ?,          ?,      ?,          now(),   ?,              ?)"; 
         try {
             PreparedStatement pstmt = conn.prepareStatement(getNextNetworkSequenceSql);
             ResultSet rs = pstmt.executeQuery();
@@ -95,6 +131,7 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.setBoolean(i++, shared);
             pstmt.setBoolean(i++, isDefault);
             pstmt.setString(i++, networkDomain);
+            pstmt.setLong(i++, seq);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create network", e);
@@ -132,39 +169,77 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.executeUpdate();
             pstmt.close();
             
+            pstmt = conn.prepareStatement("SELECT id FROM data_center");
+            rs = pstmt.executeQuery();
+            ArrayList<Long> dcs = new ArrayList<Long>();
+            while (rs.next()) {
+                dcs.add(rs.getLong(1));
+            }
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Management-Network'");
+            rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new CloudRuntimeException("Unable to find the management network offering.");
+            }
+            long managementNetworkOfferingId = rs.getLong(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Public-Network'");
+            rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new CloudRuntimeException("Unable to find the public network offering.");
+            }
+            long publicNetworkOfferingId = rs.getLong(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Control-Network'");
+            rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new CloudRuntimeException("Unable to find the control network offering.");
+            }
+            long controlNetworkOfferingId = rs.getLong(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Storage-Network'");
+            rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new CloudRuntimeException("Unable to find the storage network offering.");
+            }
+            long storageNetworkOfferingId = rs.getLong(1);
+            rs.close();
+            pstmt.close();
+            
+            for (Long dcId : dcs) {
+                insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+                insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+                insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", publicNetworkOfferingId, dcId, "PublicNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+            }
+            
+            
             if (_basicZone) {
-//              CREATE TABLE `networks` (
-//              `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-//              `name` varchar(255) DEFAULT NULL COMMENT 'name for this network',
-//              `display_text` varchar(255) DEFAULT NULL COMMENT 'display text for this network',
-//              `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
-//              `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
-//              `broadcast_uri` varchar(255) DEFAULT NULL COMMENT 'broadcast domain specifier',
-//              `gateway` varchar(15) DEFAULT NULL COMMENT 'gateway for this network configuration',
-//              `cidr` varchar(18) DEFAULT NULL COMMENT 'network cidr',
-//              `mode` varchar(32) DEFAULT NULL COMMENT 'How to retrieve ip address in this network',
-//              `network_offering_id` bigint(20) unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
-//              `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
-//              `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
-//              `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in',
-//              `related` bigint(20) unsigned NOT NULL COMMENT 'related to what other network configuration',
-//              `domain_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to domain id',
-//              `account_id` bigint(20) unsigned NOT NULL COMMENT 'owner of this network',
-//              `dns1` varchar(255) DEFAULT NULL COMMENT 'comma separated DNS list',
-//              `dns2` varchar(255) DEFAULT NULL COMMENT 'comma separated DNS list',
-//              `guru_data` varchar(1024) DEFAULT NULL COMMENT 'data stored by the netwolrk guru that setup this network',
-//              `set_fields` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'which fields are set already',
-//              `guest_type` char(32) DEFAULT NULL COMMENT 'type of guest network',
-//              `shared` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '0 if network is shared, 1 if network dedicated',
-//              `network_domain` varchar(255) DEFAULT NULL COMMENT 'domain',
-//              `reservation_id` char(40) DEFAULT NULL COMMENT 'reservation id',
-//              `is_default` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 if network is default',
-//              `created` datetime NOT NULL COMMENT 'date created',
-//              `removed` datetime DEFAULT NULL COMMENT 'date removed if not null',
-//              `is_security_group_enabled` tinyint(4) NOT NULL DEFAULT '0' COMMENT '1: enabled, 0: not',
-//      (200,NULL,NULL,'Management','Native',NULL,NULL,NULL,'Static',2,1,'PodBasedNetworkGuru','Setup',200,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,now(),NULL,0)
+                long networkOfferingId = insertNetworkOffering(conn, "System-Guest-Network", "System-Guest-Network", "Guest", false, true, "Required", true, false, false, false, true, false, true, "Direct");
+                for (Long dcId : dcs) {
+//                  (200,NULL,NULL,'Management','Native',NULL,NULL,NULL,'Static',2,1,'PodBasedNetworkGuru','Setup',200,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
+//                  (201,NULL,NULL,'Control','LinkLocal',NULL,'169.254.0.1','169.254.0.0/16','Static',3,1,'ControlNetworkGuru','Setup',201,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
+//                  (202,NULL,NULL,'Storage','Native',NULL,NULL,NULL,'Static',4,1,'PodBasedNetworkGuru','Setup',202,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
+//                  (203,NULL,NULL,'Guest','Native',NULL,NULL,NULL,'Dhcp',5,1,'DirectPodBasedNetworkGuru','Setup',203,1,1,NULL,NULL,NULL,0,'Direct',1,NULL,NULL,1,'2011-03-01 03:18:53',NULL,1);
+//                    (1,'System-Public-Network','System Offering for System-Public-Network',NULL,NULL,NULL,'Public',NULL,1,0,NULL,'2011-03-01 03:18:01',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
+//                    (2,'System-Management-Network','System Offering for System-Management-Network',NULL,NULL,NULL,'Management',NULL,1,0,NULL,'2011-03-01 03:18:01',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
+//                    (3,'System-Control-Network','System Offering for System-Control-Network',NULL,NULL,NULL,'Control',NULL,1,0,NULL,'2011-03-01 03:18:01',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
+//                    (4,'System-Storage-Network','System Offering for System-Storage-Network',NULL,NULL,NULL,'Storage',NULL,1,0,NULL,'2011-03-01 03:18:02',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
+//                    (5,'System-Guest-Network','System-Guest-Network',NULL,NULL,NULL,'Guest',NULL,1,0,NULL,'2011-03-01 03:18:02',NULL,1,'Required',1,0,0,0,1,0,1,'Direct'),
+//                    (6,'DefaultVirtualizedNetworkOffering','Virtual Vlan',NULL,NULL,NULL,'Guest',NULL,0,0,NULL,'2011-03-01 03:18:02',NULL,1,'Required',1,1,1,1,1,1,1,'Virtual'),
+//                    (7,'DefaultDirectNetworkOffering','Direct',NULL,NULL,NULL,'Guest',NULL,0,0,NULL,'2011-03-01 03:18:02',NULL,1,'Required',1,0,0,0,1,0,1,'Direct');
+                    pstmt = conn.prepareStatement("INSERT INTO network_offerings VALUES ('System-Guest-Network','System-Guest-Network',NULL,NULL,NULL,'Guest',NULL,1,0,NULL,now(),NULL,1,'Required',1,0,0,0,1,0,1,'Direct')");
+                    
+                    insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", networkOfferingId, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+                }
                 
-//                insertNetwork(conn, "BasicZoneNetwork", "Network created for Basic Zone " + dataCenterId, "Management", "Native", null, null, null, "Static", 2, 1, )
             } else {
             }
         } catch (SQLException e) {
