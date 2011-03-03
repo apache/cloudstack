@@ -1002,9 +1002,6 @@ def validateSnapshot(session, args):
             else:
                 retval = "0#"
 
-            if isISCSI and not wasTemplateAvailable:
-                manageAvailability(templatePath, '-an')
-
         else:
             # The DB thinks this is the first snapshot of a DATA DISK. 
             # The volume VDI should not have any parent.
@@ -1012,10 +1009,6 @@ def validateSnapshot(session, args):
                 retval = "1#"
             else:
                 retval = "0#"
-
-    # Set the volume's visibility back to what it was.
-    if isISCSI and not wasVolumeAvailable:
-        manageAvailability(volumePath, '-an')
 
     return retval + expectedActual
 
@@ -1053,7 +1046,6 @@ def validatePreviousSnapshotBackup(session, args):
         tries = tries + 1
         if isISCSI:
             baseCopyUuid = scanParent(previousSnapshotPath)
-            manageAvailability(previousSnapshotPath, '-an')
         else:
             baseCopyUuid = getParent(previousSnapshotPath, isISCSI)
 
@@ -1121,13 +1113,6 @@ def backupSnapshot(session, args):
         # This will prevent deleteSnapshotBackup and createVolumeFromSnapshot from breaking
         prevBackupUuid = createDummyVHD(baseCopyPath, backupsDir)
     
-    # Now set the availability of the snapshotPath and the baseCopyPath to false
-    makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
-    manageAvailability(baseCopyPath, '-an')
-    if prevSnapshotUuid:
-        makeUnavailable(prevSnapshotUuid, primarySRPath, isISCSI)
-        makeUnavailable(prevBaseCopyUuid, primarySRPath, isISCSI)
-
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
     # So set the parent of the current baseCopyVHD to prevBackupVHD 
