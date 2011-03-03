@@ -88,6 +88,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -285,8 +286,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				if (rule.getAllowedNetworkId() != null){
 					List<SecurityGroupVMMapVO> allowedInstances = _securityGroupVMMapDao.listBySecurityGroup(rule.getAllowedNetworkId(), State.Running);
 					for (SecurityGroupVMMapVO ngmapVO: allowedInstances){
-						String cidr = ngmapVO.getGuestIpAddress();
-						if (cidr != null) {
+						Nic defaultNic = _networkMgr.getDefaultNic(ngmapVO.getInstanceId());
+						if (defaultNic != null) {
+						    String cidr = defaultNic.getIp4Address();
 							cidr = cidr + "/32";
 							cidrs.add(cidr);
 						}
