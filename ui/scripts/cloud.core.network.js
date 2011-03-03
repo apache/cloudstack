@@ -209,7 +209,8 @@ function showNetworkingTab(p_domainId, p_account) {
     //watermark (end)	
     
     $("#submenu_content_network #ip_searchbutton1").bind("click", refreshIpListContainerByInputBox);
-    		  
+     
+    /* 		  
     function populateDomainDropdown() {
         var domainSelect = $("#submenu_content_network #search_by_domain").empty();			
 	    $.ajax({
@@ -224,16 +225,43 @@ function showNetworkingTab(p_domainId, p_account) {
 			    }
 		    }
 	    });		    
-    }		  
+    }	
+    */	  
     
-    $("#submenu_content_network #ip_searchbutton2").bind("click", function(event){
-        var array1 = [];
-        var account = $("#submenu_content_network #search_by_account").val();
+    $("#submenu_content_network").find("#ip_searchbutton2").bind("click", function(event){
+        var $searchPanel2= $("#submenu_content_network").find("#ip_search_panel2");
+        
+        var moreCriteria = [];
+        
+        var account = $searchPanel2.find("#search_by_account").val();
         if(account != null && account.length > 0)
-            array1.push("&account=" + account);
-        var domainId = $("#submenu_content_network #search_by_domain").val();
-        array1.push("&domainid=" + domainId);	        
-        refreshIpListContainer("command=listPublicIpAddresses&response=json&forvirtualnetwork=true" + array1.join(""));	 	        
+            moreCriteria.push("&account=" + account);       
+        
+        var domainName = $searchPanel2.find("#search_by_domain").val();
+        if (domainName != null && domainName.length > 0) { 	
+		    var domainId;							    
+	        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+		        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+		          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+		              domainId = autoCompleteDomains[i].id;
+		              break;	
+		          }
+	            } 					   			    
+	        } 	     	
+            if(domainId == null) { 
+	            //showError(false, $searchPanel2.find("#search_by_domain"), $searchPanel2.find("#search_by_domain_errormsg"), "Not Found");
+	        }
+	        else { //e.g. domainId == "5" 
+	            //showError(true, $searchPanel2.find("#search_by_domain"), $searchPanel2.find("#search_by_domain_errormsg"), null)
+	            moreCriteria.push("&domainid="+todb(domainId));	
+	        }
+	    }           
+        /*    
+        var domainId = $searchPanel2.find("#search_by_domain").val();
+        moreCriteria.push("&domainid=" + domainId);
+        */	        
+        
+        refreshIpListContainer("command=listPublicIpAddresses&response=json&forvirtualnetwork=true" + moreCriteria.join(""));	 	        
         return false;
     });
     		  
@@ -1021,7 +1049,9 @@ function showNetworkingTab(p_domainId, p_account) {
 	    if(isAdmin()) {
 	        submenuContent.find(".select_directipbg_admin").show();
 	        submenuContent.find(".select_directipbg_user").hide();	
-	        populateDomainDropdown();	    
+	        
+	        applyAutoCompleteToDomainField($("#submenu_content_network #search_by_domain"));  
+	        //populateDomainDropdown();	    
 	    } else {	        
 	        submenuContent.find(".select_directipbg_admin").hide();
 	        submenuContent.find(".select_directipbg_user").show();
