@@ -552,45 +552,10 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 	    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#domain_container", "#add_publicip_vlan_account_container". 	
        		
 		if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
-		    applyAutoCompleteToDomainChildrenField($dialogAddIpRangeToPublicNetwork.find("#domain"), zoneObj.domainid);		    
-		    /*
-		    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
-		    function populateDomainDropdown(id) {					        
-                $.ajax({
-                    data: createURL("command=listDomainChildren&id="+id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {					        
-                        var domains = json.listdomainchildrenresponse.domain;		                  		        	    
-	                    if (domains != null && domains.length > 0) {					    
-		                    for (var i = 0; i < domains.length; i++) {	
-			                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
-			                    if(domains[i].haschild == true) 
-	                                populateDomainDropdown(domains[i].id);				   
-		                    }
-	                    }				
-                    }
-                }); 
-            }	            
-            populateDomainDropdown(zoneObj.domainid);
-            */
+		    applyAutoCompleteToDomainChildrenField($dialogAddIpRangeToPublicNetwork.find("#domain"), zoneObj.domainid);		
         }
         else { //list all domains            
-             applyAutoCompleteToDomainField($dialogAddIpRangeToPublicNetwork.find("#domain"));
-             /*
-             $.ajax({
-                data: createURL("command=listDomains"),
-                dataType: "json",
-                success: function(json) {           
-                    var items = json.listdomainsresponse.domain;
-                    if(items != null && items.length > 0) {
-                        for(var i=0; i<items.length; i++) {
-                            domainSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
-                        }		
-                    }
-                }    
-            });  
-            */
+             applyAutoCompleteToDomainField($dialogAddIpRangeToPublicNetwork.find("#domain"));            
         }   
 		
 		$dialogAddIpRangeToPublicNetwork
@@ -1249,45 +1214,10 @@ function bindAddNetworkButton($button) {
 		} 
 		else {				
 			if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
-			    applyAutoCompleteToDomainChildrenField($dialogAddNetworkForZone.find("#domain"), zoneObj.domainid);	
-			    /*
-			    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
-			    function populateDomainDropdown(id) {					        
-                    $.ajax({
-	                    data: createURL("command=listDomainChildren&id="+id),
-	                    dataType: "json",
-	                    async: false,
-	                    success: function(json) {					        
-	                        var domains = json.listdomainchildrenresponse.domain;		                  		        	    
-		                    if (domains != null && domains.length > 0) {					    
-			                    for (var i = 0; i < domains.length; i++) {	
-				                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
-				                    if(domains[i].haschild == true) 
-		                                populateDomainDropdown(domains[i].id);				   
-			                    }
-		                    }				
-	                    }
-                    }); 
-                }	
-                populateDomainDropdown(zoneObj.domainid);
-                */
+			    applyAutoCompleteToDomainChildrenField($dialogAddNetworkForZone.find("#domain"), zoneObj.domainid);				    
             }
             else { //list all domains     
-                applyAutoCompleteToDomainField($dialogAddNetworkForZone.find("#domain"));
-                /*       
-                $.ajax({
-                    data: createURL("command=listDomains"),
-                    dataType: "json",
-                    success: function(json) {           
-                        var items = json.listdomainsresponse.domain;
-                        if(items != null && items.length > 0) {
-                            for(var i=0; i<items.length; i++) {
-                                domainSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
-                            }		
-                        }
-                    }    
-                });  
-                */
+                applyAutoCompleteToDomainField($dialogAddNetworkForZone.find("#domain"));               
             }   
 		}
 

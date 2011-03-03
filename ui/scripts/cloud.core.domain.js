@@ -139,27 +139,6 @@ function initAddDomainDialog() {
         autoCompleteDomains.push(jsonObj);
         
         applyAutoCompleteToDomainField($dialogAddDomain.find("#parent_domain"));      
-        /*
-        $.ajax({
-	      data: createURL("command=listDomains"),
-		    dataType: "json",
-		    async: false,
-		    success: function(json) {
-		        var $domainDropdown1 = $dialogAddDomain.find("#domain_dropdown").empty();		  
-			    var domains = json.listdomainsresponse.domain;						
-			    if (domains != null && domains.length > 0) {
-				    for (var i = 0; i < domains.length; i++) {
-					    $domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 					
-				    }
-			    } 
-			   
-			    var $thisTab = $("#right_panel_content").find("#tab_content_details");    
-                var domainId = $thisTab.find("#id").text();   //get domainId from here in case domain page is empty (e.g. when a domain was just deleted)
-                if(domainId != null && domainId.length > 0)
-                    $domainDropdown1.val(domainId);			    		    
-		    }
-	    });  
-        */
         
 		$dialogAddDomain
 		.dialog('option', 'buttons', { 					

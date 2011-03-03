@@ -473,29 +473,8 @@ $(document).ready(function() {
 	                    zoneSelect.change();
 	                }
 	            }
-            	
-            	
-            	applyAutoCompleteToDomainField($advancedSearchPopup.find("#domain"));         
-                
-                /*	
-	            var domainSelect = $advancedSearchPopup.find("#adv_search_domain");	
-	            if(domainSelect.length>0 && $advancedSearchPopup.find("#adv_search_domain_li").css("display")!="none") {	                		
-	                $.ajax({
-		                data: createURL("command=listDomains&available=true"),
-		                dataType: "json",
-		                success: function(json) {			        
-			                var domains = json.listdomainsresponse.domain;		
-	                        domainSelect.empty();	
-	                        domainSelect.append("<option value=''>" + g_dictionary["label.by.domain"] + "</option>"); 
-			                if (domains != null && domains.length > 0) {
-			                    for (var i = 0; i < domains.length; i++) {
-				                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
-			                    }
-			                }
-		                }
-	                });		    
-	            } 	
-            	*/
+            	            	
+            	applyAutoCompleteToDomainField($advancedSearchPopup.find("#domain")); 
             	   
 	            $advancedSearchPopup.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});	            
 	        }

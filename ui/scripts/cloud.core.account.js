@@ -133,27 +133,8 @@ function bindAddAccountButton() {
     initDialog("dialog_add_account", 450);
                    
     var $dialogAddAccount = $("#dialog_add_account");
-    
-    applyAutoCompleteToDomainField($dialogAddAccount.find("#domain"));         
-    /*   
-    $dialogAddAccount.find("#domain").autocomplete({
-		source: function(request, response) {			
-			$.ajax({
-			    data: createURL("command=listDomains&keyword=" + request.term),				
-				dataType: "json",
-				success: function(json) {	   
-					domainObjs = json.listdomainsresponse.domain;					
-					var array1 = [];				
-					if(domainObjs != null && domainObjs.length > 0) {									
-						for(var i=0; i < domainObjs.length; i++) 					        
-							array1.push(fromdb(domainObjs[i].name));		   					   			    
-					}					
-					response(array1);
-				}
-			});		
-		}
-	}); 
-    */
+            
+    applyAutoCompleteToDomainField($dialogAddAccount.find("#domain"));   
                 
     $("#add_account_button").unbind("click").bind("click", function(event) {    		
 		$dialogAddAccount

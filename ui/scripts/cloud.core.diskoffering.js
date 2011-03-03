@@ -87,25 +87,7 @@ function initAddDiskOfferingDialog() {
     });
     
     applyAutoCompleteToDomainField($dialogAddDisk.find("#domain"));   
-    /*
-    $.ajax({
-	  data: createURL("command=listDomains"),
-		dataType: "json",
-		async: false,
-		success: function(json) {
-		    var $domainDropdown1 = $dialogAddDisk.find("#domain_dropdown").empty();
-		    var $domainDropdown2 = $("#tab_content_details").find("#domain_edit").empty();
-			var domains = json.listdomainsresponse.domain;						
-			if (domains != null && domains.length > 0) {
-				for (var i = 0; i < domains.length; i++) {
-					$domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
-					$domainDropdown2.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
-				}
-			} 
-		}
-	});   
-    */
-        
+           
     $("#add_diskoffering_button").unbind("click").bind("click", function(event) {    
 		$dialogAddDisk.find("#disk_name").val("");
 		$dialogAddDisk.find("#disk_description").val("");

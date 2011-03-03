@@ -75,25 +75,7 @@ function initAddServiceOfferingDialog() {
     });
     
     applyAutoCompleteToDomainField($dialogAddService.find("#domain"));   
-    /*       
-	$.ajax({
-	  data: createURL("command=listDomains"),
-		dataType: "json",
-		async: false,
-		success: function(json) {
-		    var $domainDropdown1 = $dialogAddService.find("#domain_dropdown").empty();
-		    var $domainDropdown2 = $("#tab_content_details").find("#domain_edit").empty();
-			var domains = json.listdomainsresponse.domain;						
-			if (domains != null && domains.length > 0) {
-				for (var i = 0; i < domains.length; i++) {
-					$domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
-					$domainDropdown2.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
-				}
-			} 
-		}
-	});   
-	*/
-		         
+   		         
     $("#add_serviceoffering_button").unbind("click").bind("click", function(event) {    
 		$dialogAddService.find("#add_service_name").val("");
 		$dialogAddService.find("#add_service_display").val("");
