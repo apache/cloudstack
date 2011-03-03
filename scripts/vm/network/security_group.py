@@ -405,14 +405,13 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
         logging.debug("Rules already programmed for vm " + vm_name)
         return 'true'
     
-    if changes[0] or changes[2]:
+    if changes[0] or changes[1] or changes[2] or changes[3]:
         default_network_rules(vmName, vm_id, vm_ip, vmMac, vif, brname)
 
     if rules == "" or rules == None:
-        write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
-        return 'true'
-
-    lines = rules.split(';')[:-1]
+        lines = []
+    else:
+        lines = rules.split(';')[:-1]
 
     logging.debug("    programming network rules for  IP: " + vm_ip + " vmname=" + vm_name)
     execute("iptables -F " + vmchain)
