@@ -1090,10 +1090,10 @@ function initAddZoneWizard() {
     
     $addZoneWizard.find("#add_zone_public").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
-            $addZoneWizard.find("#domain_dropdown_container").hide();  
+            $addZoneWizard.find("#step2").find("#domain_container").hide();  
         }
         else {  //private zone
-            $addZoneWizard.find("#domain_dropdown_container").show();  
+            $addZoneWizard.find("#step2").find("#domain_container").show();  
         }
         return false;
     });
@@ -1127,22 +1127,9 @@ function initAddZoneWizard() {
 	    }		    
 	    return false;
 	});	
-             
-    var domainDropdown = $addZoneWizard.find("#domain_dropdown").empty();	
-	$.ajax({
-	  data: createURL("command=listDomains"),
-		dataType: "json",
-		async: false,
-		success: function(json) {
-			var domains = json.listdomainsresponse.domain;						
-			if (domains != null && domains.length > 0) {
-				for (var i = 0; i < domains.length; i++) {
-					domainDropdown.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
-				}
-			} 
-		}
-	});    
      
+    applyAutoCompleteToDomainField($addZoneWizard.find("#domain"));   
+         
     $addZoneWizard.unbind("click").bind("click", function(event) {  
         var $thisWizard = $(this);
         var $target = $(event.target);
@@ -1206,11 +1193,17 @@ function initAddZoneWizard() {
                 if (!isValid) 
 	                return;	
                 $thisWizard.find("#step2").hide();
-                $thisWizard.find("#step3").show();
+                $thisWizard.find("#step3").show();                   
+                break;  
+                           
+            case "go_to_step_4": //step 3 => step 4                   
+                var isValid = addZoneWizardValidatePod($thisWizard);                
+                if (!isValid) 
+	                return;                 
                               
                 var $IpRangeDomainSelect = $thisWizard.find("#step4").find("#add_publicip_vlan_domain").empty();	                
-		        if($thisWizard.find("#step2").find("#domain_dropdown_container").css("display") != "none") { //list only domains under zoneDomain		
-		            var zoneDomainId = $thisWizard.find("#step2").find("#domain_dropdown").val();  
+		        if($thisWizard.find("#step2").find("#domain_container").css("display") != "none") { //list only domains under zoneDomain		
+		            var zoneDomainId = $thisWizard.find("#step2").find("#domain").data("domainId");  
 		            var zoneDomainName = $thisWizard.find("#step2").find("#domain_dropdown option:selected").text();      		    
 		            $IpRangeDomainSelect.append("<option value='" + zoneDomainId + "'>" + zoneDomainName + "</option>"); 	
                     function populateDomainDropdown(parentDomainId) {
@@ -1245,13 +1238,7 @@ function initAddZoneWizard() {
                             }
                         }    
                     });  
-                }                  
-                break;  
-                           
-            case "go_to_step_4": //step 3 => step 4                   
-                var isValid = addZoneWizardValidatePod($thisWizard);                
-                if (!isValid) 
-	                return;               
+                }                         
                           
                 $thisWizard.find("#step3").hide();
                 $thisWizard.find("#step4").show();                
@@ -1293,19 +1280,41 @@ function initAddZoneWizard() {
 }
 
 function addZoneWizardValidateZond($thisWizard) {    
+    var $thisStep = $thisWizard.find("#step2");
+
 	var isValid = true;					
-	isValid &= validateString("Name", $thisWizard.find("#add_zone_name"), $thisWizard.find("#add_zone_name_errormsg"));
-	isValid &= validateIp("DNS 1", $thisWizard.find("#add_zone_dns1"), $thisWizard.find("#add_zone_dns1_errormsg"), false); //required
-	isValid &= validateIp("DNS 2", $thisWizard.find("#add_zone_dns2"), $thisWizard.find("#add_zone_dns2_errormsg"), true);  //optional	
-	isValid &= validateIp("Internal DNS 1", $thisWizard.find("#add_zone_internaldns1"), $thisWizard.find("#add_zone_internaldns1_errormsg"), false); //required
-	isValid &= validateIp("Internal DNS 2", $thisWizard.find("#add_zone_internaldns2"), $thisWizard.find("#add_zone_internaldns2_errormsg"), true);  //optional	
-	if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
-		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_startvlan"), $thisWizard.find("#add_zone_startvlan_errormsg"), true);    //optional
-		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_endvlan"), $thisWizard.find("#add_zone_endvlan_errormsg"), true);        //optional
+	isValid &= validateString("Name", $thisStep.find("#add_zone_name"), $thisStep.find("#add_zone_name_errormsg"));
+	isValid &= validateIp("DNS 1", $thisStep.find("#add_zone_dns1"), $thisStep.find("#add_zone_dns1_errormsg"), false); //required
+	isValid &= validateIp("DNS 2", $thisStep.find("#add_zone_dns2"), $thisStep.find("#add_zone_dns2_errormsg"), true);  //optional	
+	isValid &= validateIp("Internal DNS 1", $thisStep.find("#add_zone_internaldns1"), $thisStep.find("#add_zone_internaldns1_errormsg"), false); //required
+	isValid &= validateIp("Internal DNS 2", $thisStep.find("#add_zone_internaldns2"), $thisStep.find("#add_zone_internaldns2_errormsg"), true);  //optional	
+	if($thisStep.find("#add_zone_vlan_container").css("display") != "none") {
+		isValid &= validateString("VLAN Range", $thisStep.find("#add_zone_startvlan"), $thisStep.find("#add_zone_startvlan_errormsg"), true);    //optional
+		isValid &= validateString("VLAN Range", $thisStep.find("#add_zone_endvlan"), $thisStep.find("#add_zone_endvlan_errormsg"), true);        //optional
 	}		
-	if($thisWizard.find("#add_zone_guestcidraddress_container").css("display") != "none") {
-	    isValid &= validateCIDR("Guest CIDR", $thisWizard.find("#add_zone_guestcidraddress"), $thisWizard.find("#add_zone_guestcidraddress_errormsg"), false); //required
-	}
+	if($thisStep.find("#add_zone_guestcidraddress_container").css("display") != "none") {
+	    isValid &= validateCIDR("Guest CIDR", $thisStep.find("#add_zone_guestcidraddress"), $thisStep.find("#add_zone_guestcidraddress_errormsg"), false); //required
+	}		
+	if($thisStep.find("#domain_container").css("display") != "none") {
+	    isValid &= validateString("Domain", $thisStep.find("#domain"), $thisStep.find("#domain_errormsg"), false);                             //required	
+	    var domainName = $thisStep.find("#domain").val();
+	    var domainId;
+	    if(domainName != null && domainName.length > 0) { 				    
+	        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+		        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+		          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+		              domainId = autoCompleteDomains[i].id;
+		              $thisStep.find("#domain").data("domainId", domainId);
+		              break;	
+		          }
+	            } 					   			    
+	        }					    				    
+	        if(domainId == null) {
+	            showError(false, $thisStep.find("#domain"), $thisStep.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+	            isValid &= false;
+	        }				    
+	    }				
+	}	
 	return isValid;
 }
 
@@ -1391,12 +1400,11 @@ function addZoneWizardSubmit($thisWizard) {
 	    var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
 	    moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));	
 	}
-					
-	if($thisWizard.find("#step2").find("#domain_dropdown_container").css("display") != "none") {
-	    var domainId = trim($thisWizard.find("#step2").find("#domain_dropdown").val());
-	    moreCriteria.push("&domainid="+domainId);	
-	}
-	
+			
+	if($thisWizard.find("#step2").find("#domain_container").css("display") != "none") {       
+        array1.push("&domainid="+$thisWizard.find("#step2").find("#domain").val());		
+    }   
+		
 	var zoneId, podId, vlanId, $zoneNode, $podNode, gateway;	
 	var afterActionMsg = "";						
     $.ajax({
@@ -1417,12 +1425,7 @@ function addZoneWizardSubmit($thisWizard) {
 		    
 		    zoneId = item.id;	
 		    
-		    listZonesUpdate();
-		    /*
-		    var zoneTotal = parseInt($("#zone_total").text());
-		    zoneTotal++;
-		    $("#zone_total").text(zoneTotal.toString());	
-		    */	           
+		    listZonesUpdate();		           
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
