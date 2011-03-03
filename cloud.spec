@@ -366,6 +366,18 @@ id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged u
 rm -rf %{_localstatedir}/cache/%{name}
 # user harcoded here, also hardcoded on wscript
 
+%pre client-ui
+if [ -d %{_datadir}/%{name}/management/webapps/client/ ]; then
+	pushd /tmp &>/dev/null
+	file=cloud-ui-backup-%(date +%%F).tar.bz2
+	cp -r %{_datadir}/%{name}/management/webapps/client/ .
+	tar cjf "$file" client/
+	rm -rf client/
+	mkdir -p /usr/share/cloud/ui-backup/
+	mv "$file" /usr/share/cloud/ui-backup/
+	popd &>/dev/null
+fi
+
 %post client
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
