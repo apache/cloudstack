@@ -491,10 +491,6 @@ def backupSnapshot(session, args):
     util.SMlog("Back up " + baseCopyUuid + " to Secondary Storage as " + backupUuid)
     copyfile(baseCopyPath, backupFile, isISCSI)
     vhdutil.setHidden(backupFile, False)
-    
-    # Now set the availability of the snapshotPath and the baseCopyPath to false
-    makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
-    manageAvailability(baseCopyPath, '-an')
 
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
