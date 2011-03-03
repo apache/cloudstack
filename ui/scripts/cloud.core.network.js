@@ -209,25 +209,7 @@ function showNetworkingTab(p_domainId, p_account) {
     //watermark (end)	
     
     $("#submenu_content_network #ip_searchbutton1").bind("click", refreshIpListContainerByInputBox);
-     
-    /* 		  
-    function populateDomainDropdown() {
-        var domainSelect = $("#submenu_content_network #search_by_domain").empty();			
-	    $.ajax({
-		    data: "command=listDomains&available=true&response=json",
-		    dataType: "json",
-		    success: function(json) {			        
-			    var domains = json.listdomainsresponse.domain;			 
-			    if (domains != null && domains.length > 0) {
-			        for (var i = 0; i < domains.length; i++) {
-				        domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
-			        }
-			    }
-		    }
-	    });		    
-    }	
-    */	  
-    
+         
     $("#submenu_content_network").find("#ip_searchbutton2").bind("click", function(event){
         var $searchPanel2= $("#submenu_content_network").find("#ip_search_panel2");
         
@@ -1048,10 +1030,8 @@ function showNetworkingTab(p_domainId, p_account) {
 	    
 	    if(isAdmin()) {
 	        submenuContent.find(".select_directipbg_admin").show();
-	        submenuContent.find(".select_directipbg_user").hide();	
-	        
-	        applyAutoCompleteToDomainField($("#submenu_content_network #search_by_domain"));  
-	        //populateDomainDropdown();	    
+	        submenuContent.find(".select_directipbg_user").hide();		        
+	        applyAutoCompleteToDomainField($("#submenu_content_network #search_by_domain"));  	        
 	    } else {	        
 	        submenuContent.find(".select_directipbg_admin").hide();
 	        submenuContent.find(".select_directipbg_user").show();

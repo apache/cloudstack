@@ -90,6 +90,7 @@ function applyAutoCompleteToDomainField($field) {
 	}); 
 }
 
+/*
 function applyAutoCompleteToDomainChildrenField($field, parentDomainId) {  
     $field.autocomplete({
 		source: function(request, response) {			
@@ -122,6 +123,7 @@ function applyAutoCompleteToDomainChildrenField($field, parentDomainId) {
 		}
 	}); 
 }
+*/
 
 // Role Functions
 function isAdmin() {
@@ -319,6 +321,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
     	
     	applyAutoCompleteToDomainField(submenuContent.find("#advanced_search #domain")); 
     	
+    	/*
     	var domainSelect = submenuContent.find("#advanced_search #adv_search_domain");	
 		if(domainSelect.length>0 && isAdmin()) {
 		    var domainSelect = domainSelect.empty();			
@@ -335,7 +338,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 			    }
 		    });		    
 		} 
-			
+		*/	
     	    	
     	var vmSelect = submenuContent.find("#advanced_search").find("#adv_search_vm");	
 		if(vmSelect.length>0) {		   

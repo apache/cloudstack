@@ -640,23 +640,7 @@ function showConfigurationTab() {
 				}
 			});
 			
-			applyAutoCompleteToDomainField(dialogAddVlanForZone.find("#domain")); 
-			/*
-			var domainSelect = dialogAddVlanForZone.find("#add_publicip_vlan_domain").empty();	
-			$.ajax({
-				data: "command=listDomains&response=json",
-				dataType: "json",
-				async: false,
-				success: function(json) {
-					var domains = json.listdomainsresponse.domain;						
-					if (domains != null && domains.length > 0) {
-						for (var i = 0; i < domains.length; i++) {
-							domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
-						}
-					} 
-				}
-			});
-			*/
+			applyAutoCompleteToDomainField(dialogAddVlanForZone.find("#domain")); 			
 		}
 
 		dialogAddVlanForZone
