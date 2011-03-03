@@ -495,11 +495,15 @@
                                 <select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">
                                 </select>
                             </li>
-                            <li style="display: none" id="add_publicip_vlan_domain_container">
-                                <label for="user_name">
+                            <li style="display: none" id="vlan_domain_container">
+                                <label>
                                     <fmt:message key="label.domain"/>:</label>
-                                <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
+                                <input class="text" type="text" id="vlan_domain" />
+                				<div id="vlan_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
+                				<!--  
+                                <select class="select" id="vlan_domain">
                                 </select>
+                                -->
                             </li>
                             <li style="display: none" id="add_publicip_vlan_account_container">
                                 <label for="user_name">

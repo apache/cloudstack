@@ -812,21 +812,7 @@ function initAddClusterShortcut() {
 function initAddHostShortcut() {
     var $dialogAddHost = $("#dialog_add_host_in_resource_page");    
     var $podSelect = $dialogAddHost.find("#pod_dropdown");
-    
-    /*
-    $dialogAddHost.find("#host_hypervisor").change(function() {
-        if($(this).val() == "VMware") {
-    		$('li[input_group="general"]', $dialogAddHost).hide();
-    		$('li[input_group="vmware"]', $dialogAddHost).show();
-    	} else {
-    		$('li[input_group="vmware"]', $dialogAddHost).hide();
-    		$('li[input_group="general"]', $dialogAddHost).show();
-    	}
-    	
-        refreshClsuterFieldInAddHostDialog($dialogAddHost, $podSelect.val(), null, $(this).val());        
-    }); 
-    */
-        
+            
     $dialogAddHost.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
 	    if(zoneId == null)
@@ -1066,7 +1052,7 @@ function refreshAddZoneWizard() {
     $addZoneWizard.find("#step1").show();
     
     $addZoneWizard.find("#step4").find("#add_publicip_vlan_tagged").change();            		
-	$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 	
+	$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#vlan_domain_container", "#add_publicip_vlan_account_container". 	
      
     $addZoneWizard.find("#after_submit_screen").find("#spinning_wheel").show();
 	            
@@ -1118,11 +1104,11 @@ function initAddZoneWizard() {
 	
 	$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(function(event) {	   
 	    if($(this).val() == "zone-wide") {
-	        $addZoneWizard.find("#step4").find("#add_publicip_vlan_domain_container").hide();
+	        $addZoneWizard.find("#step4").find("#vlan_domain_container").hide();
 			$addZoneWizard.find("#step4").find("#add_publicip_vlan_account_container").hide();    
 	    } 
 	    else if($(this).val() == "account-specific") { 
-	        $addZoneWizard.find("#step4").find("#add_publicip_vlan_domain_container").show();
+	        $addZoneWizard.find("#step4").find("#vlan_domain_container").show();
 			$addZoneWizard.find("#step4").find("#add_publicip_vlan_account_container").show();    
 	    }		    
 	    return false;
@@ -1201,43 +1187,12 @@ function initAddZoneWizard() {
                 if (!isValid) 
 	                return;                 
                               
-                var $IpRangeDomainSelect = $thisWizard.find("#step4").find("#add_publicip_vlan_domain").empty();	                
+                var $vlanDomain = $thisWizard.find("#step4").find("#vlan_domain");	                
 		        if($thisWizard.find("#step2").find("#domain_container").css("display") != "none") { //list only domains under zoneDomain		
-		            var zoneDomainId = $thisWizard.find("#step2").find("#domain").data("domainId");  
-		            var zoneDomainName = $thisWizard.find("#step2").find("#domain_dropdown option:selected").text();      		    
-		            $IpRangeDomainSelect.append("<option value='" + zoneDomainId + "'>" + zoneDomainName + "</option>"); 	
-                    function populateDomainDropdown(parentDomainId) {
-                        $.ajax({
-                            data: createURL("command=listDomainChildren&id="+parentDomainId),
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {					        
-                                var domains = json.listdomainchildrenresponse.domain;		                  		        	    
-                                if (domains != null && domains.length > 0) {					    
-	                                for (var i = 0; i < domains.length; i++) {	
-		                                $IpRangeDomainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
-		                                if(domains[i].haschild == true) 
-                                            populateDomainDropdown(domains[i].id);				   
-	                                }
-                                }				
-                            }
-                        }); 
-                    }
-                    populateDomainDropdown(zoneDomainId);
+		            applyAutoCompleteToDomainChildrenField($vlanDomain, $thisWizard.find("#step2").find("#domain").data("domainId"));	
                 }
                 else { //list all domains            
-                     $.ajax({
-                        data: createURL("command=listDomains"),
-                        dataType: "json",
-                        success: function(json) {           
-                            var items = json.listdomainsresponse.domain;
-                            if(items != null && items.length > 0) {
-                                for(var i=0; i<items.length; i++) {
-                                    $IpRangeDomainSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
-                                }		
-                            }
-                        }    
-                    });  
+                    applyAutoCompleteToDomainField($vlanDomain);            
                 }                         
                           
                 $thisWizard.find("#step3").hide();
@@ -1338,77 +1293,101 @@ function addZoneWizardValidateDirectVLAN($thisWizard) {
     isValid &= validateIp("Guest IP Range", $createDirectVLAN.find("#endguestip"), $createDirectVLAN.find("#endguestip_errormsg"), true);  //optional
     isValid &= validateIp("Guest Netmask", $createDirectVLAN.find("#guestnetmask"), $createDirectVLAN.find("#guestnetmask_errormsg"));  //required when creating
     isValid &= validateIp("Guest Gateway", $createDirectVLAN.find("#guestgateway"), $createDirectVLAN.find("#guestgateway_errormsg"));  
+   
     return isValid;			
 }
 
 function addZoneWizardValidateVirtualVLAN($thisWizard) {   
+    var $createVirtualVlan = $thisWizard.find("#step4").find("#create_virtual_vlan");
+    
     var isValid = true;					
-	var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";	
+	var isTagged = ($createVirtualVlan.find("#add_publicip_vlan_tagged").val()=="tagged");	
 	
-	isValid &= validateString("Account", $thisWizard.find("#step4").find("#add_publicip_vlan_account"), $thisWizard.find("#step4").find("#add_publicip_vlan_account_errormsg"), true); //optional
+	isValid &= validateString("Account", $createVirtualVlan.find("#add_publicip_vlan_account"), $createVirtualVlan.find("#add_publicip_vlan_account_errormsg"), true); //optional
 	
 	if (isTagged) {
-		isValid &= validateInteger("VLAN", $thisWizard.find("#step4").find("#add_publicip_vlan_vlan"), $thisWizard.find("#step4").find("#add_publicip_vlan_vlan_errormsg"), 1, 4095);
+		isValid &= validateInteger("VLAN", $createVirtualVlan.find("#add_publicip_vlan_vlan"), $createVirtualVlan.find("#add_publicip_vlan_vlan_errormsg"), 1, 4095);
 	}
 	
-	isValid &= validateIp("Gateway", $thisWizard.find("#step4").find("#add_publicip_vlan_gateway"), $thisWizard.find("#step4").find("#add_publicip_vlan_gateway_errormsg"), false); //required
-	isValid &= validateIp("Netmask", $thisWizard.find("#step4").find("#add_publicip_vlan_netmask"), $thisWizard.find("#step4").find("#add_publicip_vlan_netmask_errormsg"), false); //required
-	isValid &= validateIp("Start IP Range", $thisWizard.find("#step4").find("#add_publicip_vlan_startip"), $thisWizard.find("#step4").find("#add_publicip_vlan_startip_errormsg"), false); //required
-	isValid &= validateIp("End IP Range", $thisWizard.find("#step4").find("#add_publicip_vlan_endip"), $thisWizard.find("#step4").find("#add_publicip_vlan_endip_errormsg"), true); //optional
-	
+	isValid &= validateIp("Gateway", $createVirtualVlan.find("#add_publicip_vlan_gateway"), $createVirtualVlan.find("#add_publicip_vlan_gateway_errormsg"), false); //required
+	isValid &= validateIp("Netmask", $createVirtualVlan.find("#add_publicip_vlan_netmask"), $createVirtualVlan.find("#add_publicip_vlan_netmask_errormsg"), false); //required
+	isValid &= validateIp("Start IP Range", $createVirtualVlan.find("#add_publicip_vlan_startip"), $createVirtualVlan.find("#add_publicip_vlan_startip_errormsg"), false); //required
+	isValid &= validateIp("End IP Range", $createVirtualVlan.find("#add_publicip_vlan_endip"), $createVirtualVlan.find("#add_publicip_vlan_endip_errormsg"), true); //optional
+		   
+    if($thisWizard.find("#step2").find("#domain_container").css("display") != "none") {
+	    isValid &= validateString("Domain", $createVirtualVlan.find("#vlan_domain"), $createVirtualVlan.find("#vlan_domain_errormsg"), false);                             //required	
+	    var domainName = $createVirtualVlan.find("#vlan_domain").val();
+	    var domainId;
+	    if(domainName != null && domainName.length > 0) { 				    
+	        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+		        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+		          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+		              domainId = autoCompleteDomains[i].id;
+		              $createVirtualVlan.find("#vlan_domain").data("domainId", domainId);
+		              break;	
+		          }
+	            } 					   			    
+	        }					    				    
+	        if(domainId == null) {
+	            showError(false, $createVirtualVlan.find("#vlan_domain"), $createVirtualVlan.find("#vlan_domain_errormsg"), g_dictionary["label.not.found"]);
+	            isValid &= false;
+	        }				    
+	    }				
+	}
+    	
     return isValid;			
 }
 
 function addZoneWizardSubmit($thisWizard) {	
-	var moreCriteria = [];	
+	var array1 = [];	
 	
 	var networktype = $thisWizard.find("#step1").find("input:radio[name=basic_advanced]:checked").val();  //"Basic", "Advanced"
-	moreCriteria.push("&networktype="+todb(networktype));
+	array1.push("&networktype="+todb(networktype));
 	
 	if(networktype == "Advanced")
-	    moreCriteria.push("&securitygroupenabled="+$thisWizard.find("#step1").find("input[name=isolation_mode]:checked").val());    
+	    array1.push("&securitygroupenabled="+$thisWizard.find("#step1").find("input[name=isolation_mode]:checked").val());    
 	
 	var name = trim($thisWizard.find("#add_zone_name").val());
-	moreCriteria.push("&name="+todb(name));
+	array1.push("&name="+todb(name));
 	
 	var dns1 = trim($thisWizard.find("#add_zone_dns1").val());
-	moreCriteria.push("&dns1="+todb(dns1));
+	array1.push("&dns1="+todb(dns1));
 	
 	var dns2 = trim($thisWizard.find("#add_zone_dns2").val());
 	if (dns2 != null && dns2.length > 0) 
-	    moreCriteria.push("&dns2="+todb(dns2));						
+	    array1.push("&dns2="+todb(dns2));						
 						
 	var internaldns1 = trim($thisWizard.find("#add_zone_internaldns1").val());
-	moreCriteria.push("&internaldns1="+todb(internaldns1));
+	array1.push("&internaldns1="+todb(internaldns1));
 	
 	var internaldns2 = trim($thisWizard.find("#add_zone_internaldns2").val());
 	if (internaldns2 != null && internaldns2.length > 0) 
-	    moreCriteria.push("&internaldns2="+todb(internaldns2));						
+	    array1.push("&internaldns2="+todb(internaldns2));						
 	 											
     if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
 		var vlanStart = $thisWizard.find("#add_zone_startvlan").val();
 		if(vlanStart != null && vlanStart.length > 0) {	
 		    var vlanEnd = $thisWizard.find("#add_zone_endvlan").val();						
 		    if (vlanEnd != null && vlanEnd.length > 0) 
-		        moreCriteria.push("&vlan=" + todb(vlanStart + "-" + vlanEnd));									
+		        array1.push("&vlan=" + todb(vlanStart + "-" + vlanEnd));									
 		    else 							
-			    moreCriteria.push("&vlan=" + todb(vlanStart));		
+			    array1.push("&vlan=" + todb(vlanStart));		
         }
 	}	
 	
 	if($thisWizard.find("#add_zone_guestcidraddress_container").css("display") != "none") {
 	    var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
-	    moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));	
+	    array1.push("&guestcidraddress="+todb(guestcidraddress));	
 	}
 			
 	if($thisWizard.find("#step2").find("#domain_container").css("display") != "none") {       
-        array1.push("&domainid="+$thisWizard.find("#step2").find("#domain").val());		
+        array1.push("&domainid="+$thisWizard.find("#step2").find("#domain").data("domainId"));		
     }   
 		
 	var zoneId, podId, vlanId, $zoneNode, $podNode, gateway;	
 	var afterActionMsg = "";						
     $.ajax({
-        data: createURL("command=createZone"+moreCriteria.join("")),
+        data: createURL("command=createZone"+array1.join("")),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {	
@@ -1483,22 +1462,22 @@ function addZoneWizardSubmit($thisWizard) {
         // create pod (end) 
         
         // create direct VLAN (basic zone, advanced zone + security group)
-        if($thisWizard.find("#step4").find("#create_direct_vlan").css("display") != "none") {
-            var netmask = $thisWizard.find("#step4").find("#create_direct_vlan").find("#guestnetmask").val();
-		    var startip = $thisWizard.find("#step4").find("#create_direct_vlan").find("#startguestip").val();
-		    var endip = $thisWizard.find("#step4").find("#create_direct_vlan").find("#endguestip").val();	
-		    var guestgateway = $thisWizard.find("#step4").find("#create_direct_vlan").find("#guestgateway").val();
+        var $createDirectVlan = $thisWizard.find("#step4").find("#create_direct_vlan");
+        if ($createDirectVlan.css("display") != "none") {
+            var netmask = $createDirectVlan.find("#guestnetmask").val();
+		    var startip = $createDirectVlan.find("#startguestip").val();
+		    var endip = $createDirectVlan.find("#endguestip").val();	
+		    var guestgateway = $createDirectVlan.find("#guestgateway").val();
     				
 		    var array1 = [];
 		    array1.push("&forVirtualNetwork=false"); //direct VLAN	
 		    array1.push("&zoneid=" + zoneId);
 		    
-		    if($thisWizard.find("#step4").find("#create_direct_vlan").find("#vlan_id_container").css("display") != "none") {		      
-		        array1.push("&vlan="+$thisWizard.find("#step4").find("#create_direct_vlan").find("#vlan_id").val());
+		    if($createDirectVlan.find("#vlan_id_container").css("display") != "none") {		      
+		        array1.push("&vlan="+$createDirectVlan.find("#vlan_id").val());
 		    }
 		    else {
-		        array1.push("&vlan=untagged");	
-		        array1.push("&podId=" + podId);	
+		        array1.push("&vlan=untagged");			        
 		    }		    
 		      
 		    array1.push("&gateway="+todb(guestgateway));
@@ -1529,37 +1508,35 @@ function addZoneWizardSubmit($thisWizard) {
         
         
         // create virtual VLAN (advanced zone + virtual)
-        if($thisWizard.find("#step4").find("#create_virtual_vlan").css("display") != "none") {  
-			var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";
-			
-			var vlan = trim($thisWizard.find("#step4").find("#add_publicip_vlan_vlan").val());
-			if (isTagged) {
-				vlan = "&vlan="+vlan;
-			} else {
-				vlan = "&vlan=untagged";
-			}
-							
-			var scopeParams = "";
-			if($thisWizard.find("#step4").find("#add_publicip_vlan_scope").val() == "account-specific") {
-			    scopeParams = "&domainId="+trim($thisWizard.find("#step4").find("#add_publicip_vlan_domain").val())+"&account="+trim($thisWizard.find("#step4").find("#add_publicip_vlan_account").val());  
-			} 
-			
-			var array1 = [];						
-			var gateway = $thisWizard.find("#step4").find("#add_publicip_vlan_gateway").val();
+        var $createVirtualVlan = $thisWizard.find("#step4").find("#create_virtual_vlan");
+        if ($createVirtualVlan.css("display") != "none") {  
+			var array1 = [];	
+						
+			if ($createVirtualVlan.find("#add_publicip_vlan_tagged").val() == "tagged") 
+				array1.push("&vlan="+$createVirtualVlan.find("#add_publicip_vlan_vlan").val());			 
+			else 
+				array1.push("&vlan=untagged");						
+						
+			if($createVirtualVlan.find("#vlan_domain_container").css("display") != "none") {			   
+			    array1.push("&domainId="+$createVirtualVlan.find("#vlan_domain").data("domainId"));
+			    array1.push("&account="+$createVirtualVlan.find("#add_publicip_vlan_account").val());  
+			} 		
+											
+			var gateway = $createVirtualVlan.find("#add_publicip_vlan_gateway").val();
 			array1.push("&gateway="+todb(gateway));
 			
-			var netmask = $thisWizard.find("#step4").find("#add_publicip_vlan_netmask").val();
+			var netmask = $createVirtualVlan.find("#add_publicip_vlan_netmask").val();
 			array1.push("&netmask="+todb(netmask));
 			
-			var startip = $thisWizard.find("#step4").find("#add_publicip_vlan_startip").val();
+			var startip = $createVirtualVlan.find("#add_publicip_vlan_startip").val();
 			array1.push("&startip="+todb(startip));
 			
-			var endip = $thisWizard.find("#step4").find("#add_publicip_vlan_endip").val();	//optional field (might be empty)
+			var endip = $createVirtualVlan.find("#add_publicip_vlan_endip").val();	//optional field (might be empty)
 			if(endip != null && endip.length > 0)
 			    array1.push("&endip="+todb(endip));										
 			
 			$.ajax({
-				data: createURL("command=createVlanIpRange&forVirtualNetwork=true&zoneId="+zoneId+vlan+scopeParams+array1.join("")),
+				data: createURL("command=createVlanIpRange&forVirtualNetwork=true&zoneId="+zoneId+array1.join("")),
 				dataType: "json",
 				success: function(json) {			    
 				    $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
