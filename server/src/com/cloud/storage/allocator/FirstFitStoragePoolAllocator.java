@@ -17,6 +17,7 @@
  */
 package com.cloud.storage.allocator;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -50,6 +51,12 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         if (!allocatorIsCorrectType(dskCh, vm)) {
         	return null;
         }
+        
+        if(dskCh.getTags() != null && dskCh.getTags().length != 0){
+        	s_logger.debug("Looking for pools in dc: " + dc.getId() + "  pod:" + pod.getId() + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()));
+        }else{
+        	s_logger.debug("Looking for pools in dc: " + dc.getId() + "  pod:" + pod.getId() + "  cluster:" + clusterId);
+        }
 
 		List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dc.getId(), pod.getId(), clusterId, dskCh.getTags(), null);
         if (pools.size() == 0) {
@@ -62,6 +69,10 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         StatsCollector sc = StatsCollector.getInstance();
 
         Collections.shuffle(pools);
+        
+    	if (s_logger.isDebugEnabled()) {
+            s_logger.debug("FirstFitStoragePoolAllocator has " + pools.size() + " pools to check for allocation");
+        }
         
         for (StoragePoolVO pool: pools) {
         	if (checkPool(avoid, pool, dskCh, template, null, vm, sc)) {

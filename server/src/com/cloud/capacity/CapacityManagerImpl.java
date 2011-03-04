@@ -195,6 +195,14 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             boolean success = false;
             if (fromLastHost) {
                 /*alloc from reserved*/
+            	long freeCpu = reservedCpu;
+    			long freeMem = reservedMem;
+    			
+    	        if (s_logger.isDebugEnabled()) {
+    	        	s_logger.debug("We need to allocate to the last host again, so trying to allocate from reserved capacity");
+    	            s_logger.debug("Free CPU: "+freeCpu + " , Requested CPU: "+cpu);
+    	            s_logger.debug("Free RAM: "+freeMem + " , Requested RAM: "+ram);
+    	        }             	
                 if (reservedCpu >= cpu && reservedMem >= ram) {
                     capacityCpu.setReservedCapacity(reservedCpu - cpu);
                     capacityMem.setReservedCapacity(reservedMem - ram);        
@@ -206,6 +214,13 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
                 }       
             } else {
                 /*alloc from free resource*/
+    			long freeCpu = totalCpu - (reservedCpu + usedCpu);
+    			long freeMem = totalMem - (reservedMem + usedMem);
+    			
+    	        if (s_logger.isDebugEnabled()) {
+    	            s_logger.debug("Free CPU: "+freeCpu + " , Requested CPU: "+cpu);
+    	            s_logger.debug("Free RAM: "+freeMem + " , Requested RAM: "+ram);
+    	        }	
                 if ((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
                     capacityCpu.setUsedCapacity(usedCpu + cpu);
                     capacityMem.setUsedCapacity(usedMem + ram);
@@ -214,12 +229,12 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             }
 
             if (success) {
-                s_logger.debug("alloc cpu from host: " + hostId + ", old used: " + usedCpu + ", old reserved: " +
+                s_logger.debug("Success in alloc cpu from host: " + hostId + ", old used: " + usedCpu + ", old reserved: " +
                         reservedCpu + ", old total: " + totalCpu + 
                         "; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
                         "; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
 
-                s_logger.debug("alloc mem from host: " + hostId + ", old used: " + usedMem + ", old reserved: " +
+                s_logger.debug("Success in alloc mem from host: " + hostId + ", old used: " + usedMem + ", old reserved: " +
                         reservedMem + ", old total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
                         capacityMem.getReservedCapacity() + ", total: " + capacityMem.getTotalCapacity() + "; requested mem: " + ram + ",alloc_from_last:" + fromLastHost);
 
