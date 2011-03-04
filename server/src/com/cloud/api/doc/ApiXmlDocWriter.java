@@ -344,14 +344,14 @@ public class ApiXmlDocWriter {
         //Generate request
         request.add(new Argument("username", "Username", true));
         request.add(new Argument("password", "Password", true));
-        request.add(new Argument("domainid", "domain ID that the user belongs to. If no domain ID is passed in, the ROOT domain is assumed.", false));
+        request.add(new Argument("domain", "path of the domain that the user belongs to. Example: domain=/com/cloud/internal.  If no domain is passed in, the ROOT domain is assumed.", false));
         apiCommand.setRequest(request);
         
         //Generate response
         response.add(new Argument("username", "Username"));
         response.add(new Argument("userid", "User id"));
         response.add(new Argument("password", "Password"));
-        response.add(new Argument("domainid", "domain ID that the user belongs to. If no domain ID is passed in, the ROOT domain is assumed."));
+        response.add(new Argument("domainid", "domain ID that the user belongs to"));
         response.add(new Argument("timeout", "the time period before the session has expired"));
         response.add(new Argument("account", "the account name the user belongs to"));
         response.add(new Argument("firstname", "first name of the user"));
