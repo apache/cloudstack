@@ -65,10 +65,10 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("broadcasturi") @Param(description="broadcast uri of the network")
     private String broadcastUri;
     
-    @SerializedName("dns1") @Param(description="the first dns for the network")
+    @SerializedName("dns1") @Param(description="the first DNS for the network")
     private String dns1;
     
-    @SerializedName("dns2") @Param(description="the second dns for the network")
+    @SerializedName("dns2") @Param(description="the second DNS for the network")
     private String dns2;
     
     @SerializedName("type") @Param(description="the type of the network")
@@ -77,13 +77,13 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("vlan") @Param(description="the vlan of the network")
     private String vlan;
     
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the network")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the network")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id associated with the network")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the network owner")
     private Long domainId;
     
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the network")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the network owner")
     private String domain;
     
     @SerializedName("isdefault") @Param(description="true if network is default, false otherwise")

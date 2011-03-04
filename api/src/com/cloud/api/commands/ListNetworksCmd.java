@@ -58,7 +58,7 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
     private Boolean isSystem;
     
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true if network is shared, false otherwise")
+    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true if network is shared across accounts in the Zone, false otherwise")
     private Boolean isShared;
     
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")

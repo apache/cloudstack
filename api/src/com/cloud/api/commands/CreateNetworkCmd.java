@@ -51,22 +51,22 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, required=true, description="the network offering id")
     private Long networkOfferingId;
     
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the Vlan ip range")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the network")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the VLAN IP range")
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the network")
     private String gateway;
     
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the VLAN IP range")
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the network")
     private String netmask;
     
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the beginning IP address in the VLAN IP range")
+    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the beginning IP address in the network IP range")
     private String startIp;
     
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the VLAN IP range")
+    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the network IP range. If not specified, will be defaulted to startIP")
     private String endIp;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
     private String vlan;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the network")
@@ -75,7 +75,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a network")
     private Long domainId;
     
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
+    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network is shared across accounts in the Zone")
     private Boolean isShared; 
     
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
