@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 import com.cloud.utils.Pair;
@@ -57,12 +58,12 @@ public class Upgrade217to22 implements DbUpgrade {
                                          String availability, boolean dns_service, boolean gateway_service, 
                                          boolean firewall_service, boolean lb_service, 
                                          boolean userdata_service, boolean vpn_service, 
-                                         boolean dhcp_service, String guest_type) {
+                                         boolean dhcp_service) {
         String insertSql = 
-            "INSERT INTO network_offerings (name, display_text, nw_rate, mc_rate, concurrent_connections, traffic_type, tags, system_only, specify_vlan, service_offering_id, created, removed, default, availability, dns_service, gateway_service, firewall_service, lb_service, userdata_service, vpn_service, dhcp_service, guest_type) " +
-                                   "VALUES (?,    ?,            NULL,    NULL,    NULL,                   ?,            NULL, ?,           0,            NULL,                now(),   NULL,    ?,       ?,            ?,           ?,               ?,                ?,          ?,                ?,           ?,            ?)";
+            "INSERT INTO network_offerings (name, display_text, nw_rate, mc_rate, concurrent_connections, traffic_type, tags, system_only, specify_vlan, service_offering_id, created, removed, `default`, availability, dns_service, gateway_service, firewall_service, lb_service, userdata_service, vpn_service, dhcp_service) " +
+                                   "VALUES (?,    ?,            NULL,    NULL,    NULL,                   ?,            NULL, ?,           0,            NULL,                now(),   NULL,    ?,       ?,            ?,           ?,               ?,                ?,          ?,                ?,           ?)";
         try {
-            PreparedStatement pstmt = conn.prepareStatement(insertSql);
+            PreparedStatement pstmt = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS);
             int i = 1;
             pstmt.setString(i++, name);
             pstmt.setString(i++, displayText);
@@ -77,12 +78,12 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.setBoolean(i++, userdata_service);
             pstmt.setBoolean(i++, vpn_service);
             pstmt.setBoolean(i++, dhcp_service);
-            pstmt.setString(i++, guest_type);
             pstmt.executeUpdate();
             ResultSet rs = pstmt.getGeneratedKeys();
+            rs.next();
+            long id = rs.getLong(1);
             rs.close();
             pstmt.close();
-            long id = rs.getLong(1);
             return id;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to insert network offering ", e);
@@ -217,12 +218,12 @@ public class Upgrade217to22 implements DbUpgrade {
             for (Long dcId : dcs) {
                 insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
                 insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
-                insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", publicNetworkOfferingId, dcId, "PublicNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+                insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
             }
             
             
             if (_basicZone) {
-                long networkOfferingId = insertNetworkOffering(conn, "System-Guest-Network", "System-Guest-Network", "Guest", false, true, "Required", true, false, false, false, true, false, true, "Direct");
+                long networkOfferingId = insertNetworkOffering(conn, "BasicZoneNetworkOffering", "Network Offering for Basic Zone", "Guest", false, true, "Required", true, false, false, false, true, false, true);
                 for (Long dcId : dcs) {
 //                  (200,NULL,NULL,'Management','Native',NULL,NULL,NULL,'Static',2,1,'PodBasedNetworkGuru','Setup',200,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
 //                  (201,NULL,NULL,'Control','LinkLocal',NULL,'169.254.0.1','169.254.0.0/16','Static',3,1,'ControlNetworkGuru','Setup',201,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
