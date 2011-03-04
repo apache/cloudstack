@@ -459,10 +459,10 @@ function securityGroupJsonToIngressRuleTab() {
 	var $thisTab = $("#right_panel_content").find("#tab_content_ingressrule");	    
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-        
+  
     $.ajax({
 		cache: false,		
-		data: createURL("command=listSecurityGroups"+"&domainid="+securityGroupObj.domainid+"&account="+securityGroupObj.account+"&securitygroupname="+securityGroupObj.name),
+		data: createURL("command=listSecurityGroups&id="+securityGroupObj.id),
 		dataType: "json",
 		success: function(json) {	
 		    var securityGroupObj = json.listsecuritygroupsresponse.securitygroup[0];		    				    
