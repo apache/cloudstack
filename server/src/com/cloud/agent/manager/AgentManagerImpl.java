@@ -86,11 +86,9 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -108,8 +106,6 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
@@ -122,6 +118,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
@@ -140,11 +137,9 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -177,10 +172,8 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.host.dao.HostTagsDao;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to
@@ -1787,21 +1780,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				return pod;
 			}
 		}
-		return null;
-	}
-
-	public Pod findPod(VirtualMachineProfile vm, DataCenter dc,
-			Set<? extends Pod> avoids) {
-		for (PodAllocator allocator : _podAllocators) {
-			Pod pod = allocator.allocateTo(vm, dc, avoids);
-			if (pod != null) {
-				s_logger.debug("Pod " + pod.getId() + " is found by "
-						+ allocator.getName());
-				return pod;
-			}
-		}
-
-		s_logger.debug("Unable to find any pod for " + vm);
 		return null;
 	}
 

@@ -920,12 +920,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         for (Pair<NetworkVO, NicProfile> network : networks) {
             NetworkVO config = network.first();
-            NetworkGuru concierge = _networkGurus.get(config.getGuruName());
+            NetworkGuru guru = _networkGurus.get(config.getGuruName());
             NicProfile requested = network.second();
             if (requested != null && requested.getMode() == null) {
                 requested.setMode(config.getMode());
             }
-            NicProfile profile = concierge.allocate(config, requested, vm);
+            NicProfile profile = guru.allocate(config, requested, vm);
 
             if (vm != null && vm.getVirtualMachine().getType() == Type.User && config.isDefault()) {
                 profile.setDefaultNic(true);
@@ -943,7 +943,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 vmType = Nic.VmType.System;
             }
             
-            NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId(), vmType);
+            NicVO vo = new NicVO(guru.getName(), vm.getId(), config.getId(), vmType);
 
             while (deviceIds[deviceId] && deviceId < deviceIds.length) {
                 deviceId++;
@@ -1091,7 +1091,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Asking " + guru + " to implement " + network);
+                s_logger.debug("Asking " + guru.getName() + " to implement " + network);
             }
 
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
@@ -1160,7 +1160,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
-            NetworkGuru concierge = implemented.first();
+            NetworkGuru guru = implemented.first();
             NetworkVO network = implemented.second();
             NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
             Integer networkRate = _configMgr.getNetworkRate(no.getId());
@@ -1177,13 +1177,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 URI isolationUri = nic.getIsolationUri();
 
                 profile = new NicProfile(nic, network, broadcastUri, isolationUri, networkRate);
-                concierge.reserve(profile, network, vmProfile, dest, context);
+                guru.reserve(profile, network, vmProfile, dest, context);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
                 nic.setMacAddress(profile.getMacAddress());
                 nic.setIsolationUri(profile.getIsolationUri());
                 nic.setBroadcastUri(profile.getBroadCastUri());
-                nic.setReserver(concierge.getName());
+                nic.setReserver(guru.getName());
                 nic.setState(Nic.State.Reserved);
                 nic.setNetmask(profile.getNetmask());
                 nic.setGateway(profile.getGateway());
@@ -1202,7 +1202,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 element.prepare(network, profile, vmProfile, dest, context);
             }
             profile.setSecurityGroupEnabled(network.isSecurityGroupEnabled());
-            concierge.updateNicProfile(profile, network);
+            guru.updateNicProfile(profile, network);
             vmProfile.addNic(profile);
         }
     }
@@ -1215,9 +1215,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
             Integer networkRate = _configMgr.getNetworkRate(no.getId());
 
-            NetworkGuru concierge = _networkGurus.get(network.getGuruName());
+            NetworkGuru guru = _networkGurus.get(network.getGuruName());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
-            concierge.updateNicProfile(profile, network);
+            guru.updateNicProfile(profile, network);
             vm.addNic(profile);
         }
     }
@@ -1230,11 +1230,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
                 Nic.State originalState = nic.getState();
                 if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
-                    NetworkGuru concierge = _networkGurus.get(network.getGuruName());
+                    NetworkGuru guru = _networkGurus.get(network.getGuruName());
                     nic.setState(Nic.State.Releasing);
                     _nicDao.update(nic.getId(), nic);
                     NicProfile profile = new NicProfile(nic, network, null, null, null);
-                    if (concierge.release(profile, vmProfile, nic.getReservationId())) {
+                    if (guru.release(profile, vmProfile, nic.getReservationId())) {
                         applyProfileToNicForRelease(nic, profile);
                         nic.setState(Nic.State.Allocated);
                         if (originalState == Nic.State.Reserved) {
@@ -1280,9 +1280,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
                 Integer networkRate = _configMgr.getNetworkRate(no.getId());
 
-                NetworkGuru concierge = _networkGurus.get(network.getGuruName());
+                NetworkGuru guru = _networkGurus.get(network.getGuruName());
                 NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
-                concierge.updateNicProfile(profile, network);
+                guru.updateNicProfile(profile, network);
                 profiles.add(profile);
             }
         }
@@ -1870,7 +1870,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             try {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Sending network shutdown to " + element);
+                    s_logger.debug("Sending network shutdown to " + element.getName());
                 }
                 
                 element.shutdown(network, context);
@@ -2479,9 +2479,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public NetworkProfile convertNetworkToNetworkProfile(long networkId) {
         NetworkVO network = _networksDao.findById(networkId);
-        NetworkGuru concierge = _networkGurus.get(network.getGuruName());
+        NetworkGuru guru = _networkGurus.get(network.getGuruName());
         NetworkProfile profile = new NetworkProfile(network);
-        concierge.updateNetworkProfile(profile);
+        guru.updateNetworkProfile(profile);
 
         return profile;
     }

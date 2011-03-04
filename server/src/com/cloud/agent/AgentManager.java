@@ -230,5 +230,4 @@ public interface AgentManager extends Manager {
     boolean isHostNativeHAEnabled(long hostId);
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
-
 }

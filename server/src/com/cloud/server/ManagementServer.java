@@ -31,7 +31,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -297,17 +296,6 @@ public interface ManagementServer extends ManagementService {
      */
     DataCenterVO findDataCenterById(long dataCenterId);
     
-    /**
-     * Copies a template from one secondary storage server to another
-     * @param userId
-     * @param templateId
-     * @param sourceZoneId - the source zone
-     * @param destZoneId - the destination zone
-     * @return true if success
-     * @throws InternalErrorException
-     */
-    boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId);
-
     /**
      * Finds a template by the specified ID.
      * @param templateId

@@ -183,7 +183,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
@@ -1110,8 +1109,9 @@ public class ManagementServerImpl implements ManagementServer {
 			while(true){
 			    if(id != null) {
 			        ServiceOfferingVO so = _offeringsDao.findById((Long)id);
-			        if(so != null)
-			            sol.add(so);
+			        if(so != null) {
+                        sol.add(so);
+                    }
 			        return sol;
 			    }
 			    
@@ -1983,18 +1983,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _templateDao.findById(id);
     }
     
-    @Override
-    public boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId) {
-    	boolean success = false;
-		try {
-			success = _tmpltMgr.copy(userId, templateId, sourceZoneId, destZoneId);
-		} catch (Exception e) {
-			s_logger.warn("Unable to copy template " + templateId + " from zone " + sourceZoneId + " to " + destZoneId , e);
-			success = false;
-		}
-		return success;
-    }
-
     @Override
     public VMTemplateVO findTemplateById(long templateId) {
         return _templateDao.findById(templateId);

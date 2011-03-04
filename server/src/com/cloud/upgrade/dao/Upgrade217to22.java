@@ -143,7 +143,7 @@ public class Upgrade217to22 implements DbUpgrade {
         try {
             pstmt = conn.prepareStatement("SELECT value FROM configuration WHERE name='direct.attach.untagged.vlan.enabled'");
             ResultSet rs = pstmt.executeQuery();
-            _basicZone = !(rs.next() && Boolean.parseBoolean(rs.getString(1)));
+            _basicZone = !rs.next() || Boolean.parseBoolean(rs.getString(1));
             rs.close();
             pstmt.close();
             pstmt = conn.prepareStatement("UPDATE data_center SET networktype=?, dns_provider=?, gateway_provider=?, firewall_provider=?, dhcp_provider=?, lb_provider=?, vpn_provider=?, userdata_provider=?");

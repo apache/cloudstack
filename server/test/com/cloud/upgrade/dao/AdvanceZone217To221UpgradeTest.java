@@ -37,8 +37,8 @@ import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class VersionDaoImplTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(VersionDaoImplTest.class);
+public class AdvanceZone217To221UpgradeTest extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(AdvanceZone217To221UpgradeTest.class);
 
     @Override
     @Before
@@ -56,7 +56,23 @@ public class VersionDaoImplTest extends TestCase {
     public void test217to22Upgrade() {
         s_logger.debug("Finding sample data from 2.1.7");
         DbTestUtils.executeScript("VersionDaoImplTest/2.1.7/2.1.7.sample.sql", false, true);
-
+        
+        Connection conn = Transaction.getStandaloneConnection();
+        PreparedStatement pstmt;
+        try {
+            pstmt = conn.prepareStatement("UPDATE configuration set value='true' WHERE name = 'direct.attach.untagged.vlan.enabled'");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch(SQLException e) {
+            
+        } finally {
+            try {
+                conn.close();
+            } catch(SQLException e) {
+                
+            }
+        }
+        
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         
         String version = dao.getCurrentVersion();
@@ -69,8 +85,7 @@ public class VersionDaoImplTest extends TestCase {
             assert false : "The test failed.  Check logs"; 
         }
         
-        Connection conn = Transaction.getStandaloneConnection();
-        PreparedStatement pstmt;
+        conn = Transaction.getStandaloneConnection();
         try {
             pstmt = conn.prepareStatement("SELECT version FROm version");
             ResultSet rs = pstmt.executeQuery();

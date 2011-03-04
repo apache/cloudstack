@@ -192,6 +192,8 @@ ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `mac_address` bigint unsigned N
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `source_network_id` bigint unsigned NOT NULL;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `network_id` bigint unsigned;
 
+UPDATE `cloud`.`user_ip_address` set state=`Allocated` WHERE allocated IS NOT NULL;
+
 CREATE TABLE `cloud`.`firewall_rules` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `ip_address_id` bigint unsigned NOT NULL COMMENT 'id of the corresponding ip address',

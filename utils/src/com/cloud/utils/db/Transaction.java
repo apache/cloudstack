@@ -209,7 +209,6 @@ public class Transaction {
     @Override
     public String toString() {
         final StringBuilder str = new StringBuilder((_name != null ? _name : ""));
-        int count = 0;
         str.append(" : ");
         for (final StackElement se : _stack) {
             if (se.type == CURRENT_TXN) {
@@ -651,7 +650,7 @@ public class Transaction {
     	closePreviousStatement();
         if (!_txn) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Rollback called when there's no transaction: " + buildName());
+                s_logger.trace("Rollback called for " + _name + " when there's no transaction: " + buildName());
             }
             return;
         }
@@ -660,7 +659,7 @@ public class Transaction {
         try {
             if (_conn != null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Rolling back the transaction: Time = " + (System.currentTimeMillis() - _txnTime) + " Name =  "+ buildName());
+                    s_logger.debug("Rolling back the transaction: Time = " + (System.currentTimeMillis() - _txnTime) + " Name =  " + _name + "; called by " + buildName());
                 }
                 _conn.rollback();
             }
