@@ -1484,6 +1484,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         s_logger.warn("Unable to delete volume:"+volume.getId()+" for vm:"+vmId+" whilst transitioning to error state");
                     }
 				}
+				UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName());
+	            _usageEventDao.persist(usageEvent);
 			}
 		}
 	}
