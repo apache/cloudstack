@@ -481,7 +481,7 @@ function accountJsonToUserTab() {
         
     $.ajax({
 		cache: false,
-		data: createURL("command=listUsers&domainid="+fromdb(jsonObj.domainid)+"&account="+fromdb(jsonObj.name)),
+		data: createURL("command=listUsers&domainid="+fromdb(jsonObj.domainid)+"&account="+todb(fromdb(jsonObj.name))),
 		dataType: "json",
 		success: function(json) {						    
 			var items = json.listusersresponse.user;	
