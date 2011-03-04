@@ -2183,7 +2183,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
         
-        _networkGroupMgr.addInstanceToGroups(vm.getId(), cmd.getSecurityGroupIdList());
+        _networkGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
         
         return vm;
 	}
