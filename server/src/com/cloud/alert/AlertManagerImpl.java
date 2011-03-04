@@ -45,7 +45,6 @@ import com.cloud.alert.dao.AlertDao;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -56,17 +55,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -75,17 +69,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.sun.mail.smtp.SMTPMessage;
@@ -96,7 +80,7 @@ import com.sun.mail.smtp.SMTPTransport;
 public class AlertManagerImpl implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
 
-    private static final long INITIAL_DELAY = 5L * 60L * 1000L; // five minutes expressed in milliseconds
+    private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Half a minute - expressed in milliseconds
 
     private static final DecimalFormat _dfPct = new DecimalFormat("###.##");
     private static final DecimalFormat _dfWhole = new DecimalFormat("########");
@@ -286,7 +270,7 @@ public class AlertManagerImpl implements AlertManager {
 
     @Override
     public boolean start() {
-        _timer.schedule(new CapacityChecker(), INITIAL_DELAY, _capacityCheckPeriod);
+        _timer.schedule(new CapacityChecker(), INITIAL_CAPACITY_CHECK_DELAY, _capacityCheckPeriod);
         return true;
     }
 
@@ -346,6 +330,7 @@ public class AlertManagerImpl implements AlertManager {
         for (ServiceOfferingVO offering : offerings) {
             offeringsMap.put(offering.getId(), offering);
         }
+        //Calculate CPU and Memory allocated stats.
         for (HostVO host : hosts) {
             if (host.getType() != Host.Type.Routing) {
                 continue;

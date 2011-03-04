@@ -6342,8 +6342,7 @@ public class ManagementServerImpl implements ManagementServer {
         // make sure capacity is accurate before displaying it anywhere
         // NOTE: listCapacities is currently called by the UI only, so this
         // shouldn't be called much since it checks all hosts/VMs
-        // to figure out what has been allocated.
-        _alertMgr.recalculateCapacity();
+        // to figure out what has been allocated.       
 
         Filter searchFilter = new Filter(CapacityVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         SearchCriteria sc = _capacityDao.createSearchCriteria();
