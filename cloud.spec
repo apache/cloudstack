@@ -508,6 +508,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
+%attr(0755,root,root) %{_bindir}/%{name}-set-guest-sshkey
 %dir %{_datadir}/%{name}/setup
 %{_datadir}/%{name}/setup/*.sql
 %{_datadir}/%{name}/setup/*.sh
