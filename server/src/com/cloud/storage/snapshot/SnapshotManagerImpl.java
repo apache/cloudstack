@@ -243,6 +243,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 snapshot.setPrevSnapshotId(preId);
                 _snapshotDao.update(snapshotId, snapshot);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshot.getName(), null, null, volume.getSize());
+                _usageEventDao.persist(usageEvent);
             } else {
                 long preSnapshotId = 0;
                 if( preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null) {
