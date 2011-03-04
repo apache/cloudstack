@@ -180,7 +180,7 @@ public class Transaction {
         if (s_logger.isDebugEnabled()) {
             final StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
             final StringBuilder str = new StringBuilder();
-            for (int i = 3, max = stacks.length > 7 ? 7 : stacks.length; i < max; i++) {
+            for (int i = 5, max = stacks.length > 10 ? 10 : stacks.length; i < max; i++) {
                 str.append("-").append(stacks[i].getClassName().substring(stacks[i].getClassName().lastIndexOf(".") + 1)).append(".").append(stacks[i].getMethodName()).append(":").append(stacks[i].getLineNumber());
             }
             return str.toString();
@@ -651,7 +651,7 @@ public class Transaction {
     	closePreviousStatement();
         if (!_txn) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Rollback called when there's no transaction: " + buildName());
+                s_logger.trace("Rollback called for " + _name + " when there's no transaction: " + buildName());
             }
             return;
         }
@@ -660,7 +660,7 @@ public class Transaction {
         try {
             if (_conn != null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Rolling back the transaction: Time = " + (System.currentTimeMillis() - _txnTime) + " Name =  "+ buildName());
+                    s_logger.debug("Rolling back the transaction: Time = " + (System.currentTimeMillis() - _txnTime) + " Name =  " + _name + "; called by " + buildName());
                 }
                 _conn.rollback();
             }
