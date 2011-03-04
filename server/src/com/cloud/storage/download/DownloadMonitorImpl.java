@@ -65,6 +65,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -351,8 +352,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             if((template.getFormat()).equals(ImageFormat.ISO)){
                 eventType = EventTypes.EVENT_ISO_CREATE;
             }
-            UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, null , size);
-            _usageEventDao.persist(usageEvent);
+            if(template.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
+                UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, null , size);
+                _usageEventDao.persist(usageEvent);
+            }
         } 
         
 		if (vmTemplateHost != null) {
