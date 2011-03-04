@@ -325,12 +325,15 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 		
 		for (Long vmId: affectedVms) {
-			Transaction txn = Transaction.currentTxn();
-			txn.start();
+			
 			VmRulesetLogVO log = null;
 			SecurityGroupWorkVO work = null;
 			UserVm vm = null;
+			Transaction txn = null;
 			try {
+			    txn = Transaction.currentTxn();
+	            txn.start();
+	            
 				vm = _userVMDao.acquireInLockTable(vmId);
 				if (vm == null) {
 					s_logger.warn("Failed to acquire lock on vm id " + vmId);
@@ -359,8 +362,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				if (vm != null) {
 					_userVMDao.releaseFromLockTable(vmId);
 				}
+				
+				if (txn != null)
+				    txn.commit();
 			}
-			txn.commit();
 
 			_executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
 
