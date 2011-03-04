@@ -886,50 +886,7 @@ function initVMWizard() {
 						}
 					}
 				}
-					
-				// Add any additional shared direct networks
-				$.ajax({
-					data: createURL("command=listNetworks&isshared=true&zoneId="+$thisPopup.find("#wizard_zone").val()),
-					dataType: "json",
-					async: false,
-					success: function(json) {
-						var sharedNetworks = json.listnetworksresponse.network;
-						if (sharedNetworks != null && sharedNetworks.length > 0) {
-							for (var i = 0; i < sharedNetworks.length; i++) {	
-							    //if zoneObj.securitygroupsenabled is true and users still choose to select network instead of security group, then UI won't show networks whose securitygroupenabled is true.
-						        if(zoneObj.securitygroupsenabled == true && sharedNetworks[i].securitygroupenabled == true) {
-						            continue;
-						        }
-						        							
-								if (sharedNetworks[i].type != 'Direct') {
-									continue;
-								}
-								if (sharedNetworks[i].isdefault) {
-									if (requiredVirtual) {
-										continue;
-									}
-									$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
-									if (defaultNetworkAdded || i > 0) {
-										// Only check the first default network
-										$directNetworkElement.find("#network_direct_checkbox").removeAttr("checked");
-									}
-									defaultNetworkAdded = true;
-								} else {
-									$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
-								}
-								$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
-								$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
-								$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
-								if (sharedNetworks[i].isdefault) {
-									$networkDirectContainer.append($directNetworkElement.show());
-								} else {
-									availableSecondary = true;
-									$networkDirectSecondaryContainer.append($directNetworkElement.show());
-								}
-							}
-						}
-					}
-				});
+						
 				if (availableSecondary) {
 					$("#secondary_network_title, #secondary_network_desc").show();
 				}
