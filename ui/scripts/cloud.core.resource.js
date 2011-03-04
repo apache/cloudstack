@@ -1473,11 +1473,15 @@ function addZoneWizardSubmit($thisWizard) {
 		    array1.push("&forVirtualNetwork=false"); //direct VLAN	
 		    array1.push("&zoneid=" + zoneId);
 		    
-		    if($createDirectVlan.find("#vlan_id_container").css("display") != "none") {		      
+		    var isValid = true;
+		    if($createDirectVlan.find("#vlan_id_container").css("display") != "none") {	//advanced zone + security group  (default VLAN is at zone-level)	      
 		        array1.push("&vlan="+$createDirectVlan.find("#vlan_id").val());
 		    }
-		    else {
-		        array1.push("&vlan=untagged");			        
+		    else { //basic zone (default VLAN is at pod-level)
+		        array1.push("&vlan=untagged");	
+		        array1.push("&podId=" + podId);	
+		        if(podId == null)
+		            isValid = false;		        
 		    }		    
 		      
 		    array1.push("&gateway="+todb(guestgateway));
@@ -1486,24 +1490,26 @@ function addZoneWizardSubmit($thisWizard) {
 		    if(endip != null && endip.length > 0)
 		        array1.push("&endip="+todb(endip));
             
-            $.ajax({
-		        data: createURL("command=createVlanIpRange" + array1.join("")),
-			    dataType: "json",
-			    async: false,
-			    success: function(json) { 			    
-			        $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
-	                $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().text("Guest IP range was created successfully");	    
-    			    
-				    var item = json.createvlaniprangeresponse.vlan;
-				    vlanId = item.id;				
-			    },		   
-		        error: function(XMLHttpResponse) {	
-				    handleError(XMLHttpResponse, function() {			
-				        $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewcross");
-	                    $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().addClass("error").text(("Failed to create Guest IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
-			        });
-                }
-		    });		            
+            if(isValid) {
+                $.ajax({
+		            data: createURL("command=createVlanIpRange" + array1.join("")),
+			        dataType: "json",
+			        async: false,
+			        success: function(json) { 			    
+			            $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
+	                    $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().text("Guest IP range was created successfully");	    
+        			    
+				        var item = json.createvlaniprangeresponse.vlan;
+				        vlanId = item.id;				
+			        },		   
+		            error: function(XMLHttpResponse) {	
+				        handleError(XMLHttpResponse, function() {			
+				            $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewcross");
+	                        $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().addClass("error").text(("Failed to create Guest IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
+			            });
+                    }
+		        });	
+		    }	            
         }
         
         
