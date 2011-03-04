@@ -2183,6 +2183,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
         
+        _networkGroupMgr.addInstanceToGroups(vm.getId(), cmd.getSecurityGroupIdList());
+        
         return vm;
 	}
 	
@@ -2229,9 +2231,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		} finally {
 			updateVmStateForFailedVmCreation(vm.getId());
 		}
-		
-		_networkGroupMgr.addInstanceToGroups(vm.getId(), cmd.getSecurityGroupIdList());
-		
 		
 		if (template.getEnablePassword()) {
 		    //this value is not being sent to the backend; need only for api dispaly purposes
