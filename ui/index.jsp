@@ -849,7 +849,7 @@
         <div id="zone_header" class="leftmenu_content">  
             <div class="leftmenu_thirdindent">
             	<div class="leftmenu_arrowloader" id="zone_loading_container" style="display:none;"></div>
-                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
+                <div class="leftmenu_arrows expanded_close" id="zone_arrow">
                 </div>	                
                 <span id="zone_name_label"><fmt:message key="label.zone"/>: </span>
                 <span id="zone_name"></span>

@@ -334,25 +334,16 @@ function zoneJSONToTreeNode(jsonObj, $zoneNode) {
     $zoneNode.data("jsonObj", jsonObj);
     $zoneNode.find("#secondarystorage_header").data("zoneObj", jsonObj);    
     
-    if(jsonObj.networktype == "Advanced") {
+    if(jsonObj.networktype == "Advanced") {  //Advanced Zone
         $zoneNode.find("#network_header").show().data("jsonObj", jsonObj);		 
+    }
+    else { //Basic Zone
+        $zoneNode.find("#network_header").hide();
     }
         
     $zoneNode.data("id", zoneid).data("name", fromdb(jsonObj.name));
     var zoneName = $zoneNode.find("#zone_name").text(fromdb(jsonObj.name));	    
-    zoneName.data("jsonObj", jsonObj);	    
-		
-	$.ajax({
-        data: createURL("command=listPods&zoneid="+zoneid),
-	    dataType: "json",
-	    async: false,
-	    success: function(json) {
-		    var items = json.listpodsresponse.pod;	
-		    if (items != null && items.length > 0) {					    
-			    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");			    
-			}	    		    
-	    }
-    });	
+    zoneName.data("jsonObj", jsonObj);	 
 }
 
 function podJSONToTreeNode(json, $podNode) {	
