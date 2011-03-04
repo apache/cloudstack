@@ -29,6 +29,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a specified domain", responseObject=SuccessResponse.class)
 public class DeleteDomainCmd extends BaseAsyncCmd {
@@ -89,6 +90,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Domain Id: "+getId());
         boolean result = _mgr.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

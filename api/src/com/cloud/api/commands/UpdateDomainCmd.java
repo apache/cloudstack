@@ -27,6 +27,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a domain with a new name", responseObject=DomainResponse.class)
 public class UpdateDomainCmd extends BaseCmd {
@@ -71,6 +72,7 @@ public class UpdateDomainCmd extends BaseCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Domain Id: "+getId());
         Domain domain = _mgr.updateDomain(this);
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);

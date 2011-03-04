@@ -27,6 +27,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a domain", responseObject=DomainResponse.class)
 public class CreateDomainCmd extends BaseCmd {
@@ -74,6 +75,7 @@ public class CreateDomainCmd extends BaseCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Domain Name: "+getDomainName()+((getParentDomainId()!=null)?", Parent DomainId :"+getParentDomainId():""));
         Domain domain = _mgr.createDomain(this);
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);

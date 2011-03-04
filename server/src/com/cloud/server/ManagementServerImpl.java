@@ -2904,7 +2904,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _domainDao.search(sc, searchFilter);
 	}
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_DOMAIN_CREATE, eventDescription="creating Domain")
     public DomainVO createDomain(CreateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         String name = cmd.getDomainName();
         Long parentId = cmd.getParentDomainId();
@@ -2945,7 +2945,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_DOMAIN_DELETE, eventDescription="deleting Domain", async=true)
     public boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getId();
@@ -3049,7 +3049,7 @@ public class ManagementServerImpl implements ManagementServer {
         return success && deleteDomainSuccess;
     }
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_DOMAIN_UPDATE, eventDescription="updating Domain")
     public DomainVO updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long domainId = cmd.getId();
     	String domainName = cmd.getDomainName();
