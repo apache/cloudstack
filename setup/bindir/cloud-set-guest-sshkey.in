@@ -1,0 +1,49 @@
+#!/bin/bash 
+#
+# Init file for SSH Public Keys Download Client
+#
+# chkconfig: 345 98 02
+# description: SSH Public Keys Download Client
+
+# Modify this line to specify the user (default is root)
+user=ubuntu
+
+
+# Get DomR Ip
+DOMR_IP=$(ip route | grep default | cut -d' ' -f3)
+
+if [ ! -n "$DOMR_IP" ]
+then
+    echo "DomR IP address not found. Exiting."
+    exit 1
+fi
+
+# Get ssh public key
+homedir=$(grep ^$user /etc/passwd|awk -F ":" '{print $6}')
+sshdir=$homedir/.ssh
+authorized=$sshdir/authorized_keys
+publickey=$(wget -t 3 -T 20 -O - http://$DOMR_IP/latest/public-keys 2>/dev/null)
+
+if [ $? -ne 0 ]
+then
+        echo "Error receiving SSH public key. Exiting."
+        exit 1
+fi
+
+
+if [ ! -e $sshdir ]
+then
+    mkdir $sshdir
+fi
+
+if [ ! -e $authorized ]
+then
+    touch $authorized
+fi
+
+cat $authorized|grep -v "$publickey" > $authorized
+echo "$publickey" >> $authorized
+
+
+exit 0
+
