@@ -203,6 +203,7 @@ function afterLoadTemplateJSP() {
                         $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
                     }
                 }
+                $hypervisorDropdown.change();
             }    
         });  	
 	   	    
