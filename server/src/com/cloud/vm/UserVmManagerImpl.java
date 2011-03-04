@@ -1475,7 +1475,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 				for(VolumeVO volume : volumesForThisVm) {
 				    try {
                         _storageMgr.destroyVolume(volume);
-                        if ((volume.getStatus() == AsyncInstanceCreateStatus.Created) && (volume.getVolumeType().equals(VolumeType.ROOT))) {
+                        if (volume.getStatus() == AsyncInstanceCreateStatus.Created) {
                             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
                                     volume.getName());
                             _usageEventDao.persist(usageEvent);
