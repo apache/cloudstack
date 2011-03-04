@@ -130,6 +130,7 @@ public class CreateUserCmd extends BaseCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("UserName: "+getUsername()+", FirstName :"+getFirstname()+", LastName: "+getLastname());
         User user = _accountService.createUser(this);
         if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);

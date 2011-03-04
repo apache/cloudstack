@@ -29,6 +29,7 @@ import com.cloud.api.response.UserResponse;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Enables a user account", responseObject=UserResponse.class)
 public class EnableUserCmd extends BaseCmd {
@@ -72,6 +73,7 @@ public class EnableUserCmd extends BaseCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _accountService.enableUser(this);
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);

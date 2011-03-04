@@ -1089,7 +1089,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_USER_CREATE, eventDescription="creating User")
     public UserVO createUser(CreateUserCmd cmd){
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
@@ -1144,7 +1144,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return dbUser;
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_USER_UPDATE, eventDescription="updating User")
     public UserAccount updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException {
         Long id = cmd.getId();
         String apiKey = cmd.getApiKey();
@@ -1228,7 +1228,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return _userAccountDao.findById(id);
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_USER_DISABLE, eventDescription="disabling User", async=true)
     public UserAccount disableUser(DisableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
         Long userId = cmd.getId();
         Account adminAccount = UserContext.current().getCaller();
@@ -1258,7 +1258,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_USER_ENABLE, eventDescription="enabling User")
     public UserAccount enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
         Long userId = cmd.getId();
         Account adminAccount = UserContext.current().getCaller();
@@ -1505,7 +1505,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
-	@Override
+	@Override @ActionEvent (eventType=EventTypes.EVENT_USER_DELETE, eventDescription="deleting User")
 	public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
 		long id = deleteUserCmd.getId();
 		

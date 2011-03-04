@@ -77,6 +77,7 @@ public class EventTypes {
 	public static final String EVENT_USER_DELETE = "USER.DELETE";
     public static final String EVENT_USER_DISABLE = "USER.DISABLE";
 	public static final String EVENT_USER_UPDATE = "USER.UPDATE";
+	public static final String EVENT_USER_ENABLE = "USER.ENABLE";
 
 	//Template Events
 	public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";

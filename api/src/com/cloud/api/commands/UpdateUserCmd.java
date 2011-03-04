@@ -29,6 +29,7 @@ import com.cloud.api.response.UserResponse;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a user account", responseObject=UserResponse.class)
 public class UpdateUserCmd extends BaseCmd {
@@ -128,6 +129,7 @@ public class UpdateUserCmd extends BaseCmd {
    
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _accountService.updateUser(this);
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);

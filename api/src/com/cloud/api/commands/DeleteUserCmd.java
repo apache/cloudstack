@@ -29,6 +29,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a user for an account", responseObject=UserResponse.class)
 public class DeleteUserCmd extends BaseCmd {
@@ -72,6 +73,7 @@ public class DeleteUserCmd extends BaseCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("UserId: "+getId());
         boolean result = _accountService.deleteUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
