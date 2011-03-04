@@ -26,5 +26,6 @@ update data_center set dns_provider='DhcpServer', dhcp_provider='DhcpServer', us
 update network_offerings set specify_vlan=1 where system_only=0 and guest_type='Direct';
 update networks set traffic_type='Guest' where network_offering_id in (select id from network_offerings where system_only=0);
 update network_offerings set availability='Optional' where id=7;
+delete from configuration where name='router.cleanup';
 
 
