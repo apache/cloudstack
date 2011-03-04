@@ -1712,8 +1712,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                                     + " templates to cleanup on secondary storage host: " + secondaryStorageHost.getName());
                             for (VMTemplateHostVO destroyedTemplateHostVO : destroyedTemplateHostVOs) {
                                 if (!_tmpltMgr.templateIsDeleteable(destroyedTemplateHostVO)) {
-                                    s_logger.debug("Not deleting template at: " + destroyedTemplateHostVO.getInstallPath());
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Not deleting template at: " + destroyedTemplateHostVO);
+                                    }
                                     continue;
+                                }
+                                
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Deleting template host: " + destroyedTemplateHostVO);
                                 }
 
                                 String installPath = destroyedTemplateHostVO.getInstallPath();
@@ -1722,7 +1728,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                                     Answer answer = _agentMgr.easySend(hostId, new DeleteTemplateCommand(destroyedTemplateHostVO.getInstallPath()));
 
                                     if (answer == null || !answer.getResult()) {
-                                        s_logger.debug("Failed to delete template at: " + destroyedTemplateHostVO.getInstallPath() + " due to "
+                                        s_logger.debug("Failed to delete " + destroyedTemplateHostVO + " due to "
                                                 + ((answer == null) ? "answer is null" : answer.getDetails()));
                                     } else {
                                         _vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
