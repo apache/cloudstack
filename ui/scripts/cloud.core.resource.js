@@ -1314,7 +1314,7 @@ function addZoneWizardValidateVirtualVLAN($thisWizard) {
 	isValid &= validateIp("Start IP Range", $createVirtualVlan.find("#add_publicip_vlan_startip"), $createVirtualVlan.find("#add_publicip_vlan_startip_errormsg"), false); //required
 	isValid &= validateIp("End IP Range", $createVirtualVlan.find("#add_publicip_vlan_endip"), $createVirtualVlan.find("#add_publicip_vlan_endip_errormsg"), true); //optional
 		   
-    if($thisWizard.find("#step2").find("#domain_container").css("display") != "none") {
+    if($createVirtualVlan.find("#vlan_domain_container").css("display") != "none") {
 	    isValid &= validateString("Domain", $createVirtualVlan.find("#vlan_domain"), $createVirtualVlan.find("#vlan_domain_errormsg"), false);                             //required	
 	    var domainName = $createVirtualVlan.find("#vlan_domain").val();
 	    var domainId;
