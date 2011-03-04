@@ -38,4 +38,19 @@ public class StringUtils {
         }
         return sb.toString();
     }
+    public static String getExceptionStackInfo(Throwable e) {
+    	StringBuffer sb = new StringBuffer();
+    	
+    	sb.append(e.toString()).append("\n");
+    	StackTraceElement[] elemnents = e.getStackTrace();
+    	for(StackTraceElement element : elemnents) {
+    		sb.append(element.getClassName()).append(".");
+    		sb.append(element.getMethodName()).append("(");
+    		sb.append(element.getFileName()).append(":");
+    		sb.append(element.getLineNumber()).append(")");
+    		sb.append("\n");
+    	}
+    	
+    	return sb.toString();
+    }
 }
