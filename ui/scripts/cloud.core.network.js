@@ -209,31 +209,41 @@ function showNetworkingTab(p_domainId, p_account) {
     //watermark (end)	
     
     $("#submenu_content_network #ip_searchbutton1").bind("click", refreshIpListContainerByInputBox);
-    		  
-    function populateDomainDropdown() {
-        var domainSelect = $("#submenu_content_network #search_by_domain").empty();			
-	    $.ajax({
-		    data: "command=listDomains&available=true&response=json",
-		    dataType: "json",
-		    success: function(json) {			        
-			    var domains = json.listdomainsresponse.domain;			 
-			    if (domains != null && domains.length > 0) {
-			        for (var i = 0; i < domains.length; i++) {
-				        domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
-			        }
-			    }
-		    }
-	    });		    
-    }		  
-    
-    $("#submenu_content_network #ip_searchbutton2").bind("click", function(event){
-        var array1 = [];
-        var account = $("#submenu_content_network #search_by_account").val();
+         
+    $("#submenu_content_network").find("#ip_searchbutton2").bind("click", function(event){
+        var $searchPanel2= $("#submenu_content_network").find("#ip_search_panel2");
+        
+        var moreCriteria = [];
+        
+        var account = $searchPanel2.find("#search_by_account").val();
         if(account != null && account.length > 0)
-            array1.push("&account=" + account);
-        var domainId = $("#submenu_content_network #search_by_domain").val();
-        array1.push("&domainid=" + domainId);	        
-        refreshIpListContainer("command=listPublicIpAddresses&response=json&forvirtualnetwork=true" + array1.join(""));	 	        
+            moreCriteria.push("&account=" + account);       
+        
+        var domainName = $searchPanel2.find("#search_by_domain").val();
+        if (domainName != null && domainName.length > 0) { 	
+		    var domainId;							    
+	        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+		        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+		          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+		              domainId = autoCompleteDomains[i].id;
+		              break;	
+		          }
+	            } 					   			    
+	        } 	     	
+            if(domainId == null) { 
+	            //showError(false, $searchPanel2.find("#search_by_domain"), $searchPanel2.find("#search_by_domain_errormsg"), "Not Found");
+	        }
+	        else { //e.g. domainId == "5" 
+	            //showError(true, $searchPanel2.find("#search_by_domain"), $searchPanel2.find("#search_by_domain_errormsg"), null)
+	            moreCriteria.push("&domainid="+todb(domainId));	
+	        }
+	    }           
+        /*    
+        var domainId = $searchPanel2.find("#search_by_domain").val();
+        moreCriteria.push("&domainid=" + domainId);
+        */	        
+        
+        refreshIpListContainer("command=listPublicIpAddresses&response=json&forvirtualnetwork=true" + moreCriteria.join(""));	 	        
         return false;
     });
     		  
@@ -1020,8 +1030,8 @@ function showNetworkingTab(p_domainId, p_account) {
 	    
 	    if(isAdmin()) {
 	        submenuContent.find(".select_directipbg_admin").show();
-	        submenuContent.find(".select_directipbg_user").hide();	
-	        populateDomainDropdown();	    
+	        submenuContent.find(".select_directipbg_user").hide();		        
+	        applyAutoCompleteToDomainField($("#submenu_content_network #search_by_domain"));  	        
 	    } else {	        
 	        submenuContent.find(".select_directipbg_admin").hide();
 	        submenuContent.find(".select_directipbg_user").show();
@@ -1174,19 +1184,44 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var commandString;            
 		var advanced = submenuContent.find("#search_button").data("advanced");                    
 		if (advanced != null && advanced) {		
-		    var name = submenuContent.find("#advanced_search #adv_search_name").val();	   
-		    var virtualMachineId = submenuContent.find("#advanced_search #adv_search_vm").val();				   
-		    var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
-		    var account = submenuContent.find("#advanced_search #adv_search_account").val();
-		    var moreCriteria = [];								
-			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&networkgroupname="+encodeURIComponent(trim(name)));						
-			if (virtualMachineId!=null && virtualMachineId.length > 0) 
-				moreCriteria.push("&virtualmachineid="+encodeURIComponent(virtualMachineId));	   
-			if (domainId!=null && domainId.length > 0) 
-				moreCriteria.push("&domainid="+domainId);		
-			if (account!=null && account.length > 0) 
-				moreCriteria.push("&account="+account);			
+		    var moreCriteria = [];	
+		    
+		    var name = submenuContent.find("#advanced_search #adv_search_name").val();	  
+		    if (name!=null && trim(name).length > 0) 
+				moreCriteria.push("&networkgroupname="+encodeURIComponent(trim(name)));				
+		     
+		    var virtualMachineId = submenuContent.find("#advanced_search #adv_search_vm").val();
+		    if (virtualMachineId!=null && virtualMachineId.length > 0) 
+				moreCriteria.push("&virtualmachineid="+encodeURIComponent(virtualMachineId));	  
+		    				   
+		    if (submenuContent.find("#adv_search_domain_li").css("display") != "none") {
+	            var domainName = submenuContent.find("#domain").val();
+	            if (domainName != null && domainName.length > 0) { 	
+				    var domainId;							    
+			        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
+				        for(var i=0; i < autoCompleteDomains.length; i++) {					        
+				          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				              domainId = autoCompleteDomains[i].id;
+				              break;	
+				          }
+			            } 					   			    
+			        } 	     	
+	                if(domainId == null) { 
+			            showError(false, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+			        }
+			        else { //e.g. domainId == "5" 
+			            showError(true, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), null)
+			            moreCriteria.push("&domainid="+todb(domainId));	
+			        }
+			    }
+	        }   
+			
+			if (submenuContent.find("#adv_search_account_li").css("display") != "none") {   	
+		        var account = submenuContent.find("#advanced_search #adv_search_account").val();
+			    if (account!=null && account.length > 0) 
+				    moreCriteria.push("&account="+account);		
+			}
+					
 			commandString = "command=listNetworkGroups&page=" + currentPage + moreCriteria.join("") + "&response=json";		
 		} else {    
 		     var moreCriteria = [];		

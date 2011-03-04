@@ -51,7 +51,7 @@ long milliseconds = new Date().getTime();
             
             <div class="select_directipbg_admin" style="display:block;">
                 <form action="#" method="post">
-                <ol>
+                <ol id="ip_search_panel1">
                     <li>
                     	
                     	<p style="float:left; font-size:11px; font-weight:bold; color:#FFF; margin:7px 0 0 0;">Search </p>
@@ -63,12 +63,19 @@ long milliseconds = new Date().getTime();
                 </form>
                 
                 <form action="#" method="post">
-                <ol>
+                <ol id="ip_search_panel2">
                      <li style="margin-left:15px;">
                     	<div class="ip_oricon"></div>
                        	<input class="text ipwatermark_text" type="text" id="search_by_account" value="By Account"/>
+                                                
+                        <input class="text" type="text" id="search_by_domain" />
+		                <!--  
+		                <div id="search_by_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">  
+		                -->
+		                <!--                     
                         <select class="select" id="search_by_domain">
                         </select>
+                        -->   
                     </li>                    
                 </ol>
                 <div class="ip_searchbutton" id="ip_searchbutton2"></div>
@@ -583,9 +590,13 @@ long milliseconds = new Date().getTime();
                         </li>
                         <li id="adv_search_domain_li" style="display: none;">
                             <label for="filter">
-                                Domain:</label>
+                                Domain:</label>                                
+                            <input class="text" type="text" id="domain" />
+		                	<div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
+                            <!--      
                             <select class="select" id="adv_search_domain">
                             </select>
+                            -->
                         </li>
                         <li id="adv_search_account_li" style="display: none;">
                             <label for="filter">
