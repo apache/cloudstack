@@ -297,5 +297,10 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
     public long getTemplateSize() {
 	    return -1;
 	}
+	
+	@Override
+    public String toString() {
+	    return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(hostId).append(installPath).append("]").toString();
+	}
 
 }

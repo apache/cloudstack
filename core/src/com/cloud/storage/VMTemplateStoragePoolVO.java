@@ -232,5 +232,9 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc{
 		return tid.hashCode()+hid.hashCode();
 	}
 	
+	@Override
+    public String toString() {
+	    return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId").append("-").append(installPath).append("]").toString();
+	}
 
 }

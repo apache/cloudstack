@@ -1015,6 +1015,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 			hostId = poolHostVOs.get(0).getHostId();
 		}
 		
+		if (s_logger.isDebugEnabled()) {
+		    s_logger.debug("Evicting " + templatePoolVO);
+		}
 		DestroyCommand cmd = new DestroyCommand(pool, templatePoolVO);
 		Answer answer = _agentMgr.easySend(hostId, cmd);
 		
