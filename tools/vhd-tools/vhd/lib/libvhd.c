@@ -323,7 +323,7 @@ vhd_validate_header(vhd_header_t *header)
 		return -EINVAL;
 	}
 
-	if (header->data_offset != 0xFFFFFFFFFFFFFFFFLLU) {
+	if (header->data_offset != 0xFFFFFFFFFFFFFFFF) {
 		VHDLOG("invalid header data_offset 0x%016"PRIx64"\n",
 		       header->data_offset);
 		return -EINVAL;
@@ -2452,7 +2452,7 @@ vhd_initialize_footer(vhd_context_t *ctx, int type, uint64_t size)
 	ctx->footer.geometry     = vhd_chs(size);
 	ctx->footer.type         = type;
 	ctx->footer.saved        = 0;
-	ctx->footer.data_offset  = 0xFFFFFFFFFFFFFFFFLLU;
+	ctx->footer.data_offset  = 0xFFFFFFFFFFFFFFFF;
 	strcpy(ctx->footer.crtr_app, "tap");
 	blk_uuid_generate(&ctx->footer.uuid);
 }

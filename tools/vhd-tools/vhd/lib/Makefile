@@ -1,13 +1,17 @@
+XEN_ROOT=../../../..
+BLKTAP_ROOT := ../..
+include $(XEN_ROOT)/tools/Rules.mk
 
 LIBVHD-MAJOR     = 1.0
 LIBVHD-MINOR     = 0
 LIBVHD-SONAME    = libvhd.so.$(LIBVHD-MAJOR)
 
-LVM-UTIL-OBJ    := ../../lvm/lvm-util.o
+LVM-UTIL-OBJ    := $(BLKTAP_ROOT)/lvm/lvm-util.o
 
 LIBVHD-BUILD    := libvhd.a
 
-CFLAGS          += -m32
+INST-DIR         = $(LIBDIR)
+
 CFLAGS          += -Werror
 CFLAGS          += -Wno-unused
 CFLAGS          += -I../../include
@@ -44,13 +48,24 @@ LIB-SRCS        += atomicio.c
 LIB-OBJS         = $(patsubst %.c,%.o,$(LIB-SRCS))
 LIB-OBJS        += $(LVM-UTIL-OBJ)
 
+LIBVHD           = libvhd.a libvhd.so.$(LIBVHD-MAJOR).$(LIBVHD-MINOR)
 
 all: build
 
 build: $(LIBVHD-BUILD)
 
 libvhd.a: $(LIB-OBJS)
+	$(CC) $(CFLAGS) -Wl,$(SONAME_LDFLAG),$(LIBVHD-SONAME) $(SHLIB_CFLAGS) \
+		$(LDFLAGS) -o libvhd.so.$(LIBVHD-MAJOR).$(LIBVHD-MINOR) $(LIBS) $^
+	ln -sf libvhd.so.$(LIBVHD-MAJOR).$(LIBVHD-MINOR) libvhd.so.$(LIBVHD-MAJOR)
+	ln -sf libvhd.so.$(LIBVHD-MAJOR) libvhd.so
 	$(AR) rc $@ $^
+
+install: all
+	$(INSTALL_DIR) -p $(DESTDIR)$(INST-DIR)
+	$(INSTALL_DATA) $(LIBVHD) $(DESTDIR)$(INST-DIR)
+	ln -sf libvhd.so.$(LIBVHD-MAJOR).$(LIBVHD-MINOR) $(DESTDIR)$(INST-DIR)/libvhd.so.$(LIBVHD-MAJOR)
+	ln -sf libvhd.so.$(LIBVHD-MAJOR) $(DESTDIR)$(INST-DIR)/libvhd.so
 
 clean:
 	rm -rf *.a *.so* *.o *~ $(DEPS) $(LIBVHD)

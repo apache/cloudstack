@@ -1,21 +1,17 @@
+XEN_ROOT = ../..
+include $(XEN_ROOT)/tools/Rules.mk
+
+CFLAGS  += $(CFLAGS_libxenctrl)
+LDFLAGS += $(LDFLAGS_libxenctrl)
+
 SUBDIRS-y :=
+SUBDIRS-y += include
 SUBDIRS-y += lvm
 SUBDIRS-y += vhd
-
-%.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
-
-all:
-	for subdir in $(SUBDIRS-y); do \
-		$(MAKE) -C $$subdir all; \
-	done
-
+SUBDIRS-y += drivers
 
 clean:
-	for subdir in $(SUBDIRS-y); do \
-		$(MAKE) -C $$subdir clean; \
-	done
+	rm -rf *.a *.so *.o *.rpm $(LIB) *~ $(DEPS) TAGS
 
-	rm -rf *.a *.so *.o *.rpm $(LIB) *~
-
-.PHONY: all clean
+.PHONY: all clean install
+all clean install: %: subdirs-%

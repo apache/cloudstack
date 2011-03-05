@@ -1,9 +1,11 @@
+XEN_ROOT = ../../..
+BLKTAP_ROOT := ..
+include $(XEN_ROOT)/tools/Rules.mk
 
 ifeq ($(LVM_UTIL_TEST),y)
 TEST              := lvm-util
 endif
 
-CFLAGS	          += -m32
 CFLAGS            += -Werror
 CFLAGS            += -Wno-unused
 CFLAGS            += -I../include
