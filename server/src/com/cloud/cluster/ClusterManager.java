@@ -44,6 +44,7 @@ public interface ClusterManager extends Manager {
 	public int getHeartbeatThreshold();
 	public long getId();
 	public long getCurrentRunId();
+    public boolean isManageemnNodeAlive(long msid);
 	public String getSelfPeerName();
 	public String getSelfNodeIP();
     public String getPeerName(long agentHostId);

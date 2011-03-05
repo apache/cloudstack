@@ -23,8 +23,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
 import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
@@ -779,6 +779,17 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override
     public long getCurrentRunId() {
         return _runId;
+    }
+    
+    @Override
+    public boolean isManageemnNodeAlive(long msid) {
+    	ManagementServerHostVO mshost = _mshostDao.findById(msid);
+    	if(mshost != null) {
+    		if(mshost.getLastUpdateTime().getTime() >=  DateUtil.currentGMTTime().getTime() - heartbeatThreshold)
+    			return true;
+    	}
+    	
+    	return false;
     }
     
     @Override

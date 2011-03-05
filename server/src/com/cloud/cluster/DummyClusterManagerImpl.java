@@ -102,6 +102,10 @@ public class DummyClusterManagerImpl implements ClusterManager {
 		return _clusterNodeIP;
 	}
 	
+    public boolean isManageemnNodeAlive(long msid) {
+    	return true;
+    }
+	
     public String getPeerName(long agentHostId) {
     	throw new CloudRuntimeException("Unsupported feature");
     }
