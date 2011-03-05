@@ -293,6 +293,7 @@ UPDATE `cloud`.`op_dc_link_local_ip_address_alloc` SET reservation_id=concat(cas
 ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `enabled` tinyint NOT NULL DEFAULT 1;
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `reservation_id` char(40) NULL;
+UPDATE op_dc_vnet_alloc set reservation_id=concat(cast(data_center_id as CHAR), concat("-", vnet)) WHERE taken is NOT NULL; 
 #TODO: Set the Reservation id for this table;
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `service_offering_id` bigint unsigned NOT NULL;
@@ -391,9 +392,6 @@ CREATE TABLE `cloud`.`vpn_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `status` varchar(32);
-
-
-
 
 CREATE TABLE `cloud`.`guest_os_hypervisor` (
   `id` bigint unsigned NOT NULL auto_increment,

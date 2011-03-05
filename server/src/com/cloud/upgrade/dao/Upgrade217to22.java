@@ -92,11 +92,11 @@ public class Upgrade217to22 implements DbUpgrade {
     protected long insertNetwork(Connection conn, String name, String displayText, String trafficType, String broadcastDomainType, String broadcastUri,
                                  String gateway, String cidr, String mode, long networkOfferingId, long dataCenterId, String guruName,
                                  String state, long domainId, long accountId, String dns1, String dns2, String guestType, boolean shared,
-                                 String networkDomain, boolean isDefault) {
+                                 String networkDomain, boolean isDefault, String reservationId) {
         String getNextNetworkSequenceSql = "SELECT value from sequence where name='networks_seq'";
         String advanceNetworkSequenceSql = "UPDATE sequence set value=value+1 where name='networks_seq'";
-        String insertNetworkSql = "INSERT INTO networks(id, name, display_text, traffic_type, broadcast_domain_type, gateway, cidr, mode, network_offering_id, data_center_id, guru_name, state, domain_id, account_id, dns1, dns2, guest_type, shared, is_default, created, network_domain, related) " + 
-                                                "VALUES(?,  ?,    ?,            ?,            ?,                     ?,       ?,    ?,    ?,                   ?,              ?,         ?,     ?,         ?,          ?,    ?,    ?,          ?,      ?,          now(),   ?,              ?)"; 
+        String insertNetworkSql = "INSERT INTO networks(id, name, display_text, traffic_type, broadcast_domain_type, gateway, cidr, mode, network_offering_id, data_center_id, guru_name, state, domain_id, account_id, dns1, dns2, guest_type, shared, is_default, created, network_domain, related, reservation_id, broadcast_uri) " + 
+                                                "VALUES(?,  ?,    ?,            ?,            ?,                     ?,       ?,    ?,    ?,                   ?,              ?,         ?,     ?,         ?,          ?,    ?,    ?,          ?,      ?,          now(),   ?,              ?,       ?,              ?)"; 
         try {
             PreparedStatement pstmt = conn.prepareStatement(getNextNetworkSequenceSql);
             ResultSet rs = pstmt.executeQuery();
@@ -132,6 +132,8 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.setBoolean(i++, isDefault);
             pstmt.setString(i++, networkDomain);
             pstmt.setLong(i++, seq);
+            pstmt.setString(i++, reservationId);
+            pstmt.setString(i++, broadcastUri);
             pstmt.executeUpdate();
             return seq;
         } catch (SQLException e) {
@@ -170,11 +172,14 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.executeUpdate();
             pstmt.close();
             
-            pstmt = conn.prepareStatement("SELECT id FROM data_center");
+            pstmt = conn.prepareStatement("SELECT id, guest_network_cidr FROM data_center");
             rs = pstmt.executeQuery();
-            ArrayList<Long> dcs = new ArrayList<Long>();
+            ArrayList<Object[]> dcs = new ArrayList<Object[]>();
             while (rs.next()) {
-                dcs.add(rs.getLong(1));
+                Object[] dc = new Object[10];
+                dc[0] = rs.getLong(1);    // data center id
+                dc[1] = rs.getString(2);  // guest network cidr
+                dcs.add(dc);
             }
             rs.close();
             pstmt.close();
@@ -215,38 +220,54 @@ public class Upgrade217to22 implements DbUpgrade {
             rs.close();
             pstmt.close();
             
-            for (Long dcId : dcs) {
-                insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
-                insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
-                insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+            for (Object[] dc : dcs) {
+                Long dcId = (Long)dc[0];
+                insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
             }
             
             
             if (_basicZone) {
-                for (Long dcId : dcs) {
-                    insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+                for (Object[] dc : dcs) {
+                    Long dcId = (Long)dc[0];
+                    insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                 }
                 
             } else {
-                for (Long dcId : dcs) {
-                    insertNetwork(conn, "PublicNetwork" + dcId, "Public Network Created for Zone " + dcId, "Public", "Native", null, null, null, "Static", publicNetworkOfferingId, dcId, "PublicNetworkGuru", "Setup", 1,1, null, null, null, true, null, false);
+                for (Object[] dc : dcs) {
+                    Long dcId = (Long)dc[0];
+                    insertNetwork(conn, "PublicNetwork" + dcId, "Public Network Created for Zone " + dcId, "Public", "Native", null, null, null, "Static", publicNetworkOfferingId, dcId, "PublicNetworkGuru", "Setup", 1,1, null, null, null, true, null, false, null);
                     
-                    pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
+                    pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
                     ArrayList<Object[]> routers = new ArrayList<Object[]>();
                     while (rs.next()) {
-                        Object[] router = new Object[3];
+                        Object[] router = new Object[40];
                         router[0] = rs.getLong(1); // router id
                         router[1] = rs.getLong(2); // domain id
                         router[2] = rs.getLong(3); // account id
+                        router[3] = rs.getString(4); // guest ip which becomes the gateway in network
+                        router[4] = rs.getString(5); // domain name
+                        router[5] = rs.getString(6); // dns1
+                        router[6] = rs.getString(7); // dns2
+                        router[7] = rs.getString(8); // vnet
                         routers.add(router);
                     }
                     rs.close();
                     pstmt.close();
                     
                     for (Object[] router : routers) {
-                        long networkId = insertNetwork(conn, "VirtualNetwork" + router[0], "Virtual Network for " + router[0], "Guest", "Vlan", null, null, null, "Dhcp", 6, dcId, "GuestNetworkGuru", "Allocated", (Long)router[1], (Long)router[2], null, null, "Virtual", false, null, true);
+                        String vnet = (String)router[7];
+                        String reservationId = null;
+                        String state = "Allocated";
+                        if (vnet != null) {
+                            reservationId = dcId + "-" + vnet;
+                            vnet = "vlan://" + vnet;
+                            state = "Implemented";
+                        }
+                        long networkId = insertNetwork(conn, "VirtualNetwork" + router[0], "Virtual Network for " + router[0], "Guest", "Vlan", vnet, (String)router[3], (String)dc[1], "Dhcp", 6, dcId, "GuestNetworkGuru", state, (Long)router[1], (Long)router[2], (String)router[5], (String)router[6], "Virtual", false, (String)router[4], true, reservationId);
                         pstmt = conn.prepareStatement("UPDATE domain_router SET network_id = ? wHERE id = ? ");
                         pstmt.setLong(1, networkId);
                         pstmt.setLong(2, (Long)router[0]);
@@ -270,12 +291,14 @@ public class Upgrade217to22 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        File file = PropertiesUtil.findConfigFile("schema-21to22-cleanup.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-cleanup.sql");
-        }
+        return null;
         
-        return new File[] { file };
+//        File file = PropertiesUtil.findConfigFile("schema-21to22-cleanup.sql");
+//        if (file == null) {
+//            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-cleanup.sql");
+//        }
+//        
+//        return new File[] { file };
     }
 
     @Override
