@@ -59,19 +59,19 @@ public class AdvanceZone217To221UpgradeTest extends TestCase {
         
         Connection conn = Transaction.getStandaloneConnection();
         PreparedStatement pstmt;
-        try {
-            pstmt = conn.prepareStatement("UPDATE configuration set value='true' WHERE name = 'direct.attach.untagged.vlan.enabled'");
-            pstmt.executeUpdate();
-            pstmt.close();
-        } catch(SQLException e) {
-            
-        } finally {
-            try {
-                conn.close();
-            } catch(SQLException e) {
-                
-            }
-        }
+//        try {
+//            pstmt = conn.prepareStatement("UPDATE configuration set value='true' WHERE name = 'direct.attach.untagged.vlan.enabled'");
+//            pstmt.executeUpdate();
+//            pstmt.close();
+//        } catch(SQLException e) {
+//            
+//        } finally {
+//            try {
+//                conn.close();
+//            } catch(SQLException e) {
+//                
+//            }
+//        }
         
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         

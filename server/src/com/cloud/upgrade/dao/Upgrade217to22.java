@@ -25,7 +25,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -90,7 +89,7 @@ public class Upgrade217to22 implements DbUpgrade {
         }        
     }
     
-    protected void insertNetwork(Connection conn, String name, String displayText, String trafficType, String broadcastDomainType, String broadcastUri,
+    protected long insertNetwork(Connection conn, String name, String displayText, String trafficType, String broadcastDomainType, String broadcastUri,
                                  String gateway, String cidr, String mode, long networkOfferingId, long dataCenterId, String guruName,
                                  String state, long domainId, long accountId, String dns1, String dns2, String guestType, boolean shared,
                                  String networkDomain, boolean isDefault) {
@@ -134,6 +133,7 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.setString(i++, networkDomain);
             pstmt.setLong(i++, seq);
             pstmt.executeUpdate();
+            return seq;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create network", e);
         }
@@ -223,77 +223,41 @@ public class Upgrade217to22 implements DbUpgrade {
             
             
             if (_basicZone) {
-                long networkOfferingId = insertNetworkOffering(conn, "BasicZoneNetworkOffering", "Network Offering for Basic Zone", "Guest", false, true, "Required", true, false, false, false, true, false, true);
                 for (Long dcId : dcs) {
-//                  (200,NULL,NULL,'Management','Native',NULL,NULL,NULL,'Static',2,1,'PodBasedNetworkGuru','Setup',200,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
-//                  (201,NULL,NULL,'Control','LinkLocal',NULL,'169.254.0.1','169.254.0.0/16','Static',3,1,'ControlNetworkGuru','Setup',201,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
-//                  (202,NULL,NULL,'Storage','Native',NULL,NULL,NULL,'Static',4,1,'PodBasedNetworkGuru','Setup',202,1,1,NULL,NULL,NULL,0,NULL,1,NULL,NULL,0,'2011-03-01 03:18:53',NULL,0),
-//                  (203,NULL,NULL,'Guest','Native',NULL,NULL,NULL,'Dhcp',5,1,'DirectPodBasedNetworkGuru','Setup',203,1,1,NULL,NULL,NULL,0,'Direct',1,NULL,NULL,1,'2011-03-01 03:18:53',NULL,1);
-//                    (1,'System-Public-Network','System Offering for System-Public-Network',NULL,NULL,NULL,'Public',NULL,1,0,NULL,'2011-03-01 03:18:01',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
-//                    (2,'System-Management-Network','System Offering for System-Management-Network',NULL,NULL,NULL,'Management',NULL,1,0,NULL,'2011-03-01 03:18:01',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
-//                    (3,'System-Control-Network','System Offering for System-Control-Network',NULL,NULL,NULL,'Control',NULL,1,0,NULL,'2011-03-01 03:18:01',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
-//                    (4,'System-Storage-Network','System Offering for System-Storage-Network',NULL,NULL,NULL,'Storage',NULL,1,0,NULL,'2011-03-01 03:18:02',NULL,0,'Required',0,0,0,0,0,0,0,NULL),
-//                    (5,'System-Guest-Network','System-Guest-Network',NULL,NULL,NULL,'Guest',NULL,1,0,NULL,'2011-03-01 03:18:02',NULL,1,'Required',1,0,0,0,1,0,1,'Direct'),
-//                    (6,'DefaultVirtualizedNetworkOffering','Virtual Vlan',NULL,NULL,NULL,'Guest',NULL,0,0,NULL,'2011-03-01 03:18:02',NULL,1,'Required',1,1,1,1,1,1,1,'Virtual'),
-//                    (7,'DefaultDirectNetworkOffering','Direct',NULL,NULL,NULL,'Guest',NULL,0,0,NULL,'2011-03-01 03:18:02',NULL,1,'Required',1,0,0,0,1,0,1,'Direct');
-                    pstmt = conn.prepareStatement("INSERT INTO network_offerings VALUES ('System-Guest-Network','System-Guest-Network',NULL,NULL,NULL,'Guest',NULL,1,0,NULL,now(),NULL,1,'Required',1,0,0,0,1,0,1,'Direct')");
-                    
-                    insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", networkOfferingId, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
+                    insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false);
                 }
                 
             } else {
-            }
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Can't update data center ", e);
-        }
-    }
-    
-    protected void upgradeNetworks(Connection conn) {
-        String getAccountsSql = "SELECT id, domain_id FROM accounts WHERE removed IS NULL AND id > 1";
-        String getDataCenterSql = "SELECT id FROM data_center";
-        String getNextNetworkSequenceSql = "SELECT value from sequence where name='networks_seq'";
-        String advanceNetworkSequenceSql = "UPDATE sequence set value=value+1 where name='networks_seq'";
-        String insertNetworkSql = "INSERT INTO NETWORKS(id, name, display_text, traffic_type, broadcast_domain_type, gateway, cidr, mode, network_offering_id, data_center_id, guru_name, state, domain_id, account_id, dns1, dns2, guest_type, shared, is_default, created) " + 
-                                                "VALUES(?,  ?,    ?,            ?,            ?,                     ?,       ?,    ?,    ?,                   ?,              ?,         ?,     ?,         ?,          ?,    ?,    ,          false,  true,       now())"; 
-        PreparedStatement pstmt;
-        try {
-            pstmt = conn.prepareStatement(getAccountsSql);
-            ResultSet rs = pstmt.executeQuery();
-            ArrayList<Pair<Long, Long>> accountIds = new ArrayList<Pair<Long, Long>>();
-            while (rs.next()) {
-                accountIds.add(new Pair<Long, Long>(rs.getLong(1), rs.getLong(2)));
-            }
-            rs.close();
-            pstmt.close();
-            pstmt = conn.prepareStatement(getDataCenterSql);
-            rs = pstmt.executeQuery();
-            ArrayList<Long> dataCenterIds = new ArrayList<Long>();
-            while (rs.next()) {
-                dataCenterIds.add(rs.getLong(1));
-            }
-            rs.close();
-            pstmt.close();
-            
-            for (Pair<Long, Long> accountId : accountIds) {
-                for (Long dataCenterId : dataCenterIds) {
-                    pstmt = conn.prepareStatement(getNextNetworkSequenceSql);
+                for (Long dcId : dcs) {
+                    insertNetwork(conn, "PublicNetwork" + dcId, "Public Network Created for Zone " + dcId, "Public", "Native", null, null, null, "Static", publicNetworkOfferingId, dcId, "PublicNetworkGuru", "Setup", 1,1, null, null, null, true, null, false);
+                    
+                    pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
+                    pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
-                    rs.next();
-                    long seq = rs.getLong(1);
+                    ArrayList<Object[]> routers = new ArrayList<Object[]>();
+                    while (rs.next()) {
+                        Object[] router = new Object[3];
+                        router[0] = rs.getLong(1); // router id
+                        router[1] = rs.getLong(2); // domain id
+                        router[2] = rs.getLong(3); // account id
+                        routers.add(router);
+                    }
                     rs.close();
                     pstmt.close();
                     
-                    pstmt = conn.prepareStatement(advanceNetworkSequenceSql);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    
-                    pstmt = conn.prepareStatement(insertNetworkSql);
+                    for (Object[] router : routers) {
+                        long networkId = insertNetwork(conn, "VirtualNetwork" + router[0], "Virtual Network for " + router[0], "Guest", "Vlan", null, null, null, "Dhcp", 6, dcId, "GuestNetworkGuru", "Allocated", (Long)router[1], (Long)router[2], null, null, "Virtual", false, null, true);
+                        pstmt = conn.prepareStatement("UPDATE domain_router SET network_id = ? wHERE id = ? ");
+                        pstmt.setLong(1, networkId);
+                        pstmt.setLong(2, (Long)router[0]);
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                    }
                 }
+                
             }
-            
-            
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to perform upgrade", e);
+            throw new CloudRuntimeException("Can't update data center ", e);
         }
     }
     
