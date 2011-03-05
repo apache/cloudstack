@@ -80,6 +80,7 @@ import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -1142,6 +1143,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		long hostId = secStorageHost.getId();
 		Transaction txn = Transaction.currentTxn();
 		try {
+			
 			List<VMInstanceVO> allVmsInZone = _vmDao.listByZoneId(zoneId);
 			if (!allVmsInZone.isEmpty()) {
 				s_logger.warn("Cannot delete secondary storage host when there are  "
@@ -1182,9 +1184,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			templateHostSC.addAnd("hostId", SearchCriteria.Op.EQ,
 					secStorageHost.getId());
 			_vmTemplateHostDao.remove(templateHostSC);
+						
+			//delete the op_host_capacity entry
+			SearchCriteria<CapacityVO> secStorageCapacitySC = _capacityDao.createSearchCriteria();			
+			secStorageCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ,
+					secStorageHost.getId());
+			secStorageCapacitySC.addAnd("capacityType", SearchCriteria.Op.EQ,
+					Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);	
+			_capacityDao.remove(secStorageCapacitySC);
 
+	
 			/* Disconnected agent needs special handling here */
 			secStorageHost.setGuid(null);
+			
 			txn.commit();
 			return true;
 		} catch (Throwable t) {
