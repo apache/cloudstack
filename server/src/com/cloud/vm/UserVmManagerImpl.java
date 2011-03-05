@@ -77,6 +77,7 @@ import com.cloud.async.executor.VMOperationListener;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
@@ -88,6 +89,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -227,6 +229,7 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject StoragePoolDao _storagePoolDao;
     @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject NetworkGroupManager _networkGroupManager;
+    @Inject ConfigurationManager _configMgr;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject EventDao _eventDao = null;
     private IpAddrAllocator _IpAllocator;
@@ -2485,28 +2488,37 @@ public class UserVmManagerImpl implements UserVmManager {
             Set<Long> avoids = new HashSet<Long>();
             VlanVO guestVlan = null;
             List<VlanVO> vlansForAccount = _vlanDao.listVlansForAccountByType(dc.getId(), account.getId(), VlanType.DirectAttached);
+            Map<Integer, List<VlanVO>> vlansForDomain = _configMgr.listDomainDirectVlans(account.getDomainId(), dc.getId());
             List<VlanVO> vlansForPod = null;
             List<VlanVO> zoneWideVlans = null;
             int freeIpCount = 0;
             boolean forAccount = false;
+            boolean forDomain = false;
             
             if (vlansForAccount.size() > 0) {
             	//iterate over the vlan to see if there are actually addresses available 
-            	for(VlanVO vlan:vlansForAccount)
-            	{
+            	for(VlanVO vlan : vlansForAccount) {
             		freeIpCount = (_ipAddressDao.countIPs(dc.getId(), vlan.getId(), false) - _ipAddressDao.countIPs(dc.getId(), vlan.getId(), true));
             		
-            		if(freeIpCount>0)
-            		{
+            		if(freeIpCount>0) {
             			forAccount = true;
                     	guestVlan = vlan;
+                    	s_logger.debug("Found account specific guest vlan id=" + guestVlan.getId() + " for vm deployment");
                     	break;
             		}
             	}
-            	
+            }
+            
+            if (!forAccount && vlansForDomain != null && !vlansForDomain.isEmpty()) { 
+                guestVlan = getDomainDirectVlan(account.getDomainId(), dc);
+                
+                if (guestVlan != null) {
+                    s_logger.debug("Found domain level vlan id=" + guestVlan.getId() + " for vm deployment");
+                    forDomain = true;
+                }
             }
 	        
-            if(!forAccount)
+            if(!forAccount && !forDomain)
 	        {
 	          	//list zone wide vlans that are direct attached and tagged
 	          	//if exists pick random one
@@ -2537,7 +2549,7 @@ public class UserVmManagerImpl implements UserVmManager {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
                 }
         		avoids.add(pod.first().getId());
-                if (!forAccount && !forZone) {
+                if (!forAccount && !forDomain && !forZone) {
                 	vlansForPod = _vlanDao.listVlansForPodByType(pod.first().getId(), VlanType.DirectAttached);
                 	if (vlansForPod.size() < 1) {
                 		if (s_logger.isDebugEnabled()) {
@@ -2546,6 +2558,11 @@ public class UserVmManagerImpl implements UserVmManager {
                 		continue;
                 	}
                 	guestVlan = vlansForPod.get(0);//FIXME: iterate over all vlans
+                }
+                
+                if (guestVlan == null) {
+                    s_logger.debug("Unable to find Direct IP address in the pod id=" + pod.first().getId() + " to use for vm deployment for account id=" + account.getId() + "; checking other pods");
+                    continue;
                 }
                 
                 List<DomainRouterVO> rtrs = _routerDao.listByVlanDbId(guestVlan.getId());
@@ -2564,43 +2581,56 @@ public class UserVmManagerImpl implements UserVmManager {
                 	routerId = router.getId();
                 }
                 
-                
                 String guestIp = null;
                                 
-                if(forAccount)
-                {
-                	for(VlanVO vlanForAcc : vlansForAccount)
-                	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false);
-                		if(guestIp!=null)
-                			break; //got an ip
-                	}
-                }
-                else if(!forAccount && !forZone)
-                {
-                	//i.e. for pod
-                	for(VlanVO vlanForPod : vlansForPod)
-                	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false);
-                		if(guestIp!=null)
-                			break;//got an ip
-                	}
-                }
-                else
-                {
-                	//for zone
-                	for(VlanVO vlanForZone : zoneWideVlans)
-                	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId().longValue(), vlanForZone.getId(), false);
-                		if(guestIp!=null)
-                			break;//found an ip
-                	}
+                //First try to get guest ip address from the guest vlan; if the operation fails, go through account/domain/pod/zone specific vlans again
+                guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), guestVlan.getId(), false);
+                if (guestIp == null) {
+                    
+                    if (forAccount) {        
+                        for(VlanVO vlanForAcc : vlansForAccount) {
+                            guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false);
+                            if(guestIp != null)
+                                break; //got an ip
+                        }
+                    } else if (forDomain) {
+                        if (vlansForDomain != null && !vlansForDomain.isEmpty()) {
+                            guestIp = getDomainDirectIp(account.getDomainId(), dc, account);
+                            
+                            if(guestIp != null) {
+                                break; //got an ip  
+                            }
+                                
+                        }
+                        
+                    } else if(!forAccount && !forDomain && !forZone) {
+                        //i.e. for pod
+                        for(VlanVO vlanForPod : vlansForPod)
+                        {
+                            guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false);
+                            if(guestIp!=null)
+                                break;//got an ip
+                        }
+                    } else {
+                        //for zone
+                        for(VlanVO vlanForZone : zoneWideVlans)
+                        {
+                            guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId().longValue(), vlanForZone.getId(), false);
+                            if(guestIp!=null)
+                                break;//found an ip
+                        }
+                    }
                 }
                 
+                VlanVO guestIpVlan = null;
                 if (guestIp == null) {
                 	s_logger.debug("No guest IP available in pod id=" + pod.first().getId());
                 	continue;
+                } else {
+                    IPAddressVO ip = _ipAddressDao.findById(guestIp);
+                    guestIpVlan = _vlanDao.findById(ip.getVlanDbId());
                 }
+                
                 s_logger.debug("Acquired a guest IP, ip=" + guestIp);
                 String guestMacAddress = macAddresses[0];
                 String externalMacAddress = macAddresses[1];
@@ -2621,7 +2651,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            vm = _vmDao.persist(vm);
 */
                 vm.setDomainRouterId(routerId);
-                vm.setGuestNetmask(guestVlan.getVlanNetmask());
+                vm.setGuestNetmask(guestIpVlan.getVlanNetmask());
                 vm.setGuestIpAddress(guestIp);
                 vm.setGuestMacAddress(guestMacAddress);
                 vm.setPodId(pod.first().getId());
@@ -3009,6 +3039,56 @@ public class UserVmManagerImpl implements UserVmManager {
         }
         
     	return usedCapacity;
+    }
+    
+    
+    protected VlanVO getDomainDirectVlan(long domainId, DataCenterVO dc) {
+        //Domain level vlans include:
+        //* vlans belonging to this domain
+        //* vlans belonging to all parent domains 
+        
+        DomainVO domain = _domainDao.findById(domainId);
+        VlanVO guestVlan = null;
+        
+        List<VlanVO> vlansForDomain = _vlanDao.listVlansForDomainByTypeAndZone(dc.getId(), domainId, VlanType.DirectAttached);
+        for(VlanVO vlan : vlansForDomain) {
+            long freeIpCount = (_ipAddressDao.countIPs(dc.getId(), vlan.getId(), false) - _ipAddressDao.countIPs(dc.getId(), vlan.getId(), true));
+            
+            if(freeIpCount>0) {
+                guestVlan = vlan;
+                break;
+            }
+        }
+   
+        if (guestVlan == null && domain.getParent() != null) {
+            guestVlan = getDomainDirectVlan(domain.getParent(), dc);
+        } 
+
+        return guestVlan;
+    }
+    
+    protected String getDomainDirectIp(long domainId, DataCenterVO dc, AccountVO account) {
+        //Domain level ips include:
+        //* ips belonging to vlans of this domain
+        //* ips belonging to vlans belonging to all parent domains
+        
+        DomainVO domain = _domainDao.findById(domainId);
+        String guestIp = null;
+        
+        List<VlanVO> vlansForDomain = _vlanDao.listVlansForDomainByTypeAndZone(dc.getId(), domainId, VlanType.DirectAttached);
+        for(VlanVO vlan : vlansForDomain) {
+            guestIp = _ipAddressDao.assignIpAddress(account.getId(), account.getDomainId(), vlan.getId(), false);
+            if(guestIp != null) {
+                s_logger.debug("Got direct ip address " + guestIp + " from domain level vlan id=" + vlan.getId() + " for vm deployment");
+                break; //got an ip
+            }  
+        }
+   
+        if (guestIp == null && domain.getParent() != null) {
+            guestIp = getDomainDirectIp(domain.getParent(), dc, account);
+        }
+        
+        return guestIp;
     }
 
 	

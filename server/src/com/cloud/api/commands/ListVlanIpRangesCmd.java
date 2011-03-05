@@ -27,11 +27,10 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 
 public class ListVlanIpRangesCmd extends BaseCmd {
@@ -118,6 +117,7 @@ public class ListVlanIpRangesCmd extends BaseCmd {
        
     	for (VlanVO vlan : vlans) {
     		accountId = getManagementServer().getAccountIdForVlan(vlan.getId());
+    		Long vlanDomainId = getManagementServer().getDomainIdForVlan(vlan.getId());
     		podId = getManagementServer().getPodIdForVlan(vlan.getId());
     		
     		List<Pair<String, Object>> vlanData = new ArrayList<Pair<String, Object>>();
@@ -132,6 +132,11 @@ public class ListVlanIpRangesCmd extends BaseCmd {
             	vlanData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), account.getDomainId()));
             	vlanData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(account.getDomainId()).getName()));
             }
+    		
+    		if (vlanDomainId != null) {
+    		    vlanData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), vlanDomainId));
+                vlanData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(vlanDomainId).getName()));
+    		}
             
             if (podId != null) {
             	HostPodVO pod = getManagementServer().findHostPodById(podId);

@@ -21,8 +21,8 @@ package com.cloud.dc.dao;
 import java.util.List;
 
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
@@ -49,5 +49,7 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 	boolean zoneHasDirectAttachUntaggedVlans(long zoneId);
 
 	List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType,String vlanId);
+	
+	List<VlanVO> listVlansForDomainByTypeAndZone(Long zoneId, long domainId, VlanType vlanType);
 
 }

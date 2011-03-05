@@ -206,6 +206,7 @@
 		<dao name="User configuration server" class="com.cloud.user.dao.UserDaoImpl">
         </dao>
         <dao name="Account configuration server" class="com.cloud.user.dao.AccountDaoImpl"/>
+        <dao name="Domain configuration server" class="com.cloud.domain.dao.DomainDaoImpl"/>
         <dao name="IP Addresses configuration server" class="com.cloud.network.dao.IPAddressDaoImpl"/>
 		<dao name="Datacenter IP Addresses configuration server" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl"/>
 		<dao name="domain router" class="com.cloud.vm.dao.DomainRouterDaoImpl"/>

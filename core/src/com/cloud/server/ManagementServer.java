@@ -17,33 +17,26 @@
  */
 package com.cloud.server;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.rmi.ServerException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import netapp.manage.NaAPIFailedException;
-import netapp.manage.NaAuthenticationException;
-import netapp.manage.NaException;
-import netapp.manage.NaProtocolException;
 
 import com.cloud.alert.AlertVO;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
@@ -95,7 +88,6 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouter;
@@ -420,19 +412,20 @@ public interface ManagementServer {
     /**
 	 * Adds a VLAN to the database, along with an IP address range. Can add three types of VLANs: (1) zone-wide VLANs on the virtual network (2) pod-wide direct attached VLANs (3) account-specific direct attached VLANs
 	 * @param userId
-	 * @param vlanType - either "DomR" (VLAN for a virtual network) or "DirectAttached" (VLAN for IPs that will be directly attached to UserVMs)
-	 * @param zoneId
-	 * @param accountId
-	 * @param podId
-	 * @param add
-	 * @param vlanId
-	 * @param gateway
-	 * @param startIP
-	 * @param endIP
+     * @param vlanType - either "DomR" (VLAN for a virtual network) or "DirectAttached" (VLAN for IPs that will be directly attached to UserVMs)
+     * @param zoneId
+     * @param accountId
+     * @param podId
+     * @param vlanId
+     * @param startIP
+     * @param endIP
+     * @param domainId TODO
+     * @param add
+     * @param gateway
 	 * @return The new VlanVO object
      * @throws Exception 
 	 */
-	VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws Exception;
+	VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP, Long domainId) throws Exception;
 	
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
@@ -2191,5 +2184,8 @@ public interface ManagementServer {
 	 */
 	String getHostTags(long hostId);
     VolumeVO findVolumeByIdIncludingRemoved(long id);
+    
+    
+    Long getDomainIdForVlan(long vlanDbId);
 	
 }

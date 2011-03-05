@@ -28,13 +28,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -42,6 +41,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -55,7 +55,8 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	protected SearchBuilder<VlanVO> ZoneTypeSearch;
 	protected SearchBuilder<VlanVO> ZoneTypeAllPodsSearch;
 	protected SearchBuilder<VlanVO> ZoneTypePodSearch;
-
+	protected SearchBuilder<VlanVO> DomainZoneVlanSearch;
+	protected SearchBuilder<VlanVO> DomainVlanSearch;
 
 	protected PodVlanMapDaoImpl _podVlanMapDao = new PodVlanMapDaoImpl();
 	protected AccountVlanMapDao _accountVlanMapDao = new AccountVlanMapDaoImpl();
@@ -290,7 +291,42 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	    } catch (SQLException e) {
 	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
 	    }
+	}
+	
+	@Override
+	public List<VlanVO> listVlansForDomainByTypeAndZone(Long zoneId, long domainId, VlanType vlanType) {
+	    
+	    if (DomainZoneVlanSearch == null) {
+	        
+            DataCenterDao _dcDao = ComponentLocator.getLocator("management-server").getDao(DataCenterDao.class);
+            AccountVlanMapDao _accountVlanMap = ComponentLocator.getLocator("management-server").getDao(AccountVlanMapDao.class);
+            
+            SearchBuilder<DataCenterVO> ZoneSearch = _dcDao.createSearchBuilder();
+            ZoneSearch.and("id", ZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
+            
+            SearchBuilder<AccountVlanMapVO> DomainSearch = _accountVlanMap.createSearchBuilder();
+            DomainSearch.and("accountId", DomainSearch.entity().getAccountId(), Op.NULL);
+            DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), Op.EQ);
+            
+            DomainZoneVlanSearch = createSearchBuilder();
+            DomainZoneVlanSearch.and("vlanType", DomainZoneVlanSearch.entity().getVlanType(), Op.EQ);
+            DomainZoneVlanSearch.join("zoneSearch", ZoneSearch, DomainZoneVlanSearch.entity().getDataCenterId(), ZoneSearch.entity().getId());
+            DomainZoneVlanSearch.join("domainVlanSearch", DomainSearch, DomainZoneVlanSearch.entity().getId(), DomainSearch.entity().getVlanDbId());
+            DomainZoneVlanSearch.done();
+            ZoneSearch.done();
+            DomainSearch.done();
+            
+        }
+	    
+	    SearchCriteria sc = DomainZoneVlanSearch.create();
+	    sc.setParameters("vlanType", vlanType);
+	    if (zoneId != null) {
+	        sc.setJoinParameters("zoneSearch", "id", zoneId);
+	    }
 
+	    sc.setJoinParameters("domainVlanSearch", "domainId", domainId);
+	    
+	    return listBy(sc);
 	}
 
 }

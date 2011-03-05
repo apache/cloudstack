@@ -242,8 +242,9 @@ CREATE TABLE `cloud`.`pod_vlan_map` (
 
 CREATE TABLE `cloud`.`account_vlan_map` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  `account_id` bigint unsigned NOT NULL COMMENT 'account id. foreign key to account table',
+  `account_id` bigint unsigned COMMENT 'account id. foreign key to account table',
   `vlan_db_id` bigint unsigned NOT NULL COMMENT 'database id of vlan. foreign key to vlan table',
+  `domain_id` bigint unsigned COMMENT 'domain id. foreign key to domain table',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

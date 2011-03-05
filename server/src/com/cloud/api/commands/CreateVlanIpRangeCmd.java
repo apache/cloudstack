@@ -28,9 +28,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.dc.VlanVO;
+import com.cloud.domain.DomainVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -101,12 +101,26 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     		}
     	}    	
     	
+    	//if only domain id is specified, create domain specific vlan
+    	if (domainId != null) {
+    	    DomainVO domain = getManagementServer().findDomainIdById(domainId);
+    	    if (domain == null) {
+    	        throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid domain");
+    	    }
+    	}
+    	
+    	//pass only accountId or domainId to createVlanIpRange command, but never both
+    	Long domainIdForVlan = null;
+    	if (accountId == null && domainId != null) {
+    	    domainIdForVlan = domainId;
+    	}
+    	
     	VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
      	    
     	// Create a VLAN and public IP addresses
     	VlanVO vlan = null;
     	try {
-			vlan = getManagementServer().createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIp, endIp);
+			vlan = getManagementServer().createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIp, endIp, domainIdForVlan);
 		} catch (Exception e) {
 			s_logger.error("Error adding VLAN: ", e);
 			throw new ServerApiException (BaseCmd.INTERNAL_ERROR, e.getMessage());

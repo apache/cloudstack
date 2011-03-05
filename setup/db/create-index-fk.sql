@@ -167,6 +167,9 @@ ALTER TABLE `cloud`.`pod_vlan_map` ADD INDEX `i_pod_vlan_map__vlan_id`(`vlan_db_
 ALTER TABLE `cloud`.`account_vlan_map` ADD CONSTRAINT `fk_account_vlan_map__account_id` FOREIGN KEY `fk_account_vlan_map__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`account_vlan_map` ADD INDEX `i_account_vlan_map__account_id`(`account_id`);
 
+ALTER TABLE `cloud`.`account_vlan_map` ADD CONSTRAINT `fk_account_vlan_map__domain_id` FOREIGN KEY `fk_account_vlan_map__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`account_vlan_map` ADD INDEX `i_account_vlan_map__domain_id`(`domain_id`);
+
 ALTER TABLE `cloud`.`account_vlan_map` ADD CONSTRAINT `fk_account_vlan_map__vlan_id` FOREIGN KEY `fk_account_vlan_map__vlan_id` (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`account_vlan_map` ADD INDEX `i_account_vlan_map__vlan_id`(`vlan_db_id`);
 

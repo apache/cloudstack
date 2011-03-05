@@ -69,6 +69,6 @@ public class AccountVlanMapDaoImpl extends GenericDaoBase<AccountVlanMapVO, Long
         AccountVlanSearch.and("accountId", AccountVlanSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountVlanSearch.and("vlanDbId", AccountVlanSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
         AccountVlanSearch.done();
-    }
-    
+        
+    }    
 }

@@ -18,11 +18,12 @@
 package com.cloud.configuration;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.service.ServiceOfferingVO;
@@ -175,15 +176,16 @@ public interface ConfigurationManager extends Manager {
 	 * @param zoneId
 	 * @param accountId
 	 * @param podId
-	 * @param add
 	 * @param vlanId
-	 * @param gateway
 	 * @param startIP
 	 * @param endIP
+	 * @param domainId TODO
+	 * @param add
+	 * @param gateway
 	 * @throws InvalidParameterValueException
 	 * @return The new VlanVO object
 	 */
-	VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException;
+	VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP, Long domainId) throws InvalidParameterValueException, InternalErrorException;
 	
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
@@ -209,5 +211,7 @@ public interface ConfigurationManager extends Manager {
 	 * @return true for Premium, false for not
 	 */
 	boolean isPremium();
+	
+	Map<Integer, List<VlanVO>> listDomainDirectVlans(long domainId, long zoneId);
 
 }

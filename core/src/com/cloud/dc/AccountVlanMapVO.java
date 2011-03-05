@@ -35,14 +35,18 @@ public class AccountVlanMapVO {
 	private Long id;
 	
 	@Column(name="account_id")
-	private long accountId;
+	private Long accountId;
 	
 	@Column(name="vlan_db_id")
 	private long vlanDbId;
 	
-	public AccountVlanMapVO(long accountId, long vlanDbId) {
+	@Column(name="domain_id")
+    private Long domainId;
+	
+	public AccountVlanMapVO(Long accountId, long vlanDbId, Long domainId) {
 		this.accountId = accountId;
 		this.vlanDbId = vlanDbId;
+		this.domainId = domainId;
 	}
 	
 	public AccountVlanMapVO() {
@@ -53,11 +57,15 @@ public class AccountVlanMapVO {
 		return id;
 	}
 	
-	public long getAccountId() {
+	public Long getAccountId() {
 		return accountId;
 	}
 	
 	public long getVlanDbId() {
 		return vlanDbId;
+	}
+	
+	public Long getDomainId() {
+	    return domainId;
 	}
 }

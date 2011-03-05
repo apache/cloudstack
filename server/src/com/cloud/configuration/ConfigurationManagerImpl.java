@@ -45,6 +45,8 @@ import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -56,7 +58,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -88,6 +89,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject DataCenterIpAddressDaoImpl _privateIpAddressDao;
 	@Inject VMInstanceDao _vmInstanceDao;
 	@Inject AccountDao _accountDao;
+	@Inject DomainDao _domainDao;
 	@Inject EventDao _eventDao;
 	@Inject UserDao _userDao;
 	public boolean _premium;
@@ -973,8 +975,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		}
     }
     
-    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException {    		
-    	
+    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP, Long domainId) throws InvalidParameterValueException, InternalErrorException {    		
+        
+        
 		//check for hypervisor type to be xenserver
 		String hypervisorType = _configDao.getValue("hypervisor.type");
 				
@@ -988,7 +991,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    			throw new InternalErrorException("For adding an untagged vlan, please set up xen.public.network.device");
 	    		}
 	    	}
-	    	
 		}
     	
     	DataCenterVO zone;
@@ -1015,8 +1017,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		}
         		
         		// Check that the pod ID is valid
-        		HostPodVO pod = null;
-        		if (podId != null && ((pod = _podDao.findById(podId)) == null)) {
+        		if (podId != null && ((_podDao.findById(podId)) == null)) {
         			throw new InvalidParameterValueException("Please specify a valid pod.");
         		}
         		
@@ -1032,17 +1033,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		}
     		else 
     		{
-    			// VLANs for an account must be tagged
+    			// VLANs for an account/domain must be tagged
         		if (vlanId.equals(Vlan.UNTAGGED)) {
         			throw new InvalidParameterValueException("Direct Attached VLANs for an account must be tagged.");
         		}
         		
-        		if(accountId!=null)
-        		{
+        		if(accountId != null || domainId != null) {
 	        		// Check that the account ID is valid
-	        		AccountVO account;
-	        		if ((account = _accountDao.findById(accountId)) == null) {
+	        		if (accountId != null && _accountDao.findById(accountId) == null) {
 	        			throw new InvalidParameterValueException("Please specify a valid account.");
+	        		}
+	        		
+	        		//Check that domainId is valid
+	        		if (domainId != null && _domainDao.findById(domainId) == null) {
+	        		    throw new InvalidParameterValueException("Please specify a valid domain");
 	        		}
 	        		
 	        		// Make sure there aren't any pod VLANs in this zone
@@ -1052,15 +1056,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	        				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has pod VLANs. A zone may contain either pod VLANs or account VLANs, but not both.");
 	        			}
 	        		}
-	        		
-	        		// Make sure the specified account isn't already assigned to a VLAN in this zone
-//	        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
-//	        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
-//	        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-//	        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
-//	        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to the VLAN with ID " + vlan.getVlanId() + " in zone " + zone.getName() + ".");
-//	        			}
-//	        		}
         		}
     		} 
     	} 
@@ -1166,7 +1161,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 				_vlanDao.delete(vlan.getId());
 				throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 			}				
-		}else if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
+		} else if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
 			deletePublicIPRange(vlan.getId());
 			_vlanDao.delete(vlan.getId());
 			throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
@@ -1174,8 +1169,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		
 		if (accountId != null) {
 			// This VLAN is account-specific, so create an AccountVlanMapVO entry
-			AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(accountId, vlan.getId());
+			AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(accountId, vlan.getId(), null);
 			_accountVlanMapDao.persist(accountVlanMapVO);
+		} else if (domainId != null) {
+		    // This VLAN is domain-specific, so create an AccountVlanMapVO entry
+            AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(null, vlan.getId(), domainId);
+            _accountVlanMapDao.persist(accountVlanMapVO);
 		} else if (podId != null) {
 			// This VLAN is pod-wide, so create a PodVlanMapVO entry
 			PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
@@ -1191,7 +1190,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 																												"accountId=" + accountId, "podId=" + podId,
 																												"vlanId=" + vlanId, "vlanGateway=" + vlanGateway,
 																												"vlanNetmask=" + vlanNetmask, "startIP=" + startIP,
-																												"endIP=" + endIP);
+																												"endIP=" + endIP, "domainId=" + domainId);
 		
 		return vlan;
     }
@@ -1690,4 +1689,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	return ipRanges;
     }           
 
+    @Override
+    public Map<Integer, List<VlanVO>> listDomainDirectVlans(long domainId, long zoneId) {
+        Map<Integer, List<VlanVO>> vlansForDomain = new HashMap<Integer, List<VlanVO>>();
+        getDomainDirectVlans(vlansForDomain, domainId, zoneId);
+        return vlansForDomain;
+    }
+    
+    private void getDomainDirectVlans(Map<Integer, List<VlanVO>> vlans, long domainId, long zoneId) {
+        //Domain level vlans include:
+        //* vlans belonging to this domain
+        //* vlans belonging to all domain 
+        
+        DomainVO domain = _domainDao.findById(domainId);
+        if (domain == null) {
+            return;
+        }
+        
+        List<VlanVO> vlan = _vlanDao.listVlansForDomainByTypeAndZone(zoneId, domainId, VlanType.DirectAttached);
+        if (vlan != null && !vlan.isEmpty()) {
+            vlans.put(domain.getLevel(), vlan);
+        }
+   
+        if (domain.getParent() != null) {
+            getDomainDirectVlans(vlans, domain.getParent(), zoneId);
+        } else {
+            return;
+        }
+    }
 }

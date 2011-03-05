@@ -1716,7 +1716,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @DB
     @Override
-    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws Exception{
+    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP, Long domainId) throws Exception{
     	          
 		if(accountId != null && vlanType == VlanType.VirtualNetwork){
 			long ipResourceLimit = _accountMgr.findCorrectResourceLimit( _accountDao.findById(accountId), ResourceType.public_ip);
@@ -1729,7 +1729,7 @@ public class ManagementServerImpl implements ManagementServer {
 			Transaction txn = Transaction.currentTxn();
 			try{
 				txn.start();
-				VlanVO vlan = _configMgr.createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
+				VlanVO vlan = _configMgr.createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIP, endIP, null);
 				associateIpAddressListToAccount(userId, accountId, zoneId, vlan.getId());
 				txn.commit();
 				return vlan;
@@ -1744,7 +1744,7 @@ public class ManagementServerImpl implements ManagementServer {
 				throw new Exception(e.getMessage());
 			}
 		}
-		return _configMgr.createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
+		return _configMgr.createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIP, endIP, domainId);
     }
 
     @Override
@@ -3820,6 +3820,7 @@ public class ManagementServerImpl implements ManagementServer {
         //if account doesn't have direct ip addresses and there are no direct Zone wide vlans, return virtual service offerings only
         //If untagged network is enabled, return only direct service offerings
         List<VlanVO> accountDirectVlans = new ArrayList<VlanVO>();
+        Map<Integer, List<VlanVO>>  domainDirectVlans = new HashMap<Integer, List<VlanVO>>();
         List<VlanVO> zoneDirectVlans = new ArrayList<VlanVO>();
         
         boolean isDirectUntaggedNetworkEnabled = new Boolean(_configDao.getValue("direct.attach.untagged.vlan.enabled"));
@@ -3828,9 +3829,11 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.DirectSingle);
         } else {
             if (accountId != null && zoneId != null) {
-                accountDirectVlans = _vlanDao.listVlansForAccountByType(null, ((Long)accountId).longValue(), VlanType.DirectAttached);
+                AccountVO account = _accountDao.findById((Long)accountId);
+                accountDirectVlans = _vlanDao.listVlansForAccountByType((Long)zoneId, ((Long)accountId).longValue(), VlanType.DirectAttached);
+                domainDirectVlans = _configMgr.listDomainDirectVlans(account.getDomainId(), (Long)zoneId);
                 zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
-                if (accountDirectVlans.isEmpty() && zoneDirectVlans.isEmpty()) {
+                if (accountDirectVlans.isEmpty() && domainDirectVlans.isEmpty() && zoneDirectVlans.isEmpty()) {
                     sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
                 }
             } else if (zoneId != null) {
@@ -6243,6 +6246,26 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
         }
+        
+        //delete domain specific vlans
+        List<VlanVO> domainVlans = _vlanDao.listVlansForDomainByTypeAndZone(null, domainId, VlanType.DirectAttached);
+        s_logger.debug("Found " + domainVlans.size() + " vlans to cleanup as a part of domain id=" + domainId + " cleanup.");
+        boolean allVlansDeleted = true;
+        for (VlanVO vlan : domainVlans) {
+            try {
+                allVlansDeleted = _configMgr.deleteVlanAndPublicIpRange(User.UID_SYSTEM, vlan.getId());
+            } catch (Exception e) {
+                s_logger.warn("Failed to delete vlan id=" + vlan.getId() + " as a part of domain  cleanup due to exception: ", e);
+                allVlansDeleted = false;
+            }
+        }
+        
+        if (!allVlansDeleted) {
+            s_logger.warn("Failed to cleanup domain specific vlans as a part of domain cleanup");
+            success = false;
+        } else {
+            s_logger.debug("Successfully deleted vlans as a part of domain id=" + domainId + " cleanup.");
+        }
 
         // delete the domain itself
         boolean deleteDomainSuccess = _domainDao.remove(domainId);
@@ -8433,5 +8456,15 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 		return _hashKey;
 	}
+	
+	@Override
+    public Long getDomainIdForVlan(long vlanDbId) {
+        List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanDbId);
+        if (accountVlanMaps.isEmpty()) {
+            return null;
+        } else {
+            return accountVlanMaps.get(0).getDomainId();
+        }
+    }
 }
 
