@@ -2090,12 +2090,10 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
         String tmplturl = cmd.getUrl();
-        int index = tmplturl.lastIndexOf("/");
-        String tmplpath = tmplturl.substring(0, index);
         String poolName = cmd.getPoolUuid();
         try {
-            URI uri = new URI(tmplpath);
-            String mountpoint = uri.getHost() + ":" + uri.getPath();
+            URI uri = new URI(tmplturl);
+            String tmplpath = uri.getHost() + ":" + uri.getPath();
             Connection conn = getConnection();
             SR poolsr = null;
             Set<SR> srs = SR.getByNameLabel(conn, poolName);
@@ -2108,7 +2106,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             String pUuid = poolsr.getUuid(conn);
             boolean isISCSI = IsISCSI(poolsr.getType(conn));
-            String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, pUuid);
+            String uuid = copy_vhd_from_secondarystorage(conn, tmplpath, pUuid);
             VDI tmpl = getVDIbyUuid(conn, uuid);
             VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
             String snapshotUuid = snapshotvdi.getUuid(conn);
@@ -4814,7 +4812,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
             } else {
                 try {
-                    String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, srUuid);
+                    String volumePath = mountpoint + volumeUUID + ".vhd";
+                    String uuid = copy_vhd_from_secondarystorage(conn, volumePath, srUuid);
                     return new CopyVolumeAnswer(cmd, true, null, srUuid, uuid);
                 } finally {
                     deleteSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder);

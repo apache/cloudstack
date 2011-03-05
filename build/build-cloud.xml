@@ -211,14 +211,9 @@
     <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/*"/>
-		<exclude name="**/fsimage.so"/>
+	<exclude name="**/fsimage.so"/>
+	<exclude name="**/vhd-util"/>
         <exclude name="**/.*" />
-        <exclude name="**/network/domr/mth/" />
-        <exclude name="**/network/domr/kvm/" />
-        <exclude name="**/network/domr/xenserver/" />
-        <exclude name="**/storage/zfs/" />
-        <exclude name="**/storage/iscsi/" />
-        <exclude name="**/hypervisor/xen/" />
       </fileset>
       <filterset>
         <filter token="VERSION" value="${impl.version}"/>
@@ -227,6 +222,7 @@
    <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/fsimage.so"/>
+	<include name="**/vhd-util"/>
       </fileset>
    </copy>
   </target>

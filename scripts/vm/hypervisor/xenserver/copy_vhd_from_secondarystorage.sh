@@ -54,6 +54,16 @@ if [ $? -ne 0 ]; then
 fi
 
 vhdfile=$localmp/$vhdfilename
+if [ ${vhdfile%.vhd} == ${vhdfile} ] ; then
+  vhdfile=$(ls $vhdfile/*.vhd)
+  if [ $? -ne 0 ]; then
+    echo "7#There is no vhd file under $mountpoint"
+    cleanup
+    exit 0
+  fi
+fi
+
+
 
 VHDUTIL="/opt/xensource/bin/vhd-util"
 
