@@ -113,11 +113,11 @@ ok:
 	    footer->type != HD_TYPE_DIFF    &&
 	    footer->data_offset != ~(0ULL))
 		return "invalid data offset";
-
+/*
 	now = vhd_time(time(NULL));
 	if (footer->timestamp > now + TIMESTAMP_MAX_SLACK)
 		return "creation time in future";
-
+*/
 	if (!strncmp(footer->crtr_app, "tap", 3) &&
 	    footer->crtr_ver > VHD_CURRENT_VERSION)
 		return "unsupported tap creator version";
