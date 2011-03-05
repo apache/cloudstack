@@ -80,7 +80,7 @@ import com.sun.mail.smtp.SMTPTransport;
 public class AlertManagerImpl implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
 
-    private static final long INITIAL_DELAY = 5L * 60L * 1000L; // five minutes expressed in milliseconds
+    private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // five minutes expressed in milliseconds
 
     private static final DecimalFormat _dfPct = new DecimalFormat("###.##");
     private static final DecimalFormat _dfWhole = new DecimalFormat("########");
@@ -201,7 +201,7 @@ public class AlertManagerImpl implements AlertManager {
 
     @Override
     public boolean start() {
-        _timer.schedule(new CapacityChecker(), INITIAL_DELAY, _capacityCheckPeriod);
+        _timer.schedule(new CapacityChecker(), INITIAL_CAPACITY_CHECK_DELAY, _capacityCheckPeriod);
         return true;
     }
 
