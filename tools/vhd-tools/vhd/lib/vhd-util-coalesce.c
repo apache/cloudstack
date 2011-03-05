@@ -131,10 +131,9 @@ vhd_util_coalesce(int argc, char **argv)
 	char *name, *pname;
 	vhd_context_t vhd, parent;
 	int parent_fd = -1;
-
+	int pflag = 0;
 	name  = NULL;
 	pname = NULL;
-	int pflag = 0;
 	parent.file = NULL;
 
 	if (!argc || !argv)

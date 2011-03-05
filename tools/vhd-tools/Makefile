@@ -8,7 +8,6 @@ SUBDIRS-y :=
 SUBDIRS-y += include
 SUBDIRS-y += lvm
 SUBDIRS-y += vhd
-SUBDIRS-y += drivers
 
 clean:
 	rm -rf *.a *.so *.o *.rpm $(LIB) *~ $(DEPS) TAGS

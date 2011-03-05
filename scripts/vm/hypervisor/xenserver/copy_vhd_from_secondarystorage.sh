@@ -3,7 +3,7 @@
 #set -x
  
 usage() {
-  printf "Usage: %s [mountpoint in secondary storage] [uuid of the source sr]\n" $(basename $0) 
+  printf "Usage: %s [vhd file in secondary storage] [uuid of the source sr] \n" $(basename $0) 
 }
 
 cleanup()
@@ -21,7 +21,8 @@ if [ -z $1 ]; then
   echo "2#no mountpoint"
   exit 0
 else
-  mountpoint=$1
+  mountpoint=${1%/*}
+  vhdfilename=${1##*/}
 fi
 
 if [ -z $2 ]; then
@@ -52,25 +53,61 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-vhdfile=$(ls $localmp/*.vhd)
-if [ $? -ne 0 ]; then
-  echo "7#There is no vhd file under $mountpoint"
-  cleanup
-  exit 0
-fi
+vhdfile=$localmp/$vhdfilename
 
-if [ $type == "nfs" ]; then
-  uuid=$(uuidgen -r)
-  dd if=$vhdfile of=/var/run/sr-mount/$sruuid/$uuid bs=2M
+VHDUTIL="/opt/xensource/bin/vhd-util"
+
+copyvhd()
+{
+  local desvhd=$1
+  local srcvhd=$2
+  local vsize=$3
+  local type=$4
+  local parent=`$VHDUTIL query -p -n $srcvhd`
   if [ $? -ne 0 ]; then
-    echo "8#failed ot copy vhdfile to /var/run/sr-mount/sruuid/$uuid"
+    echo "30#failed to query $srcvhd"
     cleanup
     exit 0
   fi
+  if [ "${parent##*vhd has}" = " no parent" ]; then
+    dd if=$srcvhd of=$desvhd bs=2M     
+    if [ $? -ne 0 ]; then
+      echo "31#failed to dd $srcvhd to $desvhd"
+      cleanup
+     exit 0
+    fi
+    if [ $type != "nfs" ]; then
+      $VHDUTIL modify -s $vsize -n $desvhd
+      if [ $? -ne 0 ]; then
+        echo "32#failed to set new vhd physical size for vdi vdi $uuid"
+        cleanup
+        exit 0
+      fi
+    fi
+  else
+    copyvhd $desvhd $parent $vsize $type
+    $VHDUTIL coalesce -p $desvhd -n $srcvhd
+    if [ $? -ne 0 ]; then
+      echo "32#failed to coalesce  $desvhd to $srcvhd"
+      cleanup
+     exit 0
+    fi
+  fi
+}
+
+if [ $type == "nfs" ]; then
+  uuid=$(uuidgen -r)
+  desvhd=/var/run/sr-mount/$sruuid/$uuid
+  copyvhd $desvhd $vhdfile 0 $type
   mv /var/run/sr-mount/$sruuid/$uuid /var/run/sr-mount/$sruuid/${uuid}.vhd
   xe sr-scan uuid=$sruuid
+  if [ $? -ne 0 ]; then
+    echo "14#failed to scan sr $sruuid"
+    cleanup
+    exit 0
+  fi
 elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
-  size=$(vhd-util query -v -n $vhdfile)
+  size=$($VHDUTIL query -v -n $vhdfile)
   uuid=$(xe vdi-create sr-uuid=$sruuid virtual-size=${size}MiB type=user name-label="cloud")
   if [ $? -ne 0 ]; then
     echo "9#can not create vdi in sr $sruuid"
@@ -83,24 +120,14 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
     cleanup
     exit 0
   fi
-  lvchange -ay /dev/VG_XenStorage-$sruuid/VHD-$uuid
+  desvhd=/dev/VG_XenStorage-$sruuid/VHD-$uuid
+  lvchange -ay $desvhd
   if [ $? -ne 0 ]; then
     echo "10#lvm can not make VDI $uuid  visiable"
     cleanup
     exit 0
   fi
-  dd if=$vhdfile of=/dev/VG_XenStorage-$sruuid/VHD-$uuid bs=2M
-  if [ $? -ne 0 ]; then
-    echo "11#failed to dd to sr $sruuid"
-    cleanup
-    exit 0
-  fi
-  vhd-util modify -s $lvsize -n /dev/VG_XenStorage-$sruuid/VHD-$uuid
-  if [ $? -ne 0 ]; then
-    echo "13#failed to set new vhd physical size for vdi vdi $uuid"
-    cleanup
-    exit 0
-  fi
+  copyvhd $desvhd $vhdfile $lvsize $type
   xe sr-scan uuid=$sruuid
   if [ $? -ne 0 ]; then
     echo "14#failed to scan sr $sruuid"
