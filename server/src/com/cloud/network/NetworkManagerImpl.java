@@ -126,7 +126,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
-import com.cloud.vm.Nic.VmType;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -932,15 +931,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 continue;
             }
             
-            VmType vmType = null;
-            
-            if (vm.getType() == Type.User) {
-                vmType  = Nic.VmType.User;
-            } else  {
-                vmType = Nic.VmType.System;
-            }
-            
-            NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId(), vmType);
+            NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId(), vm.getType());
 
             while (deviceIds[deviceId] && deviceId < deviceIds.length) {
                 deviceId++;
@@ -1146,7 +1137,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.start();
         _nicDao.update(nic.getId(), nic);
         
-         if (nic.getVmType() == VmType.User) {
+         if (nic.getVmType() == VirtualMachine.Type.User) {
              _networksDao.changeActiveNicsBy(networkId, count);
          }
         txn.commit();

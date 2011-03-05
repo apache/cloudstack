@@ -103,7 +103,7 @@ public class NicVO implements Nic {
     
     @Enumerated(value=EnumType.STRING)
     @Column(name="vm_type")
-    VmType vmType;
+    VirtualMachine.Type vmType;
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -111,7 +111,7 @@ public class NicVO implements Nic {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
 
-    public NicVO(String reserver, Long instanceId, long configurationId, VmType vmType) {
+    public NicVO(String reserver, Long instanceId, long configurationId, VirtualMachine.Type vmType) {
         this.reserver = reserver;
         this.instanceId = instanceId;
         this.networkId = configurationId;
@@ -307,7 +307,7 @@ public class NicVO implements Nic {
     }
 
     @Override
-    public VmType getVmType() {
+    public VirtualMachine.Type getVmType() {
         return vmType;
     }
 }

@@ -39,11 +39,6 @@ public interface Nic {
         OperationFailed,
     }
     
-    public enum VmType {
-        System,
-        User;
-    }
-    
     public enum State implements FiniteState<State, Event> {
         Allocated("Resource is allocated but not reserved"),
         Reserving("Resource is being reserved right now"), 
@@ -157,5 +152,5 @@ public interface Nic {
     
     URI getBroadcastUri();
 
-    VmType getVmType();
+    VirtualMachine.Type getVmType();
 }
