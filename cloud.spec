@@ -11,9 +11,9 @@ Summary:   Cloud.com Stack
 Version:   %{_ver}
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %if "%{?_prerelease}" != ""
-Release:   0.%{_build_number}%{_prerelease}
+Release:   0.%{_build_number}%{_prerelease}%{dist}
 %else
-Release:   %{_rel}
+Release:   %{_rel}%{dist}
 %endif
 License:   GPLv3+ with exceptions or CSL 1.1
 Vendor:    Cloud.com, Inc. <sqa@cloud.com>
