@@ -79,7 +79,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>netapi32.lib;iphlpapi.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)vmopsservice.exe</OutputFile>
+      <OutputFile>$(OutDir)cloudservice.exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -120,7 +120,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>netapi32.lib;iphlpapi.lib;wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)vmopsservice.exe</OutputFile>
+      <OutputFile>$(OutDir)cloudservice.exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>

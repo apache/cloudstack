@@ -2,8 +2,8 @@ HKCR
 {
 	NoRemove AppID
 	{
-		'%APPID%' = s 'VMOpsInstanceManager'
-		'vmopsservice.exe'
+		'%APPID%' = s 'CloudInstanceManager'
+		'cloudservice.exe'
 		{
 			val AppID = s '%APPID%'
 		}

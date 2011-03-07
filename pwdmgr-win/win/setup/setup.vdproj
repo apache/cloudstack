@@ -15,13 +15,7 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_55A9B5507C4141F2854209DAF400F795"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
+        "MsmKey" = "8:_4BD24FEDCF1C454D97CAB3043F1B4532"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -33,7 +27,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:..\\bin\\Debug\\VMOpsInstanceManager.msi"
+        "OutputFilename" = "8:..\\bin\\Debug\\CloudInstanceManager.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -65,7 +59,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:..\\bin\\Release\\VMOpsInstanceManager.msi"
+        "OutputFilename" = "8:..\\bin\\Release\\CloudInstanceManager.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -97,31 +91,31 @@
     {
         "CustomAction"
         {
-            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_135C0FC6511049DC8A04B3F7710C26AB"
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_5F8C50B71E4B4A658082C37C55C89C43"
             {
-            "Name" = "8:vmopsservice.exe"
+            "Name" = "8:cloudservice.exe"
             "Condition" = "8:"
-            "Object" = "8:_55A9B5507C4141F2854209DAF400F795"
-            "FileType" = "3:2"
-            "InstallAction" = "3:1"
-            "Arguments" = "8:/Service"
-            "EntryPoint" = "8:"
-            "Sequence" = "3:1"
-            "Identifier" = "8:_44CA86D9_1902_4A87_81E5_A2898BB288F1"
-            "InstallerClass" = "11:FALSE"
-            "CustomActionData" = "8:"
-            }
-            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_A2F9F0CBAE284171BD966C402B687EFB"
-            {
-            "Name" = "8:vmopsservice.exe"
-            "Condition" = "8:"
-            "Object" = "8:_55A9B5507C4141F2854209DAF400F795"
+            "Object" = "8:_4BD24FEDCF1C454D97CAB3043F1B4532"
             "FileType" = "3:2"
             "InstallAction" = "3:4"
             "Arguments" = "8:/UnregServer"
             "EntryPoint" = "8:"
             "Sequence" = "3:1"
-            "Identifier" = "8:_23916BF0_68CC_41A8_9C61_70A444549196"
+            "Identifier" = "8:_4D65764C_D67E_4B27_87E7_B37C4A531116"
+            "InstallerClass" = "11:FALSE"
+            "CustomActionData" = "8:"
+            }
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_8414EE7730664D4A9997F8DD95926204"
+            {
+            "Name" = "8:cloudservice.exe"
+            "Condition" = "8:"
+            "Object" = "8:_4BD24FEDCF1C454D97CAB3043F1B4532"
+            "FileType" = "3:2"
+            "InstallAction" = "3:1"
+            "Arguments" = "8:/Service"
+            "EntryPoint" = "8:"
+            "Sequence" = "3:1"
+            "Identifier" = "8:_1556871C_D5B0_4B13_8B8B_2B74B72211B7"
             "InstallerClass" = "11:FALSE"
             "CustomActionData" = "8:"
             }
@@ -136,39 +130,27 @@
         {
             "LaunchCondition"
             {
+                "{A06ECF26-33A3-4562-8140-9B0E340D4F24}:_E12834A9B12C4927A9DB4525051DF55C"
+                {
+                "Name" = "8:.NET Framework"
+                "Message" = "8:[VSDNETMSG]"
+                "FrameworkVersion" = "8:.NETFramework,Version=v4.0,Profile=Client"
+                "AllowLaterVersions" = "11:FALSE"
+                "InstallUrl" = "8:http://go.microsoft.com/fwlink/?LinkId=131000"
+                }
             }
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_55A9B5507C4141F2854209DAF400F795"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4BD24FEDCF1C454D97CAB3043F1B4532"
             {
-            "SourcePath" = "8:..\\bin\\Release\\vmopsservice.exe"
-            "TargetName" = "8:vmopsservice.exe"
+            "SourcePath" = "8:..\\bin\\Release\\cloudservice.exe"
+            "TargetName" = "8:cloudservice.exe"
             "Tag" = "8:"
             "Folder" = "8:_C239EFF6D5514C779D4C4F9566A171B8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D7F1DD58C60C46D1BDEB8499DC8150FA"
-            {
-            "SourcePath" = "8:header_logo.JPG"
-            "TargetName" = "8:header_logo.JPG"
-            "Tag" = "8:"
-            "Folder" = "8:_C239EFF6D5514C779D4C4F9566A171B8"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:FALSE"
             "ReadOnly" = "11:FALSE"
             "Hidden" = "11:FALSE"
             "System" = "11:FALSE"
@@ -237,7 +219,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Cloud.com VM Instance Manager"
         "ProductCode" = "8:{CF1EDAC1-1EF6-495A-8211-8EECEE496060}"
-        "PackageCode" = "8:{BC086418-B24B-4152-AA2B-12178382DD18}"
+        "PackageCode" = "8:{F17332D4-9B0F-4876-BCC5-DDAE675ED23B}"
         "UpgradeCode" = "8:{24149E96-AFD7-4183-8507-7778FC637D39}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

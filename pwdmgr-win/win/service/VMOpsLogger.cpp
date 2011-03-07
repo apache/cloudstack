@@ -40,7 +40,7 @@ BOOL CLogger::Initialize()
 
 	GetModuleFileName(NULL, achPath, _MAX_PATH);
 	_tsplitpath(achPath, achDrive, achDir, NULL, NULL);
-	_tmakepath(achPath, achDrive, achDir, _T("vmops"), _T(".log"));
+	_tmakepath(achPath, achDrive, achDir, _T("cloud"), _T(".log"));
 	m_pFile = _tfopen(achPath, _T("a+"));
 
 	return m_pFile != NULL;
@@ -54,12 +54,12 @@ void CLogger::RotateLog()
 
 	GetModuleFileName(NULL, achPath, _MAX_PATH);
 	_tsplitpath(achPath, achDrive, achDir, NULL, NULL);
-	_tmakepath(achPath, achDrive, achDir, _T("vmops"), _T(".log"));
+	_tmakepath(achPath, achDrive, achDir, _T("cloud"), _T(".log"));
 
 	TCHAR achPath2[_MAX_PATH];
 	GetModuleFileName(NULL, achPath2, _MAX_PATH);
 	_tsplitpath(achPath2, achDrive, achDir, NULL, NULL);
-	_tmakepath(achPath2, achDrive, achDir, _T("vmops"), _T(".log.bak"));
+	_tmakepath(achPath2, achDrive, achDir, _T("cloud"), _T(".log.bak"));
 
 	MoveFileEx(achPath, achPath2, MOVEFILE_REPLACE_EXISTING);
 }
