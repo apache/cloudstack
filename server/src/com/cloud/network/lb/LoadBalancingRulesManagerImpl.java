@@ -148,7 +148,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             }
             
             // Let's check to make sure the vm has a nic in the same network as the load balancing rule.
-            List<? extends Nic> nics = _networkMgr.getNics(vm);
+            List<? extends Nic> nics = _networkMgr.getNics(vm.getId());
             Nic nicInSameNetwork = null;
             for (Nic nic : nics) {
                 if (nic.getNetworkId() == loadBalancer.getNetworkId()) {

@@ -110,7 +110,7 @@ public interface NetworkManager extends NetworkService {
     
     void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
     
-    List<? extends Nic> getNics(VirtualMachine vm);
+    List<? extends Nic> getNics(long vmId);
     
     List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm);
     
