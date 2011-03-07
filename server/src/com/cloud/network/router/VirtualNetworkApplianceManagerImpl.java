@@ -282,6 +282,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     int _retry = 2;
     String _instance;
     String _mgmt_host;
+    String _mgmt_cidr;
 
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
@@ -901,9 +902,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     	if(s_logger.isInfoEnabled()) {
                             s_logger.info("Add management server explicit route to DomR.");
                         }
-
-                		buf.append(" mgmtcidr=").append(_mgmt_host);
-	                    buf.append(" localgw=").append(dest.getPod().getGateway());
+                    	
+                    	_mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+                    	if (NetUtils.isValidCIDR(_mgmt_cidr)) {
+                    	    buf.append(" mgmtcidr=").append(_mgmt_cidr);
+                    	    buf.append(" localgw=").append(dest.getPod().getGateway());
+                    	}
                 	} else {
                     	if(s_logger.isInfoEnabled()) {
                             s_logger.info("Management server host is at same subnet at pod private network, don't add explict route to DomR");
