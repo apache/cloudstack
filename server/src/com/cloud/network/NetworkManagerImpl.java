@@ -1077,6 +1077,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             Network.State state = network.getState();
             if (state == Network.State.Implemented || state == Network.State.Setup || state == Network.State.Implementing) {
+                s_logger.debug("Network id=" + networkId + " is already implemented");
                 implemented.set(guru, network);
                 return implemented;
             }
@@ -1141,6 +1142,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _nicDao.update(nic.getId(), nic);
         
          if (nic.getVmType() == VirtualMachine.Type.User) {
+             s_logger.debug("Changing active number of nics for network id=" + networkId + " on " + count);
              _networksDao.changeActiveNicsBy(networkId, count);
          }
         txn.commit();
@@ -1241,10 +1243,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
     }
-
+    
     @Override
-    public List<? extends Nic> getNics(VirtualMachine vm) {
-        return _nicDao.listByVmId(vm.getId());
+    public List<? extends Nic> getNics(long vmId) {
+        return _nicDao.listByVmId(vmId);
     }
     
     @Override
