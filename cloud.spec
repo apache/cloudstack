@@ -580,6 +580,7 @@ fi
 %{_datadir}/%{name}/setup/schema-level.sql
 %{_datadir}/%{name}/setup/data-214to215.sql
 %{_datadir}/%{name}/setup/schema-216to217.sql
+%{_datadir}/%{name}/setup/schema-217to218.sql
 %doc README
 %doc HACKING
 %doc debian/copyright
@@ -591,6 +592,7 @@ fi
 %{_sysconfdir}/%{name}/management/commands.properties
 %{_sysconfdir}/%{name}/management/components.xml
 %{_sysconfdir}/%{name}/management/context.xml
+%{_sysconfdir}/%{name}/management/simulator.properties
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
 %{_sysconfdir}/%{name}/management/environment.properties
 %{_sysconfdir}/%{name}/management/ehcache.xml
