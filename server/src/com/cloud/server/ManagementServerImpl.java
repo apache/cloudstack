@@ -204,7 +204,6 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.UploadVO;
@@ -443,11 +442,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _configs;
     }
 
-    @Override
-    public StorageStats getStorageStatistics(long hostId) {
-        return _statsCollector.getStorageStats(hostId);
-    }
-       
     @Override
     public VolumeStats[] getVolumeStatistics(long[] volIds) {
         return _statsCollector.getVolumeStats(volIds);

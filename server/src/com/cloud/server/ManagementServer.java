@@ -42,7 +42,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
@@ -111,14 +110,6 @@ public interface ManagementServer extends ManagementService {
      * @return the account, or null if not found
      */
     Account getAccount(long accountId);
-
-    /**
-     * Gets Storage statistics for a given host
-     * 
-     * @param hostId
-     * @return StorageStats
-     */
-    StorageStats getStorageStatistics(long hostId);;
 
     /**
      * Gets Volume statistics.  The array returned will contain VolumeStats in the same order
