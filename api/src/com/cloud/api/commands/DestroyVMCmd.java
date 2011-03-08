@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -95,7 +96,13 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException{
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result = _userVmService.destroyVm(this);
+        UserVm result;
+        if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
+        	result = _bareMetalVmService.destroyVm(this);
+        } else {
+        	result = _userVmService.destroyVm(this);
+        }
+        
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);
             response.setResponseName("virtualmachine");

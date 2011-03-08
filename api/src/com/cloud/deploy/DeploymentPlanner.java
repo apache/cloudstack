@@ -44,6 +44,17 @@ public interface DeploymentPlanner extends Adapter {
      */
     boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
     
+    /**
+     * canHandle is called before plan to determine if the plan can do the allocation. Planers should be exclusive so planner writer must
+     * make sure only one planer->canHandle return true in the planner list
+     * 
+     * @param vm virtual machine.
+     * @param plan deployment plan that tells you where it's being deployed to.
+     * @param avoid avoid these data centers, pods, clusters, or hosts.
+     * @return true if it's okay to allocate; false or not
+     */
+    boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid);
+    
     public static class ExcludeList {
         private Set<Long> _dcIds;
         private Set<Long> _podIds;

@@ -53,6 +53,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.BareMetalVmService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
@@ -109,6 +110,7 @@ public abstract class BaseCmd {
     public static RulesService _rulesService;
     public static LoadBalancingRulesService _lbService;
     public static RemoteAccessVpnService _ravService;
+    public static BareMetalVmService _bareMetalVmService;
    
     
     static void setComponents(ResponseGenerator generator) {
@@ -130,6 +132,7 @@ public abstract class BaseCmd {
         _lbService = locator.getManager(LoadBalancingRulesService.class);
         _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
+        _bareMetalVmService = locator.getManager(BareMetalVmService.class);
     }
     
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException;

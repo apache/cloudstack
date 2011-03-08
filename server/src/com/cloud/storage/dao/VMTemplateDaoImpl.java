@@ -441,7 +441,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
 		List<VMTemplateVO> tmplts = listBy(sc);
 		Collections.shuffle(tmplts);
-		return tmplts.get(0);
+		if (tmplts.size() > 0) {
+			return tmplts.get(0);
+		} else {
+			return null;
+		}
 	}
 	
 	@Override

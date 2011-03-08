@@ -26,12 +26,14 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.org.Cluster;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=DeploymentPlanner.class)
@@ -67,5 +69,11 @@ public class SimplePlanner extends PlannerBase implements DeploymentPlanner {
     
     protected SimplePlanner() {
         super();
+    }
+    
+    //TODO: set it to true if you want to use it
+    @Override
+	public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
+    	return false;
     }
 }

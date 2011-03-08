@@ -73,6 +73,8 @@ public interface Network extends ControlledEntity {
         public static final Provider DhcpServer = new Provider("DhcpServer");
         public static final Provider JuniperSRX = new Provider("JuniperSRX");
         public static final Provider F5BigIp = new Provider("F5BigIp");
+        public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer");
+        public static final Provider ExternalGateWay = new Provider("ExternalGateWay");
         
         private String name;
         

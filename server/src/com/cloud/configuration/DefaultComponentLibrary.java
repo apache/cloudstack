@@ -295,6 +295,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
         
+        
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
     }

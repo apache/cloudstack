@@ -145,7 +145,13 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
         User,
         DomainRouter,
         ConsoleProxy,
-        SecondaryStorageVm
+        SecondaryStorageVm,
+        
+        /*
+         * UserBareMetal is only used for selecting VirtualMachineGuru, there is no
+         * VM with this type. UserBareMetal should treat exactly as User.
+         */
+        UserBareMetal,
     }
     
     public String getInstanceName();

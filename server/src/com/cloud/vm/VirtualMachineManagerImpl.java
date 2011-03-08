@@ -134,6 +134,7 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -251,9 +252,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         if (template.getFormat() == ImageFormat.ISO) {
             _storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
-        } else {
+        } else if (template.getFormat() == ImageFormat.BAREMETAL) {
+        }else {
             _storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
         }
+        
         for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
             _storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
         }
@@ -297,6 +300,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @SuppressWarnings("unchecked")
     private <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
         return (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
+    }
+    
+    @SuppressWarnings("unchecked")
+    private <T extends VMInstanceVO> VirtualMachineGuru<T> getBareMetalVmGuru(T vm) {
+        return (VirtualMachineGuru<T>)_vmGurus.get(Type.UserBareMetal);
     }
     
     @Override
@@ -524,7 +532,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
         
-        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        VirtualMachineGuru<T> vmGuru;
+        if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+        	vmGuru = getBareMetalVmGuru(vm);
+        } else {
+        	vmGuru = getVmGuru(vm);
+        }
+        
         vm = vmGuru.findById(vm.getId());        
         Ternary<T, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);
         if (start == null) {
@@ -570,7 +584,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
-                    dest = planner.plan(vmProfile, plan, avoids);
+					if (planner.canHandle(vmProfile, plan, avoids)) {
+						dest = planner.plan(vmProfile, plan, avoids);
+					} else {
+						continue;
+					}
                     if (dest != null) {
                         avoids.addHost(dest.getHost().getId());
                         journal.record("Deployment found ", vmProfile, dest);
@@ -590,7 +608,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
                 
                 try {
-                    _storageMgr.prepare(vmProfile, dest);
+                	if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                		_storageMgr.prepare(vmProfile, dest);
+                	}
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
@@ -851,8 +871,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
         
         try {
-            _storageMgr.release(profile);
-            s_logger.debug("Successfully released storage resources for the vm " + vm);
+			if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+				_storageMgr.release(profile);
+				s_logger.debug("Successfully released storage resources for the vm " + vm);
+			}
         } catch (Exception e) {
             s_logger.warn("Unable to release storage resources.", e);
         }

@@ -24,12 +24,14 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.storage.DiskOfferingVO;
@@ -57,22 +59,22 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Local(value=DeploymentPlanner.class)
 public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);
-	@Inject private HostDao _hostDao;
-	@Inject private DataCenterDao _dcDao;
-	@Inject private HostPodDao _podDao;
-	@Inject private ClusterDao _clusterDao;
-	@Inject DetailsDao _hostDetailsDao = null;
-	@Inject GuestOSDao _guestOSDao = null; 
-    @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
-    @Inject private DiskOfferingDao _diskOfferingDao;
-    @Inject private StoragePoolHostDao _poolHostDao;
-    @Inject private UserVmDao _vmDao;
-    @Inject VMInstanceDao _vmInstanceDao;
+	@Inject protected HostDao _hostDao;
+	@Inject protected DataCenterDao _dcDao;
+	@Inject protected HostPodDao _podDao;
+	@Inject protected ClusterDao _clusterDao;
+	@Inject protected DetailsDao _hostDetailsDao = null;
+	@Inject protected GuestOSDao _guestOSDao = null; 
+    @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
+    @Inject protected DiskOfferingDao _diskOfferingDao;
+    @Inject protected StoragePoolHostDao _poolHostDao;
+    @Inject protected UserVmDao _vmDao;
+    @Inject protected VMInstanceDao _vmInstanceDao;
     @Inject protected VolumeDao _volsDao;
-    @Inject CapacityManager _capacityMgr;
-    @Inject ConfigurationDao _configDao;
+    @Inject protected CapacityManager _capacityMgr;
+    @Inject protected ConfigurationDao _configDao;
     @Inject protected StoragePoolDao _storagePoolDao;
-    @Inject CapacityDao _capacityDao;
+    @Inject protected CapacityDao _capacityDao;
     
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -248,6 +250,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, RETURN_UPTO_ALL);
 			//if found suitable hosts in this cluster, find suitable storage pools for each volume of the VM
 			if(suitableHosts != null && !suitableHosts.isEmpty()){
+				if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
+					Pod pod = _podDao.findById(clusterVO.getPodId());
+					DeployDestination dest =  new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
+					return dest;
+				}
+				
 				if (_allocationAlgorithm != null && _allocationAlgorithm.equalsIgnoreCase("random")) {
 				    Collections.shuffle(suitableHosts);
 				}
@@ -462,6 +470,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	        	break;
 	        }
 		}
+
 		if(suitableVolumeStoragePools.isEmpty()){
 			s_logger.debug("No suitable pools found");
 		}
@@ -475,4 +484,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		// TODO Auto-generated method stub
 		return false;
 	}
+    
+    @Override
+	public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
+    	return vm.getHypervisorType() != HypervisorType.BareMetal;
+    }
 }

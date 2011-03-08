@@ -349,7 +349,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	&&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
         	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
         	&&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
-        	&&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))){
+        	&&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
+        	&&hypervisorType != HypervisorType.BareMetal){
         	throw new InvalidParameterValueException("Please specify a valid "+format.toLowerCase());
         }
         	
@@ -379,27 +380,36 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             if (imgfmt == null) {
                 throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
             }
-                        
-            URI uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
-               throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-            }
-            int port = uri.getPort();
-            if (!(port == 80 || port == 443 || port == -1)) {
-            	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
-            }
-            String host = uri.getHost();
-            try {
-            	InetAddress hostAddr = InetAddress.getByName(host);
-            	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
-            		throw new IllegalArgumentException("Illegal host specified in url");
-            	}
-            	if (hostAddr instanceof Inet6Address) {
-            		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-            	}
-            } catch (UnknownHostException uhe) {
-            	throw new IllegalArgumentException("Unable to resolve " + host);
-            }
+              
+            String uriStr;
+        	if (url.startsWith("baremetal://")) {
+        		uriStr = url.substring("baremetal://".length());
+			} else {
+				URI uri = new URI(url);
+				if ((uri.getScheme() == null)
+						|| (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme()
+								.equalsIgnoreCase("file"))) {
+					throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+				}
+
+				int port = uri.getPort();
+				if (!(port == 80 || port == 443 || port == -1)) {
+					throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+				}
+				String host = uri.getHost();
+				try {
+					InetAddress hostAddr = InetAddress.getByName(host);
+					if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
+						throw new IllegalArgumentException("Illegal host specified in url");
+					}
+					if (hostAddr instanceof Inet6Address) {
+						throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+					}
+				} catch (UnknownHostException uhe) {
+					throw new IllegalArgumentException("Unable to resolve " + host);
+				}
+				uriStr = uri.toString();
+			}
             
             // Check that the resource limit for templates/ISOs won't be exceeded
             UserVO user = _userDao.findById(userId);
@@ -427,13 +437,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 }
             }
             
-            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, imgfmt, diskType, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
+            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, imgfmt, diskType, uriStr, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         }
     }
 
-    private VMTemplateVO create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, ImageFormat format,  TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
+    private VMTemplateVO create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, ImageFormat format,  TemplateType type, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
                 
         AccountVO account = _accountDao.findById(accountId);
@@ -441,7 +451,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	throw new IllegalArgumentException("Only admins can create templates in all zones");
         }
         
-        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, isExtractable, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
+        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
         if (zoneId == null) {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 

@@ -195,5 +195,14 @@ public class ApiConstants {
     public static final String GUEST_IP_TYPE = "guestiptype";
     public static final String HOST_TAGS = "hosttags";
     public static final String SSH_KEYPAIR = "keypair";
+    public static final String HOST_CPU_CAPACITY = "hostcpucapacity";
+    public static final String HOST_CPU_NUM = "hostcpunum";
+    public static final String HOST_MEM_CAPACITY = "hostmemcapacity";
+    public static final String HOST_MAC = "hostmac";
+    public static final String HOST_TAG = "hosttag";
+    public static final String PXE_SERVER_TYPE = "pxeservertype";
+    public static final String LINMIN_USERNAME = "linminusername";
+    public static final String LINMIN_PASSWORD = "linminpassword";
+    public static final String LINMIN_APID = "linminapid";
 }
  

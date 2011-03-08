@@ -76,6 +76,7 @@
         </adapters>
         <adapters key="com.cloud.deploy.DeploymentPlanner">
             <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
+            <adapter name="BareMetal Fit" class="com.cloud.deploy.BareMetalPlanner"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
             <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>

@@ -265,4 +265,9 @@ public interface UserVmService {
      * @return List of UserVMs.
      */
     List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
+    
+    HypervisorType getHypervisorTypeOfUserVM(long vmid);
+    
+	UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+			StorageUnavailableException, ResourceAllocationException;
 }

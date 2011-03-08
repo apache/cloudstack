@@ -18,6 +18,7 @@
 package com.cloud.resource;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -43,6 +44,14 @@ public abstract class DiscovererBase implements Discoverer {
         Map<String, String> params = UrlUtil.parseQueryParameters(url);
         
         return null;
+    }
+    
+    @Override
+    public void putParam(Map<String, String> params) {
+    	if (_params == null) {
+    		_params = new HashMap<String, String>();
+    	}
+    	_params.putAll(params);
     }
 
     @Override

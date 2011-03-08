@@ -104,4 +104,10 @@ public class DummyHostDiscoverer implements Discoverer {
 	public void postDiscovery(List<HostVO> hosts, long msId) {
 		//do nothing
 	}
+
+	@Override
+	public void putParam(Map<String, String> params) {
+		// TODO Auto-generated method stub
+		
+	}
 }

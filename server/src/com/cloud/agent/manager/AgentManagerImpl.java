@@ -63,6 +63,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.StartupProxyCommand;
+import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
@@ -750,14 +751,45 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		String url = cmd.getUrl();
 		String username = cmd.getUsername();
 		String password = cmd.getPassword();
+		Long memCapacity = cmd.getMemCapacity();
+		Long cpuCapacity = cmd.getCpuCapacity();
+		Long cpuNum = cmd.getCpuNum();
+		String mac = cmd.getMac();
+		String hostTag = cmd.getHostTag();
+		Map<String, String>bareMetalParams = new HashMap<String, String>();
+		
 		// this is for standalone option
 		if (clusterName == null && clusterId == null) {
 			clusterName = "Standalone-" + url;
 		}
+		
+		if (cmd.getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.BareMetal.toString())) {
+			if (memCapacity == null) {
+				memCapacity = Long.valueOf(0);
+			}
+			if (cpuCapacity == null) {
+				cpuCapacity = Long.valueOf(0);
+			}
+			if (cpuNum == null) {
+				cpuNum = Long.valueOf(0);
+			}
+			if (mac == null) {
+				mac = "unknown";
+			}
+			
+			bareMetalParams.put("cpuNum", cpuNum.toString());
+			bareMetalParams.put("cpuCapacity", cpuCapacity.toString());
+			bareMetalParams.put("memCapacity", memCapacity.toString());
+			bareMetalParams.put("mac", mac);
+			if (hostTag != null) {
+				bareMetalParams.put("hostTag", hostTag);
+			}
+		}
+		
 		List<String> hostTags = cmd.getHostTags();
 		
-		return discoverHosts(dcId, podId, clusterId, clusterName, url,
-				username, password, cmd.getHypervisor(), hostTags);
+		return discoverHostsFull(dcId, podId, clusterId, clusterName, url,
+				username, password, cmd.getHypervisor(), hostTags, bareMetalParams);
 	}
 
 	@Override
@@ -774,6 +806,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId,
 			String clusterName, String url, String username, String password,
 			String hypervisorType, List<String> hostTags) throws IllegalArgumentException,
+			DiscoveryException, InvalidParameterValueException {
+		return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, null);
+	}
+	
+	
+	private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId,
+			String clusterName, String url, String username, String password,
+			String hypervisorType, List<String>hostTags, Map<String, String>params) throws IllegalArgumentException,
 			DiscoveryException, InvalidParameterValueException {
 		URI uri = null;
 
@@ -868,6 +908,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		boolean isHypervisorTypeSupported = false;
 		while (en.hasMoreElements()) {
 			Discoverer discoverer = en.nextElement();
+			if (params != null) {
+				discoverer.putParam(params);
+			}
+			
 			if (!discoverer.matchHypervisor(hypervisorType)) {
 				continue;
 			}
@@ -2356,6 +2400,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			type = Host.Type.ExternalFirewall;
 		} else if (startup instanceof StartupExternalLoadBalancerCommand) {
 			type = Host.Type.ExternalLoadBalancer;
+		} else if (startup instanceof StartupPxeServerCommand) {
+			type = Host.Type.PxeServer;
 		} else {
 			assert false : "Did someone add a new Startup command?";
 		}
@@ -2690,7 +2736,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			// If this command is from a KVM agent, or from an agent that has a
 			// null hypervisor type, don't do the CIDR check
 			if (hypervisorType == null || hypervisorType == HypervisorType.KVM
-					|| hypervisorType == HypervisorType.VMware) {
+					|| hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal) {
 				doCidrCheck = false;
 			}
 
