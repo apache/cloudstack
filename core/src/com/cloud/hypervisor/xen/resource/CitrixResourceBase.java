@@ -1,5 +1,4 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -2066,6 +2065,25 @@ public abstract class CitrixResourceBase implements ServerResource {
         } else {
             s_logger.warn(tmp[1]);
             throw new CloudRuntimeException(tmp[1]);
+        }
+    }
+    
+    String createTemplateFromSnapshot(Connection conn, String templatePath, String snapshotPath) {
+        String results = callHostPluginAsync(conn, "vmopspremium", "create_privatetemplate_from_snapshot",
+                2 * 60 * 60 * 1000, "templatePath", templatePath, "snapshotPath", snapshotPath);
+        
+        if (results == null || results.isEmpty()) {
+            String msg = "create_privatetemplate_from_snapshot return null";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        String[] tmp = results.split("#");
+        String status = tmp[0];
+        if (status.equals("0")) {
+            return results;
+        } else {
+            s_logger.warn(results);
+            throw new CloudRuntimeException(results);
         }
     }
     
@@ -4812,7 +4830,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
             } else {
                 try {
-                    String volumePath = mountpoint + volumeUUID + ".vhd";
+                    String volumePath = mountpoint + "/" + volumeUUID + ".vhd";
                     String uuid = copy_vhd_from_secondarystorage(conn, volumePath, srUuid);
                     return new CopyVolumeAnswer(cmd, true, null, srUuid, uuid);
                 } finally {
@@ -5122,6 +5140,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 s_logger.warn(details);
                 return new CreatePrivateTemplateAnswer(cmd, false, details);
             }
+
             VDI volume = getVDIbyUuid(conn, volumeUUID);
             // create template SR
             URI tmpltURI = new URI(secondaryStoragePoolURL + "/" + installPath);
@@ -5134,13 +5153,13 @@ public abstract class CitrixResourceBase implements ServerResource {
                 tmpltVDI.setNameLabel(conn, userSpecifiedName);
             }
 
-            String tmpltSrUUID = tmpltSR.getUuid(conn);
             String tmpltUUID = tmpltVDI.getUuid(conn);
             String tmpltFilename = tmpltUUID + ".vhd";
             long virtualSize = tmpltVDI.getVirtualSize(conn);
             long physicalSize = tmpltVDI.getPhysicalUtilisation(conn);
             // create the template.properties file
-            result = postCreatePrivateTemplate(conn, tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, templateId);
+            String templatePath = secondaryStorageMountPath + "/" + installPath;
+            result = postCreatePrivateTemplate(conn, templatePath, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, templateId);
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
             }
@@ -5182,34 +5201,23 @@ public abstract class CitrixResourceBase implements ServerResource {
                 s_logger.warn(details);
                 return new CreatePrivateTemplateAnswer(cmd, false, details);
             }
+            String templatePath = secondaryStorageMountPath + "/" + installPath;
             // create snapshot SR
-            URI snapshotURI = new URI(secondaryStoragePoolURL + "/snapshots/" + accountId + "/" + volumeId );
-            snapshotSR = createNfsSRbyURI(conn, snapshotURI, false);
-            snapshotSR.scan(conn);
-            VDI snapshotVDI = getVDIbyUuid(conn, backedUpSnapshotUuid);
-            
-            // create template SR
-            URI tmpltURI = new URI(secondaryStoragePoolURL + "/" + installPath);
-            tmpltSR = createNfsSRbyURI(conn, tmpltURI, false);
-            // copy snapshotVDI to template SR
-            VDI tmpltVDI = cloudVDIcopy(conn, snapshotVDI, tmpltSR);
-            
-            String tmpltSrUUID = tmpltSR.getUuid(conn);
-            String tmpltUUID = tmpltVDI.getUuid(conn);
-            String tmpltFilename = tmpltUUID + ".vhd";
-            long virtualSize = tmpltVDI.getVirtualSize(conn);
-            long physicalSize = tmpltVDI.getPhysicalUtilisation(conn);
+            String snapshotPath = secondaryStorageMountPath + "/snapshots/" + accountId + "/" + volumeId + "/" + backedUpSnapshotUuid + ".vhd";
+            String results = createTemplateFromSnapshot(conn, templatePath, snapshotPath);
+            String[] tmp = results.split("#");
+            String tmpltUuid = tmp[1];
+            long physicalSize = Long.parseLong(tmp[2]);
+            long virtualSize = Long.parseLong(tmp[3]) * 1024 * 1024;
+            String tmpltFilename = tmpltUuid + ".vhd";
 
             // create the template.properties file
-            result = postCreatePrivateTemplate(conn, tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, newTemplateId);
+            result = postCreatePrivateTemplate(conn, templatePath, tmpltFilename, tmpltUuid, userSpecifiedName, null, physicalSize, virtualSize, newTemplateId);
             if (!result) {
-                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + templatePath);
             } 
             installPath = installPath + "/" + tmpltFilename;
-            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUUID, ImageFormat.VHD);
-        } catch (XenAPIException e) {
-            details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
-            s_logger.error(details, e);
+            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUuid, ImageFormat.VHD);
         } catch (Exception e) {
             details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
             s_logger.error(details, e);
@@ -5339,8 +5347,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
 
-        // By default, assume the command has failed and set the params to be
-        // passed to CreateVolumeFromSnapshotAnswer appropriately
         boolean result = false;
         // Generic error message.
         String details = null;
@@ -5359,18 +5365,10 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             // Get the absolute path of the snapshot on the secondary storage.
             URI snapshotURI = new URI(secondaryStoragePoolURL + "/snapshots/" + accountId + "/" + volumeId );
-            
-            snapshotSR = createNfsSRbyURI(conn, snapshotURI, false);
-            snapshotSR.scan(conn);
-            VDI snapshotVDI = getVDIbyUuid(conn, backedUpSnapshotUuid);
-
-            VDI volumeVDI = cloudVDIcopy(conn, snapshotVDI, primaryStorageSR);
-            
-            volumeUUID = volumeVDI.getUuid(conn);
-            
-            
+            String snapshotPath = snapshotURI.getHost() + ":" + snapshotURI.getPath() + "/" + backedUpSnapshotUuid + ".vhd";
+            String srUuid = primaryStorageSR.getUuid(conn);           
+            volumeUUID = copy_vhd_from_secondarystorage(conn, snapshotPath, srUuid);
             result = true;
-
         } catch (XenAPIException e) {
             details += " due to " + e.toString();
             s_logger.warn(details, e);
@@ -5640,6 +5638,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
+    
     protected boolean createSecondaryStorageFolder(Connection conn, String remoteMountPath, String newFolder) {
         String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder);
         return (result != null);
@@ -5650,7 +5649,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         return (result != null);
     }
 
-    protected boolean postCreatePrivateTemplate(Connection conn, String tmpltSrUUID,String tmpltFilename, String templateName, String templateDescription, String checksum, long size, long virtualSize, long templateId) {
+    protected boolean postCreatePrivateTemplate(Connection conn, String templatePath, String tmpltFilename, String templateName, String templateDescription, String checksum, long size, long virtualSize, long templateId) {
 
         if (templateDescription == null) {
             templateDescription = "";
@@ -5660,7 +5659,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             checksum = "";
         }
 
-        String result = callHostPluginWithTimeOut(conn, "vmopsSnapshot", "post_create_private_template", 110*60, "tmpltSrUUID", tmpltSrUUID, "templateFilename", tmpltFilename, "templateName", templateName, "templateDescription", templateDescription,
+        String result = callHostPluginWithTimeOut(conn, "vmopsSnapshot", "post_create_private_template", 110*60, "templatePath", templatePath, "templateFilename", tmpltFilename, "templateName", templateName, "templateDescription", templateDescription,
                 "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
 
         boolean success = false;
