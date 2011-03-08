@@ -73,40 +73,45 @@ fi
 
 VHDUTIL="/opt/xensource/bin/vhd-util"
 
-copyvhd()
+upgradeSnapshot()
 {
-  local desvhd=$1
-  local srcvhd=$2
-  local parent=`$VHDUTIL query -p -n $srcvhd`
+  local ssvhd=$1
+  local parent=`$VHDUTIL query -p -n $ssvhd`
   if [ $? -ne 0 ]; then
-    echo "30#failed to query $srcvhd"
+    echo "30#failed to query $ssvhd"
     cleanup
     exit 0
   fi
   if [ "${parent##*vhd has}" = " no parent" ]; then
-    dd if=$srcvhd of=$desvhd bs=2M     
+    dd if=$templatevhd of=$snapshotdir/$templatefilename bs=2M 
     if [ $? -ne 0 ]; then
-      echo "31#failed to dd $srcvhd to $desvhd"
-      cleanup
-     exit 0
-    fi
-  else
-    copyvhd $desvhd $parent
-    $VHDUTIL coalesce -p $desvhd -n $srcvhd
-    if [ $? -ne 0 ]; then
-      echo "32#failed to coalesce  $desvhd to $srcvhd"
+      echo "31#failed to dd $templatevhd to $snapshotdir/$templatefilenamed"
       cleanup
       exit 0
     fi
+
+    $VHDUTIL modify -p $snapshotdir/$templatefilename -n $ssvhd
+    if [ $? -ne 0 ]; then
+      echo "32#failed to set parent of $ssvhd to $snapshotdir/$templatefilenamed"
+      cleanup
+      exit 0
+    fi
+
+    rm -rf $parent
+  else
+    upgradeSnapshot $parent
   fi
 }
 
-templateuuid=$(uuidgen -r)
-desvhd=$templatedir/$templateuuid.vhd
-srcvhd=$snapshotdir/$vhdfilename
-copyvhd $desvhd $srcvhd
-virtualSize=`$VHDUTIL query -v -n $desvhd`
-physicalSize=`ls -l $desvhd | awk '{print $5}'`
+templatevhd=$(ls $templatedir/*.vhd)
+if [ $? -ne 0 ]; then
+  echo "8#template vhd doesn't exist for $templateurl"
+  cleanup
+  exit 0
+fi
+templatefilename=${templatevhd##*/}
+snapshotvhd=$snapshotdir/$vhdfilename
+upgradeSnapshot $snapshotvhd
 cleanup
-echo "0#$templateuuid#$physicalSize#$virtualSize"
+echo "0#success"
 exit 0

@@ -95,6 +95,10 @@ public class SnapshotVO implements Snapshot {
     @Enumerated(value=EnumType.STRING)
     HypervisorType  hypervisorType;
     
+    @Expose
+    @Column(name="version")
+    String version;
+    
     public SnapshotVO() { }
 
     public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
@@ -111,8 +115,10 @@ public class SnapshotVO implements Snapshot {
         this.status = Status.Creating;
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
+        this.version = "2.2";
     }
 
+    
     @Override
     public Long getId() {
         return id;
@@ -196,6 +202,14 @@ public class SnapshotVO implements Snapshot {
     }
     public void setTypeDescription(String typeDescription) {
         this.typeDescription = typeDescription;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public Date getCreated() {

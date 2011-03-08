@@ -117,6 +117,7 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -441,6 +442,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
         } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
             return execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
+        } else if (cmd instanceof UpgradeSnapshotCommand) {
+            return execute((UpgradeSnapshotCommand) cmd);
         } else if (cmd instanceof GetStorageStatsCommand) {
             return execute((GetStorageStatsCommand) cmd);
         } else if (cmd instanceof PrimaryStorageDownloadCommand) {
@@ -2065,6 +2068,25 @@ public abstract class CitrixResourceBase implements ServerResource {
         } else {
             s_logger.warn(tmp[1]);
             throw new CloudRuntimeException(tmp[1]);
+        }
+    }
+    
+    String upgradeSnapshot(Connection conn, String templatePath, String snapshotPath) {
+        String results = callHostPluginAsync(conn, "vmopspremium", "upgrade_snapshot",
+                2 * 60 * 60 * 1000, "templatePath", templatePath, "snapshotPath", snapshotPath);
+        
+        if (results == null || results.isEmpty()) {
+            String msg = "upgrade_snapshot return null";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        String[] tmp = results.split("#");
+        String status = tmp[0];
+        if (status.equals("0")) {
+            return results;
+        } else {
+            s_logger.warn(results);
+            throw new CloudRuntimeException(results);
         }
     }
     
@@ -5177,6 +5199,35 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         return new CreatePrivateTemplateAnswer(cmd, result, details);
     }
+    
+    protected Answer execute(final UpgradeSnapshotCommand cmd) {
+        
+        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String backedUpSnapshotUuid = cmd.getSnapshotUuid();
+        Long volumeId = cmd.getVolumeId();
+        Long accountId = cmd.getAccountId();
+        Long templateId = cmd.getTemplateId();
+        Long tmpltAcountId = cmd.getTmpltAccountId();
+        String version = cmd.getVersion();
+        
+        if ( !version.equals("2.1") ) {
+            return new Answer(cmd, true, "success");
+        }
+        try {
+            Connection conn = getConnection();
+            URI uri = new URI(secondaryStoragePoolURL);
+            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            String snapshotPath = secondaryStorageMountPath + "/snapshots/" + accountId + "/" + volumeId + "/" + backedUpSnapshotUuid + ".vhd";
+            String templatePath = secondaryStorageMountPath + "/template/tmpl/" + tmpltAcountId + "/" + templateId;
+            upgradeSnapshot(conn, templatePath, snapshotPath);
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String details = "upgrading snapshot " + backedUpSnapshotUuid + " failed due to " + e.toString();
+            s_logger.error(details, e);
+            
+        }
+        return new Answer(cmd, false, "failure");
+    }
 
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
         Connection conn = getConnection();
@@ -5186,11 +5237,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
         Long newTemplateId = cmd.getNewTemplateId();
         String userSpecifiedName = cmd.getTemplateName();
-
         // By default, assume failure
         String details = null;
-        SR snapshotSR = null;
-        SR tmpltSR = null; 
         boolean result = false;
         try {
             URI uri = new URI(secondaryStoragePoolURL);
@@ -5219,12 +5267,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             installPath = installPath + "/" + tmpltFilename;
             return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUuid, ImageFormat.VHD);
         } catch (Exception e) {
-            details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
+            details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.toString();
             s_logger.error(details, e);
-        } finally {
-            // Remove the secondary storage SR
-            removeSR(conn, snapshotSR);
-            removeSR(conn, tmpltSR);
         }
         return new CreatePrivateTemplateAnswer(cmd, result, details);
     }

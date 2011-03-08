@@ -52,6 +52,7 @@ import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -444,7 +445,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create volume from snapshotId: " + snapshot.getId() + " on storage pool " + pool.getName());
                 }
-
+                
                 // Get the newly created VDI from the snapshot.
                 // This will return a null volumePath if it could not be created
                 Pair<String, String> volumeDetails = createVDIFromSnapshot(UserContext.current().getCallerUserId(), snapshot, pool);
@@ -543,21 +544,52 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     protected Pair<String, String> createVDIFromSnapshot(long userId, SnapshotVO snapshot, StoragePoolVO pool) {
         String vdiUUID = null;
-
+        Long snapshotId = snapshot.getId();
         Long volumeId = snapshot.getVolumeId();
-        VolumeVO volume = _volsDao.findById(volumeId);
         String primaryStoragePoolNameLabel = pool.getUuid(); // pool's uuid is actually the namelabel.
-        String secondaryStoragePoolUrl = getSecondaryStorageURL(volume.getDataCenterId());
-        Long dcId = volume.getDataCenterId();
-        long accountId = volume.getAccountId();
+        Long dcId = snapshot.getDataCenterId();
+        String secondaryStoragePoolUrl = getSecondaryStorageURL(dcId);
+        long accountId = snapshot.getAccountId();
 
-        String backedUpSnapshotUuid = snapshot.getBackupSnapshotId();
-
+        String backedUpSnapshotUuid = snapshot.getBackupSnapshotId();       
+        snapshot = _snapshotDao.findById(snapshotId);
+        if ( snapshot.getVersion() == "2.1" ) {         
+            VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
+            if ( volume == null ) {
+                throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unable to find orignal volume:" + volumeId + ", try it later ");
+            }
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(volume.getTemplateId());
+            if ( template == null ) {
+                throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unalbe to find orignal template :" + volume.getTemplateId() + ", try it later ");
+            }
+            Long templateId = template.getId();
+            Long tmpltAccountId = template.getAccountId();
+            if( ! _volsDao.lockInLockTable(volumeId.toString(), 10)) {       
+                throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to volume:" + volumeId + " is being used, try it later ");
+            }
+            UpgradeSnapshotCommand cmd = new UpgradeSnapshotCommand(null, secondaryStoragePoolUrl, dcId, accountId,
+                    volumeId,templateId, tmpltAccountId, null, snapshot.getBackupSnapshotId(), snapshot.getName(), "2.1" );
+            Answer answer = null;
+            try {                              
+                answer = sendToPool(pool, cmd);
+            } catch (StorageUnavailableException e) {
+            } finally {
+                _volsDao.unlockFromLockTable(volumeId.toString());
+            }
+            if ((answer != null) && answer.getResult()) {
+                _snapshotDao.updateSnapshotVersion(volumeId, "2.1", "2.2");
+            } else {
+                return new Pair<String, String>(null, "Unable to upgrade snapshot from 2.1 to 2.2 for " + snapshot.getId());
+            }
+        }
         CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel,
                 secondaryStoragePoolUrl, dcId, accountId, volumeId, backedUpSnapshotUuid, snapshot.getName());
 
-        String basicErrMsg = "Failed to create volume from " + snapshot.getName() + " for volume: " + volume.getId();
+        String basicErrMsg = "Failed to create volume from " + snapshot.getName();
         CreateVolumeFromSnapshotAnswer answer;
+        if( ! _volsDao.lockInLockTable(volumeId.toString(), 10)) {       
+            throw new CloudRuntimeException("failed to create volume from " + snapshotId + " due to original volume:" + volumeId + " is being used, try it later ");
+        }
         try {
             answer = (CreateVolumeFromSnapshotAnswer)sendToPool(pool, createVolumeFromSnapshotCommand);
             if (answer != null && answer.getResult()) {
@@ -567,8 +599,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         } catch (StorageUnavailableException e) {
             s_logger.error(basicErrMsg);
+        } finally {
+            _volsDao.unlockFromLockTable(volumeId.toString());
         }
-
         return new Pair<String, String>(vdiUUID, basicErrMsg);
     }
 

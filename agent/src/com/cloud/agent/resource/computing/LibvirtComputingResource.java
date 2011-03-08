@@ -126,6 +126,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -842,6 +843,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CreateVolumeFromSnapshotCommand) cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
                 return execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
+            } else if (cmd instanceof UpgradeSnapshotCommand) {
+                return execute((UpgradeSnapshotCommand) cmd);
             } else if (cmd instanceof ModifyStoragePoolCommand) {
                 return execute((ModifyStoragePoolCommand) cmd);
             } else if (cmd instanceof SecurityIngressRulesCmd) {
@@ -1174,6 +1177,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	} finally {
     		
     	}
+    }
+    
+    
+    protected Answer execute(final UpgradeSnapshotCommand cmd) {
+        
+        return new Answer(cmd, true, "success");
     }
     
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {

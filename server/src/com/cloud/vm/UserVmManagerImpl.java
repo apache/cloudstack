@@ -37,8 +37,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.SnapshotCommand;
@@ -1380,6 +1382,39 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new CloudRuntimeException("Unable to find storage pools in zone " + zoneId);
             }
             pool = storagePools.get(0);
+            if ( snapshot.getVersion() == "2.1" ) {
+                VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
+                if ( volume == null ) {
+                    throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unable to find orignal volume:" + volumeId + ", try it later ");
+                }
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(volume.getTemplateId());
+                if ( template == null ) {
+                    throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unalbe to find orignal template :" + volume.getTemplateId() + ", try it later ");
+                }
+                Long origTemplateId = template.getId();
+                Long origTmpltAccountId = template.getAccountId();
+                if( ! _volsDao.lockInLockTable(volumeId.toString(), 10)) {       
+                    throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to volume:" + volumeId + " is being used, try it later ");
+                }
+                cmd = new UpgradeSnapshotCommand(null, secondaryStorageURL, dcId, accountId,
+                        volumeId, origTemplateId, origTmpltAccountId, null, snapshot.getBackupSnapshotId(), snapshot.getName(), "2.1" );
+                if( ! _volsDao.lockInLockTable(volumeId.toString(), 10)) {       
+                    throw new CloudRuntimeException("Creating template failed due to volume:" + volumeId + " is being used, try it later ");
+                }
+                Answer answer = null;
+                try {
+                    answer = _storageMgr.sendToPool(pool, cmd);
+                    cmd = null;
+                } catch (StorageUnavailableException e) {
+                } finally {
+                    _volsDao.unlockFromLockTable(volumeId.toString());
+                }
+                if ((answer != null) && answer.getResult()) {
+                    _snapshotDao.updateSnapshotVersion(volumeId, "2.1", "2.2");
+                } else {
+                    throw new CloudRuntimeException("Unable to upgrade snapshot");
+                }
+            }
             cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(),
                     secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
                     origTemplateInstallPath, templateId, name);

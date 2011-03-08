@@ -38,6 +38,7 @@ import com.cloud.utils.db.Transaction;
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
     public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
     private static final String GET_LAST_SNAPSHOT = "SELECT id FROM snapshots where volume_id = ? AND id != ? AND path IS NOT NULL ORDER BY created DESC";
+    private static final String UPDATE_SNAPSHOT_VERSION = "UPDATE snapshots SET version = ? WHERE volume_id = ? AND version = ?";
     
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
@@ -128,6 +129,21 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return 0;
     }
 
-
-	
+    @Override
+    public long updateSnapshotVersion(long volumeId, String from, String to) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        String sql = UPDATE_SNAPSHOT_VERSION;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setString(1, to);
+            pstmt.setLong(2, volumeId);
+            pstmt.setString(3, from);
+            pstmt.executeUpdate();
+            return 1;
+        } catch (Exception ex) {
+            s_logger.error("error getting last snapshot", ex);
+        }
+        return 0;
+    }
 }

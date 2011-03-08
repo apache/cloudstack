@@ -413,6 +413,7 @@ CREATE TABLE `cloud`.`snapshots` (
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
   `prev_snap_id` bigint unsigned COMMENT 'Id of the most recent snapshot',
   `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',
+  `version` varchar(32) COMMENT 'snapshot version',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
