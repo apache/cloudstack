@@ -2624,8 +2624,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		if (p == null) {
 			if (type != Host.Type.SecondaryStorage
 					&& type != Host.Type.ExternalFirewall
-					&& type != Host.Type.ExternalLoadBalancer
-					&& type != Host.Type.PxeServer) {
+					&& type != Host.Type.ExternalLoadBalancer) {
 
 				/*
 				 * s_logger.info("Unable to find the pod so we are creating one."
