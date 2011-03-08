@@ -129,6 +129,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
@@ -149,6 +150,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -205,6 +207,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject protected UserStatisticsDao _userStatsDao = null;
     @Inject protected VMTemplateDao _templateDao =  null;
     @Inject protected VMTemplateHostDao _templateHostDao = null;
+    @Inject protected VMTemplateZoneDao _templateZoneDao = null;
     @Inject protected DomainDao _domainDao = null;
     @Inject protected ResourceLimitDao _limitDao = null;
     @Inject protected UserVmDao _vmDao = null;
@@ -2028,7 +2031,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (template.getTemplateType().equals(TemplateType.SYSTEM)) {
         	throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
         }
-        
+        List<VMTemplateZoneVO> listZoneTemplate = _templateZoneDao.listByZoneTemplate(zone.getId(),template.getId());
+        if (listZoneTemplate==null || listZoneTemplate.isEmpty()){
+              	throw new InvalidParameterValueException("The template " +template.getId()+ " is not available for use");
+        }   
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
         if (isIso && !template.isBootable()) {
             throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());

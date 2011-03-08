@@ -376,12 +376,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
 
         if (onlyReady){
-        	sql += " AND thr.download_state = '" +Status.DOWNLOADED.toString() + "'";
+        	sql += " AND thr.download_state = '" +Status.DOWNLOADED.toString() + "'" + " AND thr.destroyed=0 ";
         	if (zoneId != null){
         		sql += " AND h.data_center_id = " +zoneId;
             }
         }else if (zoneId != null){
-        	sql += " AND tzr.zone_id = " +zoneId;
+        	sql += " AND tzr.zone_id = " +zoneId+ " AND tzr.removed is null" ;
+        }else{
+        	sql += " AND tzr.removed is null ";
         }
         if (!showDomr){
         	sql += " AND t.type != '" +Storage.TemplateType.SYSTEM.toString() + "'";
