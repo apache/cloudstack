@@ -183,4 +183,5 @@ public interface NetworkManager extends NetworkService {
     
     boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
+    String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
 }

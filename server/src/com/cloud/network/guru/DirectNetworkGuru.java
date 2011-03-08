@@ -145,6 +145,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
         }
+        
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
     }
@@ -154,7 +155,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         if (profile != null) {
             profile.setDns1(dc.getDns1());
-            profile.setDns2(dc.getDns2());
+            profile.setDns2(dc.getDns2());            
         } 
     }
 

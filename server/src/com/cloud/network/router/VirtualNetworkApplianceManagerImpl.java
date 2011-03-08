@@ -866,24 +866,25 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         buf.append(" template=domP type=" + type);
         buf.append(" name=").append(profile.getHostName());
         NicProfile controlNic = null;
+        String defaultDns1 = null;
+        String defaultDns2 = null;
 
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
             buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             if (nic.isDefaultNic()) {
-                buf.append(" gateway=").append(nic.getGateway());
-                buf.append(" dns1=").append(nic.getDns1());
-                if (nic.getDns2() != null) {
-                    buf.append(" dns2=").append(nic.getDns2());
-                }
+                buf.append(" gateway=").append(nic.getGateway());  
+                defaultDns1 = nic.getDns1();
+                defaultDns2 = nic.getDns2();
+                
                 if (dc.getNetworkType() == NetworkType.Basic) {
                     long cidrSize = NetUtils.getCidrSize(nic.getNetmask());
                     String cidr = NetUtils.getCidrSubNet(nic.getGateway(), cidrSize);
                     if (cidr != null) {
                         dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
                     }
-                }
+                }   
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
@@ -920,12 +921,24 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String domain = network.getNetworkDomain();
         if (domain != null) {
             buf.append(" domain=" + domain);
-        }
+        } 
         
         if (!network.isDefault() && network.getGuestType() == GuestIpType.Direct) {
             buf.append(" defaultroute=false");
+            
+            String virtualNetworkElementNicIP = _networkMgr.getIpOfNetworkElementInVirtualNetwork(network.getAccountId(), network.getDataCenterId());
+            if (!network.isShared() && virtualNetworkElementNicIP != null) {
+                defaultDns1 = virtualNetworkElementNicIP;
+            } else {
+                s_logger.debug("No Virtual network found for account id=" + network.getAccountId() + " so setting dns to the dns of the network id=" + network.getId());
+            }
         } else {
             buf.append(" defaultroute=true");
+        }
+        
+        buf.append(" dns1=").append(defaultDns1);
+        if (defaultDns2 != null) {
+            buf.append(" dns2=").append(defaultDns2);
         }
 
         if (s_logger.isDebugEnabled()) {

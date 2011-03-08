@@ -14,6 +14,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value=NicDao.class)
 public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
@@ -26,6 +27,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("instance", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.and("vmType", AllFieldsSearch.entity().getVmType(), Op.EQ);
         AllFieldsSearch.done();
         
         IpSearch = createSearchBuilder(String.class);
@@ -92,5 +94,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.addAnd("networkId", SearchCriteria.Op.EQ, networkId);
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
         return findOneIncludingRemovedBy(sc);
+    }
+    
+    @Override
+    public NicVO findByNetworkIdAndType(long networkId, VirtualMachine.Type vmType) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("vmType", vmType);
+        return findOneBy(sc);
     }
 }

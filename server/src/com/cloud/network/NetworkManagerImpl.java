@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -137,6 +138,8 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -1151,6 +1154,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
+        
+        // we have to implement default nics first - to ensure that default network elements start up first in multiple nics case)
+        // (need for setting DNS on Dhcp to domR's Ip4 address)
+        Collections.sort(nics, new Comparator<NicVO>() {
+            
+            public int compare(NicVO nic1, NicVO nic2){
+                boolean isDefault1 = getNetwork(nic1.getNetworkId()).isDefault();
+                boolean isDefault2 = getNetwork(nic2.getNetworkId()).isDefault();
+               
+                return (isDefault1 ^ isDefault2) ? ((isDefault1 ^ true) ? 1 : -1) : 0;
+            }
+        });
+        
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
             NetworkGuru guru = implemented.first();
@@ -2587,5 +2603,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return success;
+    }
+    
+    @Override
+    public String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId) {
+   
+        List<NetworkVO> virtualNetworks = _networksDao.listBy(accountId, dataCenterId , GuestIpType.Virtual);
+        
+        if (virtualNetworks.isEmpty()) {
+            s_logger.trace("Unable to find default Virtual network account id=" + accountId);
+            return null;
+        }
+        
+        NetworkVO virtualNetwork = virtualNetworks.get(0);
+        
+        NicVO networkElementNic = _nicDao.findByNetworkIdAndType(virtualNetwork.getId(), Type.DomainRouter);
+        
+        if (networkElementNic != null) {
+            return networkElementNic.getIp4Address();
+        } else {
+            s_logger.warn("Unable to set find network element for the network id=" + virtualNetwork.getId());
+            return null;
+        }
     }
 }

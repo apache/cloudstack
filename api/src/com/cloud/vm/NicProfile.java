@@ -203,6 +203,7 @@ public class NicProfile {
         this.isolationUri = isolationUri;
         this.netmask = nic.getNetmask();
         this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
+        this.vmId = nic.getInstanceId();
         
         if (networkRate != null) {
             this.networkRate = networkRate;
