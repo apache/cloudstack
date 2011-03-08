@@ -69,7 +69,10 @@
   <target name="debug-suspend">
     <java jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
       <jvmarg value="-Dcatalina.home=${tomcat.home}"/>
-      <jvmarg value="-Xdebug"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.port=20400"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
+	  <jvmarg value="-Xdebug"/>
       <jvmarg value="-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y"/>
       <jvmarg value="-ea"/>
       <jvmarg value="-Xms256m"/>
@@ -87,6 +90,9 @@
     <echo message="Start Tomcat" />
     <java dir="${tomcat.home}/bin/" jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
       <jvmarg value="${assertion}"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.port=20400"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
       <jvmarg value="-Xms256m"/>
       <jvmarg value="-Xmx384m"/>
       <jvmarg value="-ea"/>
@@ -97,7 +103,10 @@
   <target name="debug-tomcat">
     <java jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
       <jvmarg value="-Dcatalina.home=${tomcat.home}"/>
-      <jvmarg value="-Xdebug"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.port=20400"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
+	  <jvmarg value="-Xdebug"/>
       <jvmarg value="${debug.jvmarg}"/>
       <jvmarg value="-ea"/>
       <jvmarg value="-Xms256m"/>

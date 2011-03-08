@@ -47,6 +47,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
@@ -566,6 +567,12 @@ public class ClusterManagerImpl implements ClusterManager {
 		
 		for(ManagementServerHostVO mshost : removedNodeList) {
 			activePeers.remove(mshost.getId());
+			
+			try {
+				JmxUtil.unregisterMBean("ClusterManager", "Node " + mshost.getId());
+			} catch(Exception e) {
+				s_logger.warn("Unable to deregiester cluster node from JMX monitoring due to exception " + e.toString());
+			}
 		}
 		
 		List<ManagementServerHostVO> newNodeList = new ArrayList<ManagementServerHostVO>();
@@ -577,6 +584,12 @@ public class ClusterManagerImpl implements ClusterManager {
                     s_logger.debug("Detected management node joined, id:" + mshost.getId() + ", nodeIP:" + mshost.getServiceIP());
                 }
 				newNodeList.add(mshost);
+				
+				try {
+					JmxUtil.registerMBean("ClusterManager", "Node " + mshost.getId(), new ClusterManagerMBeanImpl(mshost));
+				} catch(Exception e) {
+					s_logger.warn("Unable to regiester cluster node into JMX monitoring due to exception " + e.toString());
+				}
 			}
 		}
 		
@@ -764,7 +777,7 @@ public class ClusterManagerImpl implements ClusterManager {
 		if(_currentServiceAdapter == null) {
             throw new ConfigurationException("Unable to set current cluster service adapter");
         }
-        
+		
         if(s_logger.isInfoEnabled()) {
             s_logger.info("Cluster manager is configured.");
         }

@@ -106,9 +106,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -2244,9 +2244,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
         UserVmVO vm = profile.getVirtualMachine();
 	    Account owner = _accountDao.findById(vm.getAccountId());
+
+	    if (owner == null) {
+	        throw new PermissionDeniedException("The owner of " + vm + " does not exist: " + vm.getAccountId());
+	    }
 	    
-	    if (owner == null || owner.getState() == Account.State.disabled) {
-	        throw new PermissionDeniedException("The owner of " + vm + " either does not exist or is disabled: " + vm.getAccountId());
+	    if (owner.getState() == Account.State.disabled) {
+	        throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
 	    }
 	    
 		VirtualMachineTemplate template = profile.getTemplate();
