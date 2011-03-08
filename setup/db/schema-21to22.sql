@@ -187,7 +187,7 @@ CREATE TABLE `cloud`.`cluster_details` (
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `id` bigint unsigned NOT NULL UNIQUE auto_increment;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `one_to_one_nat` int(1) unsigned NOT NULL default '0';
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `vm_id` bigint unsigned DEFAULT NULL;
-ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `state` char(32) NOT NULL DEFAULT 'FREE';
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `state` char(32) NOT NULL DEFAULT 'Free';
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `mac_address` bigint unsigned NOT NULL;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `source_network_id` bigint unsigned NOT NULL;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `network_id` bigint unsigned;

@@ -141,16 +141,18 @@ public class Upgrade217to22 implements DbUpgrade {
         }
     }
     
-    protected void upgradeUserIpAddress(Connection conn, long dcId, long networkId) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("UPDATE user_ip_address INNER JOIN vlan ON user_ip_address.vlan_db_id=vlan.id SET source_network_id=? WHERE user_ip_address.data_center_id=? AND vlan.vlan_type='VirtualNetwork'");
+    protected void upgradeUserIpAddress(Connection conn, long dcId, long networkId, String vlanType) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement("UPDATE user_ip_address INNER JOIN vlan ON user_ip_address.vlan_db_id=vlan.id SET source_network_id=? WHERE user_ip_address.data_center_id=? AND vlan.vlan_type=?");
         pstmt.setLong(1, networkId);
         pstmt.setLong(2, dcId);
+        pstmt.setString(3, vlanType);
         pstmt.executeUpdate();
         pstmt.close();
         
-        pstmt = conn.prepareStatement("UPDATE vlan SET network_id = ? WHERE data_center_id=? AND vlan_type='VirtualNetwork'");
+        pstmt = conn.prepareStatement("UPDATE vlan SET network_id = ? WHERE data_center_id=? AND vlan_type=?");
         pstmt.setLong(1, networkId);
         pstmt.setLong(2, dcId);
+        pstmt.setString(3, vlanType);
         pstmt.executeUpdate();
         pstmt.close();
     }
@@ -185,6 +187,16 @@ public class Upgrade217to22 implements DbUpgrade {
             }
             pstmt.executeUpdate();
             pstmt.close();
+            
+            //For basic zone vnet field should be NULL
+            
+            if (_basicZone) {
+                pstmt = conn.prepareStatement("UPDATE data_center SET vnet=?, guest_network_cidr=?");
+                pstmt.setString(1, null);
+                pstmt.setString(2, null);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
             
             pstmt = conn.prepareStatement("SELECT id, guest_network_cidr FROM data_center");
             rs = pstmt.executeQuery();
@@ -245,9 +257,32 @@ public class Upgrade217to22 implements DbUpgrade {
             if (_basicZone) {
                 for (Object[] dc : dcs) {
                     Long dcId = (Long)dc[0];
-                    insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                }
+                    long basicDefaultDirectNetworkId = insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, null, true, null);
                 
+                    //update all public ips with the Default Direct network Id
+                    upgradeUserIpAddress(conn, dcId, basicDefaultDirectNetworkId, "DirectAttached");
+                    
+                    //update Dhcp servers information in domain_router and vm_instance tables; all domRs belong to the same network
+                    pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
+                    pstmt.setLong(1, dcId);
+                    rs = pstmt.executeQuery();
+                    ArrayList<Object[]> routers = new ArrayList<Object[]>();
+                    while (rs.next()) {
+                        Object[] router = new Object[40];
+                        router[0] = rs.getLong(1); // router id
+                        routers.add(router);
+                    }
+                    rs.close();
+                    pstmt.close();
+                    
+                    for (Object[] router : routers) {
+                        pstmt = conn.prepareStatement("UPDATE domain_router SET network_id = ? wHERE id = ? ");
+                        pstmt.setLong(1, basicDefaultDirectNetworkId);
+                        pstmt.setLong(2, (Long)router[0]);
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                    }
+                } 
             } else {
                 for (Object[] dc : dcs) {
                     Long dcId = (Long)dc[0];
@@ -289,7 +324,7 @@ public class Upgrade217to22 implements DbUpgrade {
                         pstmt.close();
                     }
                     
-                    upgradeUserIpAddress(conn, dcId, publicNetworkId);
+                    upgradeUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
                 }
                 
             }
