@@ -5,4 +5,7 @@ public interface ClusterManagerMBean {
 	public String getLastUpdateTime();
 	public String getClusterNodeIP();
 	public String getVersion();
+	public int getHeartbeatInterval();
+	public int getHeartbeatThreshold();
+	public void setHeartbeatThreshold(int threshold);
 }

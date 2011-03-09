@@ -586,7 +586,7 @@ public class ClusterManagerImpl implements ClusterManager {
 				newNodeList.add(mshost);
 				
 				try {
-					JmxUtil.registerMBean("ClusterManager", "Node " + mshost.getId(), new ClusterManagerMBeanImpl(mshost));
+					JmxUtil.registerMBean("ClusterManager", "Node " + mshost.getId(), new ClusterManagerMBeanImpl(this, mshost));
 				} catch(Exception e) {
 					s_logger.warn("Unable to regiester cluster node into JMX monitoring due to exception " + e.toString());
 				}
@@ -808,5 +808,13 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override
 	public int getHeartbeatThreshold() {
     	return this.heartbeatThreshold;
+    }
+    
+    public int getHeartbeatInterval() {
+    	return this.heartbeatInterval;
+    }
+    
+    public void setHeartbeatThreshold(int threshold) {
+		heartbeatThreshold = threshold;
     }
 }

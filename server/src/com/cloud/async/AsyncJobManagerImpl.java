@@ -62,6 +62,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.MacAddress;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -346,6 +347,12 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
             @Override
             public void run() {
                 long jobId = 0;
+                
+                try {
+                	JmxUtil.registerMBean("AsyncJobManager", "Active Job " + job.getId(), new AsyncJobMBeanImpl(job));
+                } catch(Exception e) {
+                	s_logger.warn("Unable to register active job " + job.getId() + " to JMX minotoring");
+                }
 
                 BaseAsyncCmd cmdObj = null;
                 Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -437,6 +444,13 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                         }
                     }
                 } finally {
+                	
+                    try {
+                    	JmxUtil.unregisterMBean("AsyncJobManager", "Active Job " + job.getId());
+                    } catch(Exception e) {
+                    	s_logger.warn("Unable to unregister active job " + job.getId() + " from JMX minotoring");
+                    }
+                	
                     StackMaid.current().exitCleanup();
                     txn.close();
                     NDC.pop();
