@@ -152,7 +152,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             throw new ConfigurationException("There is no upgrade path from " + dbVersion + " to " + currentVersion);
         }
 
-        if (Version.compare(currentVersion, upgrades[upgrades.length - 1].getUpgradedVersion()) == 0) {
+        if (Version.compare(currentVersion, upgrades[upgrades.length - 1].getUpgradedVersion()) != 0) {
             throw new ConfigurationException("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() + " but our management server code version is at " + currentVersion);
         }
         

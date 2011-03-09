@@ -79,7 +79,7 @@ public class AdvanceZone217To221UpgradeTest extends TestCase {
         assert version.equals("2.1.7") : "Version returned is not 2.1.7 but " + version;
         
         try {
-            dao.upgrade("2.1.7", "2.2.1");
+            dao.upgrade("2.1.7", "2.2.3");
         } catch (ConfigurationException e) {
             s_logger.warn("Exception: ", e);
             assert false : "The test failed.  Check logs"; 
