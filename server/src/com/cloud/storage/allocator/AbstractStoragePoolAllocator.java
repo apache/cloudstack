@@ -212,9 +212,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		}
 
 		for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
-			VMTemplateVO templateInPool = _templateDao.findById(templatePoolVO.getTemplateId());
-
-			if ((template != null) && !tmpinstalled && (templateInPool.getId() == template.getId())) {
+			if ((template != null) && !tmpinstalled && (templatePoolVO.getTemplateId() == template.getId())) {
 				tmpinstalled = true;
 			}
 			
