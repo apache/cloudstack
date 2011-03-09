@@ -20,6 +20,10 @@
   <property name="unittest.dir" location="${base.dir}/unittest"/>
   <property name="unittest.target.dir" location="${unittest.dir}/classes"/>
   <property name="unittest.jar.dir" location="${unittest.dir}/jar"/>
+	
+  <condition property="jmxport" value="${jmxport.override}" else="45219">
+    <isset property="jmxport.override" />
+  </condition>
   
   <macrodef name="compile-test">
     <attribute name="top.dir" description="Top Directory of the source.  We will add src to this to get the source code."/>
@@ -69,7 +73,7 @@
   <target name="debug-suspend">
     <java jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
       <jvmarg value="-Dcatalina.home=${tomcat.home}"/>
-      <jvmarg value="-Dcom.sun.management.jmxremote.port=20400"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.port=${jmxport}"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
 	  <jvmarg value="-Xdebug"/>
@@ -90,7 +94,7 @@
     <echo message="Start Tomcat" />
     <java dir="${tomcat.home}/bin/" jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
       <jvmarg value="${assertion}"/>
-      <jvmarg value="-Dcom.sun.management.jmxremote.port=20400"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.port=${jmxport}"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
       <jvmarg value="-Xms256m"/>
@@ -103,7 +107,7 @@
   <target name="debug-tomcat">
     <java jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
       <jvmarg value="-Dcatalina.home=${tomcat.home}"/>
-      <jvmarg value="-Dcom.sun.management.jmxremote.port=20400"/>
+      <jvmarg value="-Dcom.sun.management.jmxremote.port=${jmxport}"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
 	  <jvmarg value="-Xdebug"/>
