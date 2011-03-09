@@ -1258,13 +1258,6 @@ CREATE TABLE `cloud`.`snapshot_policy` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`snapshot_policy_ref` (
-  `snap_id` bigint unsigned NOT NULL,
-  `volume_id` bigint unsigned NOT NULL,
-  `policy_id` bigint unsigned NOT NULL,
-  UNIQUE (snap_id, policy_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE  `cloud`.`snapshot_schedule` (
   `id` bigint unsigned NOT NULL auto_increment,
   `volume_id` bigint unsigned NOT NULL COMMENT 'The volume for which this snapshot is being taken',
