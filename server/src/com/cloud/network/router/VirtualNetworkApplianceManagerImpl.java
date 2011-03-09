@@ -1234,7 +1234,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("dhcp", dhcpCommand);
 
-        if (password != null) {
+        //password should be set only on default network element
+        if (password != null && network.isDefault()) {
             final String encodedPassword = rot13(password);
             SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getName());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());

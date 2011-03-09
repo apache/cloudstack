@@ -1182,18 +1182,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             cluster = _configMgr.getCluster(host.getClusterId());
         }
         DeployDestination dest = new DeployDestination(dc, pod, cluster, host);
-        ReservationContext ctx = new ReservationContextImpl(null, null, caller, account);
             
         try {
-            //implement networks if needed - underlying code will check if network needs to be implemented again.
-            List<? extends Nic> nics = _networkMgr.getNics(vm.getId());
-            
-            for (Nic nic : nics) {
-                if (!_networkMgr.startNetwork(nic.getNetworkId(), dest, ctx)) {
-                    s_logger.warn("Failed to start network id=" + nic.getNetworkId() + " as a part of vm " + vm + " reboot");
-                    throw new CloudRuntimeException("Failed to implement network id=" + nic.getNetworkId() + " as a part of vm " + vm + " reboot");
-                }
-            }
             
             Commands cmds = new Commands(OnError.Revert);
             cmds.addCommand(new RebootCommand(vm.getName()));
