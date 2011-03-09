@@ -26,9 +26,10 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
@@ -83,6 +84,11 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     }
 
     public Long getPublicIpId() {
+        IpAddress ipAddr = _networkService.getIp(publicIpId);
+        if (ipAddr == null || !ipAddr.readyToUse()) {
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipAddr.getId());
+        }
+        
         return publicIpId;
     }
 
@@ -164,13 +170,13 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     }
 
     @Override
-    public long getAccountId() {
-        return UserContext.current().getCaller().getId();
+    public long getAccountId() {  
+        return _networkService.getIp(getPublicIpId()).getAccountId();
     }
 
     @Override
     public long getDomainId() {
-        return UserContext.current().getCaller().getDomainId();
+        return _networkService.getIp(getPublicIpId()).getDomainId();
     }
 
     @Override
