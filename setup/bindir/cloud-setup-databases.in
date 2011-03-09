@@ -270,8 +270,6 @@ try: checkselinux()
 except OSError,e:
 	if e.errno == 2: pass
 	else: raise
-if sys.platform != 'win32': checknetwork()
-
 
 #initialize variables
 if sys.platform != 'win32': ipaddr = firstip(ifaces())
