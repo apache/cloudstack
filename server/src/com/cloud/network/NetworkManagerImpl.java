@@ -1099,33 +1099,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
 
-            boolean success = true;
+            
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to implmenet " + network);
                 }
                 element.implement(network, offering, dest, context);
-                //reapply all the firewall/staticNat/lb rules
-                s_logger.debug("Applying network rules as a part of network " +  network + " implement...");
-                if (!restartNetwork(networkId, false, context)) {
-                    success = false;
-                    s_logger.warn("Failed to reapply network rules as a part of network " + network + " implement");
-                }
             }
             
-            //only when all the network rules got re-implemented successfully, assume that the network is Impelemented
-            if (success) {
-                network.setState(Network.State.Implemented);
-                _networksDao.update(network.getId(), network);
-                implemented.set(guru, network);
-            } else {
-                s_logger.warn("Failed to implement the network " + network + " as some network rules failed to reapply");
-            }
-  
+            //reapply all the firewall/staticNat/lb rules
+            s_logger.debug("Applying network rules as a part of network " +  network + " implement...");
+            if (!restartNetwork(networkId, false, context.getAccount())) {
+                s_logger.warn("Failed to reapply network rules as a part of network " + network + " implement");
+                throw new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
+            } 
+            
+            network.setState(Network.State.Implemented);
+            _networksDao.update(network.getId(), network);
+            implemented.set(guru, network);
             return implemented;
         } finally {
             if (implemented.first() == null) {
-                s_logger.debug("Cleaning up because we're unable to implement network " + network);
+                s_logger.debug("Cleaning up because we're unable to implement the network " + network);
                 network.setState(Network.State.Shutdown);
                 _networksDao.update(networkId, network);
                 
@@ -2111,15 +2106,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
         
-        Account owner = _accountMgr.getAccount(network.getAccountId());
-        ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
-        
         _accountMgr.checkAccess(callerAccount, network);
         
         boolean success = true;
 
         //Restart network - network elements restart is required
-        success = restartNetwork(networkId, true, context);
+        success = restartNetwork(networkId, true, callerAccount);
         
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
@@ -2150,7 +2142,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
-    private boolean restartNetwork(long networkId, boolean restartElements, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    private boolean restartNetwork(long networkId, boolean restartElements, Account caller) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         boolean success = true;
         
         NetworkVO network = _networksDao.findById(networkId);
@@ -2161,7 +2153,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Restarting network elements for the network " + network);
             for (NetworkElement element : _networkElements) {
                 //stop and start the network element
-                if (!element.restart(network, context)) {
+                if (!element.restart(network, null)) {
                     s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
                     success = false;
                 }   
@@ -2175,13 +2167,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //apply port forwarding rules
-        if (!_rulesMgr.applyPortForwardingRulesForNetwork(networkId, false, context.getAccount())) {
+        if (!_rulesMgr.applyPortForwardingRulesForNetwork(networkId, false, caller)) {
             s_logger.warn("Failed to reapply port forwarding rule(s) as a part of network id=" + networkId + " restart");
             success = false;
         }
         
         //apply static nat rules
-        if (!_rulesMgr.applyStaticNatRulesForNetwork(networkId, false, context.getAccount())) {
+        if (!_rulesMgr.applyStaticNatRulesForNetwork(networkId, false, caller)) {
             s_logger.warn("Failed to reapply static nat rule(s) as a part of network id=" + networkId + " restart");
             success = false;
         }
