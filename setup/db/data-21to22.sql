@@ -12,7 +12,7 @@ INSERT INTO configuration (category, instance, component, name, value, descripti
 INSERT INTO configuration (category, instance, component, name, value, description)
     VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.user.limit', '8', 'The maximum number of VPN users that can be created per account');
 INSERT INTO configuration (category, instance, component, name, value, description)
-    VALUES ('Advanced', 'DEFAULT', 'management-server', 'management-server', NULL, 'The cidr of management server network');
+    VALUES ('Advanced', 'DEFAULT', 'management-server', 'management.network.cidr', NULL, 'The cidr of management server network');
 UPDATE vm_template set unique_name='routing_old'  where id=1;
 INSERT INTO vm_template (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones)
     VALUES (10, 'routing', 'SystemVM Template', 0, now(), 'ext3', 0, 64, 1, 'http://download.cloud.com/releases/2.2/systemvm.vhd.bz2', 'bcc7f290f4c27ab4d0fe95d1012829ea', 0, 'SystemVM Template', 'VHD', 15, 0, 1);
