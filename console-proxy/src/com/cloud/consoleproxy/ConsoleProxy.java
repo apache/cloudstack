@@ -369,7 +369,6 @@ public class ConsoleProxy {
 			
 			HttpServer server = factory.createHttpServerInstance(httpListenPort);
 			server.createContext("/getscreen", new ConsoleProxyThumbnailHandler());
-			server.createContext("/getjar/", new ConsoleProxyJarHandler());
 			server.createContext("/resource/", new ConsoleProxyResourceHandler());
 			server.createContext("/ajax", new ConsoleProxyAjaxHandler());
 			server.createContext("/ajaximg", new ConsoleProxyAjaxImageHandler());
