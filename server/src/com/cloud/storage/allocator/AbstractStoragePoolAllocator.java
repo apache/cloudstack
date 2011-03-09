@@ -167,6 +167,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 					s_logger.debug("Attempting to look for pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage + ", threshold: " + _storageUsedThreshold);
 				}
 				if (usedPercentage >= _storageUsedThreshold) {
+					if (s_logger.isDebugEnabled()) {
+						s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage since its usage percentage: " +usedPercentage + " has crossed the storage.capacity.threshold: " + _storageUsedThreshold + ", skipping this pool");
+					}
 					return false;
 				}
 			}
