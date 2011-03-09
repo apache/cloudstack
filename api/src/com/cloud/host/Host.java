@@ -33,7 +33,8 @@ public interface Host {
         ConsoleProxy(true),
         ExternalFirewall(false),
         ExternalLoadBalancer(false),
-        PxeServer(false);
+        PxeServer(false),
+        ExternalDhcp(false);
         
         boolean _virtual;
         private Type(boolean virtual) {

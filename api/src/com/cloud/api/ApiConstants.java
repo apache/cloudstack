@@ -204,5 +204,6 @@ public class ApiConstants {
     public static final String LINMIN_USERNAME = "linminusername";
     public static final String LINMIN_PASSWORD = "linminpassword";
     public static final String LINMIN_APID = "linminapid";
+    public static final String DHCP_SERVER_TYPE = "dhcpservertype";
 }
  

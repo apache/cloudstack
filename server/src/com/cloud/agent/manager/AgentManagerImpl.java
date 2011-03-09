@@ -60,6 +60,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalDhcpCommand;
 import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.StartupProxyCommand;
@@ -2402,7 +2403,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			type = Host.Type.ExternalLoadBalancer;
 		} else if (startup instanceof StartupPxeServerCommand) {
 			type = Host.Type.PxeServer;
-		} else {
+		} else if (startup instanceof StartupExternalDhcpCommand) {
+			type = Host.Type.ExternalDhcp;
+		}else {
 			assert false : "Did someone add a new Startup command?";
 		}
 
