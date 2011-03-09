@@ -89,6 +89,69 @@ public class Upgrade217to22 implements DbUpgrade {
         }        
     }
     
+    protected void upgradeInstanceGroups(Connection conn){
+        try {
+            
+            //Create instance groups - duplicated names are allowed across accounts
+            PreparedStatement pstmt = conn.prepareStatement("SELECT DISTINCT v.group, v.account_id from vm_instance v where v.group is not null");
+            ResultSet rs = pstmt.executeQuery();
+            ArrayList<Object[]> groups = new ArrayList<Object[]>();
+            while (rs.next()) {
+                Object[] group = new Object[10];
+                group[0] = rs.getString(1); // group name
+                group[1] = rs.getLong(2);  // accountId
+                groups.add(group);
+            }
+            rs.close();
+            pstmt.close();
+            
+            for (Object[] group : groups) {
+                String groupName = (String)group[0];
+                Long accountId = (Long)group[1];
+                createInstanceGroups(conn, groupName, accountId);
+            } 
+            
+            //update instance_group_vm_map
+            pstmt = conn.prepareStatement("SELECT g.id, v.id from vm_instance v, instance_group g where g.name=v.group and g.account_id=v.account_id and v.group is not null");
+            rs = pstmt.executeQuery();
+            ArrayList<Object[]> groupVmMaps = new ArrayList<Object[]>();
+            while (rs.next()) {
+                Object[] groupMaps = new Object[10];
+                groupMaps[0] = rs.getLong(1); // vmId
+                groupMaps[1] = rs.getLong(2);  // groupId
+                groupVmMaps.add(groupMaps);
+            }
+            rs.close();
+            pstmt.close();
+            
+            for (Object[] groupMap : groupVmMaps) {
+                Long groupId = (Long)groupMap[0];
+                Long instanceId = (Long)groupMap[1];
+                createInstanceGroupVmMaps(conn, groupId, instanceId);
+            }  
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't update instance groups ", e);
+        }
+        
+    }
+    
+    protected void createInstanceGroups(Connection conn, String groupName, long accountId) throws SQLException{
+        PreparedStatement pstmt = conn.prepareStatement("INSERT INTO instance_group (account_id, name, created) values (?, ?, now()) ");
+        pstmt.setLong(1, accountId);
+        pstmt.setString(2, groupName);
+        pstmt.executeUpdate();
+        pstmt.close();
+    }
+    
+    protected void createInstanceGroupVmMaps(Connection conn, long groupId, long instanceId) throws SQLException{
+        PreparedStatement pstmt = conn.prepareStatement("INSERT INTO instance_group_vm_map (group_id, instance_id) values (?, ?) ");
+        pstmt.setLong(1, groupId);
+        pstmt.setLong(2, instanceId);
+        pstmt.executeUpdate();
+        pstmt.close();
+    }
+
+    
     protected long insertNetwork(Connection conn, String name, String displayText, String trafficType, String broadcastDomainType, String broadcastUri,
                                  String gateway, String cidr, String mode, long networkOfferingId, long dataCenterId, String guruName,
                                  String state, long domainId, long accountId, String dns1, String dns2, String guestType, boolean shared,
@@ -338,6 +401,7 @@ public class Upgrade217to22 implements DbUpgrade {
         upgradeDataCenter(conn);
     //    upgradeNetworks(conn);
         upgradeStoragePools(conn);
+        upgradeInstanceGroups(conn);
     }
 
     @Override

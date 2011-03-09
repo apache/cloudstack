@@ -1,8 +1,6 @@
 --;
 -- Schema upgrade from 2.1 to 2.2;
 --;
-
-ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL;
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged';
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template is belonged to';

@@ -55,7 +55,7 @@ public class BasicZone217To223UpgradeTest extends TestCase {
     
     public void test217to22Upgrade() {
         s_logger.debug("Finding sample data from 2.1.7");
-        DbTestUtils.executeScript("VersionDaoImplTest/2.1.7/2.1.7_sample_basicZone_noSecurityGroups.sql", false, true);
+        DbTestUtils.executeScript("VersionDaoImplTest/2.1.7/2.1.7_sample_basicZone_SecurityGroups.sql", false, true);
         
         Connection conn = Transaction.getStandaloneConnection();
         PreparedStatement pstmt;
