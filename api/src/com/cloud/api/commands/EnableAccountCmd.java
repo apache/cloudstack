@@ -36,10 +36,10 @@ public class EnableAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Enables specified account.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Enables specified account.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Enables specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Enables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

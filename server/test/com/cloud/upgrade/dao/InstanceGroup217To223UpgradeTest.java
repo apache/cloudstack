@@ -38,8 +38,8 @@ import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class InstanceGroup217To221UpgradeTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(InstanceGroup217To221UpgradeTest.class);
+public class InstanceGroup217To223UpgradeTest extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(InstanceGroup217To223UpgradeTest.class);
 
     @Override
     @Before
@@ -72,7 +72,7 @@ public class InstanceGroup217To221UpgradeTest extends TestCase {
         }
         
         try {
-            dao.upgrade("2.1.7", "2.2.1");
+            dao.upgrade("2.1.7", "2.2.3");
         } catch (ConfigurationException e) {
             s_logger.warn("Exception: ", e);
             assert false : "The test failed.  Check logs"; 
@@ -81,7 +81,7 @@ public class InstanceGroup217To221UpgradeTest extends TestCase {
         conn = Transaction.getStandaloneConnection();
         try {
             
-            s_logger.debug("Starting tesing upgrade from 2.1.7 to 2.2.2 for Instance groups...");
+            s_logger.debug("Starting tesing upgrade from 2.1.7 to 2.2.3 for Instance groups...");
             
             //Version check
             pstmt = conn.prepareStatement("SELECT version FROM version");
@@ -89,8 +89,8 @@ public class InstanceGroup217To221UpgradeTest extends TestCase {
             
             if (!rs.next()) {
                 s_logger.error("ERROR: No version selected");
-            } else if (!rs.getString(1).equals("2.2.1")) {
-                s_logger.error("ERROR: VERSION stored is not 2.2.1: " + rs.getString(1));
+            } else if (!rs.getString(1).equals("2.2.3")) {
+                s_logger.error("ERROR: VERSION stored is not 2.2.3: " + rs.getString(1));
             }
             rs.close();
             pstmt.close();
