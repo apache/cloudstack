@@ -41,7 +41,7 @@ public class DeleteUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Deletes a user")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Deletes a user")
     private Long id;
 
     /////////////////////////////////////////////////////
