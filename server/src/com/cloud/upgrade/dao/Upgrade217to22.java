@@ -27,6 +27,7 @@ import java.util.ArrayList;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class Upgrade217to22 implements DbUpgrade {
     boolean _basicZone;
@@ -275,8 +276,6 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.close();
         }
 
-        pstmt = conn.prepareStatement("SELECT id FROM vlan WHERE vlan_type='DirectAttached'");
-       
     }
             
     protected void upgradeDataCenter(Connection conn) {
@@ -445,6 +444,20 @@ public class Upgrade217to22 implements DbUpgrade {
                         pstmt.executeUpdate();
                         pstmt.close();
                     }
+                    
+                    upgradeUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
+                    pstmt = conn.prepareStatement("SELECT id, vlan_id, vlan_gateway, vlan_netmask FROM vlan WHERE vlan_type='DirectAttached' AND data_center_id=?");
+                    pstmt.setLong(1, dcId);
+                    rs = pstmt.executeQuery();
+                    while (rs.next()) {
+                        long vlanId = rs.getLong(1);
+                        String tag = rs.getString(2);
+                        String gateway = rs.getString(3);
+                        String netmask = rs.getString(4);
+                        String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
+                        insertNetwork(conn, "DirectNetwork" + vlanId, "Direct network created for " + vlanId, "Guest", "Vlan", "vlan://" + tag, gateway, cidr, "Dhcp", 4, dcId, "DirectNetworkGuru", "Setup", 0, 0, null, null, "DirectAttached", true, null, true, null);
+                    }
+                    
                     
                     upgradeUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
                 }

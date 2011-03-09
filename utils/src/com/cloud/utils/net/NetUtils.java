@@ -496,6 +496,14 @@ public class NetUtils {
 		return null;
     }
     
+    public static String getCidrFromGatewayAndNetmask(String gatewayStr, String netmaskStr) {
+        long netmask = ip2Long(netmaskStr);
+        long gateway = ip2Long(gatewayStr);
+        long firstPart = gateway & netmask;
+        long size = getCidrSize(netmaskStr);
+        return long2Ip(firstPart) + "/" + size;
+    }
+    
     public static String[] getIpRangeFromCidr(String cidr, long size) {
         assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         String[] result = new String[2];
