@@ -54,6 +54,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -104,7 +105,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return true;
     }
     
-    abstract boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm);
+    abstract boolean allocatorIsCorrectType(DiskProfile dskCh);
     
 	protected boolean templateAvailable(long templateId, long poolId) {
     	VMTemplateStorageResourceAssoc thvo = _templatePoolDao.findByPoolTemplate(poolId, templateId);
@@ -118,12 +119,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     	}
     }
 	
-	protected boolean localStorageAllocationNeeded(DiskProfile dskCh, VMInstanceVO vm) {
+	protected boolean localStorageAllocationNeeded(DiskProfile dskCh) {
 	    return dskCh.useLocalStorage();
 	}
 	
-	protected boolean poolIsCorrectType(DiskProfile dskCh, StoragePool pool, VMInstanceVO vm) {
-		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh, vm);
+	protected boolean poolIsCorrectType(DiskProfile dskCh, StoragePool pool) {
+		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh);
 		if (s_logger.isDebugEnabled()) {
             s_logger.debug("Is localStorageAllocationNeeded? "+ localStorageAllocationNeeded);
             s_logger.debug("Is storage pool shared? "+ pool.getPoolType().isShared());
@@ -133,7 +134,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	}
 	
 	protected boolean checkPool(ExcludeList avoid, StoragePoolVO pool, DiskProfile dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, 
-			VMInstanceVO vm, StatsCollector sc) {
+			StatsCollector sc) {
 		
 		if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName()+ " ,poolId: "+ pool.getId());
@@ -162,7 +163,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
         
 		// Check that the pool type is correct
-		if (!poolIsCorrectType(dskCh, pool, vm)) {
+		if (!poolIsCorrectType(dskCh, pool)) {
     		if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool is not of correct type, skipping this pool");
             }
@@ -269,7 +270,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	
 	
 	@Override
-	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vm, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo) {
+	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo) {
 	    
 	    ExcludeList avoid = new ExcludeList();
 	    for(StoragePool pool : avoids){
@@ -277,7 +278,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	    }
 	    
 	    DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, null);
-	    return allocateToPool(dskCh, vm, plan, avoid, returnUpTo);
+	    return allocateToPool(dskCh, VMtemplate, plan, avoid, returnUpTo);
 	}
 
 }

@@ -30,6 +30,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
@@ -47,7 +48,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     boolean _storagePoolCleanupEnabled;
     
     @Override
-    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm) {
+    public boolean allocatorIsCorrectType(DiskProfile dskCh) {
     	return true;
     }
     
@@ -60,7 +61,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     }
     
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
     	
     	if (!_storagePoolCleanupEnabled) {
     		s_logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
@@ -69,10 +70,9 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     	
     	// Clean up all storage pools
     	_storageMgr.cleanupStorage(false);
-    	VMInstanceVO vm = (VMInstanceVO)(vmProfile.getVirtualMachine());
     	// Determine what allocator to use
     	StoragePoolAllocator allocator;
-    	if (localStorageAllocationNeeded(dskCh, vm)) {
+    	if (localStorageAllocationNeeded(dskCh)) {
     		allocator = _localStoragePoolAllocator;
     	} else {
     		allocator = _firstFitStoragePoolAllocator;
@@ -81,7 +81,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     	// Try to find a storage pool after cleanup
         ExcludeList myAvoids = new ExcludeList(avoid.getDataCentersToAvoid(), avoid.getPodsToAvoid(), avoid.getClustersToAvoid(), avoid.getHostsToAvoid(), avoid.getPoolsToAvoid());
         
-        return allocator.allocateToPool(dskCh, vmProfile, plan, myAvoids, returnUpTo);
+        return allocator.allocateToPool(dskCh, VMtemplate, plan, myAvoids, returnUpTo);
     }
 
     @Override

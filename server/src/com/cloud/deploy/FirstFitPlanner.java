@@ -457,7 +457,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			Enumeration<StoragePoolAllocator> enPool = _storagePoolAllocators.enumeration();
 	        while (enPool.hasMoreElements()) {
 	            final StoragePoolAllocator allocator = enPool.nextElement();
-	            final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
+	            final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile.getTemplate(), plan, avoid, returnUpTo);
 	            if (suitablePools != null && !suitablePools.isEmpty()) {
 	            	suitableVolumeStoragePools.put(toBeCreated, suitablePools);
 	            	foundPotentialPools = true;

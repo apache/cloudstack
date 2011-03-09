@@ -330,13 +330,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return false;
     }
 
-    protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, final ServiceOffering offering,
-            final VMInstanceVO vm, final VMTemplateVO template, final Set<StoragePool> avoid) {
-    	VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, (ServiceOfferingVO)offering, null, null);
+    protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId,
+            final VMTemplateVO template, final Set<StoragePool> avoid) {
+
         Enumeration<StoragePoolAllocator> en = _storagePoolAllocators.enumeration();
         while (en.hasMoreElements()) {
             final StoragePoolAllocator allocator = en.nextElement();
-            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, vmProfile, dc.getId(), pod.getId(), clusterId, avoid, 1);
+            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, template, dc.getId(), pod.getId(), clusterId, avoid, 1);
             if (poolList != null && !poolList.isEmpty()) {
                 return (StoragePoolVO) poolList.get(0);
             }
@@ -439,7 +439,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
-            while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, null, poolsToAvoid)) != null) {
+            while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, poolsToAvoid)) != null) {
                 poolsToAvoid.add(pool);
                 volumeFolder = pool.getPath();
                 if (s_logger.isDebugEnabled()) {
@@ -636,7 +636,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 break;
             }
 
-            pool = findStoragePool(dskCh, dc, pod, clusterId, offering, vm, template, avoidPools);
+            pool = findStoragePool(dskCh, dc, pod, clusterId, template, avoidPools);
             if (pool == null) {
                 s_logger.warn("Unable to find storage poll when create volume " + volume.getName());
                 break;
@@ -1317,7 +1317,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         dskCh.setHyperType(dataDiskHyperType);
         DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
         HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
-        StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, null, null,
+        StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null,
                 new HashSet<StoragePool>());
         String secondaryStorageURL = getSecondaryStorageURL(volume.getDataCenterId());
         String secondaryStorageVolumePath = null;

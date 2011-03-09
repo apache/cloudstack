@@ -31,6 +31,7 @@ import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -41,21 +42,20 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitStoragePoolAllocator.class);
 
     @Override
-    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm) {
-    	return !localStorageAllocationNeeded(dskCh, vm);
+    public boolean allocatorIsCorrectType(DiskProfile dskCh) {
+    	return !localStorageAllocationNeeded(dskCh);
     }
 
     @Override
-	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
-    	VMInstanceVO vm = (VMInstanceVO)(vmProfile.getVirtualMachine());
 	    
-	    VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+	    VMTemplateVO template = (VMTemplateVO)VMtemplate;
 	    
     	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
     	// Check that the allocator type is correct
-        if (!allocatorIsCorrectType(dskCh, vm)) {
+        if (!allocatorIsCorrectType(dskCh)) {
         	return suitablePools;
         }
 		long dcId = plan.getDataCenterId();
@@ -88,7 +88,7 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	if(suitablePools.size() == returnUpTo){
         		break;
         	}
-        	if (checkPool(avoid, pool, dskCh, template, null, vm, sc)) {
+        	if (checkPool(avoid, pool, dskCh, template, null, sc)) {
         		suitablePools.add(pool);
         	}
         }

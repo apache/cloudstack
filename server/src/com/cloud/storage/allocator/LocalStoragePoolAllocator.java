@@ -38,6 +38,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
@@ -81,18 +82,17 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     
     
     @Override
-    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm) {
-    	return localStorageAllocationNeeded(dskCh, vm);
+    public boolean allocatorIsCorrectType(DiskProfile dskCh) {
+    	return localStorageAllocationNeeded(dskCh);
     }
     
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
-    	VMInstanceVO vm = (VMInstanceVO)(vmProfile.getVirtualMachine());
     	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
     	
     	// Check that the allocator type is correct
-        if (!allocatorIsCorrectType(dskCh, vm)) {
+        if (!allocatorIsCorrectType(dskCh)) {
         	return suitablePools;
         }
 
@@ -103,36 +103,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     	}
     	
         List<StoragePool> availablePool;
-        while (!(availablePool = super.allocateToPool(dskCh, vmProfile, plan, myAvoids, 1)).isEmpty()) {
+        while (!(availablePool = super.allocateToPool(dskCh, VMtemplate, plan, myAvoids, 1)).isEmpty()) {
         	StoragePool pool = availablePool.get(0);
         	myAvoids.addPool(pool.getId());
-            if (pool.getPoolType().isShared()) {
-            	suitablePools.add(pool);
-            }else{
-	        	List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());
-	        	assert(hostsInSPool.size() == 1) : "Local storage pool should be one host per pool";
-	        	
-	        	StoragePoolHostVO spHost = hostsInSPool.get(0);
-	        	
-	        	SearchCriteria<Long> sc = VmsOnPoolSearch.create();
-	        	sc.setJoinParameters("volumeJoin", "poolId", pool.getId());
-	        	sc.setParameters("state", State.Expunging);
-	        	List<Long> vmsOnHost = _vmInstanceDao.customSearchIncludingRemoved(sc, null);
-	            
-	        	if(s_logger.isDebugEnabled()) {
-	        		s_logger.debug("Found " + vmsOnHost.size() + " VM instances are alloacated at host " + spHost.getHostId() + " with local storage pool " + pool.getName());
-	        		for(Long vmId : vmsOnHost) {
-	                    s_logger.debug("VM " + vmId + " is allocated on host " + spHost.getHostId() + " with local storage pool " + pool.getName());
-	                }
-	        	}
-	        	
-	        	if(hostHasCpuMemoryCapacity(spHost.getHostId(), vmsOnHost, vm)) {
-	        		s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
-	        		suitablePools.add(pool);
-	            }else{
-	            	s_logger.debug("Found pool " + pool.getId() + " but host doesn't fit, skipping this pool");
-	            }
-            }
+        	List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());
+        	assert(hostsInSPool.size() == 1) : "Local storage pool should be one host per pool";
+        	
+    		s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
+    		suitablePools.add(pool);
             
         	if(suitablePools.size() == returnUpTo){
         		break;
@@ -151,6 +129,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         return suitablePools;
     }
     
+    //we don't need to check host capacity now, since hostAllocators will do that anyway
     private boolean hostHasCpuMemoryCapacity(long hostId, List<Long> vmOnHost, VMInstanceVO vm) {
     	
         ServiceOffering so = null;

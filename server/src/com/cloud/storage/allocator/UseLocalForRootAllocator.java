@@ -30,6 +30,7 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
@@ -41,12 +42,12 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
     boolean _useLocalStorage;
 
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         if (!_useLocalStorage) {
             return null;
         }
         
-        return super.allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
+        return super.allocateToPool(dskCh, VMtemplate, plan, avoid, returnUpTo);
     }
 
     @Override
@@ -68,13 +69,13 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
     }
     
     @Override
-    protected boolean localStorageAllocationNeeded(DiskProfile dskCh, VMInstanceVO vm) {
+    protected boolean localStorageAllocationNeeded(DiskProfile dskCh) {
         if (dskCh.getType() == VolumeType.ROOT) {
             return true;
         } else if (dskCh.getType() == VolumeType.DATADISK) {
             return false;
         } else {
-            return super.localStorageAllocationNeeded(dskCh, vm);
+            return super.localStorageAllocationNeeded(dskCh);
         }
     }
     
