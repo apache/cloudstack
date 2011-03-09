@@ -1101,10 +1101,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     	String timeZone = cmd.getTimezone();
     	Long accountId = null;
     	
+    	//default domain to ROOT if not specified
+    	if (domainId == null) {
+    	    domainId = Domain.ROOT_DOMAIN;
+    	}
+    	
     	Account account = _accountDao.findActiveAccount(accountName, domainId);
     	
-    	if( account == null){
-    		throw new InvalidParameterValueException("Unable to find account to create user");
+    	if(account == null){
+    		throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
     	}else{
     		accountId = account.getAccountId();
     	}
