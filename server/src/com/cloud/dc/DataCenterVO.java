@@ -18,6 +18,8 @@
 
 package com.cloud.dc;
 
+import java.util.Map;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,6 +29,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
+import javax.persistence.Transient;
 
 import com.cloud.network.Network.Provider;
 
@@ -103,6 +106,12 @@ public class DataCenterVO implements DataCenter {
     @Column(name="mac_address", updatable = false, nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
+    
+    // This is a delayed load value.  If the value is null,
+    // then this field has not been loaded yet.
+    // Call the dao to load it.
+    @Transient
+    Map<String, String> details;
     
     @Override
     public String getDnsProvider() {
@@ -323,5 +332,27 @@ public class DataCenterVO implements DataCenter {
     
     public void setSecurityGroupEnabled(boolean enabled) {
         this.securityGroupEnabled = enabled;
+    }
+    
+    @Override
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    @Override
+    public void setDetails(Map<String, String> details2) {
+        details = details2;        
+    }
+    
+    public String getDetail(String name) {
+        assert (details != null) : "Did you forget to load the details?";
+        
+        return details != null ? details.get(name) : null;
+    }
+    
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+        
+        details.put(name, value);
     }
 }

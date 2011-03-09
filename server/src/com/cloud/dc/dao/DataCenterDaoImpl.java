@@ -66,6 +66,9 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
     protected TableGenerator _tgMacAddress;
+    
+    protected final DcDetailsDaoImpl _detailsDao = ComponentLocator.inject(DcDetailsDaoImpl.class);
+
 
     @Override
     public DataCenterVO findByName(String name) {
@@ -265,5 +268,20 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";
+    }
+
+    @Override
+    public void loadDetails(DataCenterVO zone) {
+        Map<String, String> details =_detailsDao.findDetails(zone.getId());
+        zone.setDetails(details);
+    }
+
+    @Override
+    public void saveDetails(DataCenterVO zone) {
+        Map<String, String> details = zone.getDetails();
+        if (details == null) {
+            return;
+        }
+        _detailsDao.persist(zone.getId(), details);
     }
 }

@@ -3,6 +3,8 @@
  */
 package com.cloud.dc;
 
+import java.util.Map;
+
 import com.cloud.org.Grouping;
 
 /**
@@ -34,5 +36,7 @@ public interface DataCenter extends Grouping {
     String getUserDataProvider();
     String getVpnProvider();
     boolean isSecurityGroupEnabled();
+    Map<String, String> getDetails();
+    void setDetails(Map<String, String> details);
 
 }

@@ -113,6 +113,7 @@ DROP TABLE IF EXISTS `cloud`.`stack_maid`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_work`;
 DROP TABLE IF EXISTS `cloud`.`user_vm_details`;
 DROP TABLE IF EXISTS `cloud`.`vpn_users`;
+DROP TABLE IF EXISTS `cloud`.`data_center_details`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -1445,6 +1446,15 @@ CREATE TABLE `cloud`.`storage_pool_work` (
   `mgmt_server_id` bigint unsigned NOT NULL COMMENT 'management server id',
   PRIMARY KEY (`id`),
  UNIQUE (pool_id,vm_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`data_center_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `dc_id` bigint unsigned NOT NULL COMMENT 'dc id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dc_details__dc_id` FOREIGN KEY (`dc_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
