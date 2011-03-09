@@ -218,6 +218,65 @@ public class Upgrade217to22 implements DbUpgrade {
         pstmt.setString(3, vlanType);
         pstmt.executeUpdate();
         pstmt.close();
+        
+        pstmt = conn.prepareStatement("SELECT user_ip_address.id, user_ip_address.public_ip_address, user_ip_address.account_id, user_ip_address.allocated FROM user_ip_address INNER JOIN vlan ON vlan.id=user_ip_address.vlan_db_id WHERE user_ip_address.data_center_id = ? AND vlan.vlan_type='VirtualNetwork'");
+        pstmt.setLong(1, dcId);
+        ResultSet rs = pstmt.executeQuery();
+        ArrayList<Object[]> allocatedIps = new ArrayList<Object[]>();
+        while (rs.next()) {
+            Object[] ip = new Object[10];
+            ip[0] = rs.getLong(1);  // id
+            ip[1] = rs.getString(2); // ip address
+            ip[2] = rs.getLong(3); // account id
+            ip[3] = rs.getDate(4); // allocated
+            allocatedIps.add(ip);
+        }
+        rs.close();
+        pstmt.close();
+        
+        for (Object[] allocatedIp : allocatedIps) {
+            pstmt = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");
+            pstmt.setLong(1, dcId);
+            rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new CloudRuntimeException("Unable to get mac address for data center " + dcId);
+            }
+            long mac = rs.getLong(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("UPDATE data_center SET mac_address=mac_address+1 WHERE id = ?");
+            pstmt.setLong(1, dcId);
+            pstmt.executeUpdate();
+            pstmt.close();
+            
+            Long associatedNetworkId = null;
+            if (allocatedIp[3] != null && allocatedIp[2] != null) {
+                pstmt = conn.prepareStatement("SELECT id FROM networks WHERE data_center_id=? AND account_id=?");
+                pstmt.setLong(1, dcId);
+                pstmt.setLong(2, (Long)allocatedIp[2]);
+                rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                    throw new CloudRuntimeException("Unable to find a network for account " + allocatedIp[2] + " in dc " + dcId);
+                }
+                associatedNetworkId = rs.getLong(1);
+                rs.close();
+                pstmt.close();
+            }            
+            pstmt = conn.prepareStatement("UPDATE user_ip_address SET mac_address=?, network_id=? WHERE id=?");
+            pstmt.setLong(1, mac);
+            if (associatedNetworkId != null) {
+                pstmt.setLong(2, associatedNetworkId);
+            } else {
+                pstmt.setObject(2, null);
+            }
+            pstmt.setLong(3, (Long)allocatedIp[0]);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
+
+        pstmt = conn.prepareStatement("SELECT id FROM vlan WHERE vlan_type='DirectAttached'");
+       
     }
             
     protected void upgradeDataCenter(Connection conn) {
