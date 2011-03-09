@@ -2474,6 +2474,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("accountIdEQ", sb.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
+        sb.and("addressLike", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
@@ -2516,7 +2517,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if ((address == null) && (keyword != null)) {
-            address = keyword;
+            sc.setParameters("addressLike", "%" + keyword + "%");
         }
 
         if (address != null) {
