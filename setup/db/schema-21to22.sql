@@ -340,10 +340,6 @@ CREATE TABLE  `cloud`.`upload` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`snapshots` ADD COLUMN `data_center_id` bigint unsigned NOT NULL;
-ALTER TABLE `cloud`.`snapshots` ADD COLUMN `domain_id` bigint unsigned NOT NULL;
-ALTER TABLE `cloud`.`snapshots` ADD COLUMN `size` bigint unsigned NOT NULL ;
-
 ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical size` bigint unsigned DEFAULT 0;
 
 ALTER TABLE `cloud`.`console_proxy` MODIFY COLUMN `public_mac_address` varchar(17);

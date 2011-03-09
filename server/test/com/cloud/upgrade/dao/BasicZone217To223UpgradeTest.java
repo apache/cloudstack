@@ -37,8 +37,8 @@ import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class BasicZone217To221UpgradeTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(BasicZone217To221UpgradeTest.class);
+public class BasicZone217To223UpgradeTest extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(BasicZone217To223UpgradeTest.class);
 
     @Override
     @Before
@@ -80,16 +80,16 @@ public class BasicZone217To221UpgradeTest extends TestCase {
         conn = Transaction.getStandaloneConnection();
         try {
             
-            s_logger.debug("Starting tesing upgrade from 2.1.7 to 2.2.2 for Basic zone...");
+            s_logger.debug("Starting tesing upgrade from 2.1.7 to 2.2.3 for Basic zone...");
             
             //Version check
-            pstmt = conn.prepareStatement("SELECT version FROM version");
+            pstmt = conn.prepareStatement(" SELECT version FROM version ORDER BY id DESC LIMIT 1");
             ResultSet rs = pstmt.executeQuery();
             
             if (!rs.next()) {
                 s_logger.error("ERROR: No version selected");
-            } else if (!rs.getString(1).equals("2.2.1")) {
-                s_logger.error("ERROR: VERSION stored is not 2.2.1: " + rs.getString(1));
+            } else if (!rs.getString(1).equals("2.2.3")) {
+                s_logger.error("ERROR: VERSION stored is not 2.2.3: " + rs.getString(1));
             }
             rs.close();
             pstmt.close();
