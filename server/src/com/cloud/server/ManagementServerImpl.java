@@ -6092,6 +6092,7 @@ public class ManagementServerImpl implements ManagementServer {
         Filter searchFilter = new Filter(DomainVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         Long domainId = (Long) c.getCriteria(Criteria.ID);
         String domainName = (String) c.getCriteria(Criteria.NAME);
+        String domainPath = (String) c.getCriteria(Criteria.PATH);
         Integer level = (Integer) c.getCriteria(Criteria.LEVEL);
         Object keyword = c.getCriteria(Criteria.KEYWORD);
 
@@ -6108,16 +6109,18 @@ public class ManagementServerImpl implements ManagementServer {
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
-
         if (domainName != null) {
             sc.setParameters("name", "%" + domainName + "%");
+        }
+        
+        if (domainPath != null) {
+        	sc.setParameters("path", "%" + domainPath + "%");
         }
 
         if (level != null) {
             sc.setParameters("level", level);
         }
-
-        if ((domainName == null) && (level == null) && (domainId != null)) {
+        if ((domainName == null) && (domainPath == null) && (level == null) && (domainId != null)) {
             DomainVO domain = _domainDao.findById(domainId);
             if (domain != null) {
                 sc.setParameters("path", domain.getPath() + "%");

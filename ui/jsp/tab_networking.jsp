@@ -68,7 +68,7 @@ long milliseconds = new Date().getTime();
                     	<div class="ip_oricon"></div>
                        	<input class="text ipwatermark_text" type="text" id="search_by_account" value="By Account"/>
                                                 
-                        <input class="text" type="text" id="search_by_domain" />
+                        <input class="text ipwatermark_text" type="text" id="search_by_domain" value="Domain"/>
 		                <!--  
 		                <div id="search_by_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">  
 		                -->

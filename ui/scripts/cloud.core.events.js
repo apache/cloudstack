@@ -59,14 +59,14 @@ function showEventsTab(showEvents) {
 				        var domainId;							    
 			            if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 				            for(var i=0; i < autoCompleteDomains.length; i++) {					        
-				              if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+				              if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainName.toLowerCase()) {
 				                  domainId = autoCompleteDomains[i].id;
 				                  break;	
 				              }
 			                } 					   			    
 			            } 	     	
 	                    if(domainId == null) { 
-			                showError(false, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+			                showError(false, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), "Domain does not exist");
 			            }
 			            else { //e.g. domainId == "5" 
 			                showError(true, submenuContent.find("#domain"), submenuContent.find("#domain_errormsg"), null)

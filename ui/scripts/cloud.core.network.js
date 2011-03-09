@@ -205,7 +205,19 @@ function showNetworkingTab(p_domainId, p_account) {
             $(this).val("By Account");
             $(this).addClass("ipwatermark_text");
         }                
-    });		 	
+    });		
+	$("#submenu_content_network #search_by_domain").bind('focus', function(event){
+	    if($(this).val() == "Domain") {
+	        $(this).val("");
+	        $(this).removeClass("ipwatermark_text");
+	    }
+	});		
+    $("#submenu_content_network #search_by_domain").bind('blur', function(event){
+        if($(this).val() == "") {
+            $(this).val("Domain");
+            $(this).addClass("ipwatermark_text");
+        }                
+    });	
     //watermark (end)	
     
     $("#submenu_content_network #ip_searchbutton1").bind("click", refreshIpListContainerByInputBox);
@@ -224,7 +236,7 @@ function showNetworkingTab(p_domainId, p_account) {
 		    var domainId;							    
 	        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 		        for(var i=0; i < autoCompleteDomains.length; i++) {					        
-		          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+		          if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainName.toLowerCase()) {
 		              domainId = autoCompleteDomains[i].id;
 		              break;	
 		          }

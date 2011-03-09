@@ -435,6 +435,7 @@ long milliseconds = new Date().getTime();
 					<label for="add_publicip_vlan_scope">Scope:</label>
 					<select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
 					    <option id="vlan_scope_zone" value="zone-wide">zone-wide</option>
+						<option id="vlan_scope_domain" value="domain-specific">domain-specific</option>
 						<option id="vlan_scope_account" value="account-specific">account-specific</option>						
 					</select>
 				</li>

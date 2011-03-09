@@ -41,6 +41,7 @@ public class ListDomainsCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PATH, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_LEVEL, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
@@ -59,6 +60,7 @@ public class ListDomainsCmd extends BaseCmd {
         Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
     	Long domainId = (Long)params.get(BaseCmd.Properties.ID.getName());
         String domainName = (String)params.get(BaseCmd.Properties.NAME.getName());
+        String domainPath = (String)params.get(BaseCmd.Properties.PATH.getName());
         Integer level = (Integer)params.get(BaseCmd.Properties.DOMAIN_LEVEL.getName());
         String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
@@ -96,6 +98,7 @@ public class ListDomainsCmd extends BaseCmd {
         c.addCriteria(Criteria.KEYWORD, keyword);
         c.addCriteria(Criteria.ID, domainId);
         c.addCriteria(Criteria.NAME, domainName);
+        c.addCriteria(Criteria.PATH, domainPath);
         c.addCriteria(Criteria.LEVEL, level);
         
         List<DomainVO> domains = getManagementServer().searchForDomains(c);
@@ -107,6 +110,7 @@ public class ListDomainsCmd extends BaseCmd {
             List<Pair<String, Object>> domainData = new ArrayList<Pair<String, Object>>();
             domainData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.valueOf(domain.getId()).toString()));
             domainData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), domain.getName()));
+            domainData.add(new Pair<String, Object>(BaseCmd.Properties.PATH.getName(), domain.getPath()));
             domainData.add(new Pair<String, Object>(BaseCmd.Properties.LEVEL.getName(), domain.getLevel().toString()));
             
             if (domain.getParent() != null){

@@ -613,8 +613,9 @@ function showConfigurationTab() {
 		var id = $(this).data("id");
 		
 		// reset dialog
+		dialogAddVlanForZone.find("#add_publicip_vlan_scope").val("zone-wide");
 		dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container, #domain_container, #account_container").hide();
-		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #account").val("");
+		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #account, #domain").val("");
 		dialogAddVlanForZone.find("#add_publicip_vlan_zone_name").text($(this).data("name"));
 		
 		if (getNetworkType() == 'vnet') {
@@ -673,14 +674,14 @@ function showConfigurationTab() {
 				    if(domainName != null && domainName.length > 0) { 				    
 				        if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 					        for(var i=0; i < autoCompleteDomains.length; i++) {					        
-					          if(fromdb(autoCompleteDomains[i].name).toLowerCase() == domainName.toLowerCase()) {
+					          if(fromdb(autoCompleteDomains[i].path).toLowerCase() == domainName.toLowerCase()) {
 					              domainId = autoCompleteDomains[i].id;
 					              break;	
 					          }
 				            } 					   			    
 				        }	       		    				    
 				        if(domainId == null) {
-				            showError(false, thisDialog.find("#domain"), thisDialog.find("#domain_errormsg"), "Not Found");
+				            showError(false, thisDialog.find("#domain"), thisDialog.find("#domain_errormsg"), "Domain does not exist");
 				            isValid &= false;
 				        }				    
 				    }				
@@ -1079,7 +1080,10 @@ function showConfigurationTab() {
 	    if($(this).val() == "zone-wide") {
 	        dialogAddVlanForZone.find("#domain_container").hide();
 			dialogAddVlanForZone.find("#account_container").hide();    
-	    } else { // account-specific
+	    } else if ($(this).val() == "domain-specific") {
+			dialogAddVlanForZone.find("#domain_container").show();
+			dialogAddVlanForZone.find("#account_container").hide();  
+		} else { // account-specific
 	        dialogAddVlanForZone.find("#domain_container").show();
 			dialogAddVlanForZone.find("#account_container").show();    
 	    }		    

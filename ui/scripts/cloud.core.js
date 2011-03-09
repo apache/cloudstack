@@ -73,7 +73,7 @@ function applyAutoCompleteToDomainField($field) {
     $field.autocomplete({
 		source: function(request, response) {			
 			$.ajax({
-			    data: "command=listDomains&keyword=" + request.term +"&response=json",				
+			    data: "command=listDomains&path=" + encodeURIComponent(request.term) +"&response=json",				
 				dataType: "json",
 				async: false,
 				success: function(json) {					   
@@ -81,7 +81,7 @@ function applyAutoCompleteToDomainField($field) {
 					var array1 = [];				
 					if(autoCompleteDomains != null && autoCompleteDomains.length > 0) {									
 						for(var i=0; i < autoCompleteDomains.length; i++) 					        
-							array1.push(fromdb(autoCompleteDomains[i].name));		   					   			    
+							array1.push(fromdb(autoCompleteDomains[i].path));		   					   			    
 					}					
 					response(array1);
 				}
@@ -260,8 +260,11 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 
     submenuContent.find("#advanced_search").bind("keypress", function(event) {		        
         if(event.keyCode == keycode_Enter) {           
-            event.preventDefault();   		        
-	        submenuContent.find("#adv_search_button").click();			     
+            event.preventDefault();   		  
+			var id = $(event.target).attr("id");
+			if (id != 'domain') {
+				submenuContent.find("#adv_search_button").click();	
+			}
 	    }		    
     });		   
      
@@ -601,8 +604,12 @@ function activateDialog(dialog) {
 	
 	//bind Enter-Key-pressing event handler to the dialog 	
 	dialog.keypress(function(event) {
-	    if(event.keyCode == keycode_Enter) 	        
-	        $('[aria-labelledby$='+dialog.attr("id")+']').find(":button:first").click();	    
+	    if(event.keyCode == keycode_Enter) { 	        
+			var id = $(event.target).attr("id");
+			if (id != 'domain') {
+				$('[aria-labelledby$='+dialog.attr("id")+']').find(":button:first").click();	
+			}
+		}
 	});
 }
 function removeDialogs() {
