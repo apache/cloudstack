@@ -289,7 +289,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	    throw new InvalidParameterValueException("unable to find a virtual machine with id " + cmd.getId());
     	}
     	
-    	VMTemplateVO template = _templateDao.findById(userVm.getTemplateId());
+    	VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
     	if (template == null || !template.getEnablePassword()) {
     	    throw new InvalidParameterValueException("Fail to reset password for the virtual machine, the template is not password enabled");
     	}
@@ -319,7 +319,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return false;
         }
 
-        VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
         if (template.getEnablePassword()) {
             Nic defaultNic = _networkMgr.getDefaultNic(vmId);
             if (defaultNic == null) {
@@ -2240,7 +2240,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    _vmDao.loadDetails(vm);
 	    
         // Check that the password was passed in and is valid
-        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
         
         String password = "saved_password";
         if (template.getEnablePassword()) {
