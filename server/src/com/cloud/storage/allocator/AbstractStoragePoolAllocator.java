@@ -157,7 +157,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		// capacity check "storage.capacity.threshold"
 		if (sc != null) {
 			long totalSize = pool.getCapacityBytes();
-			StorageStats stats = sc.getStorageStats(pool.getId());
+			StorageStats stats = sc.getStoragePoolStats(pool.getId());
+			if(stats == null){
+				stats = sc.getStorageStats(pool.getId());
+			}
 			if (stats != null) {
 				double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
 				if (s_logger.isDebugEnabled()) {
