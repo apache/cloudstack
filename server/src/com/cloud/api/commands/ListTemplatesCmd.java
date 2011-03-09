@@ -151,7 +151,7 @@ public class ListTemplatesCmd extends BaseCmd {
         	List<VMTemplateHostVO> templateHostRefsForTemplate = getManagementServer().listTemplateHostBy(template.getId(), zoneId);
         	
         	for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
-        		if (onlyReady && templateHostRef.getDownloadState() != Status.DOWNLOADED) {
+        		if ((onlyReady && templateHostRef.getDownloadState() != Status.DOWNLOADED) || templateHostRef.getDestroyed()){
     				continue;
     			}
         		

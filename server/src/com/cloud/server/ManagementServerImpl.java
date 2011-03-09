@@ -214,6 +214,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -312,6 +313,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final DiskOfferingDao _diskOfferingDao;
     private final VMTemplateDao _templateDao;
     private final VMTemplateHostDao _templateHostDao;
+    private final VMTemplateZoneDao _templateZoneDao;
     private final LaunchPermissionDao _launchPermissionDao;
     private final PricingDao _pricingDao;
     private final DomainDao _domainDao;
@@ -410,6 +412,7 @@ public class ManagementServerImpl implements ManagementServer {
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
         _templateHostDao = locator.getDao(VMTemplateHostDao.class);
+        _templateZoneDao = locator.getDao(VMTemplateZoneDao.class);
         _launchPermissionDao = locator.getDao(LaunchPermissionDao.class);
         _pricingDao = locator.getDao(PricingDao.class);
         _domainDao = locator.getDao(DomainDao.class);
@@ -2462,6 +2465,8 @@ public class ManagementServerImpl implements ManagementServer {
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Please specify a valid template or ISO ID.");
+        }if (_templateZoneDao.findByZoneTemplate(dataCenterId, templateId) != null){
+        	throw new InvalidParameterValueException("The template " +templateId+ " is not available for use");
         }
 
         boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());

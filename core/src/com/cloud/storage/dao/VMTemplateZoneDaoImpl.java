@@ -73,7 +73,7 @@ public class VMTemplateZoneDaoImpl extends GenericDaoBase<VMTemplateZoneVO, Long
 		SearchCriteria sc = ZoneTemplateSearch.create();
 	    sc.setParameters("zone_id", zoneId);
 	    sc.setParameters("template_id", templateId);
-	    return findOneBy(sc);
+	    return findOneActiveBy(sc);
 	}
 
 	@Override
