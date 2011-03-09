@@ -54,10 +54,6 @@ ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__prev_snap_id`(`prev_snap
 
 ALTER TABLE `cloud`.`snapshot_policy` ADD INDEX `i_snapshot_policy__volume_id`(`volume_id`);
 
-ALTER TABLE `cloud`.`snapshot_policy_ref` ADD INDEX `i_snapshot_policy_ref__snap_id`(`snap_id`);
-ALTER TABLE `cloud`.`snapshot_policy_ref` ADD INDEX `i_snapshot_policy_ref__volume_id`(`volume_id`);
-ALTER TABLE `cloud`.`snapshot_policy_ref` ADD INDEX `i_snapshot_policy_ref__policy_id`(`policy_id`);
-
 ALTER TABLE `cloud`.`snapshot_schedule` ADD CONSTRAINT `fk__snapshot_schedule_volume_id` FOREIGN KEY `fk_snapshot_schedule__volume_id` (`volume_id`) REFERENCES `volumes` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`snapshot_schedule` ADD INDEX `i_snapshot_schedule__volume_id`(`volume_id`);
 ALTER TABLE `cloud`.`snapshot_schedule` ADD CONSTRAINT `fk__snapshot_schedule_policy_id` FOREIGN KEY `fk_snapshot_schedule__policy_id` (`policy_id`) REFERENCES `snapshot_policy` (`id`) ON DELETE CASCADE;
