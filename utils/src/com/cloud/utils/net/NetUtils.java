@@ -933,6 +933,30 @@ public class NetUtils {
         long size = Long.valueOf(splitResult[1]);
         return NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
     }
+    
+    public static boolean validateGuestCidr(String cidr) {
+        //RFC 1918 - The Internet Assigned Numbers Authority (IANA) has reserved the
+        //following three blocks of the IP address space for private internets:
+        //10.0.0.0        -   10.255.255.255  (10/8 prefix)
+        //172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
+        //192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
+
+        String cidr1 = "10.0.0.0/8";
+        String cidr2 = "172.16.0.0/12";
+        String cidr3 = "192.168.0.0/16";
+        
+        if (!isValidCIDR(cidr)) {
+            s_logger.warn("Cidr " + cidr + " is not valid");
+            return false;
+        }
+        
+        if (isNetworkAWithinNetworkB(cidr, cidr1) || isNetworkAWithinNetworkB(cidr, cidr2) || isNetworkAWithinNetworkB(cidr, cidr3)) {
+            return true;
+        } else {
+            s_logger.warn("cidr " + cidr + " is not RFC 1918 compliant");
+            return false;
+        }
+    }
     	
 }
 

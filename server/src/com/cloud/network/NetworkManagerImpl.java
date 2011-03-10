@@ -1574,7 +1574,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override @DB
     public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled)
             throws ConcurrentOperationException, InsufficientCapacityException {
-        Long userId = UserContext.current().getCallerUserId();
         
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -1630,6 +1629,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             //validate network domain
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +  "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+        }
+        
+        //Check if cidr is RFC1918 compliant if the network is Guest Virtual
+        if (cidr != null && networkOffering.getGuestType() == GuestIpType.Virtual && networkOffering.getTrafficType() == TrafficType.Guest) {
+            if (!NetUtils.validateGuestCidr(cidr)) {
+                throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC1918 compliant");
             }
         }
 

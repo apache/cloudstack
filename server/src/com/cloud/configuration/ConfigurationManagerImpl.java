@@ -982,7 +982,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	    }
     	}
     	
-    	 if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
+    	 if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
              throw new InvalidParameterValueException("Please enter a valid guest cidr");
          }
 
@@ -1115,7 +1115,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         //checking the following params outside checkzoneparams method as we do not use these params for updatezone
         //hence the method below is generic to check for common params
-        if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
+        if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
             throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
 
