@@ -2751,6 +2751,19 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
+    void forceShutdownVM(Connection conn, VM vm) {
+        try {
+            Long domId = vm.getDomid(conn);
+            callHostPlugin(conn, "vmopspremium", "forceShutdownVM", "domId", domId.toString());
+            vm.powerStateReset(conn);
+            vm.destroy(conn);
+        } catch (Exception e) {
+            String msg = "forceShutdown failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+    
     void shutdownVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
         Task task = null;
         try {
@@ -2771,7 +2784,16 @@ public abstract class CitrixResourceBase implements ServerResource {
             try {
                 Types.VmPowerState state = vm.getPowerState(conn);
                 if (state == Types.VmPowerState.RUNNING ) {
-                    vm.hardShutdown(conn);
+                    try {
+                        vm.hardShutdown(conn);
+                    } catch (Exception e1) {
+                        s_logger.debug("Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString());
+                        state = vm.getPowerState(conn);
+                        if (state == Types.VmPowerState.RUNNING ) {
+                            forceShutdownVM(conn, vm);
+                        }
+                        return;
+                    }
                 } else if (state == Types.VmPowerState.HALTED ) {
                     return;
                 } else {
@@ -3031,7 +3053,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                                     disableVlanNetwork(conn, network);
                                 }
                             }
-                        }
+                            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, bytesSent, bytesRcvd);
+                        } 
                     } catch (XenAPIException e) {
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.toString();
                         s_logger.warn(msg, e);
@@ -3045,7 +3068,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                     }
                 }
             }
-            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, bytesSent, bytesRcvd);
+
         } catch (XenAPIException e) {
             String msg = "Stop Vm " + vmName + " fail due to " + e.toString();
             s_logger.warn(msg, e);
@@ -3055,6 +3078,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             s_logger.warn(msg, e);
             return new StopAnswer(cmd, msg);
         }
+        return new StopAnswer(cmd, "Stop VM failed");
     }
 
     private List<VDI> getVdis(Connection conn, VM vm) {
@@ -3149,15 +3173,8 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
 
     protected String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
-        //default time out is 300 s
-        return callHostPluginWithTimeOut(conn, plugin, cmd, 300, params);
-    }
-
-    protected String callHostPluginWithTimeOut(Connection conn, String plugin, String cmd, int timeout, String... params) {
         Map<String, String> args = new HashMap<String, String>();
-
         try {
-
             for (int i = 0; i < params.length; i += 2) {
                 args.put(params[i], params[i + 1]);
             }
@@ -5703,7 +5720,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             checksum = "";
         }
 
-        String result = callHostPluginWithTimeOut(conn, "vmopsSnapshot", "post_create_private_template", 110*60, "templatePath", templatePath, "templateFilename", tmpltFilename, "templateName", templateName, "templateDescription", templateDescription,
+        String result = callHostPlugin(conn, "vmopsSnapshot", "post_create_private_template", "templatePath", templatePath, "templateFilename", tmpltFilename, "templateName", templateName, "templateDescription", templateDescription,
                 "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
 
         boolean success = false;

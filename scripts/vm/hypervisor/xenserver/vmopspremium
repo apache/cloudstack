@@ -18,6 +18,17 @@ def echo(fn):
     return wrapped
 
 @echo
+def forceShutdownVM(session, args):
+    domId = args['domId']
+    try:
+        cmd = ["/opt/xensource/debug/xenops", "destroy_domain", "-domid", domId]
+        txt = util.pread2(cmd)
+    except:
+        txt = '10#failed'
+    return txt
+
+
+@echo
 def create_privatetemplate_from_snapshot(session, args):
     templatePath = args['templatePath']
     snapshotPath = args['snapshotPath']
@@ -108,5 +119,5 @@ def heartbeat(session, args):
     return txt
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat})
+    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat})
 
