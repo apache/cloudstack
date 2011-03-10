@@ -13,9 +13,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.cluster.ClusterManager;
-import com.cloud.cluster.ClusterService;
-import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
@@ -38,6 +35,9 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     @Override
 	public ClusterService getPeerService(String strPeer) throws RemoteException {
     	String serviceUrl = getServiceEndpointName(strPeer);
+    	if(serviceUrl == null)
+    		return null;
+    	
     	return new ClusterServiceServletImpl(serviceUrl);
 	}
     

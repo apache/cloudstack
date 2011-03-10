@@ -83,10 +83,15 @@ public class ClusterManagerImpl implements ClusterManager {
     private ManagementServerHostDao _mshostDao;
     private HostDao _hostDao;
     
-    protected long _id = MacAddress.getMacAddress().toLong();
+    //
+    // pay attention to _mshostId and _msid
+    // _mshostId is the primary key of management host table
+    // _msid is the unique persistent identifier that peer name is based upon
+    //
+    private Long _mshostId = null;
+    protected long _msid = MacAddress.getMacAddress().toLong();
     protected long _runId = System.currentTimeMillis();
     
-    private Long _mshostId = null;
     private boolean _peerScanInited = false;
     
     private String _name;
@@ -407,7 +412,7 @@ public class ClusterManagerImpl implements ClusterManager {
 	
 	@Override
 	public String getSelfPeerName() {
-		return Long.toString(_id);
+		return Long.toString(_msid);
 	}
 
 	@Override
@@ -585,7 +590,7 @@ public class ClusterManagerImpl implements ClusterManager {
 		Iterator<ManagementServerHostVO> it = removedNodeList.iterator();
 		while(it.hasNext()) {
 			ManagementServerHostVO mshost = it.next();
-			if(!pingManagementNode(mshost.getId())) {
+			if(!pingManagementNode(mshost.getMsid())) {
 				s_logger.warn("Management node " + mshost.getId() + " is detected inactive by timestamp and also not pingable");
 				activePeers.remove(mshost.getId());
 				
@@ -666,7 +671,7 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override @DB
     public boolean start() {
     	if(s_logger.isInfoEnabled()) {
-            s_logger.info("Starting cluster manager, msid : " + _id);
+            s_logger.info("Starting cluster manager, msid : " + _msid);
         }
     	
         Transaction txn = Transaction.currentTxn();
@@ -676,10 +681,10 @@ public class ClusterManagerImpl implements ClusterManager {
 	        final Class<?> c = this.getClass();
 	        String version = c.getPackage().getImplementationVersion();
 	        
-	        ManagementServerHostVO mshost = _mshostDao.findByMsid(_id);
+	        ManagementServerHostVO mshost = _mshostDao.findByMsid(_msid);
 	        if(mshost == null) {
 	        	mshost = new ManagementServerHostVO();
-		        mshost.setMsid(_id);
+		        mshost.setMsid(_msid);
 		        
 		        mshost.setName(NetUtils.getHostName());
 		        mshost.setVersion(version);
@@ -691,11 +696,11 @@ public class ClusterManagerImpl implements ClusterManager {
 		        _mshostDao.persist(mshost);
 		        
 		        if(s_logger.isInfoEnabled()) {
-                    s_logger.info("New instance of management server msid " + _id + " is being started");
+                    s_logger.info("New instance of management server msid " + _msid + " is being started");
                 }
 	        } else {
 		        if(s_logger.isInfoEnabled()) {
-                    s_logger.info("Management server " + _id + " is being started");
+                    s_logger.info("Management server " + _msid + " is being started");
                 }
 		        
 		        _mshostDao.update(mshost.getId(), NetUtils.getHostName(), version,
@@ -837,7 +842,7 @@ public class ClusterManagerImpl implements ClusterManager {
     
     @Override
     public long getManagementNodeId() {
-        return _id;
+        return _msid;
     }
     
     @Override
@@ -858,10 +863,10 @@ public class ClusterManagerImpl implements ClusterManager {
     
     @Override
     public boolean pingManagementNode(long msid) {
-    	ManagementServerHostVO mshost = _mshostDao.findById(msid);
+    	ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
     	if(mshost == null)
     		return false;
-    	
+
     	String targetIp = mshost.getServiceIP();
     	if("127.0.0.1".equals(targetIp) || "0.0.0.0".equals(targetIp)) {
     		s_logger.info("ping management node cluster service can not be performed on self");
@@ -909,17 +914,17 @@ public class ClusterManagerImpl implements ClusterManager {
     	Date cutTime = DateUtil.currentGMTTime();
     	List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - heartbeatThreshold));
     	for(ManagementServerHostVO peer : peers) {
-    		if(_mshostId == peer.getMsid()) {
-    			// skip check on itself
-    			continue;
-    		}
-    		
-    		if(_clusterNodeIP.equals(peer.getServiceIP().trim())) {
+    		String peerIP = peer.getServiceIP().trim();
+    		if(_clusterNodeIP.equals(peerIP)) {
     			if("127.0.0.1".equals(_clusterNodeIP)) {
-					throw new ConfigurationException("Detected another management node with localhost IP is already running, please check your cluster configuration");
+    				String msg = "Detected another management node with localhost IP is already running, please check your cluster configuration";
+    				s_logger.error(msg);
+					throw new ConfigurationException(msg);
     			} else {
-    				if(!pingManagementNode(peer.getId())) {
-    					throw new ConfigurationException("Detected that another management node with the same IP " + peer.getServiceIP() + " is already running");
+    				if(!pingManagementNode(peer.getMsid())) {
+    					String msg = "Detected that another management node with the same IP " + peer.getServiceIP() + " is already running";
+        				s_logger.error(msg);
+    					throw new ConfigurationException(msg);
     				}
     			}
     		}

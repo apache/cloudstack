@@ -43,11 +43,10 @@ public interface ClusterManager extends Manager {
 	
 	public int getHeartbeatThreshold();
 	
-	public long getManagementNodeId();
-	public long getCurrentRunId();
-	
+	public long getManagementNodeId();		// msid of current management server node
     public boolean isManagementNodeAlive(long msid);
     public boolean pingManagementNode(long msid);
+	public long getCurrentRunId();
     
 	public String getSelfPeerName();
 	public String getSelfNodeIP();
