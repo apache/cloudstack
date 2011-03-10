@@ -600,7 +600,7 @@ def rpm(context):
 	shutil.copy(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
-	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
+	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever)
 	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease+packagever)
 	try: checkdeps()
 	except (CalledProcessError,OSError),e:
