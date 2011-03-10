@@ -178,9 +178,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			//createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
 			//createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
 			// Save default disk offerings
-			createDiskOffering(DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
-			createDiskOffering(DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
-			createDiskOffering(DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
+			createDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
+			createDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
+			createDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null);
 			//_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Private", "Private Disk", 0, null);
 			
 			// Save the mount parent to the configuration table
@@ -677,7 +677,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         return pod;
     }
 
-    private DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
+    private DiskOfferingVO createDiskOffering(Long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
         long diskSize = numGibibytes * 1024;
         tags = cleanupTags(tags);
 

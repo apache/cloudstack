@@ -93,7 +93,7 @@ public class DiskOfferingVO implements DiskOffering {
     public DiskOfferingVO() {
     }
 
-    public DiskOfferingVO(long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized) {
+    public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized) {
         this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
@@ -119,7 +119,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     //domain specific offerings constructor (null domainId implies public offering)
     public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse, boolean customized, Long domainId) {
-        this.domainId = null;
         this.type = Type.Service;
         this.name = name;
         this.displayText = displayText;
