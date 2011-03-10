@@ -263,7 +263,96 @@ public class Upgrade217to22 implements DbUpgrade {
         }
     }
     
-    protected void upgradeUserIpAddress(Connection conn, long dcId, long networkId, String vlanType) throws SQLException {
+    protected void upgradeManagementIpAddress(Connection conn, long dcId) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement("SELECT op_dc_ip_address_alloc.id FROM op_dc_ip_address_alloc WHERE data_center_id=?");
+        pstmt.setLong(1, dcId);
+        ResultSet rs = pstmt.executeQuery();
+        ArrayList<Object[]> allocatedIps = new ArrayList<Object[]>();
+        while (rs.next()) {
+            Object[] ip = new Object[10];
+            ip[0] = rs.getLong(1);  // id
+            allocatedIps.add(ip);
+        }
+        rs.close();
+        pstmt.close();
+        
+        for (Object[] allocatedIp : allocatedIps) {
+            pstmt = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");
+            pstmt.setLong(1, dcId);
+            rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new CloudRuntimeException("Unable to get mac address for data center " + dcId);
+            }
+            long mac = rs.getLong(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("UPDATE data_center SET mac_address=mac_address+1 WHERE id = ?");
+            pstmt.setLong(1, dcId);
+            pstmt.executeUpdate();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("UPDATE op_dc_ip_address_alloc SET mac_address=? WHERE id=?");
+            pstmt.setLong(1, mac);
+            pstmt.setLong(2, (Long)allocatedIp[0]);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
+
+    }
+    
+    protected void upgradeDirectUserIpAddress(Connection conn, long dcId, long networkId, String vlanType) throws SQLException {
+        s_logger.debug("Upgrading user ip address for data center " + dcId + " network " + networkId + " vlan type " + vlanType);
+        PreparedStatement pstmt = conn.prepareStatement("UPDATE user_ip_address INNER JOIN vlan ON user_ip_address.vlan_db_id=vlan.id SET user_ip_address.source_network_id=vlan.network_id WHERE user_ip_address.data_center_id=? AND vlan.vlan_type=?");
+        pstmt.setLong(1, dcId);
+        pstmt.setString(2, vlanType);
+        pstmt.executeUpdate();
+        pstmt.close();
+        
+        pstmt = conn.prepareStatement("SELECT user_ip_address.id, user_ip_address.public_ip_address, user_ip_address.account_id, user_ip_address.allocated FROM user_ip_address INNER JOIN vlan ON vlan.id=user_ip_address.vlan_db_id WHERE user_ip_address.data_center_id = ? AND vlan.vlan_type=?");
+        pstmt.setLong(1, dcId);
+        pstmt.setString(2, vlanType);
+        ResultSet rs = pstmt.executeQuery();
+        ArrayList<Object[]> allocatedIps = new ArrayList<Object[]>();
+        while (rs.next()) {
+            Object[] ip = new Object[10];
+            ip[0] = rs.getLong(1);  // id
+            ip[1] = rs.getString(2); // ip address
+            ip[2] = rs.getLong(3); // account id
+            ip[3] = rs.getDate(4); // allocated
+            allocatedIps.add(ip);
+        }
+        rs.close();
+        pstmt.close();
+        
+        s_logger.debug("Marking " + allocatedIps.size() + " ip addresses to belong to network " + networkId);
+        
+        for (Object[] allocatedIp : allocatedIps) {
+            pstmt = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");
+            pstmt.setLong(1, dcId);
+            rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new CloudRuntimeException("Unable to get mac address for data center " + dcId);
+            }
+            long mac = rs.getLong(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("UPDATE data_center SET mac_address=mac_address+1 WHERE id = ?");
+            pstmt.setLong(1, dcId);
+            pstmt.executeUpdate();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("UPDATE user_ip_address SET mac_address=? WHERE id=?");
+            pstmt.setLong(1, mac);
+            pstmt.setLong(2, (Long)allocatedIp[0]);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
+    }
+    
+    protected void upgradePublicUserIpAddress(Connection conn, long dcId, long networkId, String vlanType) throws SQLException {
+        s_logger.debug("Upgrading user ip address for data center " + dcId + " network " + networkId + " vlan type " + vlanType);
         PreparedStatement pstmt = conn.prepareStatement("UPDATE user_ip_address INNER JOIN vlan ON user_ip_address.vlan_db_id=vlan.id SET source_network_id=? WHERE user_ip_address.data_center_id=? AND vlan.vlan_type=?");
         pstmt.setLong(1, networkId);
         pstmt.setLong(2, dcId);
@@ -431,8 +520,8 @@ public class Upgrade217to22 implements DbUpgrade {
                 insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                 insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                 insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                upgradeManagementIpAddress(conn, dcId);
             }
-            
             
             if (_basicZone) {
                 for (Object[] dc : dcs) {
@@ -440,7 +529,7 @@ public class Upgrade217to22 implements DbUpgrade {
                     long basicDefaultDirectNetworkId = insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, null, true, null);
                 
                     //update all public ips with the Default Direct network Id
-                    upgradeUserIpAddress(conn, dcId, basicDefaultDirectNetworkId, "DirectAttached");
+                    upgradePublicUserIpAddress(conn, dcId, basicDefaultDirectNetworkId, "DirectAttached");
                     
                     //update Dhcp servers information in domain_router and vm_instance tables; all domRs belong to the same network
                     pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
@@ -507,7 +596,8 @@ public class Upgrade217to22 implements DbUpgrade {
                         upgradeVirtualUserVms(conn, (Long)router[0], virtualNetworkId, (String)router[3], vnet);
                     }
                     
-                    upgradeUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
+                    upgradePublicUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
+                    
                     pstmt = conn.prepareStatement("SELECT id, vlan_id, vlan_gateway, vlan_netmask FROM vlan WHERE vlan_type='DirectAttached' AND data_center_id=?");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
@@ -518,7 +608,14 @@ public class Upgrade217to22 implements DbUpgrade {
                         String netmask = rs.getString(4);
                         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
                         long directNetworkId = insertNetwork(conn, "DirectNetwork" + vlanId, "Direct network created for " + vlanId, "Guest", "Vlan", "vlan://" + tag, gateway, cidr, "Dhcp", 7, dcId, "DirectNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, (String)dc[2], true, null);
-                        upgradeUserIpAddress(conn, dcId, directNetworkId, "DirectNetwork");
+                        
+                        pstmt = conn.prepareStatement("UPDATE vlan SET network_id=? WHERE id=?");
+                        pstmt.setLong(1, directNetworkId);
+                        pstmt.setLong(2, vlanId);
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                        
+                        upgradeDirectUserIpAddress(conn, dcId, directNetworkId, "DirectAttached");
                     }
                     
                 }
@@ -532,7 +629,6 @@ public class Upgrade217to22 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         upgradeDataCenter(conn);
-    //    upgradeNetworks(conn);
         upgradeStoragePools(conn);
         upgradeInstanceGroups(conn);
     }
