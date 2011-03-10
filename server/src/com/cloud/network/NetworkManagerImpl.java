@@ -1475,6 +1475,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (endIP == null && startIP != null) {
             endIP = startIP;
         }
+        
+        // Check if zone exists
+        if (zoneId == null || ((_dcDao.findById(zoneId)) == null)) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
 
         // Check if network offering exists
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
@@ -1487,47 +1492,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Can't create network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability());
         }
 
-        // allow isDefault to be set only for Direct network
-        if (networkOffering.getGuestType() == GuestIpType.Virtual) {
-            if (isDefault != null) {
-                throw new InvalidParameterValueException("Can specify isDefault parameter only for Direct network.");
-            } else {
-                isDefault = true;
-            }
-        } else {
-            if (isDefault == null) {
-                isDefault = false;
-            }
-        }
-
-        // If networkDomain is not specified, take it from the global configuration
-        if (networkDomain == null) {
-            networkDomain = "cs"+Long.toHexString(owner.getId())+_networkDomain;
-        } else {
-            //validate network domain
-            if (!NetUtils.verifyDomainName(networkDomain)) {
-                throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +  "and the hyphen ('-'); can't start or end with \"-\"");
-            }
-        }
-
-        // Check if zone exists; allow network creation in Advanced zone only
-        if (zoneId == null || ((_dcDao.findById(zoneId)) == null)) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
-        }
-
-        DataCenter zone = _dcDao.findById(zoneId);
-        if (zone.getNetworkType() == NetworkType.Basic) {
-            throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
-        }
-        
-        if (zone.isSecurityGroupEnabled() && (networkOffering.getGuestType() == GuestIpType.Virtual  || (isShared != null && isShared))) {
-            throw new InvalidParameterValueException("Virtual Network and Direct Shared Network creation is not allowed if zone is security group enabled");
-        }
-        
-        if (zone.isSecurityGroupEnabled() && cmd.getAccountName() == null) {
-            throw new InvalidParameterValueException("Can't create a zone wide network if zone is security group enabled");
-        }
-        
         //If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
         ArrayList<String> networkConfigs = new ArrayList<String>();
         networkConfigs.add(gateway);
@@ -1554,20 +1518,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
         
-        // Don't allow to create network with vlan that already exists in the system
-        if (vlanId != null) {
-            String uri = "vlan://" + vlanId;
-            List<NetworkVO> networks = _networksDao.listBy(zoneId, uri);
-            if ((networks != null && !networks.isEmpty())) {
-                throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
-            }
-        }
-        
-        //Don't allow to create guest virtual network with Vlan specified
-        if (networkOffering.getGuestType() == GuestIpType.Virtual && vlanId != null) {
-            throw new InvalidParameterValueException("Can't specify vlan when create network with Guest IP Type " + GuestIpType.Virtual);
-        }
-        
         //Regular user can create guest virtual network only
         if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Virtual)) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and Guest Ip type " + GuestIpType.Virtual);
@@ -1588,12 +1538,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Cidr size can't be less than " + _cidrLimit);
             }
         }
-
-        // VlanId can be specified only when network offering supports it
-        if (vlanId != null && !networkOffering.getSpecifyVlan()) {
-            throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
-        }
-
+        
         txn.start();
         Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false);
         
@@ -1620,6 +1565,60 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         DataCenterVO zone = _dcDao.findById(zoneId);
+        
+        //Only Direct Account specific networks can be created in Advanced Security Group enabled zone
+        if (zone.isSecurityGroupEnabled() && (networkOffering.getGuestType() == GuestIpType.Virtual  || (isShared != null && isShared))) {
+            throw new InvalidParameterValueException("Virtual Network and Direct Shared Network creation is not allowed if zone is security group enabled");
+        }
+        
+        if (zone.getNetworkType() == NetworkType.Basic) {
+            throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
+        }
+        
+        // allow isDefault/isShared to be set only for Direct network
+        if (networkOffering.getGuestType() == GuestIpType.Virtual) {
+            if (isDefault != null) {
+                throw new InvalidParameterValueException("Can specify isDefault parameter only for Direct network.");
+            } else {
+                isDefault = true;
+            }
+            if (isShared != null && isShared) {
+                throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks only");
+            }
+        } else {
+            if (isDefault == null) {
+                isDefault = false;
+            }
+        }
+        
+        // Don't allow to create network with vlan that already exists in the system
+        if (vlanId != null) {
+            String uri = "vlan://" + vlanId;
+            List<NetworkVO> networks = _networksDao.listBy(zoneId, uri);
+            if ((networks != null && !networks.isEmpty())) {
+                throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
+            }
+        }
+        
+        // VlanId can be specified only when network offering supports it
+        if (vlanId != null && !networkOffering.getSpecifyVlan()) {
+            throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
+        }
+        
+        //Don't allow to create guest virtual network with Vlan specified
+        if (networkOffering.getGuestType() == GuestIpType.Virtual && vlanId != null) {
+            throw new InvalidParameterValueException("Can't specify vlan when create network with Guest IP Type " + GuestIpType.Virtual);
+        }
+        
+        // If networkDomain is not specified, take it from the global configuration
+        if (networkDomain == null) {
+            networkDomain = "cs"+Long.toHexString(owner.getId())+_networkDomain;
+        } else {
+            //validate network domain
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +  "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1629,7 +1628,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         userNetwork.setNetworkDomain(networkDomain);
         userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
 
-        // cidr should be set only when the user is admin
         if (cidr != null && gateway != null) {
             userNetwork.setCidr(cidr);
             userNetwork.setGateway(gateway);
