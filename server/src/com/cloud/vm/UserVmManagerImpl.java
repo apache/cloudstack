@@ -37,14 +37,13 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.SnapshotCommand;
 import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.to.VolumeTO;
@@ -122,7 +121,9 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.vpn.PasswordResetElement;
+import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
@@ -131,7 +132,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
@@ -142,6 +142,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
@@ -2005,6 +2006,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             networkList.add(guestVirtualNetwork);
             
         } else {
+            
+            boolean requiredNetworkOfferingIsPresent = false;
+            List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+            Long requiredOfferingId = null;
+            
+            if (!requiredOfferings.isEmpty()) {
+                //in 2.2.x there can be only one required offering - default Virtual
+                requiredOfferingId = requiredOfferings.get(0).getId();
+            }
+            
             for (Long networkId : networkIdList) {         
                 NetworkVO network = _networkDao.findById(networkId);
                 if (network == null) {
@@ -2019,8 +2030,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
                 } 
                 
+                if (requiredOfferingId != null && network.getNetworkOfferingId() == requiredOfferingId.longValue()) {
+                    requiredNetworkOfferingIsPresent = true;
+                }
+                
                 networkList.add(network);
             }
+            
+            //If default Virtual network offering is Required, it has to be specified in the network list
+            if (requiredOfferingId != null && !requiredNetworkOfferingIsPresent) {
+                throw new InvalidParameterValueException("Network created from the network offering id=" + requiredOfferingId + " is required; change network offering availability to be Optional to relax this requirement");
+            }
+          
+            
         }
         
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, caller, diskOfferingId, 

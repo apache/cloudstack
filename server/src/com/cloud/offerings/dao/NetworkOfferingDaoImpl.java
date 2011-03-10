@@ -11,6 +11,7 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -24,6 +25,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
+    final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
     
     protected NetworkOfferingDaoImpl() {
         super();
@@ -35,6 +37,11 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         SystemOfferingSearch = createSearchBuilder();
         SystemOfferingSearch.and("system", SystemOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         SystemOfferingSearch.done();
+        
+        AvailabilitySearch = createSearchBuilder();
+        AvailabilitySearch.and("availability", AvailabilitySearch.entity().getAvailability(), SearchCriteria.Op.EQ);
+        AvailabilitySearch.and("isSystem", AvailabilitySearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
+        AvailabilitySearch.done();
     }
     
     @Override
@@ -75,5 +82,13 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
         sc.setParameters("system", true);
         return this.listIncludingRemovedBy(sc, null);
+    }
+    
+    @Override
+    public List<NetworkOfferingVO> listByAvailability(Availability availability, boolean isSystem) {
+        SearchCriteria<NetworkOfferingVO> sc = AvailabilitySearch.create();
+        sc.setParameters("availability", availability);
+        sc.setParameters("isSystem", isSystem);
+        return listBy(sc, null);
     }
 }

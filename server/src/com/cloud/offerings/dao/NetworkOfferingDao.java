@@ -5,6 +5,7 @@ package com.cloud.offerings.dao;
 
 import java.util.List;
 
+import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -34,5 +35,7 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     List<NetworkOfferingVO> listNonSystemNetworkOfferings();
     
     List<NetworkOfferingVO> listSystemNetworkOfferings();
+    
+    List<NetworkOfferingVO> listByAvailability(Availability availability, boolean isSystem);
     
 }
