@@ -86,6 +86,14 @@ public class DummyClusterManagerImpl implements ClusterManager {
         return _id;
 	}
 	
+    public boolean isManagementNodeAlive(long msid) {
+    	return true;
+    }
+    
+    public boolean pingManagementNode(long msid) {
+    	return false;
+    }
+	
 	@Override
 	public ManagementServerHostVO getPeer(String str) {
 		return null;

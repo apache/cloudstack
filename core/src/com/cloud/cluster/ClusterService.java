@@ -25,4 +25,5 @@ public interface ClusterService extends Remote {
 	String execute(String callingPeer, long agentId, String gsonPackage, boolean stopOnError) throws RemoteException;
 	long executeAsync(String callingPeer, long agentId, String gsonPackage, boolean stopOnError) throws RemoteException;
 	boolean onAsyncResult(String executingPeer, long agentId, long seq, String gsonPackage) throws RemoteException;
+	boolean ping(String callingPeer) throws RemoteException;
 }

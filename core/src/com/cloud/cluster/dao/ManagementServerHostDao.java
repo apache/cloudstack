@@ -30,5 +30,6 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 	void update(long id, Date lastUpdate);
 	
 	List<ManagementServerHostVO> getActiveList(Date cutTime);
+	List<ManagementServerHostVO> getInactiveList(Date cutTime);
 	void increaseAlertCount(long id);
 }
