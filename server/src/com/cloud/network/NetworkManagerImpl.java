@@ -1520,8 +1520,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
         }
         
-        if (zone.isSecurityGroupEnabled() && networkOffering.getGuestType() == GuestIpType.Virtual) {
-            throw new InvalidParameterValueException("Virtual Network creation is not allowd if zone is security group enabled");
+        if (zone.isSecurityGroupEnabled() && (networkOffering.getGuestType() == GuestIpType.Virtual  || (isShared != null && isShared))) {
+            throw new InvalidParameterValueException("Virtual Network and Direct Shared Network creation is not allowed if zone is security group enabled");
         }
         
         if (zone.isSecurityGroupEnabled() && cmd.getAccountName() == null) {
