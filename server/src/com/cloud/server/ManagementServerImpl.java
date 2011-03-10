@@ -2431,6 +2431,7 @@ public class ManagementServerImpl implements ManagementServer {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
+        Object keyword = cmd.getKeyword();
         Long accountId = null;
        
 
@@ -2448,12 +2449,19 @@ public class ManagementServerImpl implements ManagementServer {
                     } else {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
-                }
+                } 
             } else {
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
             }
         } else {
             accountId = account.getId();
+        }
+        
+        if (accountId == null && keyword != null) {
+            Account userAccount = _accountDao.findActiveAccount((String)keyword, domainId);
+            if (userAccount != null) {
+                accountId = userAccount.getId();
+            }
         }
 
         Boolean isAllocated = cmd.isAllocatedOnly();
@@ -2466,7 +2474,6 @@ public class ManagementServerImpl implements ManagementServer {
         Object zone = cmd.getZoneId();
         Object address = cmd.getIpAddress();
         Object vlan = cmd.getVlanId();
-        Object keyword = cmd.getKeyword();
         Object forVirtualNetwork  = cmd.isForVirtualNetwork();
         Object ipId = cmd.getId();
 
@@ -2474,7 +2481,6 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("accountIdEQ", sb.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
-        sb.and("addressLike", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
@@ -2483,6 +2489,10 @@ public class ManagementServerImpl implements ManagementServer {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getAllocatedInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (keyword != null && address == null) {
+            sb.and("addressLIKE", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         }
         
         if (forVirtualNetwork != null) {
@@ -2516,8 +2526,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("id", ipId);
         }
 
-        if ((address == null) && (keyword != null)) {
-            sc.setParameters("addressLike", "%" + keyword + "%");
+        if (address == null && keyword != null) {
+            sc.setParameters("addressLIKE", "%" + keyword + "%"); 
         }
 
         if (address != null) {
