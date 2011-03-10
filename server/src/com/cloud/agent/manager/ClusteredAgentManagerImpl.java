@@ -67,7 +67,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 	public final static long LOAD_SIZE = 100;
 	
     @Inject protected ClusterManager _clusterMgr = null;
-    protected Set<Long> _pendingDirectAttache = new HashSet<Long>();
     
     protected HashMap<String, SocketChannel> _peers;
     private final Timer _timer = new Timer("ClusteredAgentManager Timer");
@@ -146,30 +145,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 						continue;
 					}
 				}
-	
-				synchronized(_pendingDirectAttache) {
-					if(_pendingDirectAttache.contains(host.getId())) {
-						// is being loaded, skip
-						continue;
-					}
-				}
 				
 				if(s_logger.isDebugEnabled())
 					s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ")");
 
-				synchronized(_pendingDirectAttache) {
-					_pendingDirectAttache.add(host.getId());
-				}
-		        host.setLastPinged(System.currentTimeMillis() >> 10);
-		        _hostDao.update(host.getId(), host);
-				loadDirectlyConnectedHost(host, new ActionDelegate<Long>() {
-					@Override
-                    public void action(Long param) {
-						synchronized(_pendingDirectAttache) {
-							_pendingDirectAttache.remove(param);
-						}
-					}
-				});
+				loadDirectlyConnectedHost(host);
 			}
 		}
 		

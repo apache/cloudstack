@@ -1669,13 +1669,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	public void startDirectlyConnectedHosts() {
 		List<HostVO> hosts = _hostDao.findDirectlyConnectedHosts();
 		for (HostVO host : hosts) {
-			loadDirectlyConnectedHost(host, null);
+			loadDirectlyConnectedHost(host);
 		}
 	}
 
 	@SuppressWarnings("rawtypes")
-	protected void loadDirectlyConnectedHost(HostVO host,
-			ActionDelegate<Long> actionDelegate) {
+	protected void loadDirectlyConnectedHost(HostVO host) {
 		String resourceName = host.getResource();
 		ServerResource resource = null;
 		try {
@@ -1753,9 +1752,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			s_logger.warn("Unable to start the resource");
 			return;
 		}
-
+		host.setLastPinged(System.currentTimeMillis() >> 10);
+		host.setManagementServerId(_nodeId);
+		_hostDao.update(host.getId(), host);
 		_executor.execute(new SimulateStartTask(host.getId(), resource, host
-				.getDetails(), actionDelegate));
+				.getDetails(), null));
 	}
 
 	protected AgentAttache simulateStart(ServerResource resource,
@@ -2979,6 +2980,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 		@Override
 		public void run() {
+            AgentAttache at = null;
 			try {
 				if (s_logger.isDebugEnabled()) {
 					s_logger.debug("Simulating start for resource "
@@ -2992,7 +2994,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				if (actionDelegate != null) {
 					actionDelegate.action(new Long(id));
 				}
-
+				if ( at == null ) {
+				    HostVO host = _hostDao.findById(id);
+				    host.setManagementServerId(null);
+				    _hostDao.update(id, host);
+				}
 				StackMaid.current().exitCleanup();
 			}
 		}
