@@ -982,11 +982,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     public void startDirectlyConnectedHosts() {
         List<HostVO> hosts = _hostDao.findDirectlyConnectedHosts();
         for (HostVO host : hosts) {
-        	loadDirectlyConnectedHost(host, null);
+        	loadDirectlyConnectedHost(host);
         }
     }
     
-    protected void loadDirectlyConnectedHost(HostVO host, ActionDelegate<Long> actionDelegate) {
+    protected void loadDirectlyConnectedHost(HostVO host) {
         String resourceName = host.getResource();
         ServerResource resource = null;
         try {
@@ -1051,8 +1051,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             s_logger.warn("Unable to start the resource");
             return;
         }
-
-        _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), actionDelegate));
+        host.setLastPinged(System.currentTimeMillis() >> 10);
+        host.setManagementServerId(_nodeId);
+        _hostDao.update(host.getId(), host);
+        _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
     }
 
     protected AgentAttache simulateStart(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags) throws IllegalArgumentException{
@@ -1911,18 +1913,22 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         @Override
         public void run() {
+            AgentAttache at = null;
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
-                simulateStart(resource, details, false, null);
+                at = simulateStart(resource, details, false, null);
             } catch (Exception e) {
+
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
-            } finally {
-            	if(actionDelegate != null)
-            		actionDelegate.action(new Long(id));
-            	
+            } finally {          	
             	StackMaid.current().exitCleanup();
+            	if ( at == null ) {
+                    HostVO host = _hostDao.findById(id);
+                    host.setManagementServerId(null);
+                    _hostDao.update(id, host);
+            	}
             }
         }
     }
