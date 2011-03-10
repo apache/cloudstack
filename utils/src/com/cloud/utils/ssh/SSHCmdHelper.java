@@ -11,6 +11,36 @@ import com.trilead.ssh2.Session;
 public class SSHCmdHelper {
 	private static final Logger s_logger = Logger.getLogger(SSHCmdHelper.class);
 	
+	public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, String username, String password) {
+		return acquireAuthorizedConnection(ip, 22, username, password);
+	}
+	
+	public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, int port, String username, String password) {
+		com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(ip, port);
+		try {
+			sshConnection.connect(null, 60000, 60000);
+			if (!sshConnection.authenticateWithPassword(username, password)) {
+				String[] methods = sshConnection.getRemainingAuthMethods(username);
+				StringBuffer mStr = new StringBuffer();
+				for (int i=0; i<methods.length; i++) {
+					mStr.append(methods[i]);
+				}
+				s_logger.warn("SSH authorizes failed, support authorized methods are " + mStr);
+				return null;
+			}
+			return sshConnection;
+		} catch (IOException e) {
+			s_logger.warn("Get SSH connection failed", e);
+			return null;
+		}
+	}
+	
+	public static void releaseSshConnection(com.trilead.ssh2.Connection sshConnection) {
+		if (sshConnection != null) {
+			sshConnection.close();
+		}
+	}
+	
 	public static boolean sshExecuteCmd(com.trilead.ssh2.Connection sshConnection, String cmd, int nTimes) {
 		for (int i = 0; i < nTimes; i ++) {
 			if (sshExecuteCmdOneShot(sshConnection, cmd))

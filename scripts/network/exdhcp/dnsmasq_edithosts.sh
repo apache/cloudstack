@@ -45,8 +45,11 @@ echo "$2 $3" >> /etc/hosts
 pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
-  service dnsmasq restart
+  # send SIGHUP to dnsmasq to reload /etc/hosts /etc/dhcphosts.txt
+  # this will not reload /etc/dnsmasq.conf
+  kill -s 1 $pid
 else
+  service dnsmasq start
   wait_for_dnsmasq
 fi
 

@@ -2,25 +2,133 @@
 
 # prepare dnsmasq on external dhcp server
 # Usage:
-# 	sh prepare_dnsmasq gateway dns
+# 	sh prepare_dnsmasq gateway dns self_ip
 #
 
 gateway=$1
 dns=$2
+self_ip=$3
 
 exit_with_error() {
 	echo $1
 	exit 1
 }
 
-[ $# -ne 2 ] && exit_with_error "Usage: prepare_dnsmasq gateway dns"
+config_dnsmasq() {
+	echo "$*" >> /etc/dnsmasq.conf
+	[ $? -ne 0 ] && exit_with_error "echo $* failed"
+}
+
+[ $# -ne 3 ] && exit_with_error "Usage: prepare_dnsmasq gateway dns self_ip"
 
 [ -f /etc/dnsmasq.conf ] || exit_with_error "Can not found /etc/dnsmasq.conf"
-sed -i -e '/^[#]*dhcp-option=option:router.*$/d' /etc/dnsmasq.conf
-[ $? -ne 0 ] && exit_with_error "sed -i -e '/^[#]*dhcp-option=option:router.*$/d' /etc/dnsmasq.conf failed"
-echo dhcp-option=option:router,$gateway >> /etc/dnsmasq.conf
-[ $? -ne 0 ] && exit_with_error "echo \"sed -i -e '/^[#]*dhcp-option=option:router.*$/d' /etc/dnsmasq.conf failed\" "
 
+touch /var/log/dnsmasq.log
+[ $? -ne 0 ] && exit_with_error "touch /var/log/dnsmasq.log failed"
+touch /etc/dnsmasq-resolv.conf
+[ $? -ne 0 ] && exit_with_error "touch /etc/dnsmasq-resolv.conf failed"
+
+#produce echoer.sh
+cat > /usr/bin/echoer.sh<<'EOF'
+#!/bin/sh
+
+echo "$*" >> /var/lib/dnsmasq.trace
+EOF
+[ $? -ne 0 ] && exit_with_error "can't produce /usr/bin/echoer.sh"
+
+chmod +x /usr/bin/echoer.sh
+[ $? -ne 0 ] && exit_with_error "chmod +x /usr/bin/echoer.sh failed"
+
+# Configure dnsmasq with comments
+echo "# This is produced by CloudStack" > /etc/dnsmasq.conf
+config_dnsmasq "# Never forward plain names (without a dot or domain part)"
+config_dnsmasq domain-needed
+config_dnsmasq "# Never forward addresses in the non-routed address spaces."
+config_dnsmasq bogus-priv
+config_dnsmasq "
+# Change this line if you want dns to get its upstream servers from
+# somewhere other that /etc/resolv.conf"
+config_dnsmasq resolv-file=/etc/dnsmasq-resolv.conf
+config_dnsmasq "
+# Add local-only domains here, queries in these domains are answered
+# from /etc/hosts or DHCP only."
+config_dnsmasq local=/cloudnine.internal/
+config_dnsmasq "
+# On systems which support it, dnsmasq binds the wildcard address,
+# even when it is listening on only some interfaces. It then discards
+# requests that it shouldn't reply to. This has the advantage of
+# working even when interfaces come and go and change address. If you
+# want dnsmasq to really bind only the interfaces it is listening on,
+# uncomment this option. About the only time you may need this is when
+# running another nameserver on the same machine."
+config_dnsmasq bind-interfaces
+config_dnsmasq "
+# Set this (and domain: see below) if you want to have a domain
+# automatically added to simple names in a hosts-file."
+config_dnsmasq expand-hosts
+config_dnsmasq "
+# Set the domain for dnsmasq. this is optional, but if it is set, it
+# does the following things.
+# 1) Allows DHCP hosts to have fully qualified domain names, as long
+#     as the domain part matches this setting.
+# 2) Sets the \"domain\" DHCP option thereby potentially setting the
+#    domain of all systems configured by DHCP
+# 3) Provides the domain part for \"expand-hosts\"
+"
+config_dnsmasq domain=cloudnine.internal
+config_dnsmasq "
+# Send options to hosts which ask for a DHCP lease.
+# See RFC 2132 for details of available options.
+# Common options can be given to dnsmasq by name: 
+# run \"dnsmasq --help dhcp\" to get a list.
+# Note that all the common settings, such as netmask and
+# broadcast address, DNS server and default route, are given
+# sane defaults by dnsmasq. You very likely will not need 
+# any dhcp-options. If you use Windows clients and Samba, there
+# are some options which are recommended, they are detailed at the
+# end of this section.
+
+# Override the default route supplied by dnsmasq, which assumes the
+# router is the same machine as the one running dnsmasq."
+config_dnsmasq dhcp-option=option:router,$gateway
+config_dnsmasq "
+# Uncomment this to enable the integrated DHCP server, you need
+# to supply the range of addresses available for lease and optionally
+# a lease time. If you have more than one network, you will need to
+# repeat this for each network on which you want to supply DHCP
+# service."
+config_dnsmasq dhcp-range=$self_ip,static
+config_dnsmasq dhcp-hostsfile=/etc/dhcphosts.txt
+config_dnsmasq "# Set the domain"
+config_dnsmasq dhcp-option=15,"cloudnine.internal"
+config_dnsmasq "
+# Send microsoft-specific option to tell windows to release the DHCP lease
+# when it shuts down. Note the \"i\" flag, to tell dnsmasq to send the
+# value as a four-byte integer - that's what microsoft wants. See
+# http://technet2.microsoft.com/WindowsServer/en/library/a70f1bb7-d2d4-49f0-96d6-4b7414ecfaae1033.mspx?mfr=true"
+config_dnsmasq dhcp-option=vendor:MSFT,2,1i
+config_dnsmasq "
+# The DHCP server needs somewhere on disk to keep its lease database.
+# This defaults to a sane location, but if you want to change it, use
+# the line below.
+#dhcp-leasefile=/var/lib/misc/dnsmasq.leases"
+config_dnsmasq leasefile-ro
+config_dnsmasq "
+# For debugging purposes, log each DNS query as it passes through
+# dnsmasq."
+config_dnsmasq log-queries
+config_dnsmasq log-facility=/var/log/dnsmasq.log
+config_dnsmasq "
+# Run an executable when a DHCP lease is created or destroyed.
+# The arguments sent to the script are \"add\" or \"del\",
+# then the MAC address, the IP address and finally the hostname
+# if there is one."
+config_dnsmasq dhcp-script=/usr/bin/echoer.sh
+config_dnsmasq dhcp-scriptuser=root
+config_dnsmasq dhcp-authoritative
+
+[ -f /usr/sbin/setenforce ] && /usr/sbin/setenforce 0
+[ $? -ne 0 ] && exit_with_error "Can not set seLinux to passive mode"
 
 # Open DHCP ports in iptable
 chkconfig --list iptables | grep "on"
@@ -67,10 +175,11 @@ if [ $? -ne 0 ]; then
 	fi
 fi
 
+# Set up upstream DNS
 [ -f /etc/dnsmasq-resolv.conf ] || echo nameserver $dns > /etc/dnsmasq-resolv.conf
 [ $? -ne 0 ] && exit_with_error "cannot create /etc/dnsmasq-resolv.conf"
 
-touch /var/log/dnsmasq.log && service dnsmasq restart
-[ $? -ne 0 ] && exit_with_error "touch /var/log/dnsmasq.log && service dnsmasq restart failed"
+service dnsmasq restart
+[ $? -ne 0 ] && exit_with_error "service dnsmasq restart failed"
 
 exit 0
