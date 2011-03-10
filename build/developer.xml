@@ -264,14 +264,14 @@
   </target>
     
   <target name="test" description="Execute one unit test" depends="compile-tests">
-    <junit fork="true" printsummary="true" clonevm="true" failureproperty="junit.failure">
+    <junit fork="true" printsummary="true" showoutput="true" failureproperty="junit.failure">
       <!-- N.b. use failureproperty instead of haltonfailure, because if we use
            the former, we will get no detailed report about the failure.
            If the test fails, the fail element below will still assure that
            the Ant run will exit with error status.
       -->
-      <bootclasspath refid="test.classpath"/>
       <classpath refid="test.classpath"/>
+      <jvmarg value="${debug.jvmarg}"/>
       <batchtest todir="${unittest.dir}">
         <formatter type="plain"/>
         <fileset dir="${utils.test.dir}">
@@ -281,8 +281,12 @@
           <include name="**/${test}.java"/>
         </fileset>
       </batchtest>
+      <junitreport todir="${unittest.dir}">
+        <fileset dir="${unittest.dir}"/>
+        <report todir="${unittest.dir}/test-reports"/>
+      </junitreport>
+      <fail if="junit.failure" message="Unit test(s) failed.  See reports!"/>
     </junit>
-    <jvmarg value="${debug.jvmarg}"/>
     <junitreport todir="${unittest.dir}">
       <fileset dir="${unittest.dir}"/>
       <report todir="${unittest.dir}/test-reports"/>

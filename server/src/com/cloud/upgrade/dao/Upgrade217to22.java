@@ -319,13 +319,14 @@ public class Upgrade217to22 implements DbUpgrade {
                 pstmt.close();
             }
             
-            pstmt = conn.prepareStatement("SELECT id, guest_network_cidr FROM data_center");
+            pstmt = conn.prepareStatement("SELECT id, guest_network_cidr, domain FROM data_center");
             rs = pstmt.executeQuery();
             ArrayList<Object[]> dcs = new ArrayList<Object[]>();
             while (rs.next()) {
                 Object[] dc = new Object[10];
                 dc[0] = rs.getLong(1);    // data center id
                 dc[1] = rs.getString(2);  // guest network cidr
+                dc[2] = rs.getString(3);  // network domain
                 dcs.add(dc);
             }
             rs.close();
@@ -455,11 +456,10 @@ public class Upgrade217to22 implements DbUpgrade {
                         String gateway = rs.getString(3);
                         String netmask = rs.getString(4);
                         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
-                        insertNetwork(conn, "DirectNetwork" + vlanId, "Direct network created for " + vlanId, "Guest", "Vlan", "vlan://" + tag, gateway, cidr, "Dhcp", 4, dcId, "DirectNetworkGuru", "Setup", 0, 0, null, null, "DirectAttached", true, null, true, null);
+                        long directNetworkId = insertNetwork(conn, "DirectNetwork" + vlanId, "Direct network created for " + vlanId, "Guest", "Vlan", "vlan://" + tag, gateway, cidr, "Dhcp", 7, dcId, "DirectNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, (String)dc[2], true, null);
+                        upgradeUserIpAddress(conn, dcId, directNetworkId, "DirectNetwork");
                     }
                     
-                    
-                    upgradeUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
                 }
                 
             }

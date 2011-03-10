@@ -64,8 +64,6 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
     protected VersionDaoImpl() {
         super();
         _upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.3"), new DbUpgrade[] { new Upgrade217to22(), new UpgradeSnapshot217to223()});
-        _upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.1"), new DbUpgrade[] { new Upgrade217to22() });
-        _upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.3"), new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222() });
         
         CurrentVersionSearch = createSearchBuilder(String.class);
         CurrentVersionSearch.select(null, Func.FIRST, CurrentVersionSearch.entity().getVersion());
