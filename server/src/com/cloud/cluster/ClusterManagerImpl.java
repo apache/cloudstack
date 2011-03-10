@@ -852,7 +852,7 @@ public class ClusterManagerImpl implements ClusterManager {
     
     @Override
     public boolean isManagementNodeAlive(long msid) {
-    	ManagementServerHostVO mshost = _mshostDao.findById(msid);
+    	ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
     	if(mshost != null) {
     		if(mshost.getLastUpdateTime().getTime() >=  DateUtil.currentGMTTime().getTime() - heartbeatThreshold)
     			return true;
