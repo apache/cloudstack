@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
@@ -64,9 +65,11 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability;
     
-    
     @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest ip type for the network offering, supported types are Direct and Virtual.")
     private String guestIpType;
+    
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list netowrk offerings available for network creation in specific zone")
+    private Long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,6 +109,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     public String getGuestIpType() {
         return guestIpType;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
     }
 
     /////////////////////////////////////////////////////

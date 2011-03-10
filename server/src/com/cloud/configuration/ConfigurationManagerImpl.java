@@ -2513,6 +2513,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object isShared = cmd.getIsShared();
         Object availability = cmd.getAvailability();
         Object guestIpType = cmd.getGuestIpType();
+        Long zoneId = cmd.getZoneId();
+        DataCenter zone = null;
+        
+        if (zoneId != null) {
+            zone = getZone(zoneId);
+        }
         
         Object keyword = cmd.getKeyword();
 
@@ -2557,6 +2563,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         if (availability != null) {
             sc.addAnd("availability", SearchCriteria.Op.EQ, availability);
+        }
+        
+        if (zone != null) {
+            if (zone.getNetworkType() == NetworkType.Basic) {
+                //return empty list as we don't allow to create networks in basic zone, and shouldn't display networkOfferings
+                return new ArrayList<NetworkOffering>();
+            } else if (zone.isSecurityGroupEnabled()){
+                sc.addAnd("guestType", SearchCriteria.Op.EQ, GuestIpType.Direct);
+            }
         }
         
         //Don't return system network offerings to the user
