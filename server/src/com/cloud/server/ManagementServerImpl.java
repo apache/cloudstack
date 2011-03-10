@@ -2465,7 +2465,7 @@ public class ManagementServerImpl implements ManagementServer {
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Please specify a valid template or ISO ID.");
-        }if (_templateZoneDao.findByZoneTemplate(dataCenterId, templateId) != null){
+        }if (_templateZoneDao.findByZoneTemplate(dataCenterId, templateId) == null){
         	throw new InvalidParameterValueException("The template " +templateId+ " is not available for use");
         }
 
