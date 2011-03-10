@@ -592,7 +592,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 	
 	private long getMsid() {
 		if(_clusterMgr != null)
-			return _clusterMgr.getId();
+			return _clusterMgr.getManagementNodeId();
 		
 		return MacAddress.getMacAddress().toLong();
 	}

@@ -23,4 +23,5 @@ public interface RemoteMethodConstants {
     public static final int METHOD_EXECUTE = 1;
     public static final int METHOD_EXECUTE_ASYNC = 2;
     public static final int METHOD_ASYNC_RESULT = 3;
+    public static final int METHOD_PING = 4;
 }

@@ -81,7 +81,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_peers = new HashMap<String, SocketChannel>(7);
-        _nodeId = _clusterMgr.getId();
+        _nodeId = _clusterMgr.getManagementNodeId();
 		
         ClusteredAgentAttache.initialize(this);
         
@@ -120,7 +120,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
 		// for agents that are self-managed, threshold to be considered as disconnected is 3 ping intervals
 		long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingInterval*3);
-    	List<HostVO> hosts =  _hostDao.findDirectAgentToLoad(_clusterMgr.getId(), cutSeconds, LOAD_SIZE);
+    	List<HostVO> hosts =  _hostDao.findDirectAgentToLoad(_clusterMgr.getManagementNodeId(), cutSeconds, LOAD_SIZE);
     	if ( hosts != null && hosts.size() == LOAD_SIZE ) {
     	    Long clusterId = hosts.get((int)(LOAD_SIZE-1)).getClusterId();
     	    if ( clusterId != null) {

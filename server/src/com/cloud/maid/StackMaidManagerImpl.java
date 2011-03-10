@@ -45,7 +45,7 @@ public class StackMaidManagerImpl implements StackMaidManager {
 		if (s_logger.isInfoEnabled())
 			s_logger.info("Start configuring StackMaidManager : " + name);
 		
-		StackMaid.init(_clusterMgr.getId());
+		StackMaid.init(_clusterMgr.getManagementNodeId());
 		return true;
 	}
 	
@@ -88,7 +88,7 @@ public class StackMaidManagerImpl implements StackMaidManager {
 	
     public boolean start() {
     	try {
-    		List<StackMaidVO> l = _maidDao.listLeftoversByMsid(_clusterMgr.getId());
+    		List<StackMaidVO> l = _maidDao.listLeftoversByMsid(_clusterMgr.getManagementNodeId());
     		cleanupLeftovers(l);
     	} catch(Throwable e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);

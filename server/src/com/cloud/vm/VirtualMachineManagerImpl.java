@@ -398,7 +398,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         _operationTimeout = NumbersUtil.parseInt(params.get(Config.Wait.key()), 1800) * 2;
         
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
-        _nodeId = _clusterMgr.getId();
+        _nodeId = _clusterMgr.getManagementNodeId();
       
         _agentMgr.registerForHostEvents(this, true, true, true);
         

@@ -39,6 +39,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private static final Logger s_logger = Logger.getLogger(ManagementServerHostDaoImpl.class);
     
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
+    private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
+    private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     
 	public ManagementServerHostVO findByMsid(long msid) {
         SearchCriteria<ManagementServerHostVO> sc = MsIdSearch.create();
@@ -94,11 +96,14 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	}
 	
 	public List<ManagementServerHostVO> getActiveList(Date cutTime) {
-	    SearchBuilder<ManagementServerHostVO> activeSearch = createSearchBuilder();
-	    activeSearch.and("lastUpdateTime", activeSearch.entity().getLastUpdateTime(),  SearchCriteria.Op.GT);
-	    activeSearch.and("removed", activeSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+	    SearchCriteria<ManagementServerHostVO> sc = ActiveSearch.create();
+	    sc.setParameters("lastUpdateTime", cutTime);
 	    
-	    SearchCriteria<ManagementServerHostVO> sc = activeSearch.create();
+	    return listIncludingRemovedBy(sc);
+	}
+	
+	public List<ManagementServerHostVO> getInactiveList(Date cutTime) {
+	    SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
 	    sc.setParameters("lastUpdateTime", cutTime);
 	    
 	    return listIncludingRemovedBy(sc);
@@ -125,5 +130,15 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 		MsIdSearch = createSearchBuilder();
 		MsIdSearch.and("msid",  MsIdSearch.entity().getMsid(), SearchCriteria.Op.EQ);
 		MsIdSearch.done();
+		
+	    ActiveSearch = createSearchBuilder();
+	    ActiveSearch.and("lastUpdateTime", ActiveSearch.entity().getLastUpdateTime(),  SearchCriteria.Op.GT);
+	    ActiveSearch.and("removed", ActiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+	    ActiveSearch.done();
+
+	    InactiveSearch = createSearchBuilder();
+	    InactiveSearch.and("lastUpdateTime", InactiveSearch.entity().getLastUpdateTime(),  SearchCriteria.Op.LTEQ);
+	    InactiveSearch.and("removed", InactiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+	    InactiveSearch.done();
 	}
 }

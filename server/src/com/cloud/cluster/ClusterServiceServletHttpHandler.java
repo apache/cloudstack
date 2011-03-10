@@ -20,8 +20,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentAnswer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.cluster.ClusterManager;
-import com.cloud.cluster.RemoteMethodConstants;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.serializer.GsonHelper;
@@ -120,6 +118,10 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
 				
 			case RemoteMethodConstants.METHOD_ASYNC_RESULT :
 				responseContent = handleAsyncResultMethodCall(req);
+				break;
+				
+			case RemoteMethodConstants.METHOD_PING :
+				responseContent = handlePingMethodCall(req);
 				break;
 				
 			case RemoteMethodConstants.METHOD_UNKNOWN :
@@ -277,5 +279,14 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
 				" ms, return recurring=false, indicate to tear down async listener");
 			
 		return "recurring=false";
+	}
+	
+	private String handlePingMethodCall(HttpRequest req) {
+		String callingPeer = (String)req.getParams().getParameter("callingPeer");
+		
+		if(s_logger.isDebugEnabled())
+			s_logger.debug("Handle ping request from " + callingPeer);
+		
+		return "true";
 	}
 }

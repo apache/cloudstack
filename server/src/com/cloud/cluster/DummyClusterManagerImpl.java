@@ -81,7 +81,7 @@ public class DummyClusterManagerImpl implements ClusterManager {
     	return ClusterManager.DEFAULT_HEARTBEAT_INTERVAL;
 	}
 	
-	public long getId() {
+	public long getManagementNodeId() {
         return _id;
 	}
 	
@@ -102,8 +102,12 @@ public class DummyClusterManagerImpl implements ClusterManager {
 		return _clusterNodeIP;
 	}
 	
-    public boolean isManageemnNodeAlive(long msid) {
+    public boolean isManagementNodeAlive(long msid) {
     	return true;
+    }
+    
+    public boolean pingManagementNode(long msid) {
+    	return false;
     }
 	
     public String getPeerName(long agentHostId) {

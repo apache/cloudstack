@@ -9,8 +9,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Logger;
 
-import com.cloud.cluster.ClusterService;
-import com.cloud.cluster.RemoteMethodConstants;
 import com.cloud.serializer.GsonHelper;
 import com.google.gson.Gson;
 
@@ -102,6 +100,21 @@ public class ClusterServiceServletImpl implements ClusterService {
     	
 		if(s_logger.isDebugEnabled())
 			s_logger.debug("Remote listener returned recurring=false");
+    	return false;
+	}
+	
+	public boolean ping(String callingPeer) throws RemoteException {
+    	if(s_logger.isDebugEnabled())
+    		s_logger.debug("Ping at " + serviceUrl);
+    	
+        HttpClient client = new HttpClient();
+        PostMethod method = new PostMethod(serviceUrl);
+        
+        method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_PING));
+        method.addParameter("callingPeer", callingPeer);
+    	String returnVal =  executePostMethod(client, method);
+    	if("true".equalsIgnoreCase(returnVal))
+    		return true;
     	return false;
 	}
 	
