@@ -123,7 +123,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
@@ -1181,10 +1180,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                    routerResponse.setGateway(singleNicProfile.getGateway());
                    routerResponse.setPublicNetworkId(singleNicProfile.getNetworkId());
                } else if (network.getTrafficType() == TrafficType.Control) {
-                   routerResponse.setPrivateIp(singleNicProfile.getIp4Address());
-                   routerResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
-                   routerResponse.setPrivateNetmask(singleNicProfile.getNetmask());
-                   routerResponse.setPrivateNetworkId(singleNicProfile.getNetworkId());
+                   routerResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
+                   routerResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
+                   routerResponse.setLinkLocalMacAddress(singleNicProfile.getNetmask());
+                   routerResponse.setLinkLocalNetworkId(singleNicProfile.getNetworkId());
                } else if (network.getTrafficType() == TrafficType.Guest) {
                    routerResponse.setGuestIpAddress(singleNicProfile.getIp4Address());
                    routerResponse.setGuestMacAddress(singleNicProfile.getMacAddress());
@@ -1265,10 +1264,14 @@ public class ApiResponseHelper implements ResponseGenerator {
                        vmResponse.setPublicIp(singleNicProfile.getIp4Address());
                        vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
                        vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
-                   } else if (network.getTrafficType() == TrafficType.Control) {
+                   } else if (network.getTrafficType() == TrafficType.Management) {
                        vmResponse.setPrivateIp(singleNicProfile.getIp4Address());
                        vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
                        vmResponse.setPrivateNetmask(singleNicProfile.getNetmask());
+                   } else if (network.getTrafficType() == TrafficType.Control) {
+                       vmResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
+                       vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
+                       vmResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
                    }
                }
             }

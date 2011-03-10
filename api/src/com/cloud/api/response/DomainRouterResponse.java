@@ -58,17 +58,17 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName("hostname") @Param(description="the hostname for the router")
     private String hostName;
 
-    @SerializedName(ApiConstants.PRIVATE_IP) @Param(description="the private IP address for the router")
-    private String privateIp;
+    @SerializedName(ApiConstants.LINK_LOCAL_IP) @Param(description="the link local IP address for the router")
+    private String linkLocalIp;
 
-    @SerializedName("privatemacaddress") @Param(description="the private MAC address for the router")
-    private String privateMacAddress;
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS) @Param(description="the link local MAC address for the router")
+    private String linkLocalMacAddress;
 
-    @SerializedName("privatenetmask") @Param(description="the private netmask for the router")
-    private String privateNetmask;
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK) @Param(description="the link local netmask for the router")
+    private String linkLocalNetmask;
     
-    @SerializedName("privatenetworkid") @Param(description="the ID of the corresponding private network")
-    private Long privateNetworkId;
+    @SerializedName(ApiConstants.LINK_LOCAL_NETWORK_ID) @Param(description="the ID of the corresponding link local network")
+    private Long linkLocalNetworkId;
 
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address for the router")
     private String publicIp;
@@ -209,30 +209,6 @@ public class DomainRouterResponse extends BaseResponse {
         this.hostName = hostName;
     }
 
-    public String getPrivateIp() {
-        return privateIp;
-    }
-
-    public void setPrivateIp(String privateIp) {
-        this.privateIp = privateIp;
-    }
-
-    public String getPrivateMacAddress() {
-        return privateMacAddress;
-    }
-
-    public void setPrivateMacAddress(String privateMacAddress) {
-        this.privateMacAddress = privateMacAddress;
-    }
-
-    public String getPrivateNetmask() {
-        return privateNetmask;
-    }
-
-    public void setPrivateNetmask(String privateNetmask) {
-        this.privateNetmask = privateNetmask;
-    }
-
     public String getPublicIp() {
         return publicIp;
     }
@@ -328,15 +304,7 @@ public class DomainRouterResponse extends BaseResponse {
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
-
-    public Long getPrivateNetworkId() {
-        return privateNetworkId;
-    }
-
-    public void setPrivateNetworkId(Long privateNetworkId) {
-        this.privateNetworkId = privateNetworkId;
-    }
-
+    
     public Long getPublicNetworkId() {
         return publicNetworkId;
     }
@@ -352,4 +320,37 @@ public class DomainRouterResponse extends BaseResponse {
     public void setGuestNetworkId(Long guestNetworkId) {
         this.guestNetworkId = guestNetworkId;
     }
+
+    public String getLinkLocalIp() {
+        return linkLocalIp;
+    }
+
+    public void setLinkLocalIp(String linkLocalIp) {
+        this.linkLocalIp = linkLocalIp;
+    }
+
+    public String getLinkLocalMacAddress() {
+        return linkLocalMacAddress;
+    }
+
+    public void setLinkLocalMacAddress(String linkLocalMacAddress) {
+        this.linkLocalMacAddress = linkLocalMacAddress;
+    }
+
+    public String getLinkLocalNetmask() {
+        return linkLocalNetmask;
+    }
+
+    public void setLinkLocalNetmask(String linkLocalNetmask) {
+        this.linkLocalNetmask = linkLocalNetmask;
+    }
+
+    public Long getLinkLocalNetworkId() {
+        return linkLocalNetworkId;
+    }
+
+    public void setLinkLocalNetworkId(Long linkLocalNetworkId) {
+        this.linkLocalNetworkId = linkLocalNetworkId;
+    }
+    
 }

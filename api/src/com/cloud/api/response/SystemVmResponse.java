@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -65,14 +66,23 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("hostname") @Param(description="the hostname for the system VM")
     private String hostName;
 
-    @SerializedName("privateip") @Param(description="the private IP address for the system VM")
+    @SerializedName(ApiConstants.PRIVATE_IP) @Param(description="the private IP address for the system VM")
     private String privateIp;
 
-    @SerializedName("privatemacaddress") @Param(description="the private MAC address for the system VM")
+    @SerializedName(ApiConstants.PRIVATE_MAC_ADDRESS) @Param(description="the private MAC address for the system VM")
     private String privateMacAddress;
 
-    @SerializedName("privatenetmask") @Param(description="the private netmask for the system VM")
+    @SerializedName(ApiConstants.PRIVATE_NETMASK) @Param(description="the private netmask for the system VM")
     private String privateNetmask;
+    
+    @SerializedName(ApiConstants.LINK_LOCAL_IP) @Param(description="the link local IP address for the system vm")
+    private String linkLocalIp;
+
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS) @Param(description="the link local MAC address for the system vm")
+    private String linkLocalMacAddress;
+
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK) @Param(description="the link local netmask for the system vm")
+    private String linkLocalNetmask;
 
     @SerializedName("publicip") @Param(description="the public IP address for the system VM")
     private String publicIp;
@@ -289,5 +299,29 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setActiveViewerSessions(Integer activeViewerSessions) {
         this.activeViewerSessions = activeViewerSessions;
+    }
+
+    public String getLinkLocalIp() {
+        return linkLocalIp;
+    }
+
+    public void setLinkLocalIp(String linkLocalIp) {
+        this.linkLocalIp = linkLocalIp;
+    }
+
+    public String getLinkLocalMacAddress() {
+        return linkLocalMacAddress;
+    }
+
+    public void setLinkLocalMacAddress(String linkLocalMacAddress) {
+        this.linkLocalMacAddress = linkLocalMacAddress;
+    }
+
+    public String getLinkLocalNetmask() {
+        return linkLocalNetmask;
+    }
+
+    public void setLinkLocalNetmask(String linkLocalNetmask) {
+        this.linkLocalNetmask = linkLocalNetmask;
     }
 }
