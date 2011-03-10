@@ -37,7 +37,7 @@ public interface SnapshotService {
      * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
      * @return the Snapshot that was created
      */
-    Snapshot createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException;
+    Snapshot createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException;
 
     /**
      * List all snapshots of a disk volume. Optionally lists snapshots created by specified interval
@@ -79,6 +79,6 @@ public interface SnapshotService {
     
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
     
-    Snapshot allocSnapshot(CreateSnapshotCmd cmd);
+    Snapshot allocSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException;
 
 }

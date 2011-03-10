@@ -44,7 +44,7 @@ public interface SnapshotManager {
      * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
      * @return the Snapshot that was created
      */
-    SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId) throws ResourceAllocationException;
+    SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId);
 
     /**
      * After successfully creating a snapshot of a volume, copy the snapshot to the secondary storage for 

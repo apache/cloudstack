@@ -119,7 +119,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void create(){
+    public void create() throws ResourceAllocationException{
         Snapshot snapshot = _snapshotService.allocSnapshot(this);
         if (snapshot != null) {
             this.setEntityId(snapshot.getId());
@@ -129,7 +129,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void execute() throws ResourceAllocationException{ 	
+    public void execute() { 	
         Snapshot snapshot = _snapshotService.createSnapshot(this);
         if (snapshot != null) {
             SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
