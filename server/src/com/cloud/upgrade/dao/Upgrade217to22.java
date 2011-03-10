@@ -24,12 +24,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class Upgrade217to22 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade217to22.class);
     boolean _basicZone;
 
     @Override
@@ -136,7 +140,7 @@ public class Upgrade217to22 implements DbUpgrade {
         
     }
     
-    protected void createInstanceGroups(Connection conn, String groupName, long accountId) throws SQLException{
+    protected void createInstanceGroups(Connection conn, String groupName, long accountId) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("INSERT INTO instance_group (account_id, name, created) values (?, ?, now()) ");
         pstmt.setLong(1, accountId);
         pstmt.setString(2, groupName);
@@ -144,12 +148,66 @@ public class Upgrade217to22 implements DbUpgrade {
         pstmt.close();
     }
     
-    protected void createInstanceGroupVmMaps(Connection conn, long groupId, long instanceId) throws SQLException{
+    protected void createInstanceGroupVmMaps(Connection conn, long groupId, long instanceId) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("INSERT INTO instance_group_vm_map (group_id, instance_id) values (?, ?) ");
         pstmt.setLong(1, groupId);
         pstmt.setLong(2, instanceId);
         pstmt.executeUpdate();
         pstmt.close();
+    }
+    
+    protected void insertNic(Connection conn, long networkId, long instanceId, boolean running, String macAddress, String ipAddress, String netmask, String strategy, String gateway, String vnet) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(
+                "INSERT INTO nics (instance_id, network_id, mac_address, ip4_address, netmask, strategy, ip_type, broadcast_uri, mode, reserver_name, reservation_id, device_id, update_time, isolation_uri, ip6_address, default_nic, created, removed, state, gateway) " +
+                          "VALUES (?,           ?,          ?,           ?,           ?,       ?,        'Ip4',   ?,             'Dhcp', 'GuestNetworkGuru', NULL,    0,         now(),       NULL,          NULL,         1,          now(),   NULL,    ?,     ?)");
+        int i = 1;
+        
+        String broadcast = null;
+        if (vnet != null) {
+            broadcast = "vlan://" + vnet;
+        }
+        pstmt.setLong(i++, instanceId);
+        pstmt.setLong(i++, networkId);
+        pstmt.setString(i++, macAddress);
+        pstmt.setString(i++, ipAddress);
+        pstmt.setString(i++, netmask);
+        pstmt.setString(i++, strategy);
+        pstmt.setString(i++, broadcast);
+        pstmt.setString(i++, running ? "Reserved" : "Allocated");
+        pstmt.setString(i++, gateway);
+        pstmt.executeUpdate();
+        pstmt.close();
+    }
+    
+    
+    protected void upgradeVirtualUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
+        pstmt.setLong(1, domainRouterId);
+        ResultSet rs = pstmt.executeQuery();
+        List<Object[]> vms = new ArrayList<Object[]>();
+        while (rs.next()) {
+            Object[] vm = new Object[10];
+            vm[0] = rs.getLong(1); // vm id
+            vm[1] = rs.getString(2); // mac address
+            vm[2] = rs.getString(3); // ip address
+            vm[3] = rs.getString(4); // netmask
+            vm[4] = rs.getString(5);  // vm state
+            vms.add(vm);
+        }
+        rs.close();
+        pstmt.close();
+        
+        s_logger.debug("Upgrading " + vms.size() + " vms for router " + domainRouterId);
+        
+        for (Object[] vm : vms) {
+            String state = (String)vm[4];
+            
+            boolean running = false;
+            if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
+                running = true;
+            }
+            insertNic(conn, networkId, (Long)vm[0], running, (String)vm[1], (String)vm[2], (String)vm[3], "Start", gateway, vnet);
+        }
     }
 
     
@@ -444,6 +502,9 @@ public class Upgrade217to22 implements DbUpgrade {
                         pstmt.setLong(2, (Long)router[0]);
                         pstmt.executeUpdate();
                         pstmt.close();
+                        s_logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
+                        
+                        upgradeVirtualUserVms(conn, (Long)router[0], virtualNetworkId, (String)router[3], vnet);
                     }
                     
                     upgradeUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
