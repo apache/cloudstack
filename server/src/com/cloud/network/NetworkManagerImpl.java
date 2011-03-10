@@ -1632,6 +1632,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        //Cidr for Direct network can't be NULL - 2.2.x limitation, remove after we introduce support for multiple ip ranges with different Cidrs for the same Shared network
+        if (cidr == null && networkOffering.getTrafficType() == TrafficType.Guest && networkOffering.getGuestType() == GuestIpType.Direct) {
+            throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required for Direct network creation");
+        }
+        
         //Check if cidr is RFC1918 compliant if the network is Guest Virtual
         if (cidr != null && networkOffering.getGuestType() == GuestIpType.Virtual && networkOffering.getTrafficType() == TrafficType.Guest) {
             if (!NetUtils.validateGuestCidr(cidr)) {
