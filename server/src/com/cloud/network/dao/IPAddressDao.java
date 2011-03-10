@@ -36,7 +36,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	
 	List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
 	
-	List<IPAddressVO> listByAssociatedNetwork(long networkId);
+	List<IPAddressVO> listByAssociatedNetwork(long networkId, Boolean isSourceNat);
 	
 	int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
 	
@@ -49,4 +49,5 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	IPAddressVO findByAssociatedVmId(long vmId);
 	
 	IPAddressVO findByAccountAndIp(long accountId, String ipAddress);
+	
 }

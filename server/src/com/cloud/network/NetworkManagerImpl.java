@@ -438,7 +438,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
-        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId());
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
@@ -1101,7 +1101,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setGateway(result.getGateway());
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
-
+            
+            //If network if guest virtual and there is no source nat ip, associate a new one
+            if (network.getGuestType() == GuestIpType.Virtual) {
+                List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(networkId, true);
+                
+                if (ips.isEmpty()) {
+                    s_logger.debug("Creating a source natp ip for " + network);
+                    Account owner = _accountMgr.getAccount(network.getAccountId());
+                    PublicIp sourceNatIp = assignSourceNatIpAddress(owner, network, context.getCaller().getId());
+                    if (sourceNatIp == null) {
+                        throw new InsufficientAddressCapacityException("Unable to assign source nat ip address to the network " + network, DataCenter.class, network.getDataCenterId());
+                    }
+                }
+            }
             
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
@@ -1659,14 +1672,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 network = networks.get(0);
             }
-            
-            if (network.getGuestType() == GuestIpType.Virtual) {
-                s_logger.debug("Creating a source natp ip for " + network);
-                PublicIp ip = assignSourceNatIpAddress(owner, network, userId);
-                if (ip == null) {
-                    throw new InsufficientAddressCapacityException("Unable to assign source nat ip address to owner for this network", DataCenter.class, zoneId);
-                }
-            }
         }
 
         txn.commit();
@@ -2023,7 +2028,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //release all ip addresses
-        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
+        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         for (IPAddressVO ipToRelease : ipsToRelease) {
             IPAddressVO ip = _ipAddressDao.markAsUnavailable(ipToRelease.getId());
             assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";

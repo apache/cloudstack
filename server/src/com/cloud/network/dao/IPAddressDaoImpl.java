@@ -192,9 +192,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
     
     @Override
-    public List<IPAddressVO> listByAssociatedNetwork(long networkId) {
+    public List<IPAddressVO> listByAssociatedNetwork(long networkId, Boolean isSourceNat) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
+        
+        if (isSourceNat != null) {
+            sc.setParameters("sourceNat", isSourceNat);
+        }
         
         return listBy(sc);
     }
