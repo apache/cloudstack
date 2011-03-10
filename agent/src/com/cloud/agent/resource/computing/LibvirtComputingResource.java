@@ -282,6 +282,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected String _privBridgeName;
 	protected String _linkLocalBridgeName;
 	protected String _publicBridgeName;
+	protected String _guestBridgeName;
 	protected String _privateBridgeIp;
 	protected String _pool;
 	protected String _localGateway;
@@ -534,6 +535,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	_privBridgeName = "cloudbr1";
         }
         
+        _guestBridgeName = (String)params.get("guest.network.device");
+        if (_guestBridgeName == null) {
+            _guestBridgeName = _privBridgeName;
+        }
+        
         _privNwName = (String)params.get("private.network.name");
         if (_privNwName == null) {
         	if (isDeveloper) {
@@ -645,8 +651,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		if (_publicBridgeName != null) {
 			pubPif = Script.runSimpleBashScript("brctl show | grep " + _publicBridgeName + " | awk '{print $4}'");			
 		}
-		if (_privBridgeName != null) {
-			privPif = Script.runSimpleBashScript("brctl show | grep " + _privBridgeName + " | awk '{print $4}'");	
+		if (_guestBridgeName != null) {
+			privPif = Script.runSimpleBashScript("brctl show | grep " + _guestBridgeName + " | awk '{print $4}'");	
 		}
 		return new Pair<String, String>(privPif, pubPif);
 	}
