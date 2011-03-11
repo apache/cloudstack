@@ -616,14 +616,13 @@ def deb(context):
 			raise Utils.WafError("Please specify a build number to go along with --prerelease")
 		# version/release numbers are read by dpkg-buildpackage from line 1 of debian/changelog
 		# http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
-		tempchangelog = """%s (%s.%s-~%s%s) unstable; urgency=low
+		tempchangelog = """%s (%s-~%s%s) unstable; urgency=low
 
   * Automatic prerelease build
 
  -- Automated build system <noreply@cloud.com>  %s"""%(
 			APPNAME,
 			VERSION,
-			Utils.getbuildnumber(),
 			Utils.getbuildnumber(),
 			Options.options.PRERELEASE,
 			email.Utils.formatdate(time.time())
