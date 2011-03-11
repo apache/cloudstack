@@ -41,6 +41,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -171,6 +174,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -237,6 +241,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _instance; //instance name (default is usually "VM")
 
     protected IAgentControl _agentControl;
+    private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterIpSync"));
     protected Map<String, String> _domrIPMap = new ConcurrentHashMap<String, String>();
 
     protected final XenServerHost _host = new XenServerHost();
@@ -1103,10 +1108,21 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected WatchNetworkAnswer execute(WatchNetworkCommand cmd) {
-        WatchNetworkAnswer answer = new WatchNetworkAnswer(cmd);
-        for (String domr : _domrIPMap.keySet()) {
-            long[] stats = getNetworkStats(domr);
-            answer.addStats(domr, stats[0], stats[1]);
+        WatchNetworkAnswer answer = new WatchNetworkAnswer(cmd);       
+        HashMap<String, State> allVms= getAllVms();
+        if (allVms != null) {
+        	for (final Map.Entry<String, State> entry : allVms.entrySet()) {
+        		final String vm = entry.getKey();
+        		State state = entry.getValue();
+        		if (VirtualMachineName.isValidRouterName(vm) && (state == State.Running)) {        			
+        			if(_domrIPMap.get(vm) == null){
+        				//Router private Ip is not available, add private Ip to domRIP Map
+        				addDomRIpToMap(vm);
+        			}
+                    long[] stats = getNetworkStats(vm);
+                    answer.addStats(vm, stats[0], stats[1]);
+        		}
+        	}
         }
         return answer;
     }
@@ -1121,6 +1137,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 stats[0] += (new Long(splitResult[i++])).longValue();
                 stats[1] += (new Long(splitResult[i++])).longValue();
             }
+        } else {
+            stats[0] = -1;
+            stats[1] = -1;
         }
         return stats;
     }
@@ -2200,11 +2219,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         long[] stats = getNetworkStats(cmd.getVmName());
         Long bytesSent = stats[0];
         Long bytesRcvd = stats[1];
-        _domrIPMap.remove(cmd.getVmName());
         RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
         answer.setBytesSent(bytesSent);
         answer.setBytesReceived(bytesRcvd);
-        _domrIPMap.put(cmd.getVmName(), cmd.getPrivateIpAddress());
         if (answer.getResult()) {
             String cnct = connect(cmd.getVmName(), cmd.getPrivateIpAddress());
             networkUsage(cmd.getPrivateIpAddress(), "create", null);
@@ -2714,9 +2731,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                             state = State.Stopped;
                             SR sr = getISOSRbyVmName(cmd.getVmName());
                             removeSR(sr);
-                            if (VirtualMachineName.isValidRouterName(vmName)) {
-                                _domrIPMap.remove(vmName);
-                            }
                             // Disable any VLAN networks that aren't used
                             // anymore
                             for (Network network : networks) {
@@ -2831,7 +2845,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId(), cmd.getNetworkRateMbps(), cmd.getGuestOSDescription());
             if (result == null) {
                 networkUsage(router.getPrivateIpAddress(), "create", null);
-                _domrIPMap.put(cmd.getVmName(), router.getPrivateIpAddress());
                 return new StartRouterAnswer(cmd);
             }
             return new StartRouterAnswer(cmd, result);
@@ -3826,20 +3839,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             changes = sync();
         }
 
-        _domrIPMap.clear();
-        if (changes != null) {
-            for (final Map.Entry<String, State> entry : changes.entrySet()) {
-                final String vm = entry.getKey();
-                State state = entry.getValue();
-                if (VirtualMachineName.isValidRouterName(vm) && (state == State.Running)) {
-                    syncDomRIPMap(vm);
-                }
-            }
-        }
-
         cmd.setHypervisorType(Hypervisor.Type.XenServer);
         cmd.setChanges(changes);
         cmd.setCluster(_cluster);
+        _executor.scheduleAtFixedRate(new RouterIpSyncTask(), 60, 60, TimeUnit.MINUTES);
 
         StartupStorageCommand sscmd = initializeLocalSR();
         if (sscmd != null) {
@@ -6013,7 +6016,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     }
 
-    protected void syncDomRIPMap(String vm) {
+    protected void addDomRIpToMap(String vm) {
         // VM is a DomR, get its IP and add to domR-IP map
         Connection conn = getConnection();
         VM vm1 = getVM(conn, vm);
@@ -6155,7 +6158,23 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     }
     
-    
+    protected class RouterIpSyncTask implements Runnable {
+    	@Override
+    	public void run() {
+    		_domrIPMap.clear();
+    		HashMap<String, State> allVms= getAllVms();
+    		if (allVms != null) {
+    			for (final Map.Entry<String, State> entry : allVms.entrySet()) {
+    				final String vm = entry.getKey();
+    				State state = entry.getValue();
+    				if (VirtualMachineName.isValidRouterName(vm) && (state == State.Running)) {        			
+    					addDomRIpToMap(vm);
+    				}
+    			}
+    		}
+
+    	}
+    }
 
     protected class Nic {
         public Network n;

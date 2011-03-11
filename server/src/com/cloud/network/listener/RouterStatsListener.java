@@ -76,7 +76,7 @@ public class RouterStatsListener implements Listener {
             		
                 long id = VirtualMachineName.getRouterId(vmName);
                 DomainRouterVO router = _routerDao.findById(id);
-                if (router == null || router.isRemoved()) {
+                if (router == null || router.isRemoved() || !(router.getInstanceName().equals(vmName))) {
                     s_logger.debug("Router is removed or non existent: " + vmName);
                     continue;
                 }
@@ -89,6 +89,12 @@ public class RouterStatsListener implements Listener {
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("VM " + vmName + " Tx: " + bytes[0] + " Rx: " + bytes[1]);
                 }
+                
+                if (!(bytes[0] > 0) && !(bytes[1] > 0)) {
+                    s_logger.debug("Recieved and Sent bytes are both not > 0. Not updating user_statistics");
+                    continue;
+                }
+                
                 Transaction txn = Transaction.currentTxn();
                 try {
                     txn.start();
