@@ -546,6 +546,9 @@ def bindist(ctx):
 	"""creates a binary distribution that, when unzipped in the root directory of a machine, deploys the entire stack"""
 	ctx = _getbuildcontext()
 
+	if Options.options.VERNUM:
+		VERSION = Options.options.VERNUM
+
 	tarball = "%s-bindist-%s.tar.%s"%(APPNAME,VERSION,Scripting.g_gz)
 	zf = _join(ctx.bldnode.abspath(),tarball)
 	Options.options.destdir = _join(ctx.bldnode.abspath(),"bindist-destdir")
@@ -605,12 +608,15 @@ def deb(context):
 	if buildnumber: buildnumber = ["--set-envvar=BUILDNUMBER=%s"%buildnumber]
 	else: buildnumber = []
 	
+	if Options.options.VERNUM:
+		VERSION = Options.options.VERNUM
+
 	if Options.options.PRERELEASE:
 		if not buildnumber:
 			raise Utils.WafError("Please specify a build number to go along with --prerelease")
 		# version/release numbers are read by dpkg-buildpackage from line 1 of debian/changelog
 		# http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
-		tempchangelog = """%s (%s-~%s%s) unstable; urgency=low
+		tempchangelog = """%s (%s.%s-~%s%s) unstable; urgency=low
 
   * Automatic prerelease build
 
@@ -618,18 +624,27 @@ def deb(context):
 			APPNAME,
 			VERSION,
 			Utils.getbuildnumber(),
+			Utils.getbuildnumber(),
 			Options.options.PRERELEASE,
 			email.Utils.formatdate(time.time())
 		)
 	else:
-		tempchangelog = None
+		tempchangelog = """%s (%s-1) stable; urgency=low
+
+  * Automatic release build
+
+ -- Automated build system <noreply@cloud.com>  %s"""%(
+			APPNAME,
+			VERSION,
+			email.Utils.formatdate(time.time())
+		)
 	
 	# FIXME wrap the source tarball in POSIX locking!
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"debbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"debbuild")
 	Utils.pprint("GREEN","Building DEBs")
 
-	tarball = Scripting.dist()	
+	tarball = Scripting.dist('', VERSION)	
 	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
 
 	if _exists(srcdir): shutil.rmtree(srcdir)
