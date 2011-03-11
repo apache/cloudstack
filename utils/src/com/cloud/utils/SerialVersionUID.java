@@ -59,4 +59,5 @@ public interface SerialVersionUID {
     public static final long ResourceUnavailableException = Base | 0x1f;
     public static final long ConnectionException = Base | 0x20;
     public static final long PermissionDeniedException = Base | 0x21;
+    public static final long sshException = Base | 0x22;
 }

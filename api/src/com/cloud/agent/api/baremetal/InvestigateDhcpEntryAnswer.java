@@ -7,6 +7,7 @@ public class InvestigateDhcpEntryAnswer extends Answer {
 	String mac;
 	String ip;
 	String state;
+	int resultCode;
 	
 	public String getMac() {
 		return mac;
@@ -20,11 +21,16 @@ public class InvestigateDhcpEntryAnswer extends Answer {
 		return state;
 	}
 	
-	public InvestigateDhcpEntryAnswer(Command cmd, boolean success, String details) {
+	public int getResultCode() {
+		return resultCode;
+	}
+	
+	public InvestigateDhcpEntryAnswer(Command cmd, boolean success, String details, int code) {
 		super(cmd, success, details);
 		InvestigateDhcpEntryCommand icmd = (InvestigateDhcpEntryCommand)cmd;
 		mac = icmd.getMac();
 		ip = icmd.getIp();
 		state = icmd.getState();
+		resultCode = code;
 	}
 }

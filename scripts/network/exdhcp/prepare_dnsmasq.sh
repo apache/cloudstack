@@ -27,14 +27,47 @@ touch /var/log/dnsmasq.log
 [ $? -ne 0 ] && exit_with_error "touch /var/log/dnsmasq.log failed"
 touch /etc/dnsmasq-resolv.conf
 [ $? -ne 0 ] && exit_with_error "touch /etc/dnsmasq-resolv.conf failed"
+touch /var/lib/dnsmasq.trace
+[ $? -ne 0 ] && exit_with_error "touch /var/lib/dnsmasq.trace failed"
+
 
 #produce echoer.sh
 cat > /usr/bin/echoer.sh<<'EOF'
 #!/bin/sh
 
+sed -i /"$*"/d /var/lib/dnsmasq.trace
 echo "$*" >> /var/lib/dnsmasq.trace
 EOF
 [ $? -ne 0 ] && exit_with_error "can't produce /usr/bin/echoer.sh"
+
+#produce lease_checker.sh
+cat > /usr/bin/lease_checker.sh<<'EOF'
+#!/bin/sh
+# Usage: lease_checker dhcp_entry_state(add/old/del) mac ip
+state=$1
+mac=$2
+ip=$3
+
+exit_with_error() {
+	echo $1
+	exit $2
+}
+
+[ $# -ne 3 ] && exit_with_error "Wrong arguments.Usage: lease_checker dhcp_entry_state(add/old/del) mac ip" -3
+
+[ -f /var/lib/dnsmasq.trace ] || exit_with_error "Cannot find /var/lib/dnsmasq" -1
+pidof dnsmasq &>/dev/null
+[ $? -ne 0 ] && exit_with_error "Dnsmasq is not running" -2
+
+grep "$state $mac $ip" /var/lib/dnsmasq.trace
+if [ $? -ne 0 ]; then
+	exit $?
+else
+	sed -i /"$state $mac $ip"/d /var/lib/dnsmasq.trace
+	exit 0
+fi
+
+EOF
 
 chmod +x /usr/bin/echoer.sh
 [ $? -ne 0 ] && exit_with_error "chmod +x /usr/bin/echoer.sh failed"
