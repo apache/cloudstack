@@ -658,7 +658,7 @@ def deb(context):
 		f.close()
 	
 	checkdeps = lambda: c(["dpkg-checkbuilddeps"],srcdir)
-	dodeb = lambda: c(["debuild",'-e','WAFCACHE','--no-lintian']+buildnumber+["-us","-uc"],srcdir)
+	dodeb = lambda: c(["debuild",'-e','WAFCACHE','--no-lintian', '--no-tgz-check']+buildnumber+["-us","-uc"],srcdir)
 	try: checkdeps()
 	except (CalledProcessError,OSError),e:
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
