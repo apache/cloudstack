@@ -31,6 +31,7 @@ dictionary = {
 	'label.action.reset.password.processing': '<fmt:message key="label.action.reset.password.processing"/>',
 	'label.action.change.service': '<fmt:message key="label.action.change.service"/>',
 	'label.action.change.service.processing': '<fmt:message key="label.action.change.service.processing"/>',
+	'label.action.migrate.instance': '<fmt:message key="label.action.migrate.instance"/>',
 	'label.action.detach.disk': '<fmt:message key="label.action.detach.disk"/>',
 	'label.action.detach.disk.processing': '<fmt:message key="label.action.detach.disk.processing"/>',
 	'label.action.create.template': '<fmt:message key="label.action.create.template"/>',
@@ -42,6 +43,8 @@ dictionary = {
 	'message.action.take.snapshot': '<fmt:message key="message.action.take.snapshot"/>',
 	'label.data.disk.offering': '<fmt:message key="label.data.disk.offering"/>',
 	'label.root.disk.offering': '<fmt:message key="label.root.disk.offering"/>',
+	'label.full': '<fmt:message key="label.full"/>',
+	'label.available': '<fmt:message key="label.available"/>',
 	'message.launch.vm.on.private.network': '<fmt:message key="message.launch.vm.on.private.network"/>'
 };	
 </script>
@@ -1216,6 +1219,27 @@ dictionary = {
                 <select class="select" id="change_service_offerings">
                 </select>
                 <div id="change_service_offerings_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Migrate VM Dialog -->
+<div id="dialog_migrate_instance" title='<fmt:message key="label.action.migrate.vm" />' style="display: none">
+    <p> 
+		<fmt:message key="message.migrate.instance.confirm" />
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <fmt:message key="label.migrate.instance.to" />:</label>
+                <select class="select" id="migrate_instance_hosts">
+                </select>
+                <div id="migrate_vm_hosts_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
         </ol>

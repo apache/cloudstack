@@ -131,7 +131,8 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
     initDialog("dialog_change_service_offering", 600);                
-    initDialog("dialog_create_template", 400);             
+    initDialog("dialog_create_template", 400);    
+	initDialog("dialog_migrate_instance", 600);
        
     $.ajax({
 	    data: createURL("command=listOsTypes"),
@@ -1367,7 +1368,16 @@ var vmActionMap = {
             var jsonObj = json.changeserviceforvirtualmachineresponse.virtualmachine;       
             vmToMidmenu(jsonObj, $midmenuItem1);           
         }
-    }      
+    },       
+    "label.action.migrate.instance": {
+        isAsyncJob: false,        
+        inProcessText: "label.action.migrate.instance",
+        dialogBeforeActionFn : doMigrateInstance,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;       
+            vmToMidmenu(jsonObj, $midmenuItem1);           
+        }
+    }        
 }                      
      
 function doStartVM($actionLink, $detailsTab, $midmenuItem1) {       
@@ -1667,6 +1677,54 @@ function doChangeService($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
+function doMigrateInstance($actionLink, $detailsTab, $midmenuItem1) {    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+	
+	$.ajax({	   
+	    data: createURL("command=listHosts&VirtualMachineId="+id), 
+		dataType: "json",
+		async: false,
+		success: function(json) {
+			var hosts = json.listhostsresponse.host;
+			var hostSelect = $("#dialog_migrate_instance #migrate_instance_hosts").empty();
+			
+			if (hosts != null && hosts.length > 0) {
+				for (var i = 0; i < hosts.length; i++) {
+					var option = $("<option value='" + hosts[i].id + "'>" + fromdb(hosts[i].name) + ": " +((hosts[i].hasEnoughCapacity) ? dictionary["label.available"] : dictionary["label.full"]) + "</option>").data("name", fromdb(hosts[i].name));
+					hostSelect.append(option); 
+				}
+			} 
+		}
+	});
+	
+	$("#dialog_migrate_instance")
+	.dialog('option', 'buttons', { 						
+		"OK": function() { 
+		    var $thisDialog = $(this);
+		    		   
+		    var isValid = true;				
+			isValid &= validateDropDownBox("Host", $thisDialog.find("#migrate_instance_hosts"), $thisDialog.find("#migrate_instance_errormsg"));	
+			if (!isValid) 
+			    return;
+		    
+			$thisDialog.dialog("close"); 
+			var hostId = $thisDialog.find("#migrate_instance_hosts").val();
+			/*		
+			if(jsonObj.state != "Stopped") {				    
+		        $midmenuItem1.find("#info_icon").addClass("error").show();
+                $midmenuItem1.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: virtual instance needs to be stopped before you can change its service."));  
+	        }
+			*/
+            var apiCommand = "command=migrateVirtualMachine&hostid="+hostId+"&virtualmachineid="+id;	     
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 			
+		} 
+	}).dialog("open");
+}
+
 function vmToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.data("jsonObj", jsonObj);
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));   
@@ -1831,6 +1889,7 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		buildActionLinkForTab("label.action.stop.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.reboot.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.migrate.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		if (jsonObj.isoid == null)	
 			buildActionLinkForTab("label.action.attach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
