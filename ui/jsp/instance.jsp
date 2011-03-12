@@ -32,6 +32,7 @@ dictionary = {
 	'label.action.change.service': '<fmt:message key="label.action.change.service"/>',
 	'label.action.change.service.processing': '<fmt:message key="label.action.change.service.processing"/>',
 	'label.action.migrate.instance': '<fmt:message key="label.action.migrate.instance"/>',
+	'label.action.migrate.instance.processing': '<fmt:message key="label.action.migrate.instance.processing"/>',
 	'label.action.detach.disk': '<fmt:message key="label.action.detach.disk"/>',
 	'label.action.detach.disk.processing': '<fmt:message key="label.action.detach.disk.processing"/>',
 	'label.action.create.template': '<fmt:message key="label.action.create.template"/>',
