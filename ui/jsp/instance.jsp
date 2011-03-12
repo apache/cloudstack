@@ -1227,7 +1227,7 @@ dictionary = {
 </div>
 
 <!-- Migrate VM Dialog -->
-<div id="dialog_migrate_instance" title='<fmt:message key="label.action.migrate.vm" />' style="display: none">
+<div id="dialog_migrate_instance" title='<fmt:message key="label.action.migrate.instance" />' style="display: none">
     <p> 
 		<fmt:message key="message.migrate.instance.confirm" />
     </p>
