@@ -156,10 +156,10 @@ public class Upgrade217to22 implements DbUpgrade {
         pstmt.close();
     }
     
-    protected void insertNic(Connection conn, long networkId, long instanceId, boolean running, String macAddress, String ipAddress, String netmask, String strategy, String gateway, String vnet) throws SQLException {
+    protected void insertNic(Connection conn, long networkId, long instanceId, boolean running, String macAddress, String ipAddress, String netmask, String strategy, String gateway, String vnet, String guru, boolean defNic, int deviceId, String mode, String reservationId) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(
                 "INSERT INTO nics (instance_id, network_id, mac_address, ip4_address, netmask, strategy, ip_type, broadcast_uri, mode, reserver_name, reservation_id, device_id, update_time, isolation_uri, ip6_address, default_nic, created, removed, state, gateway) " +
-                          "VALUES (?,           ?,          ?,           ?,           ?,       ?,        'Ip4',   ?,             'Dhcp', 'GuestNetworkGuru', NULL,    0,         now(),       NULL,          NULL,         1,          now(),   NULL,    ?,     ?)");
+                          "VALUES (?,           ?,          ?,           ?,           ?,       ?,        'Ip4',   ?,             ?,    ?,             ?,              ?,         now(),       NULL,          NULL,         ?,          now(),   NULL,    ?,     ?)");
         int i = 1;
         
         String broadcast = null;
@@ -173,10 +173,47 @@ public class Upgrade217to22 implements DbUpgrade {
         pstmt.setString(i++, netmask);
         pstmt.setString(i++, strategy);
         pstmt.setString(i++, broadcast);
+        pstmt.setString(i++, mode);
+        pstmt.setString(i++, guru);
+        pstmt.setString(i++, reservationId);
+        pstmt.setInt(i++, deviceId);
+        pstmt.setBoolean(i++, defNic);
         pstmt.setString(i++, running ? "Reserved" : "Allocated");
         pstmt.setString(i++, gateway);
         pstmt.executeUpdate();
         pstmt.close();
+    }
+    
+    protected void upgradeDomR(Connection conn, long domrId, long publicNetworkId, long guestNetworkId, long controlNetworkId) throws SQLException {
+        s_logger.debug("Upgrading domR" + domrId);
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, domain_router.public_mac_address, domain_router.public_ip_address, domain_router.public_netmask, domain_router.guest_mac_address, domain_router.guest_ip_address, domain_router.guest_netmask, domain_router.vnet, domain_router.gateway FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
+        pstmt.setLong(1, domrId);
+        ResultSet rs = pstmt.executeQuery();
+        
+        if (!rs.next()) {
+            throw new CloudRuntimeException("Unable to find router " + domrId);
+        }
+        
+        long id = rs.getLong(1);
+        String state = rs.getString(2);
+        boolean running = state.equals("Running") | state.equals("Starting") | state.equals("Stopping");
+        String privateMac = rs.getString(3);
+        String privateIp = rs.getString(4);
+        String privateNetmask = rs.getString(5);
+        String publicMac = rs.getString(6);
+        String publicIp = rs.getString(7);
+        String publicNetmask = rs.getString(8);
+        String guestMac = rs.getString(9);
+        String guestIp = rs.getString(10);
+        String guestNetmask = rs.getString(11);
+        String vnet = rs.getString(12);
+        String gateway = rs.getString(13);
+        rs.close();
+        pstmt.close();
+        
+        insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 0, "Static", null);
+        insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Create", null, null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
+        insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "GuestNetworkGuru", false, 2, "Dhcp", null);
     }
     
     
@@ -206,7 +243,7 @@ public class Upgrade217to22 implements DbUpgrade {
             if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
                 running = true;
             }
-            insertNic(conn, networkId, (Long)vm[0], running, (String)vm[1], (String)vm[2], (String)vm[3], "Start", gateway, vnet);
+            insertNic(conn, networkId, (Long)vm[0], running, (String)vm[1], (String)vm[2], (String)vm[3], "Start", gateway, vnet, "GuestNetworkGuru", true, 0, "Dhcp", null);
         }
     }
 
@@ -515,17 +552,13 @@ public class Upgrade217to22 implements DbUpgrade {
             rs.close();
             pstmt.close();
             
-            for (Object[] dc : dcs) {
-                Long dcId = (Long)dc[0];
-                insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                upgradeManagementIpAddress(conn, dcId);
-            }
-            
             if (_basicZone) {
                 for (Object[] dc : dcs) {
                     Long dcId = (Long)dc[0];
+                    insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    upgradeManagementIpAddress(conn, dcId);
                     long basicDefaultDirectNetworkId = insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, null, true, null);
                 
                     //update all public ips with the Default Direct network Id
@@ -555,6 +588,10 @@ public class Upgrade217to22 implements DbUpgrade {
             } else {
                 for (Object[] dc : dcs) {
                     Long dcId = (Long)dc[0];
+                    long mgmtNetworkid = insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    long storageNetworkId = insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    long controlNetworkId = insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    upgradeManagementIpAddress(conn, dcId);
                     long publicNetworkId = insertNetwork(conn, "PublicNetwork" + dcId, "Public Network Created for Zone " + dcId, "Public", "Native", null, null, null, "Static", publicNetworkOfferingId, dcId, "PublicNetworkGuru", "Setup", 1,1, null, null, null, true, null, false, null);
                     
                     pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
@@ -582,10 +619,9 @@ public class Upgrade217to22 implements DbUpgrade {
                         String state = "Allocated";
                         if (vnet != null) {
                             reservationId = dcId + "-" + vnet;
-                            vnet = "vlan://" + vnet;
                             state = "Implemented";
                         }
-                        long virtualNetworkId = insertNetwork(conn, "VirtualNetwork" + router[0], "Virtual Network for " + router[0], "Guest", "Vlan", vnet, (String)router[3], (String)dc[1], "Dhcp", 6, dcId, "GuestNetworkGuru", state, (Long)router[1], (Long)router[2], (String)router[5], (String)router[6], "Virtual", false, (String)router[4], true, reservationId);
+                        long virtualNetworkId = insertNetwork(conn, "VirtualNetwork" + router[0], "Virtual Network for " + router[0], "Guest", "Vlan", "vlan://" + vnet, (String)router[3], (String)dc[1], "Dhcp", 6, dcId, "GuestNetworkGuru", state, (Long)router[1], (Long)router[2], (String)router[5], (String)router[6], "Virtual", false, (String)router[4], true, reservationId);
                         pstmt = conn.prepareStatement("UPDATE domain_router SET network_id = ? wHERE id = ? ");
                         pstmt.setLong(1, virtualNetworkId);
                         pstmt.setLong(2, (Long)router[0]);
@@ -594,6 +630,7 @@ public class Upgrade217to22 implements DbUpgrade {
                         s_logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
                         
                         upgradeVirtualUserVms(conn, (Long)router[0], virtualNetworkId, (String)router[3], vnet);
+                        upgradeDomR(conn, (Long)router[0], publicNetworkId, virtualNetworkId, controlNetworkId);
                     }
                     
                     upgradePublicUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
