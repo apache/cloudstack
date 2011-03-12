@@ -1371,6 +1371,7 @@ var vmActionMap = {
     },       
     "label.action.migrate.instance": {
         isAsyncJob: true,        
+		asyncJobResponse: "migratevirtualmachineresponse", 
         inProcessText: "label.action.migrate.instance.processing",
         dialogBeforeActionFn : doMigrateInstance,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
@@ -1894,7 +1895,9 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		buildActionLinkForTab("label.action.stop.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.reboot.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForTab("label.action.migrate.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		if (jsonObj.rootdevicetype == 'NetworkFilesystem' || jsonObj.rootdevicetype == 'IscsiLUN') {
+			buildActionLinkForTab("label.action.migrate.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		}
 		
 		if (jsonObj.isoid == null)	
 			buildActionLinkForTab("label.action.attach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
