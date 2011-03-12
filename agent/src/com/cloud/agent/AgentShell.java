@@ -534,9 +534,13 @@ public class AgentShell implements IAgentShell {
             } else {
                 instance += ".";
             }
+            
+            String pidDir = getProperty(null, "piddir");
+            
+            
             final String run = "agent." + instance + "pid";
             s_logger.debug("Checking to see if " + run + "exists.");
-        	ProcessUtil.pidCheck(run);
+        	ProcessUtil.pidCheck(pidDir, run);
         	
         	launchAgent();
 

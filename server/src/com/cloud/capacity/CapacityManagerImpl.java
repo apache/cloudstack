@@ -29,6 +29,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -60,12 +63,15 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
     @Inject ServiceOfferingDao _offeringsDao;
     @Inject HostDao _hostDao;
     @Inject VMInstanceDao _vmDao;
+    @Inject AgentManager _agentManager;
 
     private int _hostCapacityCheckerDelay;
     private int _hostCapacityCheckerInterval;
     private int _vmCapacityReleaseInterval;
     private ScheduledExecutorService _executor;
     private boolean _stopped;
+    private float _storageOverProvisioningFactor = 1.0f;
+    private float _cpuOverProvisioningFactor = 1.0f;
 
 
     @Override
@@ -74,8 +80,17 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
         _hostCapacityCheckerDelay = NumbersUtil.parseInt(_configDao.getValue(Config.HostCapacityCheckerWait.key()), 3600);
         _hostCapacityCheckerInterval = NumbersUtil.parseInt(_configDao.getValue(Config.HostCapacityCheckerInterval.key()), 3600);
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        _storageOverProvisioningFactor = NumbersUtil.parseFloat(_configDao.getValue(Config.StorageOverprovisioningFactor.key()), 1.0f);
+        _cpuOverProvisioningFactor = NumbersUtil.parseFloat(_configDao.getValue(Config.CPUOverprovisioningFactor.key()), 1.0f);
+
+        if (_cpuOverProvisioningFactor < 1.0f) {
+            _cpuOverProvisioningFactor = 1.0f;
+        }
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("HostCapacity-Checker"));
         VirtualMachine.State.getStateMachine().registerListener(this);
+        _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageOverProvisioningFactor), true, false, false);
+        _agentManager.registerForHostEvents(new ComputeCapacityListener(_capacityDao, _cpuOverProvisioningFactor), true, false, false);
+
         return true;
     }
 
@@ -522,5 +537,107 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
 
         return true;
     }
+
+ // create capacity entries if none exist for this server
+    private void createCapacityEntry(final StartupCommand startup, HostVO server) {
+        SearchCriteria<CapacityVO> capacitySC = _capacityDao
+                .createSearchCriteria();
+        capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, server.getId());
+        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ,
+                server.getDataCenterId());
+        capacitySC.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
+
+ 
+        if (startup instanceof StartupRoutingCommand) {
+            SearchCriteria<CapacityVO> capacityCPU = _capacityDao
+                    .createSearchCriteria();
+            capacityCPU.addAnd("hostOrPoolId", SearchCriteria.Op.EQ,
+                    server.getId());
+            capacityCPU.addAnd("dataCenterId", SearchCriteria.Op.EQ,
+                    server.getDataCenterId());
+            capacityCPU
+                    .addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
+            capacityCPU.addAnd("capacityType", SearchCriteria.Op.EQ,
+                    CapacityVO.CAPACITY_TYPE_CPU);
+            List<CapacityVO> capacityVOCpus = _capacityDao.search(capacitySC,
+                    null);
+
+            if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
+                CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
+                long newTotalCpu = (long) (server.getCpus().longValue()
+                        * server.getSpeed().longValue() * _cpuOverProvisioningFactor);
+                if ((CapacityVOCpu.getTotalCapacity() <= newTotalCpu)
+                        || ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu
+                                .getReservedCapacity()) <= newTotalCpu)) {
+                    CapacityVOCpu.setTotalCapacity(newTotalCpu);
+                } else if ((CapacityVOCpu.getUsedCapacity()
+                        + CapacityVOCpu.getReservedCapacity() > newTotalCpu)
+                        && (CapacityVOCpu.getUsedCapacity() < newTotalCpu)) {
+                    CapacityVOCpu.setReservedCapacity(0);
+                    CapacityVOCpu.setTotalCapacity(newTotalCpu);
+                } else {
+                    s_logger.debug("What? new cpu is :" + newTotalCpu
+                            + ", old one is " + CapacityVOCpu.getUsedCapacity()
+                            + "," + CapacityVOCpu.getReservedCapacity() + ","
+                            + CapacityVOCpu.getTotalCapacity());
+                }
+                _capacityDao.update(CapacityVOCpu.getId(), CapacityVOCpu);
+            } else {
+                CapacityVO capacity = new CapacityVO(
+                        server.getId(),
+                        server.getDataCenterId(),
+                        server.getPodId(), 
+                        server.getClusterId(),
+                        0L,
+                        (long) (server.getCpus().longValue()
+                                * server.getSpeed().longValue() * _cpuOverProvisioningFactor),
+                        CapacityVO.CAPACITY_TYPE_CPU);
+                _capacityDao.persist(capacity);
+            }
+
+            SearchCriteria<CapacityVO> capacityMem = _capacityDao
+                    .createSearchCriteria();
+            capacityMem.addAnd("hostOrPoolId", SearchCriteria.Op.EQ,
+                    server.getId());
+            capacityMem.addAnd("dataCenterId", SearchCriteria.Op.EQ,
+                    server.getDataCenterId());
+            capacityMem
+                    .addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
+            capacityMem.addAnd("capacityType", SearchCriteria.Op.EQ,
+                    CapacityVO.CAPACITY_TYPE_MEMORY);
+            List<CapacityVO> capacityVOMems = _capacityDao.search(capacityMem,
+                    null);
+
+            if (capacityVOMems != null && !capacityVOMems.isEmpty()) {
+                CapacityVO CapacityVOMem = capacityVOMems.get(0);
+                long newTotalMem = server.getTotalMemory();
+                if (CapacityVOMem.getTotalCapacity() <= newTotalMem
+                        || (CapacityVOMem.getUsedCapacity()
+                                + CapacityVOMem.getReservedCapacity() <= newTotalMem)) {
+                    CapacityVOMem.setTotalCapacity(newTotalMem);
+                } else if (CapacityVOMem.getUsedCapacity()
+                        + CapacityVOMem.getReservedCapacity() > newTotalMem
+                        && CapacityVOMem.getUsedCapacity() < newTotalMem) {
+                    CapacityVOMem.setReservedCapacity(0);
+                    CapacityVOMem.setTotalCapacity(newTotalMem);
+                } else {
+                    s_logger.debug("What? new cpu is :" + newTotalMem
+                            + ", old one is " + CapacityVOMem.getUsedCapacity()
+                            + "," + CapacityVOMem.getReservedCapacity() + ","
+                            + CapacityVOMem.getTotalCapacity());
+                }
+                _capacityDao.update(CapacityVOMem.getId(), CapacityVOMem);
+            } else {
+                CapacityVO capacity = new CapacityVO(server.getId(),
+                        server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
+                        server.getTotalMemory(),
+                        CapacityVO.CAPACITY_TYPE_MEMORY);
+                _capacityDao.persist(capacity);
+            }
+        }
+
+    }
+
+    
 
 }

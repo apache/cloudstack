@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.storage.secondary;
+package com.cloud.storage.resource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -161,7 +161,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         
         final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l*1024l*1024l*1024l, _dlMgr.gatherTemplateInfo());
         cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
-        cmd.setIqn(null);
+        cmd.setIqn("local://");
         fillNetworkInformation(cmd);
         cmd.setDataCenter(_dc);
         cmd.setPod(_pod);

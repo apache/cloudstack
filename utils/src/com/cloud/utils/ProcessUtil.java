@@ -40,9 +40,9 @@ public class ProcessUtil {
     private static final Logger s_logger = Logger.getLogger(ProcessUtil.class.getName());
 
 	// paths cannot be hardcoded
-	public static void pidCheck(String run) throws ConfigurationException {
+	public static void pidCheck(String pidDir, String run) throws ConfigurationException {
 		
-		String dir = "/var/run";
+		String dir = pidDir==null?"/var/run":pidDir;
 		
 		try {
 			final File propsFile = PropertiesUtil.findConfigFile("environment.properties");

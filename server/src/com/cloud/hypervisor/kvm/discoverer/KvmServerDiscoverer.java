@@ -166,11 +166,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return null;
 			}
 			
-			s_logger.debug("copying " + _setupAgentPath + " to host");
-			SCPClient scp = new SCPClient(sshConnection);
-			scp.put(_setupAgentPath, "/usr/bin", "0755");
-			
-			String parameters = " -h " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -u " + guid;
+			String parameters = " --host=" + _hostIp + " --zone=" + dcId + " --pod=" + podId + " --cluster=" + clusterId + " --guid=" + guid + " -a";
 			
 			if (_kvmPublicNic != null) {
 				parameters += " -P " + _kvmPublicNic;
@@ -180,7 +176,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				parameters += " -N " + _kvmPrivateNic;
 			}
 		
-			SSHCmdHelper.sshExecuteCmd(sshConnection, "/usr/bin/setup_agent.sh " + parameters + " 1>&2", 3);
+			SSHCmdHelper.sshExecuteCmd(sshConnection, "cloud-setup-agent " + parameters + " >& /dev/null", 3);
 			
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
 			Map<String, Object> params = new HashMap<String, Object>();

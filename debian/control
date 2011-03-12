@@ -141,11 +141,20 @@ Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, cgroup-bin, augeas-tools, uuid-runtime, rsync, grep, iproute, vlan
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, cgroup-bin, augeas-tools, uuid-runtime, rsync, grep, iproute, jnetpcap, ebtables
 Description: Cloud.com agent
  The Cloud.com agent is in charge of managing shared computing resources in
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
  will participate in your cloud.
+
+Package: cloud-agent-premium
+Architecture: any
+Depends: cloud-agent
+Description: Cloud.com agent premium
+ The Cloud.com agent is in charge of managing shared computing resources in
+ a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
+ will participate in your cloud.
+
 
 Package: cloud-console-proxy
 Architecture: any

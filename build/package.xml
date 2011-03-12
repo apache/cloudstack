@@ -70,6 +70,8 @@
         <include name="cloud-libvirt-0.4.5.jar" />
         <include name="cloud-jna.jar" />
         <include name="cloud-cglib.jar" />
+        <include name="jetty-6.1.26.jar" />
+        <include name="jetty-util-6.1.26.jar"/>
       </zipfileset>
       <zipfileset dir="${jar.dir}">
         <include name="${agent.jar}" />

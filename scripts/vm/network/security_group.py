@@ -1,25 +1,4 @@
 #!/usr/bin/python
-
-
-
-  #
-  # Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
-  # 
-  # This software is licensed under the GNU General Public License v3 or later.
-  # 
-  # It is free software: you can redistribute it and/or modify
-  # it under the terms of the GNU General Public License as published by
-  # the Free Software Foundation, either version 3 of the License, or any later version.
-  # This program is distributed in the hope that it will be useful,
-  # but WITHOUT ANY WARRANTY; without even the implied warranty of
-  # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  # GNU General Public License for more details.
-  # 
-  # You should have received a copy of the GNU General Public License
-  # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  #
- 
-
 import cloud_utils
 from cloud_utils import Command
 import logging
@@ -84,7 +63,7 @@ def ipset(ipsetname, proto, start, end, ips):
     return result
 '''
 
-def destroy_network_rules_for_vm(vm_name):
+def destroy_network_rules_for_vm(vm_name, vif=None):
     vmchain = vm_name
     vmchain_default = None
     
@@ -116,6 +95,16 @@ def destroy_network_rules_for_vm(vm_name):
     except:
         logging.debug("Ignoring failure to delete  chain " + vmchain)
     
+    if vif is not None:
+        try:
+            dnats = execute("iptables -t nat -S | grep " + vif + " | sed 's/-A/-D/'").split("\n")
+            for dnat in dnats:
+                try:
+                    execute("iptables -t nat " + dnat)
+                except:
+                    logging.debug("Igoring failure to delete dnat: " + dnat) 
+        except:
+            pass
     remove_rule_log_for_vm(vm_name)
     
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
@@ -162,7 +151,8 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         execute("ebtables -t nat -A " +  vmchain_in + " -s ! " +  vm_mac + " -j DROP")
         execute("ebtables -t nat -A " +  vmchain_in  + " -p ARP -s ! " + vm_mac + " -j DROP")
         execute("ebtables -t nat -A " +  vmchain_in  + " -p ARP --arp-mac-src ! " + vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " + vmchain_in  +  " -p ARP --arp-ip-src ! " + vm_ip + " -j DROP") 
+        if vm_ip is not None:
+            execute("ebtables -t nat -A " + vmchain_in  +  " -p ARP --arp-ip-src ! " + vm_ip + " -j DROP") 
         execute("ebtables -t nat -A " + vmchain_in  + " -p ARP --arp-op Request -j ACCEPT")   
         execute("ebtables -t nat -A " + vmchain_in  + " -p ARP --arp-op Reply -j ACCEPT")    
         execute("ebtables -t nat -A " + vmchain_in  + " -p ARP  -j DROP")    
@@ -172,7 +162,8 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
    
     try:
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply --arp-mac-dst ! " +  vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP") 
+        if vm_ip is not None:
+            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP") 
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Request -j ACCEPT")   
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply -j ACCEPT")    
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j DROP")    
@@ -244,7 +235,8 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -p udp --dport 68 --sport 67  -j ACCEPT")
 
         #don't let vm spoof its ip address
-        execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif  + " --source " +  vm_ip +  " -j ACCEPT")
+        if vm_ip is not None:
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif  + " --source " +  vm_ip +  " -j ACCEPT")
         execute("iptables -A " + vmchain_default + " -j " +  vmchain)
         execute("iptables -A " + vmchain + " -j DROP")
     except:
@@ -253,12 +245,42 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
     
     default_ebtables_rules(vmchain, vm_ip, vm_mac, vif)
     
-    if write_rule_log_for_vm(vmName, vm_id, vm_ip, domID, '_initial_', '-1') == False:
-        logging.debug("Failed to log default network rules, ignoring")
+    if vm_ip is not None:
+        if write_rule_log_for_vm(vmName, vm_id, vm_ip, domID, '_initial_', '-1') == False:
+            logging.debug("Failed to log default network rules, ignoring")
         
     logging.debug("Programmed default rules for vm " + vm_name)
     return 'true'
     
+def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpSvr, hostIp, hostMacAddr):
+    vmchain_default = '-'.join(vm_name.split('-')[:-1]) + "-def"
+    vmchain_in = vm_name + "-in"
+    vmchain_out = vm_name + "-out"
+    domID = getvmId(vm_name)
+    try:
+        execute("iptables -I " + vmchain_default + " 4 -m physdev --physdev-is-bridged --physdev-in " + vif  + " --source " +  vm_ip +  " -j ACCEPT")
+    except:
+        pass
+    try:
+        execute("iptables -t nat -A PREROUTING -p tcp -m physdev --physdev-in " + vif + " -m tcp --dport 80 -d " + dhcpSvr + " -j DNAT --to-destination " + hostIp + ":80")
+    except:
+        pass
+    
+    try:
+        execute("ebtables -t nat -A PREROUTING -i " + vif + " -p IPv4 --ip-protocol tcp --ip-destination-port 80 -j dnat --to-destination " + hostMacAddr)
+    except:
+        pass
+    
+    try:
+        execute("ebtables -t nat -I " + vmchain_in  +  " 4 -p ARP --arp-ip-src ! " + vm_ip + " -j DROP") 
+    except:
+        pass
+    try:
+        execute("ebtables -t nat -I " + vmchain_out + " 2 -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP") 
+    except:
+        pass
+    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domID, '_initial_', '-1') == False:
+            logging.debug("Failed to log default network rules, ignoring")
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
@@ -582,6 +604,9 @@ if __name__ == '__main__':
     parser.add_option("--seq", dest="seq")
     parser.add_option("--rules", dest="rules")
     parser.add_option("--brname", dest="brname")
+    parser.add_option("--dhcpSvr", dest="dhcpSvr")
+    parser.add_option("--hostIp", dest="hostIp")
+    parser.add_option("--hostMacAddr", dest="hostMacAddr")
     (option, args) = parser.parse_args()
     cmd = args[0]
     if cmd == "can_bridge_firewall":
@@ -589,7 +614,7 @@ if __name__ == '__main__':
     elif cmd == "default_network_rules":
         default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmMAC, option.vif, option.brname)
     elif cmd == "destroy_network_rules_for_vm":
-        destroy_network_rules_for_vm(option.vmName) 
+        destroy_network_rules_for_vm(option.vmName, option.vif) 
     elif cmd == "default_network_rules_systemvm":
         default_network_rules_systemvm(option.vmName, option.brname)
     elif cmd == "get_rule_logs_for_vms":
@@ -598,3 +623,5 @@ if __name__ == '__main__':
         add_network_rules(option.vmName, option.vmID, option.vmIP, option.sig, option.seq, option.vmMAC, option.rules, option.vif, option.brname)
     elif cmd == "cleanup_rules":
         cleanup_rules()
+    elif cmd == "post_default_network_rules":
+        post_default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmMAC, option.vif, option.brname, option.dhcpSvr, option.hostIp, option.hostMacAddr)

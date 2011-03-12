@@ -81,21 +81,30 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        DataCenterVO dc = _dcDao.findById(network.getDataCenterId());
+        ReservationStrategy rsStrategy = ReservationStrategy.Start;
+        _dcDao.loadDetails(dc);
+        String dhcpStrategy = dc.getDetail(ZoneConfig.DhcpStrategy.key());
+        if ("external".equalsIgnoreCase(dhcpStrategy)) {
+            rsStrategy = ReservationStrategy.Create;
+        }
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-
+        
         if (!canHandle(offering, dc)) {
             return null;
         }
-
+       
         if (nic == null) {
-            nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
+            nic = new NicProfile(rsStrategy, null, null, null, null);
         } else if (nic.getIp4Address() == null) {
             nic.setStrategy(ReservationStrategy.Start);
         } else {
             nic.setStrategy(ReservationStrategy.Create);
         }
-
+        if (rsStrategy == ReservationStrategy.Create) {
+            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(network.getId());
+            nic.setMacAddress(mac);
+        }
         return nic;
     }
 

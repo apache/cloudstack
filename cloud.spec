@@ -221,6 +221,7 @@ Requires: jpackage-utils
 Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
+Requires: jnetpcap
 Group:     System Environment/Libraries
 
 %package baremetal-agent
@@ -297,6 +298,13 @@ The Cloud.com command line tools contain a few Python modules that can call clou
 
 
 %if %{_premium}
+
+%package premium-agent
+Summary: Cloud.com premium agent
+Requires: cloud-agent
+Group:     System Environment/Libraries
+%description premium-agent
+The Cloud.com premium agent
 
 %package test
 Summary:   Cloud.com test suite
@@ -507,6 +515,8 @@ fi
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
 %{_javadir}/%{name}-jstl-1.2.jar
+%{_javadir}/jetty-6.1.26.jar
+%{_javadir}/jetty-util-6.1.26.jar
 
 %{_javadir}/%{name}-axis.jar
 %{_javadir}/%{name}-commons-discovery.jar
@@ -586,6 +596,9 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
 
+%files premium-agent
+%{_javadir}/cloud-agent-extras.jar
+%attr(0755,root,root) %{_bindir}/mycloud-setup-agent
 
 %files console-proxy
 %defattr(0644,root,root,0755)

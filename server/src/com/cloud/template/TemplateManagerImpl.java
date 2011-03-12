@@ -343,19 +343,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	        }
         }
         
-        SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
-        sc.setParameters("id", templateId);
-        sc.setParameters("state", Status.DOWNLOADED);
-        sc.setJoinParameters("host", "dcId", pool.getDataCenterId());
-
-        List<VMTemplateHostVO> templateHostRefs = _tmpltHostDao.search(sc, null);
+        templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool.getDataCenterId(), pool.getPodId());
         
-        if (templateHostRefs.size() == 0) {
+        if (templateHostRef == null) {
             s_logger.debug("Unable to find a secondary storage host who has completely downloaded the template.");
             return null;
         }
-        
-        templateHostRef = templateHostRefs.get(0);
         
         HostVO sh = _hostDao.findById(templateHostRef.getHostId());
         origUrl = sh.getStorageUrl();
@@ -398,7 +391,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             String url = origUrl + "/" + templateHostRef.getInstallPath();
             PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), 
             	template.getAccountId(), pool.getId(), pool.getUuid());
-            HostVO secondaryStorageHost = _hostDao.findSecondaryStorageHost(pool.getDataCenterId());
+            HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
             assert(secondaryStorageHost != null);
             dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());
             // TODO temporary hacking, hard-coded to NFS primary data store

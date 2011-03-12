@@ -26,6 +26,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.StorageUnavailableException;
@@ -72,6 +73,13 @@ public interface StorageManager extends Manager {
 	 * @return secondary storage host
 	 */
 	public HostVO getSecondaryStorageHost(long zoneId);
+	
+	/**
+	 * Returns the secondary storage host
+	 * @param zoneId
+	 * @return secondary storage host
+	 */
+    public VMTemplateHostVO findVmTemplateHost(long templateId, long dcId, Long podId);
 
 	/**
 	 * Moves a volume from its current storage pool to a storage pool with enough capacity in the specified zone, pod, or cluster

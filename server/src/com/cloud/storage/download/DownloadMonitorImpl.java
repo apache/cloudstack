@@ -56,12 +56,14 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
@@ -85,6 +87,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	private static final String DEFAULT_HTTP_COPY_PORT = "80";
     @Inject 
     VMTemplateHostDao _vmTemplateHostDao;
+    @Inject 
+    VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
 	VMTemplatePoolDao _vmTemplatePoolDao;
     @Inject
@@ -438,6 +442,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
 			return;
 		}		
+		long zoneId = storageHost.getDataCenterId();
 
 		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
 		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(storageHost.getDataCenterId());
@@ -500,6 +505,15 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 					tmpltHost.setSize(tmpltInfo.getSize());
                     tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
 					_vmTemplateHostDao.persist(tmpltHost);
+					VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
+					if (tmpltZoneVO == null){
+					    tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
+					    _vmTemplateZoneDao.persist(tmpltZoneVO);
+					} else {
+					    tmpltZoneVO.setLastUpdated(new Date());
+					    _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
+					}
+
 				}
 
 				continue;
@@ -511,6 +525,14 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 				s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request download shortly");
 				VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
 				_vmTemplateHostDao.persist(templtHost);
+				VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
+				if (tmpltZoneVO == null){
+				    tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
+				    _vmTemplateZoneDao.persist(tmpltZoneVO);
+				} else {
+				    tmpltZoneVO.setLastUpdated(new Date());
+				    _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
+				}
 			}
 
 		}

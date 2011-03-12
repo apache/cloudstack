@@ -58,7 +58,10 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	+   "WHERE host_id = ? and type_id = ?";
 			
 	protected static final String DOWNLOADS_STATE_DC=
-		"SELECT * FROM template_host_ref t, host h where t.host_id = h.id and h.data_center_id=? "
+		"SELECT t.id, t.host_id, t.pool_id, t.template_id, t.created, t.last_updated, t.job_id, " 
+	+   "t.download_pct, t.size, t.physical_size, t.download_state, t.error_str, t.local_path, "
+	+   "t.install_path, t.url, t.destroyed, t.is_copy FROM template_host_ref t, host h " 
+	+   "where t.host_id = h.id and h.data_center_id=? "
 	+	" and t.template_id=? and t.download_state = ?" ;
 	
 	protected static final String DOWNLOADS_STATE_DC_POD=

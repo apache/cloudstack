@@ -486,6 +486,9 @@ public class LibvirtVMDef {
 		public String getDevName() {
 		    return _networkName;
 		}
+		public String getMacAddress() {
+		    return _macAddr;
+		}
 		
 		@Override
         public String toString() {

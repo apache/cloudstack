@@ -24,6 +24,7 @@ import java.util.List;
 public class VmDataCommand extends NetworkElementCommand {
     
 	String vmIpAddress;
+	String vmName;
 	List<String[]> vmData;
 	
     protected VmDataCommand() {    	
@@ -35,9 +36,19 @@ public class VmDataCommand extends NetworkElementCommand {
     }
     
     public VmDataCommand(String vmIpAddress) {
-    	this.vmIpAddress = vmIpAddress;
-    	this.vmData = new ArrayList<String[]>();
+    	this(vmIpAddress, null);
     }
+    
+    public String getVmName() {
+        return vmName;
+    }
+
+    public VmDataCommand(String vmIpAddress, String vmName) {
+        this.vmName = vmName;
+        this.vmIpAddress = vmIpAddress;
+        this.vmData = new ArrayList<String[]>();
+    }
+    
 	
 	public String getVmIpAddress() {
 		return vmIpAddress;

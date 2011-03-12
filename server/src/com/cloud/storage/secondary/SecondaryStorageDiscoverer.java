@@ -46,6 +46,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
+import com.cloud.storage.resource.LocalSecondaryStorageResource;
 import com.cloud.storage.resource.NfsSecondaryStorageResource;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.net.NfsUtils;

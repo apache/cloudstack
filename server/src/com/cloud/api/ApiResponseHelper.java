@@ -1508,6 +1508,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setChecksum(template.getChecksum());
             templateResponse.setSourceTemplateId(template.getSourceTemplateId());
             
+            templateResponse.setChecksum(template.getChecksum());
+
             templateResponse.setObjectName("template");
             responses.add(templateResponse);
         }

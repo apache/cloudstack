@@ -61,7 +61,7 @@ public abstract class ServerResourceBase implements ServerResource {
     protected abstract String getDefaultScriptsDir();
 
     @Override
-    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(final String name,  Map<String, Object> params) throws ConfigurationException {
     	_name = name;
 
         String publicNic = (String)params.get("public.network.device");
@@ -123,7 +123,10 @@ public abstract class ServerResourceBase implements ServerResource {
                 throw new ConfigurationException("Private NIC is not configured");
             }
         }
-
+        String infos[] = NetUtils.getNetworkParams(_privateNic);
+        params.put("host.ip", infos[0]);
+        params.put("host.mac.address", infos[1]);
+       
     	return true;
     }
     

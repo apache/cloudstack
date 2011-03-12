@@ -260,7 +260,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public ConsoleProxyInfo assignProxy(final long dataCenterId, final long vmId) {
-
+        if (!isConsoleProxyVmRequired(dataCenterId)) {
+            return null;
+        }
+        
         final Pair<ConsoleProxyManagerImpl, ConsoleProxyVO> result = new Pair<ConsoleProxyManagerImpl, ConsoleProxyVO>(this, null);
 
         _requestHandlerScheduler.execute(new Runnable() {

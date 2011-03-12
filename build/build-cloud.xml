@@ -443,6 +443,7 @@
 
   <path id="agent.classpath">
     <path refid="deps.classpath" />
+    <path refid="thirdparty.classpath"/>
     <fileset dir="${target.dir}">
       <include name="**/${core.jar}" />
       <include name="**/${utils.jar}" />

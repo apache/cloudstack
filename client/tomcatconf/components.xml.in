@@ -93,6 +93,7 @@
         <adapters key="com.cloud.acl.SecurityChecker">
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
+
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">

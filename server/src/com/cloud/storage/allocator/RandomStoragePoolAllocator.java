@@ -78,7 +78,7 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	if(suitablePools.size() == returnUpTo){
         		break;
         	}        	
-        	if (checkPool(avoid, pool, dskCh, template, null, sc)) {
+        	if (checkPool(avoid, pool, dskCh, template, null, sc, plan)) {
         		suitablePools.add(pool);
         	}
         }

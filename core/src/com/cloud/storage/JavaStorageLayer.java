@@ -32,7 +32,18 @@ import javax.naming.ConfigurationException;
 public class JavaStorageLayer implements StorageLayer {
     
     String _name;
+    boolean _makeWorldWriteable = true;
     
+    
+    public JavaStorageLayer() {
+        super();
+    }
+    
+    public JavaStorageLayer(boolean makeWorldWriteable) {
+        this();
+        this._makeWorldWriteable = makeWorldWriteable;
+    }
+
     @Override
     public boolean cleanup(String path, String rootPath) throws IOException {
         assert path.startsWith(rootPath) : path + " does not start with " + rootPath;
@@ -121,8 +132,11 @@ public class JavaStorageLayer implements StorageLayer {
             if (file.exists()) {
                 return file.isDirectory();
             }
-            
-            return (file.mkdirs() && setWorldReadableAndWriteable(file));
+            if (_makeWorldWriteable) {
+                return (file.mkdirs() && setWorldReadableAndWriteable(file));
+            } else {
+                return file.mkdirs();
+            }
         }
     }
     
@@ -146,7 +160,9 @@ public class JavaStorageLayer implements StorageLayer {
             for (String dirPath : dirPaths) {
             	dir = new File(dirPath);
             	if (!dir.exists()) {
-            		success = dir.mkdir() && setWorldReadableAndWriteable(dir);
+            		success = dir.mkdir();
+            		if (_makeWorldWriteable)
+            		    success = success && setWorldReadableAndWriteable(dir);
             	}
             }
             

@@ -194,10 +194,24 @@ public class LibvirtStorageResource {
     }
     
     public StoragePool getStoragePoolbyURI(Connect conn, URI uri) throws LibvirtException {
-        String sourcePath = uri.getPath();
-        sourcePath = sourcePath.replace("//", "/");
-        String sourceHost = uri.getHost();
-        String uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
+        String sourcePath;
+        String uuid;
+        String sourceHost = "";
+        String protocal;
+        if (uri.getScheme().equalsIgnoreCase("local")) {
+            sourcePath = _mountPoint + File.separator + uri.toString().replace("local:///", "");
+            sourcePath = sourcePath.replace("//", "/");
+            uuid = UUID.nameUUIDFromBytes(new String(sourcePath).getBytes()).toString();
+            protocal = "DIR";
+        } else {
+            sourcePath = uri.getPath();
+            sourcePath = sourcePath.replace("//", "/");
+            sourceHost = uri.getHost();
+            uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
+            protocal = "NFS";
+        }
+       
+       
         String targetPath = _mountPoint + File.separator + uuid;
         StoragePool sp = null;
         try {
@@ -207,12 +221,29 @@ public class LibvirtStorageResource {
 
         if (sp == null) {
             try {
-                _storageLayer.mkdir(targetPath);
-                LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NETFS, uuid, uuid,
-                        sourceHost, sourcePath, targetPath);
-                s_logger.debug(spd.toString());
-                addStoragePool(uuid);
+                LibvirtStoragePoolDef spd = null;
+                if (protocal.equalsIgnoreCase("NFS")) {
+                    _storageLayer.mkdir(targetPath);
+                    spd = new LibvirtStoragePoolDef(poolType.NETFS, uuid, uuid,
+                            sourceHost, sourcePath, targetPath);
+                    s_logger.debug(spd.toString());
+                    addStoragePool(uuid);
 
+                    synchronized (getStoragePool(uuid)) {
+                        sp = conn.storagePoolDefineXML(spd.toString(), 0);
+
+                        if (sp == null) {
+                            s_logger.debug("Failed to define storage pool");
+                            return null;
+                        }
+                        sp.create(0);
+                    }
+                } else if (protocal.equalsIgnoreCase("DIR")) {
+                    _storageLayer.mkdir(targetPath);
+                    spd = new LibvirtStoragePoolDef(poolType.DIR, uuid, uuid,
+                            null, null, sourcePath);
+                }
+                
                 synchronized (getStoragePool(uuid)) {
                     sp = conn.storagePoolDefineXML(spd.toString(), 0);
 

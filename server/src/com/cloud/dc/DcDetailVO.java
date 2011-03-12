@@ -25,7 +25,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="datacenter_details")
+@Table(name="data_center_details")
 public class DcDetailVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

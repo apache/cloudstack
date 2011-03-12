@@ -2531,13 +2531,54 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
                 .getHypervisorType().toString());
         _usageEventDao.persist(usageEvent);
+        Answer startAnswer = cmds.getAnswer(StartAnswer.class);
+        String returnedIp = null;
+        String originalIp = null;
+        if (startAnswer != null) {
+            StartAnswer startAns = (StartAnswer) startAnswer;
+            VirtualMachineTO vmTO = startAns.getVirtualMachine();
+            for (NicTO nicTO: vmTO.getNics()) {
+                if (nicTO.getType() == TrafficType.Guest) {
+                    returnedIp = nicTO.getIp();
+                }
+            }
+        }
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        NicVO guestNic = null;
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
             usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(), null, isDefault);
             _usageEventDao.persist(usageEvent);
+            if (network.getTrafficType() == TrafficType.Guest) {
+                originalIp = nic.getIp4Address();
+                guestNic = nic;
+            }
+        }
+        boolean ipChanged = false;
+        if (originalIp != null && !originalIp.equalsIgnoreCase(returnedIp)) {
+            if (returnedIp != null && guestNic != null) {
+                guestNic.setIp4Address(returnedIp);
+                ipChanged = true;
+            }
+        }
+        if (returnedIp != null && !returnedIp.equalsIgnoreCase(originalIp)) {
+            if (guestNic != null) {
+                guestNic.setIp4Address(returnedIp);
+                ipChanged = true;
+            }
+        }
+        if (ipChanged) {
+            DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
+            UserVmVO userVm = profile.getVirtualMachine();
+            if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){            
+                _nicDao.update(guestNic.getId(), guestNic);
+                userVm.setPrivateIpAddress(guestNic.getIp4Address());
+                _vmDao.update(userVm.getId(), userVm);
+
+                s_logger.info("Detected that ip changed in the answer, updated nic in the db with new ip " + returnedIp);
+            }
         }
 
         return true;

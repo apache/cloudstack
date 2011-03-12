@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -210,6 +211,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
     protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(17);
     protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(17);
+    protected List<Pair<Integer, StartupCommandProcessor>> _creationMonitors = new ArrayList<Pair<Integer, StartupCommandProcessor>>(17);
     protected int _monitorId = 0;
 
     protected NioServer _connection;
@@ -423,6 +425,23 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             return _monitorId;
         }
     }
+
+    @Override
+	public int registerForInitialConnects(final StartupCommandProcessor creator,boolean priority) {
+	    synchronized (_hostMonitors) {
+	        _monitorId++;
+
+	        if (priority) {
+	            _creationMonitors.add(0, new Pair<Integer, StartupCommandProcessor>(
+	                    _monitorId, creator));
+	        } else {
+	            _creationMonitors.add(0, new Pair<Integer, StartupCommandProcessor>(
+	                    _monitorId, creator));
+	        }
+	    }
+
+	    return _monitorId;
+	}
 
     @Override
     public void unregisterForHostEvents(final int id) {
@@ -1741,6 +1760,22 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         return attache;
     }
 
+	protected boolean notifyCreatorsOfConnection(StartupCommand[] cmd) throws ConnectionException {
+	    boolean handled = false;
+	    for (Pair<Integer, StartupCommandProcessor> monitor : _creationMonitors) {
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug("Sending Connect to creator: "
+	                    + monitor.second().getClass().getSimpleName());
+	        }
+	        handled =  monitor.second().processInitialConnect(cmd);
+	        if (handled) {
+	            break;
+	        }
+	    }
+
+	    return handled;
+	}
+
     @Override
     public boolean start() {
         startDirectlyConnectedHosts();
@@ -2488,24 +2523,27 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         return result;
     }
 
-    public AgentAttache handleConnect(final Link link, final StartupCommand[] startup) throws IllegalArgumentException, ConnectionException {
-        HostVO server = createHost(startup, null, null, false, null, null);
-        if (server == null) {
-            return null;
-        }
-        long id = server.getId();
+public AgentAttache handleConnect(final Link link,
+			final StartupCommand[] startup) throws IllegalArgumentException,
+			ConnectionException {
+	    HostVO server = null;
+	    boolean handled = notifyCreatorsOfConnection(startup);
+	    if (!handled) {
+	        server = createHost(startup, null, null, false, null, null);
+	    } else {
+	        server = _hostDao.findByGuid(startup[0].getGuid()); 
+	    }
+	     
+		if (server == null) {
+			return null;
+		}
+		long id = server.getId();
 
-        AgentAttache attache = createAttache(id, server, link);
+		AgentAttache attache = createAttache(id, server, link);
 
-        attache = notifyMonitorsOfConnection(attache, startup);
+		attache = notifyMonitorsOfConnection(attache, startup);
 
-        return attache;
-    }
-
-    public AgentAttache findAgent(long hostId) {
-        synchronized (_agents) {
-            return _agents.get(hostId);
-        }
+		return attache;
     }
 
     protected AgentAttache createAttache(long id, HostVO server, Link link) {

@@ -63,7 +63,7 @@ public class StartupCommand extends Command {
     public StartupCommand(Long id, Host.Type type, String name, String dataCenter, String pod, String guid, String version, String gatewayIpAddress) {
 		this(id, type, name, dataCenter, pod, guid, version);
 		this.gatewayIpAddress = gatewayIpAddress;
-   }    
+    }    
     
     public Host.Type getHostType() {
         return type;
@@ -278,6 +278,7 @@ public class StartupCommand extends Command {
     public void setGatewayIpAddress(String gatewayIpAddress) {
         this.gatewayIpAddress = gatewayIpAddress;
     }
+  
     
     @Override
     public boolean executeInSequence() {

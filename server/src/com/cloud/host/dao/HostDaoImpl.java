@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -77,7 +78,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> TypeSearch;
     protected final SearchBuilder<HostVO> StatusSearch;
     protected final SearchBuilder<HostVO> NameLikeSearch;
-    protected final SearchBuilder<HostVO> NameSearch;
     protected final SearchBuilder<HostVO> SequenceSearch;
     protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
@@ -187,10 +187,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         NameLikeSearch.and("name", NameLikeSearch.entity().getName(), SearchCriteria.Op.LIKE);
         NameLikeSearch.done();
         
-        NameSearch = createSearchBuilder();
-        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        NameSearch.done();
-        
         SequenceSearch = createSearchBuilder();
         SequenceSearch.and("id", SequenceSearch.entity().getId(), SearchCriteria.Op.EQ);
 //        SequenceSearch.addRetrieve("sequence", SequenceSearch.entity().getSequence());
@@ -241,7 +237,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         CountRoutingByDc.and("dc", CountRoutingByDc.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         CountRoutingByDc.and("type", CountRoutingByDc.entity().getType(), SearchCriteria.Op.EQ);
         CountRoutingByDc.and("status", CountRoutingByDc.entity().getStatus(), SearchCriteria.Op.EQ);
-        CountRoutingByDc.done();         
+        CountRoutingByDc.done();        
                 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -528,12 +524,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
         return findOneBy(sc);
     }
-    
-    @Override 
-    public HostVO findByName(String name) {
-        SearchCriteria<HostVO> sc = NameSearch.create("name", name);
-        return findOneBy(sc);
-    }
 
     @Override
     public List<HostVO> findLostHosts(long timeout) {
@@ -608,8 +598,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
-    @Override
-    public void saveDetails(HostVO host) {
+    protected void saveDetails(HostVO host) {
         Map<String, String> details = host.getDetails();
         if (details == null) {
             return;
@@ -764,7 +753,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("status", Status.Up.toString());
         return customSearch(sc, null).get(0);
-    }    
+    }
+
+    @Override
+    public List<HostVO> listSecondaryStorageHosts(long dataCenterId) {
+        SearchCriteria<HostVO> sc = TypeDcSearch.create();
+        sc.setParameters("type", Host.Type.SecondaryStorage);
+        sc.setParameters("dc", dataCenterId);
+        List<HostVO> secondaryStorageHosts = listIncludingRemovedBy(sc);
+        
+        return secondaryStorageHosts;
+    }
 }
 
 

@@ -338,4 +338,21 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     	
     	return dcs;
     }
+
+    @Override
+    public DataCenterVO findByTokenOrIdOrName(String tokenOrIdOrName) {
+        DataCenterVO result = findByToken(tokenOrIdOrName);
+        if (result == null) {
+            result = findByName(tokenOrIdOrName);
+            if (result == null) {
+                try {
+                    Long dcId = Long.parseLong(tokenOrIdOrName);
+                    return findById(dcId);
+                } catch (NumberFormatException nfe) {
+                    
+                }
+            }
+        }
+        return result;
+    }
 }
