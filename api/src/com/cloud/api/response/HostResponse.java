@@ -143,6 +143,9 @@ public class HostResponse extends BaseResponse {
     
     @SerializedName("hosttags") @Param(description="comma-separated list of tags for the host")
     private String hostTags;
+    
+    @SerializedName("hasEnoughCapacity") @Param(description="true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
+    private Boolean hasEnoughCapacity;
 
     @Override
     public Long getObjectId() {
@@ -464,4 +467,12 @@ public class HostResponse extends BaseResponse {
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
     }
+    
+    public Boolean hasEnoughCapacity() {
+        return hasEnoughCapacity;
+    }
+
+    public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
+        this.hasEnoughCapacity = hasEnoughCapacity;
+    }    
 }

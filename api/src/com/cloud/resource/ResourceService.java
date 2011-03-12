@@ -71,4 +71,6 @@ public interface ResourceService {
      * @throws InvalidParameterValueException
      */
     boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException; 
+    
+    Host getHost(long hostId);
 }

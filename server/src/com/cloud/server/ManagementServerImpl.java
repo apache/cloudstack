@@ -177,6 +177,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -238,6 +239,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1224,11 +1226,80 @@ public class ManagementServerImpl implements ManagementServer {
 
         return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zone, pod, cluster, id, keyword);
     }
+    
+    @Override
+    public Pair<List<? extends Host>, List<Long>> listHostsForMigrationOfVM(UserVm vm, Long startIndex, Long pageSize) {
+    	//access check - only root admin can migrate VM
+    	Account caller = UserContext.current().getCaller();
+    	if(caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
+    		}
+    		throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+    	}
+    	//business logic
+        if(vm.getState() != State.Running){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+            }
+            throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm " + vm);
+        }
+        
+    	if(!vm.getHypervisorType().equals(HypervisorType.XenServer)){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug(vm + " is not XenServer, cannot migrate this VM.");
+    		}
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer only");
+    	}
+    	ServiceOfferingVO svcOffering = _offeringsDao.findById(vm.getServiceOfferingId());
+    	if(svcOffering.getUseLocalStorage()){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
+    		}
+            throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
+    	}
+    	long srcHostId = vm.getHostId();
+    	Host srcHost = _hostDao.findById(srcHostId);
+    	if(srcHost == null){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug("Unable to find the host with id: "+srcHostId+" of this VM:" + vm);
+    		}    		
+    		throw new InvalidParameterValueException("Unable to find the host with id: "+srcHostId+" of this VM:" + vm);
+    	}
+    	Long cluster = srcHost.getClusterId();
+    	Type hostType = srcHost.getType();
+		if(s_logger.isDebugEnabled()){
+			s_logger.debug("Searching for all hosts in cluster: " +cluster+ " for migrating VM "+ vm);
+		}
+    	
+    	List<? extends Host> allHostsInCluster = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null);
+    	//filter out the current host
+    	allHostsInCluster.remove(srcHost);
+
+    	if(s_logger.isDebugEnabled()){
+			s_logger.debug("Other Hosts in this cluster: "+allHostsInCluster);
+		}
+		
+		int requiredCpu = svcOffering.getCpu() * svcOffering.getSpeed();
+		long requiredRam = svcOffering.getRamSize() * 1024L * 1024L;
+
+		if(s_logger.isDebugEnabled()){
+			s_logger.debug("Searching for hosts in cluster: " +cluster+ " having required CPU: " +requiredCpu+ " and RAM:"+ requiredRam);
+		}
+
+    	List<Long> hostsWithCapacity = _capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, cluster, hostType.name());
+
+		if(s_logger.isDebugEnabled()){
+			s_logger.debug("Hosts having capacity: "+hostsWithCapacity );
+		}
+		
+    	return new Pair<List<? extends Host>, List<Long>>(allHostsInCluster, hostsWithCapacity);
+    }
 
     private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-
+        
         if (keyword != null) {
             SearchCriteria<HostVO> ssc = _hostDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1260,7 +1331,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (cluster != null) {
             sc.addAnd("clusterId", SearchCriteria.Op.EQ, cluster);
         }
-
+        
         return _hostDao.search(sc, searchFilter);
     }
 

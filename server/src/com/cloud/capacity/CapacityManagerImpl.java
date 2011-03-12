@@ -174,7 +174,7 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
         
     @DB
     @Override
-    public boolean allocateVmCapacity(VirtualMachine vm, boolean fromLastHost) {
+    public void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost) {
 
     	long hostId = vm.getHostId();
     	
@@ -184,7 +184,7 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
         CapacityVO capacityMem = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
 
         if (capacityCpu == null || capacityMem == null || svo == null) {
-            return false;
+            return;
         }
 
         int cpu = svo.getCpu() * svo.getSpeed();
@@ -203,71 +203,53 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             long reservedMem = capacityMem.getReservedCapacity();
             long totalCpu = capacityCpu.getTotalCapacity();
             long totalMem = capacityMem.getTotalCapacity();
+            
+			long freeCpu = totalCpu - (reservedCpu + usedCpu);
+			long freeMem = totalMem - (reservedMem + usedMem);
 
-            boolean success = false;
+	        if (s_logger.isDebugEnabled()) {
+	        	s_logger.debug("We are allocating VM, increasing the used capacity of this host:"+ hostId);
+	            s_logger.debug("Current Used CPU: "+usedCpu + " , Free CPU:"+freeCpu+" ,Requested CPU: "+cpu);
+	            s_logger.debug("Current Used RAM: "+usedMem + " , Free RAM:"+freeMem+" ,Requested RAM: "+ram);
+	        } 
+            capacityCpu.setUsedCapacity(usedCpu + cpu);
+            capacityMem.setUsedCapacity(usedMem + ram);
+            
             if (fromLastHost) {
             	/*alloc from reserved*/
-            	long freeCpu = reservedCpu;
-    			long freeMem = reservedMem;
-    			
     	        if (s_logger.isDebugEnabled()) {
-    	        	s_logger.debug("We need to allocate to the last host again, so trying to allocate from reserved capacity");
-    	            s_logger.debug("Free CPU: "+freeCpu + " , Requested CPU: "+cpu);
-    	            s_logger.debug("Free RAM: "+freeMem + " , Requested RAM: "+ram);
+    	        	s_logger.debug("We are allocating VM to the last host again, so adjusting the reserved capacity if it is not less than required");
+    	            s_logger.debug("Reserved CPU: "+reservedCpu + " , Requested CPU: "+cpu);
+    	            s_logger.debug("Reserved RAM: "+reservedMem + " , Requested RAM: "+ram);
     	        }                
                 if (reservedCpu >= cpu && reservedMem >= ram) {
                     capacityCpu.setReservedCapacity(reservedCpu - cpu);
                     capacityMem.setReservedCapacity(reservedMem - ram);        
-
-                    capacityCpu.setUsedCapacity(usedCpu + cpu);
-                    capacityMem.setUsedCapacity(usedMem + ram);
-
-                    success = true;
-                }       
+                }
             } else {
                 /*alloc from free resource*/
-    			long freeCpu = totalCpu - (reservedCpu + usedCpu);
-    			long freeMem = totalMem - (reservedMem + usedMem);
-    			
-    	        if (s_logger.isDebugEnabled()) {
-    	            s_logger.debug("Free CPU: "+freeCpu + " , Requested CPU: "+cpu);
-    	            s_logger.debug("Free RAM: "+freeMem + " , Requested RAM: "+ram);
-    	        }	
-                if ((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
-                    capacityCpu.setUsedCapacity(usedCpu + cpu);
-                    capacityMem.setUsedCapacity(usedMem + ram);
-                    success = true;
+                if (!((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem))) {
+                	if (s_logger.isDebugEnabled()) {
+        	            s_logger.debug("Host doesnt seem to have enough free capacity, but increasing the used capacity anyways, since the VM is already starting on this host ");
+        	        }
                 }
             }
 
-            if (success) {
-                s_logger.debug("Success in alloc cpu from host: " + hostId + ", old used: " + usedCpu + ", old reserved: " +
-                        reservedCpu + ", old total: " + totalCpu + 
-                        "; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
-                        "; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
+            s_logger.debug("CPU STATS after allocation: for host: " + hostId + ", old used: " + usedCpu + ", old reserved: " +
+                    reservedCpu + ", old total: " + totalCpu + 
+                    "; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
+                    "; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
 
-                s_logger.debug("Success in  alloc mem from host: " + hostId + ", old used: " + usedMem + ", old reserved: " +
-                        reservedMem + ", old total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
-                        capacityMem.getReservedCapacity() + ", total: " + capacityMem.getTotalCapacity() + "; requested mem: " + ram + ",alloc_from_last:" + fromLastHost);
+            s_logger.debug("RAM STATS after allocation: for host: " + hostId + ", old used: " + usedMem + ", old reserved: " +
+                    reservedMem + ", old total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
+                    capacityMem.getReservedCapacity() + ", total: " + capacityMem.getTotalCapacity() + "; requested mem: " + ram + ",alloc_from_last:" + fromLastHost);
 
-                _capacityDao.update(capacityCpu.getId(), capacityCpu);
-                _capacityDao.update(capacityMem.getId(), capacityMem);
-            } else {
-                if (fromLastHost) {
-                    s_logger.debug("Failed to alloc resource from host: " + hostId + " reservedCpu: " + reservedCpu + ", requested cpu: " + cpu +
-                            ", reservedMem: " + reservedMem + ", requested mem: " + ram); 
-                } else {
-                    s_logger.debug("Failed to alloc resource from host: " + hostId + " reservedCpu: " + reservedCpu + ", used cpu: " + usedCpu + ", requested cpu: " + cpu +
-                            ", total cpu: " + totalCpu + 
-                            ", reservedMem: " + reservedMem + ", used Mem: " + usedMem + ", requested mem: " + ram + ", total Mem:" + totalMem); 
-                }
-            }
-
+            _capacityDao.update(capacityCpu.getId(), capacityCpu);
+            _capacityDao.update(capacityMem.getId(), capacityMem);
             txn.commit();
-            return success;
         } catch (Exception e) {
             txn.rollback();
-            return false;
+            return;
         }               
     }
     
@@ -297,8 +279,8 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
 			
 	        if (s_logger.isDebugEnabled()) {
 	        	s_logger.debug("We need to allocate to the last host again, so checking if there is enough reserved capacity");
-	            s_logger.debug("Free CPU: "+freeCpu + " , Requested CPU: "+cpu);
-	            s_logger.debug("Free RAM: "+freeMem + " , Requested RAM: "+ram);
+	            s_logger.debug("Reserved CPU: "+freeCpu + " , Requested CPU: "+cpu);
+	            s_logger.debug("Reserved RAM: "+freeMem + " , Requested RAM: "+ram);
 	        }	
 			/*alloc from reserved*/
 			if (reservedCpu >= cpu){ 
@@ -462,7 +444,7 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
     @Override
     public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Long oldHostId) {
         s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event +
-                "vm's original host id: " + vm.getLastHostId() + " new host id: " + vm.getHostId());
+                "vm's original host id: " + vm.getLastHostId() + " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
         if (!status) {
             return false;
         }

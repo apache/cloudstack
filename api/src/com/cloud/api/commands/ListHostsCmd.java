@@ -27,10 +27,14 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists hosts.", responseObject=HostResponse.class)
 public class ListHostsCmd extends BaseListCmd {
@@ -63,7 +67,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the host")
     private Long zoneId;
 
-
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
+    private Long virtualMachineId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -96,7 +102,9 @@ public class ListHostsCmd extends BaseListCmd {
         return zoneId;
     }
 
-
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -112,12 +120,30 @@ public class ListHostsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Host> result = _mgr.searchForServers(this);
+    	List<? extends Host> result = new ArrayList<Host>();
+		List<Long> hostIdsWithCapacity = new ArrayList<Long>();
+    	 
+    	if(getVirtualMachineId() != null){
+            UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
+            if (userVm == null) {
+                throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
+            }
+            Pair<List<? extends Host>, List<Long>> hostsForMigration = _mgr.listHostsForMigrationOfVM(userVm, this.getStartIndex(), this.getPageSizeVal());
+            result = hostsForMigration.first();
+            hostIdsWithCapacity = hostsForMigration.second();
+    	}else{
+    		result = _mgr.searchForServers(this);
+    	}
 
         ListResponse<HostResponse> response = new ListResponse<HostResponse>();
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
         for (Host host : result) {
             HostResponse hostResponse = _responseGenerator.createHostResponse(host);
+            Boolean hasEnoughCapacity = false;
+            if(hostIdsWithCapacity.contains(host.getId())){
+            	hasEnoughCapacity = true;
+            }
+            hostResponse.setHasEnoughCapacity(hasEnoughCapacity);
             hostResponse.setObjectName("host");
             hostResponses.add(hostResponse);
         }

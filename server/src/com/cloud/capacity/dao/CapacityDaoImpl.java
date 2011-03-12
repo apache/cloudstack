@@ -53,6 +53,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     
     private SearchBuilder<CapacityVO> _hostIdTypeSearch;
 	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
+	
+	private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
+			"AND a.total_capacity - (a.used_capacity + a.reserved_capacity) >= ? and a.capacity_type = 1) " +
+			"JOIN op_host_capacity b ON a.host_id = b.host_id AND b.total_capacity - (b.used_capacity + b.reserved_capacity) >= ? AND b.capacity_type = 0";
     
     public CapacityDaoImpl() {
     	_hostIdTypeSearch = createSearchBuilder();
@@ -200,5 +204,32 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
-    }    
+    }
+    
+    
+    @Override
+    public List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType){
+    	Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+
+        StringBuilder sql = new StringBuilder(LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, clusterId);
+        	pstmt.setString(2, hostType);
+        	pstmt.setLong(3, requiredCpu);
+        	pstmt.setLong(4, requiredRam);
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
 }

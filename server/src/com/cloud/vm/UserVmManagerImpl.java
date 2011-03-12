@@ -95,12 +95,14 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -197,6 +199,8 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.org.Cluster;
+
 @Local(value={UserVmManager.class, UserVmService.class})
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -2850,4 +2854,50 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		// TODO Auto-generated method stub
 		return null;
 	}
+    
+    public UserVm getUserVm(long vmId){
+    	return _vmDao.findById(vmId);
+    }
+    
+    public UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException{
+    	//access check - only root admin can migrate VM
+    	Account caller = UserContext.current().getCaller();
+    	if(caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
+    		}    		
+    		throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+    	}
+    	//business logic
+        if(vm.getState() != State.Running){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+            }
+            throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm " + vm);
+        }
+    	if(!vm.getHypervisorType().equals(HypervisorType.XenServer)){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug(vm + " is not XenServer, cannot migrate this VM.");
+    		}
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer only");
+    	}
+    	
+    	ServiceOfferingVO svcOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+    	if(svcOffering.getUseLocalStorage()){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
+    		}
+            throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
+    	}
+
+    	//call to core process
+    	DataCenterVO dcVO = _dcDao.findById(destinationHost.getDataCenterId());
+    	HostPodVO pod = _podDao.findById(destinationHost.getPodId());
+    	long srcHostId = vm.getHostId();
+    	Cluster cluster = _clusterDao.findById(destinationHost.getClusterId());
+    	DeployDestination dest = new DeployDestination(dcVO, pod,cluster,destinationHost);
+    	
+		UserVmVO migratedVm = _itMgr.migrate((UserVmVO)vm, srcHostId, dest);
+		return migratedVm;
+    }
 }

@@ -11,7 +11,7 @@ import com.cloud.vm.VirtualMachine;
 public interface CapacityManager extends Manager {
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
-    boolean allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
+    void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
     
     boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity);
 }

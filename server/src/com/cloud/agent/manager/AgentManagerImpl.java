@@ -2809,6 +2809,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		}
 
 	}
+	
+	public Host getHost(long hostId){
+		return _hostDao.findById(hostId);
+	}
 
 	// create capacity entries if none exist for this server
 	private void createCapacityEntry(final StartupCommand startup, HostVO server) {

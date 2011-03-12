@@ -30,4 +30,5 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 	void clearNonStorageCapacities2();
 	List<CapacityVO> findByHostorPoolId(Long hostorPoolId);
 	List<Long> orderClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone);
+	List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType);
 }
