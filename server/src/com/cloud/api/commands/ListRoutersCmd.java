@@ -95,7 +95,7 @@ public class ListRoutersCmd extends BaseCmd {
         }
 
         Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
+        int pageSizeNum = getManagementServer().getDefaultPageSize();
     	if (pageSize != null) {
     		pageSizeNum = pageSize.intValue();
     	}

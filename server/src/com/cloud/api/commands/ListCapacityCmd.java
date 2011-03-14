@@ -33,8 +33,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.server.Criteria;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.Pair;
 
 public class ListCapacityCmd extends BaseCmd{
@@ -67,12 +67,12 @@ public class ListCapacityCmd extends BaseCmd{
         Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
         String type = (String)params.get(BaseCmd.Properties.TYPE.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
+        Long pageSize = (Long)params.get(BaseCmd.Properties.PAGESIZE.getName());
 
         Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 1000000;
+        Long pageSizeNum = null;
         if (pageSize != null) {
-            pageSizeNum = pageSize.intValue();
+            pageSizeNum = pageSize;
         }
         if (page != null) {
             int pageNum = page.intValue();
@@ -81,7 +81,7 @@ public class ListCapacityCmd extends BaseCmd{
             }
         }
 
-        Criteria c = new Criteria ("capacityType", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
+        Criteria c = new Criteria ("capacityType", Boolean.TRUE, startIndex, pageSizeNum);
         c.addCriteria(Criteria.DATACENTERID, zoneId);
         c.addCriteria(Criteria.PODID, podId);
         c.addCriteria(Criteria.HOSTID, hostId);

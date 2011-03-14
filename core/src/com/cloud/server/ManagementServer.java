@@ -2187,5 +2187,7 @@ public interface ManagementServer {
     
     
     Long getDomainIdForVlan(long vlanDbId);
+    
+    Integer getDefaultPageSize();
 	
 }

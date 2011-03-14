@@ -355,6 +355,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final Map<String, String> _configs;
 
     private String _domain;
+    private Integer _defaultPageSize;
     private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
     // private int _consoleProxyUrlPort =
     // ConsoleProxyManager.DEFAULT_PROXY_URL_PORT;
@@ -505,6 +506,13 @@ public class ManagementServerImpl implements ManagementServer {
         if (_instance == null) {
             _instance = "DEFAULT";
         }
+        
+        //get default page size from configuration
+        _defaultPageSize = Integer.valueOf(_configs.get("default.page.size"));
+        if (_defaultPageSize == null) {
+            _defaultPageSize = 50;
+        }
+ 
     }
 
     protected Map<String, String> getConfigs() {
@@ -8473,6 +8481,11 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             return accountVlanMaps.get(0).getDomainId();
         }
+    }
+
+	@Override
+    public Integer getDefaultPageSize() {
+        return _defaultPageSize;
     }
 }
 
