@@ -562,25 +562,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-check-snapshot
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
 %dir %{_datadir}/%{name}/setup
-%{_datadir}/%{name}/setup/create-database.sql
-%{_datadir}/%{name}/setup/create-index-fk.sql
-%{_datadir}/%{name}/setup/create-schema.sql
-%{_datadir}/%{name}/setup/server-setup.sql
-%{_datadir}/%{name}/setup/templates.kvm.sql
-%{_datadir}/%{name}/setup/templates.xenserver.sql
-%{_datadir}/%{name}/setup/deploy-db-dev.sh
-%{_datadir}/%{name}/setup/server-setup.xml
-%{_datadir}/%{name}/setup/data-20to21.sql
-%{_datadir}/%{name}/setup/index-20to21.sql
-%{_datadir}/%{name}/setup/index-212to213.sql
-%{_datadir}/%{name}/setup/postprocess-20to21.sql
-%{_datadir}/%{name}/setup/schema-20to21.sql
-%{_datadir}/%{name}/setup/schema-213to214.sql
-%{_datadir}/%{name}/setup/schema-214to215.sql
-%{_datadir}/%{name}/setup/schema-level.sql
-%{_datadir}/%{name}/setup/data-214to215.sql
-%{_datadir}/%{name}/setup/schema-216to217.sql
-%{_datadir}/%{name}/setup/schema-217to218.sql
+%{_datadir}/%{name}/setup/*
 %doc README
 %doc HACKING
 %doc debian/copyright
