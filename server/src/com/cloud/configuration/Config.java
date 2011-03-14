@@ -179,7 +179,7 @@ public enum Config {
     SSOAuthTolerance("Advanced", ManagementServer.class, Long.class, "security.singlesignon.tolerance.millis", "300000", "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.", null),
     HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
 	
-	DefaultPageSize("Advanced", ManagementServer.class, Integer.class, "default.page.size", "50", "Default page size for API list* commands", null);
+	DefaultPageSize("Advanced", ManagementServer.class, Integer.class, "default.page.size", "500", "Default page size for API list* commands", null);
 
 	private final String _category;
 	private final Class<?> _componentClass;

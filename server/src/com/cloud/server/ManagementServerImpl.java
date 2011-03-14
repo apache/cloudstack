@@ -510,7 +510,7 @@ public class ManagementServerImpl implements ManagementServer {
         //get default page size from configuration
         _defaultPageSize = Integer.valueOf(_configs.get("default.page.size"));
         if (_defaultPageSize == null) {
-            _defaultPageSize = 50;
+            _defaultPageSize = 500;
         }
  
     }
