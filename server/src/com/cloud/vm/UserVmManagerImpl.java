@@ -1902,7 +1902,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             networkList.add(defaultNetwork);
         }
         
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, caller, diskOfferingId, 
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
                                     diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller);
     }
     
@@ -2049,7 +2049,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             
         }
         
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, caller, diskOfferingId, 
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
                 diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller);
     }
     
@@ -2069,7 +2069,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new CloudRuntimeException("Unable to find the domain " + zone.getDomainId() + " for the zone: " + zone);
             }
             _accountMgr.checkAccess(caller, domain);
-            _accountMgr.checkAccess(owner, domain);
+            _accountMgr.checkAccess(caller, domain);
         }
 
         //check if account/domain is with in resource limits to create a new vm
