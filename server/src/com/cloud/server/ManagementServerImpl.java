@@ -4857,17 +4857,54 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
-        Account account = UserContext.current().getCaller();
-    
-        if (cmd.getName() != null && cmd.getName().length() > 0) {
-            return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+        Account caller = UserContext.current().getCaller();
+        String name = cmd.getName();
+        String fingerPrint = cmd.getFingerprint();
+        Long accountId = null;
+        Long domainId = null;
+        String path = null;
+        
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            accountId = caller.getId();
+            domainId = caller.getDomainId();
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            DomainVO domain = _domainDao.findById(caller.getDomainId());
+            path = domain.getPath();
         }
-    
-        if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0) {
-            return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
+        
+        SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
+        Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        
+        if (path != null) {
+            //for domain admin we should show only subdomains information
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-    
-        return _sshKeyPairDao.listKeyPairs(account.getAccountId(), account.getDomainId());
+        
+        SearchCriteria<SSHKeyPairVO> sc = sb.create();
+        
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+        
+        if (accountId != null) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+        
+        if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+        
+        if (fingerPrint != null) {
+            sc.addAnd("fingerprint", SearchCriteria.Op.EQ, fingerPrint);
+        }
+        
+        if (path != null) {
+            sc.setJoinParameters("domainSearch", "path", path + "%");
+        }
+        
+       return _sshKeyPairDao.search(sc, searchFilter);
     }
 
     @Override

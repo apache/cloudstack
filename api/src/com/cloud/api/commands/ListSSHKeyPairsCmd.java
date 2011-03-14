@@ -23,10 +23,10 @@ public class ListSSHKeyPairsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 	
-	@Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=false, description="A key pair name to look for") 
+	@Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="A key pair name to look for") 
 	private String name;
 	
-    @Parameter(name="fingerprint", type=CommandType.STRING, required=false, description="A public key fingerprint to look for") 
+    @Parameter(name="fingerprint", type=CommandType.STRING, description="A public key fingerprint to look for") 
     private String fingerprint;
 
     
