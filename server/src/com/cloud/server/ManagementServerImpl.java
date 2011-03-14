@@ -4834,20 +4834,22 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         Account owner = null;
         
-        if (accountName != null && domainId != null) {
-            owner = _accountMgr.getActiveAccount(accountName, domainId);
-        }
-        
-        if (owner == null) {
-            owner = caller;
-        } else {
+        if (accountName != null) {
+            if (domainId != null) {
+                owner = _accountMgr.getActiveAccount(accountName, domainId);
+            } else {
+                throw new InvalidParameterValueException("DomainId has to be specified along with account");
+            }
+            
             //check account permissions
             _accountMgr.checkAccess(caller, owner);
+        } else {
+            owner = caller;
         }
-        
+
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {
-            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist for account " + owner.getAccountName() + " in domain id=" + owner.getDomainId());
         }
     
         return _sshKeyPairDao.deleteByName(caller.getAccountId(), caller.getDomainId(), cmd.getName());
