@@ -4900,11 +4900,15 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public String getVMPassword(GetVMPasswordCmd cmd) {   	
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
+        
         UserVmVO vm = _userVmDao.findById(cmd.getId());
-        if (vm == null || vm.getAccountId() != account.getAccountId()) {
+        if (vm == null) {
             throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
         }
+        
+        //make permission check
+        _accountMgr.checkAccess(caller, vm);
             	
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");         
