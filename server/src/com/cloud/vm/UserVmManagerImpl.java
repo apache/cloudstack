@@ -2068,8 +2068,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (domain == null) {
                 throw new CloudRuntimeException("Unable to find the domain " + zone.getDomainId() + " for the zone: " + zone);
             }
+            //check that caller can operate with domain
             _accountMgr.checkAccess(caller, domain);
-            _accountMgr.checkAccess(caller, domain);
+            //check that vm owner can create vm in the domain
+            _accountMgr.checkAccess(owner, domain);
         }
 
         //check if account/domain is with in resource limits to create a new vm

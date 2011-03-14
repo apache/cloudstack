@@ -4806,8 +4806,13 @@ public class ManagementServerImpl implements ManagementServer {
 	
     @Override
     public SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd) {
-        Account account = UserContext.current().getCaller();
-        SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+        Account caller = UserContext.current().getCaller();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        
+        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
+        
+        SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s != null) {
             throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
         }
