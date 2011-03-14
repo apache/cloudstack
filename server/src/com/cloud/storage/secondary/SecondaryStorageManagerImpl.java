@@ -1006,6 +1006,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 buf.append(" gateway=").append(nic.getGateway());
             }
             if (nic.getTrafficType() == TrafficType.Management) {
+            	String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+            	if (NetUtils.isValidCIDR(mgmt_cidr)) {
+            	    buf.append(" mgmtcidr=").append(mgmt_cidr);
+            	}
+            	
                 buf.append(" localgw=").append(dest.getPod().getGateway());
                 buf.append(" private.network.device=").append("eth").append(deviceId);
             } else if (nic.getTrafficType() == TrafficType.Public) {

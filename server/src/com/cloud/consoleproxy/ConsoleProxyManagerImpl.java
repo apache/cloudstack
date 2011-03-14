@@ -112,6 +112,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -1407,6 +1408,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             }
             
             if (nic.getTrafficType() == TrafficType.Management) {
+            	String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+            	if (NetUtils.isValidCIDR(mgmt_cidr)) {
+            	    buf.append(" mgmtcidr=").append(mgmt_cidr);
+            	}
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             } 
         }
