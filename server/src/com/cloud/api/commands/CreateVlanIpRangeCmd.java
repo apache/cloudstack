@@ -90,29 +90,32 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     		vlanId = Vlan.UNTAGGED;
     	}
     	
-    	// If an account name and domain ID are specified, look up the account
     	Long accountId = null;
-    	if (accountName != null && domainId != null) {
-    		Account account = getManagementServer().findAccountByName(accountName, domainId);    		
-    		if (account == null || account.getRemoved() != null) {
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
-    		} else {
-    			accountId = account.getId();
-    		}
-    	}    	
     	
-    	//if only domain id is specified, create domain specific vlan
     	if (domainId != null) {
     	    DomainVO domain = getManagementServer().findDomainIdById(domainId);
-    	    if (domain == null) {
-    	        throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid domain");
-    	    }
+            if (domain == null) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid domain");
+            }
+    	    // If an account name and domain ID are specified, look up the account
+            if (accountName != null) {
+                Account account = getManagementServer().findAccountByName(accountName, domainId);           
+                if (account == null || account.getRemoved() != null) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
+                } else {
+                    accountId = account.getId();
+                }
+            } 
     	}
     	
-    	//pass only accountId or domainId to createVlanIpRange command, but never both
+    	//pass only accountId or domainId (if vlan is Direct) to createVlanIpRange command, but never both
     	Long domainIdForVlan = null;
     	if (accountId == null && domainId != null) {
-    	    domainIdForVlan = domainId;
+    	    if (!forVirtualNetwork) {
+    	        domainIdForVlan = domainId;
+    	    } else {
+    	        throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't create domain specific Vlans for Virtual network; works for Direct case only");
+    	    }
     	}
     	
     	VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
