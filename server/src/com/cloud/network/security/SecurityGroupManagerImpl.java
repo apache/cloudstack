@@ -1144,19 +1144,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
-        
-        if(id != null){
-        	SecurityGroupRulesVO secGrp = _securityGroupRulesDao.findById(id); 
-        	if(secGrp != null) {
-                securityRulesList.add(secGrp);
-            }
-        	return securityRulesList;
-        }
-        
         Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Object keyword = cmd.getKeyword();
 
         SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -1169,6 +1161,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         SearchCriteria<SecurityGroupVO> sc = sb.create();
+        
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
             if (securityGroup != null) {
@@ -1187,7 +1184,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 sc.setParameters("domainId", domainId);
             }
         }
-        
+
         List<SecurityGroupVO> securityGroups = _securityGroupDao.search(sc, searchFilter);
         for (SecurityGroupVO group : securityGroups) {
            securityRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
