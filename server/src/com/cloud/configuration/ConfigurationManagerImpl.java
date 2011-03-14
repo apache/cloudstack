@@ -684,12 +684,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long zoneId = cmd.getZoneId();
         String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         Long userId = UserContext.current().getCallerUserId();
+        Boolean useExternalDhcp = cmd.getUseExternalDhcp();
+        useExternalDhcp = (useExternalDhcp == null ? false : useExternalDhcp);
         
-        return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp);
+        return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp, useExternalDhcp);
     }
 
     @Override @DB
-    public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp)  {
+    public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, Boolean useExternalDhcp)  {
         
         // Check if the zone is valid
         if (!validZone(zoneId)) {
@@ -717,7 +719,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			throw new InvalidParameterValueException("Start ip is required parameter");
 		}
 		
-		HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
+		HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange, useExternalDhcp);
 		
 		Transaction txn = Transaction.currentTxn();
 		txn.start();

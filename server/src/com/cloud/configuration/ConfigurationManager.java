@@ -93,9 +93,10 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param cidr
 	 * @param startIp
 	 * @param endIp
+	 * @param useExternalDhcp
 	 * @return Pod
 	 */
-	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp);
+	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, Boolean useExternalDhcp);
 
 
     /**

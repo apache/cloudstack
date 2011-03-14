@@ -28,4 +28,6 @@ public interface Pod extends Grouping {
     String getDescription();
     
     String getName();
+    
+    boolean getExternalDhcp();
 }

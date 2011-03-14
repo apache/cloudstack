@@ -51,14 +51,18 @@ public class HostPodVO implements Pod {
 
 	@Column(name = "description")
 	private String description;
+	
+	@Column(name = "external_dhcp")
+	private Boolean externalDhcp;
 
-	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
+	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description, Boolean externalDhcp) {
 		this.name = name;
 		this.dataCenterId = dcId;
 		this.gateway = gateway;
 		this.cidrAddress = cidrAddress;
 		this.cidrSize = cidrSize;
 		this.description = description;
+		this.externalDhcp = externalDhcp;
 	}
 
 	/*
@@ -131,6 +135,10 @@ public class HostPodVO implements Pod {
 	@Override
     public int hashCode() {
 	    return  NumbersUtil.hash(id);
+	}
+	
+	public boolean getExternalDhcp() {
+		return externalDhcp;
 	}
 	
 	@Override

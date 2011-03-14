@@ -520,6 +520,7 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   `cidr_size` bigint unsigned NOT NULL COMMENT 'CIDR size for the pod',
   `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',
   `enabled` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this Pod enabled for activity',
+  `external_dhcp` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this Pod using external DHCP',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`name`, `data_center_id`),
   INDEX `i_host_pod_ref__data_center_id`(`data_center_id`)
