@@ -67,12 +67,12 @@ public class ListCapacityCmd extends BaseCmd{
         Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
         String type = (String)params.get(BaseCmd.Properties.TYPE.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Long pageSize = (Long)params.get(BaseCmd.Properties.PAGESIZE.getName());
+        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
 
         Long startIndex = Long.valueOf(0);
-        Long pageSizeNum = null;
+        int pageSizeNum = 1000000;
         if (pageSize != null) {
-            pageSizeNum = pageSize;
+            pageSizeNum = pageSize.intValue();
         }
         if (page != null) {
             int pageNum = page.intValue();
@@ -81,7 +81,7 @@ public class ListCapacityCmd extends BaseCmd{
             }
         }
 
-        Criteria c = new Criteria ("capacityType", Boolean.TRUE, startIndex, pageSizeNum);
+        Criteria c = new Criteria ("capacityType", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
         c.addCriteria(Criteria.DATACENTERID, zoneId);
         c.addCriteria(Criteria.PODID, podId);
         c.addCriteria(Criteria.HOSTID, hostId);
