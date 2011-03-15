@@ -1589,7 +1589,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         // allow isDefault/isShared to be set only for Direct network
         if (networkOffering.getGuestType() == GuestIpType.Virtual) {
-            if (isDefault != null) {
+            if (isDefault != null && !isDefault) {
                 throw new InvalidParameterValueException("Can specify isDefault parameter only for Direct network.");
             } else {
                 isDefault = true;
@@ -2428,15 +2428,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override @DB
     public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         Account owner = _accountMgr.getActiveAccount(accountId);
-        boolean createNetwork = true;
+        boolean createNetwork = false;
         
         Transaction txn= Transaction.currentTxn();
         
         txn.start();
         
-        if (network != null) {
-            createNetwork = false;
-        } else {
+        if (network == null) {
             List<? extends Network> networks = getVirtualNetworksOwnedByAccountInZone(owner.getAccountName(), owner.getDomainId(), zoneId);
             if (networks.size() == 0) {
                 createNetwork = true;
@@ -2448,7 +2446,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // create new Virtual network for the user if it doesn't exist
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
-            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, true, zoneId, null, null, null, null, owner, false);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null, zoneId, null, null, null, null, owner, false);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
@@ -2456,13 +2454,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } 
         }
         
+        //Check if there is a source nat ip address for this account; if not - we have to allocate one
+        boolean allocateSourceNat = false;
+        List<IPAddressVO> sourceNat = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+        if (sourceNat.isEmpty()) {
+            allocateSourceNat = true;
+        }
         
         //update all ips with a network id, mark them as allocated and update resourceCount/usage
         List<IPAddressVO> ips = _ipAddressDao.listByVlanId(vlanId);
+        boolean isSourceNatAllocated = false;
         for (IPAddressVO addr : ips) {
-            if (!addr.isSourceNat() && addr.getState() != State.Allocated) {
+            if (addr.getState() != State.Allocated) {
+                if (!isSourceNatAllocated && allocateSourceNat) {
+                    addr.setSourceNat(true);
+                    isSourceNatAllocated = true;
+                } else {
+                    addr.setSourceNat(false);
+                }
                 addr.setAssociatedWithNetworkId(network.getId());
-                addr.setSourceNat(false);
                 addr.setAllocatedTime(new Date());
                 addr.setAllocatedInDomainId(owner.getDomainId());
                 addr.setAllocatedToAccountId(owner.getId());
