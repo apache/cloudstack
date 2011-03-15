@@ -697,8 +697,8 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
         }
         
-        if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
-            throw new InvalidParameterValueException("There are other servers in maintenance mode.");
+        if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance) > 0) {
+            throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
         }
         
         if (_storageMgr.isLocalStorageActiveOnHost(host)) {
