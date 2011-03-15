@@ -211,9 +211,41 @@ public class Upgrade217to22 implements DbUpgrade {
         rs.close();
         pstmt.close();
         
-        insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 0, "Static", null);
+        insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
         insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Create", null, null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
-        insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "GuestNetworkGuru", false, 2, "Dhcp", null);
+        insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "GuestNetworkGuru", false, 0, "Static", null);
+    }
+    
+    protected void upgradeSsvm(Connection conn, long dataCenterId, long publicNetworkId, long storageNetworkId, long controlNetworkId) throws SQLException {
+        s_logger.debug("Upgrading ssvm in " + dataCenterId);
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, secondary_storage_vm.public_mac_address, secondary_storage_vm.public_ip_address, secondary_storage_vm.public_netmask, secondary_storage_vm.guest_mac_address, secondary_storage_vm.guest_ip_address, secondary_storage_vm.guest_netmask, secondary_storage_vm.gateway FROM vm_instance INNER JOIN secondary_storage_vm ON vm_instance.id=secondary_storage_vm.id WHERE vm_instance.removed is NULL AND vm_instance.data_center_id=? AND vm_instance.type='SecondaryStorageVm'");
+        pstmt.setLong(1, dataCenterId);
+        ResultSet rs = pstmt.executeQuery();
+        
+        if (!rs.next()) {
+            s_logger.debug("Unable to find ssvm in data center " + dataCenterId);
+            return;
+        }
+        
+        long ssvmId = rs.getLong(1);
+        String state = rs.getString(2);
+        boolean running = state.equals("Running") | state.equals("Starting") | state.equals("Stopping");
+        String privateMac = rs.getString(3);
+        String privateIp = rs.getString(4);
+        String privateNetmask = rs.getString(5);
+        String publicMac = rs.getString(6);
+        String publicIp = rs.getString(7);
+        String publicNetmask = rs.getString(8);
+        String guestMac = rs.getString(9);
+        String guestIp = rs.getString(10);
+        String guestNetmask = rs.getString(11);
+        String gateway = rs.getString(12);
+        rs.close();
+        pstmt.close();
+        
+        insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
+        insertNic(conn, controlNetworkId, ssvmId, running, privateMac, privateIp, privateNetmask, "Create", null, null, "ControlNetworkGuru", false, 0, "Static", privateIp != null ? (ssvmId + privateIp) : null);
+        insertNic(conn, storageNetworkId, ssvmId, running, guestMac, guestIp, guestNetmask, "Start", null, null, "PodBasedNetworkGuru", false, 1, "Static", null);
     }
     
     
@@ -588,7 +620,7 @@ public class Upgrade217to22 implements DbUpgrade {
             } else {
                 for (Object[] dc : dcs) {
                     Long dcId = (Long)dc[0];
-                    long mgmtNetworkid = insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    long mgmtNetworkId = insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     long storageNetworkId = insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     long controlNetworkId = insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     upgradeManagementIpAddress(conn, dcId);
@@ -654,6 +686,8 @@ public class Upgrade217to22 implements DbUpgrade {
                         
                         upgradeDirectUserIpAddress(conn, dcId, directNetworkId, "DirectAttached");
                     }
+                    
+                    upgradeSsvm(conn, dcId, publicNetworkId, storageNetworkId, controlNetworkId);
                     
                 }
                 
