@@ -1,3 +1,9 @@
+cloud (2.2.3) unstable; urgency=low
+
+  * Bumping version number for next CloudStack release
+
+ -- Engineering <info@cloud.com>  Mon, 15 Mar 2011 14:28:54 -0700
+
 cloud (2.2.2) unstable; urgency=low
 
   * Bumping version number for next CloudStack release
