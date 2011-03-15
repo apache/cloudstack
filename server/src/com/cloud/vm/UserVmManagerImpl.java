@@ -123,10 +123,12 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.vpn.PasswordResetElement;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.org.Cluster;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -199,7 +201,6 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.org.Cluster;
 
 @Local(value={UserVmManager.class, UserVmService.class})
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
@@ -1992,22 +1993,57 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, owner);
         
-        //if no network is passed in, find Account specific Guest Virtual network
         if (networkIdList == null || networkIdList.isEmpty()) {
-            List<NetworkVO> networks = _networkDao.listByOwner(owner.getId());
-            NetworkVO guestVirtualNetwork = null;
-            for (NetworkVO network : networks) {
-                if (!network.isShared() && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Virtual) {
-                    guestVirtualNetwork = network;
-                    break;
+            NetworkVO defaultNetwork = null;
+            
+            //if no network is passed in
+            //1) Check if default virtual network offering has Availability=Required. If it's true, search for corresponding network
+            //   * if network is found, use it. If more than 1 virtual network is found, throw an error
+            //   * if network is not found, create a new one and use it
+            //2) If Availability=Optional, search for default networks for the account. If it's more than 1, throw an error. 
+            //   If it's 0, and there are no default direct networks, create default Guest Virtual network
+            
+            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeAndGuestType(false, TrafficType.Guest, GuestIpType.Virtual);
+            
+            if (defaultVirtualOffering.get(0).getAvailability() == Availability.Required) {
+                //get Virtual netowrks
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), GuestIpType.Virtual, true);
+                
+                if (virtualNetworks.isEmpty()) {
+                    s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
+                    Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null, zone.getId(), null, null, null, null, owner, false);
+                    defaultNetwork = _networkDao.findById(newNetwork.getId());
+                } else if (virtualNetworks.size() > 1) {
+                    throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + owner + "; please specify networkIds");
+                } else {
+                    defaultNetwork = virtualNetworks.get(0);
+                }
+            } else {
+                List<NetworkVO> defaultNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), null, true);
+                if (defaultNetworks.isEmpty()) {
+                    if (defaultVirtualOffering.get(0).getAvailability() == Availability.Optional) {
+                        s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
+                        Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null, zone.getId(), null, null, null, null, owner, false);
+                        defaultNetwork = _networkDao.findById(newNetwork.getId());
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find default networks for account " + owner);
+                    }
+                    
+                } else if (defaultNetworks.size() > 1) {
+                    throw new InvalidParameterValueException("More than 1 default network is found for accoun " + owner);
+                } else {
+                    defaultNetwork = defaultNetworks.get(0);
                 }
             }
             
-            if (guestVirtualNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find Guest Virtual network for account id=" + owner.getId() + "; please specify networkId(s)");
+            //Check that network offering doesn't have Availability=Unavailable
+            NetworkOffering networkOffering = _configMgr.getNetworkOffering(defaultNetwork.getNetworkOfferingId());
+            
+            if (networkOffering.getAvailability() == Availability.Unavailable) {
+                throw new InvalidParameterValueException("Unable to find default network; please specify networkOfferingIds");
             }
             
-            networkList.add(guestVirtualNetwork);
+            networkList.add(defaultNetwork);
             
         } else {
             
@@ -2034,6 +2070,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
                 } 
                 
+                //check that corresponding offering is available
+                NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                
+                if (networkOffering.getAvailability() == Availability.Unavailable) {
+                    throw new InvalidParameterValueException("Network id=" + network.getId() + " can't be used; corresponding network offering is " + Availability.Unavailable);
+                }
+                
                 if (requiredOfferingId != null && network.getNetworkOfferingId() == requiredOfferingId.longValue()) {
                     requiredNetworkOfferingIsPresent = true;
                 }
@@ -2045,8 +2088,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (requiredOfferingId != null && !requiredNetworkOfferingIsPresent) {
                 throw new InvalidParameterValueException("Network created from the network offering id=" + requiredOfferingId + " is required; change network offering availability to be Optional to relax this requirement");
             }
-          
-            
         }
         
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
@@ -2902,4 +2943,5 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		UserVmVO migratedVm = _itMgr.migrate((UserVmVO)vm, srcHostId, dest);
 		return migratedVm;
     }
+    
 }

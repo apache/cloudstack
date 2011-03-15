@@ -70,5 +70,4 @@ public interface NetworkService {
     Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
     
     Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
-    
 }

@@ -2642,4 +2642,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         }
     }
+    
+    @Override
+    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault) {
+        List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
+        List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
+        
+        for (NetworkVO network : zoneNetworks) {
+            NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            if (!no.isSystemOnly()) {
+                if (network.isShared() || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
+                    if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault == network.isDefault)) {
+                        accountNetworks.add(network); 
+                    } 
+                }
+            }
+        }
+        return accountNetworks;
+    }
 }

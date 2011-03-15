@@ -11,6 +11,8 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
@@ -26,6 +28,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
+    final SearchBuilder<NetworkOfferingVO> TrafficTypeGuestTypeSearch;
     
     protected NetworkOfferingDaoImpl() {
         super();
@@ -42,6 +45,12 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         AvailabilitySearch.and("availability", AvailabilitySearch.entity().getAvailability(), SearchCriteria.Op.EQ);
         AvailabilitySearch.and("isSystem", AvailabilitySearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         AvailabilitySearch.done();
+        
+        TrafficTypeGuestTypeSearch = createSearchBuilder();
+        TrafficTypeGuestTypeSearch.and("trafficType", TrafficTypeGuestTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        TrafficTypeGuestTypeSearch.and("guestType", TrafficTypeGuestTypeSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
+        TrafficTypeGuestTypeSearch.and("isSystem", TrafficTypeGuestTypeSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
+        TrafficTypeGuestTypeSearch.done();
     }
     
     @Override
@@ -91,4 +100,14 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.setParameters("isSystem", isSystem);
         return listBy(sc, null);
     }
+    
+    @Override
+    public List<NetworkOfferingVO> listByTrafficTypeAndGuestType(boolean isSystem, TrafficType trafficType, GuestIpType guestType) {
+        SearchCriteria<NetworkOfferingVO> sc = TrafficTypeGuestTypeSearch.create();
+        sc.setParameters("trafficType", trafficType);
+        sc.setParameters("guestType", guestType);
+        sc.setParameters("isSystem", isSystem);
+        return listBy(sc, null);
+    }
+    
 }
