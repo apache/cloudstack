@@ -1085,8 +1085,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         createDhcpEntriesCommands(router, cmds);
         
         //Resend user data
-        s_logger.debug("Reapplying user data entries as a part of domR " + router + " start...");
-        createUserDataCommands(router, cmds);
+        s_logger.debug("Reapplying vm data (userData and metaData) entries as a part of domR " + router + " start...");
+        createVmDataCommands(router, cmds);
         // Network usage command to create iptables rules
         cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getName(), "create"));
         
@@ -1519,24 +1519,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     
-    private void createUserDataCommands(DomainRouterVO router, Commands cmds) {
+    private void createVmDataCommands(DomainRouterVO router, Commands cmds) {
         long networkId = router.getNetworkId();
         List<UserVmVO> vms = _userVmDao.listByNetworkId(networkId);
         if (vms != null && !vms.isEmpty()) {
             for (UserVmVO vm : vms) {
-                if (vm.getUserData() != null) {
-                    NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
-                    if (nic != null) {
-                        s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
-                        String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
-                        String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
-                        cmds.addCommand(
-                                "vmdata",
-                                generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName,
-                                        nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId(), null));
-                    }
+                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+                if (nic != null) {
+                    s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
+                    String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
+                    String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
+                    cmds.addCommand(
+                            "vmdata",
+                            generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName,
+                                    nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId(), null));
                 }
-            }
+             }
         }
     }
     
