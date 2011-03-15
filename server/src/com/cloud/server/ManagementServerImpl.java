@@ -6377,19 +6377,16 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<CapacityVO> listCapacities(Criteria c) {
-        // make sure capacity is accurate before displaying it anywhere
-        // NOTE: listCapacities is currently called by the UI only, so this
-        // shouldn't be called much since it checks all hosts/VMs
-        // to figure out what has been allocated.       
+    public List<CapacityVO> listCapacities(Criteria c) {       
 
         Filter searchFilter = new Filter(CapacityVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         SearchCriteria sc = _capacityDao.createSearchCriteria();
+        List<CapacityVO> capacities = new ArrayList<CapacityVO>();
 
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object zoneId = c.getCriteria(Criteria.DATACENTERID);
-        Object podId = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
+        Integer type 	= (Integer)c.getCriteria(Criteria.TYPE);
+        Long zoneId 	= (Long)c.getCriteria(Criteria.DATACENTERID);
+        Long podId 		= (Long)c.getCriteria(Criteria.PODID);
+        Long hostId 	= (Long)c.getCriteria(Criteria.HOSTID);
 
         if (type != null) {
             sc.addAnd("capacityType", SearchCriteria.Op.EQ, type);
@@ -6406,8 +6403,15 @@ public class ManagementServerImpl implements ManagementServer {
         if (hostId != null) {
             sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
         }
-
-        return _capacityDao.search(sc, searchFilter);
+        capacities = _capacityDao.search(sc, searchFilter);
+        
+        // op_host_Capacity contains only allocated stats and the real time stats are stored "in memory".
+        if (type == null || type == CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE){
+        	capacities.addAll(_storageMgr.getSecondaryStorageUsedStats(hostId, podId, zoneId));
+        }if (type == null || type == CapacityVO.CAPACITY_TYPE_STORAGE){
+        	capacities.addAll(_storageMgr.getStoragePoolUsedStats(hostId, podId, zoneId));
+        }
+        return capacities;
     }
     
     public long getMemoryUsagebyHost(Long hostId) {

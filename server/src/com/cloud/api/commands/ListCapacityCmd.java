@@ -65,7 +65,7 @@ public class ListCapacityCmd extends BaseCmd{
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
         Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
         Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
-        String type = (String)params.get(BaseCmd.Properties.TYPE.getName());
+        Integer type = (Integer)params.get(BaseCmd.Properties.TYPE.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
 

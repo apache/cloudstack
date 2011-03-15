@@ -260,117 +260,52 @@ public class StatsCollector {
 			try {
 				s_logger.debug("StorageCollector is running...");
 				
-				SearchCriteria sc = _hostDao.createSearchCriteria();
-				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-				sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Storage.toString());
-				
+				SearchCriteria sc = _hostDao.createSearchCriteria();				
 				ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
 				List<HostVO> hosts = _hostDao.search(sc, null);
-				for (HostVO host : hosts) {
-					GetStorageStatsCommand command = new GetStorageStatsCommand(host.getGuid());
-		            Answer answer = _agentMgr.easySend(host.getId(), command);
-		            if (answer != null && answer.getResult()) {
-		            	storageStats.put(host.getId(), (StorageStats)answer);
-		            }
-				}
 				
-                sc = _hostDao.createSearchCriteria();
                 sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
                 sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.SecondaryStorage.toString());
                 
                 hosts = _hostDao.search(sc, null);
-                try{
-	                for (HostVO host : hosts) {
-	                    GetStorageStatsCommand command = new GetStorageStatsCommand(host.getGuid());
-	                    Answer answer = _agentMgr.easySend(host.getId(), command);
-	                    if (answer != null && answer.getResult()) {
-	                        storageStats.put(host.getId(), (StorageStats)answer);
-	                    }
-	                }
-                }catch(Exception e){
-                	s_logger.warn("Caught exception for StorageCollector " +e.getMessage());
-                }
-				_storageStats = storageStats;
-				
+                for (HostVO host : hosts) {
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(host.getGuid());
+                    long hostId = host.getId();
+                    Answer answer = _agentMgr.easySend(hostId, command);
+                    if (answer != null && answer.getResult()) {
+                        storageStats.put(hostId, (StorageStats)answer);
+                        //Seems like we have dynamically updated the sec. storage as prev. size and the current do not match
+                        if (_storageStats.get(hostId)!=null && 
+                        		_storageStats.get(hostId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){	                       	
+	                       	host.setTotalSize(((StorageStats)answer).getCapacityBytes());
+	                       	_hostDao.update(hostId, host);
+	                    }  
+                    }
+                }				
+                _storageStats = storageStats;
 				ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
-				List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
+				List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
 				for (StoragePoolVO pool: storagePools) {
 					GetStorageStatsCommand command = new GetStorageStatsCommand(pool.getUuid(), pool.getPoolType(), pool.getPath());
+					long poolId = pool.getId();
 					Answer answer = _storageManager.sendToPool(pool, command);
 					if (answer != null && answer.getResult()) {
 						storagePoolStats.put(pool.getId(), (StorageStats)answer);
+
+						// Seems like we have dynamically updated the pool size since the prev. size and the current do not match 
+						if (_storagePoolStats.get(poolId)!= null &&
+								_storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){	                        
+		                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());	                    
+		                    _storagePoolDao.update(pool.getId(), pool);                         
+	                    }
 					}
-				}
-				_storagePoolStats = storagePoolStats;
-
-                // Updating the storage entries and creating new ones if they dont exist.
-				Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-                try {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("recalculating system storage capacity");
-                    }
-                    txn.start();
-                    for (Long hostId : storageStats.keySet()) {
-                        StorageStats stats = storageStats.get(hostId);
-                        short capacityType = -1;
-                        HostVO host = _hostDao.findById(hostId);
-                        host.setTotalSize(stats.getCapacityBytes());
-                        _hostDao.update(host.getId(), host);
-                        
-                        SearchCriteria capacitySC = _capacityDao.createSearchCriteria();
-                        capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
-                        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, host.getDataCenterId());
-                        
-                        if (Host.Type.SecondaryStorage.equals(host.getType())) {
-                            capacityType = CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE;                                                                                                                
-                        } else if (Host.Type.Storage.equals(host.getType())) {
-                            capacityType = CapacityVO.CAPACITY_TYPE_STORAGE;
-                        }
-                        if(-1 != capacityType){
-                            capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);    
-                            List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-                            if (capacities.size() == 0){ // Create a new one
-                                CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), capacityType);
-                                _capacityDao.persist(capacity);
-                            }else{ //Update if it already exists.                             
-                                CapacityVO capacity = _capacityDao.createForUpdate(capacities.get(0).getId());                                
-                                capacity.setUsedCapacity(stats.getByteUsed());
-                                capacity.setTotalCapacity(stats.getCapacityBytes());
-                                _capacityDao.update(capacities.get(0).getId(), capacity);
-                            }
-                        }
-                    }// End of for
-                    txn.commit();
-                } catch (Exception ex) {
-                    txn.rollback();
-                    s_logger.error("Unable to start transaction for storage capacity update");
-                }finally {
-                    txn.close();
-                }
-
-                for (Long poolId : storagePoolStats.keySet()) {
-                    StorageStats stats = storagePoolStats.get(poolId);
-                    StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                    
-                    if (pool == null) {
-                        continue;
-                    }
-                    
-                    pool.setCapacityBytes(stats.getCapacityBytes());
-                    long available = stats.getCapacityBytes() - stats.getByteUsed();
-                    if( available < 0 ) {
-                        available = 0;
-                    }
-                    pool.setAvailableBytes(available);
-                    _storagePoolDao.update(pool.getId(), pool);                         
-                    
-                    _storageManager.createCapacityEntry(pool, 0L);
-                }                               
+				}                               
+                _storagePoolStats = storagePoolStats;
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);
 			}
-		}
+		}		
 	}
 
 	public StorageStats getStorageStats(long id) {

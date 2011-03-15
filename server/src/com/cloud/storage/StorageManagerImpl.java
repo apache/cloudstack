@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,6 +91,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -1596,27 +1598,8 @@ public class StorageManagerImpl implements StorageManager {
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool, long allocated) {
         SearchCriteria capacitySC = _capacityDao.createSearchCriteria();
-        capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
-        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
-        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_STORAGE);
-
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-
-        if (capacities.size() == 0) {
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getAvailableBytes(), storagePool.getCapacityBytes(),
-                    CapacityVO.CAPACITY_TYPE_STORAGE);
-            _capacityDao.persist(capacity);
-        } else {
-            CapacityVO capacity = capacities.get(0);
-            capacity.setTotalCapacity(storagePool.getCapacityBytes());
-            long used = storagePool.getCapacityBytes() - storagePool.getAvailableBytes();
-            if( used <= 0 ) {
-            	used = 0;
-            }
-            capacity.setUsedCapacity(used);
-            _capacityDao.update(capacity.getId(), capacity);
-        }
-        s_logger.trace("Successfully set Capacity - " +storagePool.getCapacityBytes()+ " for CAPACITY_TYPE_STORAGE, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());
+        
         capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
@@ -1875,5 +1858,72 @@ public class StorageManagerImpl implements StorageManager {
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(poolId);
         assert storagePoolVO != null;
         return storagePoolVO.getUuid();
+    }
+    
+    @Override
+	public List<CapacityVO> getSecondaryStorageUsedStats(Long hostId, Long podId, Long zoneId){
+    	SearchCriteria sc = _hostDao.createSearchCriteria();
+    	StatsCollector scInstance = StatsCollector.getInstance();
+    	
+        if (zoneId != null) {
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        }
+
+        if (podId != null) {
+            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        }
+
+        if (hostId != null) {
+            sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
+        }
+        
+        List<HostVO> hosts = _hostDao.search(sc, null);
+        List<CapacityVO> capacities = new LinkedList<CapacityVO>();
+        for (HostVO host : hosts){
+        	StorageStats stats = scInstance.getStorageStats(host.getId());
+        	if (stats == null) 
+       		 continue;
+        	
+        	CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), 
+        			stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);        	
+			capacities.add(capacity);
+        }
+        return capacities;
+    }
+    
+    @Override
+	public List<CapacityVO> getStoragePoolUsedStats(Long poolId, Long podId, Long zoneId){
+    	SearchCriteria sc = _storagePoolDao.createSearchCriteria();
+    	List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
+    	StatsCollector scInstance = StatsCollector.getInstance();
+    	
+    	if (zoneId != null) {
+             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+         }
+
+         if (podId != null) {
+             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+         }
+
+         if (poolId != null) {
+             sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, poolId);
+         }	
+         if (poolId != null){
+        	 pools.add(_storagePoolDao.findById(poolId));
+         }else{
+        	 pools = _storagePoolDao.search(sc, null);
+         }
+         List<CapacityVO> capacities = new LinkedList<CapacityVO>();
+         
+         for (StoragePoolVO storagePool : pools){
+        	 StorageStats stats = scInstance.getStoragePoolStats(storagePool.getId());
+        	 if (stats == null) 
+        		 continue;
+        	 
+        	 CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(),
+        			 stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
+        	 capacities.add(capacity);
+         }
+         return capacities;
     }
 }

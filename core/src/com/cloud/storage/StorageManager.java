@@ -25,6 +25,7 @@ import java.util.Map;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.InternalErrorException;
@@ -279,5 +280,11 @@ public interface StorageManager extends Manager {
      * Calculates the sum of all template sizes in the pool.
      */
 	long calculateAllTemplateSizesInPool(StoragePoolVO pool);
+
+	List<CapacityVO> getSecondaryStorageUsedStats(Long hostId, Long podId,
+			Long zoneId);
+
+	List<CapacityVO> getStoragePoolUsedStats(Long poolId, Long podId,
+			Long zoneId);
 
 }
