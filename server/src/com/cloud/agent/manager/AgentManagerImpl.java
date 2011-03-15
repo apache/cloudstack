@@ -2180,9 +2180,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 		if (host == null) {
 			s_logger.debug("Unable to find host " + hostId);
-			throw new InvalidParameterValueException(
-					"Unable to find host with ID: " + hostId
-							+ ". Please specify a valid host ID.");
+			throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
+		}
+		
+		if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance) > 0) {
+		    throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
 		}
 
 		if (_storageMgr.isLocalStorageActiveOnHost(host)) {
