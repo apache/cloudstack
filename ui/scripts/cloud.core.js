@@ -73,7 +73,7 @@ function applyAutoCompleteToDomainField($field) {
     $field.autocomplete({
 		source: function(request, response) {			
 			$.ajax({
-			    data: "command=listDomains&path=" + encodeURIComponent(request.term) +"&response=json&pagesize=20",				
+			    data: "command=listDomains&path=" + encodeURIComponent(request.term) +"&response=json&pagesize=10",				
 				dataType: "json",
 				async: false,
 				success: function(json) {					   
