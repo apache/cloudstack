@@ -6,7 +6,7 @@ import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseListCmd extends BaseCmd {
 
-    private static final Long MAX_PAGESIZE = 500L;
+    private static final Long MAX_PAGESIZE = _configService.getDefaultPageSize();
 
 	/////////////////////////////////////////////////////
     /////////// BaseList API parameters /////////////////
@@ -52,9 +52,9 @@ public abstract class BaseListCmd extends BaseCmd {
             if (pageSize == -1) {
                 pageSize = null;
             } else if (pageSize > MAX_PAGESIZE){//FIX ME - have a validator and do this.                
-                throw new InvalidParameterValueException("The parameter " +ApiConstants.PAGE_SIZE+ " exceeded its max value - "+MAX_PAGESIZE);
+                throw new InvalidParameterValueException("The parameter " + ApiConstants.PAGE_SIZE + " exceeded its max value - " + MAX_PAGESIZE);
             }
-        }
+        } 
         return pageSize;
     }
 

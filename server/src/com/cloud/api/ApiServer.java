@@ -131,7 +131,7 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_allCommands = null;
     
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
-
+    
     static {
         s_userCommands = new ArrayList<String>();
         s_resellerCommands = new ArrayList<String>();
@@ -436,9 +436,18 @@ public class ApiServer implements HttpRequestHandler {
             // if the command is of the listXXXCommand, we will need to also return the 
             // the job id and status if possible
             if (cmdObj instanceof BaseListCmd) {
+                validatePageSize((BaseListCmd)cmdObj);
             	buildAsyncListResponse((BaseListCmd)cmdObj, account);
             }
             return ApiResponseSerializer.toSerializedString((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType());    
+        }
+    }
+    
+    private void validatePageSize(BaseListCmd command) {
+        List<ResponseObject> responses = ((ListResponse)command.getResponseObject()).getResponses();
+        int defaultPageLimit = BaseCmd._configService.getDefaultPageSize().intValue();
+        if (responses != null && responses.size() > defaultPageLimit && command.getPage() == null && command.getPageSize() == null) {
+            throw new ServerApiException(BaseCmd.PAGE_LIMIT_EXCEED, "Number of returned objects per page exceed default page limit " + defaultPageLimit + "; please specify \"page\"/\"pagesize\" parameters");
         }
     }
     

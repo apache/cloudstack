@@ -162,6 +162,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
 
     private int _maxVolumeSizeInGb;
+    private long _defaultPageSize;
     protected Set<String> configValuesForValidation;
     
     @Override
@@ -170,6 +171,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+        
+        String defaultPageSizeString = _configDao.getValue("default.page.size");
+        _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, 500L);
 
         populateConfigValuesForValidationSet();       
     	return true;
@@ -2786,5 +2790,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public ServiceOffering getServiceOffering(long serviceOfferingId) {
         return _serviceOfferingDao.findById(serviceOfferingId);
+    }
+    
+    @Override
+    public Long getDefaultPageSize() {
+        return _defaultPageSize;
     }
 }

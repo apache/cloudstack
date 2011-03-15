@@ -217,7 +217,9 @@ public enum Config {
 	VmOpLockStateRetry("Advanced", ManagementServer.class, Integer.class, "vm.op.lock.state.retry", "5", "Times to retry locking the state of a VM for operations", "-1 means try forever"),
 	VmOpCleanupInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.interval", "86400", "Interval to run the thread that cleans up the vm operations (in seconds)", "Seconds"),
 	VmOpCleanupWait("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.wait", "3600", "Time (in seconds) to wait before cleanuping up any vm work items", "Seconds"),
-	VmOpCancelInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cancel.interval", "3600", "Time (in seconds) to wait before cancelling a operation", "Seconds");
+	VmOpCancelInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cancel.interval", "3600", "Time (in seconds) to wait before cancelling a operation", "Seconds"),
+	
+	DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null);
 	
 	
 	private final String _category;

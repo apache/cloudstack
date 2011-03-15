@@ -191,5 +191,7 @@ public interface ConfigurationService {
     DataCenter getZone(long id);
     
     ServiceOffering getServiceOffering(long serviceOfferingId);
+    
+    Long getDefaultPageSize();
    
 }
