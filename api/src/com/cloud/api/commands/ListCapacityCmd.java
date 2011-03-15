@@ -49,8 +49,8 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;
 
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="lists capacity by type")
-    private String type;
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type")
+    private Integer type;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
     private Long zoneId;
@@ -68,7 +68,7 @@ public class ListCapacityCmd extends BaseListCmd {
         return podId;
     }
 
-    public String getType() {
+    public Integer getType() {
         return type;
     }
 

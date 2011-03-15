@@ -333,6 +333,7 @@ public class AlertManagerImpl implements AlertManager {
             try {
                 List<CapacityVO> capacityList = _capacityDao.listAllIncludingRemoved();
                 Map<String, List<CapacityVO>> capacityDcTypeMap = new HashMap<String, List<CapacityVO>>();
+                _storageMgr.getStoragePoolUsedStats(null, null, null);
 
                 for (CapacityVO capacity : capacityList) {
                     long dataCenterId = capacity.getDataCenterId();

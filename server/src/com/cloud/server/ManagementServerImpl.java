@@ -43,6 +43,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -132,6 +133,7 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.certificate.CertificateVO;
@@ -3223,18 +3225,15 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<CapacityVO> listCapacities(ListCapacityCmd cmd) {
-        // make sure capacity is accurate before displaying it anywhere
-        // NOTE: listCapacities is currently called by the UI only, so this
-        // shouldn't be called much since it checks all hosts/VMs
-        // to figure out what has been allocated.
 
         Filter searchFilter = new Filter(CapacityVO.class, "capacityType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
+        List<CapacityVO> capacities = new LinkedList<CapacityVO>();
 
-        Object type = cmd.getType();
-        Object zoneId = cmd.getZoneId();
-        Object podId = cmd.getPodId();
-        Object hostId = cmd.getHostId();
+        Integer type = cmd.getType();
+        Long zoneId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        Long hostId = cmd.getHostId();
 
         if (type != null) {
             sc.addAnd("capacityType", SearchCriteria.Op.EQ, type);
@@ -3251,8 +3250,16 @@ public class ManagementServerImpl implements ManagementServer {
         if (hostId != null) {
             sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
         }
-
-        return _capacityDao.search(sc, searchFilter);
+        capacities = _capacityDao.search(sc, searchFilter);
+        
+        // op_host_Capacity contains only allocated stats and the real time stats are stored "in memory".
+        if (type == null || type == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE){
+        	capacities.addAll(_storageMgr.getSecondaryStorageUsedStats(hostId, podId, zoneId));
+        }if (type == null || type == Capacity.CAPACITY_TYPE_STORAGE){
+        	capacities.addAll(_storageMgr.getStoragePoolUsedStats(hostId, podId, zoneId));
+        }
+                
+        return capacities;
     }
     
     @Override

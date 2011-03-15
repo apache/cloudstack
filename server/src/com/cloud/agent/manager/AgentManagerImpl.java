@@ -2837,11 +2837,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
 			if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
 				CapacityVO capacity = new CapacityVO(server.getId(),
-						server.getDataCenterId(), server.getPodId(), server.getClusterId(),0L,
-						server.getTotalSize(), CapacityVO.CAPACITY_TYPE_STORAGE);
-				_capacityDao.persist(capacity);
-
-				capacity = new CapacityVO(server.getId(),
 						server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
 						server.getTotalSize() * _overProvisioningFactor,
 						CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);

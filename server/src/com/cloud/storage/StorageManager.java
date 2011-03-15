@@ -22,6 +22,7 @@ import java.util.List;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
@@ -184,4 +185,8 @@ public interface StorageManager extends Manager {
 	void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest);
 
 	Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
+
+	List<CapacityVO> getSecondaryStorageUsedStats(Long hostId, Long podId, Long zoneId);
+
+	List<CapacityVO> getStoragePoolUsedStats(Long poolId, Long podId, Long zoneId);
 }

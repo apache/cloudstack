@@ -289,6 +289,10 @@ public class ApiDBUtils {
     public static VmStats getVmStatistics(long hostId) {
         return _statsCollector.getVmStats(hostId);
     }
+    
+    public static StorageStats getSecondaryStorageStatistics(long id){
+    	return _statsCollector.getStorageStats(id);
+    }
 
     /////////////////////////////////////////////////////////////
     //                     Dao methods                         //
