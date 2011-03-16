@@ -160,6 +160,8 @@ then
   then 
     vhd-util check -n ${tmpltimg2} > /dev/null
     rollback_if_needed $tmpltfs $? "vhd tool check $tmpltimg2 failed\n"
+    vhd-util set -n ${tmpltimg2} -f "hidden" -v "0" > /dev/null
+    rollback_if_needed $tmpltfs $? "vhd remove $tmpltimg2 hidden failed\n"
   fi
 fi
 
