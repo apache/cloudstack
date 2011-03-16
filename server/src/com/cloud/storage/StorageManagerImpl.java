@@ -493,9 +493,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         createdVolume = _volsDao.findById(volumeId);
 
         if (success) {
-            // Increment the number of volumes
-            _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume);
-
             createdVolume.setStatus(AsyncInstanceCreateStatus.Created);
             createdVolume.setPodId(pod.first().getId());
             createdVolume.setPoolId(pool.getId());
@@ -1546,6 +1543,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         _usageEventDao.persist(usageEvent);
         
+        //Increment resource count during allocation; if actual creation fails, decrement it
+        _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+        
         return volume;
     }
 
@@ -1555,14 +1555,22 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
 
-        if (cmd.getSnapshotId() != null) {
-            return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
-        } else {
-            _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-            volume.setStatus(AsyncInstanceCreateStatus.Created);
-            _volsDao.update(volume.getId(), volume);
+        try {
+            if (cmd.getSnapshotId() != null) {
+                return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
+            } else {
+                
+                volume.setStatus(AsyncInstanceCreateStatus.Created);
+                _volsDao.update(volume.getId(), volume);
+            }
+
+            return _volsDao.findById(volume.getId());
+        } finally {
+            if (volume.getStatus() !=  AsyncInstanceCreateStatus.Created) {
+                s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
+                _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
+            }
         }
-        return _volsDao.findById(volume.getId());
     }
 
     @Override
