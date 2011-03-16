@@ -306,25 +306,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
        
         txn.commit();
     }
-    
-    @Override @DB
-    public void unassignPublicIpAddress(IPAddressVO addr) {
-        Transaction txn = Transaction.currentTxn();
-        Account owner = _accountMgr.getAccount(addr.getAccountId());
-        long isSourceNat = (addr.isSourceNat()) ? 1 : 0;
-        
-        txn.start();
-        
-        _ipAddressDao.unassignIpAddress(addr.getId());
-        if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat);
-            _usageEventDao.persist(usageEvent);
-        }
-        
-        _accountMgr.decrementResourceCount(owner.getId(), ResourceType.public_ip);
-        
-        txn.commit();
-    }
 
     @Override
     @DB
@@ -472,7 +453,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } else if (addr.getState() == IpAddress.State.Releasing) {
                     //Cleanup all the resources for ip address if there are any, and only then unassign ip in the system
                     if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
-                        unassignPublicIpAddress(addr);
+                        _ipAddressDao.unassignIpAddress(addr.getId());
                     } else {
                         success = false;
                         s_logger.warn("Failed to release resources for ip address id=" + addr.getId());
@@ -614,11 +595,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override
+    @Override @DB
     public boolean releasePublicIpAddress(long addrId, long userId, Account caller) {
         
-        //mark ip address as Releasing
-        IPAddressVO ip = _ipAddressDao.markAsUnavailable(addrId);
+        IPAddressVO ip = markIpAsUnavailable(addrId);
+        
         assert (ip != null) : "Unable to mark the ip address id=" + addrId + " as unavailable.";
         if (ip == null) {
             return true;
@@ -631,9 +612,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean success = true;
         
         //Cleanup all ip address resources - PF/LB/Static nat rules
-        if (cleanupIpResources(addrId, userId, caller)) {
-            unassignPublicIpAddress(ip);
-        } else {
+        if (!cleanupIpResources(addrId, userId, caller)) {
             success = false;
             s_logger.warn("Failed to release resources for ip address id=" + addrId);
         }
@@ -1278,14 +1257,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _nicDao.listByVmIdIncludingRemoved(vm.getId());
     }
 
-    private Account findAccountByIpAddress(Long ipAddressId) {
-        IPAddressVO address = _ipAddressDao.findById(ipAddressId);
-        if ((address != null) && (address.getAllocatedToAccountId() != null)) {
-            return _accountMgr.getActiveAccount(address.getAllocatedToAccountId());
-        }
-        return null;
-    }
-
     @Override
     public List<NicProfile> getNicProfiles(VirtualMachine vm) {
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
@@ -1314,75 +1285,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long ipAddressId = cmd.getIpAddressId();
 
         // Verify input parameters
-        Account accountByIp = findAccountByIpAddress(ipAddressId);
-        if (accountByIp == null) {
-            throw new InvalidParameterValueException("Unable to find account owner for ip " + ipAddressId);
+        IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
+        }
+        
+        if (ipVO.getAllocatedTime() == null) {
+            s_logger.debug("Ip Address id= " + ipAddressId + " is not allocated, so do nothing.");
+            return true;
         }
 
-        Long accountId = accountByIp.getId();
-        if (!_accountMgr.isAdmin(caller.getType())) {
-            if (caller.getId() != accountId.longValue()) {
-                throw new PermissionDeniedException("account " + caller.getAccountName() + " doesn't own ip address id=" + ipAddressId);
-            }
-        } else {
-            Domain domain = _domainDao.findById(accountByIp.getDomainId());
-            _accountMgr.checkAccess(caller, domain);
+        if (ipVO.getAllocatedToAccountId() != null) {
+            _accountMgr.checkAccess(caller, ipVO);
         }
 
-        try {
-            IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
-            if (ipVO == null) {
-                return false;
-            }
-
-            if (ipVO.getAllocatedTime() == null) {
-                return true;
-            }
-
-            Account account = _accountMgr.getAccount(accountId);
-            if (account == null) {
-                return false;
-            }
-
-            if ((ipVO.getAllocatedToAccountId() == null) || (ipVO.getAllocatedToAccountId().longValue() != accountId)) {
-                // FIXME: is the user visible in the admin account's domain????
-                if (!BaseCmd.isAdmin(account.getType())) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("permission denied disassociating IP address id=" + ipAddressId + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): " + ipVO.getAllocatedToAccountId() + " / " + ipVO.getDataCenterId() + " / "
-                                + ipVO.getAllocatedInDomainId() + " / " + ipVO.getAllocatedTime());
-                    }
-                    throw new PermissionDeniedException("User/account does not own supplied address");
-                }
-            }
-
-            if (ipVO.getAllocatedTime() == null) {
-                return true;
-            }
-
-            if (ipVO.isSourceNat()) {
-                throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
-            }
-
-            VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
-            if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
-                throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
-            }
-
-            // Check for account wide pool. It will have an entry for account_vlan_map.
-            if (_accountVlanMapDao.findAccountVlanMap(accountId, ipVO.getVlanId()) != null) {
-                throw new PermissionDeniedException("Ip address id=" + ipAddressId + " belongs to Account wide IP pool and cannot be disassociated");
-            }
-
-            return releasePublicIpAddress(ipAddressId, userId, caller);
-
-        } catch (PermissionDeniedException pde) {
-            throw pde;
-        } catch (IllegalArgumentException iae) {
-            throw iae;
-        } catch (Throwable t) {
-            s_logger.error("Disassociate IP address threw an exception.", t);
-            throw new IllegalArgumentException("Disassociate IP address threw an exception");
+        if (ipVO.isSourceNat()) {
+            throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
+
+        VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
+        if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
+            throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
+        }
+
+        // Check for account wide pool. It will have an entry for account_vlan_map.
+        if (_accountVlanMapDao.findAccountVlanMap(ipVO.getAccountId(), ipVO.getVlanId()) != null) {
+            throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " belongs to Account wide IP pool and cannot be disassociated");
+        }
+
+        return releasePublicIpAddress(ipAddressId, userId, caller);
     }
 
     @Override
@@ -2041,7 +1972,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //release all ip addresses
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         for (IPAddressVO ipToRelease : ipsToRelease) {
-            IPAddressVO ip = _ipAddressDao.markAsUnavailable(ipToRelease.getId());
+            IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
             assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
         }
         
@@ -2659,5 +2590,31 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         return accountNetworks;
+    }
+    
+    @DB
+    private IPAddressVO markIpAsUnavailable(long addrId) {
+        Transaction txn = Transaction.currentTxn();
+ 
+        IPAddressVO ip = _ipAddressDao.findById(addrId);
+        
+        if (ip.getState() != State.Releasing) {
+            txn.start();
+            
+            ip = _ipAddressDao.markAsUnavailable(addrId);
+            
+            _accountMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
+            
+            long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
+            
+            if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat);
+                _usageEventDao.persist(usageEvent);
+            }
+            
+            txn.commit();
+        }
+        
+        return ip;
     }
 }

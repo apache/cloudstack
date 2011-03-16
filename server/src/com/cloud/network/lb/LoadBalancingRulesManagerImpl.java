@@ -285,11 +285,23 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
     
     
+    @DB 
     private boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply, Account caller, long callerUserId) {
         LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
+        Transaction txn = Transaction.currentTxn();
+        boolean generateUsageEvent = false;
         
-        lb.setState(FirewallRule.State.Revoke);
-        _lbDao.persist(lb);
+        txn.start();
+        if (lb.getState() == FirewallRule.State.Staged) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found a rule that is still in stage state so just removing it: " + lb);
+            }
+            generateUsageEvent = true;
+        } else if (lb.getState() == FirewallRule.State.Add || lb.getState() == FirewallRule.State.Active) {
+            lb.setState(FirewallRule.State.Revoke);
+            _lbDao.persist(lb);
+            generateUsageEvent = true;
+        }
         
         List<LoadBalancerVMMapVO> maps = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
         if (maps != null) {
@@ -299,6 +311,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + map.getInstanceId());
             }  
         }
+        
+        if (generateUsageEvent) {
+          //Generate usage event right after all rules were marked for revoke
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_DELETE, lb.getAccountId(), 0 , lb.getId(), null);
+            _usageEventDao.persist(usageEvent);
+        }
+        
+        txn.commit();
         
         if (apply) {
             try {
@@ -312,9 +332,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             }
         }
         
-        _rulesDao.remove(lb.getId());
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_DELETE, lb.getAccountId(), 0 , lb.getId(), null);
-        _usageEventDao.persist(usageEvent);
+        _rulesDao.remove(lb.getId()); 
         s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         return true;
     }

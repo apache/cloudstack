@@ -208,7 +208,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
         IPAddressVO ip = _ipAddressDao.findByAccountAndIp(vm.getVirtualMachine().getAccountId(), nic.getIp4Address());
         if (ip != null) {
-            _networkMgr.unassignPublicIpAddress(ip);
+            _ipAddressDao.unassignIpAddress(ip.getId());
         }
         nic.deallocate();
     }

@@ -440,15 +440,24 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
        
         Transaction txn = Transaction.currentTxn();
+        boolean generateUsageEvent = false;
+        
         txn.start();
         if (rule.getState() == State.Staged) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
             }
             _firewallDao.remove(rule.getId());
+            generateUsageEvent = true;
         } else if (rule.getState() == State.Add || rule.getState() == State.Active) {
             rule.setState(State.Revoke);
             _firewallDao.update(rule.getId(), rule);
+            generateUsageEvent = true;
+        }
+        
+        if (generateUsageEvent) {
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
+            _usageEventDao.persist(usageEvent);
         }
         
         // Save and create the event
@@ -459,7 +468,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             description.append("->[").append(pfRule.getDestinationIpAddress()).append(":").append(pfRule.getDestinationPortStart()).append("-").append(pfRule.getDestinationPortEnd()).append("]");
         }
         description.append(" ").append(rule.getProtocol());
-
         txn.commit();
     }
     
@@ -490,10 +498,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else {
             success = true;
         }
-        if(success){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, ruleId, null);
-            _usageEventDao.persist(usageEvent);
-        }
+        
         return success;
     }
     
@@ -525,10 +530,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else {
             success = true;
         }
-        if(success){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, ruleId, null);
-            _usageEventDao.persist(usageEvent);
-        }
+        
         return success;
     }
     
