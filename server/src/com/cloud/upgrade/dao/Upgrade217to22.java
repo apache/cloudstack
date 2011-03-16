@@ -156,15 +156,21 @@ public class Upgrade217to22 implements DbUpgrade {
         pstmt.close();
     }
     
-    protected void insertNic(Connection conn, long networkId, long instanceId, boolean running, String macAddress, String ipAddress, String netmask, String strategy, String gateway, String vnet, String guru, boolean defNic, int deviceId, String mode, String reservationId) throws SQLException {
+    protected void insertNic(Connection conn, long networkId, long instanceId, boolean running, String macAddress, String ipAddress, String netmask, String strategy, String gateway, String vnet, String guru, boolean defNic, int deviceId, String mode, String reservationId, String vmType) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(
-                "INSERT INTO nics (instance_id, network_id, mac_address, ip4_address, netmask, strategy, ip_type, broadcast_uri, mode, reserver_name, reservation_id, device_id, update_time, isolation_uri, ip6_address, default_nic, created, removed, state, gateway) " +
-                          "VALUES (?,           ?,          ?,           ?,           ?,       ?,        'Ip4',   ?,             ?,    ?,             ?,              ?,         now(),       NULL,          NULL,         ?,          now(),   NULL,    ?,     ?)");
+                "INSERT INTO nics (instance_id, network_id, mac_address, ip4_address, netmask, strategy, ip_type, broadcast_uri, mode, reserver_name, reservation_id, device_id, update_time, isolation_uri, ip6_address, default_nic, created, removed, state, gateway, vm_type) " +
+                          "VALUES (?,           ?,          ?,           ?,           ?,       ?,        'Ip4',   ?,             ?,    ?,             ?,              ?,         now(),       ?,          NULL,         ?,          now(),   NULL,    ?,     ?,     ?)");
         int i = 1;
+        String isolationUri = null;
         
         String broadcast = null;
         if (vnet != null) {
             broadcast = "vlan://" + vnet;
+            if (vnet.equalsIgnoreCase("untagged")) {
+                isolationUri = "ec2://" + vnet;
+            } else {
+                isolationUri = broadcast;
+            }
         }
         pstmt.setLong(i++, instanceId);
         pstmt.setLong(i++, networkId);
@@ -177,16 +183,18 @@ public class Upgrade217to22 implements DbUpgrade {
         pstmt.setString(i++, guru);
         pstmt.setString(i++, reservationId);
         pstmt.setInt(i++, deviceId);
+        pstmt.setString(i++, isolationUri);
         pstmt.setBoolean(i++, defNic);
         pstmt.setString(i++, running ? "Reserved" : "Allocated");
         pstmt.setString(i++, gateway);
+        pstmt.setString(i++, vmType);
         pstmt.executeUpdate();
         pstmt.close();
     }
     
-    protected void upgradeDomR(Connection conn, long domrId, long publicNetworkId, long guestNetworkId, long controlNetworkId) throws SQLException {
+    protected void upgradeDomR(Connection conn, long domrId, Long publicNetworkId, long guestNetworkId, long controlNetworkId, String zoneType) throws SQLException {
         s_logger.debug("Upgrading domR" + domrId);
-        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, domain_router.public_mac_address, domain_router.public_ip_address, domain_router.public_netmask, domain_router.guest_mac_address, domain_router.guest_ip_address, domain_router.guest_netmask, domain_router.vnet, domain_router.gateway FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, domain_router.public_mac_address, domain_router.public_ip_address, domain_router.public_netmask, domain_router.guest_mac_address, domain_router.guest_ip_address, domain_router.guest_netmask, domain_router.vnet, domain_router.gateway, vm_instance.type FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
         pstmt.setLong(1, domrId);
         ResultSet rs = pstmt.executeQuery();
         
@@ -208,17 +216,25 @@ public class Upgrade217to22 implements DbUpgrade {
         String guestNetmask = rs.getString(11);
         String vnet = rs.getString(12);
         String gateway = rs.getString(13);
+        String type = rs.getString(14);
         rs.close();
         pstmt.close();
         
-        insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
-        insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Create", null, null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
-        insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "GuestNetworkGuru", false, 0, "Static", null);
+        if (zoneType.equalsIgnoreCase("Basic")) {
+            insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null, type);
+            insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", gateway, vnet, "DirectPodBasedNetworkGuru", false, 0, "Static", null, type);
+        } else {
+            insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null, type);
+            insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null, type);
+            insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "GuestNetworkGuru", false, 0, "Static", null, type);
+        }
+        
+        
     }
     
-    protected void upgradeSsvm(Connection conn, long dataCenterId, long publicNetworkId, long managementNetworkId, long controlNetworkId) throws SQLException {
+    protected void upgradeSsvm(Connection conn, long dataCenterId, long publicNetworkId, long managementNetworkId, long controlNetworkId, String zoneType) throws SQLException {
         s_logger.debug("Upgrading ssvm in " + dataCenterId);
-        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, secondary_storage_vm.public_mac_address, secondary_storage_vm.public_ip_address, secondary_storage_vm.public_netmask, secondary_storage_vm.guest_mac_address, secondary_storage_vm.guest_ip_address, secondary_storage_vm.guest_netmask, secondary_storage_vm.gateway FROM vm_instance INNER JOIN secondary_storage_vm ON vm_instance.id=secondary_storage_vm.id WHERE vm_instance.removed is NULL AND vm_instance.data_center_id=? AND vm_instance.type='SecondaryStorageVm'");
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, secondary_storage_vm.public_mac_address, secondary_storage_vm.public_ip_address, secondary_storage_vm.public_netmask, secondary_storage_vm.guest_mac_address, secondary_storage_vm.guest_ip_address, secondary_storage_vm.guest_netmask, secondary_storage_vm.gateway, vm_instance.type FROM vm_instance INNER JOIN secondary_storage_vm ON vm_instance.id=secondary_storage_vm.id WHERE vm_instance.removed is NULL AND vm_instance.data_center_id=? AND vm_instance.type='SecondaryStorageVm'");
         pstmt.setLong(1, dataCenterId);
         ResultSet rs = pstmt.executeQuery();
         
@@ -240,17 +256,39 @@ public class Upgrade217to22 implements DbUpgrade {
         String guestIp = rs.getString(10);
         String guestNetmask = rs.getString(11);
         String gateway = rs.getString(12);
+        String type = rs.getString(13);
         rs.close();
         pstmt.close();
         
-        insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
-        insertNic(conn, controlNetworkId, ssvmId, running, guestMac, guestIp, guestNetmask, "Create", null, null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (ssvmId + guestIp) : null);
-        insertNic(conn, managementNetworkId, ssvmId, running, privateMac, privateIp, privateNetmask, "Start", null, null, "PodBasedNetworkGuru", false, 1, "Static", null);
+        pstmt = conn.prepareStatement("SELECT host_pod_ref.gateway from host_pod_ref INNER JOIN vm_instance ON vm_instance.pod_id=host_pod_ref.id WHERE vm_instance.removed is NULL AND vm_instance.data_center_id=? AND vm_instance.type='SecondaryStorageVm'");
+        pstmt.setLong(1, dataCenterId);
+        rs = pstmt.executeQuery();
+        
+        if (!rs.next()) {
+            s_logger.debug("Unable to find ssvm in data center " + dataCenterId);
+            return;
+        }
+        
+        String podGateway = rs.getString(1);
+        rs.close();
+        pstmt.close();
+        
+        s_logger.debug("Gateway is " + podGateway);
+        
+        if (zoneType.equalsIgnoreCase("Basic")) {
+            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Start", gateway, null, "DirectPodBasedNetworkGuru", true, 2, "Static", null, type);
+
+        } else {
+            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null, type);
+        }
+        
+        insertNic(conn, controlNetworkId, ssvmId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (ssvmId + guestIp) : null, type);
+        insertNic(conn, managementNetworkId, ssvmId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", null, type);
     }
     
-    protected void upgradeConsoleProxy(Connection conn, long cpId, long publicNetworkId, long managementNetworkId, long controlNetworkId) throws SQLException {
+    protected void upgradeConsoleProxy(Connection conn, long cpId, long publicNetworkId, long managementNetworkId, long controlNetworkId, String zoneType) throws SQLException {
         s_logger.debug("Upgrading cp" + cpId);
-        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, console_proxy.public_mac_address, console_proxy.public_ip_address, console_proxy.public_netmask, console_proxy.guest_mac_address, console_proxy.guest_ip_address, console_proxy.guest_netmask, console_proxy.gateway FROM vm_instance INNER JOIN console_proxy ON vm_instance.id=console_proxy.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, console_proxy.public_mac_address, console_proxy.public_ip_address, console_proxy.public_netmask, console_proxy.guest_mac_address, console_proxy.guest_ip_address, console_proxy.guest_netmask, console_proxy.gateway, vm_instance.type FROM vm_instance INNER JOIN console_proxy ON vm_instance.id=console_proxy.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
         pstmt.setLong(1, cpId);
         ResultSet rs = pstmt.executeQuery();
         
@@ -271,16 +309,35 @@ public class Upgrade217to22 implements DbUpgrade {
         String guestIp = rs.getString(10);
         String guestNetmask = rs.getString(11);
         String gateway = rs.getString(12);
+        String type = rs.getString(13);
         rs.close();
         pstmt.close();
         
-        insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
-        insertNic(conn, controlNetworkId, cpId, running, guestMac, guestIp, guestNetmask, "Create", null, null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (cpId + guestIp) : null);
-        insertNic(conn, managementNetworkId, cpId, running, privateMac, privateIp, privateNetmask, "Start", null, null, "PodBasedNetworkGuru", false, 1, "Static", null);
+        pstmt = conn.prepareStatement("SELECT host_pod_ref.gateway from host_pod_ref INNER JOIN vm_instance ON vm_instance.pod_id=host_pod_ref.id WHERE vm_instance.id=?");
+        pstmt.setLong(1, cpId);
+        rs = pstmt.executeQuery();
+        
+        if (!rs.next()) {
+            throw new CloudRuntimeException("Unable to find cp " + cpId);
+        }
+        
+        String podGateway = rs.getString(1);
+        rs.close();
+        pstmt.close();
+        
+        
+        if (zoneType.equalsIgnoreCase("Basic")) {
+            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Start", gateway, null, "DirectPodBasedNetworkGuru", true, 2, "Static", null, type);
+        } else {
+            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null, type);
+        }
+        
+        insertNic(conn, controlNetworkId, cpId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (cpId + guestIp) : null, type);
+        insertNic(conn, managementNetworkId, cpId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", null, type);
     }
     
     protected void upgradeVirtualUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state, vm_instance.type FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
         pstmt.setLong(1, domainRouterId);
         ResultSet rs = pstmt.executeQuery();
         List<Object[]> vms = new ArrayList<Object[]>();
@@ -291,6 +348,7 @@ public class Upgrade217to22 implements DbUpgrade {
             vm[2] = rs.getString(3); // ip address
             vm[3] = rs.getString(4); // netmask
             vm[4] = rs.getString(5);  // vm state
+            vm[5] = rs.getString(6); // vm type
             vms.add(vm);
         }
         rs.close();
@@ -305,7 +363,41 @@ public class Upgrade217to22 implements DbUpgrade {
             if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
                 running = true;
             }
-            insertNic(conn, networkId, (Long)vm[0], running, (String)vm[1], (String)vm[2], (String)vm[3], "Start", gateway, vnet, "GuestNetworkGuru", true, 0, "Dhcp", null);
+            
+            insertNic(conn, networkId, (Long)vm[0], running, (String)vm[1], (String)vm[2], (String)vm[3], "Start", gateway, vnet, "GuestNetworkGuru", true, 0, "Dhcp", null, (String)vm[5]);
+        }
+    }
+    
+    
+    protected void upgradeBasicUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state, vm_instance.type FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
+        pstmt.setLong(1, domainRouterId);
+        ResultSet rs = pstmt.executeQuery();
+        List<Object[]> vms = new ArrayList<Object[]>();
+        while (rs.next()) {
+            Object[] vm = new Object[10];
+            vm[0] = rs.getLong(1); // vm id
+            vm[1] = rs.getString(2); // mac address
+            vm[2] = rs.getString(3); // ip address
+            vm[3] = rs.getString(4); // netmask
+            vm[4] = rs.getString(5);  // vm state
+            vm[5] = rs.getString(6);  // vm type
+            vms.add(vm);
+        }
+        rs.close();
+        pstmt.close();
+        
+        s_logger.debug("Upgrading " + vms.size() + " vms for router " + domainRouterId);
+        
+        for (Object[] vm : vms) {
+            String state = (String)vm[4];
+            
+            boolean running = false;
+            if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
+                running = true;
+            }
+            insertNic(conn, networkId, (Long)vm[0], running, (String)vm[1], (String)vm[2], (String)vm[3], "Start", gateway, vnet, "DirectPodBasedNetworkGuru", true, 0, "Dhcp", null, (String)vm[5]);
+            
         }
     }
 
@@ -427,6 +519,7 @@ public class Upgrade217to22 implements DbUpgrade {
         s_logger.debug("Marking " + allocatedIps.size() + " ip addresses to belong to network " + networkId);
         
         for (Object[] allocatedIp : allocatedIps) {
+            s_logger.debug("Updating mac addresses for data center id=" + dcId);
             pstmt = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");
             pstmt.setLong(1, dcId);
             rs = pstmt.executeQuery();
@@ -617,35 +710,63 @@ public class Upgrade217to22 implements DbUpgrade {
             if (_basicZone) {
                 for (Object[] dc : dcs) {
                     Long dcId = (Long)dc[0];
-                    insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                    insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                    insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    long mgmtNetworkId = insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    long storageNetworkId = insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    long controlNetworkId = insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     upgradeManagementIpAddress(conn, dcId);
                     long basicDefaultDirectNetworkId = insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, null, true, null);
                 
-                    //update all public ips with the Default Direct network Id
-                    upgradePublicUserIpAddress(conn, dcId, basicDefaultDirectNetworkId, "DirectAttached");
+                    
+                    pstmt = conn.prepareStatement("SELECT id FROM vlan WHERE vlan_type='DirectAttached' AND data_center_id=?");
+                    pstmt.setLong(1, dcId);
+                    rs = pstmt.executeQuery();
+                    while (rs.next()) {
+                        long vlanId = rs.getLong(1);
+                        
+                        pstmt = conn.prepareStatement("UPDATE vlan SET network_id=? WHERE id=?");
+                        pstmt.setLong(1, basicDefaultDirectNetworkId);
+                        pstmt.setLong(2, vlanId);
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                        
+                        upgradeDirectUserIpAddress(conn, dcId, basicDefaultDirectNetworkId, "DirectAttached");
+                    }
                     
                     //update Dhcp servers information in domain_router and vm_instance tables; all domRs belong to the same network
-                    pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
+                    pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.gateway, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
                     ArrayList<Object[]> routers = new ArrayList<Object[]>();
                     while (rs.next()) {
                         Object[] router = new Object[40];
                         router[0] = rs.getLong(1); // router id
+                        router[1] = rs.getString(4); // router gateway which is gonna be gateway for user vms
                         routers.add(router);
                     }
                     rs.close();
                     pstmt.close();
                     
                     for (Object[] router : routers) {
+                        s_logger.debug("Updating domR with network id in basic zone id=" + dcId);
                         pstmt = conn.prepareStatement("UPDATE domain_router SET network_id = ? wHERE id = ? ");
                         pstmt.setLong(1, basicDefaultDirectNetworkId);
                         pstmt.setLong(2, (Long)router[0]);
                         pstmt.executeUpdate();
                         pstmt.close();
+                        
+                        upgradeBasicUserVms(conn, (Long)router[0], basicDefaultDirectNetworkId, (String)router[1], "untagged");
+                        upgradeDomR(conn, (Long)router[0], null, basicDefaultDirectNetworkId, controlNetworkId, "Basic");
                     }
+                    
+                    upgradeSsvm(conn, dcId, basicDefaultDirectNetworkId, storageNetworkId, controlNetworkId, "Basic");
+                    
+                    pstmt = conn.prepareStatement("SELECT vm_instance.id FROM vm_instance WHERE removed IS NULL AND type='ConsoleProxy' AND data_center_id=?");
+                    pstmt.setLong(1, dcId);
+                    rs = pstmt.executeQuery();
+                    while (rs.next()) {
+                        upgradeConsoleProxy(conn, rs.getLong(1), basicDefaultDirectNetworkId, mgmtNetworkId, controlNetworkId, "Basic");
+                    }
+                    
                 } 
             } else {
                 for (Object[] dc : dcs) {
@@ -692,7 +813,7 @@ public class Upgrade217to22 implements DbUpgrade {
                         s_logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
                         
                         upgradeVirtualUserVms(conn, (Long)router[0], virtualNetworkId, (String)router[3], vnet);
-                        upgradeDomR(conn, (Long)router[0], publicNetworkId, virtualNetworkId, controlNetworkId);
+                        upgradeDomR(conn, (Long)router[0], publicNetworkId, virtualNetworkId, controlNetworkId, "Advanced");
                     }
                     
                     upgradePublicUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
@@ -717,13 +838,13 @@ public class Upgrade217to22 implements DbUpgrade {
                         upgradeDirectUserIpAddress(conn, dcId, directNetworkId, "DirectAttached");
                     }
                     
-                    upgradeSsvm(conn, dcId, publicNetworkId, storageNetworkId, controlNetworkId);
+                    upgradeSsvm(conn, dcId, publicNetworkId, storageNetworkId, controlNetworkId, "Advanced");
                     
                     pstmt = conn.prepareStatement("SELECT vm_instance.id FROM vm_instance WHERE removed IS NULL AND type='ConsoleProxy' AND data_center_id=?");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
                     while (rs.next()) {
-                        upgradeConsoleProxy(conn, rs.getLong(1), publicNetworkId, mgmtNetworkId, controlNetworkId);
+                        upgradeConsoleProxy(conn, rs.getLong(1), publicNetworkId, mgmtNetworkId, controlNetworkId, "Advanced");
                     }
                     
                 }
