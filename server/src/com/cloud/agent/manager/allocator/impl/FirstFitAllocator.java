@@ -90,8 +90,8 @@ public class FirstFitAllocator implements HostAllocator {
 			ExcludeList avoid, int returnUpTo) {
 
 		long dcId = plan.getDataCenterId();
-		long podId = plan.getPodId();
-		long clusterId = plan.getClusterId();
+		Long podId = plan.getPodId();
+		Long clusterId = plan.getClusterId();
 		ServiceOffering offering = vmProfile.getServiceOffering();
 		VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
 

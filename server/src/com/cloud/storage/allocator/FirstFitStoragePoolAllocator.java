@@ -59,8 +59,8 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	return suitablePools;
         }
 		long dcId = plan.getDataCenterId();
-		long podId = plan.getPodId();
-		long clusterId = plan.getClusterId();
+		Long podId = plan.getPodId();
+		Long clusterId = plan.getClusterId();
 
         if(dskCh.getTags() != null && dskCh.getTags().length != 0){
         	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()));
