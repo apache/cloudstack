@@ -165,7 +165,7 @@ config_dnsmasq dhcp-authoritative
 
 # Open DHCP ports in iptable
 chkconfig --list iptables | grep "on"
-if [ $? -ne 0 ]; then
+if [ $? -eq 0 ]; then
 	iptables-save | grep 'A INPUT -p udp -m udp --dport 67 -j ACCEPT' >/dev/null
 	if [ $? -ne 0 ]; then
 		iptables -I INPUT 1 -p udp --dport 67 -j ACCEPT
