@@ -304,6 +304,7 @@ Obsoletes: %{name}-premium-plugin-zynga < %{version}-%{release}
 Provides: %{name}-premium-vendor-zynga = %{version}-%{release}
 Obsoletes: %{name}-premium-vendor-zynga < %{version}-%{release}
 Requires: java >= 1.6.0
+Requires: ipmitool
 Requires: %{name}-utils = %{version}
 License:   CSL 1.1
 Group:     System Environment/Libraries
