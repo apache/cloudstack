@@ -2752,6 +2752,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     }
                 }
             }
+            _domrIPMap.remove(vmName);
             return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, bytesSent, bytesRcvd);
         } catch (XenAPIException e) {
             String msg = "Stop Vm " + vmName + " fail due to " + e.toString();
@@ -2841,9 +2842,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId(), cmd.getNetworkRateMbps(), cmd.getGuestOSDescription());
             if (result == null) {
                 networkUsage(router.getPrivateIpAddress(), "create", null);
+                _domrIPMap.put(cmd.getVmName(), router.getPrivateIpAddress());
                 return new StartRouterAnswer(cmd);
             }
-            _domrIPMap.put(cmd.getVmName(), router.getPrivateIpAddress());
             return new StartRouterAnswer(cmd, result);
 
         } catch (Exception e) {
