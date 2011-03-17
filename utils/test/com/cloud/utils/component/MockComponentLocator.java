@@ -18,6 +18,7 @@
 package com.cloud.utils.component;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.NoOp;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DatabaseCallback;
 import com.cloud.utils.db.DatabaseCallbackFilter;
 import com.cloud.utils.db.GenericDao;
@@ -60,8 +62,8 @@ public class MockComponentLocator extends ComponentLocator {
     }
     
     @Override
-    protected Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> parse2(String filename) {
-        Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> result = new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(new XmlHandler("fake"), new HashMap<String, List<ComponentInfo<Adapter>>>());
+    protected Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> parse2(String filename) {
+        Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> result = new Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>>(new XmlHandler("fake"), new HashMap<String, List<ComponentInfo<Adapter>>>(), new ArrayList<SystemIntegrityChecker>());
         _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
         _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
         _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
@@ -86,6 +88,12 @@ public class MockComponentLocator extends ComponentLocator {
     }
     
     protected class MockComponentLibrary extends ComponentLibraryBase implements ComponentLibrary { 
+        
+        @Override
+        public List<SystemIntegrityChecker> getSystemIntegrityCheckers() {
+            return new ArrayList<SystemIntegrityChecker>();
+        }
+        
         @Override
         public Map<String, List<ComponentInfo<Adapter>>> getAdapters() {
             return _adapters;
