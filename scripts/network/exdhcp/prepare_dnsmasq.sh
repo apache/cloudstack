@@ -159,6 +159,12 @@ config_dnsmasq "
 config_dnsmasq dhcp-script=/usr/bin/echoer.sh
 config_dnsmasq dhcp-scriptuser=root
 config_dnsmasq dhcp-authoritative
+config_dnsmasq "
+# Ignore any bootp and pxe boot request
+"
+config_dnsmasq dhcp-ignore=bootp
+config_dnsmasq dhcp-vendorclass=pxestuff,PXEClient
+config_dnsmasq dhcp-ignore=pxestuff
 
 [ -f /usr/sbin/setenforce ] && /usr/sbin/setenforce 0
 [ $? -ne 0 ] && exit_with_error "Can not set seLinux to passive mode"
