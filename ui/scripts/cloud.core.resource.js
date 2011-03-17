@@ -912,7 +912,8 @@ function initAddHostShortcut() {
                  
 			    array1.push("&hypervisor="+hypervisor);			    
 			    var clustertype = clusterObj.clustertype;
-                array1.push("&clustertype=" + clustertype);				    
+                array1.push("&clustertype=" + clustertype);	
+				array1.push("&hosttags=" + todb(trim($thisDialog.find("#host_tags").val())));
 
 			    if(hypervisor == "VMware") {
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());

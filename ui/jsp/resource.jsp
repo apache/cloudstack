@@ -975,8 +975,8 @@
 			<li>
                 <label input_group="general">
                     Tags:</label>
-                <input class="text" type="text" name="host_baremetal_tags" id="host_baremetal_tags" />
-                <div id="host_baremetal_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                <input class="text" type="text" name="host_tags" id="host_tags" />
+                <div id="host_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li> 
         </ol>
