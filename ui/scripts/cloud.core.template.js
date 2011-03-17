@@ -82,6 +82,8 @@ function afterLoadTemplateJSP() {
 	        formatSelect.append("<option value='OVA'>OVA</option>");
 	    else if(selectedHypervisorType == "KVM")
 	        formatSelect.append("<option value='QCOW2'>QCOW2</option>");
+		else if(selectedHypervisorType == "BareMetal")
+	        formatSelect.append("<option value='BareMetal'>BareMetal</option>");
 	        
 	    return false;
 	});		
