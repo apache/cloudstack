@@ -18,6 +18,7 @@
 package com.cloud.configuration;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,6 +133,7 @@ import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLibraryBase;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ClusteredVirtualMachineManagerImpl;
 import com.cloud.vm.ItWorkDaoImpl;
@@ -148,6 +150,13 @@ import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
+    
+    @Override
+    public List<SystemIntegrityChecker> getSystemIntegrityCheckers() {
+        ArrayList<SystemIntegrityChecker> checkers = new ArrayList<SystemIntegrityChecker>();
+//        checkers.add(new DatabaseUpgradeChecker());
+        return checkers;
+    }
 
     protected void populateDaos() {
         addDao("StackMaidDao", StackMaidDaoImpl.class);

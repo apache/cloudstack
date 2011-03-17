@@ -23,8 +23,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.naming.ConfigurationException;
-
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -61,6 +59,7 @@ public class BasicZone217To223UpgradeTest extends TestCase {
         PreparedStatement pstmt;
         
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
+        DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
         
         String version = dao.getCurrentVersion();
         
@@ -70,12 +69,7 @@ public class BasicZone217To223UpgradeTest extends TestCase {
             s_logger.debug("Basic zone test version is " + version);
         }
         
-        try {
-            dao.upgrade("2.1.7", "2.2.3");
-        } catch (ConfigurationException e) {
-            s_logger.warn("Exception: ", e);
-            assert false : "The test failed.  Check logs"; 
-        }
+        checker.upgrade("2.1.7", "2.2.3");
         
         conn = Transaction.getStandaloneConnection();
         try {

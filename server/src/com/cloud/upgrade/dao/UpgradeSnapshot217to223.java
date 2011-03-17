@@ -19,24 +19,20 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class UpgradeSnapshot217to223 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        File file = PropertiesUtil.findConfigFile("schema-snapshot-217to223.sql");
+        String file = Script.findScript("", "db/schema-snapshot-217to223.sql");
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, chema-snapshot-217to223.sql");
         }
         
-        return new File[] {file};
+        return new File[] { new File(file)};
     }
 
     @Override

@@ -62,6 +62,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DatabaseCallback;
 import com.cloud.utils.db.DatabaseCallbackFilter;
 import com.cloud.utils.db.GenericDao;
@@ -113,7 +114,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return getLocatorName();
     }
 
-    protected Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> parse2(String filename) {
+    protected Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> parse2(String filename) {
         try {
             SAXParserFactory spfactory = SAXParserFactory.newInstance();
             SAXParser saxParser = spfactory.newSAXParser();
@@ -147,6 +148,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
 
             ComponentLibrary library = null;
+            List<SystemIntegrityChecker> checkers = null;
             if (handler.library != null) {
                 Class<?> clazz = Class.forName(handler.library);
                 library = (ComponentLibrary)clazz.newInstance();
@@ -154,13 +156,14 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _managerMap.putAll(library.getManagers());
                 adapters.putAll(library.getAdapters());
                 _factories.putAll(library.getFactories());
+                checkers = library.getSystemIntegrityCheckers();
             }
 
             _daoMap.putAll(handler.daos);
             _managerMap.putAll(handler.managers);
             adapters.putAll(handler.adapters);
             
-            return new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(handler, adapters);
+            return new Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>>(handler, adapters, checkers);
             
         } catch (ParserConfigurationException e) {
             s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
@@ -182,7 +185,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     protected void parse(String filename) {
-        Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> result = parse2(filename);
+        Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> result = parse2(filename);
         if (result == null) {
             s_logger.info("Skipping configuration using " + filename);
             return;
@@ -191,6 +194,11 @@ public class ComponentLocator implements ComponentLocatorMBean {
         XmlHandler handler = result.first();
         HashMap<String, List<ComponentInfo<Adapter>>> adapters = result.second();
         try {
+            if (result.third() != null) {
+                for (SystemIntegrityChecker checker : result.third()) {
+                    checker.check();
+                }
+            }
             startDaos();    // daos should not be using managers and adapters.
             instantiateAdapters(adapters);
             instantiateManagers();
@@ -1019,7 +1027,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     itManagers.remove();
                     if (manager.singleton == true) {
                         Singleton singleton = s_singletons.get(manager.clazz);
-                        if (singleton.state == Singleton.State.Started) {
+                        if (singleton != null && singleton.state == Singleton.State.Started) {
                             s_logger.info("Asking Manager " + manager.getName() + " to shutdown.");
                             manager.instance.stop();
                             singleton.state = Singleton.State.Stopped;

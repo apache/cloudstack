@@ -28,9 +28,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.script.Script;
 
 public class Upgrade217to22 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade217to22.class);
@@ -38,12 +38,12 @@ public class Upgrade217to22 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        File file = PropertiesUtil.findConfigFile("schema-21to22.sql");
+        String file = Script.findScript("","db/schema-21to22.sql");
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22.sql");
         }
         
-        return new File[] {file};
+        return new File[] {new File(file)};
     }
     
     protected void upgradeStoragePools(Connection conn) {
@@ -864,12 +864,12 @@ public class Upgrade217to22 implements DbUpgrade {
     public File[] getCleanupScripts() {
         return null;
         
-//        File file = PropertiesUtil.findConfigFile("schema-21to22-cleanup.sql");
+//        String file = Script.findScript("", "db/schema-21to22-cleanup.sql");
 //        if (file == null) {
 //            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-cleanup.sql");
 //        }
 //        
-//        return new File[] { file };
+//        return new File[] { new File(file) };
     }
 
     @Override

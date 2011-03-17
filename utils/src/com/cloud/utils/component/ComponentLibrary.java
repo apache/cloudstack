@@ -35,6 +35,13 @@ import com.cloud.utils.db.GenericDao;
  */
 public interface ComponentLibrary {
     /**
+     * @return a list of SytemIntegrityCheckers which is run before other
+     * components are started to check if the system are fit to check 
+     * the system.
+     */
+    List<SystemIntegrityChecker> getSystemIntegrityCheckers();
+    
+    /**
      * @return all of the daos
      */
     Map<String, ComponentInfo<GenericDao<?,?>>> getDaos();
