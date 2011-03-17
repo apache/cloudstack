@@ -897,7 +897,7 @@ public class Upgrade217to22 implements DbUpgrade {
                     pstmt.close();                       
                     
                     //update firewall_rules table
-                    s_logger.debug("Updating firewall_rules table...");
+                    s_logger.trace("Updating firewall_rules table as a part of PF rules upgrade...");
                     pstmt = conn.prepareStatement("INSERT INTO firewall_rules VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'PortForwarding',       ?,      ?,      ?,      ?,       now())");
                     pstmt.setLong(1, id);
                     pstmt.setInt(2, ipAddressId);
@@ -910,10 +910,10 @@ public class Upgrade217to22 implements DbUpgrade {
                     pstmt.setString(9, UUID.randomUUID().toString());
                     pstmt.executeUpdate();
                     pstmt.close();
-                    s_logger.debug("firewall_rules table is updated");
+                    s_logger.trace("firewall_rules table is updated as a part of PF rules upgrade");
                     
                     //update port_forwarding_rules table
-                    s_logger.debug("Updating port_forwarding_rules table...");
+                    s_logger.trace("Updating port_forwarding_rules table...");
                     String privateIp = (String)rule[3];
                     pstmt = conn.prepareStatement("SELECT instance_id FROM nics where network_id=? AND ip4_address=?");
                     pstmt.setLong(1, networkId);
@@ -924,8 +924,7 @@ public class Upgrade217to22 implements DbUpgrade {
                         throw new CloudRuntimeException("Unable to find vmId for private ip address " + privateIp + " for account id=" + accountId) ;
                     }
                         
-                    long instanceId = rs.getLong(1);
-                    s_logger.debug("Instance id is " + instanceId);
+                    long instanceId = rs.getLong(1);;
                     rs.close();
                     pstmt.close();
                         
@@ -939,14 +938,127 @@ public class Upgrade217to22 implements DbUpgrade {
                     pstmt.setInt(5, Integer.valueOf(privatePort));
                     pstmt.executeUpdate();
                     pstmt.close();
-                    s_logger.debug("port_forwarding_rules table is updated");
+                    s_logger.trace("port_forwarding_rules table is updated");
                 }
             }
-            
+            s_logger.debug("Port forwarding rules are updated");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't update port forwarding rules ", e);
         }
-       
+    }
+    
+    
+    public void upgradeLoadBalancingRules(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT name, ip_address, public_port, private_port, algorithm, id FROM load_balancer");
+            ResultSet rs = pstmt.executeQuery();
+            ArrayList<Object[]> lbs = new ArrayList<Object[]>();
+            while (rs.next()) {
+                Object[] lb = new Object[10];
+                lb[0] = rs.getString(1); //lb name
+                lb[1] = rs.getString(2); //lb public IP
+                lb[2] = rs.getString(3); //lb public port
+                lb[3] = rs.getString(4); //lb private port
+                lb[4] = rs.getString(5); //lb algorithm
+                lb[5] = rs.getLong(6); // lb Id 
+                lbs.add(lb);
+            }
+            rs.close();
+            pstmt.close();
+            
+            if (!lbs.isEmpty()) {
+                s_logger.debug("Found " + lbs.size() + " lb rules to upgrade");
+                pstmt = conn.prepareStatement("SELECT id FROM firewall_rules");
+                rs = pstmt.executeQuery();
+                long newLbId = 0;
+                while (rs.next()) {
+                    newLbId = rs.getLong(1);
+                }
+                rs.close();
+                pstmt.close();
+                
+                for (Object[] lb : lbs) {
+                    String name = (String)lb[0];
+                    String publicIp = (String)lb[1];
+                    String sourcePort = (String)lb[2];
+                    String destPort = (String)lb[3];
+                    String algorithm = (String)lb[4];
+                    Long originalLbId = (Long)lb[5];
+                    newLbId = newLbId+1;
+                   
+                    
+                    pstmt = conn.prepareStatement("SELECT id, account_id, domain_id, network_id FROM user_ip_address WHERE public_ip_address=?");
+                    pstmt.setString(1, publicIp);
+                    rs = pstmt.executeQuery();
+                    
+                    if (!rs.next()) {
+                        throw new CloudRuntimeException("Unable to find public IP address " + publicIp);
+                    }
+                    
+                    int ipAddressId = rs.getInt(1);
+                    long accountId = rs.getLong(2);
+                    long domainId = rs.getLong(3);
+                    long networkId = rs.getLong(4);
+                    
+                    rs.close();
+                    pstmt.close();                       
+                    
+                    //update firewall_rules table
+                    s_logger.trace("Updating firewall_rules table as a part of LB rules upgrade...");
+                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'LoadBalancing',       ?,      ?,      ?,      ?,       now())");
+                    pstmt.setLong(1, newLbId);
+                    pstmt.setInt(2, ipAddressId);
+                    pstmt.setInt(3, Integer.valueOf(sourcePort));
+                    pstmt.setInt(4, Integer.valueOf(sourcePort));
+                    pstmt.setString(5, "tcp");
+                    pstmt.setLong(6, accountId);
+                    pstmt.setLong(7, domainId);
+                    pstmt.setLong(8, networkId);
+                    pstmt.setString(9, UUID.randomUUID().toString());
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    s_logger.trace("firewall_rules table is updated as a part of LB rules upgrade");
+                    
+                    //update load_balancing_rules
+                    s_logger.trace("Updating load_balancing_rules table as a part of LB rules upgrade...");
+                    pstmt = conn.prepareStatement("INSERT INTO load_balancing_rules VALUES (?,      ?,      NULL,      ?,       ?,      ?)");
+                    pstmt.setLong(1, newLbId);
+                    pstmt.setString(2, name);
+                    pstmt.setInt(3, Integer.valueOf(destPort));
+                    pstmt.setInt(4, Integer.valueOf(destPort));
+                    pstmt.setString(5, algorithm);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    s_logger.trace("load_balancing_rules table is updated as a part of LB rules upgrade");
+                    
+                    //update load_balancer_vm_map table
+                    s_logger.trace("Updating load_balancer_vm_map table as a part of LB rules upgrade...");
+                    pstmt = conn.prepareStatement("SELECT instance_id FROM load_balancer_vm_map WHERE load_balancer_id=?");
+                    pstmt.setLong(1, originalLbId);
+                    rs = pstmt.executeQuery();
+                    ArrayList<Object[]> lbMaps = new ArrayList<Object[]>();
+                    while (rs.next()) {
+                        Object[] lbMap = new Object[10];
+                        lbMap[0] = rs.getLong(1); //instanceId
+                        lbMaps.add(lbMap);
+                    }
+                    rs.close();
+                    pstmt.close();
+                    
+                    
+                    pstmt = conn.prepareStatement("UPDATE load_balancer_vm_map SET load_balancer_id=? WHERE load_balancer_id=?");
+                    pstmt.setLong(1, newLbId);
+                    pstmt.setLong(2, originalLbId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    
+                    s_logger.trace("load_balancer_vm_map table is updated as a part of LB rules upgrade");
+                }
+            }
+            s_logger.debug("LB rules are upgraded");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't update LB rules ", e);
+        }
     }
     
     @Override
@@ -955,7 +1067,7 @@ public class Upgrade217to22 implements DbUpgrade {
         upgradeStoragePools(conn);
         upgradeInstanceGroups(conn);
         upgradePortForwardingRules(conn);
-        
+        upgradeLoadBalancingRules(conn);
     }
 
     @Override

@@ -69,7 +69,7 @@ public class PortForwarding217To221UpgradeTest extends TestCase {
         } else {
             s_logger.debug("Port forwarding test version is " + version);
         }
-        
+       
         checker.upgrade("2.1.7", "2.2.3");
         
         conn = Transaction.getStandaloneConnection();
