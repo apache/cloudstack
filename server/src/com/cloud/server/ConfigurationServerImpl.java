@@ -63,7 +63,6 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.guru.ControlNetworkGuru;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
@@ -77,7 +76,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -94,7 +92,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 	
 	private final ConfigurationDao _configDao;
-	private final SnapshotPolicyDao _snapPolicyDao;
 	private final DataCenterDao _zoneDao;
     private final HostPodDao _podDao;
     private final DiskOfferingDao _diskOfferingDao;
@@ -104,13 +101,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final DataCenterDao _dataCenterDao;
     private final NetworkDao _networkDao;
     private final VlanDao _vlanDao;
-    private final IPAddressDao _ipAddressDao;
 
 	
 	public ConfigurationServerImpl() {
 		ComponentLocator locator = ComponentLocator.getLocator(Name);
 		_configDao = locator.getDao(ConfigurationDao.class);
-		_snapPolicyDao = locator.getDao(SnapshotPolicyDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _podDao = locator.getDao(HostPodDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
@@ -120,7 +115,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _dataCenterDao = locator.getDao(DataCenterDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
-        _ipAddressDao = locator.getDao(IPAddressDao.class);
 	}
 
 	@Override @DB
@@ -730,8 +724,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 TrafficType.Guest, 
                 true, false, null, null, null, true, 
                 Availability.Required, 
-                true, true, true, //services - all true except for firewall/lb/vpn and gateway
-                false, false, false, false, GuestIpType.Direct);
+                true, true, true, //services - all true except for lb/vpn and gateway
+                false, true, false, false, GuestIpType.Direct);
 
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         
@@ -800,7 +794,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     } else if (trafficType == TrafficType.Control) {
                         broadcastDomainType = BroadcastDomainType.LinkLocal;
                     } else if (offering.getTrafficType() == TrafficType.Public) {
-                        if (zone.getNetworkType() == NetworkType.Advanced) {
+                        if ((zone.getNetworkType() == NetworkType.Advanced && !zone.isSecurityGroupEnabled()) || zone.getNetworkType() == NetworkType.Basic) {
                             broadcastDomainType = BroadcastDomainType.Vlan;
                         } else {
                             continue;

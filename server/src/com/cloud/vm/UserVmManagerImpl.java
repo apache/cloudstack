@@ -127,6 +127,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.org.Cluster;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -199,7 +200,6 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.org.Cluster;
 
 @Local(value={UserVmManager.class, UserVmService.class})
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
@@ -1894,12 +1894,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _accountMgr.checkAccess(caller, owner);
         
         //Get default guest network in Basic zone
-        NetworkVO defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+        Network defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
         
         if (defaultNetwork == null) {
             throw new InvalidParameterValueException("Unable to find a default network to start a vm");
         } else {
-            networkList.add(defaultNetwork);
+            networkList.add(_networkDao.findById(defaultNetwork.getId()));
         }
         
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, caller, diskOfferingId, 

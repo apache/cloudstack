@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -51,7 +50,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -84,7 +82,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         
         if (provider != null && provider.equalsIgnoreCase(Provider.JuniperSRX.getName()) && ipType == GuestIpType.Virtual) {
             return true;
-        } else if (dest.getPod().getExternalDhcp()){
+        } else if (dest.getPod() != null && dest.getPod().getExternalDhcp()){
         	//This pod is using external DHCP server
         	return false;
         } else {

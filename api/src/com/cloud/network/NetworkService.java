@@ -34,6 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 
 
@@ -70,5 +71,7 @@ public interface NetworkService {
     Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
     
     Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
+    
+    Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
     
 }

@@ -19,7 +19,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -54,7 +53,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly() && !dc.isSecurityGroupEnabled()) {
+        if (((dc.getNetworkType() == NetworkType.Advanced && !dc.isSecurityGroupEnabled()) || dc.getNetworkType() == NetworkType.Basic) && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of System only Public Virtual Network");

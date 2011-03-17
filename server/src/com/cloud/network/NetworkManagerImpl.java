@@ -80,6 +80,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
@@ -450,6 +451,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean success = true;
         for (NetworkElement element : _networkElements) {
             try {
+                s_logger.trace("Asking " + element + " to apply ip associations");
                 element.applyIps(network, publicIps);
             } catch (ResourceUnavailableException e) {
                 success = false;
@@ -693,8 +695,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 null, 
                 true, 
                 Availability.Required, 
-                //services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false,false, false, GuestIpType.Direct);
+                //services - all true except for lb/vpn and gateway services
+                true, true, true, false, true,false, false, GuestIpType.Direct);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
 
@@ -1770,17 +1772,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         sb.and("removed", sb.entity().getRemoved(), Op.NULL);
         
         SearchCriteria<NetworkVO> sc = sb.create();
-
-        if (!isSystem) {
-            if (zoneId != null) {
-                DataCenterVO dc = _dcDao.findById(zoneId);
-                if (dc != null && !dc.isSecurityGroupEnabled()) {
-                    sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
-                }
-            }
-        } else {
-            sc.setJoinParameters("networkOfferingSearch", "systemOnly", true);
-            sc.setJoinParameters("zoneSearch", "networkType", NetworkType.Advanced.toString());
+        
+        if (isSystem != null) {
+            sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
         }
 
         if (keyword != null) {
@@ -2339,8 +2333,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public Map<Capability, String> getServiceCapability(long zoneId, Service service) {
+    public Map<Capability, String> getServiceCapabilities(long zoneId, Service service) {
         Map<Service, Map<Capability, String>> networkCapabilities = getZoneCapabilities(zoneId);
+        if (networkCapabilities.get(service) == null) {
+            throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in zone id=" + zoneId);
+        }
+        
         return networkCapabilities.get(service);
     }
 
@@ -2549,9 +2547,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean zoneIsConfiguredForExternalNetworking(long zoneId) {
         DataCenterVO zone = _dcDao.findById(zoneId);
-
-        return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getLoadBalancerProvider().equals(
-                Network.Provider.F5BigIp.getName()));
+        
+        if (zone.getNetworkType() == NetworkType.Advanced) {
+            return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) 
+                    && zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) 
+                    && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(
+                            Network.Provider.F5BigIp.getName()));
+        } else {
+            return (zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));
+        }
 
     }
     

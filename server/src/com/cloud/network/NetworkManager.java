@@ -126,8 +126,6 @@ public interface NetworkManager extends NetworkService {
 
 	boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 	
-	NetworkVO getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
-	
 	List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
 	
 	PublicIpAddress getPublicIpAddress(long ipAddressId);
@@ -174,7 +172,7 @@ public interface NetworkManager extends NetworkService {
     
     void unassignPublicIpAddress(IPAddressVO addr);
     
-    Map<Capability, String> getServiceCapability(long zoneId, Service service);
+    Map<Capability, String> getServiceCapabilities(long zoneId, Service service);
     
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
     
