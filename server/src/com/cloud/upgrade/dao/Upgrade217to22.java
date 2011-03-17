@@ -25,6 +25,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -853,11 +854,108 @@ public class Upgrade217to22 implements DbUpgrade {
         }
     }
     
+    public void upgradePortForwardingRules(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id, public_ip_address, public_port, private_ip_address, private_port, protocol FROM ip_forwarding WHERE forwarding=1");
+            ResultSet rs = pstmt.executeQuery();
+            ArrayList<Object[]> rules = new ArrayList<Object[]>();
+            while (rs.next()) {
+                Object[] rule = new Object[10];
+                rule[0] = rs.getLong(1); //rule id
+                rule[1] = rs.getString(2); //rule public IP
+                rule[2] = rs.getString(3); //rule public port
+                rule[3] = rs.getString(4); //rule private Ip
+                rule[4] = rs.getString(5); //rule private port
+                rule[5] = rs.getString(6); //rule protocol
+                rules.add(rule);
+            }
+            rs.close();
+            pstmt.close();
+            
+            if (!rules.isEmpty()) {
+                s_logger.debug("Found " + rules.size() + " port forwarding rules to upgrade");
+                for (Object[] rule : rules) {
+                    long id = (Long)rule[0];
+                    String sourcePort = (String)rule[2];
+                    String protocol = (String)rule[5];
+                    String publicIp = (String)rule[1];
+                    
+                    pstmt = conn.prepareStatement("SELECT id, account_id, domain_id, network_id FROM user_ip_address WHERE public_ip_address=?");
+                    pstmt.setString(1, publicIp);
+                    rs = pstmt.executeQuery();
+                    
+                    if (!rs.next()) {
+                        throw new CloudRuntimeException("Unable to find public IP address " + publicIp);
+                    }
+                    
+                    int ipAddressId = rs.getInt(1);
+                    long accountId = rs.getLong(2);
+                    long domainId = rs.getLong(3);
+                    long networkId = rs.getLong(4);
+                    
+                    rs.close();
+                    pstmt.close();                       
+                    
+                    //update firewall_rules table
+                    s_logger.debug("Updating firewall_rules table...");
+                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'PortForwarding',       ?,      ?,      ?,      ?,       now())");
+                    pstmt.setLong(1, id);
+                    pstmt.setInt(2, ipAddressId);
+                    pstmt.setInt(3, Integer.valueOf(sourcePort));
+                    pstmt.setInt(4, Integer.valueOf(sourcePort));
+                    pstmt.setString(5, protocol);
+                    pstmt.setLong(6, accountId);
+                    pstmt.setLong(7, domainId);
+                    pstmt.setLong(8, networkId);
+                    pstmt.setString(9, UUID.randomUUID().toString());
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    s_logger.debug("firewall_rules table is updated");
+                    
+                    //update port_forwarding_rules table
+                    s_logger.debug("Updating port_forwarding_rules table...");
+                    String privateIp = (String)rule[3];
+                    pstmt = conn.prepareStatement("SELECT instance_id FROM nics where network_id=? AND ip4_address=?");
+                    pstmt.setLong(1, networkId);
+                    pstmt.setString(2, privateIp);
+                    rs = pstmt.executeQuery();
+                    
+                    if (!rs.next()) {
+                        throw new CloudRuntimeException("Unable to find vmId for private ip address " + privateIp + " for account id=" + accountId) ;
+                    }
+                        
+                    long instanceId = rs.getLong(1);
+                    s_logger.debug("Instance id is " + instanceId);
+                    rs.close();
+                    pstmt.close();
+                        
+                        
+                    String privatePort = (String)rule[4];
+                    pstmt = conn.prepareStatement("INSERT INTO port_forwarding_rules VALUES (?,    ?,      ?,      ?,       ?)");
+                    pstmt.setLong(1, id);
+                    pstmt.setLong(2, instanceId);
+                    pstmt.setString(3, privateIp);
+                    pstmt.setInt(4, Integer.valueOf(privatePort));
+                    pstmt.setInt(5, Integer.valueOf(privatePort));
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    s_logger.debug("port_forwarding_rules table is updated");
+                }
+            }
+            
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't update port forwarding rules ", e);
+        }
+       
+    }
+    
     @Override
     public void performDataMigration(Connection conn) {
         upgradeDataCenter(conn);
         upgradeStoragePools(conn);
         upgradeInstanceGroups(conn);
+        upgradePortForwardingRules(conn);
+        
     }
 
     @Override
