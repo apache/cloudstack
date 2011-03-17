@@ -753,7 +753,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		String username = cmd.getUsername();
 		String password = cmd.getPassword();
 		Long memCapacity = cmd.getMemCapacity();
-		Long cpuCapacity = cmd.getCpuCapacity();
+		Long cpuSpeed = cmd.getCpuSpeed();
 		Long cpuNum = cmd.getCpuNum();
 		String mac = cmd.getMac();
 		String hostTag = cmd.getHostTag();
@@ -768,8 +768,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (memCapacity == null) {
 				memCapacity = Long.valueOf(0);
 			}
-			if (cpuCapacity == null) {
-				cpuCapacity = Long.valueOf(0);
+			if (cpuSpeed == null) {
+				cpuSpeed = Long.valueOf(0);
 			}
 			if (cpuNum == null) {
 				cpuNum = Long.valueOf(0);
@@ -779,7 +779,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			}
 			
 			bareMetalParams.put("cpuNum", cpuNum.toString());
-			bareMetalParams.put("cpuCapacity", cpuCapacity.toString());
+			bareMetalParams.put("cpuCapacity", cpuSpeed.toString());
 			bareMetalParams.put("memCapacity", memCapacity.toString());
 			bareMetalParams.put("mac", mac);
 			if (hostTag != null) {
