@@ -33,7 +33,7 @@ public class NicProfile {
     Integer deviceId;
     String dns1;
     String dns2;
-    int networkRate;
+    Integer networkRate;
     boolean isSecurityGroupEnabled;
     
     public String getDns1() {
@@ -180,7 +180,7 @@ public class NicProfile {
         this.ip4Address = ip4Address;
     }
     
-    public int getNetworkRate() {
+    public Integer getNetworkRate() {
         return networkRate;
     }
 

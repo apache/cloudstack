@@ -2705,6 +2705,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             networkRate = Integer.parseInt(_configDao.getValue(Config.NetworkThrottlingRate.key()));
         }
         
+        if (networkRate == 0) {
+            //0 means no network limits should be applied
+            return null;
+        }
+        
         return networkRate;
     }
     
