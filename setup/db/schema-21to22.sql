@@ -350,10 +350,10 @@ ALTER TABLE `cloud`.`resource_count` MODIFY COLUMN `account_id` bigint unsigned;
 
 ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `reserved_capacity` bigint unsigned NOT NULL;
 
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `system_used` tinyint(1) unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `system_use` tinyint(1) unsigned NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `customized` tinyint(1) unsigned NOT NULL DEFAULT 0;
 
-update `cloud`.`disk_offering` set system_used=1, removed=null WHERE unique_name like 'Cloud.Com-%';
+update `cloud`.`disk_offering` set system_use=1, removed=null WHERE unique_name like 'Cloud.Com-%';
 
 CREATE TABLE `cloud`.`remote_access_vpn` (
   `vpn_server_addr_id` bigint unsigned UNIQUE NOT NULL,

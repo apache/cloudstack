@@ -20,7 +20,6 @@ package com.cloud.upgrade.dao;
 import java.io.File;
 import java.sql.Connection;
 
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -43,12 +42,12 @@ public class Upgrade221to222 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        File file = PropertiesUtil.findConfigFile("schema-221to222-cleanup.sql");
+        String file = Script.findScript("", "db/schema-221to222-cleanup.sql");
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-221to222-cleanup.sql");
         }
         
-        return new File[] {file};
+        return new File[] {new File(file)};
     }
 
     @Override

@@ -124,6 +124,8 @@ CREATE TABLE `cloud`.`version` (
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT INTO `version` (`version`, `updated`, `step`) VALUES('@VERSION@', now(), 'Complete');
+
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'reservation id',
   `mgmt_server_id` bigint unsigned COMMENT 'management server id',

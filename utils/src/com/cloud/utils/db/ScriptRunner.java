@@ -22,7 +22,6 @@ package com.cloud.utils.db;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,10 +29,13 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.apache.log4j.Logger;
+
 /**
  * Tool to run database scripts
  */
 public class ScriptRunner {
+    private static Logger s_logger = Logger.getLogger(ScriptRunner.class); 
 
     private static final String DEFAULT_DELIMITER = ";";
 
@@ -42,11 +44,10 @@ public class ScriptRunner {
     private boolean stopOnError;
     private boolean autoCommit;
 
-    private PrintWriter logWriter = new PrintWriter(System.out);
-    private PrintWriter errorLogWriter = new PrintWriter(System.err);
-
     private String delimiter = DEFAULT_DELIMITER;
     private boolean fullLineDelimiter = false;
+    
+    private StringBuffer _logBuffer = new StringBuffer();
 
     /**
      * Default constructor
@@ -60,26 +61,6 @@ public class ScriptRunner {
     public void setDelimiter(String delimiter, boolean fullLineDelimiter) {
         this.delimiter = delimiter;
         this.fullLineDelimiter = fullLineDelimiter;
-    }
-
-    /**
-     * Setter for logWriter property
-     * 
-     * @param logWriter
-     *            - the new value of the logWriter property
-     */
-    public void setLogWriter(PrintWriter logWriter) {
-        this.logWriter = logWriter;
-    }
-
-    /**
-     * Setter for errorLogWriter property
-     * 
-     * @param errorLogWriter
-     *            - the new value of the errorLogWriter property
-     */
-    public void setErrorLogWriter(PrintWriter errorLogWriter) {
-        this.errorLogWriter = errorLogWriter;
     }
 
     /**
@@ -215,29 +196,23 @@ public class ScriptRunner {
     }
 
     private void print(Object o) {
-        if (logWriter != null) {
-            System.out.print(o);
-        }
+        _logBuffer.append(o);
     }
 
     private void println(Object o) {
-        if (logWriter != null) {
-            logWriter.println(o);
-        }
+        _logBuffer.append(o);
+        s_logger.debug(_logBuffer.toString());
+        _logBuffer = new StringBuffer();
     }
 
     private void printlnError(Object o) {
-        if (errorLogWriter != null) {
-            errorLogWriter.println(o);
-        }
+        s_logger.error("" + o);
     }
 
     private void flush() {
-        if (logWriter != null) {
-            logWriter.flush();
-        }
-        if (errorLogWriter != null) {
-            errorLogWriter.flush();
+        if (_logBuffer.length() > 0) {
+            s_logger.debug(_logBuffer.toString());
+            _logBuffer = new StringBuffer();
         }
     }
 }
