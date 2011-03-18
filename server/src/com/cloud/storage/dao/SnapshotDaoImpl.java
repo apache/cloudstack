@@ -115,8 +115,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         VolumeIdTypeSearch.done();
         
         VolumeIdVersionSearch = createSearchBuilder();
-        VolumeIdVersionSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        VolumeIdVersionSearch.and("version", VolumeIdTypeSearch.entity().getVersion(), SearchCriteria.Op.EQ);
+        VolumeIdVersionSearch.and("volumeId", VolumeIdVersionSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdVersionSearch.and("version", VolumeIdVersionSearch.entity().getVersion(), SearchCriteria.Op.EQ);
         VolumeIdVersionSearch.done();
         
         ParentIdSearch = createSearchBuilder();

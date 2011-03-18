@@ -99,7 +99,7 @@ patch() {
     local newmd5=
     [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
  
-   if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+   if [ "true" == "true" ]
     then
       shouldpatch=true
       log_it "Patching  scripts oldmd5=$oldmd5 newmd5=$newmd5"
