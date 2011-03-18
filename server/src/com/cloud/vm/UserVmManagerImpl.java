@@ -1127,17 +1127,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 return false;
             }
 	        
-	        //Cleanup vm resources - all the PF/LB/StaticNat rules associated with vm
-	        s_logger.debug("Starting cleaning up vm " + vm + " resources...");
-	        if (cleanupVmResources(vm.getId())) {
-	            s_logger.debug("Successfully cleaned up vm " + vm + " resources as a part of expunge process");
-	        } else {
-	            s_logger.warn("Failed to cleanup resources as a part of vm " + vm + " expunge");
-	            return false;
+	        //Only if vm is not expunged already, cleanup it's resources
+	        if (vm != null && vm.getRemoved() == null) {
+	            //Cleanup vm resources - all the PF/LB/StaticNat rules associated with vm
+	            s_logger.debug("Starting cleaning up vm " + vm + " resources...");
+	            if (cleanupVmResources(vm.getId())) {
+	                s_logger.debug("Successfully cleaned up vm " + vm + " resources as a part of expunge process");
+	            } else {
+	                s_logger.warn("Failed to cleanup resources as a part of vm " + vm + " expunge");
+	                return false;
+	            }
+	 
+	            _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
 	        }
- 
-            _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
-            return true;
+	       
+	        return true;
+	        
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge  " + vm, e);
             return false;
