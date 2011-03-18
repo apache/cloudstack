@@ -205,7 +205,7 @@
     </condition>
   	
     <echo message="deploydb ${server-setup.file} ${templates.file} ${DBROOTPW}" />
-    <exec dir="${setup.db.dir}" executable="bash">
+    <exec dir="${db.scripts.dir}" executable="bash">
       <arg value="deploy-db-dev.sh" />
       <arg value="${server-setup.file}" />
       <arg value="${templates.file}" />

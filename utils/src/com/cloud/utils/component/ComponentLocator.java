@@ -374,7 +374,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             if (info.singleton) {
                 Singleton s = s_singletons.get(info.clazz);
                 if (s.state == Singleton.State.Instantiated) {
-                    s_logger.info("Injecting singleton Manager: " + info.name);
+                    s_logger.debug("Injecting singleton Manager: " + info.name);
                     inject(info.clazz, info.instance);
                     s.state = Singleton.State.Injected;
                 }

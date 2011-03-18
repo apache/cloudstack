@@ -34,7 +34,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -50,7 +49,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         super();
         
         CurrentVersionSearch = createSearchBuilder(String.class);
-        CurrentVersionSearch.select(null, Func.FIRST, CurrentVersionSearch.entity().getVersion());
+        CurrentVersionSearch.selectField(CurrentVersionSearch.entity().getVersion());
         CurrentVersionSearch.and("step", CurrentVersionSearch.entity().getStep(), Op.EQ);
         CurrentVersionSearch.done();
         
@@ -62,6 +61,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         
     }
     
+    @Override
     public VersionVO findByVersion(String version, Step step) {
         SearchCriteria<VersionVO> sc = AllFieldsSearch.create();
         sc.setParameters("version", version);
@@ -70,6 +70,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         return findOneBy(sc);
     }
     
+    @Override
     public String getCurrentVersion() {
         Connection conn = null;
         try {
@@ -77,12 +78,12 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             
             conn = Transaction.getStandaloneConnection();
     
-            PreparedStatement pstmt = conn.prepareStatement("SHOW TABLES LIKE 'VERSION'");
+            PreparedStatement pstmt = conn.prepareStatement("SHOW TABLES LIKE 'version'");
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
                 pstmt.close();
                 rs.close();
-                pstmt = conn.prepareStatement("SHOW TABLES LIKE 'NICS'");
+                pstmt = conn.prepareStatement("SHOW TABLES LIKE 'nics'");
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
                     pstmt.close();
@@ -108,7 +109,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         SearchCriteria<String> sc = CurrentVersionSearch.create();
         
         sc.setParameters("step", Step.Complete);
-        Filter filter = new Filter(VersionVO.class, "updated", true, 0l, 1l);
+        Filter filter = new Filter(VersionVO.class, "id", true, 0l, 1l);
         
         List<String> vers = customSearch(sc, filter);
         return vers.get(0);

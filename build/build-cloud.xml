@@ -292,8 +292,10 @@
     <copy overwrite="true" todir="${db.scripts.dir}">
       <fileset dir="${setup.db.dir}">
         <include name="**/*"/>
-        <exclude name="**/override/*"/>
       </fileset>
+      <filterset>
+        <filter token="VERSION" value="${impl.version}"/>
+      </filterset>
     </copy>
   </target>
 
