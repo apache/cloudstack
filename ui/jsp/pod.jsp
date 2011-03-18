@@ -342,7 +342,42 @@ dictionary = {
                 <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
                 <div id="host_vcenter_host_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
-            </li>            
+            </li>
+			<li input_group="baremetal" style="display: none;">
+                <label for="host_baremetal_cpucores">
+                    # of CPU Cores:</label>
+                <input class="text" type="text" name="host_baremetal_cpucores" id="host_baremetal_cpucores" />
+                <div id="host_baremetal_cpucores_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+			<li input_group="baremetal" style="display: none;">
+                <label for="host_baremetal_cpu">
+                    CPU (in MHz):</label>
+                <input class="text" type="text" name="host_baremetal_cpu" id="host_baremetal_cpu" />
+                <div id="host_baremetal_cpu_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+			<li input_group="baremetal" style="display: none;">
+                <label for="host_baremetal_memory">
+                    Memory (in MB):</label>
+                <input class="text" type="text" name="host_baremetal_memory" id="host_baremetal_memory" />
+                <div id="host_baremetal_memory_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+			<li input_group="baremetal" style="display: none;">
+                <label for="host_baremetal_mac">
+                    Host MAC:</label>
+                <input class="text" type="text" name="host_baremetal_mac" id="host_baremetal_mac" />
+                <div id="host_baremetal_mac_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+			<li>
+                <label input_group="general">
+                    Tags:</label>
+                <input class="text" type="text" name="host_tags" id="host_tags" />
+                <div id="host_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
         </ol>
         </form>
     </div>
