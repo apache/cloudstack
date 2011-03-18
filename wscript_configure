@@ -53,6 +53,10 @@ systemjars = {
 	'Ubuntu':
 	(
 		"servlet-api-2.5.jar",
+		"jsp-api-2.1.jar",
+		"jasper-6.0.28.jar",
+		"el-api-2.1.jar",
+		"jasper-el-6.0.28.jar",
 		#"catalina.jar",
 	),
 	'Windows':
