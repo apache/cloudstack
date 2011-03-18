@@ -217,8 +217,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     VMTemplateHostDao _vmTemplateHostDao = null;
     @Inject
-    UserVmDao _vmDao = null;
-    @Inject
     ResourceLimitDao _limitDao = null;
     @Inject
     CapacityDao _capacityDao = null;
@@ -250,8 +248,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     UserStatisticsDao _statsDao = null;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
-    @Inject
-    NetworkDao _networksDao = null;
     @Inject
     GuestOSDao _guestOSDao = null;
     @Inject
@@ -822,9 +818,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
         }
-        State state = router.getState();
-        if (state != State.Starting && state != State.Running) {
-            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+        Long routeId = router.getId();
+        router = _routerDao.acquireInLockTable(routeId, 600);       
+        if (router == null) { 
+            throw new ConcurrentOperationException("Unable to acquire router: " + routeId);
+        }
+        try {
+            State state = router.getState();
+            if (state == State.Starting ) {
+                throw new RuntimeException("router " + routeId + " is in Starting state");
+            } 
+            if (state != State.Running) {
+                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+            }
+        } finally {
+            _routerDao.releaseFromLockTable(routeId);
         }
         // Creating stats entry for router
         UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, null, router.getId(), router.getType().toString());
@@ -1222,7 +1230,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String routerControlIpAddress = null;
         List<NicVO> nics = _nicDao.listByVmId(router.getId());
         for (NicVO n : nics) {
-            NetworkVO nc = _networksDao.findById(n.getNetworkId());
+            NetworkVO nc = _networkDao.findById(n.getNetworkId());
             if (nc.getTrafficType() == TrafficType.Control) {
                 routerControlIpAddress = n.getIp4Address();
             }

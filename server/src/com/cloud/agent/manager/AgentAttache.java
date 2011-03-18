@@ -405,17 +405,21 @@ public abstract class AgentAttache {
         } catch (OperationTimedoutException e) {
             s_logger.warn(log(seq, "Timed out on " + req.toString()));
             cancel(seq);
-            throw e;
-        } catch (Exception e) {
-            s_logger.warn(log(seq, "Exception while waiting for answer"), e);
-            cancel(seq);
-            throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
-        } finally {
-            unregisterListener(seq);
             final Long current = _currentSequence;
             if (req.executeInSequence() && (current != null && current == seq)) {
                 sendNext(seq);
             }
+            throw e;
+        } catch (Exception e) {
+            s_logger.warn(log(seq, "Exception while waiting for answer"), e);
+            cancel(seq);
+            final Long current = _currentSequence;
+            if (req.executeInSequence() && (current != null && current == seq)) {
+                sendNext(seq);
+            }
+            throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
+        } finally {
+            unregisterListener(seq);
         }
     }
     
