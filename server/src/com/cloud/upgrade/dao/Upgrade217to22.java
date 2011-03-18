@@ -1072,14 +1072,12 @@ public class Upgrade217to22 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        return null;
+        String file = Script.findScript("", "db/schema-21to22-cleanup.sql");
+        if (file == null) {
+            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-cleanup.sql");
+        }
         
-//        String file = Script.findScript("", "db/schema-21to22-cleanup.sql");
-//        if (file == null) {
-//            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-cleanup.sql");
-//        }
-//        
-//        return new File[] { new File(file) };
+        return new File[] { new File(file) };
     }
 
     @Override
@@ -1089,7 +1087,7 @@ public class Upgrade217to22 implements DbUpgrade {
 
     @Override
     public String getUpgradedVersion() {
-        return "2.2.0";
+        return "2.2.1";
     }
     
     @Override
