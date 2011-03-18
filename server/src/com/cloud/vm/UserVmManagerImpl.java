@@ -24,6 +24,7 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -2998,9 +2999,18 @@ public class UserVmManagerImpl implements UserVmManager {
     public long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType) {
         assert(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY || capacityType == CapacityVO.CAPACITY_TYPE_CPU) : "Invalid capacity type passed in calcHostAllocatedCpuCapacity()";
     	
-        List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
+        List<VMInstanceVO> runningVms = _vmInstanceDao.listByHostId(hostId);
+        List<VMInstanceVO> otherVms = _vmInstanceDao.listByLastHostId(hostId);
+        Set<Long> vmIdSet = new HashSet<Long>();// This is because for running vms it can be that lasthostId == hostid and so we dont want to redo the calc.
+        List<VMInstanceVO> allVms = new LinkedList<VMInstanceVO>(runningVms);
+        allVms.addAll(otherVms);
+        
         long usedCapacity = 0;
-        for (VMInstanceVO vm : vms) {
+        for (VMInstanceVO vm : allVms) {
+        	
+        	if (!vmIdSet.add(vm.getId()))// Found the duplicate vm id.
+        		continue;
+        	
         	if(skipCalculation(vm))
         		continue;
         	

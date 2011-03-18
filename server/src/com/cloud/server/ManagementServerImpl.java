@@ -6414,24 +6414,8 @@ public class ManagementServerImpl implements ManagementServer {
         return capacities;
     }
     
-    public long getMemoryUsagebyHost(Long hostId) {
-        long mem = 0;
-        List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostIdTypes(hostId, VirtualMachine.Type.DomainRouter);
-        mem += vms.size() * _routerRamSize * 1024L * 1024L;
- 
-        vms = _vmInstanceDao.listUpByHostIdTypes(hostId, VirtualMachine.Type.SecondaryStorageVm);
-        mem += vms.size() * _ssRamSize * 1024L * 1024L;
-        
-        vms = _vmInstanceDao.listUpByHostIdTypes(hostId, VirtualMachine.Type.ConsoleProxy);
-        mem += vms.size() * _proxyRamSize * 1024L * 1024L;
-        
-        
-        List<UserVmVO> instances = _userVmDao.listUpByHostId(hostId);
-        for (UserVmVO vm : instances) {
-            ServiceOffering so = findServiceOfferingById(vm.getServiceOfferingId());
-            mem += so.getRamSize() * 1024L * 1024L;
-        }
-        return mem;
+    public long getMemoryUsagebyHost(Long hostId) {    	
+    	return  _vmMgr.calcHostAllocatedCpuMemoryCapacity(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);    
     }
 
     @Override
