@@ -898,7 +898,7 @@ public class Upgrade217to22 implements DbUpgrade {
                     
                     //update firewall_rules table
                     s_logger.trace("Updating firewall_rules table as a part of PF rules upgrade...");
-                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'PortForwarding',       ?,      ?,      ?,      ?,       now())");
+                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules (id, ip_address_id, start_port, end_port, state, protocol, purpose, account_id, domain_id, network_id, xid, is_static_nat, created) VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'PortForwarding',       ?,      ?,      ?,      ?,       0,     now())");
                     pstmt.setLong(1, id);
                     pstmt.setInt(2, ipAddressId);
                     pstmt.setInt(3, Integer.valueOf(sourcePort));
@@ -1005,7 +1005,7 @@ public class Upgrade217to22 implements DbUpgrade {
                     
                     //update firewall_rules table
                     s_logger.trace("Updating firewall_rules table as a part of LB rules upgrade...");
-                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'LoadBalancing',       ?,      ?,      ?,      ?,       now())");
+                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules (id, ip_address_id, start_port, end_port, state, protocol, purpose, account_id, domain_id, network_id, xid, is_static_nat, created) VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'LoadBalancing',       ?,      ?,      ?,      ?,       0,       now())");
                     pstmt.setLong(1, newLbId);
                     pstmt.setInt(2, ipAddressId);
                     pstmt.setInt(3, Integer.valueOf(sourcePort));
