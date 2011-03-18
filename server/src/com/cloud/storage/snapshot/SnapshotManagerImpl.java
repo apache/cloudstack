@@ -487,9 +487,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             long prevSnapshotId = snapshot.getPrevSnapshotId();
             if (prevSnapshotId > 0) {
                 prevSnapshot = _snapshotDao.findByIdIncludingRemoved(prevSnapshotId);
-                prevBackupUuid = prevSnapshot.getBackupSnapshotId();
-                if (prevBackupUuid != null) {
-                    prevSnapshotUuid = prevSnapshot.getPath();
+                if (prevSnapshot.getVersion() != null && prevSnapshot.getVersion().equals("2.2") ) {
+                    prevBackupUuid = prevSnapshot.getBackupSnapshotId();
+                    if (prevBackupUuid != null) {
+                        prevSnapshotUuid = prevSnapshot.getPath();
+                    }
                 }
             }
 

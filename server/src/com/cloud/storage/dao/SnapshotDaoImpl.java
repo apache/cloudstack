@@ -44,6 +44,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private final SearchBuilder<SnapshotVO> ParentIdSearch;
     private final SearchBuilder<SnapshotVO> backupUuidSearch;   
+    private final SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
     
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {
@@ -62,6 +63,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public List<SnapshotVO> listByVolumeIdType(long volumeId, Type type ) {
         return listByVolumeIdType(null, volumeId, type);
+    }
+    
+    
+    @Override
+    public List<SnapshotVO> listByVolumeIdVersion(long volumeId, String version ) {
+        return listByVolumeIdVersion(null, volumeId, version);
     }
 
     @Override
@@ -89,6 +96,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("type", type.ordinal());
         return listBy(sc, filter);
     }
+    
+    public List<SnapshotVO> listByVolumeIdVersion(Filter filter, long volumeId, String version ) {
+        SearchCriteria<SnapshotVO> sc = VolumeIdVersionSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("version", version);
+        return listBy(sc, filter);
+    }
 
     protected SnapshotDaoImpl() {
         VolumeIdSearch = createSearchBuilder();
@@ -99,6 +113,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         VolumeIdTypeSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getsnapshotType(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.done();
+        
+        VolumeIdVersionSearch = createSearchBuilder();
+        VolumeIdVersionSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdVersionSearch.and("version", VolumeIdTypeSearch.entity().getVersion(), SearchCriteria.Op.EQ);
+        VolumeIdVersionSearch.done();
         
         ParentIdSearch = createSearchBuilder();
         ParentIdSearch.and("prevSnapshotId", ParentIdSearch.entity().getPrevSnapshotId(), SearchCriteria.Op.EQ);

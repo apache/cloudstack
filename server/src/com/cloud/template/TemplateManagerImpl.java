@@ -1149,9 +1149,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 		// Check if there are any snapshots for the template in the template host ref's zone
 		List<VolumeVO> volumes = _volumeDao.findByTemplateAndZone(templateId, zoneId);
 		for (VolumeVO volume : volumes) {
-			List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+			List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdVersion(volume.getId(), "2.1");
 			if (!snapshots.isEmpty()) {
-				s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() + " is not deleteable because there are snapshots using this template.");
+				s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() + " is not deleteable because there are 2.1 snapshots using this template.");
 				return false;
 			}
 		}
