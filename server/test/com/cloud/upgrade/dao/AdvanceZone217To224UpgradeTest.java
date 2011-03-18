@@ -35,8 +35,8 @@ import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class AdvanceZone217To223UpgradeTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(AdvanceZone217To223UpgradeTest.class);
+public class AdvanceZone217To224UpgradeTest extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(AdvanceZone217To224UpgradeTest.class);
 
     @Override
     @Before
@@ -64,14 +64,14 @@ public class AdvanceZone217To223UpgradeTest extends TestCase {
         String version = dao.getCurrentVersion();
         assert version.equals("2.1.7") : "Version returned is not 2.1.7 but " + version;
         
-        checker.upgrade("2.1.7", "2.2.3");
+        checker.upgrade("2.1.7", "2.2.4");
         
         conn = Transaction.getStandaloneConnection();
         try {
             pstmt = conn.prepareStatement("SELECT version FROM version ORDER BY id DESC LIMIT 1");
             ResultSet rs = pstmt.executeQuery();
             assert rs.next() : "No version selected";
-            assert rs.getString(1).equals("2.2.3") : "VERSION stored is not 2.2.3: " + rs.getString(1);
+            assert rs.getString(1).equals("2.2.4") : "VERSION stored is not 2.2.4: " + rs.getString(1);
             rs.close();
             pstmt.close();
             

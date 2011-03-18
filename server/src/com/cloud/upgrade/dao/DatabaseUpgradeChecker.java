@@ -28,11 +28,12 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.VersionVO.Step;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.SystemIntegrityChecker;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -40,12 +41,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     
-    protected HashMap<Pair<String, String>, DbUpgrade[]> _upgradeMap = new HashMap<Pair<String, String>, DbUpgrade[]>();
+    protected HashMap<String, DbUpgrade[]> _upgradeMap = new HashMap<String, DbUpgrade[]>();
 
     VersionDao _dao;
     public DatabaseUpgradeChecker() {
         _dao = ComponentLocator.inject(VersionDaoImpl.class);
-        _upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.3"), new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
+        _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
+        _upgradeMap.put("2.2.2", new DbUpgrade[] { new Upgrade222to224() });
+        _upgradeMap.put("2.2.3", new DbUpgrade[] { new Upgrade222to224() });
     }
     
     protected void runScript(File file) {
@@ -55,11 +58,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
         } catch (FileNotFoundException e) {
-            throw new CloudRuntimeException("Unable to find upgrade script, schema-21to22.sql", e);
+            throw new CloudRuntimeException("Unable to find upgrade script: " + file.getAbsolutePath(), e);
         } catch (IOException e) {
-            throw new CloudRuntimeException("Unable to read upgrade script, schema-21to22.sql", e);
+            throw new CloudRuntimeException("Unable to read upgrade script: " + file.getAbsolutePath(), e);
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to execute upgrade script, schema-21to22.sql", e);
+            throw new CloudRuntimeException("Unable to execute upgrade script: " + file.getAbsolutePath(), e);
         }
     }
     
@@ -69,7 +72,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         String trimmedDbVersion = Version.trimToPatch(dbVersion);
         String trimmedCurrentVersion = Version.trimToPatch(currentVersion);
         
-        DbUpgrade[] upgrades = _upgradeMap.get(new Pair<String, String>(trimmedDbVersion, trimmedCurrentVersion));
+        DbUpgrade[] upgrades = _upgradeMap.get(trimmedDbVersion);
         if (upgrades == null) {
             throw new CloudRuntimeException("There is no upgrade path from " + dbVersion + " to " + currentVersion);
         }
@@ -86,8 +89,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         }
         
-        if (!supportsRollingUpgrade) {
-            // TODO: Check if the other management server is still running by looking at the database.  If so, then throw an exception.
+        if (!supportsRollingUpgrade && ClusterManagerImpl.arePeersRunning(null)) {
+            throw new CloudRuntimeException("Unable to run upgrade because the upgrade sequence does not support rolling update and there are other management server nodes running");
         }
 
         for (DbUpgrade upgrade : upgrades) {
@@ -116,48 +119,64 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         }
         
-        for (DbUpgrade upgrade : upgrades) {
-            s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
-            VersionVO version = _dao.findByVersion(upgrade.getUpgradedVersion(), Step.Upgrade);
-            Transaction txn = Transaction.open("Cleanup");
-            txn.start();
-            try {
-                File[] scripts = upgrade.getCleanupScripts();
-                if (scripts != null) {
-                    for (File script : scripts) {
-                        runScript(script);
+        if (!ClusterManagerImpl.arePeersRunning(trimmedCurrentVersion)) {
+            s_logger.info("Cleaning upgrades because all management server are now at the same version");
+            for (DbUpgrade upgrade : upgrades) {
+                s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
+                VersionVO version = _dao.findByVersion(upgrade.getUpgradedVersion(), Step.Upgrade);
+                Transaction txn = Transaction.open("Cleanup");
+                txn.start();
+                try {
+                    File[] scripts = upgrade.getCleanupScripts();
+                    if (scripts != null) {
+                        for (File script : scripts) {
+                            runScript(script);
+                        }
                     }
+                    version.setStep(Step.Complete);
+                    version.setUpdated(new Date());
+                    _dao.update(version.getId(), version);
+                    txn.commit();
+                } finally {
+                    txn.close();
                 }
-                version.setStep(Step.Complete);
-                version.setUpdated(new Date());
-                _dao.update(version.getId(), version);
-                txn.commit();
-            } finally {
-                txn.close();
             }
         }
     }
 
     @Override
     public void check() {
-        String dbVersion = _dao.getCurrentVersion();
-        String currentVersion = this.getClass().getPackage().getImplementationVersion();
-        if (currentVersion == null) {
-            currentVersion = this.getClass().getSuperclass().getPackage().getImplementationVersion();
+        GlobalLock lock = GlobalLock.getInternLock("DatabaseUpgrade");
+        try {
+            s_logger.info("Grabbing lock to check for database integrity.");
+            if (!lock.lock(20*60)) {
+                throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
+            } 
+                
+            try {
+                String dbVersion = _dao.getCurrentVersion();
+                String currentVersion = this.getClass().getPackage().getImplementationVersion();
+                if (currentVersion == null) {
+                    currentVersion = this.getClass().getSuperclass().getPackage().getImplementationVersion();
+                }
+                
+                s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
+                
+                if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch(currentVersion)) > 0) {
+                    throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersion);
+                }
+                
+                if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch(currentVersion)) == 0) {
+                    s_logger.info("DB version and code version matches so no upgrade needed.");
+                    return;
+                }
+                
+                upgrade(dbVersion, currentVersion);
+            } finally {
+                lock.unlock();
+            }
+        } finally {
+            lock.releaseRef();
         }
-        
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("DB version = " + dbVersion + " Code Version = " + currentVersion);
-        }
-        
-        if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch(currentVersion)) > 0) {
-            throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersion);
-        }
-        
-        if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch(currentVersion)) == 0) {
-            return;
-        }
-        
-        upgrade(dbVersion, currentVersion);
     }
 }

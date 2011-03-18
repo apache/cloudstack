@@ -34,9 +34,7 @@ import javax.persistence.TemporalType;
 @Table(name="version")
 public class VersionVO {
     public enum Step {
-        Dump,
         Upgrade,
-        Cleanup,
         Complete
     };
     

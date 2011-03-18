@@ -36,8 +36,8 @@ import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class PortForwarding217To221UpgradeTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(PortForwarding217To221UpgradeTest.class);
+public class PortForwarding217To224UpgradeTest extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(PortForwarding217To224UpgradeTest.class);
 
     @Override
     @Before
@@ -70,12 +70,12 @@ public class PortForwarding217To221UpgradeTest extends TestCase {
             s_logger.debug("Port forwarding test version is " + version);
         }
        
-        checker.upgrade("2.1.7", "2.2.3");
+        checker.upgrade("2.1.7", "2.2.4");
         
         conn = Transaction.getStandaloneConnection();
         try {
             
-            s_logger.debug("Starting tesing upgrade from 2.1.7 to 2.2.3 for Port forwarding rules...");
+            s_logger.debug("Starting tesing upgrade from 2.1.7 to 2.2.4 for Port forwarding rules...");
             
             //Version check
             pstmt = conn.prepareStatement("SELECT version FROM version");
@@ -83,8 +83,8 @@ public class PortForwarding217To221UpgradeTest extends TestCase {
             
             if (!rs.next()) {
                 s_logger.error("ERROR: No version selected");
-            } else if (!rs.getString(1).equals("2.2.3")) {
-                s_logger.error("ERROR: VERSION stored is not 2.2.3: " + rs.getString(1));
+            } else if (!rs.getString(1).equals("2.2.4")) {
+                s_logger.error("ERROR: VERSION stored is not 2.2.4: " + rs.getString(1));
             }
             rs.close();
             pstmt.close();

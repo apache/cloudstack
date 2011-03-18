@@ -160,6 +160,19 @@ public class ClusterManagerImpl implements ClusterManager {
         return answers[0].getResult();
     }
     
+    /**
+     * called by DatabaseUpgradeChecker to see if there are other peers running.
+     * @param notVersion If version is passed in, the peers CANNOT be running at this
+     *                version.  If version is null, return true if any peer is
+     *                running regardless of version.
+     * @return true if there are peers running and false if not.
+     */
+    public static final boolean arePeersRunning(String notVersion) {
+        return false;  //TODO: Leaving this for Kelven to take care of.
+    }
+    
+    
+    
     @Override
     public void broadcast(long agentId, Command[] cmds) {
 		Date cutTime = DateUtil.currentGMTTime();
@@ -564,8 +577,9 @@ public class ClusterManagerImpl implements ClusterManager {
 		// missed cleanup 
 		Date cutTime = DateUtil.currentGMTTime();
 		List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - heartbeatThreshold));
-		if(inactiveList.size() > 0)
-			notifyNodeLeft(inactiveList);
+		if(inactiveList.size() > 0) {
+            notifyNodeLeft(inactiveList);
+        }
 	}
 	
 	private void peerScan() {
@@ -632,8 +646,9 @@ public class ClusterManagerImpl implements ClusterManager {
             
 			profiler.stop();
 			if(profiler.getDuration() > 1000) {
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Notifying management server join event took " + profiler.getDuration() + " ms");
+				if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Notifying management server join event took " + profiler.getDuration() + " ms");
+                }
 			} else {
 				s_logger.warn("Notifying management server join event took " + profiler.getDuration() + " ms");
 			}
@@ -647,8 +662,9 @@ public class ClusterManagerImpl implements ClusterManager {
 			
 			profiler.stop();
 			if(profiler.getDuration() > 1000) {
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Notifying management server leave event took " + profiler.getDuration() + " ms");
+				if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Notifying management server leave event took " + profiler.getDuration() + " ms");
+                }
 			} else {
 				s_logger.warn("Notifying management server leave event took " + profiler.getDuration() + " ms");
 			}
@@ -855,8 +871,9 @@ public class ClusterManagerImpl implements ClusterManager {
     public boolean isManagementNodeAlive(long msid) {
     	ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
     	if(mshost != null) {
-    		if(mshost.getLastUpdateTime().getTime() >=  DateUtil.currentGMTTime().getTime() - heartbeatThreshold)
-    			return true;
+    		if(mshost.getLastUpdateTime().getTime() >=  DateUtil.currentGMTTime().getTime() - heartbeatThreshold) {
+                return true;
+            }
     	}
     	
     	return false;
@@ -865,8 +882,9 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override
     public boolean pingManagementNode(long msid) {
     	ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
-    	if(mshost == null)
-    		return false;
+    	if(mshost == null) {
+            return false;
+        }
 
     	String targetIp = mshost.getServiceIP();
     	if("127.0.0.1".equals(targetIp) || "0.0.0.0".equals(targetIp)) {
