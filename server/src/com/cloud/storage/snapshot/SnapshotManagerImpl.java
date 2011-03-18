@@ -388,7 +388,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 if (!backedUp) {
                     throw new CloudRuntimeException("Created snapshot: " + snapshot + " on primary but failed to backup on secondary");
                 }
-            } 
+            } else {
+                throw new CloudRuntimeException("Failed to create snapshot: " + snapshot + " on primary storage");
+            }
         } finally {
             // Cleanup jobs to do after the snapshot has been created; decrement resource count
             if (snapshot != null) {
