@@ -62,6 +62,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.MacAddress;
 import com.google.gson.Gson;
@@ -351,7 +352,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                 try {
                 	JmxUtil.registerMBean("AsyncJobManager", "Active Job " + job.getId(), new AsyncJobMBeanImpl(job));
                 } catch(Exception e) {
-                	s_logger.warn("Unable to register active job " + job.getId() + " to JMX minotoring");
+                	s_logger.warn("Unable to register active job " + job.getId() + " to JMX minotoring due to exception " + ExceptionUtil.toString(e));
                 }
 
                 BaseAsyncCmd cmdObj = null;

@@ -716,6 +716,27 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     @Override
     @DB
+    public boolean resetTemplateDownloadStateOnPool(long templateStoragePoolRefId) {
+    	// have to use the same lock that prepareTemplateForCreate use to maintain state consistency
+    	VMTemplateStoragePoolVO templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, 1200);
+    	
+        if (templateStoragePoolRef == null) {
+        	s_logger.warn("resetTemplateDownloadStateOnPool failed - unable to lock TemplateStorgePoolRef " + templateStoragePoolRefId);
+            return false;
+        }
+        
+        try {
+        	templateStoragePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+        	_tmpltPoolDao.update(templateStoragePoolRefId, templateStoragePoolRef);
+        } finally {
+            _tmpltPoolDao.releaseFromLockTable(templateStoragePoolRefId);
+        }
+        
+        return true;
+    }
+    
+    @Override
+    @DB
     public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException, ResourceAllocationException {
     	HostVO srcSecHost = _storageMgr.getSecondaryStorageHost(sourceZoneId);
     	HostVO dstSecHost = _storageMgr.getSecondaryStorageHost(destZoneId);

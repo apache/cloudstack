@@ -49,6 +49,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -618,7 +619,7 @@ public class ClusterManagerImpl implements ClusterManager {
 				try {
 					JmxUtil.registerMBean("ClusterManager", "Node " + mshost.getId(), new ClusterManagerMBeanImpl(this, mshost));
 				} catch(Exception e) {
-					s_logger.warn("Unable to regiester cluster node into JMX monitoring due to exception " + e.toString());
+					s_logger.warn("Unable to regiester cluster node into JMX monitoring due to exception " + ExceptionUtil.toString(e));
 				}
 			}
 		}

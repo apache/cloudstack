@@ -70,6 +70,8 @@ public interface TemplateManager {
      */
     VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool);
     
+    boolean resetTemplateDownloadStateOnPool(long templateStoragePoolRefId);
+    
     /**
      * Copies a template from its current secondary storage server to the secondary storage server in the specified zone.
      * @param templateId

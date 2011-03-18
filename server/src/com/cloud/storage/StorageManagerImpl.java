@@ -119,7 +119,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -179,7 +178,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -649,25 +647,39 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
             CreateCommand cmd = null;
             VMTemplateStoragePoolVO tmpltStoredOn = null;
-            if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
-                tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
-                if (tmpltStoredOn == null) {
-                    continue;
-                }
-                cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
-            } else {
-                cmd = new CreateCommand(dskCh, new StorageFilerTO(pool));
+            
+            for(int i = 0; i < 2; i++) {
+	            if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
+	                tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
+	                if (tmpltStoredOn == null) {
+	                    continue;
+	                }
+	                cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
+	            } else {
+	                cmd = new CreateCommand(dskCh, new StorageFilerTO(pool));
+	            }
+	
+	            try {
+	                Answer answer = sendToPool(pool, cmd);
+	                if (answer != null && answer.getResult()) {
+	                    created = ((CreateAnswer) answer).getVolume();
+	                    break;
+	                }
+	                
+	                if(tmpltStoredOn != null && answer != null && (answer instanceof CreateAnswer) && ((CreateAnswer)answer).templateReloadRequested()) {
+	                	if(!_tmpltMgr.resetTemplateDownloadStateOnPool(tmpltStoredOn.getId()))
+	                		break;		// break out of template-redeploy retry loop
+	                } else {
+	                	break;
+	                }
+	            } catch (StorageUnavailableException e) {
+	                s_logger.debug("Storage unavailable for " + pool.getId());
+	                break;				// break out of template-redeploy retry loop
+	            }
             }
-
-            try {
-                Answer answer = sendToPool(pool, cmd);
-                if (answer != null && answer.getResult()) {
-                    created = ((CreateAnswer) answer).getVolume();
-                    break;
-                }
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("Storage unavailable for " + pool.getId());
-            }
+            
+            if(created != null)
+            	break;
 
             s_logger.debug("Retrying the create because it failed on pool " + pool);
         }
@@ -694,8 +706,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setPodId(pod.getId());
             volume.setState(Volume.State.Ready);
             _volsDao.persist(volume);
-            
-
         }
         txn.commit();
         return volume;
@@ -2544,22 +2554,32 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             CreateCommand cmd = null;
-            if (template != null && template.getFormat() != Storage.ImageFormat.ISO) {
-                VMTemplateStoragePoolVO tmpltStoredOn = null;
-                tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
-                if (tmpltStoredOn == null) {
-                    s_logger.debug("Cannot use this pool " + pool + " because we can't propagate template " + template);
-                    return null;
-                }
-                cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
-            } else {
-                cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool));
-            }
-            long[] hostIdsToTryFirst = {dest.getHost().getId()};
-            Answer answer = sendToPool(pool, hostIdsToTryFirst, cmd);
-            if (answer.getResult()) {
-                CreateAnswer createAnswer = (CreateAnswer) answer;
-                return new Pair<VolumeTO, StoragePool>(createAnswer.getVolume(), pool);
+            VMTemplateStoragePoolVO tmpltStoredOn = null;
+            
+            for(int i = 0; i < 2; i++) {
+	            if (template != null && template.getFormat() != Storage.ImageFormat.ISO) {
+	                tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
+	                if (tmpltStoredOn == null) {
+	                    s_logger.debug("Cannot use this pool " + pool + " because we can't propagate template " + template);
+	                    return null;
+	                }
+	                cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
+	            } else {
+	                cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool));
+	            }
+	            long[] hostIdsToTryFirst = {dest.getHost().getId()};
+	            Answer answer = sendToPool(pool, hostIdsToTryFirst, cmd);
+	            if (answer.getResult()) {
+	                CreateAnswer createAnswer = (CreateAnswer) answer;
+	                return new Pair<VolumeTO, StoragePool>(createAnswer.getVolume(), pool);
+	            } else {
+	            	if(tmpltStoredOn != null && (answer instanceof CreateAnswer) && ((CreateAnswer)answer).templateReloadRequested()) {
+	                	if(!_tmpltMgr.resetTemplateDownloadStateOnPool(tmpltStoredOn.getId()))
+	                		break;		// break out of template-redeploy retry loop
+	            	} else {
+	            		break;
+	            	}
+	            }
             }
         }
 
