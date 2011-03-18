@@ -45,7 +45,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     VersionDao _dao;
     public DatabaseUpgradeChecker() {
         _dao = ComponentLocator.inject(VersionDaoImpl.class);
-        _upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.3"), new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223()});
+        _upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.3"), new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
     }
     
     protected void runScript(File file) {
