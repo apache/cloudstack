@@ -78,6 +78,8 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -1549,6 +1551,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
     
     @Override @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventDescription = "creating vlan ip range", async = false)
     public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -2349,6 +2352,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	}
 
 	@Override
+	@ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_DELETE, eventDescription = "deleting vlan ip range", async = false)
 	public boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException {
     	Long vlanDbId = cmd.getId();
     	Long userId = UserContext.current().getCallerUserId();
