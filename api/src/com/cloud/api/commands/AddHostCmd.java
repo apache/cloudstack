@@ -77,12 +77,7 @@ public class AddHostCmd extends BaseCmd {
     private Long memCapacity;
     
     @Parameter(name=ApiConstants.HOST_MAC, type=CommandType.STRING, description="Only for hypervisor is BareMetal, Mac of PXE nic")
-    private String mac;
-    
-    @Parameter(name=ApiConstants.HOST_TAG, type=CommandType.STRING, description="Only for hypervisor is BareMetal, Tag of host")
-    private String hostTag;
-    
-    
+    private String mac;        
 
     @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
     private List<String> hostTags;
@@ -141,11 +136,7 @@ public class AddHostCmd extends BaseCmd {
     
     public String getMac() {
     	return mac;
-    }
-    
-    public String getHostTag() {
-    	return hostTag;
-    }
+    } 
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

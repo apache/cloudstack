@@ -756,7 +756,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Long cpuSpeed = cmd.getCpuSpeed();
 		Long cpuNum = cmd.getCpuNum();
 		String mac = cmd.getMac();
-		String hostTag = cmd.getHostTag();
+		List<String> hostTags = cmd.getHostTags();
 		Map<String, String>bareMetalParams = new HashMap<String, String>();
 		
 		// this is for standalone option
@@ -782,12 +782,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			bareMetalParams.put("cpuCapacity", cpuSpeed.toString());
 			bareMetalParams.put("memCapacity", memCapacity.toString());
 			bareMetalParams.put("mac", mac);
-			if (hostTag != null) {
-				bareMetalParams.put("hostTag", hostTag);
+			if (hostTags != null) {
+				bareMetalParams.put("hostTag", hostTags.get(0));
 			}
 		}
-		
-		List<String> hostTags = cmd.getHostTags();
 		
 		return discoverHostsFull(dcId, podId, clusterId, clusterName, url,
 				username, password, cmd.getHypervisor(), hostTags, bareMetalParams);
