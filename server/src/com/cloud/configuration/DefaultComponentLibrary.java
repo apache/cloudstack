@@ -122,7 +122,7 @@ import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.template.TemplateManagerImpl;
-import com.cloud.upgrade.dao.DatabaseUpgradeChecker;
+import com.cloud.upgrade.DatabaseUpgradeChecker;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.SSHKeyPairDaoImpl;
