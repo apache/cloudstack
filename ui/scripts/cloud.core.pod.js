@@ -575,7 +575,7 @@ function bindAddHostButton($leftmenuItem1) {
 						array1.push("&cpunumber="+todb(cpuCores));
 						
 						var cpuSpeed = trim($thisDialog.find("#host_baremetal_cpu").val());
-						array1.push("&cpuspeeed="+todb(cpuSpeed));
+						array1.push("&cpuspeed="+todb(cpuSpeed));
 						
 						var memory = trim($thisDialog.find("#host_baremetal_memory").val());
 						array1.push("&memory="+todb(memory));
