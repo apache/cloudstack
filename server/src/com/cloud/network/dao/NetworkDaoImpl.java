@@ -26,6 +26,8 @@ import javax.persistence.TableGenerator;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
+import com.cloud.network.NetworkDomainDaoImpl;
+import com.cloud.network.NetworkDomainVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
@@ -52,6 +54,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
     
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
+    NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
@@ -270,5 +273,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", ownerId);
         return listBy(sc);
+    }
+    
+    @Override
+    public void addDomainToNetwork(long configurationId, long domainId) {
+        addDomainToNetworkConfiguration(configurationId, domainId);
+    }
+    
+    protected void addDomainToNetworkConfiguration(long configurationId, long domainId) {
+        NetworkDomainVO domain = new NetworkDomainVO(configurationId, domainId);
+        _domainsDao.persist(domain);
     }
 }

@@ -78,6 +78,7 @@ DROP TABLE IF EXISTS `cloud`.`networks`;
 DROP TABLE IF EXISTS `cloud`.`op_networks`;
 DROP TABLE IF EXISTS `cloud`.`network_offerings`;
 DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
+DROP TABLE IF EXISTS `cloud`.`domain_network_ref`;
 DROP TABLE IF EXISTS `cloud`.`instance_group`;
 DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
 DROP TABLE IF EXISTS `cloud`.`certificate`;
@@ -200,6 +201,7 @@ CREATE TABLE `cloud`.`account_network_ref` (
   CONSTRAINT `fk_account_network_ref__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_account_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE `cloud`.`certificate` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -1457,6 +1459,15 @@ CREATE TABLE `cloud`.`data_center_details` (
   `value` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_dc_details__dc_id` FOREIGN KEY (`dc_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`domain_network_ref` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_domain_network_ref__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_domain_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

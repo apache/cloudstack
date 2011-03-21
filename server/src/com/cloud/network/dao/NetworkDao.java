@@ -59,4 +59,5 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<Long> findNetworksToGarbageCollect();
     void clearCheckForGc(long networkId);
     List<NetworkVO> listByZoneSecurityGroup(Long zoneId);
+    void addDomainToNetwork(long networkId, long domainId);
 }

@@ -86,7 +86,7 @@ public class PortForwarding217To224UpgradeTest extends TestCase {
             conn.close();
         }
         
-        checker.upgrade("2.1.7", "2.2.4");
+        checker.upgrade("2.1.7", "2.2.2");
         
         conn = Transaction.getStandaloneConnection();
         try {

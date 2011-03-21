@@ -1822,9 +1822,6 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         } 
-
-        
-        
         
         SearchCriteria<AccountVO> sc = sb.create();
         if (keyword != null) {
