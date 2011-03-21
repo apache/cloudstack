@@ -750,7 +750,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         State state = router.getState();
-        if (state != State.Starting && state != State.Running) {
+        if (state != State.Running) {
             router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
         }
         
@@ -818,21 +818,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
         }
-        Long routeId = router.getId();
-        router = _routerDao.acquireInLockTable(routeId, 600);       
-        if (router == null) { 
-            throw new ConcurrentOperationException("Unable to acquire router: " + routeId);
-        }
-        try {
-            State state = router.getState();
-            if (state == State.Starting ) {
-                throw new RuntimeException("router " + routeId + " is in Starting state");
-            } 
-            if (state != State.Running) {
-                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
-            }
-        } finally {
-            _routerDao.releaseFromLockTable(routeId);
+        State state = router.getState();
+        if (state != State.Running) {
+            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
         }
         // Creating stats entry for router
         UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, null, router.getId(), router.getType().toString());
