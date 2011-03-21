@@ -141,6 +141,10 @@ public class HostPodVO implements Pod {
 		return externalDhcp;
 	}
 	
+	public void setExternalDhcp(boolean use) {
+		externalDhcp = use;
+	}
+	
 	@Override
     public boolean equals(Object obj) {
 	    if (obj instanceof HostPodVO) {
