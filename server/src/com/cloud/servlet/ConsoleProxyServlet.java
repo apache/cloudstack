@@ -527,6 +527,12 @@ public class ConsoleProxyServlet extends HttpServlet {
             if (!equalSig) {
             	s_logger.debug("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             }
+            
+            if(equalSig) {
+            	requestParameters.put("userid", new Object[] {String.valueOf(user.getId())});
+            	requestParameters.put("account", new Object[] {account.getAccountName()});
+            	requestParameters.put("accountobj", new Object[] { account });
+            }
             return equalSig;
         } catch (Exception ex) {
             s_logger.error("unable to verifty request signature", ex);
