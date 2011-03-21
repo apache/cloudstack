@@ -102,6 +102,26 @@ public class NetUtils {
     	return addrs;
     }
     
+    public static String[] getLocalCidrs()  {
+    	List<String> cidrList = new ArrayList<String>();
+    	try {
+	    	for(NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
+		    	for (InterfaceAddress address : ifc.getInterfaceAddresses()) {
+		    		InetAddress addr = address.getAddress();
+		    		int prefixLength = address.getNetworkPrefixLength();
+		    		if(prefixLength < 32 && prefixLength > 0) {
+		    			String ip = ipFromInetAddress(addr);
+	    				cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
+		    		}
+		    	}
+	    	}
+    	} catch(SocketException e) {
+        	s_logger.warn("UnknownHostException in getLocalCidrs().", e);
+    	}
+    	
+    	return cidrList.toArray(new String[0]);
+    }
+    
     public static InetAddress getFirstNonLoopbackLocalInetAddress() {
     	InetAddress[] addrs = getAllLocalInetAddresses();
     	if(addrs != null) {
@@ -144,17 +164,23 @@ public class NetUtils {
     public static String getLocalIPString() {
         InetAddress addr = getLocalInetAddress();
         if(addr != null) {
-            byte[] ipBytes = addr.getAddress();
-            StringBuffer sb = new StringBuffer();
-            sb.append(ipBytes[0] & 0xff).append(".");
-            sb.append(ipBytes[1] & 0xff).append(".");
-            sb.append(ipBytes[2] & 0xff).append(".");
-            sb.append(ipBytes[3] & 0xff);
-
-            return sb.toString();
+        	return ipFromInetAddress(addr);
         }
 
         return new String("127.0.0.1");
+    }
+    
+    public static String ipFromInetAddress(InetAddress addr) {
+    	assert(addr != null);
+    	
+        byte[] ipBytes = addr.getAddress();
+        StringBuffer sb = new StringBuffer();
+        sb.append(ipBytes[0] & 0xff).append(".");
+        sb.append(ipBytes[1] & 0xff).append(".");
+        sb.append(ipBytes[2] & 0xff).append(".");
+        sb.append(ipBytes[3] & 0xff);
+
+        return sb.toString();
     }
 
     public static boolean isLocalAddress(InetAddress addr) {

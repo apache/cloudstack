@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
@@ -157,6 +158,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Inject AccountManager _accountMgr;
     @Inject NetworkManager _networkMgr;
     @Inject ClusterDao _clusterDao;
+    @Inject AlertManager _alertMgr;
 	@Inject(adapter=SecurityChecker.class)
     Adapters<SecurityChecker> _secChecker;
 	
@@ -209,6 +211,27 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     
     @Override
     public boolean start() {
+
+    	// TODO : this may not be a good place to do integrity check here, we put it here as we need _alertMgr to be properly configured 
+    	// before we can use it
+    	
+		// As it is so common for people to forget about configuring management.network.cidr, 
+		String mgtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+		if(mgtCidr == null || mgtCidr.trim().isEmpty()) {
+			String[] localCidrs = NetUtils.getLocalCidrs();
+			if(localCidrs.length > 0) {
+				s_logger.warn("Management network CIDR is not configured originally. Set it default to " + localCidrs[0]);
+				
+			    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
+			    		"Management network CIDR is not configured originally. Set it default to " + localCidrs[0], "");
+				_configDao.update(Config.ManagementNetwork.key(), localCidrs[0]);
+			} else {
+				s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
+			    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
+			    		"Management network CIDR is not properly configured and we are not able to find a default setting", "");
+			}
+		}
+        
         return true;
     }
 

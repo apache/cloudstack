@@ -102,6 +102,6 @@
         <dao name="DataCenterDao" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
         <dao name="NetworkDao" class="com.cloud.network.dao.NetworkDaoImpl" singleton="false"/>
         <dao name="IpAddressDao" class="com.cloud.network.dao.IPAddressDaoImpl" singleton="false"/>     
-        <dao name="VlanDao" class="com.cloud.dc.dao.VlanDaoImpl" singleton="false"/>        
+        <dao name="VlanDao" class="com.cloud.dc.dao.VlanDaoImpl" singleton="false"/>
     </configuration-server>
 </components.xml>
