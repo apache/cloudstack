@@ -32,6 +32,7 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.server.Criteria;
+import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
@@ -52,6 +53,7 @@ public class ListVMsCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FOR_VIRTUAL_NETWORK, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
@@ -80,6 +82,7 @@ public class ListVMsCmd extends BaseCmd {
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
         Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
         Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
+        Boolean forVirtualNetwork = (Boolean)params.get(BaseCmd.Properties.FOR_VIRTUAL_NETWORK.getName());
         String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
@@ -149,8 +152,7 @@ public class ListVMsCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.VM_LIST_ERROR, "unable to find virtual machines for account id " + accountName.toString());
         }
 
-        Object[] vmTag = new Object[virtualMachines.size()];
-        int i = 0;
+        List vmTag = new ArrayList();
 
         HashMap<Long, HostVO> hostMap = new HashMap<Long, HostVO>();
         List<HostVO> hostList = getManagementServer().listAllActiveHosts();
@@ -235,8 +237,14 @@ public class ListVMsCmd extends BaseCmd {
 
             // Service Offering Info
             ServiceOfferingVO offering = getManagementServer().findServiceOfferingById(vmInstance.getServiceOfferingId());
+            
+            // Probably not the best place to check but it will have to do for now to make this
+            // the least intrusive fix.
+            if (forVirtualNetwork != null && forVirtualNetwork && offering.getGuestIpType() != ServiceOffering.GuestIpType.Virtualized) {
+            	continue;
+            }
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.SERVICE_OFFERING_ID.getName(), Long.valueOf(vmInstance.getServiceOfferingId()).toString()));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.SERVICE_OFFERING_NAME.getName(), offering.getName()));
+	        vmData.add(new Pair<String, Object>(BaseCmd.Properties.SERVICE_OFFERING_NAME.getName(), offering.getName()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_NUMBER.getName(), Integer.valueOf(offering.getCpu()).toString()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_SPEED.getName(), Integer.valueOf(offering.getSpeed()).toString()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY.getName(), Integer.valueOf(offering.getRamSize()).toString()));
@@ -261,10 +269,10 @@ public class ListVMsCmd extends BaseCmd {
             //network groups
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_GROUP_LIST.getName(), getManagementServer().getNetworkGroupsNamesForVm(vmInstance.getId())));
             
-            vmTag[i++] = vmData;
+            vmTag.add(vmData);
         }
         List<Pair<String, Object>> returnTags = new ArrayList<Pair<String, Object>>();
-        Pair<String, Object> vmTags = new Pair<String, Object>("virtualmachine", vmTag);
+        Pair<String, Object> vmTags = new Pair<String, Object>("virtualmachine", vmTag.toArray());
         returnTags.add(vmTags);
         return returnTags;
     }
