@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS `cloud`.`ext_lun_alloc`;
 DROP TABLE IF EXISTS `cloud`.`disk_template_ref`;
 
 -- Then remove columns
-ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
 
 ALTER TABLE `cloud`.`volumes` DROP COLUMN `mirror_state`;
 ALTER TABLE `cloud`.`volumes` DROP COLUMN `mirror_vol`;
@@ -18,7 +17,7 @@ DROP TABLE `cloud`.`op_vm_host`;
 
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `iso_id`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `display_name`;
-#ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `storage_ip`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `mirrored_vols`;
 
