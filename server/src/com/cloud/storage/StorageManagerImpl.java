@@ -129,6 +129,7 @@ import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
@@ -205,6 +206,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject protected ConsoleProxyDao _consoleProxyDao;
     @Inject protected DetailsDao _detailsDao;
     @Inject protected SnapshotDao _snapshotDao;
+    @Inject protected SnapshotPolicyDao _snapshotPolicyDao;
     @Inject protected StoragePoolHostDao _storagePoolHostDao;
     @Inject protected AlertManager _alertMgr;
     @Inject protected VMTemplateHostDao _vmTemplateHostDao = null;
@@ -1323,6 +1325,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) {
+        
+        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+        if( snapshots != null && snapshots.size() > 0) {
+            throw new CloudRuntimeException("Unable to move volume " + volume.getId() + " due to there are snapshots for this volume");
+        }
+        
+        List<SnapshotPolicyVO> snapshotPolicys = _snapshotPolicyDao.listByVolumeId(volume.getId());
+        if( snapshotPolicys != null && snapshotPolicys.size() > 0) {
+            throw new CloudRuntimeException("Unable to move volume " + volume.getId() + " due to there are snapshot policyes for this volume");
+        }
+        
         // Find a destination storage pool with the specified criteria
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(),
