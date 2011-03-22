@@ -543,4 +543,8 @@ public class ApiDBUtils {
         }
     }
     
+    public static Long getDedicatedNetworkDomain(long networkId) {
+        return _networkMgr.getDedicatedNetworkDomain(networkId);
+    }
+    
 }

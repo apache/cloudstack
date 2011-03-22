@@ -73,6 +73,7 @@ import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
+import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
@@ -258,6 +259,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("OvsTunnelAccountDao", OvsTunnelAccountDaoImpl.class);
         addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
         addDao("HostTagsDao", HostTagsDaoImpl.class);
+        addDao("NetworkDomainDao", NetworkDomainDaoImpl.class);
     }
     
     @Override

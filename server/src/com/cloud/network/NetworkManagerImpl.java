@@ -89,6 +89,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
@@ -198,6 +199,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     Adapters<NetworkGuru> _networkGurus;
     @Inject(adapter = NetworkElement.class)
     Adapters<NetworkElement> _networkElements;
+    @Inject
+    NetworkDomainDao _networkDomainDao;
 
     private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -2682,12 +2685,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         
-        List<NetworkVO> networks = _networksDao.listSharedDomainNetworksByNetworkId(networkId);
-        if (networks.isEmpty()) {
+        List<NetworkDomainVO> networkDomainMap = _networkDomainDao.listDomainNetworkMapByNetworkId(networkId);
+        if (networkDomainMap.isEmpty()) {
             s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
             return true;
         } else {
-            networkDomainId = networks.get(0).getDomainId();
+            networkDomainId = networkDomainMap.get(0).getDomainId();
         }
         
         if (domainId == networkDomainId.longValue()) {
@@ -2703,5 +2706,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return result;
+    }
+    
+    @Override
+    public Long getDedicatedNetworkDomain(long networkId) {
+        List<NetworkDomainVO> networkMaps = _networkDomainDao.listDomainNetworkMapByNetworkId(networkId);
+        if (!networkMaps.isEmpty()) {
+            return networkMaps.get(0).getDomainId();
+        } else {
+            return null;
+        }
     }
 }

@@ -72,4 +72,6 @@ public interface NetworkService {
     Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
     
     boolean isNetworkAvailableInDomain(long networkId, long domainId);
+    
+    Long getDedicatedNetworkDomain(long networkId);
 }

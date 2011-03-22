@@ -2350,6 +2350,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setDomainId(domain.getId());
             response.setDomain(domain.getName());
         }
+        
+        Long dedicatedDomainId = ApiDBUtils.getDedicatedNetworkDomain(network.getId());
+        if (dedicatedDomainId != null) {
+            response.setIsDedicatedToDomain(true);
+            response.setDedicatedDomainId(dedicatedDomainId);
+        } else {
+            response.setIsDedicatedToDomain(false);
+        }
+        
         response.setObjectName("network");
         return response;
     }
