@@ -47,6 +47,7 @@ public class SearchCriteria<K> {
         BETWEEN(" BETWEEN ? AND ? ", 2),
         NBETWEEN(" NOT BETWEEN ? AND ? ", 2),
         IN(" IN () ", -1),
+        NOTIN(" NOT IN () ", -1),
         LIKE(" LIKE ? ", 1),
         NLIKE(" NOT LIKE ? ", 1),
         NIN(" NOT IN () ", -1),

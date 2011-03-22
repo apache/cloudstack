@@ -63,6 +63,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -1656,6 +1657,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean isDefault = cmd.isDefault();
         Long accountId = null;
         String path = null;
+        List<Long> avoidNetworks = new ArrayList<Long>();
+        List<Long> allowedSharedNetworks = new ArrayList<Long>();
 
         if (isSystem == null) {
             isSystem = false;
@@ -1754,20 +1757,50 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
 
-        if (!isSystem) {
-            
+        if (!isSystem) { 
             if (accountName != null && domainId != null) {  
                 if (isShared == null) {
                     sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                    sc.addOr("isShared", SearchCriteria.Op.EQ, true);
+                    //sc.addOr("isShared", SearchCriteria.Op.EQ, true);
                 } else if (!isShared) {
                     sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
                 } else {
                     sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
                 }
+                
+                if (isShared == null || isShared) {
+                    List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
+                    for (NetworkVO network : allNetworks) {
+                        if (!isNetworkAvailableInDomain(network.getId(), domainId)) {
+                            avoidNetworks.add(network.getId());
+                        } else {
+                            allowedSharedNetworks.add(network.getId());
+                        }
+                    }
+                }
+                
             } else if (isShared != null) {
                 sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
             }    
+        }
+        
+        //find list of shared networks to avoid
+        if (domainId != null && accountName == null) {
+            List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
+            for (NetworkVO network : allNetworks) {
+                if (!isNetworkAvailableInDomain(network.getId(), domainId)) {
+                    avoidNetworks.add(network.getId());
+                }
+            }
+            sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
+        }
+        
+        for (Long avoidNetwork : avoidNetworks) {
+            sc.addAnd("id", SearchCriteria.Op.NOTIN, avoidNetwork);
+        }
+        
+        for (Long allowerdSharedNetwork : allowedSharedNetworks) {
+            sc.addOr("id", SearchCriteria.Op.IN, allowerdSharedNetwork);
         }
 
         if (isDefault != null) {
@@ -1781,8 +1814,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (!isSystem && path != null && (isShared == null || !isShared)) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
-        
-        
 
         List<NetworkVO> networks = _networksDao.search(sc, searchFilter);
 
@@ -2604,7 +2635,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkVO network : zoneNetworks) {
             NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (!no.isSystemOnly()) {
-                if (network.isShared() || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
+                if (network.getIsShared() || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
                     if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault == network.isDefault)) {
                         accountNetworks.add(network); 
                     } 
@@ -2638,5 +2669,39 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return ip;
+    }
+    
+    @Override
+    public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
+        boolean result = false;
+        Long networkDomainId = null;
+        Network network = getNetwork(networkId);
+        if (!network.getIsShared()) {
+            s_logger.trace("Network id=" + networkId + " is not shared");
+            return false;
+        }
+        
+        
+        List<NetworkVO> networks = _networksDao.listSharedDomainNetworksByNetworkId(networkId);
+        if (networks.isEmpty()) {
+            s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
+            return true;
+        } else {
+            networkDomainId = networks.get(0).getDomainId();
+        }
+        
+        if (domainId == networkDomainId.longValue()) {
+            return true;
+        }
+        
+        Domain domain = _domainDao.findById(domainId);
+        while (domain.getParent() != null) {
+            if (domain.getParent().longValue() == networkDomainId) {
+                return true;
+            }
+            domain = _domainDao.findById(domain.getParent());
+        }
+        
+        return result;
     }
 }

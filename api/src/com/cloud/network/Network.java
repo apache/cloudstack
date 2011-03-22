@@ -199,7 +199,7 @@ public interface Network extends ControlledEntity {
     
     String getDisplayText();
     
-    boolean isShared();
+    boolean getIsShared();
     
     String getReservationId();
     

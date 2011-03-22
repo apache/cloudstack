@@ -2303,7 +2303,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
         }
         
-        response.setIsShared(network.isShared());
+        response.setIsShared(network.getIsShared());
         response.setIsDefault(network.isDefault());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());

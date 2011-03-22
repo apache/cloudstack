@@ -60,4 +60,9 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     void clearCheckForGc(long networkId);
     List<NetworkVO> listByZoneSecurityGroup(Long zoneId);
     void addDomainToNetwork(long networkId, long domainId);
+    
+    List<NetworkVO> listSharedDomainNetworksByDomain(long domainId);
+    List<NetworkVO> listSharedDomainNetworksByNetworkId(long networkId);
+    
+    List<NetworkVO> listNetworksBy(boolean isShared);
 }

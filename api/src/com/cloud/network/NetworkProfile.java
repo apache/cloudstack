@@ -48,7 +48,7 @@ public class NetworkProfile implements Network{
         this.related = network.getRelated();
         this.guestIpType = network.getGuestType();
         this.displayText = network.getDisplayText();
-        this.isShared = network.isShared();
+        this.isShared = network.getIsShared();
         this.reservationId = network.getReservationId();
         this.isDefault = network.isDefault();
         this.networkDomain = network.getNetworkDomain();
@@ -152,7 +152,7 @@ public class NetworkProfile implements Network{
     }
     
     @Override
-    public boolean isShared() {
+    public boolean getIsShared() {
         return isShared;
     }
     

@@ -377,7 +377,7 @@ public class NetworkVO implements Network {
     }
     
     @Override
-    public boolean isShared() {
+    public boolean getIsShared() {
         return isShared;
     }
     

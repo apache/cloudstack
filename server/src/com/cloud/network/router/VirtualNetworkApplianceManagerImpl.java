@@ -772,7 +772,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         long dcId = dest.getDataCenter().getId();
         
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-        if (offering.isSystemOnly() || guestNetwork.isShared()) {
+        if (offering.isSystemOnly() || guestNetwork.getIsShared()) {
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
 
@@ -927,7 +927,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             buf.append(" defaultroute=false");
             
             String virtualNetworkElementNicIP = _networkMgr.getIpOfNetworkElementInVirtualNetwork(network.getAccountId(), network.getDataCenterId());
-            if (!network.isShared() && virtualNetworkElementNicIP != null) {
+            if (!network.getIsShared() && virtualNetworkElementNicIP != null) {
                 defaultDns1 = virtualNetworkElementNicIP;
             } else {
                 s_logger.debug("No Virtual network found for account id=" + network.getAccountId() + " so setting dns to the dns of the network id=" + network.getId());

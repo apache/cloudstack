@@ -52,6 +52,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
+    final SearchBuilder<NetworkVO> DomainSearch;
     
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
@@ -72,6 +73,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("guesttype", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
+        AllFieldsSearch.and("isShared", AllFieldsSearch.entity().getIsShared(), Op.EQ);
         AllFieldsSearch.done();
         
         AccountSearch = createSearchBuilder();
@@ -110,6 +112,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         ZoneSecurityGroupSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
+        
+        DomainSearch = createSearchBuilder();
+        SearchBuilder<NetworkDomainVO> domainJoin = _domainsDao.createSearchBuilder();
+        domainJoin.and("domainId", domainJoin.entity().getDomainId(), Op.EQ);
+        domainJoin.and("networkId", domainJoin.entity().getNetworkId(), Op.EQ);
+        DomainSearch.join("domains", domainJoin, DomainSearch.entity().getId(), domainJoin.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        DomainSearch.done();
+        
     }
     
     @Override
@@ -283,5 +293,28 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     protected void addDomainToNetworkConfiguration(long configurationId, long domainId) {
         NetworkDomainVO domain = new NetworkDomainVO(configurationId, domainId);
         _domainsDao.persist(domain);
+    }
+    
+    @Override
+    public List<NetworkVO> listSharedDomainNetworksByDomain(long domainId) {
+        SearchCriteria<NetworkVO> sc = DomainSearch.create();
+        sc.setJoinParameters("domains", "domainId", domainId);
+        
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<NetworkVO> listSharedDomainNetworksByNetworkId(long networkId) {
+        SearchCriteria<NetworkVO> sc = DomainSearch.create();
+        sc.setJoinParameters("domains", "networkId", networkId);
+        
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<NetworkVO> listNetworksBy(boolean isShared) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("isShared", isShared);
+        return listBy(sc);
     }
 }

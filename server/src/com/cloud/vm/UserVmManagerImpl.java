@@ -1979,12 +1979,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
                 }
                 
-                if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != GuestIpType.Direct || (network.isShared() && !network.isSecurityGroupEnabled())) {
+                if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != GuestIpType.Direct || (network.getIsShared() && !network.isSecurityGroupEnabled())) {
                     throw new InvalidParameterValueException("Can specify only Direct Guest Account specific networks when deploy vm in Security Group enabled zone");
                 }
                 
                 //Perform account permission check
-                if (!network.isShared()) {
+                if (!network.getIsShared()) {
                     //Check account permissions
                     List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
                     if (networkMap == null || networkMap.isEmpty()) {
@@ -2082,12 +2082,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
                 
                 //Perform account permission check
-                if (!network.isShared()) {
+                if (!network.getIsShared()) {
                     List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
                     if (networkMap == null || networkMap.isEmpty()) {
                         throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
                     }
-                } 
+                } else {
+                    if (!_networkMgr.isNetworkAvailableInDomain(networkId, owner.getDomainId())) {
+                        throw new PermissionDeniedException("Shared network id=" + networkId + " is not available in domain id=" + owner.getDomainId());
+                    }
+                }
                 
                 //check that corresponding offering is available
                 NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
