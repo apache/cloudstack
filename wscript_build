@@ -42,12 +42,7 @@ def build_utils_docs ():
 # ant only needs to be reinvoked if the version with build number changes
 # we here trim all the depended targets from the target list:
 def build_jars ():
-	builddate = time.strftime("%Y.%m.%d.%H.%M.%S", time.localtime());
-	if Options.options.VERNUM:
-		Implementation_Version = Options.options.VERNUM
-	else:
-		Implementation_Version = "2.2"
-	Implementation_Version = Implementation_Version + "." + builddate
+	Implementation_Version = bld.env.VERSION
 
 	# this is to trigger recompilation / cache avoidance if the relevant environment for ant changes
 	ant_args = [
@@ -276,7 +271,11 @@ def build_conf_files ():
 
 # cloudstack-proprietary still has db files for usage
 def build_db_files ():
-	bld.install_files_filtered("${SETUPDATADIR}",filelist("*/db/* cloudstack-proprietary/*/db/*",excl=Node.exclude_regs + "\ncloud-gate\ncloud-bridge"))
+	#bld.install_files_filtered("${SETUPDATADIR}",filelist("*/db/* cloudstack-proprietary/*/db/*",excl=Node.exclude_regs + "\ncloud-gate\ncloud-bridge"))
+	start_path = bld.path.find_dir ("setup/db")
+	bld.substitute('**',"${SETUPDATADIR}", cwd=start_path)
+	start_path = bld.path.find_dir ("cloudstack-proprietary/premium/db")
+	bld.substitute('**',"${SETUPDATADIR}", cwd=start_path)
 
 
 def build_plugins ():

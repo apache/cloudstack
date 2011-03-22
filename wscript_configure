@@ -10,6 +10,7 @@ try: from os import getuid as _getuid
 except ImportError: pass
 from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, expanduser as _expanduser, sep, pathsep, pardir
 from glob import glob as _glob
+import time
 
 
 # list of JARs that provide the build dependencies
@@ -103,7 +104,12 @@ hard_deps = [
 ]
 
 
-conf.env.VERSION = Utils.g_module.VERSION
+if Options.options.VERNUM:
+	Version = Options.options.VERNUM
+else:
+	Version = "2.2"
+builddate = time.strftime("%Y.%m.%d.%H.%M.%S", time.localtime()).replace('.','')
+conf.env.VERSION = Version + "." + builddate
 
 conf.check_message_1('Detecting distribution')
 if Options.platform == 'win32': conf.env.DISTRO = "Windows"
@@ -279,8 +285,6 @@ conf.env.CLASSPATH = pathsep.join(compilecp)
 conf.check_message_2('Done','GREEN')
 
 # log4j config and property config files require backslash escapes on Windows
-#conf.env.VERSION = Utils.g_module.VERSION
-conf.env.VERSION = Utils.getbuildnumber ()
 
 conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
 conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)
