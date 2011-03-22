@@ -109,7 +109,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         SearchCriteria<String> sc = CurrentVersionSearch.create();
         
         sc.setParameters("step", Step.Complete);
-        Filter filter = new Filter(VersionVO.class, "id", true, 0l, 1l);
+        Filter filter = new Filter(VersionVO.class, "id", false, 0l, 1l);
         
         List<String> vers = customSearch(sc, filter);
         return vers.get(0);
