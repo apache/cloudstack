@@ -31,8 +31,8 @@ public class Version {
         
         int compareLength = Math.min(tokens1.length, tokens2.length);
         for (int i = 0; i < compareLength; i++) {
-        	int version1 = Integer.parseInt(tokens1[i]);
-        	int version2 = Integer.parseInt(tokens2[i]);
+        	long version1 = Long.parseLong(tokens1[i]);
+        	long version2 = Long.parseLong(tokens2[i]);
             if (version1 != version2) {
                 return version1 < version2 ? -1 : 1;
             }
