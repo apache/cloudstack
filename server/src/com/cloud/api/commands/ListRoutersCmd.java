@@ -161,10 +161,7 @@ public class ListRoutersCmd extends BaseCmd {
             routerData.add(new Pair<String, Object>(BaseCmd.Properties.GUEST_NETMASK.getName(), router.getGuestNetmask()));
             routerData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(router.getTemplateId()).toString()));
             routerData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(router.getCreated())));
-            if (router.getHostId() != null) {
-                routerData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_ID.getName(), router.getHostId().toString()));
-                routerData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(),getManagementServer().getHostBy(router.getHostId()).getName()));
-            }
+            
             if (router.getState() != null) {
                 routerData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), router.getState().toString()));
             }
