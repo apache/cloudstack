@@ -668,7 +668,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	                
 	                if(tmpltStoredOn != null && answer != null && (answer instanceof CreateAnswer) && ((CreateAnswer)answer).templateReloadRequested()) {
 	                	if(!_tmpltMgr.resetTemplateDownloadStateOnPool(tmpltStoredOn.getId()))
-	                		break;		// break out of template-redeploy retry loop
+                         {
+                            break;		// break out of template-redeploy retry loop
+                        }
 	                } else {
 	                	break;
 	                }
@@ -678,8 +680,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	            }
             }
             
-            if(created != null)
-            	break;
+            if(created != null) {
+                break;
+            }
 
             s_logger.debug("Retrying the create because it failed on pool " + pool);
         }
@@ -1370,12 +1373,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         String destPrimaryStorageVolumePath = cvAnswer.getVolumePath();
         String destPrimaryStorageVolumeFolder = cvAnswer.getVolumeFolder();
-
-        try {
-            destroyVolume(volume);
-        } catch (ConcurrentOperationException e) {
-            s_logger.warn("Concurrent Operation", e);
-        }
 
         expungeVolume(volume);
 
@@ -2575,7 +2572,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	            } else {
 	            	if(tmpltStoredOn != null && (answer instanceof CreateAnswer) && ((CreateAnswer)answer).templateReloadRequested()) {
 	                	if(!_tmpltMgr.resetTemplateDownloadStateOnPool(tmpltStoredOn.getId()))
-	                		break;		// break out of template-redeploy retry loop
+                         {
+                            break;		// break out of template-redeploy retry loop
+                        }
 	            	} else {
 	            		break;
 	            	}
@@ -2742,8 +2741,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<CapacityVO> capacities = new LinkedList<CapacityVO>();
         for (HostVO host : hosts){
         	StorageStats stats = ApiDBUtils.getSecondaryStorageStatistics(host.getId());
-        	if (stats == null) 
-       		 continue;
+        	if (stats == null) {
+                continue;
+            }
         	
         	CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), 
         			host.getClusterId(), stats.getByteUsed(), stats.getCapacityBytes(), Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);        	
@@ -2777,8 +2777,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
          
          for (StoragePoolVO storagePool : pools){
         	 StorageStats stats = ApiDBUtils.getStoragePoolStatistics(storagePool.getId());
-        	 if (stats == null) 
-        		 continue;
+        	 if (stats == null) {
+                continue;
+            }
         	 
         	 CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(),
         			 stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);

@@ -60,12 +60,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
-	private static final Logger s_logger = Logger.getLogger(FirstFitStoragePoolAllocator.class);
+	private static final Logger s_logger = Logger.getLogger(AbstractStoragePoolAllocator.class);
     @Inject TemplateManager _tmpltMgr;
     @Inject StorageManager _storageMgr;
     @Inject StoragePoolDao _storagePoolDao;

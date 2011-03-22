@@ -302,11 +302,18 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `domain_id` bigint unsigned NOT NUL
 
 UPDATE vm_instance inner join user_vm on user_vm.id=vm_instance.id set vm_instance.service_offering_id=user_vm.service_offering_id, vm_instance.account_id=user_vm.account_id, vm_instance.domain_id=user_vm.domain_id where vm_instance.id = user_vm.id and vm_instance.type='User';
 UPDATE vm_instance inner join domain_router on vm_instance.id=domain_router.id set vm_instance.account_id=domain_router.account_id, vm_instance.domain_id=domain_router.domain_id where vm_instance.type='DomainRouter';
+UPDATE vm_instance SET service_offering_id=(SELECT id FROM disk_offering WHERE unique_name='Cloud.Com-SoftwareRouter') WHERE type='DomainRouter';
+UPDATE vm_instance SET service_offering_id=(SELECT id FROM disk_offering WHERE unique_name='Cloud.Com-ConsoleProxy') WHERE type='ConsoleProxy';
+UPDATE vm_instance SET service_offering_id=(SELECT id FROM disk_offering WHERE unique_name='Cloud.Com-SecondaryStorage') WHERE type='SecondaryStorageVm';
 
 ALTER TABLE `cloud`.`user_vm` ADD COLUMN `iso_id` bigint unsigned;
 ALTER TABLE `cloud`.`user_vm` ADD COLUMN `display_name` varchar(255);
 
 UPDATE user_vm inner join vm_instance on user_vm.id=vm_instance.id set user_vm.iso_id=vm_instance.iso_id, user_vm.display_name=vm_instance.display_name where vm_instance.type='User';
+
+ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned DEFAULT 0;
+UPDATE template_host_ref INNER JOIN template_spool_ref ON template_host_ref.template_id=template_spool_ref.template_id SET template_host_ref.physical_size=template_spool_ref.template_size;  
+
 
 CREATE TABLE `cloud`.`user_vm_details` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -338,8 +345,6 @@ CREATE TABLE  `cloud`.`upload` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical size` bigint unsigned DEFAULT 0;
-
 ALTER TABLE `cloud`.`console_proxy` MODIFY COLUMN `public_mac_address` varchar(17);
 
 ALTER TABLE `cloud`.`secondary_storage_vm` MODIFY COLUMN `public_mac_address` varchar(17);
@@ -354,6 +359,10 @@ ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `system_use` tinyint(1) unsigned 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `customized` tinyint(1) unsigned NOT NULL DEFAULT 0;
 
 update `cloud`.`disk_offering` set system_use=1, removed=null WHERE unique_name like 'Cloud.Com-%';
+
+ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `public_ip_address` varchar(15) DEFAULT NULL;
+ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL;
 
 CREATE TABLE `cloud`.`remote_access_vpn` (
   `vpn_server_addr_id` bigint unsigned UNIQUE NOT NULL,
@@ -545,6 +554,8 @@ CREATE TABLE `cloud`.`storage_pool_work` (
   PRIMARY KEY (`id`),
  UNIQUE (pool_id,vm_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE vm_instance set hypervisor_type=(SELECT value FROM configuration WHERE name='hypervisor.type');
 
 -- Insert stuff?;
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', (SELECT max(id) + 1 or 200 from volumes));

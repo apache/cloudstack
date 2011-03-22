@@ -64,30 +64,26 @@ public class InstanceGroup217To224UpgradeTest extends TestCase {
         if (!version.equals("2.1.7")) {
             s_logger.error("Version returned is not 2.1.7 but " + version);
         } else {
-            s_logger.debug("Instance group test version is " + version);
+            s_logger.debug("Basic zone test version is " + version);
         }
         
         Long groupNumberVmInstance = 0L;
         ArrayList<Object[]> groups = new ArrayList<Object[]>();
-        ArrayList<Object[]> groupVmMaps = new ArrayList<Object[]>();
         Connection conn = Transaction.getStandaloneConnection();
         try {
             //Check that correct number of instance groups were created
-            pstmt = conn.prepareStatement("SELECT DISTINCT v.group, u.account_id from vm_instance v, user_vm u where v.group is not null and u.id=v.id");
-            s_logger.debug("Query is " + pstmt);
+            pstmt = conn.prepareStatement("SELECT DISTINCT v.group, v.account_id from vm_instance v where v.group is not null");
             rs = pstmt.executeQuery();
             
             while (rs.next()) {
                 groupNumberVmInstance++;
             }
-            
-            s_logger.debug("Found "  + groupNumberVmInstance);
 
             rs.close();
             pstmt.close();
             //For each instance group from vm_instance table check that 1) entry was created in the instance_group table 2) vm to group map exists in instance_group_vm_map table
             //Check 1)
-            pstmt = conn.prepareStatement("SELECT DISTINCT v.group, u.account_id from vm_instance v, user_vm u where v.group is not null and u.id=v.id");
+            pstmt = conn.prepareStatement("SELECT DISTINCT v.group, v.account_id from vm_instance v where v.group is not null");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 Object[] group = new Object[10];
@@ -97,24 +93,7 @@ public class InstanceGroup217To224UpgradeTest extends TestCase {
             }
             rs.close();
             pstmt.close();
-            
-            
-            //Check 2)
-            pstmt = conn.prepareStatement("SELECT g.id, v.id from vm_instance v, instance_group g, user_vm u where g.name=v.group and g.account_id=u.account_id and u.id=v.id and v.group is not null");
-            rs = pstmt.executeQuery();
-            
-            while (rs.next()) {
-                Object[] groupMaps = new Object[10];
-                groupMaps[0] = rs.getLong(1); // vmId
-                groupMaps[1] = rs.getLong(2);  // groupId
-                groupVmMaps.add(groupMaps);
-            }
-            rs.close();
-            pstmt.close();
-            
-        } catch (Exception ex) {
-            s_logger.error("Instance group test failed due to ", ex);
-        }finally {
+        } finally {
             conn.close();
         }
         
@@ -165,6 +144,19 @@ public class InstanceGroup217To224UpgradeTest extends TestCase {
             rs.close();
             pstmt.close();
             
+            //Check 2)
+            pstmt = conn.prepareStatement("SELECT g.id, v.id from vm_instance v, instance_group g where g.name=v.group and g.account_id=v.account_id and v.group is not null");
+            rs = pstmt.executeQuery();
+            ArrayList<Object[]> groupVmMaps = new ArrayList<Object[]>();
+            while (rs.next()) {
+                Object[] groupMaps = new Object[10];
+                groupMaps[0] = rs.getLong(1); // vmId
+                groupMaps[1] = rs.getLong(2);  // groupId
+                groupVmMaps.add(groupMaps);
+            }
+            rs.close();
+            pstmt.close();
+            
             for (Object[] groupMap : groupVmMaps) {
                 Long groupId = (Long)groupMap[0];
                 Long instanceId = (Long)groupMap[1];
@@ -179,9 +171,7 @@ public class InstanceGroup217To224UpgradeTest extends TestCase {
             
             s_logger.debug("Instance group upgrade test is passed");
             
-        } catch (Exception ex) {
-            s_logger.debug("Instance group test failed due to ", ex);
-        }finally {
+        } finally {
             conn.close();
         }
     }
