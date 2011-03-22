@@ -7976,6 +7976,10 @@ public class ManagementServerImpl implements ManagementServer {
     		throw new InvalidParameterValueException("Invalid schedule: "+ schedule +" for interval type: " + intervalType);
     	}
     	
+        if (maxSnaps <= 0) {
+            throw new InvalidParameterValueException("maxSnaps should be greater than 0");
+        }
+    	
     	int intervalMaxSnaps = type.getMax();
     	if(maxSnaps > intervalMaxSnaps){
     		throw new InvalidParameterValueException("maxSnaps exceeds limit: "+ intervalMaxSnaps +" for interval type: " + intervalType);
