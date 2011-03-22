@@ -158,9 +158,9 @@ public class CreateVolumeCmd extends BaseCmd {
     	} catch (Exception ex) {
     	    s_logger.error("Failed to create volume " + (useSnapshot ? ("from snapshot " + snapshotId) : ("in zone " + zoneId + " with disk offering " + diskOfferingId)), ex);
     	    if (useSnapshot) {
-    	        throw new ServerApiException(BaseCmd.CREATE_VOLUME_FROM_SNAPSHOT_ERROR, "Unable to create a volume from snapshot with id " + snapshotId + " for this account.");
+    	        throw new ServerApiException(BaseCmd.CREATE_VOLUME_FROM_SNAPSHOT_ERROR, "Unable to create a volume from snapshot with id " + snapshotId + " for this account: " + ex.getMessage());
     	    } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume in zone " + zoneId + " with disk offering " + diskOfferingId);
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume in zone " + zoneId + " with disk offering " + diskOfferingId + ": " + ex.getMessage());
     	    }
     	}
     	
