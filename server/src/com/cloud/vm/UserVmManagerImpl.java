@@ -1615,6 +1615,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (vmInstance == null) {
             throw new InvalidParameterValueException("unable to find virtual machine with id " + id);
         }
+        
+        ServiceOffering offering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
+        if (!offering.getOfferHA() && ha != null && ha) {
+            throw new InvalidParameterValueException("Can't enable ha for the vm as it's created from the Service offering having HA disabled");
+        }
 
         userId = accountAndUserValidation(id, account, userId,vmInstance);  
         
