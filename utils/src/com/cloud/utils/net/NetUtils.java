@@ -81,6 +81,16 @@ public class NetUtils {
         }
     }
     
+    public static String resolveToIp(String host) {
+		try {
+			InetAddress addr = InetAddress.getByName(host);
+			return ipFromInetAddress(addr);
+		} catch (UnknownHostException e) {
+			s_logger.warn("Unable to resolve " + host + " to IP due to UnknownHostException");
+			return null;
+		}
+    }
+    
     public static InetAddress[] getAllLocalInetAddresses() {
     	List<InetAddress> addrList = new ArrayList<InetAddress>();
     	try {
@@ -848,6 +858,7 @@ public class NetUtils {
     
     public static void main(String[] args) {
     	configLog4j();
+    	
     	if (args.length == 0) {
     		System.out.println("Must specify at least one parameter");
     	}
