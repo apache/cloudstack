@@ -337,7 +337,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String firstname = "admin";
         String lastname = "cloud";
         String password = "password";
-        String email = "";
         
         MessageDigest md5 = null;
         try {
@@ -366,8 +365,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " +
-                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
+                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
 
         txn = Transaction.currentTxn();
         try {
