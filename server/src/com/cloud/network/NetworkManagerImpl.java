@@ -2348,7 +2348,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, networkOfferingId, zoneId);
-        if (networks == null) {
+        if (networks == null || networks.isEmpty()) {
             throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
         }
         return networks.get(0);
