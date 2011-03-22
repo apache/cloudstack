@@ -1373,15 +1373,24 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         String destPrimaryStorageVolumePath = cvAnswer.getVolumePath();
         String destPrimaryStorageVolumeFolder = cvAnswer.getVolumeFolder();
-
-        expungeVolume(volume);
+        // Delete the volume on the source storage pool
+        final DestroyCommand cmd = new DestroyCommand(srcPool, volume, null);
 
         volume.setPath(destPrimaryStorageVolumePath);
         volume.setFolder(destPrimaryStorageVolumeFolder);
         volume.setPodId(destPool.getPodId());
         volume.setPoolId(destPool.getId());
         _volsDao.update(volume.getId(), volume);
-
+        
+        Answer destroyAnswer = null;
+        try {
+            destroyAnswer = sendToPool(srcPool, cmd);
+        } catch (StorageUnavailableException e1) {
+            throw new CloudRuntimeException("Failed to destroy the volume from the source primary storage pool to secondary storage.");
+        }
+        if (destroyAnswer == null || !destroyAnswer.getResult()) {
+            throw new CloudRuntimeException("Failed to destroy the volume from the source primary storage pool to secondary storage.");
+        }
         return _volsDao.findById(volume.getId());
     }
 
