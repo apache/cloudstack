@@ -35,6 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.user.Account;
 
 
 public interface NetworkService {
@@ -74,4 +75,6 @@ public interface NetworkService {
     boolean isNetworkAvailableInDomain(long networkId, long domainId);
     
     Long getDedicatedNetworkDomain(long networkId);
+    
+    Network updateNetwork(long networkId, String name, String displayText, Account caller);
 }

@@ -2717,4 +2717,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         }
     }
+    
+    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_UPDATE, eventDescription="updating network", async=false)
+    public Network updateNetwork(long networkId, String name, String displayText, Account caller) {
+        
+        //verify input parameters
+        NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
+        }
+        
+        //Don't allow to update system network
+        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+        if (offering.isSystemOnly()) {
+            throw new InvalidParameterValueException("Can't update system networks");
+        }
+        
+        _accountMgr.checkAccess(caller, network);
+        
+        if (name != null) {
+            network.setName(name);
+        }
+        
+        if (displayText != null) {
+            network.setDisplayText(displayText);
+        }
+        
+        _networksDao.update(networkId, network);
+        
+        return network;
+       
+    }
 }
