@@ -27,6 +27,8 @@ touch /var/log/dnsmasq.log
 [ $? -ne 0 ] && exit_with_error "touch /var/log/dnsmasq.log failed"
 touch /etc/dnsmasq-resolv.conf
 [ $? -ne 0 ] && exit_with_error "touch /etc/dnsmasq-resolv.conf failed"
+echo "nameserver $dns">/etc/dnsmasq-resolv.conf
+[ $? -ne 0 ] && exit_with_error "echo \"nameserver $dns\">/etc/dnsmasq-resolv.conf failed"
 touch /var/lib/dnsmasq.trace
 [ $? -ne 0 ] && exit_with_error "touch /var/lib/dnsmasq.trace failed"
 
