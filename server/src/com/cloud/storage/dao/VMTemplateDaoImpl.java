@@ -21,11 +21,9 @@ package com.cloud.storage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,15 +40,16 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -136,7 +135,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	public List<VMTemplateVO> listAllSystemVMTemplates() {
 		SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
 		sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
-		return listBy(sc);
+		
+		Filter filter = new Filter(VMTemplateVO.class, "id", false, null, null);
+		return listBy(sc, filter);
 	}
 
 	@Override
@@ -151,12 +152,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path) {
 		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
 		sc.addAnd("iso", SearchCriteria.Op.EQ, true);
-		if (domainId != null)
-			sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-		if (accountId != null)
-			sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-		if (path != null)
-			sc.addAnd("path", SearchCriteria.Op.EQ, path);
+		if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+		if (accountId != null) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+		if (path != null) {
+            sc.addAnd("path", SearchCriteria.Op.EQ, path);
+        }
 		return listIncludingRemovedBy(sc);
 	}
 
@@ -189,10 +193,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		}
 		
 		consoleProxyTmpltName = (String)params.get("consoleproxy.uniquename");
-		if(consoleProxyTmpltName == null)
-			consoleProxyTmpltName = "routing";
-		if(s_logger.isDebugEnabled())
-			s_logger.debug("Use console proxy template : " + consoleProxyTmpltName);
+		if(consoleProxyTmpltName == null) {
+            consoleProxyTmpltName = "routing";
+        }
+		if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Use console proxy template : " + consoleProxyTmpltName);
+        }
 
 		UniqueNameSearch = createSearchBuilder();
 		UniqueNameSearch.and("uniqueName", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
