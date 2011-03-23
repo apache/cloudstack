@@ -560,3 +560,8 @@ UPDATE vm_instance set hypervisor_type=(SELECT value FROM configuration WHERE na
 -- Insert stuff?;
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', (SELECT max(id) + 1 or 200 from volumes));
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
+
+DELETE FROM `cloud`.`sync_queue`;
+DELETE FROM `cloud`.`sync_queue_item`;
+DELETE FROM `cloud`.`async_job`;
+UPDATE `cloud`.`vm_template` SET unique_name='routing-xenserver-2.4',type='SYSTEM' WHERE name='systemvm-xenserver-2.4';
