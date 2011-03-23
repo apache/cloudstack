@@ -11,4 +11,5 @@ import java.lang.annotation.Target;
 public @interface Implementation {
     Class<?> responseObject();
     String description() default "";
+    boolean includeInApiDoc() default true;
 }

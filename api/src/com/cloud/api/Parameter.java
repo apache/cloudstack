@@ -35,5 +35,6 @@ public @interface Parameter {
     CommandType type() default CommandType.OBJECT;
     CommandType collectionType() default CommandType.OBJECT;
     boolean expose() default true;
+    boolean includeInApiDoc() default true;
 }
 

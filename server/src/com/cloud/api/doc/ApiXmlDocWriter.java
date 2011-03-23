@@ -287,49 +287,55 @@ public class ApiXmlDocWriter {
         apiCommand.setName(command);
         
         Implementation impl = (Implementation)clas.getAnnotation(Implementation.class);
-        if (impl == null)
+        if (impl == null) {
             impl = (Implementation)clas.getSuperclass().getAnnotation(Implementation.class);
-        String commandDescription = impl.description();
-        if (commandDescription != null)
-            apiCommand.setDescription(commandDescription);
-        else
-            System.out.println("Command " + apiCommand.getName() + " misses description");
-        
-        //Set request parameters   
-        Field[] fields = clas.getDeclaredFields();
-        
-        //Get fields from superclass
-        Class<?> superClass = clas.getSuperclass();
-        String superName = superClass.getName();
-        if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
-            Field[] superClassFields = superClass.getDeclaredFields();
-            if (superClassFields != null && !superClass.getName().equals(BaseListCmd.class.getName())) {
-                Field[] tmpFields = new Field[fields.length + superClassFields.length];
-                System.arraycopy(fields, 0, tmpFields, 0, fields.length);
-                System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
-                fields = tmpFields;
+        }
+            
+        if (impl.includeInApiDoc()) {
+            String commandDescription = impl.description();
+            if (commandDescription != null)
+                apiCommand.setDescription(commandDescription);
+            else
+                System.out.println("Command " + apiCommand.getName() + " misses description");
+            
+            //Set request parameters   
+            Field[] fields = clas.getDeclaredFields();
+            
+            //Get fields from superclass
+            Class<?> superClass = clas.getSuperclass();
+            String superName = superClass.getName();
+            if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
+                Field[] superClassFields = superClass.getDeclaredFields();
+                if (superClassFields != null && !superClass.getName().equals(BaseListCmd.class.getName())) {
+                    Field[] tmpFields = new Field[fields.length + superClassFields.length];
+                    System.arraycopy(fields, 0, tmpFields, 0, fields.length);
+                    System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
+                    fields = tmpFields;
+                }
+                superClass = superClass.getSuperclass();
             }
-            superClass = superClass.getSuperclass();
-        }
-        request = setRequestFields(fields);
-        
-        
-        //Set Async information for the command
-        if (superName.equals(BaseAsyncCmd.class.getName()) || superName.equals(BaseAsyncCreateCmd.class.getName())) {
-            apiCommand.setAsync(true);
+            request = setRequestFields(fields);
+            
+            
+            //Set Async information for the command
+            if (superName.equals(BaseAsyncCmd.class.getName()) || superName.equals(BaseAsyncCreateCmd.class.getName())) {
+                apiCommand.setAsync(true);
+            } else {
+                apiCommand.setAsync(false);
+            }
+            
+            //Get response parameters
+            Class<?> responseClas = impl.responseObject();
+            Field[] responseFields = responseClas.getDeclaredFields();
+            response = setResponseFields(responseFields);
+            
+            apiCommand.setRequest(request);
+            apiCommand.setResponse(response);
+            
+            out.writeObject(apiCommand);
         } else {
-            apiCommand.setAsync(false);
+            s_logger.debug("Command " + command + " is not exposed in api doc");
         }
-        
-        //Get response parameters
-        Class<?> responseClas = impl.responseObject();
-        Field[] responseFields = responseClas.getDeclaredFields();
-        response = setResponseFields(responseFields);
-        
-        apiCommand.setRequest(request);
-        apiCommand.setResponse(response);
-        
-        out.writeObject(apiCommand);
 	}
 	
 	private static void writeLoginCommand(ObjectOutputStream out) throws ClassNotFoundException, IOException{
@@ -394,7 +400,7 @@ public class ApiXmlDocWriter {
 	    Argument id = null;
 	    for (Field f : fields) {
             Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
-            if (parameterAnnotation != null && parameterAnnotation.expose()) {
+            if (parameterAnnotation != null && parameterAnnotation.expose() && parameterAnnotation.includeInApiDoc()) {
                 Argument reqArg = new Argument(parameterAnnotation.name());
                 reqArg.setRequired(parameterAnnotation.required());
                 if (!parameterAnnotation.description().isEmpty()) {
