@@ -377,13 +377,13 @@ public class ConsoleProxyServlet extends HttpServlet {
         	return false;
         }
 		
+        // root admin can access anything
 		if(accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN)
     		return true;
 
         switch(vm.getType())
         {
         case User :
-        case DomainRouter:
         	if(vm.getAccountId() != accountObj.getId()) {
         		
         		// access from another normal user
@@ -407,6 +407,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         	}
         	break;
         	
+        case DomainRouter:
         case ConsoleProxy :
         case SecondaryStorageVm:
     		return false;
