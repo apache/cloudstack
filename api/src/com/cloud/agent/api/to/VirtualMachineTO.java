@@ -39,12 +39,13 @@ public class VirtualMachineTO {
     String[] bootupScripts;
     boolean rebootOnCrash;
     boolean enableHA;
+    String vncPassword;
     Map<String, String> params;
 
     VolumeTO[] disks;
     NicTO[] nics;
 
-    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA) {
+    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, String vncPassword) {
         this.id = id;
         this.name = instanceName;
         this.type = type;
@@ -55,6 +56,7 @@ public class VirtualMachineTO {
         this.bootloader = bootloader;
         this.os = os;
         this.enableHA = enableHA;
+        this.vncPassword = vncPassword;
     }
 
     protected VirtualMachineTO() {
@@ -175,5 +177,13 @@ public class VirtualMachineTO {
 
     public void setNics(NicTO[] nics) {
         this.nics = nics;
+    }
+    
+    public String getVncPassword() {
+    	return this.vncPassword;
+    }
+    
+    public void setVncPassword(String vncPassword) {
+    	this.vncPassword = vncPassword;
     }
 }
