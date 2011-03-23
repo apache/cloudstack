@@ -41,7 +41,7 @@ public class UpdateUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="The API key for the user.")
+    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="The API key for the user. Must be specified with secretKey")
     private String apiKey;
 
     @Parameter(name=ApiConstants.EMAIL, type=CommandType.STRING, description="email")
@@ -59,7 +59,7 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="Hashed password (default is MD5). If you wish to use any other hasing algorithm, you would need to write a custom authentication adapter")
     private String password;
 
-    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="The secret key for the user.")
+    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="The secret key for the user. Must be specified with apiKey")
     private String secretKey;
 
     @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
