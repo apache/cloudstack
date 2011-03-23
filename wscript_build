@@ -68,8 +68,6 @@ javac_env = bld.env.copy()
 # FIXME trigger recompilation / cache avoidance when debuglevel changes.  ATM this does not happen.
 if antprops.get('debuglevel',None): javac_env.append_value("JAVACFLAGS",["-g:%s"%antprops['debuglevel']])
 Implementation_Version = bld.env.VERSION
-buildnumber = Utils.getbuildnumber()
-if buildnumber: Implementation_Version += "." + buildnumber
 
 # compile .class files using waf
 classpathentries = [ _join(builddir,x[2]) for x in targets ]
