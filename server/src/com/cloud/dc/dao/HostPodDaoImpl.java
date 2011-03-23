@@ -56,14 +56,16 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 	    DataCenterIdSearch.done();
 	}
 	
-	public List<HostPodVO> listByDataCenterId(long id) {
+	@Override
+    public List<HostPodVO> listByDataCenterId(long id) {
 		SearchCriteria<HostPodVO> sc = DataCenterIdSearch.create();
 		sc.setParameters("dcId", id);
 		
 	    return listBy(sc);
 	}
 	
-	public HostPodVO findByName(String name, long dcId) {
+	@Override
+    public HostPodVO findByName(String name, long dcId) {
 	    SearchCriteria<HostPodVO> sc = DataCenterAndNameSearch.create();
 	    sc.setParameters("dc", dcId);
 	    sc.setParameters("name", name);
@@ -82,7 +84,9 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         	ResultSet rs = stmt.executeQuery();
         	while (rs.next()) {
         		Long podId = rs.getLong("id");
-        		if (podId.longValue() == podIdToSkip) continue;
+        		if (podId.longValue() == podIdToSkip) {
+                    continue;
+                }
         		String cidrAddress = rs.getString("cidr_address");
         		long cidrSize = rs.getLong("cidr_size");
         		List<Object> cidrPair = new ArrayList<Object>();
@@ -101,98 +105,6 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		super.configure(name, params);
-/*
-		SearchBuilder<HostPodVO> builder = createSearchBuilder();
-		builder.and("abc", builder.entity().getId(), SearchCriteria.Op.EQ);
-		builder.op(Op.AND, "def", builder.entity().getId(), SearchCriteria.Op.GT);
-		builder.or("fee", builder.entity().getId(), SearchCriteria.Op.LT);
-		builder.cp();
-		builder.and("jjj", builder.entity().getId(), SearchCriteria.Op.EQ);
-		builder.done();
-		SearchCriteria sc = builder.create();
-		sc.setParameters("abc", 1);
-		sc.setParameters("def", 1);
-		sc.setParameters("fee", 1);
-		sc.setParameters("jjj", 1);
-		searchAll(sc, null, null, false);
-		try {
-		Transaction txn2 = Transaction.open("a1");
-		txn2 = Transaction.open("a2");
-        PreparedStatement pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-        pstmt2.executeQuery();
-        txn2.close();
-        txn2.setSavepoint();
-        txn2.rollback();
-		txn2.start();
-		Transaction.open("a3");
-		txn2.setSavepoint();
-		txn2.start();
-		Transaction.open("a4");
-		Savepoint sp = txn2.setSavepoint();
-		Transaction.open("a5");
-		txn2.rollback(sp);
-		pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-		pstmt2.executeQuery();
-        txn2.close();
-		txn2.rollback();
-		txn2.close();
-		txn2.close();
-		txn2.close();
-		// This tests multiple starts and one single rollback rolls them all back.
-		txn2.open("a6");
-		txn2.start();
-        pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-        pstmt2.executeQuery();
-		txn2.start();
-        pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-        pstmt2.executeQuery();
-		txn2.open("a7");
-		txn2.start();
-        pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-        pstmt2.executeQuery();
-		txn2.rollback();
-		txn2.close();
-		txn2.close();
-		
-		// This tests multiple starts and need multiple commits.
-        txn2.open("a8");
-        txn2.start();
-        pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-        pstmt2.executeQuery();
-        txn2.start();
-        pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-        pstmt2.executeQuery();
-        txn2.open("a9");
-        txn2.start();
-        pstmt2 = txn2.prepareAutoCloseStatement("SELECT id FROM host_pod_ref");
-        pstmt2.executeQuery();
-        txn2.commit();
-        txn2.close();
-        txn2.commit();
-        txn2.commit();
-        txn2.close();
-        
-		
-		} catch (Exception e) {
-		    s_logger.warn("Exeception", e);
-		}
-		
-            Merovingian m = new Merovingian(Transaction.VMOPS_DB);
-            m.acquire("key1", 100);
-            m.acquire("key1", 100);
-            m.release("key1");
-            m.acquire("key2", 100);
-            m.acquire("key3", 1000);
-            m.acquire("key1", 1000);
-            m.release("key3");
-            m.release("key1");
-            m.release("key2");
-            m.release("key1");
-            
-            
-            acquire(1l);
-            release(1l);
-    */
 		Transaction txn = Transaction.currentTxn();
 		try {
 			txn.start();

@@ -54,7 +54,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     VersionDao _dao;
     public DatabaseUpgradeChecker() {
         _dao = ComponentLocator.inject(VersionDaoImpl.class);
+        // FIXME: Alena needs to make changes here to add 217 to 218 upgrade. 
         _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
+        _upgradeMap.put("2.1.8", new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
         _upgradeMap.put("2.2.2", new DbUpgrade[] { new Upgrade222to224() });
         _upgradeMap.put("2.2.3", new DbUpgrade[] { new Upgrade222to224() });
     }

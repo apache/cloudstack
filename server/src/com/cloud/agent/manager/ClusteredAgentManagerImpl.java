@@ -12,10 +12,8 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -38,12 +36,10 @@ import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.resource.ResourceService;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
-import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -51,10 +47,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterVO;
-
-import java.util.ArrayList;
 
 
 @Local(value={AgentManager.class, ResourceService.class})
@@ -114,8 +106,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 	}
 	
 	private void scanDirectAgentToLoad() {
-		if(s_logger.isTraceEnabled())
-			s_logger.trace("Begin scanning directly connected hosts");
+		if(s_logger.isTraceEnabled()) {
+            s_logger.trace("Begin scanning directly connected hosts");
+        }
 
 		// for agents that are self-managed, threshold to be considered as disconnected is 3 ping intervals
 		long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingInterval*3);
@@ -138,23 +131,26 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 				if(agentattache != null) {
 					// already loaded, skip
 					if(agentattache.forForward()) {
-						if(s_logger.isInfoEnabled())
-							s_logger.info("Host " + host.getName() + " is detected down, but we have a forward attache running, disconnect this one before launching the host");
+						if(s_logger.isInfoEnabled()) {
+                            s_logger.info("Host " + host.getName() + " is detected down, but we have a forward attache running, disconnect this one before launching the host");
+                        }
 						removeAgent(agentattache, Status.Disconnected);			
 					} else {
 						continue;
 					}
 				}
 				
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ")");
+				if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ")");
+                }
 
 				loadDirectlyConnectedHost(host);
 			}
 		}
 		
-		if(s_logger.isTraceEnabled())
-			s_logger.trace("End scanning directly connected hosts");
+		if(s_logger.isTraceEnabled()) {
+            s_logger.trace("End scanning directly connected hosts");
+        }
 	}
 	
 	private class DirectAgentScanTimerTask extends TimerTask {
@@ -243,8 +239,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
     
 	protected boolean handleDisconnect(AgentAttache agent, Status.Event event, boolean investigate, boolean broadcast) {
-		if( agent == null )
-			return true;
+		if( agent == null ) {
+            return true;
+        }
     	
     	if (super.handleDisconnect(agent, event, investigate)) {
     	    if (broadcast) {
@@ -581,6 +578,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+        
     }
 
     @Override

@@ -81,20 +81,38 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             PreparedStatement pstmt = conn.prepareStatement("SHOW TABLES LIKE 'version'");
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
-                pstmt.close();
                 rs.close();
+                pstmt.close();
                 pstmt = conn.prepareStatement("SHOW TABLES LIKE 'nics'");
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
-                    pstmt.close();
                     rs.close();
-                    s_logger.debug("No version table and no nics table, returning 2.1.7");
-                    return "2.1.7";
+                    pstmt.close();
+                    
+                    pstmt = conn.prepareStatement("SELECT domain_id FROM account_vlan_map LIMIT 1");
+                    try {
+                        pstmt.executeQuery();
+                        return "2.1.8";
+                    } catch (SQLException e) {
+                        s_logger.debug("Assuming the exception means domain_id is not there.");
+                        s_logger.debug("No version table and no nics table, returning 2.1.7");
+                        return "2.1.7";
+                    } finally {
+                        pstmt.close();
+                    }
                 } else {
-                    pstmt.close();
                     rs.close();
-                    s_logger.debug("No version table but has nics table, returning 2.1.2");
-                    return "2.2.1";
+                    pstmt.close();
+                    s_logger.debug("No version table but has nics table, returning 2.2.1 or 2.2.2");
+                    
+                    pstmt = conn.prepareStatement("SHOW TABLES LIKE 'domain_network_ref'");
+                    rs = pstmt.executeQuery();
+                    if (!rs.next()) {
+                        s_logger.debug("No domain_network_ref table so returning 2.2.1");
+                        return "2.2.1";
+                    } else {
+                        return "2.2.2";
+                    }
                 }
             }
         } catch (SQLException e) {
