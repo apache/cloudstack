@@ -1156,9 +1156,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             
             excludes.addHost(dest.getHost().getId());
-            
+            VMInstanceVO vmInstance = null;
             try {
-                vm = migrate(vm, srcHostId, dest);
+                vmInstance = migrate(vm, srcHostId, dest);
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Unable to migrate to unavailable " + dest);
             } catch (ConcurrentOperationException e) {
@@ -1166,9 +1166,20 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 			} catch (ManagementServerException e) {
 				s_logger.debug("Unable to migrate VM: " + e.getMessage());
 			}
-            if (vm != null) {
+            if (vmInstance != null) {
                 return true;
             }
+            try { 
+                 boolean result = advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                 return result;
+            } catch (ResourceUnavailableException e) {
+                s_logger.debug("Unable to stop VM due to " + e.getMessage());
+            } catch (ConcurrentOperationException e) {
+                s_logger.debug("Unable to stop VM due to " + e.getMessage());
+            } catch (OperationTimedoutException e) {
+                s_logger.debug("Unable to stop VM due to " + e.getMessage());
+            }
+            return false;  
         } 
     }
     

@@ -2321,6 +2321,12 @@ public abstract class CitrixResourceBase implements ServerResource {
                         s_logger.warn("Can not fake PV driver for " + vmName);
                     }
                 }
+                if( ! isPVInstalled(conn, vm) ) {
+                    String msg = "Migration failed due to PV drivers is not installed for " + vmName;
+                    s_logger.warn(msg);
+                    return new MigrateAnswer(cmd, false, msg, null);
+                }
+                
                 Set<VBD> vbds = vm.getVBDs(conn);
                 for( VBD vbd : vbds) {
                     VBD.Record vbdRec = vbd.getRecord(conn);
@@ -2329,16 +2335,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                         break;
                     }
                 }
-                
-                try {
-                    vm.setAffinity(conn, dsthost);
-                    vm.poolMigrate(conn, dsthost, new HashMap<String, String>());
-                } catch (Types.VmMissingPvDrivers e1) {
-                    // if PV driver is missing, just shutdown the VM
-                    s_logger.warn("VM " + vmName + " is stopped when trying to migrate it because PV driver is missing, Please install PV driver for this VM");                  
-                    vm.hardShutdown(conn);
-                    vm.destroy(conn);
-                }
+                vm.poolMigrate(conn, dsthost, new HashMap<String, String>());               
+                vm.setAffinity(conn, dsthost);
                 state = State.Stopping;
             }
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
