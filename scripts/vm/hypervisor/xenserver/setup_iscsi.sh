@@ -1,5 +1,6 @@
 #!/bin/bash
 # $Id: setup_iscsi.sh 9879 2010-06-24 02:41:46Z anthony $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/hypervisor/xenserver/setup_iscsi.sh $
+# Version @VERSION@
 
 #set -x
  

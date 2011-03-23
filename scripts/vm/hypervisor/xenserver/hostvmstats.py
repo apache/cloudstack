@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # $Id: hostvmstats.py 10054 2010-06-29 22:09:31Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/hypervisor/xenserver/hostvmstats.py $
+# Version @VERSION@
 
 import XenAPI
 import urllib

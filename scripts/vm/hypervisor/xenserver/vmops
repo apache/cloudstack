@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# Version @VERSION@
 #
 # A plugin for executing script needed by vmops cloud 
 

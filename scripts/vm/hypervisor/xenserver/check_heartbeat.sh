@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Version @VERSION@
 #set -x
  
 usage() {
