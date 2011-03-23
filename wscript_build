@@ -365,7 +365,7 @@ build_ui ()
 build_conf_files ()
 build_db_files ()
 build_plugins ()
-#build_xml_api_description ()
+build_xml_api_description ()
 
 # ====================== Magic! =========================================
 bld.use_the_magic()
