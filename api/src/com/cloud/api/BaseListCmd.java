@@ -6,7 +6,7 @@ import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseListCmd extends BaseCmd {
 
-    private static final Long MAX_PAGESIZE = _configService.getDefaultPageSize();
+    private static Long MAX_PAGESIZE = 500L;
 
 	/////////////////////////////////////////////////////
     /////////// BaseList API parameters /////////////////
@@ -36,6 +36,11 @@ public abstract class BaseListCmd extends BaseCmd {
 
     public Integer getPageSize() {
         return pageSize;
+    }
+    
+    
+    static void configure() {
+        MAX_PAGESIZE = _configService.getDefaultPageSize();
     }
     
     @Override

@@ -161,6 +161,7 @@ public class ApiServer implements HttpRequestHandler {
     public void init(String[] apiConfig) {
         try {
             BaseCmd.setComponents(new ApiResponseHelper());
+            BaseListCmd.configure();
             _apiCommands = new Properties();
             Properties preProcessedCommands = new Properties();
             if (apiConfig != null) {
