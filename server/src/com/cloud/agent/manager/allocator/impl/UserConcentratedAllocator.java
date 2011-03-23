@@ -96,6 +96,10 @@ public class UserConcentratedAllocator implements PodAllocator {
         for (HostPodVO pod: podsInZone) {
             long podId = pod.getId();
         	if (!avoids.contains(podId)) {
+				if (s_logger.isDebugEnabled()) {
+					s_logger.debug("Checking Pod: " + podId);
+				}
+				
         		if (template != null && !templateAvailableInPod(template.getId(), pod.getDataCenterId(), podId)) {
         			continue;
         		}
@@ -108,7 +112,9 @@ public class UserConcentratedAllocator implements PodAllocator {
         			if (!enoughCapacity) {
         				if (s_logger.isDebugEnabled()) {
         					s_logger.debug("Not enough RAM available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");
+        					s_logger.debug("Adding Pod to avoid list (zone: " + zoneId + ", pod: " + podId + ")");
         				}
+        				avoids.add(podId);
         				continue;
         			}
 
@@ -117,7 +123,9 @@ public class UserConcentratedAllocator implements PodAllocator {
         			if (!enoughCapacity) {
         				if (s_logger.isDebugEnabled()) {
         					s_logger.debug("Not enough cpu available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");
+        					s_logger.debug("Adding Pod to avoid list (zone: " + zoneId + ", pod: " + podId + ")");
         				}
+        				avoids.add(podId);
         				continue;
         			}
         			
@@ -127,11 +135,13 @@ public class UserConcentratedAllocator implements PodAllocator {
         		// If the pod has VMs or volumes in it, return this pod
         		List<UserVmVO> vmsInPod = _vmDao.listByAccountAndPod(accountId, pod.getId());
             	if (!vmsInPod.isEmpty()) {
+            		s_logger.debug("Returning pod since it has VMs for this account, podid: "+pod.getId() +" ,name: " + pod.getName() + " in zone " + zone.getName());
             		return new Pair<HostPodVO, Long>(pod, podHostCandidates.get(podId));
             	}
             	
             	List<VolumeVO> volumesInPod = _volumeDao.findByAccountAndPod(accountId, pod.getId());
             	if (!volumesInPod.isEmpty()) {
+            		s_logger.debug("Returning pod since it has Volumes for this account, podid: "+pod.getId() +" ,name: " + pod.getName() + " in zone " + zone.getName());
             		return new Pair<HostPodVO, Long>(pod, podHostCandidates.get(podId));
             	}
             
