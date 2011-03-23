@@ -5,6 +5,7 @@ import base64
 import string 
 import os
 import tempfile
+from subprocess import call
 
 def vm_data(args):
 
@@ -39,7 +40,7 @@ def vm_data(args):
                 return ''
 
         try:
-            txt = util.pread2(cmd)
+            call(cmd)
             txt = 'success'
         except:
             txt = ''
@@ -51,17 +52,20 @@ def vm_data(args):
     return txt
 
 def parseFileData(fileName):
-	args = {} 
-	fd = open(fileName)
-	
-	line = fd.readline()
-	while (line != ""):
-		key=string.strip(line[:], '\n')
-		line=fd.readline()
-                val=string.strip(line[:], '\n')
-		args[key]=val
-		line=fd.readline()
-	return args
+    args = {} 
+    fd = open(fileName)
+
+    line = fd.readline()
+    while (line != ""):
+        key=string.strip(line[:], '\n')
+        if (key == ""):
+            break
+	  
+        line=fd.readline()
+        val=string.strip(line[:], '\n')
+        args[key]=val
+        line=fd.readline()
+    return args
 
 if __name__ == "__main__":
 	vm_data(parseFileData("/tmp/" + sys.argv[1]))
