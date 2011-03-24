@@ -1444,8 +1444,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean isShared = cmd.getIsShared();
         Boolean isDefault = cmd.isDefault();
         Long userId = UserContext.current().getCallerUserId();
-        Long domainId = null;
-        Account owner = null;
+        Account caller = UserContext.current().getCaller();
+        boolean isDomainSpecific = false;
         
         Transaction txn = Transaction.currentTxn();
         
@@ -1455,26 +1455,30 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
         }
        
-        Account ctxAccount = UserContext.current().getCaller();
-        owner = _accountMgr.finalizeOwner(ctxAccount, cmd.getAccountName(), cmd.getDomainId());
-        UserContext.current().setAccountId(owner.getAccountId());
-        
         //Check if the network is domain specific
-        if (cmd.getDomainId() != null) {
+        if (cmd.getDomainId() != null && cmd.getAccountName() == null) {
             if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Direct) {
                 throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest Ip type " + GuestIpType.Direct);
             } else if (isShared == null || !isShared) {
                 throw new InvalidParameterValueException("Network dedicated to domain should be shared");
             } else {
-                domainId = cmd.getDomainId();
-                DomainVO domain = _domainDao.findById(domainId);
+                DomainVO domain = _domainDao.findById(cmd.getDomainId());
                 if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+                    throw new InvalidParameterValueException("Unable to find domain by id " + cmd.getDomainId());
                 }
-                _accountMgr.checkAccess(ctxAccount, domain);
+                _accountMgr.checkAccess(caller, domain);
+                isDomainSpecific = true;
             }
         }
-
+        
+        Account owner = null;
+        if (cmd.getAccountName() != null && cmd.getDomainId() != null) {
+            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId());
+        } else {
+            owner = caller;
+        }
+        
+        UserContext.current().setAccountId(owner.getAccountId());
         
         // if end ip is not specified, default it to startIp
         if (endIP == null && startIP != null) {
@@ -1491,7 +1495,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
-		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(ctxAccount.getType())){
+		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
 			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
 		}
 
@@ -1527,17 +1531,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //Regular user can create guest virtual network only
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Virtual)) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Virtual)) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and Guest Ip type " + GuestIpType.Virtual);
         }
         
         //Don't allow to specify cidr if the caller is a regular user
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && (cidr != null || vlanId != null)) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (cidr != null || vlanId != null)) {
             throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange/vlanId");
         }
         
         //For non-root admins check cidr limit - if it's allowed by global config value
-        if (ctxAccount.getType() != Account.ACCOUNT_TYPE_ADMIN && cidr != null) {
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && cidr != null) {
             
             String[] cidrPair = cidr.split("\\/");
             int cidrSize = Integer.valueOf(cidrPair[1]);
@@ -1548,6 +1552,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         txn.start();
+        
+        Long domainId = null;
+        if (isDomainSpecific) {
+            domainId = cmd.getDomainId();
+        }
+        
         Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId);
         
         // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
@@ -1556,7 +1566,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             owner = null;
         }
 
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == GuestIpType.Direct && defineNetworkConfig) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == GuestIpType.Direct && defineNetworkConfig) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
         }
