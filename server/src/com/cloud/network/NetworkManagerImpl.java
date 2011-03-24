@@ -486,12 +486,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account caller = UserContext.current().getCaller();
         long userId = UserContext.current().getCallerUserId();
 
-        Account owner = _accountMgr.getActiveAccount(accountName, domainId);
-        if (owner == null) {
+        Account ipOwner = _accountMgr.getActiveAccount(accountName, domainId);
+        if (ipOwner == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
         }
 
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, ipOwner);
         
         if(zoneId != null){
 	        DataCenterVO zone = _dcDao.findById(zoneId);
@@ -504,7 +504,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 				throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
 			}
         }
-        long ownerId = owner.getId();
+        long ownerId = ipOwner.getId();
         Long networkId = cmd.getNetworkId();
         Network network = null;
         if (networkId != null) {
@@ -512,6 +512,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (network == null) {
                 throw new InvalidParameterValueException("Network id is invalid: " + networkId);
             }
+        }
+        
+        //Check that network belongs to IP owner
+        if (network.getAccountId() != ipOwner.getId()) {
+            throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
 
         PublicIp ip = null;
@@ -541,7 +546,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             txn.start();
-            ip = fetchNewPublicIp(zoneId, null, null, owner, VlanType.VirtualNetwork, network.getId(), false, false);
+            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), false, false);
 
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
@@ -549,7 +554,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             UserContext.current().setEventDetails("Ip Id: "+ip.getId());
             Ip ipAddress = ip.getAddress();
 
-            s_logger.debug("Got " + ipAddress + " to assign for account " + owner.getId() + " in zone " + network.getDataCenterId());
+            s_logger.debug("Got " + ipAddress + " to assign for account " + ipOwner.getId() + " in zone " + network.getDataCenterId());
 
             txn.commit();
         } finally {
