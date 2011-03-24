@@ -27,5 +27,4 @@ update network_offerings set specify_vlan=1 where system_only=0 and guest_type='
 update networks set traffic_type='Guest' where network_offering_id in (select id from network_offerings where system_only=0);
 update network_offerings set availability='Optional' where id=7;
 delete from configuration where name='router.cleanup.interval';
-
-
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None');
