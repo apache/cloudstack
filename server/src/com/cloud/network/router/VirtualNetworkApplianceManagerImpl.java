@@ -1006,7 +1006,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             long zoneId = router.getDataCenterId();
             
             
-            final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, null);
+            final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, null, null);
             List<PublicIpAddress> publicIps = new ArrayList<PublicIpAddress>();
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {

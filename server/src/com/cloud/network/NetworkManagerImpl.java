@@ -333,7 +333,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             IPAddressVO sourceNat = null;
-            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, dcId, null);
+            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, dcId, null, network.getId());
             if (addrs.size() == 0) {
                 // Check that the maximum number of public IPs for the given accountId will not be exceeded
                 if (_accountMgr.resourceLimitExceeded(owner, ResourceType.public_ip)) {
@@ -544,9 +544,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 rae.setResourceType("ip");
                 throw rae;
             }
+            
+            boolean isSourceNat = false;
 
             txn.start();
-            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), false, false);
+            //First IP address should be source nat
+            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
+            
+            if (addrs.isEmpty()) {
+                isSourceNat = true;
+            }
+            
+            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), isSourceNat, false);
 
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
@@ -758,6 +767,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
         IpAddressSearch.and("dataCenterId", IpAddressSearch.entity().getDataCenterId(), Op.EQ);
+        IpAddressSearch.and("associatedWithNetworkId", IpAddressSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
         SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
         IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -797,10 +807,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat) {
+    public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
         SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("dataCenterId", dcId);
+        if (associatedNetworkId != null) {
+            sc.setParameters("associatedWithNetworkId", associatedNetworkId);
+        }
+        
         if (sourceNat != null) {
             sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
         }

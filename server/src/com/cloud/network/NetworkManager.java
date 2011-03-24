@@ -93,9 +93,10 @@ public interface NetworkManager extends NetworkService {
      * @param accountId - account that the IP address should belong to
      * @param dcId - zone that the IP address should belong to
      * @param sourceNat - (optional) true if the IP address should be a source NAT address
+     * @param associatedNetworkId TODO
      * @return - list of IP addresses
      */
-    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
+    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);	
     
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault) throws ConcurrentOperationException;
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault, boolean errorIfAlreadySetup, Long domainId) throws ConcurrentOperationException;
