@@ -137,21 +137,27 @@ public class LibvirtDomainXMLParser {
         return false;
 	}
 	
-	 private static String getTagValue(String tag, Element eElement){
-	        NodeList nlList= eElement.getElementsByTagName(tag).item(0).getChildNodes();
-	        Node nValue = (Node) nlList.item(0); 
-	     
-	        return nValue.getNodeValue();    
-	     }
+	private static String getTagValue(String tag, Element eElement){
+	    NodeList tagNodeList = eElement.getElementsByTagName(tag);
+	    if (tagNodeList == null || tagNodeList.getLength() == 0) {
+	        return null;
+	    }
 	    
-	    private static String getAttrValue(String tag, String attr, Element eElement){
-	        NodeList tagNode = eElement.getElementsByTagName(tag);
-	        if (tagNode.getLength() == 0) {
-	            return null;
-	        }
-	        Element node = (Element)tagNode.item(0);
-	        return node.getAttribute(attr);
-	     }
+	    NodeList nlList= tagNodeList.item(0).getChildNodes();
+
+	    Node nValue = (Node) nlList.item(0); 
+
+	    return nValue.getNodeValue();    
+	}
+
+	private static String getAttrValue(String tag, String attr, Element eElement){
+	    NodeList tagNode = eElement.getElementsByTagName(tag);
+	    if (tagNode.getLength() == 0) {
+	        return null;
+	    }
+	    Element node = (Element)tagNode.item(0);
+	    return node.getAttribute(attr);
+	}
 	
 	public Integer getVncPort() {
 		return vncPort;
