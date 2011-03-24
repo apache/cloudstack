@@ -51,6 +51,9 @@ if [ $mysqlout -eq 1 ]; then
     printf "Error: Cannot execute create-database.sql\n"
     exit 10
   fi
+elif [ $mysqlout -eq 127 ]; then
+  printf "Error: Cannot execute create-database.sql - mysql command not found.\n"
+  exit 11
 elif [ $mysqlout -ne 0 ]; then
   printf "Error: Cannot execute create-database.sql\n"
   exit 11
