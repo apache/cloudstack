@@ -968,9 +968,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
     }
     
-    @Override
-    @DB
+    @Override @DB
     public boolean deleteZone(DeleteZoneCmd cmd) {
+        
+        Transaction txn = Transaction.currentTxn();
+        boolean success = false;
     	
     	Long userId = UserContext.current().getCallerUserId();
     	Long zoneId = cmd.getId();
@@ -986,35 +988,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
     	checkIfZoneIsDeletable(zoneId);
     	
-    	boolean success = _zoneDao.expunge(zoneId);
+    	txn.start();
     	
-    	try {
-    	    // Delete vNet
-            _zoneDao.deleteVnet(zoneId);
-            
-            //Delete networks
-            List<NetworkVO> networks = _networkDao.listByZone(zoneId);
-            if (networks != null && !networks.isEmpty()) {
-                for (NetworkVO network : networks) {
-                    _networkDao.remove(network.getId());
-                }
-            }
-            
-            //delete vlans for this zone
-            List<VlanVO> vlans = _vlanDao.listByZone(zoneId);
-            for(VlanVO vlan : vlans) {
-            	_vlanDao.remove(vlan.getId());
-            }
-    	} catch (Exception ex) {
-    	    s_logger.error("Failed to delete zone " + zoneId);
-    	    throw new CloudRuntimeException("Failed to delete zone " + zoneId);
-    	}
-    	
-        if (success){
-            return true;
-        } else{
-            return false;
+	    // Delete vNet
+        _zoneDao.deleteVnet(zoneId);
+        
+      //delete vlans for this zone
+        List<VlanVO> vlans = _vlanDao.listByZone(zoneId);
+        for(VlanVO vlan : vlans) {
+            _vlanDao.remove(vlan.getId());
         }
+        
+        //Delete networks
+        List<NetworkVO> networks = _networkDao.listByZoneIncludingRemoved(zoneId);
+        if (networks != null && !networks.isEmpty()) {
+            for (NetworkVO network : networks) {
+                _networkDao.expunge(network.getId());
+            }
+        }
+        
+        success = _zoneDao.expunge(zoneId);
+    	
+    	txn.commit();
+    	
+        return success;
             
     }
     

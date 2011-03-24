@@ -292,4 +292,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("isShared", isShared);
         return listBy(sc);
     }
+    
+    @Override
+    public List<NetworkVO> listByZoneIncludingRemoved(long zoneId) {
+        SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        return listIncludingRemovedBy(sc);
+    }
 }
