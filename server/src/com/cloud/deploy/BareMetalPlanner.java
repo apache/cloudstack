@@ -92,7 +92,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		
 		for (HostVO h : hosts) {
 			if (h.getStatus() == Status.Up) {
-				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, true)){
+				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false)){
 					s_logger.debug("Find host " + h.getId() + " has enough capacity");
 					DataCenter dc = _dcDao.findById(h.getDataCenterId());
 					Pod pod = _podDao.findById(h.getPodId());
