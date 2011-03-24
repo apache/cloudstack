@@ -103,6 +103,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Override
     public List<DataCenterVO> listSecurityGroupEnabledZones() {
         SearchCriteria<DataCenterVO> sc = securityGroupSearch.create();
+        sc.setParameters("isSgEnabled", true);
         return listBy(sc);
     }
 
