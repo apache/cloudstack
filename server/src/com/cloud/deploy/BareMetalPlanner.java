@@ -45,6 +45,15 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		ServiceOffering offering = vmProfile.getServiceOffering();	
 		String hostTag = null;
 		
+		if (vm.getLastHostId() != null) {
+			HostVO h = _hostDao.findById(vm.getLastHostId());
+			DataCenter dc = _dcDao.findById(h.getDataCenterId());
+			Pod pod = _podDao.findById(h.getPodId());
+			Cluster c =  _clusterDao.findById(h.getClusterId());
+			s_logger.debug("Start baremetal vm " + vm.getId() + " on last stayed host " + h.getId());
+			return new DeployDestination(dc, pod, c, h);
+		}
+		
 		if (offering.getTags() != null) {
 			String[] tags = offering.getTags().split(",");
 			if (tags.length > 0) {
@@ -83,7 +92,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		
 		for (HostVO h : hosts) {
 			if (h.getStatus() == Status.Up) {
-				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false)){
+				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, true)){
 					s_logger.debug("Find host " + h.getId() + " has enough capacity");
 					DataCenter dc = _dcDao.findById(h.getDataCenterId());
 					Pod pod = _podDao.findById(h.getPodId());
