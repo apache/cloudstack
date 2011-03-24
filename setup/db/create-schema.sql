@@ -530,7 +530,7 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this Pod enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`name`, `data_center_id`),
-  INDEX `i_host_pod_ref__data_center_id`(`data_center_id`)
+  INDEX `i_host_pod_ref__data_center_id`(`data_center_id`),
   INDEX `i_host_pod_ref__allocation_state`(`allocation_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
