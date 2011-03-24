@@ -27,6 +27,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.utils.NumbersUtil;
 
@@ -66,6 +67,7 @@ public class HostPodVO implements Pod {
 		this.cidrAddress = cidrAddress;
 		this.cidrSize = cidrSize;
 		this.description = description;
+		this.allocationState = Grouping.AllocationState.Enabled;
 	}
 	
 	/*

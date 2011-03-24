@@ -384,6 +384,7 @@ public class HostVO implements Host {
 	    this.parent = parent;
 	    this.totalSize = totalSize;
 	    this.fsType = fsType;
+	    this.hostAllocationState = Host.HostAllocationState.Enabled;
 	}
 	
     public HostVO(long id,
@@ -441,6 +442,7 @@ public class HostVO implements Host {
         this.disconnectedOn = disconnectedOn;
         this.dom0MinMemory = dom0MinMemory;
         this.storageUrl = url;
+        this.hostAllocationState = Host.HostAllocationState.Enabled;
     }
     
     public void setPodId(Long podId) {

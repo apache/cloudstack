@@ -66,6 +66,7 @@ public class ClusterVO implements Cluster {
     
     public ClusterVO() {
     	clusterType = Cluster.ClusterType.CloudManaged;
+    	allocationState = Grouping.AllocationState.Enabled;
     }
     
     public ClusterVO(long dataCenterId, long podId, String name) {
@@ -73,6 +74,7 @@ public class ClusterVO implements Cluster {
         this.podId = podId;
         this.name = name;
     	this.clusterType = Cluster.ClusterType.CloudManaged;
+    	this.allocationState = Grouping.AllocationState.Enabled;
     }
 
     public long getId() {

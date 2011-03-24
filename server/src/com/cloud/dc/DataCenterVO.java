@@ -32,6 +32,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import com.cloud.network.Network.Provider;
+import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 
 @Entity
@@ -166,6 +167,7 @@ public class DataCenterVO implements DataCenter {
     public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType) {
         this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false);
         this.id = id;
+        this.allocationState = Grouping.AllocationState.Enabled;
 	}
 
     public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled) {
@@ -180,7 +182,7 @@ public class DataCenterVO implements DataCenter {
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
-        
+        this.allocationState = Grouping.AllocationState.Enabled;
         this.securityGroupEnabled = securityGroupEnabled;
         
         if (zoneType == NetworkType.Advanced) {

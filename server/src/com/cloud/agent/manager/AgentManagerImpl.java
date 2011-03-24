@@ -661,7 +661,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			}
 		}
 		if (allocationState == null) {
-			allocationState = Grouping.AllocationState.Disabled;
+			allocationState = Grouping.AllocationState.Enabled;
 		}
 		
 		Discoverer discoverer = getMatchingDiscover(hypervisorType);
@@ -818,7 +818,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		List<String> hostTags = cmd.getHostTags();
 		String allocationState = cmd.getAllocationState();
 		if (allocationState == null) {
-			allocationState = Host.HostAllocationState.Disabled.toString();
+			allocationState = Host.HostAllocationState.Enabled.toString();
 		}
 		
 		return discoverHostsFull(dcId, podId, clusterId, clusterName, url,
@@ -2549,8 +2549,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 					server.setHostAllocationState(hostAllocationState);
 				}
 			}catch(IllegalArgumentException ex){
-				s_logger.error("Unable to resolve " + allocationState + " to a valid supported host allocation State");
+				s_logger.error("Unable to resolve " + allocationState + " to a valid supported host allocation State, defaulting to 'Enabled'");
+				server.setHostAllocationState(Host.HostAllocationState.Enabled);
 			}
+		}else{
+			server.setHostAllocationState(Host.HostAllocationState.Enabled);
 		}
 		
 		updateHost(server, startup, type, _nodeId);

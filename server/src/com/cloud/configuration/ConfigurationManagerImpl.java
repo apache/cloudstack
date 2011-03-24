@@ -735,7 +735,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String allocationState = cmd.getAllocationState();
         
         if(allocationState == null){
-        	allocationState = Grouping.AllocationState.Disabled.toString();
+        	allocationState = Grouping.AllocationState.Enabled.toString();
         }
         return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp, allocationState);
     }
@@ -1289,7 +1289,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean isBasic = false;
         String allocationState = cmd.getAllocationState();
 		if (allocationState == null) {
-			allocationState = Grouping.AllocationState.Disabled.toString();
+			allocationState = Grouping.AllocationState.Enabled.toString();
 		}
         
         if (!(type.equalsIgnoreCase(NetworkType.Basic.toString())) && !(type.equalsIgnoreCase(NetworkType.Advanced.toString()))) {
