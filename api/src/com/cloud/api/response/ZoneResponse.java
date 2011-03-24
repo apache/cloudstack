@@ -67,6 +67,9 @@ public class ZoneResponse extends BaseResponse {
     
     @SerializedName("securitygroupsenabled") @Param(description="true if security groups support is enabled, false otherwise")
     private boolean securityGroupsEnabled;
+    
+    @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
+    private String allocationState;    
 
     public Long getId() {
         return id;
@@ -187,4 +190,12 @@ public class ZoneResponse extends BaseResponse {
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    }
+    
+    public void setAllocationState(String allocationState) {
+    	this.allocationState = allocationState;
+    }     
 }

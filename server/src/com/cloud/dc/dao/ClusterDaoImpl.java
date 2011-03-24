@@ -27,13 +27,19 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import com.cloud.capacity.CapacityVO;
+
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Grouping;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value=ClusterDao.class)
@@ -47,6 +53,8 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
+    
+    protected final HostPodDaoImpl _hostPodDao = ComponentLocator.inject(HostPodDaoImpl.class);
     
     protected ClusterDaoImpl() {
         super();
@@ -168,4 +176,47 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
             throw new CloudRuntimeException("Caught: " + GET_POD_CLUSTER_MAP_PREFIX, e);
         }
     }
+    
+    @Override
+    public List<Long> listDisabledClusters(long zoneId, Long podId) {
+    	GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
+    	clusterIdSearch.selectField(clusterIdSearch.entity().getId());
+    	clusterIdSearch.and("dataCenterId", clusterIdSearch.entity().getDataCenterId(), Op.EQ);
+    	if(podId != null){
+    		clusterIdSearch.and("podId", clusterIdSearch.entity().getPodId(), Op.EQ);
+    	}
+    	clusterIdSearch.and("allocationState", clusterIdSearch.entity().getAllocationState(), Op.EQ);
+    	clusterIdSearch.done();
+
+    	
+    	SearchCriteria<Long> sc = clusterIdSearch.create();
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        if (podId != null) {
+	        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+	    }
+        sc.addAnd("allocationState", SearchCriteria.Op.EQ, Grouping.AllocationState.Disabled);
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listClustersWithDisabledPods(long zoneId) {
+    	
+    	GenericSearchBuilder<HostPodVO, Long> disabledPodIdSearch = _hostPodDao.createSearchBuilder(Long.class);
+    	disabledPodIdSearch.selectField(disabledPodIdSearch.entity().getId());
+    	disabledPodIdSearch.and("dataCenterId", disabledPodIdSearch.entity().getDataCenterId(), Op.EQ);
+    	disabledPodIdSearch.and("allocationState", disabledPodIdSearch.entity().getAllocationState(), Op.EQ);
+
+    	GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
+    	clusterIdSearch.selectField(clusterIdSearch.entity().getId());
+    	clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+    	clusterIdSearch.done();
+
+    	
+    	SearchCriteria<Long> sc = clusterIdSearch.create();
+        sc.setJoinParameters("disabledPodIdSearch", "dataCenterId", zoneId);
+        sc.setJoinParameters("disabledPodIdSearch", "allocationState", Grouping.AllocationState.Disabled);
+        
+        return customSearch(sc, null);
+    }
+
 }

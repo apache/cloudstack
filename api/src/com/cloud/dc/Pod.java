@@ -4,6 +4,7 @@
 package com.cloud.dc;
 
 import com.cloud.org.Grouping;
+import com.cloud.org.Grouping.AllocationState;
 
 /**
  * Represents one pod in the cloud stack.
@@ -28,4 +29,6 @@ public interface Pod extends Grouping {
     String getDescription();
     
     String getName();
+    
+    AllocationState getAllocationState();
 }

@@ -54,6 +54,11 @@ public interface Host {
         }
     }
     
+    public enum HostAllocationState {
+        Disabled,
+        Enabled;
+    }    
+    
     /**
      * @return id of the host.
      */
@@ -187,5 +192,7 @@ public interface Host {
     String getStorageNetmaskDeux();
     
     String getStorageMacAddressDeux();
+    
+    HostAllocationState getHostAllocationState();
     
 }

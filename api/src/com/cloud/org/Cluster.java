@@ -19,4 +19,5 @@ public interface Cluster extends Grouping {
 
     HypervisorType getHypervisorType();
     ClusterType getClusterType();
+    AllocationState getAllocationState();
 }

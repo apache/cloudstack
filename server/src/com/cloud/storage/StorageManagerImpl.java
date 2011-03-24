@@ -119,6 +119,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -978,7 +979,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (zone == null) {
             throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
         }
-
+        // Check if zone is disabled
+		Account account = UserContext.current().getCaller();
+		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())){
+			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
+		}
+		
         URI uri = null;
         try {
             uri = new URI(cmd.getUrl());
@@ -1451,7 +1457,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Long zoneId = null;
         Long diskOfferingId = null;
         Long size = null;
-
+        
         // validate input parameters before creating the volume
         if ((cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) || (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null)) {
             throw new InvalidParameterValueException("Either disk Offering Id or snapshot Id must be passed whilst creating volume");
@@ -1525,6 +1531,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         }
 
+        //Verify that zone exists
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
+        }
+        
+        // Check if zone is disabled
+		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())){
+			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
+		}  
+		
         // Check that there is a shared primary storage pool in the specified zone
         List<StoragePoolVO> storagePools = _storagePoolDao.listByDataCenterId(zoneId);
         boolean sharedPoolExists = false;

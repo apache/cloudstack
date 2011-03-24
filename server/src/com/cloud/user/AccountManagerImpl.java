@@ -693,6 +693,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     @Override
+    public boolean isRootAdmin(short accountType) {
+        return (accountType == Account.ACCOUNT_TYPE_ADMIN); 
+    }
+
+    @Override
     public void checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(caller, domain)) {

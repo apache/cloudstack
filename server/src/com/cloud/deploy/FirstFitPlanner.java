@@ -19,6 +19,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
@@ -26,6 +27,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -34,6 +37,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -47,6 +51,8 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
@@ -101,6 +107,38 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		
 		s_logger.debug("Is ROOT volume READY (pool already allocated)?: " + (plan.getPoolId()!=null ? "Yes": "No"));
 		
+		if(plan.getHostId() != null){
+			Long hostIdSpecified = plan.getHostId();
+			if(s_logger.isDebugEnabled()){
+				s_logger.debug("DeploymentPlan has host_id specified, making no checks on this host, looks like admin test: "+hostIdSpecified);
+			}
+			HostVO host = _hostDao.findById(hostIdSpecified);
+			if(host == null){
+				s_logger.debug("The specified host cannot be found");
+			}else{
+				s_logger.debug("Looking for suitable pools for this host under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
+			}
+			
+			//search for storage under the zone, pod, cluster of the host.
+			DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId());
+			Map<Volume, List<StoragePool>> suitableVolumeStoragePools = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+			//choose the potential pool for this VM for this host
+			if(!suitableVolumeStoragePools.isEmpty()){
+				List<Host> suitableHosts = new ArrayList<Host>();
+				suitableHosts.add(host);
+				
+				Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools);
+				if(potentialResources != null){
+					Pod pod = _podDao.findById(vm.getPodId());
+					Cluster cluster = _clusterDao.findById(host.getClusterId());
+					DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, potentialResources.second());
+					s_logger.debug("Returning Deployment Destination: "+ dest);
+					return dest;
+				}
+			}			
+			s_logger.debug("Cannnot deploy to specified host, returning.");
+			return null;
+		}
 		
 		if (vm.getLastHostId() != null) {
 			s_logger.debug("This VM has last host_id specified, trying to choose the same host: " +vm.getLastHostId());			
@@ -109,37 +147,45 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			if(host == null){
 				s_logger.debug("The last host of this VM cannot be found");
 			}else{
-				if (host.getStatus() == Status.Up) {
-					if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true)){
-						s_logger.debug("The last host of this VM is UP and has enough capacity"); 
-						s_logger.debug("Now checking for suitable pools under zone: "+vm.getDataCenterId() +", pod: "+ vm.getPodId()+", cluster: "+ host.getClusterId());
-						//search for storage under the zone, pod, cluster of the last host.
-						DataCenterDeployment lastPlan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), host.getClusterId(), null);				
-						Map<Volume, List<StoragePool>> suitableVolumeStoragePools = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
-						//choose the potential pool for this VM for this host
-						if(!suitableVolumeStoragePools.isEmpty()){
-							List<Host> suitableHosts = new ArrayList<Host>();
-							suitableHosts.add(host);
-							
-							Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools);
-							if(potentialResources != null){
-								Pod pod = _podDao.findById(vm.getPodId());
-								Cluster cluster = _clusterDao.findById(host.getClusterId());
-								DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, potentialResources.second());
-								s_logger.debug("Returning Deployment Destination: "+ dest);
-								return dest;
+				if (host.getStatus() == Status.Up && host.getHostAllocationState() == Host.HostAllocationState.Enabled) {
+					//check zone/pod/cluster are enabled
+					if(isEnabledForAllocation(vm.getDataCenterId(), vm.getPodId(), host.getClusterId())){
+						if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true)){
+							s_logger.debug("The last host of this VM is UP and has enough capacity"); 
+							s_logger.debug("Now checking for suitable pools under zone: "+vm.getDataCenterId() +", pod: "+ vm.getPodId()+", cluster: "+ host.getClusterId());
+							//search for storage under the zone, pod, cluster of the last host.
+							DataCenterDeployment lastPlan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());			
+							Map<Volume, List<StoragePool>> suitableVolumeStoragePools = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+							//choose the potential pool for this VM for this host
+							if(!suitableVolumeStoragePools.isEmpty()){
+								List<Host> suitableHosts = new ArrayList<Host>();
+								suitableHosts.add(host);
+								
+								Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools);
+								if(potentialResources != null){
+									Pod pod = _podDao.findById(vm.getPodId());
+									Cluster cluster = _clusterDao.findById(host.getClusterId());
+									DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, potentialResources.second());
+									s_logger.debug("Returning Deployment Destination: "+ dest);
+									return dest;
+								}
 							}
+						}else{
+							s_logger.debug("The last host of this VM does not have enough capacity");
 						}
-					}else{
-						s_logger.debug("The last host of this VM does not have enough capacity");
 					}
 				}else{
-					s_logger.debug("The last host of this VM is not UP, host status is: "+host.getStatus().name());
+					s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: "+host.getStatus().name() + ", host allocation state is: "+host.getHostAllocationState().name());
 				}
 			}
 			
 			s_logger.debug("Cannot choose the last host to deploy this VM ");
 		}
+		
+		if(!isEnabledForAllocation(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId())){
+			s_logger.debug("Cannot deploy to specified plan, allocation state is disabled, returning.");
+			return null;
+		}		
 
 		List<Long> clusterList = new ArrayList<Long>();
 		if (plan.getClusterId() != null) {
@@ -170,7 +216,16 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 						}
 			    		clusterList.removeAll(avoid.getClustersToAvoid());
 			    	}
-					DeployDestination dest = checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
+			    	
+			    	List<Long> disabledClusters = listDisabledClusters(plan.getDataCenterId(), podIdSpecified);
+			    	if(!disabledClusters.isEmpty()){
+			    		if (s_logger.isDebugEnabled()) {
+			    			s_logger.debug("Removing from the clusterId list these clusters that are disabled: "+ disabledClusters);
+			    		}
+			    		clusterList.removeAll(disabledClusters);	
+			    	}
+					
+			    	DeployDestination dest = checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
 					if(dest == null){
 						avoid.addPod(plan.getPodId());
 					}
@@ -198,7 +253,21 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			    		s_logger.debug("Removing from the clusterId list these clusters from avoid set: "+ avoid.getClustersToAvoid());
 					}
 					prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
-				}			
+				}
+		    	List<Long> disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
+		    	if(!disabledClusters.isEmpty()){
+		    		if (s_logger.isDebugEnabled()) {
+		    			s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: "+ disabledClusters);
+		    		}
+		    		prioritizedClusterIds.removeAll(disabledClusters);
+		    	}
+			}else{
+				if (s_logger.isDebugEnabled()) {
+		    		s_logger.debug("No clusters found having a host with enough capacity, returning.");
+				}
+	    		return null;
+			}
+			if(!prioritizedClusterIds.isEmpty()){
 				boolean applyUserConcentrationPodHeuristic = Boolean.parseBoolean(_configDao.getValue(Config.UseUserConcentratedPodAllocation.key())); 
 				if(applyUserConcentrationPodHeuristic && vmProfile.getOwner() != null){
 					//user has VMs in certain pods. - prioritize those pods first
@@ -222,7 +291,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 				return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
 			}else{
 				if (s_logger.isDebugEnabled()) {
-		    		s_logger.debug("No clusters found having a host with enough capacity, returning.");
+		    		s_logger.debug("No clusters found after removing disabled clusters and clusters in avoid list, returning.");
 				}
 	    		return null;
 			}
@@ -230,10 +299,25 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
 	}
 	
+	private List<Long> listDisabledClusters(long zoneId, Long podId){
+		List<Long> disabledClusters = _clusterDao.listDisabledClusters(zoneId, podId);
+		if(podId == null){
+			//list all disabled clusters under this zone + clusters under any disabled pod of this zone
+			List<Long> clustersWithDisabledPods = _clusterDao.listClustersWithDisabledPods(zoneId);
+			disabledClusters.addAll(clustersWithDisabledPods);
+		}
+		return disabledClusters;
+	}
+	
+	                                          
 	
 	private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile vmProfile,
 			DeploymentPlan plan, ExcludeList avoid, DataCenter dc, String _allocationAlgorithm){
 		
+    	if (s_logger.isDebugEnabled()) {
+    		s_logger.debug("ClusterId List to consider: "+clusterList );
+		}
+    	
 		for(Long clusterId : clusterList){
 			Cluster clusterVO = _clusterDao.findById(clusterId);
 
@@ -242,9 +326,17 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 				avoid.addCluster(clusterVO.getId());
 				continue;
 			}
+			
+            if(clusterVO.getAllocationState() != Grouping.AllocationState.Enabled){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster name: " + clusterVO.getName() + ", clusterId: "+ clusterId +" is in " + clusterVO.getAllocationState().name() + " state, skipping this and trying other clusters");
+                }
+                continue;
+            }
+            
 			s_logger.debug("Checking resources in Cluster: "+clusterId + " under Pod: "+clusterVO.getPodId());
 			//search for resources(hosts and storage) under this zone, pod, cluster.
-			DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), plan.getPoolId());
+			DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId());
 
 			//find suitable hosts under this cluster, need as many hosts as we get.
 			List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, RETURN_UPTO_ALL);
@@ -488,5 +580,28 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Override
 	public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
     	return vm.getHypervisorType() != HypervisorType.BareMetal;
+    }
+    
+    private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId){
+		// Check if the zone exists in the system
+		DataCenterVO zone = _dcDao.findById(zoneId);
+		if(zone != null && Grouping.AllocationState.Disabled == zone.getAllocationState()){
+			s_logger.info("Zone is currently disabled, cannot allocate to this zone: "+ zoneId);
+			return false;
+		}
+
+		Pod pod = _podDao.findById(podId);
+		if(pod != null && Grouping.AllocationState.Disabled == pod.getAllocationState()){
+			s_logger.info("Pod is currently disabled, cannot allocate to this pod: "+ podId);
+			return false;
+		}
+
+		Cluster cluster = _clusterDao.findById(clusterId);
+		if(cluster != null && Grouping.AllocationState.Disabled == cluster.getAllocationState()){
+			s_logger.info("Cluster is currently disabled, cannot allocate to this cluster: "+ clusterId);
+			return false;
+		}
+
+    	return true;
     }
 }

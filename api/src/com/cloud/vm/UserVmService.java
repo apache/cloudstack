@@ -142,7 +142,8 @@ public interface UserVmService {
                          This binary data must be base64 encoded before adding it to the request. 
                          Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair - name of the ssh key pair used to login to the virtual machine
-     * 
+     * @param Host destinationHost to deploy the VM
+     *  
      * @return UserVm object if successful.
      * 
      * @throws InsufficientCapacityException if there is insufficient capacity to deploy the VM.
@@ -151,7 +152,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException 
      */    
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, 
-                                    HypervisorType hypervisor, String userData, String sshKeyPair) 
+                                    HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost) 
                                     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
     
     
@@ -178,6 +179,7 @@ public interface UserVmService {
                          This binary data must be base64 encoded before adding it to the request. 
                          Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair - name of the ssh key pair used to login to the virtual machine
+     * @param Host destinationHost to deploy the VM
      * 
      * @return UserVm object if successful.
      * 
@@ -188,7 +190,7 @@ public interface UserVmService {
      */ 
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList, 
                                                     Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, 
-                                                    HypervisorType hypervisor, String userData, String sshKeyPair) 
+                                                    HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost) 
                                                     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
     
     
@@ -214,6 +216,7 @@ public interface UserVmService {
                          This binary data must be base64 encoded before adding it to the request. 
                          Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair - name of the ssh key pair used to login to the virtual machine
+     * @param Host destinationHost to deploy the VM
      * 
      * @return UserVm object if successful.
      * 
@@ -223,7 +226,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException 
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName, 
-                                        String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair) 
+                                        String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost) 
                                         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
     
     /**
@@ -278,7 +281,8 @@ public interface UserVmService {
      * Migrate the given VM to the destination host provided. The API returns the migrated VM
      * if migration succeeds. Only Root Admin can migrate a VM.
      * @param UserVm vm The VM to migrate
-     * @return Host destinationHost to migrate the VM
+     * @param Host destinationHost to migrate the VM
+     * @return UserVm migrated VM
      * @throws ManagementServerException in case we get error finding the VM or host or access errors or other internal errors.
      * @throws ConcurrentOperationException if there are multiple users working on the same VM.
      * @throws ResourceUnavailableException if the destination host to migrate the VM is not currently available.

@@ -41,6 +41,11 @@ public interface DeploymentPlan {
     public Long getClusterId();
     
     /**
+     * @return host the VM should deploy in; null if no preference.
+     */
+    public Long getHostId();
+    
+    /**
      * @return pool the VM should be created in; null if no preference.
      */
     public Long getPoolId();

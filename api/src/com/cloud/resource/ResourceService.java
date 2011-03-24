@@ -58,7 +58,8 @@ public interface ResourceService {
      * @throws InvalidParameterValueException
      */
     List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
-    boolean deleteCluster(DeleteClusterCmd cmd) throws InvalidParameterValueException; 
+    boolean deleteCluster(DeleteClusterCmd cmd) throws InvalidParameterValueException;
+    Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState) throws InvalidParameterValueException;
     
     List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
@@ -73,4 +74,6 @@ public interface ResourceService {
     boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException; 
     
     Host getHost(long hostId);
+
+	Cluster getCluster(Long clusterId);
 }

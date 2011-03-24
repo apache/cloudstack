@@ -33,6 +33,7 @@ import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanVO;
+import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -58,6 +59,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> PublicZonesSearch;
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
     protected SearchBuilder<DataCenterVO> securityGroupSearch;
+    protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
 
     protected final DataCenterIpAddressDaoImpl _ipAllocDao = ComponentLocator.inject(DataCenterIpAddressDaoImpl.class);
     protected final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -266,6 +268,10 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         securityGroupSearch.and("isSgEnabled", securityGroupSearch.entity().isSecurityGroupEnabled(), SearchCriteria.Op.EQ);
         securityGroupSearch.done();
         
+        DisabledZonesSearch = createSearchBuilder();
+        DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        DisabledZonesSearch.done();
+        
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
@@ -283,5 +289,14 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
             return;
         }
         _detailsDao.persist(zone.getId(), details);
+    }
+    
+    public List<DataCenterVO> listDisabledZones(){
+    	SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+    	sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
+    	
+    	List<DataCenterVO> dcs =  listBy(sc);
+    	
+    	return dcs;
     }
 }

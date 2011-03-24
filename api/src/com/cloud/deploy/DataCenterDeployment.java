@@ -22,15 +22,17 @@ public class DataCenterDeployment implements DeploymentPlan {
     Long _podId;
     Long _clusterId;
     Long _poolId;
+    Long _hostId;
     
     public DataCenterDeployment(long dataCenterId) {
-        this(dataCenterId, null, null, null);
+        this(dataCenterId, null, null, null, null);
     }
     
-    public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long poolId) {
+    public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long hostId, Long poolId) {
         _dcId = dataCenterId;
         _podId = podId;
         _clusterId = clusterId;
+        _hostId = hostId;
         _poolId = poolId;
     }
     
@@ -47,6 +49,11 @@ public class DataCenterDeployment implements DeploymentPlan {
     @Override
     public Long getClusterId() {
         return _clusterId;
+    }
+
+    @Override
+    public Long getHostId(){
+    	return _hostId;
     }
     
     @Override

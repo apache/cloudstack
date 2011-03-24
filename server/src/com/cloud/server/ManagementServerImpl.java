@@ -728,6 +728,7 @@ public class ManagementServerImpl implements ManagementServer {
         List<DataCenterVO> dcs = null;
     	Long domainId = cmd.getDomainId();
     	Long id = cmd.getId();
+    	boolean removeDisabledZones = false;
     	if(domainId != null){
     		//for domainId != null
     		//right now, we made the decision to only list zones associated with this domain
@@ -753,7 +754,8 @@ public class ManagementServerImpl implements ManagementServer {
     			}
     		}
     		//add all public zones too
-    		dcs.addAll(_dcDao.listPublicZones());    		
+    		dcs.addAll(_dcDao.listPublicZones());    	
+    		removeDisabledZones = true;
     	}else if(account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
     		//it was decided to return all zones for the domain admin, and everything above till root
     		dcs = new ArrayList<DataCenterVO>();
@@ -788,6 +790,11 @@ public class ManagementServerImpl implements ManagementServer {
     		}   		
     		//add all public zones too
     		dcs.addAll(_dcDao.listPublicZones());
+    		removeDisabledZones = true;
+    	}
+    	
+    	if(removeDisabledZones){
+    		dcs.removeAll(_dcDao.listDisabledZones());
     	}
 
         Boolean available = cmd.isAvailable();
@@ -1187,6 +1194,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object zoneId = cmd.getZoneId();
         Object hypervisorType = cmd.getHypervisorType();
         Object clusterType = cmd.getClusterType();
+        Object allocationState = cmd.getAllocationState();
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -1211,6 +1219,10 @@ public class ManagementServerImpl implements ManagementServer {
         if(clusterType != null) {
         	sc.addAnd("clusterType", SearchCriteria.Op.EQ, clusterType);
         }
+        
+        if(allocationState != null){
+        	sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
+        }
 
         return _clusterDao.search(sc, searchFilter);
     }
@@ -1225,8 +1237,9 @@ public class ManagementServerImpl implements ManagementServer {
         Object cluster = cmd.getClusterId();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
+        Object allocationState = cmd.getAllocationState();
 
-        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zone, pod, cluster, id, keyword);
+        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zone, pod, cluster, id, keyword, allocationState);
     }
     
     @Override
@@ -1274,7 +1287,7 @@ public class ManagementServerImpl implements ManagementServer {
 			s_logger.debug("Searching for all hosts in cluster: " +cluster+ " for migrating VM "+ vm);
 		}
     	
-    	List<? extends Host> allHostsInCluster = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null);
+    	List<? extends Host> allHostsInCluster = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null);
     	//filter out the current host
     	allHostsInCluster.remove(srcHost);
 
@@ -1298,7 +1311,7 @@ public class ManagementServerImpl implements ManagementServer {
     	return new Pair<List<? extends Host>, List<Long>>(allHostsInCluster, hostsWithCapacity);
     }
 
-    private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword) {
+    private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword, Object allocationState) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
         
@@ -1334,6 +1347,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("clusterId", SearchCriteria.Op.EQ, cluster);
         }
         
+        if(allocationState != null){
+        	sc.addAnd("hostAllocationState", SearchCriteria.Op.EQ, allocationState);
+        }
+        
         return _hostDao.search(sc, searchFilter);
     }
 
@@ -1346,6 +1363,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long id = cmd.getId();
         Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
+        Object allocationState = cmd.getAllocationState();
 
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
@@ -1366,6 +1384,10 @@ public class ManagementServerImpl implements ManagementServer {
         if (zoneId != null) {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
+        
+        if (allocationState != null) {
+            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
+        }        
 
         return _hostPodDao.search(sc, searchFilter);
     }

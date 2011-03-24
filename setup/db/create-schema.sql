@@ -275,10 +275,12 @@ CREATE TABLE `cloud`.`cluster` (
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
   `hypervisor_type` varchar(32),
   `cluster_type` varchar(64) DEFAULT 'CloudManaged',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this cluster enabled for allocation for new resources',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`),
   CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
-  UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`)
+  UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`),
+  INDEX `i_cluster__allocation_state`(`allocation_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`cluster_details` (
@@ -482,10 +484,11 @@ CREATE TABLE  `cloud`.`data_center` (
   `lb_provider` char(64) DEFAULT 'VirtualRouter',
   `vpn_provider` char(64) DEFAULT 'VirtualRouter',
   `userdata_provider` char(64) DEFAULT 'VirtualRouter',
-  `enable` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this data center enabled for activities',
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this data center enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`)
+  CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
+  INDEX `i_data_center__allocation_state`(`allocation_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
@@ -523,11 +526,12 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   `gateway` varchar(255) NOT NULL COMMENT 'gateway for the pod',
   `cidr_address` varchar(15) NOT NULL COMMENT 'CIDR address for the pod',
   `cidr_size` bigint unsigned NOT NULL COMMENT 'CIDR size for the pod',
-  `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',
-  `enabled` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this Pod enabled for activity',
+  `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',  
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this Pod enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`name`, `data_center_id`),
   INDEX `i_host_pod_ref__data_center_id`(`data_center_id`)
+  INDEX `i_host_pod_ref__allocation_state`(`allocation_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
@@ -636,11 +640,13 @@ CREATE TABLE  `cloud`.`host` (
   `disconnected` datetime COMMENT 'Time this was disconnected',
   `created` datetime COMMENT 'date the host first signed on',
   `removed` datetime COMMENT 'date removed if not null',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this host enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
   INDEX `i_host__removed`(`removed`),
   INDEX `i_host__last_ping`(`last_ping`),
   INDEX `i_host__status`(`status`),
   INDEX `i_host__data_center_id`(`data_center_id`),
+  INDEX `i_host__allocation_state`(`allocation_state`),
   CONSTRAINT `fk_host__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
   INDEX `i_host__pod_id`(`pod_id`),
   CONSTRAINT `fk_host__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`)

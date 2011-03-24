@@ -126,6 +126,11 @@ public class HostVO implements Host {
     
     @Column(name="setup")
     private boolean setup = false;
+    
+    @Column(name="allocation_state", nullable=false)
+    @Enumerated(value=EnumType.STRING)
+    private HostAllocationState hostAllocationState;
+
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -651,4 +656,13 @@ public class HostVO implements Host {
 	public HypervisorType getHypervisorType() {
 		return hypervisorType;
 	}
+	
+	@Override
+	public HostAllocationState getHostAllocationState() {
+    	return hostAllocationState;
+    }
+    
+    public void setHostAllocationState(HostAllocationState hostAllocationState) {
+		this.hostAllocationState = hostAllocationState;
+    }	
 }

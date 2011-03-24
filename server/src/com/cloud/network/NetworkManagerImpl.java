@@ -102,6 +102,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.org.Grouping;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -491,7 +492,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         _accountMgr.checkAccess(caller, owner);
-
+        
+        if(zoneId != null){
+	        DataCenterVO zone = _dcDao.findById(zoneId);
+			if (zone == null) {
+				throw new InvalidParameterValueException("Can't find zone by id "
+						+ zoneId);
+			}
+			
+			if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
+				throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
+			}
+        }
         long ownerId = owner.getId();
         Long networkId = cmd.getNetworkId();
         Network network = null;
@@ -1451,10 +1463,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         // Check if zone exists
-        if (zoneId == null || ((_dcDao.findById(zoneId)) == null)) {
+		DataCenterVO zone = _dcDao.findById(zoneId);
+
+        if (zoneId == null || zone == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
+		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(ctxAccount.getType())){
+			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
+		}
+
         //Check if network offering is Available
         if (networkOffering.getAvailability() == Availability.Unavailable) {
             throw new InvalidParameterValueException("Can't create network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability());
@@ -1602,7 +1620,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null);
         NetworkVO userNetwork = new NetworkVO();
         userNetwork.setNetworkDomain(networkDomain);
         userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);

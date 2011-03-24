@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
@@ -49,6 +50,9 @@ public class ListPodsByCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list Pods by Zone ID")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list pods by allocation state")
+    private String allocationState;    
 
 
     /////////////////////////////////////////////////////
@@ -66,6 +70,10 @@ public class ListPodsByCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    }    
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

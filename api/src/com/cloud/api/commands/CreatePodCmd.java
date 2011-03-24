@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
@@ -56,6 +57,9 @@ public class CreatePodCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created	")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Pod for allocation of new resources")
+    private String allocationState;
 
 
     /////////////////////////////////////////////////////
@@ -86,7 +90,10 @@ public class CreatePodCmd extends BaseCmd {
         return zoneId;
     }
 
-
+    public String getAllocationState() {
+    	return allocationState;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

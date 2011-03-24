@@ -44,6 +44,9 @@ public class PodResponse extends BaseResponse {
 
     @SerializedName("endip") @Param(description="the ending IP for the Pod")
     private String endIp;
+    
+    @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
+    private String allocationState;    
 
     public Long getId() {
         return id;
@@ -108,4 +111,12 @@ public class PodResponse extends BaseResponse {
     public void setEndIp(String endIp) {
         this.endIp = endIp;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    }
+    
+    public void setAllocationState(String allocationState) {
+    	this.allocationState = allocationState;
+    }       
 }

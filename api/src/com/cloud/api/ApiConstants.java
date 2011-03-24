@@ -212,5 +212,6 @@ public class ApiConstants {
     public static final String PRIVATE_MAC_ADDRESS = "privatemacaddress";
     public static final String PRIVATE_NETMASK = "privatenetmask";
     public static final String PRIVATE_NETWORK_ID = "privatenetworkid";
+    public static final String ALLOCATION_STATE = "allocationstate";
 }
  

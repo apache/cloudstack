@@ -565,6 +565,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             hostResponse.setEvents(events);
         }
+        
+        hostResponse.setAllocationState(host.getHostAllocationState().toString());
+        
         hostResponse.setObjectName("host");
 
         return hostResponse;
@@ -719,6 +722,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setStartIp(ipRange[0]);
         podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
         podResponse.setGateway(pod.getGateway());
+        podResponse.setAllocationState(pod.getAllocationState().toString());
         podResponse.setObjectName("pod");
         return podResponse;
     }
@@ -747,6 +751,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         zoneResponse.setDomain(dataCenter.getDomain());
         zoneResponse.setDomainId(dataCenter.getDomainId());
         zoneResponse.setType(dataCenter.getNetworkType().toString());
+        zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
         zoneResponse.setObjectName("zone");
         return zoneResponse;
     }
@@ -915,6 +920,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setZoneId(cluster.getDataCenterId());
         clusterResponse.setHypervisorType(cluster.getHypervisorType().toString());
         clusterResponse.setClusterType(cluster.getClusterType().toString());
+        clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
         clusterResponse.setPodName(pod.getName());
         DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());

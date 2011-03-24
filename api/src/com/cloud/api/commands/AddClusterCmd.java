@@ -46,6 +46,8 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name=ApiConstants.CLUSTER_TYPE, type=CommandType.STRING, required=true, description="hypervisor type of the cluster")
     private String clusterType;
     
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
+    private String allocationState;
     
     public String getClusterName() {
         return clusterName;
@@ -92,6 +94,14 @@ public class AddClusterCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    }
+    
+    public void setAllocationState(String allocationState) {
+    	this.allocationState = allocationState;
+    }    
 
     @Override
     public void execute(){

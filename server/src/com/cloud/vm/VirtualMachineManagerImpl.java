@@ -226,7 +226,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (plan.getPodId() != null) {
             vm.setPodId(plan.getPodId());
         }
-        assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
+        if (plan.getHostId() != null) {
+            vm.setHostId(plan.getHostId());
+        }
+        assert (plan.getPoolId() == null) : "We currently don't support pool preset yet";
         
         @SuppressWarnings("unchecked")
         VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
@@ -533,7 +536,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
-        
+        Long hostIdSpecified = vm.getHostId(); 
         VirtualMachineGuru<T> vmGuru;
         if (vm.getHypervisorType() == HypervisorType.BareMetal) {
         	vmGuru = getBareMetalVmGuru(vm);
@@ -554,7 +557,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         T startedVm = null;
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null);
+        Long clusterSpecified = null;
+        if(hostIdSpecified != null){
+        	Host destinationHost = _hostDao.findById(hostIdSpecified);
+        	clusterSpecified = destinationHost.getClusterId();
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), clusterSpecified, hostIdSpecified, null);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         
         try {
@@ -575,7 +583,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             long rootVolDcId = pool.getDataCenterId();
                             Long rootVolPodId = pool.getPodId();
                             Long rootVolClusterId = pool.getClusterId();
-                            plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, vol.getPoolId());
+                            plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Root Volume " + vol + " is ready, changing deployment plan to use this pool's datacenterId: "+rootVolDcId +" , podId: "+rootVolPodId +" , and clusterId: "+rootVolClusterId);
                             }
@@ -1132,7 +1140,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         Host host = _hostDao.findById(hostId);
         
-        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null);
+        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(hostId);
         

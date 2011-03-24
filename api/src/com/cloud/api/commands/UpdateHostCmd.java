@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.HostResponse;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
@@ -43,6 +44,9 @@ public class UpdateHostCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="the id of Os category to update the host with")
     private Long osCategoryId;
+    
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Host for allocation of new resources")
+    private String allocationState;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,6 +59,10 @@ public class UpdateHostCmd extends BaseCmd {
     public Long getOsCategoryId() {
         return osCategoryId;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    }     
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

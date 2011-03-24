@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.org.Cluster;
@@ -59,6 +60,9 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.CLUSTER_TYPE, type=CommandType.STRING, description="lists clusters by cluster type")
     private String clusterType;
     
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="lists clusters by allocation state")
+    private String allocationState;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -88,6 +92,9 @@ public class ListClustersCmd extends BaseListCmd {
     	return clusterType;
     }
 
+    public String getAllocationState() {
+    	return allocationState;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

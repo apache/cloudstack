@@ -32,6 +32,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import com.cloud.network.Network.Provider;
+import com.cloud.utils.NumbersUtil;
 
 @Entity
 @Table(name="data_center")
@@ -112,6 +113,10 @@ public class DataCenterVO implements DataCenter {
     // Call the dao to load it.
     @Transient
     Map<String, String> details;
+    
+    @Column(name="allocation_state")
+    @Enumerated(value=EnumType.STRING)
+    AllocationState allocationState;
     
     @Override
     public String getDnsProvider() {
@@ -354,5 +359,27 @@ public class DataCenterVO implements DataCenter {
         assert (details != null) : "Did you forget to load the details?";
         
         details.put(name, value);
+    }
+    
+    public AllocationState getAllocationState() {
+    	return allocationState;
+    }
+    
+    public void setAllocationState(AllocationState allocationState) {
+		this.allocationState = allocationState;
+    }
+    
+    @Override
+    public int hashCode() {
+        return NumbersUtil.hash(id);
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof DataCenterVO)) {
+            return false;
+        }
+        DataCenterVO that = (DataCenterVO)obj;
+        return this.id == that.id;
     }
 }

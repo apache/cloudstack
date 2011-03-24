@@ -27,6 +27,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
@@ -82,7 +83,8 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.HOST_TAG, type=CommandType.STRING, description="Only for hypervisor is BareMetal, Tag of host")
     private String hostTag;
     
-    
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Host for allocation of new resources")
+    private String allocationState;
 
     @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
     private List<String> hostTags;
@@ -146,6 +148,10 @@ public class AddHostCmd extends BaseCmd {
     public String getHostTag() {
     	return hostTag;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    }    
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

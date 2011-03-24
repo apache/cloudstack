@@ -109,11 +109,13 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -132,6 +134,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceService;
 import com.cloud.resource.ServerResource;
@@ -151,6 +154,9 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.ActionDelegate;
@@ -275,6 +281,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 	@Inject
 	protected StorageManager _storageMgr = null;
+	
+    @Inject
+    protected AccountManager _accountMgr = null;
 
 	protected int _retry = 2;
 
@@ -503,7 +512,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				vm, template, offering, null, null);
 		DeployDestination dest = null;
 		DataCenterDeployment plan = new DataCenterDeployment(dc.getId(),
-				pod.getId(), sp.getClusterId(), null);
+				pod.getId(), sp.getClusterId(), null, null);
 		ExcludeList avoids = new ExcludeList();
 		for (Host h : avoid) {
 			avoids.addHost(h.getId());
@@ -560,12 +569,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	}
 
 	protected AgentAttache handleDirectConnect(ServerResource resource,
-			StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags)
+			StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags, String allocationState)
 			throws ConnectionException {
 		if (startup == null) {
 			return null;
 		}
-		HostVO server = createHost(startup, resource, details, old, hostTags);
+		HostVO server = createHost(startup, resource, details, old, hostTags, allocationState);
 		if (server == null) {
 			return null;
 		}
@@ -589,15 +598,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		String url = cmd.getUrl();
 		String username = cmd.getUsername();
 		String password = cmd.getPassword();
-
+		
 		URI uri = null;
 
 		// Check if the zone exists in the system
-		if (_dcDao.findById(dcId) == null) {
+		DataCenterVO zone = _dcDao.findById(dcId);
+		if (zone == null) {
 			throw new InvalidParameterValueException("Can't find zone by id "
 					+ dcId);
 		}
-
+		
+		Account account = UserContext.current().getCaller();
+		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())){
+			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ dcId );
+		}
+		
 		// Check if the pod exists in the system
 		if (podId != null) {
 			if (_podDao.findById(podId) == null) {
@@ -636,7 +651,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		if (clusterType == null) {
 			clusterType = Cluster.ClusterType.CloudManaged;
 		}
-
+		
+		Grouping.AllocationState allocationState = null;
+		if (cmd.getAllocationState() != null && !cmd.getAllocationState().isEmpty()) {
+			try{
+				allocationState = Grouping.AllocationState.valueOf(cmd.getAllocationState());
+			}catch(IllegalArgumentException ex){
+				throw new InvalidParameterValueException("Unable to resolve Allocation State '" + cmd.getAllocationState() + "' to a supported state");
+			}
+		}
+		if (allocationState == null) {
+			allocationState = Grouping.AllocationState.Disabled;
+		}
+		
 		Discoverer discoverer = getMatchingDiscover(hypervisorType);
 		if (discoverer == null) {
 			
@@ -650,6 +677,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		cluster.setHypervisorType(cmd.getHypervisor());
 
 		cluster.setClusterType(clusterType);
+		cluster.setAllocationState(allocationState);
 		try {
 			cluster = _clusterDao.persist(cluster);
 		} catch (Exception e) {
@@ -705,7 +733,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (resources != null) {
 				for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
 					ServerResource resource = entry.getKey();
-					AgentAttache attache = simulateStart(resource, entry.getValue(), true, null);
+					AgentAttache attache = simulateStart(resource, entry.getValue(), true, null, null);
 					if (attache != null) {
 						hosts.add(_hostDao.findById(attache.getId()));
 					}
@@ -788,9 +816,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		}
 		
 		List<String> hostTags = cmd.getHostTags();
+		String allocationState = cmd.getAllocationState();
+		if (allocationState == null) {
+			allocationState = Host.HostAllocationState.Disabled.toString();
+		}
 		
 		return discoverHostsFull(dcId, podId, clusterId, clusterName, url,
-				username, password, cmd.getHypervisor(), hostTags, bareMetalParams);
+				username, password, cmd.getHypervisor(), hostTags, bareMetalParams, allocationState);
 	}
 
 	@Override
@@ -808,20 +840,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			String clusterName, String url, String username, String password,
 			String hypervisorType, List<String> hostTags) throws IllegalArgumentException,
 			DiscoveryException, InvalidParameterValueException {
-		return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, null);
+		return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, null, null);
 	}
 	
 	
 	private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId,
 			String clusterName, String url, String username, String password,
-			String hypervisorType, List<String>hostTags, Map<String, String>params) throws IllegalArgumentException,
+			String hypervisorType, List<String>hostTags, Map<String, String>params, String allocationState) throws IllegalArgumentException,
 			DiscoveryException, InvalidParameterValueException {
 		URI uri = null;
 
 		// Check if the zone exists in the system
-		if (_dcDao.findById(dcId) == null) {
+		DataCenterVO zone = _dcDao.findById(dcId);
+		if (zone == null) {
 			throw new InvalidParameterValueException("Can't find zone by id "
 					+ dcId);
+		}
+		
+		Account account = UserContext.current().getCaller();
+		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())){
+			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ dcId );
 		}
 
 		// Check if the pod exists in the system
@@ -949,7 +987,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 						return null;
 					}
 					AgentAttache attache = simulateStart(resource,
-							entry.getValue(), true, hostTags);
+							entry.getValue(), true, hostTags, allocationState);
 					if (attache != null) {
 						hosts.add(_hostDao.findById(attache.getId()));
 					}
@@ -1008,7 +1046,77 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			return false;
 		}
 	}
+	
+	@Override
+	@DB
+	public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState)
+	throws InvalidParameterValueException {
+		
+		ClusterVO cluster = (ClusterVO)clusterToUpdate;
+		// Verify cluster information and update the cluster if needed
+		boolean doUpdate = false;
 
+		if (hypervisor != null && !hypervisor.isEmpty()) {
+			Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
+			if (hypervisorType == null) {
+				s_logger.error("Unable to resolve " + hypervisor + " to a valid supported hypervisor type");
+				throw new InvalidParameterValueException("Unable to resolve " + hypervisor + " to a supported type");
+			}else{
+				cluster.setHypervisorType(hypervisor);
+				doUpdate = true;
+			}
+		}
+
+
+		Cluster.ClusterType newClusterType = null;
+		if (clusterType != null && !clusterType.isEmpty()) {
+			try{
+				newClusterType = Cluster.ClusterType.valueOf(clusterType);
+			}catch(IllegalArgumentException ex){
+				throw new InvalidParameterValueException("Unable to resolve " + clusterType + " to a supported type");
+			}
+			if (newClusterType == null) {
+				s_logger.error("Unable to resolve " + clusterType + " to a valid supported cluster type");
+				throw new InvalidParameterValueException("Unable to resolve " + clusterType + " to a supported type");
+			}else{
+				cluster.setClusterType(newClusterType);
+				doUpdate = true;
+			}			
+		}
+		
+		Grouping.AllocationState newAllocationState = null;
+		if (allocationState != null && !allocationState.isEmpty()) {
+			try{
+				newAllocationState = Grouping.AllocationState.valueOf(allocationState);
+			}catch(IllegalArgumentException ex){
+				throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationState + "' to a supported state");
+			}
+			if (newAllocationState == null) {
+				s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
+				throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
+			}else{
+				cluster.setAllocationState(newAllocationState);
+				doUpdate = true;
+			}
+		}
+		if(doUpdate){
+			Transaction txn = Transaction.currentTxn();
+			try {
+				txn.start();			
+				_clusterDao.update(cluster.getId(), cluster);
+				txn.commit();
+			} catch(Exception e) {
+				s_logger.error("Unable to update cluster due to " + e.getMessage(), e);
+				throw new CloudRuntimeException("Failed to update cluster. Please contact Cloud Support.");
+			}
+		}
+		return cluster;
+	}
+
+	public Cluster getCluster(Long clusterId){
+		return _clusterDao.findById(clusterId);
+	}
+	
 	@Override
     public Answer sendTo(Long dcId, HypervisorType type, Command cmd) {
         List<ClusterVO> clusters = _clusterDao.listByDcHyType(dcId, type.toString());
@@ -1760,7 +1868,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	}
 
 	protected AgentAttache simulateStart(ServerResource resource,
-			Map<String, String> details, boolean old, List<String> hostTags)
+			Map<String, String> details, boolean old, List<String> hostTags, String allocationState)
 			throws IllegalArgumentException {
 		StartupCommand[] cmds = resource.initialize();
 		if (cmds == null) {
@@ -1775,7 +1883,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 //							.toString());
 		}
 		try {
-			attache = handleDirectConnect(resource, cmds, details, old, hostTags);
+			attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState);
 		} catch (IllegalArgumentException ex) {
 			s_logger.warn("Unable to connect due to ", ex);
 			throw ex;
@@ -2356,13 +2464,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			}
 		}
 
-		AgentAttache attache = simulateStart(resource, hostDetails, true, null);
+		AgentAttache attache = simulateStart(resource, hostDetails, true, null, null);
 		return _hostDao.findById(attache.getId());
 	}
 
 	public HostVO createHost(final StartupCommand startup,
 			ServerResource resource, Map<String, String> details,
-			boolean directFirst, List<String> hostTags) throws IllegalArgumentException {
+			boolean directFirst, List<String> hostTags, String allocationState) throws IllegalArgumentException {
 		Host.Type type = null;
 
 		if (startup instanceof StartupStorageCommand) {
@@ -2434,6 +2542,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		server.setDetails(details);
 		server.setHostTags(hostTags);
 		
+		if(allocationState != null){
+			try{
+				HostAllocationState hostAllocationState = Host.HostAllocationState.valueOf(allocationState);
+				if(hostAllocationState != null){
+					server.setHostAllocationState(hostAllocationState);
+				}
+			}catch(IllegalArgumentException ex){
+				s_logger.error("Unable to resolve " + allocationState + " to a valid supported host allocation State");
+			}
+		}
+		
 		updateHost(server, startup, type, _nodeId);
 		if (resource != null) {
 			server.setResource(resource.getClass().getName());
@@ -2484,9 +2603,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 	public HostVO createHost(final StartupCommand[] startup,
 			ServerResource resource, Map<String, String> details,
-			boolean directFirst, List<String> hostTags) throws IllegalArgumentException {
+			boolean directFirst, List<String> hostTags, String allocationState) throws IllegalArgumentException {
 		StartupCommand firstCmd = startup[0];
-		HostVO result = createHost(firstCmd, resource, details, directFirst, hostTags);
+		HostVO result = createHost(firstCmd, resource, details, directFirst, hostTags, allocationState);
 		if (result == null) {
 			return null;
 		}
@@ -2496,7 +2615,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	public AgentAttache handleConnect(final Link link,
 			final StartupCommand[] startup) throws IllegalArgumentException,
 			ConnectionException {
-		HostVO server = createHost(startup, null, null, false, null);
+		HostVO server = createHost(startup, null, null, false, null, null);
 		if (server == null) {
 			return null;
 		}
@@ -2606,6 +2725,31 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				hostDetails.remove("guest.os.category.id");
 			}
 			_hostDetailsDao.persist(hostId, hostDetails);
+		}
+		
+		String allocationState = cmd.getAllocationState();
+		if(allocationState != null){
+			// Verify that the host exists
+			HostVO host = _hostDao.findById(hostId);
+			if (host == null) {
+				throw new InvalidParameterValueException("Host with id "
+						+ hostId + " doesn't exist");
+			}
+
+			try{
+				HostAllocationState newAllocationState = Host.HostAllocationState.valueOf(allocationState);
+				if (newAllocationState == null) {
+					s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
+					throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
+				}else{
+					host.setHostAllocationState(newAllocationState);
+				}
+			}catch(IllegalArgumentException ex){
+				s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
+				throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
+			}
+		
+			_hostDao.update(hostId, host);
 		}
 
 		HostVO updatedHost = _hostDao.findById(hostId);
@@ -2987,7 +3131,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 					s_logger.debug("Simulating start for resource "
 							+ resource.getName() + " id " + id);
 				}
-				simulateStart(resource, details, false, null);
+				simulateStart(resource, details, false, null, null);
 			} catch (Exception e) {
 				s_logger.warn("Unable to simulate start on resource " + id
 						+ " name " + resource.getName(), e);

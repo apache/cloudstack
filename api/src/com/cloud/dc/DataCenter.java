@@ -38,5 +38,6 @@ public interface DataCenter extends Grouping {
     boolean isSecurityGroupEnabled();
     Map<String, String> getDetails();
     void setDetails(Map<String, String> details);
+    AllocationState getAllocationState();
 
 }

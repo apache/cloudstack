@@ -93,9 +93,10 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param cidr
 	 * @param startIp
 	 * @param endIp
+	 * @param allocationState
 	 * @return Pod
 	 */
-	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp);
+	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState);
 
 
     /**
@@ -109,11 +110,12 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param vnetRange
      * @param guestCidr
      * @param zoneType
+     * @param allocationState
      * @return
      * @throws 
      * @throws 
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean isSecurityGroupEnabled);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationState);
 
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
@@ -193,10 +195,11 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param endIp
      * @param gateway
      * @param netmask
+     * @param allocationState 
      * @return Pod
      * @throws  
      * @throws  
      */
-    Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask);
+    Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationStateStr);
     
 }

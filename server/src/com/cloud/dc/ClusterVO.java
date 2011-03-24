@@ -28,6 +28,8 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.utils.NumbersUtil;
 
 @Entity
@@ -57,6 +59,10 @@ public class ClusterVO implements Cluster {
     @Column(name="cluster_type")
     @Enumerated(value=EnumType.STRING)
     Cluster.ClusterType clusterType;
+    
+    @Column(name="allocation_state")
+    @Enumerated(value=EnumType.STRING)
+    AllocationState allocationState;
     
     public ClusterVO() {
     	clusterType = Cluster.ClusterType.CloudManaged;
@@ -91,6 +97,14 @@ public class ClusterVO implements Cluster {
     
     public void setClusterType(Cluster.ClusterType clusterType) {
     	this.clusterType = clusterType;
+    }
+    
+    public AllocationState getAllocationState() {
+    	return allocationState;
+    }
+    
+    public void setAllocationState(AllocationState allocationState) {
+		this.allocationState = allocationState;
     }
     
     public ClusterVO(long clusterId) {

@@ -28,6 +28,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
@@ -36,8 +37,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
@@ -102,6 +105,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name=ApiConstants.SSH_KEYPAIR, type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine", includeInApiDoc=false)
     private String sshKeyPairName;
+    
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only")
+    private Long hostId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -172,7 +178,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     public String getSSHKeyPairName() {
     	return sshKeyPairName;
     }
-    
+
+    public Long getHostId() {
+        return hostId;
+    }
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -286,7 +295,19 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             if (template == null) {
                 throw new InvalidParameterValueException("Unable to use template " + templateId);
             }
-
+            
+            Host destinationHost = null;
+            if(getHostId() != null){
+            	Account account = UserContext.current().getCaller();
+            	if(!_accountService.isRootAdmin(account.getType())){
+            		throw new PermissionDeniedException("Parameter hostid can only be specified by a Root Admin, permission denied");
+            	}
+	            destinationHost = _resourceService.getHost(getHostId());
+	            if (destinationHost == null) {
+	                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + getHostId());
+	            }
+            }
+            
 			UserVm vm = null;
 			if (getHypervisor() == HypervisorType.BareMetal) {
 				vm = _bareMetalVmService.createVirtualMachine(this);
@@ -296,18 +317,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 						throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
 					} else {
 						vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, securityGroupIdList, owner, name,
-								displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+								displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, destinationHost);
 					}
 				} else {
 					if (zone.isSecurityGroupEnabled()) {
 						vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), securityGroupIdList,
-								owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+								owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, destinationHost);
 					} else {
 						if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
 							throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
 						}
 						vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-								diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+								diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, destinationHost);
 					}
 				}
 			}

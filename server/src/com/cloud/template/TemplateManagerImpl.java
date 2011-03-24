@@ -67,6 +67,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.org.Grouping;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -425,9 +426,14 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             
             // If a zoneId is specified, make sure it is valid
             if (zoneId != null) {
-            	if (_dcDao.findById(zoneId) == null) {
+            	DataCenterVO zone = _dcDao.findById(zoneId);
+            	if (zone == null) {
             		throw new IllegalArgumentException("Please specify a valid zone.");
             	}
+        		Account caller = UserContext.current().getCaller();
+        		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
+        			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
+        		}
             }
            
             List<VMTemplateVO> systemvmTmplts = _tmpltDao.listAllSystemVMTemplates();
@@ -902,6 +908,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override @DB
     public boolean delete(long userId, long templateId, Long zoneId) {
     	boolean success = true;
+    	
     	VMTemplateVO template = _tmpltDao.findById(templateId);
     	if (template == null || template.getRemoved() != null) {
     		throw new InvalidParameterValueException("Please specify a valid template.");

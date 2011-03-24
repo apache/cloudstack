@@ -20,11 +20,14 @@ package com.cloud.dc;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.utils.NumbersUtil;
 
 @Entity
@@ -51,6 +54,10 @@ public class HostPodVO implements Pod {
 
 	@Column(name = "description")
 	private String description;
+	
+    @Column(name="allocation_state")
+    @Enumerated(value=EnumType.STRING)
+    AllocationState allocationState;
 
 	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
 		this.name = name;
@@ -60,7 +67,7 @@ public class HostPodVO implements Pod {
 		this.cidrSize = cidrSize;
 		this.description = description;
 	}
-
+	
 	/*
 	 * public HostPodVO(String name, long dcId) { this(null, name, dcId); }
 	 */
@@ -122,6 +129,14 @@ public class HostPodVO implements Pod {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	
+    public AllocationState getAllocationState() {
+    	return allocationState;
+    }
+    
+    public void setAllocationState(AllocationState allocationState) {
+		this.allocationState = allocationState;
+    }
 	
 	// Use for comparisons only.
 	public HostPodVO(Long id) {

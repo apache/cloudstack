@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
@@ -56,6 +57,9 @@ public class UpdatePodCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the starting IP address for the Pod")
     private String startIp;
+    
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
+    private String allocationState;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -85,6 +89,9 @@ public class UpdatePodCmd extends BaseCmd {
         return startIp;
     }
 
+    public String getAllocationState() {
+    	return allocationState;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

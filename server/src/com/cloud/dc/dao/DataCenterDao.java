@@ -70,4 +70,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     
     void loadDetails(DataCenterVO zone);
     void saveDetails(DataCenterVO zone);
+    
+    List<DataCenterVO> listDisabledZones();
 }

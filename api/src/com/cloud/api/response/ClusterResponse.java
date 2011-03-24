@@ -46,6 +46,9 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("clustertype") @Param(description="the type of the cluster")
     private String clusterType;
     
+    @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
+    private String allocationState;
+    
     public Long getId() {
         return id;
     }
@@ -109,4 +112,12 @@ public class ClusterResponse extends BaseResponse {
     public void setHypervisorType(String hypervisorType) {
     	this.hypervisorType = hypervisorType;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    }
+    
+    public void setAllocationState(String allocationState) {
+    	this.allocationState = allocationState;
+    }     
 }

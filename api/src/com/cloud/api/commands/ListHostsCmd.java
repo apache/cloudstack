@@ -70,6 +70,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
     
+    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list hosts by allocation state")
+    private String allocationState;    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +108,10 @@ public class ListHostsCmd extends BaseListCmd {
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
+    
+    public String getAllocationState() {
+    	return allocationState;
+    } 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
