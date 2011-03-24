@@ -36,6 +36,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value={HostPodDao.class})
@@ -44,6 +45,10 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 	
 	protected SearchBuilder<HostPodVO> DataCenterAndNameSearch;
 	protected SearchBuilder<HostPodVO> DataCenterIdSearch;
+	
+	private static final String PodsByHostTag = "SELECT DISTINCT host_pod_ref.* FROM (host_tags JOIN host ON host_tags.host_id = host.id AND host_tags.tag = ?) JOIN host_pod_ref " +
+			"ON host_pod_ref.id = host.pod_id WHERE host_pod_ref.data_center_id = ? ";
+
 	
 	protected HostPodDaoImpl() {
 	    DataCenterAndNameSearch = createSearchBuilder();
@@ -97,6 +102,30 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         
         return currentPodCidrSubnets;
 	}
+	
+	@Override
+	public List<HostPodVO> listPodsByHostTag(long dcId, String hostTag) {
+		
+		StringBuilder sql = new StringBuilder(PodsByHostTag);
+    
+	    Transaction txn = Transaction.currentTxn();
+	    PreparedStatement pstmt = s_initStmt;
+	    try {
+	        pstmt = txn.prepareAutoCloseStatement(sql.toString());
+	        int i = 1;
+	        pstmt.setString(i++, hostTag);
+	        pstmt.setLong(i++, dcId);
+	        ResultSet rs = pstmt.executeQuery();
+	        List<HostPodVO> pods = new ArrayList<HostPodVO>();
+	        while (rs.next()) {
+	        	pods.add(toEntityBean(rs, false));
+	        }
+	        return pods;
+	    } catch (SQLException e) {
+	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
+	    }
+
+	}	
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

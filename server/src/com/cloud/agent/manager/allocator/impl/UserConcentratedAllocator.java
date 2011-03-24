@@ -83,7 +83,7 @@ public class UserConcentratedAllocator implements PodAllocator {
     @Override
     public Pair<HostPodVO, Long> allocateTo(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO zone, long accountId, Set<Long> avoids) {
     	long zoneId = zone.getId();
-        List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
+        List<HostPodVO> podsInZone = listPods(zoneId, offering);
         
         if (podsInZone.size() == 0) {
             s_logger.debug("No pods found in zone " + zone.getName());
@@ -100,10 +100,7 @@ public class UserConcentratedAllocator implements PodAllocator {
 					s_logger.debug("Checking Pod: " + podId);
 				}
 				
-        		if (template != null && !templateAvailableInPod(template.getId(), pod.getDataCenterId(), podId)) {
-        			continue;
-        		}
-        		
+       		
         		if (offering != null) {
         			// test for enough memory in the pod (make sure to check for enough memory for the service offering, plus some extra padding for xen overhead
         			long[] hostCandiates = new long[1];
@@ -159,6 +156,14 @@ public class UserConcentratedAllocator implements PodAllocator {
         	s_logger.debug("Found pod " + selectedPod.getName() + " in zone " + zone.getName());
         	return new Pair<HostPodVO, Long>(selectedPod, podHostCandidates.get(selectedPod.getId()));
         }
+    }
+    
+    protected List<HostPodVO> listPods(long zoneId, ServiceOffering offering){
+    	List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
+    	if (s_logger.isDebugEnabled()) {
+    		s_logger.debug("Found "+podsInZone.size() +" Pods in Zone: "+zoneId);
+    	}
+    	return podsInZone;
     }
 
     private boolean dataCenterAndPodHasEnoughCapacity(long dataCenterId, long podId, long capacityNeeded, short capacityType, long[] hostCandidate) {

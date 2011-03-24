@@ -31,5 +31,7 @@ public interface HostPodDao extends GenericDao<HostPodVO, Long> {
 	public HostPodVO findByName(String name, long dcId);
 	
 	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
+	
+	public List<HostPodVO> listPodsByHostTag(long dcId, String hostTag);
 
 }
