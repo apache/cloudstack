@@ -1463,9 +1463,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         // Check if zone exists
-		DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zoneId == null) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
 
-        if (zoneId == null || zone == null) {
+		DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
