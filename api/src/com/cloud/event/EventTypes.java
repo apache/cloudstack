@@ -167,6 +167,8 @@ public class EventTypes {
 	// Security Groups
 	public static final String EVENT_SECURITY_GROUP_AUTHORIZE_INGRESS = "SG.AUTH.INGRESS";
     public static final String EVENT_SECURITY_GROUP_REVOKE_INGRESS = "SG.REVOKE.INGRESS";
+    public static final String EVENT_SECURITY_GROUP_CREATE = "SG.CREATE";
+    public static final String EVENT_SECURITY_GROUP_DELETE = "SG.DELETE";
 
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";

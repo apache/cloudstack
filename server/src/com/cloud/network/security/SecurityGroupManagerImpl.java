@@ -52,15 +52,15 @@ import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -90,7 +90,6 @@ import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -98,7 +97,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -753,6 +751,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 
 	@Override
+	@ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_CREATE, eventDescription = "creating security group")
     public SecurityGroupVO createSecurityGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
 
         String accountName = cmd.getAccountName();
@@ -826,6 +825,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				group = new SecurityGroupVO(name, description, domainId, accountId, accountName);
 				group =  _securityGroupDao.persist(group);
 			}
+			
+			s_logger.debug("Created security group " + group + " for account id=" + accountId);
 			return group;
 		} finally {
 			if (account != null) {
@@ -1006,6 +1007,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	@DB
 	@Override
+	@ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_DELETE, eventDescription = "deleting security group")
 	public boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException{
 		Long id = cmd.getId();
 		String accountName = cmd.getAccountName();
@@ -1080,6 +1082,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		}
         _securityGroupDao.expunge(groupId);
         txn.commit();
+        
+        s_logger.debug("Deleted security group " + group + " for account id=" + accountId);
+        
         return true;
 	}
 
