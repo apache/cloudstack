@@ -171,8 +171,6 @@ public class ClusterManagerImpl implements ClusterManager {
         return false;  //TODO: Leaving this for Kelven to take care of.
     }
     
-    
-    
     @Override
     public void broadcast(long agentId, Command[] cmds) {
 		Date cutTime = DateUtil.currentGMTTime();
