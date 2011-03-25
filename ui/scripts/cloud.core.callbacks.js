@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
+$.urlParam = function(name){ var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href); if (!results) { return 0; } return results[1] || 0;}
+ 
 /*
 This file is meant to help with implementing single signon integration.  If you are using the
 cloud.com default UI, there is no need to touch this file.
@@ -39,33 +40,33 @@ var g_loginResponse = null;
 For single signon purposes, you just need to make sure that after a successful login, you set the
 global variable "g_loginResponse"
 
+You can also pass in a special param called loginUrl that is pregenerated and sent to the CloudStack, it will
+automatically log you in.
+
 Below is a sample login attempt
 */
 
-/*
 $(document).ready(function() {
-	//var username = encodeURIComponent($("#account_username").val());
-	//var password = $("#account_password").val();
-	//var domain = encodeURIComponent($("#account_domain").val());
-	//var url = "/client/api?command=login&username="+username+"&password="+$.md5(password)+"&domain="+domain+"&response=json";
 	
-	// Test URL
-	var url = "/client/api?command=login&username=admin&password=5f4dcc3b5aa765d61d8327deb882cf99&domain=%2F&response=json";
-	$.ajax({
-		url: url,
-		dataType: "json",
-		async: false,
-		success: function(json) {
-			g_loginResponse = json.loginresponse;
-		},
-		error: function() {
-			// This means the login failed.  You should redirect to your login page.
-		},
-		beforeSend: function(XMLHttpRequest) {
-			return true;
-		}
-	});
+	var url = $.urlParam("loginUrl");
+	if (url != undefined && url != null && url.length > 0) {
+		url = unescape("/client/api?"+url);
+		$.ajax({
+			url: url,
+			dataType: "json",
+			async: false,
+			success: function(json) {
+				g_loginResponse = json.loginresponse;
+			},
+			error: function() {
+				onLogoutCallback();
+				// This means the login failed.  You should redirect to your login page.
+			},
+			beforeSend: function(XMLHttpRequest) {
+				return true;
+			}
+		});
+	}
 });
-*/
 
 
