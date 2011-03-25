@@ -22,6 +22,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,7 +33,9 @@ import org.apache.log4j.Logger;
 import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.DbUpgrade;
-import com.cloud.upgrade.dao.Upgrade217to22;
+import com.cloud.upgrade.dao.Upgrade217to218;
+import com.cloud.upgrade.dao.Upgrade218to22;
+import com.cloud.upgrade.dao.Upgrade218to224DomainVlans;
 import com.cloud.upgrade.dao.Upgrade221to222;
 import com.cloud.upgrade.dao.Upgrade222to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to223;
@@ -54,9 +58,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     VersionDao _dao;
     public DatabaseUpgradeChecker() {
         _dao = ComponentLocator.inject(VersionDaoImpl.class);
-        // FIXME: Alena needs to make changes here to add 217 to 218 upgrade. 
-        _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
-        _upgradeMap.put("2.1.8", new DbUpgrade[] { new Upgrade217to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
+        _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224()});
+        _upgradeMap.put("2.1.8", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to223(), new Upgrade222to224(), new Upgrade218to224DomainVlans()});
         _upgradeMap.put("2.2.2", new DbUpgrade[] { new Upgrade222to224() });
         _upgradeMap.put("2.2.3", new DbUpgrade[] { new Upgrade222to224() });
     }
@@ -121,8 +124,30 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     }
                 }
                 upgrade.performDataMigration(conn);
-                VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
-                _dao.persist(version);
+                boolean upgradeVersion = true;
+                
+                if (upgrade.getUpgradedVersion().equals("2.1.8")) {
+                    //we don't have VersionDao in 2.1.x
+                    upgradeVersion = false;
+                } else if (upgrade.getUpgradedVersion().equals("2.2.4")) {
+                    try {
+                        //specifically for domain vlan update from 2.1.8 to 2.2.4
+                        PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM version WHERE version='2.2.4'");
+                        ResultSet rs = pstmt.executeQuery();
+                        if (rs.next()){
+                            upgradeVersion = false;
+                        } 
+                    } catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable to update the version table", e);
+                    } 
+                }
+                
+
+                if (upgradeVersion) {
+                    VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
+                    _dao.persist(version);  
+                }
+               
                 txn.commit();
             } finally {
                 txn.close();
@@ -134,21 +159,24 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             for (DbUpgrade upgrade : upgrades) {
                 s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
                 VersionVO version = _dao.findByVersion(upgrade.getUpgradedVersion(), Step.Upgrade);
-                Transaction txn = Transaction.open("Cleanup");
-                txn.start();
-                try {
-                    File[] scripts = upgrade.getCleanupScripts();
-                    if (scripts != null) {
-                        for (File script : scripts) {
-                            runScript(script);
+                
+                if (version != null) {
+                    Transaction txn = Transaction.open("Cleanup");
+                    txn.start();
+                    try {
+                        File[] scripts = upgrade.getCleanupScripts();
+                        if (scripts != null) {
+                            for (File script : scripts) {
+                                runScript(script);
+                            }
                         }
+                        version.setStep(Step.Complete);
+                        version.setUpdated(new Date());
+                        _dao.update(version.getId(), version);
+                        txn.commit();
+                    } finally {
+                        txn.close();
                     }
-                    version.setStep(Step.Complete);
-                    version.setUpdated(new Date());
-                    _dao.update(version.getId(), version);
-                    txn.commit();
-                } finally {
-                    txn.close();
                 }
             }
         }

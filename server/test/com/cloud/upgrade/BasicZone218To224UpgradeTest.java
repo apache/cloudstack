@@ -34,8 +34,8 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 
-public class BasicZone217To224UpgradeTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(BasicZone217To224UpgradeTest.class);
+public class BasicZone218To224UpgradeTest extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(BasicZone218To224UpgradeTest.class);
 
     @Override
     @Before
@@ -49,8 +49,8 @@ public class BasicZone217To224UpgradeTest extends TestCase {
     }
     
     public void test217to22Upgrade() throws SQLException {
-        s_logger.debug("Finding sample data from 2.1.7");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.1.7/2.1.7_sample_basicZone_SecurityGroups.sql", false, true);
+        s_logger.debug("Finding sample data from 2.1.8");
+        DbTestUtils.executeScript("PreviousDatabaseSchema/2.1.8/2.1.8_sample_basicZone_SecurityGroups.sql", false, true);
         
         Connection conn = Transaction.getStandaloneConnection();
         PreparedStatement pstmt;
@@ -60,18 +60,18 @@ public class BasicZone217To224UpgradeTest extends TestCase {
         
         String version = dao.getCurrentVersion();
         
-        if (!version.equals("2.1.7")) {
-            s_logger.error("Version returned is not 2.1.7 but " + version);
+        if (!version.equals("2.1.8")) {
+            s_logger.error("Version returned is not 2.1.8 but " + version);
         } else {
             s_logger.debug("Basic zone test version is " + version);
         }
         
-        checker.upgrade("2.1.7", "2.2.4");
+        checker.upgrade("2.1.8", "2.2.4");
         
         conn = Transaction.getStandaloneConnection();
         try {
             
-            s_logger.debug("Starting tesing upgrade from 2.1.7 to 2.2.4 for Basic zone...");
+            s_logger.debug("Starting tesing upgrade from 2.1.8 to 2.2.4 for Basic zone...");
             
             //Version check
             pstmt = conn.prepareStatement(" SELECT version FROM version ORDER BY id DESC LIMIT 1");

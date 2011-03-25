@@ -34,8 +34,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
-public class Upgrade217to22 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade217to22.class);
+public class Upgrade218to22 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade218to22.class);
     boolean _basicZone;
 
     @Override
@@ -842,7 +842,6 @@ public class Upgrade217to22 implements DbUpgrade {
                         boolean isShared = true;
                         pstmt = conn.prepareStatement("SELECT account_id FROM account_vlan_map WHERE account_id IS NOT NULL AND vlan_db_id=?");
                         pstmt.setLong(1, vlanId);
-                        s_logger.debug("query is " + pstmt);
                         ResultSet accountRs = pstmt.executeQuery();
                         while(accountRs.next()) {
                             isShared = false;
@@ -1117,7 +1116,7 @@ public class Upgrade217to22 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.1.7", "2.1.7" };
+        return new String[] { "2.1.8", "2.1.8" };
     }
 
     @Override

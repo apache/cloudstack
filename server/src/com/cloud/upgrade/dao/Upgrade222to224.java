@@ -61,7 +61,12 @@ public class Upgrade222to224 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        return null;
+        String file = Script.findScript("", "db/schema-222to224-cleanup.sql");
+        if (file == null) {
+            throw new CloudRuntimeException("Unable to find the upgrade script, schema-222to224-cleanup.sql");
+        }
+        
+        return new File[] {new File(file)};
     }
 
     private void updateClusterIdInOpHostCapacity(Connection conn){
