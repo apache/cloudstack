@@ -61,6 +61,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
+import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -418,6 +419,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	vmInstance.add(2, "there are virtual machines running in this pod");
     	tablesToCheck.add(vmInstance);
     	
+    	List<String> cluster = new ArrayList<String>();
+    	cluster.add(0, "cluster");
+    	cluster.add(1, "pod_id");
+    	cluster.add(2, "there are clusters in this pod");
+        tablesToCheck.add(cluster);
+    	
     	for (List<String> table : tablesToCheck) {
     		String tableName = table.get(0);
     		String column = table.get(1);
@@ -444,10 +451,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 stmt.setLong(1, podId);
                 ResultSet rs = stmt.executeQuery();
                 if (rs != null && rs.next()) {
-                	throw new CloudRuntimeException("The pod cannot be edited because " + errorMsg);
+                	throw new CloudRuntimeException("The pod cannot be deleted because " + errorMsg);
                 }
             } catch (SQLException ex) {
-                throw new CloudRuntimeException("The Management Server failed to detect if pod is editable. Please contact Cloud Support.");
+                throw new CloudRuntimeException("The Management Server failed to detect if pod is deletable. Please contact Cloud Support.");
             }
     	}
     }
@@ -549,9 +556,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	    }
     	
     	//Delete link local ip addresses for the pod
-    	if (!(_LinkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
-            throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
-        }
+	    List<DataCenterLinkLocalIpAddressVO> localIps = _LinkLocalIpAllocDao.listByPodIdDcId(podId, pod.getDataCenterId());
+	    if (!localIps.isEmpty()) {
+	        if (!(_LinkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
+	            throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
+	        }
+	    }
     	
     	//Delete vlans associated with the pod
     	List<? extends Vlan> vlans = _networkMgr.listPodVlans(podId);
