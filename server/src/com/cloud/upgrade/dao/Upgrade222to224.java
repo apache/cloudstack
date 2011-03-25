@@ -57,6 +57,7 @@ public class Upgrade222to224 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
     	updateClusterIdInOpHostCapacity(conn);
+    	updateGuestOsType(conn);
     }
 
     @Override
@@ -67,6 +68,26 @@ public class Upgrade222to224 implements DbUpgrade {
         }
         
         return new File[] {new File(file)};
+    }
+    
+    private void updateGuestOsType(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`guest_os` WHERE `display_name`='CentOS 5.3 (64-bit)'");
+            ResultSet rs = pstmt.executeQuery();
+            Long osId = null;
+            if (rs.next()) {
+                osId = rs.getLong(1);
+            }
+            
+            if (osId != null) {
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET `guest_os_id`=? WHERE id=2");
+                pstmt.setLong(1, osId);
+                pstmt.executeUpdate();
+            }
+    
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update the guest os type for default template as a part of 222 to 224 upgrade", e);
+        }
     }
 
     private void updateClusterIdInOpHostCapacity(Connection conn){
@@ -122,6 +143,5 @@ public class Upgrade222to224 implements DbUpgrade {
             }
 
         }
-        
     }
 }

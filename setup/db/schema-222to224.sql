@@ -40,3 +40,4 @@ ALTER TABLE `cloud`.`storage_pool` MODIFY `host_address` char(40) NOT NULL;
 ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__related`;
 ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE;
 
+
