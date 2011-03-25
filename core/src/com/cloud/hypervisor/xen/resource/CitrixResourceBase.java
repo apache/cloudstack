@@ -4385,15 +4385,19 @@ public abstract class CitrixResourceBase implements ServerResource {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        _host.uuid = (String) params.get("guid");
+
         try {
             _dcId = Long.parseLong((String) params.get("zone"));
         } catch (NumberFormatException e) {
             throw new ConfigurationException("Unable to get the zone " + params.get("zone"));
         }
+
+        _host.uuid = (String) params.get("guid");
+
         _name = _host.uuid;
         _host.ip = (String) params.get("ipaddress");
         _host.pool = (String) params.get("pool");
+
         _username = (String) params.get("username");
         _password = (String) params.get("password");
         _pod = (String) params.get("pod");
@@ -4433,8 +4437,29 @@ public abstract class CitrixResourceBase implements ServerResource {
         if (_host.uuid == null) {
             throw new ConfigurationException("Unable to get the uuid");
         }
+        
+        CheckXenHostInfo();
         return true;
 
+    }
+
+    private void CheckXenHostInfo() throws ConfigurationException {
+        Connection conn = _connPool.slaveConnect(_host.ip, _username, _password);
+        if( conn == null ) {
+            throw new ConfigurationException("Can not create slave connection to " + _host.ip);
+        }
+        Host.Record hostRec = null;
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            hostRec = host.getRecord(conn);
+        } catch (Exception e) {
+            throw new ConfigurationException("Can not get host information from " + _host.ip);
+        }
+        if( !hostRec.address.equals(_host.ip) ) {
+            String msg = "Host " + _host.ip + " seems be reinstalled, please remove this host and readd";
+            s_logger.error(msg);
+            throw new ConfigurationException(msg);
+        }
     }
 
     void destroyVDI(Connection conn, VDI vdi) {
