@@ -273,10 +273,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             }
 
             if (!(_forceHA || vm.isHaEnabled())) {
-            	
+                String hostDesc = "id:" + vm.getHostId() + ", availability zone id:" + vm.getDataCenterId() + ", pod id:" + vm.getPodId();
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: "
                 		+ vm.getName() + ", id: " + vm.getId() + ") stopped unexpectedly on host "
-                		+ vm.getHostId(), "Virtual Machine " + vm.getName() + " (id: "
+                		+ hostDesc, "Virtual Machine " + vm.getName() + " (id: "
                 		+ vm.getId() + ") running on host [" + vm.getHostId()
                 		+ "] stopped unexpectedly.");
                 		
@@ -410,12 +410,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             work.setStep(Step.Scheduled);
             _haDao.update(work.getId(), work);
         }
-
-        // send an alert for VMs that stop unexpectedly
-        _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(),
-        		"VM (name: " + vm.getName() + ", id: " + vmId + ") stopped unexpectedly on host "
-        		+ hostDesc, "Virtual Machine " + vm.getName() + " (id: "
-        		+ vm.getId() + ") running on host [" + hostDesc + "] stopped unexpectedly.");
         
         vm = _itMgr.findById(vm.getType(), vm.getId());
 
