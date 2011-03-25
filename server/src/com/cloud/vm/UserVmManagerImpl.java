@@ -65,7 +65,6 @@ import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -149,7 +148,6 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -195,7 +193,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
@@ -416,7 +413,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	// Check that the volume ID is valid
     	VolumeVO volume = _volsDao.findById(volumeId);
         // Check that the volume is a data volume
-        if (volume == null || volume.getVolumeType() != VolumeType.DATADISK) {
+        if (volume == null || volume.getVolumeType() != Volume.Type.DATADISK) {
             throw new InvalidParameterValueException("Please specify a valid data volume.");
         }
 
@@ -454,7 +451,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         // Check that the VM has less than 6 data volumes attached
-        List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, VolumeType.DATADISK);
+        List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
         if (existingDataVolumes.size() >= 6) {
             throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (6). Please specify another VM.");
         }
@@ -488,7 +485,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	}
 
         VolumeVO rootVolumeOfVm = null;
-        List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, VolumeType.ROOT);
+        List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
         if (rootVolumesOfVm.size() != 1) {
         	throw new CloudRuntimeException("The VM " + vm.getName() + " has more than one ROOT volume and is in an invalid state. Please contact Cloud Support.");
         } else {
@@ -686,7 +683,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	}
 
         // Check that the volume is a data volume
-        if (volume.getVolumeType() != VolumeType.DATADISK) {
+        if (volume.getVolumeType() != Volume.Type.DATADISK) {
             throw new InvalidParameterValueException("Please specify a data volume.");
         }
 
@@ -1025,7 +1022,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Recover the VM's disks
         List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
         for (VolumeVO volume : volumes) {
-            if (volume.getVolumeType().equals(VolumeType.ROOT)) {
+            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
                 // Create an event
                 Long templateId = volume.getTemplateId();
                 Long diskOfferingId = volume.getDiskOfferingId();
@@ -1078,7 +1075,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
         
-        _itMgr.registerGuru(Type.User, this);
+        _itMgr.registerGuru(VirtualMachine.Type.User, this);
         
         s_logger.info("User VM Manager is configured.");
 
@@ -1539,7 +1536,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 				for(VolumeVO volume : volumesForThisVm) {
 				    try {
                         _storageMgr.destroyVolume(volume);
-                        if (volume.getStatus() == AsyncInstanceCreateStatus.Created) {
+                        if (volume.getState() == Volume.State.Ready) {
                             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
                                     volume.getName());
                             _usageEventDao.persist(usageEvent);
@@ -2434,14 +2431,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			if (guestOS != null) {
 				displayName = guestOS.getDisplayName();
 			}
-			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, isoPath,
+			VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, isoPath,
 										0, null, displayName);
 			
 			iso.setDeviceId(3);
 			profile.addDisk(iso);
 		} else {
 			/*create a iso placeholder*/
-			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, null,
+			VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, null,
 					0, null);
 			iso.setDeviceId(3);
 			profile.addDisk(iso);
@@ -2607,7 +2604,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
             for (VolumeVO volume : volumes) {
-                if (volume.getVolumeType().equals(VolumeType.ROOT)) {
+                if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
                             volume.getName());
                     _usageEventDao.persist(usageEvent);
@@ -2941,10 +2938,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		return null;
 	}
     
+    @Override
     public UserVm getUserVm(long vmId){
     	return _vmDao.findById(vmId);
     }
     
+    @Override
     public UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException{
     	//access check - only root admin can migrate VM
     	Account caller = UserContext.current().getCaller();

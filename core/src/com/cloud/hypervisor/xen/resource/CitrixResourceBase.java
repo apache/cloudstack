@@ -175,7 +175,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.resource.StoragePoolResource;
 import com.cloud.storage.template.TemplateInfo;
@@ -292,8 +291,9 @@ public abstract class CitrixResourceBase implements ServerResource {
         for (Map.Entry<VM, VM.Record> entry : vms.entrySet()) {
             VM vm = entry.getKey();
             VM.Record vmRec = entry.getValue();
-            if ( vmRec.isATemplate || vmRec.isControlDomain )
+            if ( vmRec.isATemplate || vmRec.isControlDomain ) {
                 continue;
+            }
             
             if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host)) {
                 try {
@@ -690,7 +690,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
     
     protected VDI mount(Connection conn, String vmName, VolumeTO volume) throws XmlRpcException, XenAPIException {
-        if (volume.getType() == VolumeType.ISO) {
+        if (volume.getType() == Volume.Type.ISO) {
         	
             String isopath = volume.getPath();
             if (isopath == null) {
@@ -721,7 +721,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
     
     protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
-        VolumeType type = volume.getType();
+        Volume.Type type = volume.getType();
         
         VDI vdi = mount(conn, vmName, volume);
         
@@ -732,17 +732,17 @@ public abstract class CitrixResourceBase implements ServerResource {
         } else {
         	vbdr.empty = true;
         }
-        if (type == VolumeType.ROOT && bootLoaderType == BootloaderType.PyGrub) {
+        if (type == Volume.Type.ROOT && bootLoaderType == BootloaderType.PyGrub) {
             vbdr.bootable = true;
-        }else if(type == VolumeType.ISO && bootLoaderType == BootloaderType.CD) {
+        }else if(type == Volume.Type.ISO && bootLoaderType == BootloaderType.CD) {
         	vbdr.bootable = true;
         }
         
         vbdr.userdevice = Long.toString(volume.getDeviceId());
-        if (volume.getType() == VolumeType.ISO) {
+        if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
-        } else if (volume.getType() == VolumeType.ROOT) {
+        } else if (volume.getType() == Volume.Type.ROOT) {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
             vbdr.unpluggable = false;           
@@ -825,7 +825,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
             	VolumeTO [] disks = vmSpec.getDisks();
             	for (VolumeTO disk : disks) {
-            		if (disk.getType() == Volume.VolumeType.ISO && disk.getOsType() != null) {
+            		if (disk.getType() == Volume.Type.ISO && disk.getOsType() != null) {
             			String isoGuestOsName = getGuestOsType(disk.getOsType(), vmSpec.getBootloader() == BootloaderType.CD);
             			if (!isoGuestOsName.equals(guestOsTypeName)) {
             				vmSpec.setBootloader(BootloaderType.PyGrub);
@@ -970,8 +970,9 @@ public abstract class CitrixResourceBase implements ServerResource {
             c = c.startsWith("/") ? c.substring(1) : c;
             c = c.endsWith("/") ? c.substring(0, c.length() - 1) : c;
             String[] p = c.split(";");
-            if (p.length != 2)
+            if (p.length != 2) {
                 continue;
+            }
             if (p[0].equalsIgnoreCase("vlans")) {
             	p[1] = p[1].replace("@", "[");
             	p[1] = p[1].replace("#", "]");

@@ -33,7 +33,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
@@ -83,7 +82,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -108,7 +106,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -136,7 +134,6 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -256,14 +253,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
         
         if (template.getFormat() == ImageFormat.ISO) {
-            _storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
+            _storageMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
         } else if (template.getFormat() == ImageFormat.BAREMETAL) {
         }else {
-            _storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
+            _storageMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
         }
         
         for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            _storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
+            _storageMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
         }
 
         txn.commit();
@@ -309,7 +306,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     
     @SuppressWarnings("unchecked")
     private <T extends VMInstanceVO> VirtualMachineGuru<T> getBareMetalVmGuru(T vm) {
-        return (VirtualMachineGuru<T>)_vmGurus.get(Type.UserBareMetal);
+        return (VirtualMachineGuru<T>)_vmGurus.get(VirtualMachine.Type.UserBareMetal);
     }
     
     @Override

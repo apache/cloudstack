@@ -20,7 +20,6 @@ package com.cloud.storage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,14 +27,11 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncInstanceCreateStatus;
-import com.cloud.dc.ClusterVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
@@ -63,31 +59,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final Attribute _stateAttr;
     
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
-    protected static final String SELECT_VM_ID_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ?";
     protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
 
-    @Override @DB
-    public List<Long> findVmsStoredOnHost(long hostId) {
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        List<Long> result = new ArrayList<Long>();
-
-        try {
-            String sql = SELECT_VM_ID_SQL;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, hostId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.add(rs.getLong(1));
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + SELECT_VM_SQL, e);
-        } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + SELECT_VM_SQL, e);
-        }
-    }
-    
     @Override
     public List<VolumeVO> findDetachedByAccount(long accountId) {
     	SearchCriteria<VolumeVO> sc = DetachedAccountIdSearch.create();
@@ -124,7 +97,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy);
-        sc.setParameters("vType", Volume.VolumeType.ROOT.toString());
+        sc.setParameters("vType", Volume.Type.ROOT.toString());
 	    return listBy(sc);
 	}
     
@@ -132,8 +105,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findCreatedByInstance(long id) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
-        sc.setParameters("status", AsyncInstanceCreateStatus.Created);
-        sc.setParameters("notDestroyed", Volume.State.Destroy);
+        sc.setParameters("state", Volume.State.Ready);
         return listBy(sc);
     }
     
@@ -147,7 +119,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
     
 	@Override
-	public List<VolumeVO> findByInstanceAndType(long id, VolumeType vType) {
+	public List<VolumeVO> findByInstanceAndType(long id, Type vType) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
         sc.setParameters("vType", vType.toString());
@@ -159,7 +131,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", vmId);
 		sc.setParameters("destroyed", Volume.State.Destroy);
-		return listIncludingRemovedBy(sc);
+		return listBy(sc);
 	}
 	
 	@Override
@@ -167,8 +139,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", instanceId);
 		sc.setParameters("state", Volume.State.Ready);
-		sc.setParameters("vType", Volume.VolumeType.ROOT.toString());		
-		return listIncludingRemovedBy(sc);
+		sc.setParameters("vType", Volume.Type.ROOT.toString());		
+		return listBy(sc);
 	}
 	
 	@Override
@@ -176,8 +148,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("pod", podId);
-        sc.setParameters("notDestroyed", Volume.State.Destroy);
-        sc.setParameters("status", AsyncInstanceCreateStatus.Created);
+        sc.setParameters("state", Volume.State.Ready);
         
         return listIncludingRemovedBy(sc);
 	}
@@ -295,7 +266,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	    AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
-        AllFieldsSearch.and("status", AllFieldsSearch.entity().getStatus(), Op.EQ);
         AllFieldsSearch.and("instanceId", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
         AllFieldsSearch.and("deviceId", AllFieldsSearch.entity().getDeviceId(), Op.EQ);
         AllFieldsSearch.and("poolId", AllFieldsSearch.entity().getPoolId(), Op.EQ);

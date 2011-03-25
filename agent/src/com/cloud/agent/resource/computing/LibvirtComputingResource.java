@@ -171,7 +171,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
@@ -1708,7 +1707,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			/*setup disks, e.g for iso*/
 			VolumeTO[] volumes = vm.getDisks();
 			for (VolumeTO volume : volumes) {
-			    if (volume.getType() == Volume.VolumeType.ISO) {
+			    if (volume.getType() == Volume.Type.ISO) {
 			        getVolumePath(conn, volume);
 			    }
 			}
@@ -2109,7 +2108,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	private String getVolumePath(Connect conn, VolumeTO volume) throws LibvirtException, URISyntaxException {
-		if (volume.getType() == Volume.VolumeType.ISO && volume.getPath() != null) {
+		if (volume.getType() == Volume.Type.ISO && volume.getPath() != null) {
 			StorageVol vol = _storageResource.getVolumeFromURI(conn, volume.getPath());
 			return vol.getPath();
 		} else {
@@ -2123,7 +2122,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 			DiskDef.diskBus diskBusType = getGuestDiskModel(vmSpec.getOs());
 			DiskDef disk = new DiskDef();
-			if (volume.getType() == VolumeType.ISO) {
+			if (volume.getType() == Volume.Type.ISO) {
 				if (volPath == null) {
 					/*Add iso as placeholder*/					
 					disk.defISODisk(null);					
@@ -2137,7 +2136,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			}
 
 			//Centos doesn't support scsi hotplug. For other host OSes, we attach the disk after the vm is running, so that we can hotplug it.
-			if (volume.getType() == VolumeType.DATADISK &&  diskBusType != DiskDef.diskBus.VIRTIO) {
+			if (volume.getType() == Volume.Type.DATADISK &&  diskBusType != DiskDef.diskBus.VIRTIO) {
 				disk.setAttachDeferred(true);
 			}
 
@@ -2155,7 +2154,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 	}
 	
-	private VolumeTO getVolume(VirtualMachineTO vmSpec, VolumeType type) {
+	private VolumeTO getVolume(VirtualMachineTO vmSpec, Volume.Type type) {
 	    VolumeTO volumes[] = vmSpec.getDisks();
 	    for (VolumeTO volume : volumes) {
 	        if (volume.getType() == type) {
@@ -2169,7 +2168,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		
 		List<DiskDef> disks = vm.getDevices().getDisks();
 		DiskDef rootDisk = disks.get(0);
-		VolumeTO rootVol = getVolume(vmSpec, VolumeType.ROOT);
+		VolumeTO rootVol = getVolume(vmSpec, Volume.Type.ROOT);
 		StoragePool pool = _storageResource.getStoragePool(conn, rootVol.getPoolUuid());
 		StorageVol tmplVol = _storageResource.createTmplDataDisk(conn, pool, 10L * 1024 * 1024);
 		String datadiskPath = tmplVol.getKey();
@@ -3258,8 +3257,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	cmd.add("--vmmac", mac);
     	cmd.add("--vif", vif);
     	cmd.add("--brname", brname);
-    	if (rules != null)
-    	    cmd.add("--rules", newRules);
+    	if (rules != null) {
+            cmd.add("--rules", newRules);
+        }
     	String result = cmd.execute();
     	if (result != null) {
     		return false;

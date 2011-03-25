@@ -29,7 +29,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume.Type;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DiskProfile;
@@ -70,9 +70,9 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
     
     @Override
     protected boolean localStorageAllocationNeeded(DiskProfile dskCh) {
-        if (dskCh.getType() == VolumeType.ROOT) {
+        if (dskCh.getType() == Type.ROOT) {
             return true;
-        } else if (dskCh.getType() == VolumeType.DATADISK) {
+        } else if (dskCh.getType() == Type.DATADISK) {
             return false;
         } else {
             return super.localStorageAllocationNeeded(dskCh);

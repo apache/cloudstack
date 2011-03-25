@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -72,7 +71,6 @@ import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -126,7 +124,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -177,7 +175,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
@@ -243,7 +240,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected Adapters<StoragePoolDiscoverer> _discoverers;
 
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
-    protected SearchBuilder<StoragePoolVO> PoolsUsedByVmSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
 
     ScheduledExecutorService _executor = null;
@@ -262,7 +258,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
-        List<VolumeVO> rootVolForGivenVm = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
+        List<VolumeVO> rootVolForGivenVm = _volsDao.findByInstanceAndType(vm.getId(), Type.ROOT);
         if (rootVolForGivenVm != null && rootVolForGivenVm.size() > 0) {
             boolean isPoolAvailable = isPoolAvailable(rootVolForGivenVm.get(0).getPoolId());
             if (!isPoolAvailable) {
@@ -384,7 +380,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     protected DiskProfile createDiskCharacteristics(VolumeVO volume, VMTemplateVO template, DataCenterVO dc, DiskOfferingVO diskOffering) {
-        if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
+        if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
             sc.setParameters("id", template.getId());
             sc.setParameters("state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
@@ -494,7 +490,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         createdVolume = _volsDao.findById(volumeId);
 
         if (success) {
-            createdVolume.setStatus(AsyncInstanceCreateStatus.Created);
             createdVolume.setPodId(pod.first().getId());
             createdVolume.setPoolId(pool.getId());
             createdVolume.setPoolType(pool.getPoolType());
@@ -503,7 +498,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             createdVolume.setDomainId(account.getDomainId());
             createdVolume.setState(Volume.State.Ready);
         } else {
-            createdVolume.setStatus(AsyncInstanceCreateStatus.Corrupted);
             createdVolume.setState(Volume.State.Destroy);
         }
 
@@ -617,7 +611,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             diskOffering.setDiskSize(size);
         }
         DiskProfile dskCh = null;
-        if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
+        if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
@@ -652,7 +646,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             VMTemplateStoragePoolVO tmpltStoredOn = null;
             
             for(int i = 0; i < 2; i++) {
-	            if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
+	            if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
 	                tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
 	                if (tmpltStoredOn == null) {
 	                    continue;
@@ -696,14 +690,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to create a volume for " + volume);
             }
-            volume.setStatus(AsyncInstanceCreateStatus.Failed);
             volume.setState(Volume.State.Destroy);
             _volsDao.persist(volume);
             _volsDao.remove(volume.getId());
             volume = null;
 
         } else {
-            volume.setStatus(AsyncInstanceCreateStatus.Created);
             volume.setFolder(pool.getPath());
             volume.setPath(created.getPath());
             volume.setSize(created.getSize());
@@ -788,15 +780,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
 
-        PoolsUsedByVmSearch = _storagePoolDao.createSearchBuilder();
-        SearchBuilder<VolumeVO> volSearch = _volsDao.createSearchBuilder();
-        PoolsUsedByVmSearch.join("volumes", volSearch, volSearch.entity().getPoolId(), PoolsUsedByVmSearch.entity().getId(),
-                JoinBuilder.JoinType.INNER);
-        volSearch.and("vm", volSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        volSearch.and("status", volSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        volSearch.done();
-        PoolsUsedByVmSearch.done();
-
         HostTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
         HostTemplateStatesSearch.and("id", HostTemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         HostTemplateStatesSearch.and("state", HostTemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
@@ -820,13 +803,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         UpHostsInPoolSearch.done();
         
         return true;
-    }
-
-    public String getVolumeFolder(String parentDir, long accountId, String diskFolderName) {
-        StringBuilder diskFolderBuilder = new StringBuilder();
-        Formatter diskFolderFormatter = new Formatter(diskFolderBuilder);
-        diskFolderFormatter.format("%s/u%06d/%s", parentDir, accountId, diskFolderName);
-        return diskFolderBuilder.toString();
     }
 
     public String getRandomVolumeName() {
@@ -1566,7 +1542,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             userSpecifiedName = getRandomVolumeName();
         }
 
-        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
+        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
@@ -1577,7 +1553,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
-        volume.setStatus(AsyncInstanceCreateStatus.Creating);
         volume.setDomainId((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
         volume.setState(Volume.State.Allocated);
         volume = _volsDao.persist(volume);
@@ -1604,14 +1579,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             if (cmd.getSnapshotId() != null) {
                 return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
             } else {
-                
-                volume.setStatus(AsyncInstanceCreateStatus.Created);
                 _volsDao.update(volume.getId(), volume);
             }
 
             return _volsDao.findById(volume.getId());
         } finally {
-            if (volume.getStatus() !=  AsyncInstanceCreateStatus.Created) {
+            if (volume.getState() !=  Volume.State.Ready) {
                 s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
                 _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
             }
@@ -2340,7 +2313,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
-    public <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm,
+    public <T extends VMInstanceVO> DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, T vm,
             Account owner) {
         if (size == null) {
             size = offering.getDiskSizeInBytes();
@@ -2352,7 +2325,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             vol.setInstanceId(vm.getId());
         }
 
-        if (type.equals(VolumeType.ROOT)) {
+        if (type.equals(Type.ROOT)) {
             vol.setDeviceId(0l);
         } else {
             vol.setDeviceId(1l);
@@ -2373,7 +2346,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
-    public <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template,
+    public <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(Type type, String name, DiskOfferingVO offering, VMTemplateVO template,
             T vm, Account owner) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
 
@@ -2394,9 +2367,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         vol.setTemplateId(template.getId());
 
-        if (type.equals(VolumeType.ROOT)) {
+        if (type.equals(Type.ROOT)) {
             vol.setDeviceId(0l);
-            if (!vm.getType().equals(Type.User)) {
+            if (!vm.getType().equals(VirtualMachine.Type.User)) {
                 vol.setRecreatable(true);
             }
         } else {
@@ -2441,7 +2414,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterId());
                 if (isoPathPair != null) {
                     String isoPath = isoPathPair.first();
-                    VolumeTO iso = new VolumeTO(vm.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, null, null, isoPath,
+                    VolumeTO iso = new VolumeTO(vm.getId(), Volume.Type.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, null, null, isoPath,
                             0, null, null);
                     vm.addDisk(iso);
                 }
@@ -2531,7 +2504,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 throw new StorageUnavailableException("Unable to create " + newVol, poolId == null ? -1L : poolId);
             }
             created.first().setDeviceId(newVol.getDeviceId().intValue());
-            newVol.setStatus(AsyncInstanceCreateStatus.Created);
             newVol.setFolder(created.second().getPath());
             newVol.setPath(created.first().getPath());
             newVol.setSize(created.first().getSize());
@@ -2636,7 +2608,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             s_logger.debug("Expunging " + vol);
         }
         String vmName = null;
-        if (vol.getVolumeType() == VolumeType.ROOT && vol.getInstanceId() != null) {
+        if (vol.getVolumeType() == Type.ROOT && vol.getInstanceId() != null) {
             VirtualMachine vm = _vmInstanceDao.findByIdIncludingRemoved(vol.getInstanceId());
             if (vm != null) {
                 vmName = vm.getInstanceName();
@@ -2688,7 +2660,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
         for (VolumeVO vol : volumesForVm) {
-            if (vol.getVolumeType().equals(VolumeType.ROOT)) {
+            if (vol.getVolumeType().equals(Type.ROOT)) {
                 //This check is for VM in Error state (volume is already destroyed)
                 if(!vol.getState().equals(Volume.State.Destroy)){
                     destroyVolume(vol);

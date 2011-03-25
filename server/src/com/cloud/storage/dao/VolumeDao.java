@@ -21,9 +21,9 @@ import java.util.List;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
@@ -32,11 +32,10 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     List<VolumeVO> findByAccount(long accountId);
     Pair<Long, Long> getCountAndTotalByPool(long poolId);
     List<VolumeVO> findByInstance(long id);
-    List<VolumeVO> findByInstanceAndType(long id, Volume.VolumeType vType);
+    List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
     List<VolumeVO> findByInstanceIdDestroyed(long vmId);
     List<VolumeVO> findByAccountAndPod(long accountId, long podId);
     List<VolumeVO> findByTemplateAndZone(long templateId, long zoneId);
-    List<Long> findVmsStoredOnHost(long hostId);
     void deleteVolumesByInstance(long instanceId);
     void attachVolume(long volumeId, long vmId, long deviceId);
     void detachVolume(long volumeId);

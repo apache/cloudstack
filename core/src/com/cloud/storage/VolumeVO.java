@@ -31,7 +31,6 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -72,9 +71,6 @@ public class VolumeVO implements Volume {
     @Column(name="path")
     String path;
     
-    @Column(name="iscsi_name")
-    String iscsiName;
-    
     @Column(name="pod_id")
     Long podId;
     
@@ -102,7 +98,7 @@ public class VolumeVO implements Volume {
 
     @Column(name="volume_type")
     @Enumerated(EnumType.STRING)
-	VolumeType volumeType = Volume.VolumeType.UNKNOWN;
+	Type volumeType = Volume.Type.UNKNOWN;
 
     @Column(name="pool_type")
     @Enumerated(EnumType.STRING)
@@ -114,10 +110,6 @@ public class VolumeVO implements Volume {
     @Column(name="resource_type")
     @Enumerated(EnumType.STRING)
 	Storage.StorageResourceType storageResourceType;
-    
-    @Column(name="status", updatable = true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
-    private AsyncInstanceCreateStatus status;
     
     @Column(name="updated")
     @Temporal(value=TemporalType.TIMESTAMP)
@@ -144,7 +136,7 @@ public class VolumeVO implements Volume {
      * @param domainId
      * @param size
      */
-    public VolumeVO(VolumeType type, long instanceId, String name, long dcId, long podId, long accountId, long domainId, long size) {
+    public VolumeVO(Type type, long instanceId, String name, long dcId, long podId, long accountId, long domainId, long size) {
         this.volumeType = type;
         this.name = name;
         this.dataCenterId = dcId;
@@ -153,14 +145,13 @@ public class VolumeVO implements Volume {
         this.domainId = domainId;
         this.instanceId = instanceId;
         this.size = size;
-        this.status = AsyncInstanceCreateStatus.Creating;
         this.templateId = null;
         this.storageResourceType = Storage.StorageResourceType.STORAGE_POOL;
         this.poolType = null;
     }
  
     // Real Constructor
-    public VolumeVO(VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
+    public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
         this.volumeType = type;
         this.name = name;
         this.dataCenterId = dcId;
@@ -168,7 +159,6 @@ public class VolumeVO implements Volume {
         this.domainId = domainId;
         this.size = size;
         this.diskOfferingId = diskOfferingId;
-        this.status = AsyncInstanceCreateStatus.Creating;
         this.state = State.Allocated;
     }
 
@@ -184,14 +174,14 @@ public class VolumeVO implements Volume {
      * @param accountId
      * @param domainId
      */
-    public VolumeVO(VolumeType type, long instanceId, long templateId, String name, long dcId, long podId, long accountId, long domainId, boolean recreatable) {
+    public VolumeVO(Type type, long instanceId, long templateId, String name, long dcId, long podId, long accountId, long domainId, boolean recreatable) {
         this(type, instanceId, name, dcId, podId, accountId, domainId, 0l);
         this.templateId = templateId;
         this.recreatable = recreatable;
     }
     
     
-    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.VolumeType vType) {
+    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -202,7 +192,6 @@ public class VolumeVO implements Volume {
         this.podId = podId;
         this.dataCenterId = dcId;
         this.volumeType = vType;
-        this.status = AsyncInstanceCreateStatus.Created;
         this.recreatable = false;
     }
 
@@ -215,10 +204,6 @@ public class VolumeVO implements Volume {
         this.recreatable = recreatable;
     }
     
-    public String getIscsiName() {
-		return iscsiName;
-	}
-
 	@Override
     public long getId() {
         return id;
@@ -294,7 +279,7 @@ public class VolumeVO implements Volume {
     }
 
     @Override
-	public VolumeType getVolumeType() {
+	public Type getVolumeType() {
 		return volumeType;
 	}
 	
@@ -330,10 +315,6 @@ public class VolumeVO implements Volume {
 		this.hostip = hostip;
 	}
 
-	public void setIscsiName(String iscsiName) {
-		this.iscsiName = iscsiName;
-	}
-
 	public void setPodId(Long podId) {
 		this.podId = podId;
 	}
@@ -342,7 +323,7 @@ public class VolumeVO implements Volume {
 		this.dataCenterId = dataCenterId;
 	}
 
-	public void setVolumeType(VolumeType type) {
+	public void setVolumeType(Type type) {
 		volumeType = type;
 	}
 	
@@ -401,15 +382,6 @@ public class VolumeVO implements Volume {
 	
 	public void setPoolId(Long poolId) {
 		this.poolId = poolId;
-	}
-	
-    @Override
-    public AsyncInstanceCreateStatus getStatus() {
-		return status;
-	}
-	
-	public void setStatus(AsyncInstanceCreateStatus status) {
-		this.status = status;
 	}
 	
 	public Date getUpdated() {

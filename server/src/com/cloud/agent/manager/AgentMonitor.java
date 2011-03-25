@@ -41,7 +41,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class AgentMonitor extends Thread implements Listener {
@@ -135,21 +134,7 @@ public class AgentMonitor extends Thread implements Listener {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
                             _hostDao.updateStatus(host, Event.PreparationComplete, _msId);
                         }
-                    } else {
-                        List<Long> ids = _volDao.findVmsStoredOnHost(hostId);
-                        boolean stillWorking = false;
-                        for (Long id : ids) {
-                            VMInstanceVO instance = _vmDao.findById(id);
-                            if (instance != null && (instance.getState() == VirtualMachine.State.Starting || instance.getState() == VirtualMachine.State.Stopping || instance.getState() == VirtualMachine.State.Running || instance.getState() == VirtualMachine.State.Migrating)) {
-                                stillWorking = true;
-                                break;
-                            }
-                        }
-                        if (!stillWorking) {
-                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "All VMs Stopped for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
-                            _hostDao.updateStatus(host, Event.PreparationComplete, _msId);
-                        }
-                    }
+                    } 
                 }
             } catch (Throwable th) {
                 s_logger.error("Caught the following exception: ", th);

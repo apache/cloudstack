@@ -818,14 +818,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         volResponse.setStorageType(storageType);
-        if (volume.getVolumeType().equals(Volume.VolumeType.ROOT)) {
+        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
             volResponse.setServiceOfferingId(volume.getDiskOfferingId());
         } else {
             volResponse.setDiskOfferingId(volume.getDiskOfferingId());
         }
 
         DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
-        if (volume.getVolumeType().equals(Volume.VolumeType.ROOT)) {
+        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
             volResponse.setServiceOfferingName(diskOffering.getName());
             volResponse.setServiceOfferingDisplayText(diskOffering.getDisplayText());
         } else {

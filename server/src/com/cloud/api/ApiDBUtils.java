@@ -65,7 +65,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -374,7 +374,7 @@ public class ApiDBUtils {
     }
 
     public static VolumeVO findRootVolume(long vmId) {
-        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, VolumeType.ROOT);
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Type.ROOT);
         if (volumes != null && volumes.size() == 1) {
             return volumes.get(0);
         } else {

@@ -45,7 +45,6 @@ import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -1164,8 +1163,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (volume == null) {
             throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
-        if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getState() + ". Cannot take snapshot.");
         }
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
         if (storagePoolVO == null) {

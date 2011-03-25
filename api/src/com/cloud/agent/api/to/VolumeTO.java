@@ -31,7 +31,7 @@ public class VolumeTO {
     private String mountPoint;
     private String path;
     private long size;
-    private Volume.VolumeType type;
+    private Volume.Type type;
     private Storage.StorageResourceType resourceType;
     private StoragePoolType storagePoolType;
     private String storagePoolUuid;
@@ -39,7 +39,7 @@ public class VolumeTO {
     private String chainInfo;
     private String guestOsType;
     
-    public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
+    public VolumeTO(long id, Volume.Type type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
     	String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
         this.name= name;
@@ -53,7 +53,7 @@ public class VolumeTO {
         this.chainInfo = chainInfo;
     }
     
-    public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
+    public VolumeTO(long id, Volume.Type type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
         	String poolUuid, String name, String mountPoint, String path, long size, String chainInfo, String guestOsType) {
             this.id = id;
             this.name= name;
@@ -107,7 +107,7 @@ public class VolumeTO {
         return size;
     }
 
-    public Volume.VolumeType getType() {
+    public Volume.Type getType() {
         return type;
     }
 

@@ -22,14 +22,13 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.template.BasedOn;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
 
 
 public interface Volume extends ControlledEntity, BasedOn {
-	enum VolumeType {UNKNOWN, ROOT, SWAP, DATADISK, ISO};
+	enum Type {UNKNOWN, ROOT, SWAP, DATADISK, ISO};
 	
 	enum State implements FiniteState<State, Event> {
 	    Allocated("The volume is allocated but has not been created yet."),
@@ -119,7 +118,7 @@ public interface Volume extends ControlledEntity, BasedOn {
     
     long getDataCenterId();
     
-    VolumeType getVolumeType();
+    Type getVolumeType();
     
     Storage.StorageResourceType getStorageResourceType();
     
@@ -132,7 +131,6 @@ public interface Volume extends ControlledEntity, BasedOn {
 	Long getDeviceId();
 	
 	Date getCreated();
-	AsyncInstanceCreateStatus getStatus();
 	
 	long getDiskOfferingId();
 	

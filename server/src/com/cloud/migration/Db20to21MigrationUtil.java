@@ -41,7 +41,7 @@ import com.cloud.migration.DiskOffering21VO.Type;
 import com.cloud.network.Network;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -674,11 +674,11 @@ public class Db20to21MigrationUtil {
 			List<VolumeVO> volumes = _volumeDao.searchIncludingRemoved(sc2, null, false, false);
 			deviceId = 1;	// reset for each VM iteration
 			for(VolumeVO vol : volumes) {
-				if(vol.getVolumeType() == VolumeType.ROOT) {
+				if(vol.getVolumeType() == Volume.Type.ROOT) {
 					System.out.println("Setting root volume device id to zero, vol: " + vol.getName() + ", instance: " + vm.getName());
 					
 					vol.setDeviceId(0L);
-				} else if(vol.getVolumeType() == VolumeType.DATADISK) {
+				} else if(vol.getVolumeType() == Volume.Type.DATADISK) {
 					System.out.println("Setting data volume device id, vol: " + vol.getName() + ", instance: " + vm.getName() + ", device id: " + deviceId);
 					
 					vol.setDeviceId(deviceId);

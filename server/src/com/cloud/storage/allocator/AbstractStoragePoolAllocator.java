@@ -46,7 +46,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -144,7 +144,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             }			
 			return false;
 		}
-        if(dskCh.getType().equals(VolumeType.ROOT) && pool.getPoolType().equals(StoragePoolType.Iscsi)){
+        if(dskCh.getType().equals(Type.ROOT) && pool.getPoolType().equals(StoragePoolType.Iscsi)){
     		if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Disk needed for ROOT volume, but StoragePoolType is Iscsi, skipping this and trying other available pools");
             }	

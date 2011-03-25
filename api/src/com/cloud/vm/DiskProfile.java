@@ -30,7 +30,7 @@ import com.cloud.storage.Volume;
 public class DiskProfile {
     private long size;
     private String[] tags;
-    private Volume.VolumeType type;
+    private Volume.Type type;
     private String name;
     private boolean useLocalStorage;
     private boolean recreatable;
@@ -43,7 +43,7 @@ public class DiskProfile {
     protected DiskProfile() {
     }
     
-    public DiskProfile(long volumeId, Volume.VolumeType type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
+    public DiskProfile(long volumeId, Volume.Type type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
         this.type = type;
         this.name = name;
         this.size = size;
@@ -91,7 +91,7 @@ public class DiskProfile {
     /**
      * @return type of volume.  
      */
-    public Volume.VolumeType getType() {
+    public Volume.Type getType() {
         return type;
     }
     

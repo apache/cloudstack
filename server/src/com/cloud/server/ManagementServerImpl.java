@@ -2422,9 +2422,6 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("domPNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
         sb.and("domSNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
 
-        // Only return Volumes that are in the "Created" state
-        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
-
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         
@@ -4322,7 +4319,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public VolumeVO getRootVolume(Long instanceId)
     {
-    	return _volumeDao.findByInstanceAndType(instanceId, Volume.VolumeType.ROOT).get(0);
+    	return _volumeDao.findByInstanceAndType(instanceId, Volume.Type.ROOT).get(0);
     }
     
     @Override
