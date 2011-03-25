@@ -122,6 +122,7 @@
         </adapters>
         <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
             <adapter name="User First" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator"/>
+	        <!--adapter name="User First With HostTag" class="com.cloud.agent.manager.allocator.impl.HostTagBasedPodAllocator"/-->
         </adapters>
 
         <adapters key="com.cloud.consoleproxy.ConsoleProxyAllocator">
