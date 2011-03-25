@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -447,6 +448,12 @@ public class Upgrade217to22 implements DbUpgrade {
             pstmt.setString(i++, reservationId);
             pstmt.setString(i++, broadcastUri);
             pstmt.executeUpdate();
+            
+            pstmt = conn.prepareStatement("INSERT INTO account_network_ref (account_id, network_id, is_owner) VALUES (?,    ?,  1)");
+            pstmt.setLong(1, accountId);
+            pstmt.setLong(2, seq);
+            pstmt.executeUpdate();
+            
             return seq;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create network", e);
@@ -817,24 +824,52 @@ public class Upgrade217to22 implements DbUpgrade {
                     
                     upgradePublicUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
                     
+                    
                     pstmt = conn.prepareStatement("SELECT id, vlan_id, vlan_gateway, vlan_netmask FROM vlan WHERE vlan_type='DirectAttached' AND data_center_id=?");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
+                    HashMap<String, Long> vlanNetworkMap = new HashMap<String, Long>();
                     while (rs.next()) {
                         long vlanId = rs.getLong(1);
                         String tag = rs.getString(2);
                         String gateway = rs.getString(3);
                         String netmask = rs.getString(4);
                         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
-                        long directNetworkId = insertNetwork(conn, "DirectNetwork" + vlanId, "Direct network created for " + vlanId, "Guest", "Vlan", "vlan://" + tag, gateway, cidr, "Dhcp", 7, dcId, "DirectNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, (String)dc[2], true, null);
+                        
+                        //Get the owner of the network
+                        Long accountId = 1L;
+                        Long domainId = 1L;
+                        boolean isShared = true;
+                        pstmt = conn.prepareStatement("SELECT account_id FROM account_vlan_map WHERE account_id IS NOT NULL AND vlan_db_id=?");
+                        pstmt.setLong(1, vlanId);
+                        s_logger.debug("query is " + pstmt);
+                        ResultSet accountRs = pstmt.executeQuery();
+                        while(accountRs.next()) {
+                            isShared = false;
+                            accountId = accountRs.getLong(1);
+                            pstmt = conn.prepareStatement("SELECT domain_id FROM account WHERE id=?");
+                            pstmt.setLong(1, accountId);
+                            ResultSet domainRs = pstmt.executeQuery();
+                            while (domainRs.next()) {
+                                domainId = domainRs.getLong(1);
+                            }
+                        }     
+                        
+                        if (vlanNetworkMap.get(tag) == null) {
+                            long directNetworkId = insertNetwork(conn, "DirectNetwork" + vlanId, "Direct network created for " + vlanId, "Guest", "Vlan", "vlan://" + tag, gateway, cidr, "Dhcp", 7, dcId, "DirectNetworkGuru", "Setup", domainId, accountId, null, null, "Direct", isShared, (String)dc[2], true, null);
+                            vlanNetworkMap.put(tag, directNetworkId);
+                        }
                         
                         pstmt = conn.prepareStatement("UPDATE vlan SET network_id=? WHERE id=?");
-                        pstmt.setLong(1, directNetworkId);
+                        pstmt.setLong(1, vlanNetworkMap.get(tag));
                         pstmt.setLong(2, vlanId);
                         pstmt.executeUpdate();
+                        
+                        
+                        
                         pstmt.close();
                         
-                        upgradeDirectUserIpAddress(conn, dcId, directNetworkId, "DirectAttached");
+                        upgradeDirectUserIpAddress(conn, dcId, vlanNetworkMap.get(tag), "DirectAttached");
                     }
                     
                     upgradeSsvm(conn, dcId, publicNetworkId, storageNetworkId, controlNetworkId, "Advanced");
