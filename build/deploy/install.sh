@@ -107,7 +107,7 @@ source /etc/profile.d/catalinahome.sh
 # fi
 
 ####### set up usage server as a service
-if [ ! -f /ec/init.d/usageserver ] ; then
+if [ ! -f /etc/init.d/usageserver ] ; then
   cp -f usageserver /etc/init.d
   /sbin/chkconfig usageserver on
 fi
