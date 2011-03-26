@@ -1144,6 +1144,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	@Override
 	@DB
 	public boolean deleteHost(long hostId) {
+	    
+	    //Check if there are vms running/starting/stopping on this host
+	    List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+	    
+	    if (!vms.isEmpty()) {
+	        throw new CloudRuntimeException("Unable to delete the host as there are vms in " + vms.get(0).getState() + " state using this host");
+	    } 
+	    
 		Transaction txn = Transaction.currentTxn();
 		try {
 			HostVO host = _hostDao.findById(hostId);

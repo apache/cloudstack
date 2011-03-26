@@ -143,7 +143,6 @@ public enum Status {
         s_fsm.addTransition(Status.PrepareForMaintenance, Event.AgentConnected, Status.PrepareForMaintenance);
         s_fsm.addTransition(Status.PrepareForMaintenance, Event.HostDown, Status.PrepareForMaintenance);
         s_fsm.addTransition(Status.PrepareForMaintenance, Event.UnableToMigrate, Status.ErrorInMaintenance);
-        s_fsm.addTransition(Status.PrepareForMaintenance, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.PrepareForMaintenance, Event.Ping, Status.PrepareForMaintenance);
         s_fsm.addTransition(Status.PrepareForMaintenance, Event.ManagementServerDown, Status.PrepareForMaintenance);
         s_fsm.addTransition(Status.ErrorInMaintenance, Event.MaintenanceRequested, Status.PrepareForMaintenance);
