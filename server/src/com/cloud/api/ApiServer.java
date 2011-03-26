@@ -109,10 +109,10 @@ public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    private static final short ADMIN_COMMAND = 1;
-    private static final short DOMAIN_ADMIN_COMMAND = 2;
-    private static final short READ_ONLY_ADMIN_COMMAND = 4;
-    private static final short USER_COMMAND = 8;
+    public static final short ADMIN_COMMAND = 1;
+    public static final short DOMAIN_ADMIN_COMMAND = 4;
+    public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
+    public static final short USER_COMMAND = 8;
     private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
@@ -127,7 +127,7 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_userCommands = null;
     private static List<String> s_resellerCommands = null; // AKA domain-admin
     private static List<String> s_adminCommands = null;
-    private static List<String> s_readOnlyAdminCommands = null;
+    private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
     
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
@@ -136,7 +136,7 @@ public class ApiServer implements HttpRequestHandler {
         s_userCommands = new ArrayList<String>();
         s_resellerCommands = new ArrayList<String>();
         s_adminCommands = new ArrayList<String>();
-        s_readOnlyAdminCommands = new ArrayList<String>();
+        s_resourceDomainAdminCommands = new ArrayList<String>();
         s_allCommands = new ArrayList<String>();
     }
 
@@ -179,12 +179,12 @@ public class ApiServer implements HttpRequestHandler {
                             if ((cmdPermissions & ADMIN_COMMAND) != 0) {
                                 s_adminCommands.add((String)key);
                             }
+                            if ((cmdPermissions & RESOURCE_DOMAIN_ADMIN_COMMAND) != 0) {
+                                s_resourceDomainAdminCommands.add((String)key);
+                            }
                             if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
                                 s_resellerCommands.add((String)key);
-                            }
-                            if ((cmdPermissions & READ_ONLY_ADMIN_COMMAND) != 0) {
-                                s_readOnlyAdminCommands.add((String)key);
-                            }
+                            }                            
                             if ((cmdPermissions & USER_COMMAND) != 0) {
                                 s_userCommands.add((String)key);
                             }
@@ -195,7 +195,7 @@ public class ApiServer implements HttpRequestHandler {
                 }
                 
                 s_allCommands.addAll(s_adminCommands);
-                s_allCommands.addAll(s_readOnlyAdminCommands);
+                s_allCommands.addAll(s_resourceDomainAdminCommands);
                 s_allCommands.addAll(s_userCommands);
                 s_allCommands.addAll(s_resellerCommands);
             }
@@ -738,8 +738,8 @@ public class ApiServer implements HttpRequestHandler {
         case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
             isCommandAvailable = s_resellerCommands.contains(commandName);
             break;
-        case Account.ACCOUNT_TYPE_READ_ONLY_ADMIN:
-            isCommandAvailable = s_readOnlyAdminCommands.contains(commandName);
+        case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
+            isCommandAvailable = s_resourceDomainAdminCommands.contains(commandName);
             break;
         case Account.ACCOUNT_TYPE_NORMAL:
             isCommandAvailable = s_userCommands.contains(commandName);

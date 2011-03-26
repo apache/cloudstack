@@ -39,7 +39,8 @@ public interface Account extends ControlledEntity {
     public static final short ACCOUNT_TYPE_NORMAL = 0;
     public static final short ACCOUNT_TYPE_ADMIN = 1;
     public static final short ACCOUNT_TYPE_DOMAIN_ADMIN = 2;
-    public static final short ACCOUNT_TYPE_READ_ONLY_ADMIN = 3;
+    public static final short ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN = 3;
+    public static final short ACCOUNT_TYPE_READ_ONLY_ADMIN = 4;
 
     public static final String ACCOUNT_STATE_DISABLED = "disabled";
     public static final String ACCOUNT_STATE_ENABLED = "enabled";
