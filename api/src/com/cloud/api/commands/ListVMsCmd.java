@@ -79,6 +79,9 @@ public class ListVMsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the target hypervisor for the template")
     private String hypervisor;
+    
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
+    private Long storageId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -139,6 +142,11 @@ public class ListVMsCmd extends BaseListCmd {
     public String getHypervisor() {
 		return hypervisor;
 	}
+    
+    public Long getStorageId() {
+        return storageId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

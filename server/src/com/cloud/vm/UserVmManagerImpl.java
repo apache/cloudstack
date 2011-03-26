@@ -2698,6 +2698,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             c.addCriteria(Criteria.DOMAINID, domainId);
             c.addCriteria(Criteria.PODID, cmd.getPodId());
             c.addCriteria(Criteria.HOSTID, cmd.getHostId());
+            c.addCriteria(Criteria.STORAGE_ID, cmd.getStorageId());
         }
         
         if (accountId != null) {
@@ -2777,6 +2778,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Object path = c.getCriteria(Criteria.PATH);
         Object networkId = c.getCriteria(Criteria.NETWORKID);
         Object hypervisor = c.getCriteria(Criteria.HYPERVISOR);
+        Object storageId = c.getCriteria(Criteria.STORAGE_ID);
         
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -2798,6 +2800,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             domainSearch.and("id", domainSearch.entity().getId(), SearchCriteria.Op.EQ);
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (storageId != null) {
+            SearchBuilder<VolumeVO> volumeSearch = _volsDao.createSearchBuilder();
+            volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+            sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
         
         if (groupId != null && (Long)groupId == -1) {
@@ -2861,6 +2869,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         if (path != null) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
+        }
+        
+        if (storageId != null) {
+            sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
         
         if (networkId != null) {
