@@ -12,7 +12,7 @@ INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`,
 alter table user_statistics add column `network_id` bigint unsigned;
 update op_networks set nics_count=(nics_count-1) where id in (select d.network_id from domain_router d, vm_instance i where i.state='Running' and i.id=d.id);
 update network_offerings set traffic_type='Guest' where system_only=0;
-alter table network_offerings add column `guest_type` char(32);
+alter table network_offerings add column `guest_type` char(32) NOT NULL;
 update network_offerings set guest_type='Direct' where id=5;
 update network_offerings set guest_type='Virtual' where id=6;
 update network_offerings set guest_type='Direct' where id=7;
@@ -29,4 +29,5 @@ update network_offerings set availability='Optional' where id=7;
 delete from configuration where name='router.cleanup.interval';
 INSERT INTO configuration (category, instance, component, name, value, description)
     VALUES ('Advanced', 'DEFAULT', 'management-server', 'management.network.cidr', NULL, 'The cidr of management server network');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None');
+
+

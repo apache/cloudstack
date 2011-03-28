@@ -43,4 +43,7 @@ ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY
 ALTER TABLE `cloud`.`cluster` ADD COLUMN  `removed` datetime COMMENT 'date removed if not null';
 ALTER TABLE `cloud`.`cluster` MODIFY `name` varchar(255) COMMENT 'name for the cluster';
 
+ALTER TABLE `cloud`.`network_offerings` MODIFY `guest_type` char(32);
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None');
+
 
