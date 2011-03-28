@@ -47,3 +47,7 @@ ALTER TABLE `cloud`.`network_offerings` MODIFY `guest_type` char(32);
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None');
 
 
+UPDATE `cloud`.`network_offerings` SET `nw_rate`=0, `mc_rate`=0 WHERE system_only=1 and guest_type IS NULL;
+UPDATE `cloud`.`network_offerings` SET `default`=1 WHERE system_only=1;
+
+

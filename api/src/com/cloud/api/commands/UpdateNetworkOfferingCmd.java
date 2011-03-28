@@ -48,7 +48,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the network offering")
     private String displayText;
     
-    @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
+    @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required for Guest Virtual network offering; Optional for Guest Direct network offering")
     private String availability; 
 
     /////////////////////////////////////////////////////
