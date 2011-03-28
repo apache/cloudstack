@@ -23,11 +23,11 @@ import java.io.StringWriter;
 public class ExceptionUtil {
     public static String toString(Throwable th) {
         final StringWriter writer = new StringWriter();
+		writer.append("Exception: " + th.getClass().getName() + "\n");
         writer.append("Message: ");
         writer.append(th.getMessage());
         writer.append("\n  Stack: ");
         th.printStackTrace(new PrintWriter(writer));
         return writer.toString();
     }
-
 }
