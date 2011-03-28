@@ -32,6 +32,7 @@ import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
@@ -87,26 +88,23 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public void execute(){ 
-        boolean result;
+    public void execute() throws ResourceUnavailableException{ 
+        boolean result = false;
+        FirewallRule rule = null;
         try {
-            UserContext.current().setEventDetails("Rule Id: "+getEntityId());
+            UserContext.current().setEventDetails("Rule Id: "+ getEntityId());
             result = _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCaller());
-        } catch (Exception e) {
-            s_logger.error("Unable to apply port forwarding rules", e);
-            _rulesService.revokeStaticNatRule(getEntityId(), true);
-            result = false;
-        }
-        if (result) {
-            FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
+            rule = _entityMgr.findById(FirewallRule.class, getEntityId());
             StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule);
             IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
             fwResponse.setResponseName(getCommandName());
             this.setResponseObject(fwResponse);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error in creating ip forwarding rule on the domr");
+        } finally {
+            if (!result || rule == null) {
+                _rulesService.revokeStaticNatRule(getEntityId(), true);
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error in creating ip forwarding rule on the domr");
+            }
         }
-       
     }
 
 	@Override
