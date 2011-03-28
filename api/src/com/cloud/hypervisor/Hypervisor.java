@@ -28,6 +28,7 @@ public class Hypervisor {
     	VirtualBox,
     	Parralels,
     	BareMetal,
+    	Simulator,
     	
     	Any; /*If you don't care about the hypervisor type*/
 
