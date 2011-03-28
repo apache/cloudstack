@@ -39,8 +39,11 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value=ClusterDao.class)
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -217,6 +220,20 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setJoinParameters("disabledPodIdSearch", "allocationState", Grouping.AllocationState.Disabled);
         
         return customSearch(sc, null);
+    }
+    
+    @Override
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        ClusterVO cluster = createForUpdate();
+        cluster.setName(null);
+        
+        update(id, cluster);
+
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 
 }

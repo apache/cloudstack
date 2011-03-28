@@ -40,4 +40,7 @@ ALTER TABLE `cloud`.`storage_pool` MODIFY `host_address` char(40) NOT NULL;
 ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__related`;
 ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE;
 
+ALTER TABLE `cloud`.`cluster` ADD COLUMN  `removed` datetime COMMENT 'date removed if not null';
+ALTER TABLE `cloud`.`cluster` MODIFY `name` varchar(255) COMMENT 'name for the cluster';
+
 

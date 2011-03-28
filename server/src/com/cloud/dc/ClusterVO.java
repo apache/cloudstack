@@ -17,6 +17,8 @@
  */
 package com.cloud.dc;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -29,8 +31,8 @@ import javax.persistence.Table;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
-import com.cloud.org.Grouping.AllocationState;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="cluster")
@@ -63,6 +65,9 @@ public class ClusterVO implements Cluster {
     @Column(name="allocation_state")
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
+    
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    private Date removed;
     
     public ClusterVO() {
     	clusterType = Cluster.ClusterType.CloudManaged;
@@ -143,4 +148,12 @@ public class ClusterVO implements Cluster {
         this.guid = guid;
     }
 
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+    
 }

@@ -269,13 +269,14 @@ CREATE TABLE `cloud`.`network_offerings` (
 
 CREATE TABLE `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name for the cluster',
+  `name` varchar(255) COMMENT 'name for the cluster',
   `guid` varchar(255) UNIQUE DEFAULT NULL COMMENT 'guid for the cluster',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
   `hypervisor_type` varchar(32),
   `cluster_type` varchar(64) DEFAULT 'CloudManaged',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this cluster enabled for allocation for new resources',
+  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`),
   CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
