@@ -97,12 +97,6 @@ public class NetworkResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is enabled, false otherwise")
     private Boolean isSecurityGroupEnabled;
-      
-    @SerializedName("isdedicatedtodomain") @Param(description="true if network is dedicated to specific domain")
-    private Boolean isDedicatedToDomain;
-    
-    @SerializedName("dedicateddomainid") @Param(description="the id of domain network dedicated to")
-    private Long dedicatedDomainId;
     
     public Long getId() {
         return id;
@@ -342,22 +336,6 @@ public class NetworkResponse extends BaseResponse{
     
     public void setIsSecurityGroupEnabled(Boolean sgEnabled) {
         this.isSecurityGroupEnabled = sgEnabled;
-    }
-
-    public Boolean getIsDedicatedToDomain() {
-        return isDedicatedToDomain;
-    }
-
-    public void setIsDedicatedToDomain(Boolean isDedicatedToDomain) {
-        this.isDedicatedToDomain = isDedicatedToDomain;
-    }
-
-    public Long getDedicatedDomainId() {
-        return dedicatedDomainId;
-    }
-
-    public void setDedicatedDomainId(Long dedicatedDomainId) {
-        this.dedicatedDomainId = dedicatedDomainId;
     }
     
 }

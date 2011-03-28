@@ -2350,7 +2350,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setServices(serviceResponses);
         
         Account account = ApiDBUtils.findAccountById(network.getAccountId());
-        if (account != null) {
+        if (account != null && !network.getIsShared()) {
             response.setAccountName(account.getAccountName());
             Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
             response.setDomainId(domain.getId());
@@ -2359,11 +2359,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         Long dedicatedDomainId = ApiDBUtils.getDedicatedNetworkDomain(network.getId());
         if (dedicatedDomainId != null) {
-            response.setIsDedicatedToDomain(true);
-            response.setDedicatedDomainId(dedicatedDomainId);
-        } else {
-            response.setIsDedicatedToDomain(false);
-        }
+            Domain domain = ApiDBUtils.findDomainById(dedicatedDomainId);
+            response.setDomainId(dedicatedDomainId);
+            response.setDomain(domain.getName());
+        } 
         
         response.setObjectName("network");
         return response;

@@ -1608,6 +1608,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        //if network is shared, defult its owner to be system
+        if (isShared) {
+            owner = _accountMgr.getSystemAccount();
+        }
+        
         // Don't allow to create network with vlan that already exists in the system
         if (vlanId != null) {
             String uri = "vlan://" + vlanId;
