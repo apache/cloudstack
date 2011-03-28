@@ -158,7 +158,7 @@ Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-Requires: /usr/bin/mkisofs
+Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
 Requires: augeas >= 0.7.1
