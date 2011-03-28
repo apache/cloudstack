@@ -699,7 +699,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // Check that the VM is in the correct state
         UserVmVO vm = _vmDao.findById(vmId);
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {
         	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }
         
