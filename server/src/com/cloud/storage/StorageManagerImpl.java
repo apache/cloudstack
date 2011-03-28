@@ -2422,7 +2422,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
     }
 
-
     @Override
     public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException,
             InsufficientStorageCapacityException {

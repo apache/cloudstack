@@ -22,7 +22,7 @@ public class BareMetalPlanner extends FirstFitPlanner implements DeploymentPlann
 	private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
 	
 	@Override
-	public DeployDestination plan(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
+	public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
 		VirtualMachine vm = vmProfile.getVirtualMachine();
 		ServiceOffering offering = vmProfile.getServiceOffering();
 		String hostTag = null;
