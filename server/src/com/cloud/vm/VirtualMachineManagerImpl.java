@@ -430,7 +430,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             ItWorkVO vo = _workDao.findByOutstandingWork(vm.getId(), state);
             if (vo == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find work for " + vm);
+                    s_logger.debug("Unable to find work for VM: " + vm + " and state: " + state);
                 }
                 return true;
             }
