@@ -967,7 +967,8 @@ CREATE TABLE  `cloud`.`domain` (
   `removed` datetime COMMENT 'date removed',
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   PRIMARY KEY  (`id`),
-  UNIQUE (parent, name, removed)
+  UNIQUE (parent, name, removed),
+  INDEX `i_domain__path`(`path`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`account` (

@@ -299,7 +299,7 @@ public class ApiDBUtils {
     /////////////////////////////////////////////////////////////
 
     public static Account findAccountById(Long accountId) {
-        return _accountDao.findById(accountId);
+        return _accountDao.findByIdIncludingRemoved(accountId);
     }
     
     public static Account findAccountByIdIncludingRemoved(Long accountId) {
