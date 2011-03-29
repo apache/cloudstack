@@ -995,17 +995,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UserVmResponse createUserVmResponse(UserVm userVm) {
         UserVmResponse userVmResponse = new UserVmResponse();
         Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
-        // FIXME - this check should be done in searchForUserVm method in
-        // ManagementServerImpl;
-        // otherwise the number of vms returned is not going to match pageSize
-        // request parameter
-        if ((acct != null) && (acct.getRemoved() == null)) {
+        if (acct != null) {
             userVmResponse.setAccountName(acct.getAccountName());
             userVmResponse.setDomainId(acct.getDomainId());
             userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-        } else {
-            return null; // the account has been deleted, skip this VM in the
-                         // response
         }
 
         userVmResponse.setId(userVm.getId());
