@@ -50,4 +50,11 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, '
 UPDATE `cloud`.`network_offerings` SET `nw_rate`=0, `mc_rate`=0 WHERE system_only=1 and guest_type IS NULL;
 UPDATE `cloud`.`network_offerings` SET `default`=1 WHERE system_only=1;
 
-
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled';
+ALTER TABLE `cloud`.`data_center` ADD INDEX `i_data_center__allocation_state`(`allocation_state`);
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled';
+ALTER TABLE `cloud`.`cluster` ADD INDEX `i_cluster__allocation_state`(`allocation_state`);
+ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled';
+ALTER TABLE `cloud`.`host_pod_ref` ADD INDEX `i_host_pod_ref__allocation_state`(`allocation_state`);
+ALTER TABLE `cloud`.`host` ADD COLUMN `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled';
+ALTER TABLE `cloud`.`host` ADD INDEX `i_host__allocation_state`(`allocation_state`);
