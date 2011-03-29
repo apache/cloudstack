@@ -172,6 +172,7 @@ import com.cloud.network.ovs.OvsDestroyTunnelCommand;
 import com.cloud.network.ovs.OvsSetTagAndFlowAnswer;
 import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -221,7 +222,7 @@ import com.xensource.xenapi.XenAPIObject;
  * 
  */
 @Local(value = ServerResource.class)
-public abstract class CitrixResourceBase implements ServerResource {
+public abstract class CitrixResourceBase implements ServerResource, HypervisorResource {
     private static final Logger s_logger = Logger.getLogger(CitrixResourceBase.class);
     protected static final XenServerConnectionPool _connPool = XenServerConnectionPool.getInstance();
     protected static final int MB = 1024 * 1024;
@@ -376,7 +377,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     @Override
     public Answer executeRequest(Command cmd) {
-
         if (cmd instanceof CreateCommand) {
             return execute((CreateCommand) cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
@@ -1006,7 +1006,8 @@ public abstract class CitrixResourceBase implements ServerResource {
 		}
     }
     
-    protected StartAnswer execute(StartCommand cmd) {
+    @Override
+    public StartAnswer execute(StartCommand cmd) {
         Connection conn = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName(); 
@@ -2575,7 +2576,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         return NumbersUtil.parseInt(vncport, -1);
     }
 
-    protected Answer execute(final RebootCommand cmd) {
+    @Override
+    public RebootAnswer execute(RebootCommand cmd) {
         Connection conn = getConnection();
         synchronized (_vms) {
             _vms.put(cmd.getVmName(), State.Starting);
@@ -2617,7 +2619,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             bytesSent = stats[0];
             bytesRcvd = stats[1];
         }
-        RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
+        RebootAnswer answer = execute((RebootCommand) cmd);
         answer.setBytesSent(bytesSent);
         answer.setBytesReceived(bytesRcvd);
         if (answer.getResult()) {
@@ -2952,8 +2954,9 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         return null;
     }
-  
-    protected StopAnswer execute(final StopCommand cmd) {
+    
+    @Override
+    public StopAnswer execute(StopCommand cmd) {
         Connection conn = getConnection();
         String vmName = cmd.getVmName();
         try {
@@ -3082,7 +3085,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         return new StopAnswer(cmd, "Stop VM failed");
     }
-
+    
     private List<VDI> getVdis(Connection conn, VM vm) {
         List<VDI> vdis = new ArrayList<VDI>();
         try {
