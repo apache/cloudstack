@@ -4703,8 +4703,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         continue;
                     }
                     if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
-                        throw new CloudRuntimeException("There is a SR using the same configuration target:" + dc.get("target") +  "， targetIQN:" 
-                                    + dc.get("targetIQN")  + "， lunid:" + dc.get("lunid") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
+                        throw new CloudRuntimeException("There is a SR using the same configuration target:" + dc.get("target") +  ",  targetIQN:" 
+                                    + dc.get("targetIQN")  + ", lunid:" + dc.get("lunid") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
                     }
                 }
                 deviceConfig.put("target", target);
@@ -4816,7 +4816,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
-                    throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + "， serverpath:" 
+                    throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:" 
                             + dc.get("serverpath") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
                 }
 
