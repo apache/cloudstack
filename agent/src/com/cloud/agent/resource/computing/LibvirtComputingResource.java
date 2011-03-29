@@ -77,6 +77,7 @@ import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
@@ -850,6 +851,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
             } else if (cmd instanceof UpgradeSnapshotCommand) {
                 return execute((UpgradeSnapshotCommand) cmd);
+            } else if (cmd instanceof CreateStoragePoolCommand) {
+                return execute((CreateStoragePoolCommand) cmd);
             } else if (cmd instanceof ModifyStoragePoolCommand) {
                 return execute((ModifyStoragePoolCommand) cmd);
             } else if (cmd instanceof SecurityIngressRulesCmd) {
@@ -1388,7 +1391,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     }
     
-  
+    protected Answer execute(CreateStoragePoolCommand cmd) {
+        return new Answer(cmd, true, "success");
+    }
+    
     protected Answer execute(ModifyStoragePoolCommand cmd) {
     	try {
     		Connect conn = LibvirtConnection.getConnection();
