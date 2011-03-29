@@ -185,9 +185,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Inject private VirtualMachineManager _itMgr;
     
-/*    
-    private final ScheduledExecutorService _capacityScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("CP-Scan"));
-*/  
     private final ExecutorService _requestHandlerScheduler = Executors.newCachedThreadPool(new NamedThreadFactory("Request-handler"));
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
