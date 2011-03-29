@@ -857,7 +857,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
         }
         
-        ServiceOfferingVO currentServiceOffering = _offeringDao.findById(vmInstance.getServiceOfferingId());
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
         
         // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
         // NOTE: With the new network refactoring in 2.2, we shouldn't need the check for same guest IP type anymore.

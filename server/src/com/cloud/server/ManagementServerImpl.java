@@ -1080,7 +1080,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
 
-            ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
+            ServiceOfferingVO offering = _offeringsDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
             
             // Only return offerings with the same Guest IP type and storage pool preference
