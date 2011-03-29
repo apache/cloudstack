@@ -941,7 +941,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 			}
 		}
 		
-		Account account = _accountDao.findById(template.getAccountId());
+		Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
 		String eventType = "";
 		
 		if (template.getFormat().equals(ImageFormat.ISO)){
