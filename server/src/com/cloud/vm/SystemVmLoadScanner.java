@@ -35,6 +35,17 @@ public class SystemVmLoadScanner<T> {
         _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), startupDelayMs, scanIntervalMs, TimeUnit.MILLISECONDS);
 	}
 	
+	public void stop() {
+        _capacityScanScheduler.shutdownNow();
+
+        try {
+            _capacityScanScheduler.awaitTermination(1000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+        }
+
+        _capacityScanLock.releaseRef();
+	}
+	
     private Runnable getCapacityScanTask() {
         return new Runnable() {
 

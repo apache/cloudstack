@@ -292,9 +292,20 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         _detailsDao.persist(zone.getId(), details);
     }
     
+    @Override
     public List<DataCenterVO> listDisabledZones(){
     	SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
     	sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
+    	
+    	List<DataCenterVO> dcs =  listBy(sc);
+    	
+    	return dcs;
+    }
+    
+    @Override
+    public List<DataCenterVO> listEnabledZones(){
+    	SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+    	sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
     	
     	List<DataCenterVO> dcs =  listBy(sc);
     	
