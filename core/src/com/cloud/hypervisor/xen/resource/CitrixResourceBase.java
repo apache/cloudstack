@@ -645,7 +645,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vifr.qosAlgorithmType = "ratelimit";
             vifr.qosAlgorithmParams = new HashMap<String, String>();
             // convert mbs to kilobyte per second
-            vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 1024));
+            vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 128));
         }
         
         VIF vif = VIF.create(conn, vifr);
