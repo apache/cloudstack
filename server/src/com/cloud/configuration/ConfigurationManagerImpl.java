@@ -2780,20 +2780,24 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     
     @Override
     public Integer getNetworkRate(long networkOfferingId) {
+        
+        //validate network offering information
         NetworkOffering no = getNetworkOffering(networkOfferingId);
-        Integer networkRate = null;
         if (no == null) {
             throw new InvalidParameterValueException("Unable to find network offering by id=" + networkOfferingId);
         }
+        
+        Integer networkRate;
         if (no.getRateMbps() != null) {
             networkRate = no.getRateMbps();
         } else {
             networkRate = Integer.parseInt(_configDao.getValue(Config.NetworkThrottlingRate.key()));
         }
         
+        //networkRate is unsigned int in netowrkOfferings table, and can't be set to -1
+        //so 0 means unlimited; we convert it to -1, so we are consistent with all our other resources where -1 means unlimited
         if (networkRate == 0) {
-            //0 means no network limits should be applied
-            return null;
+            networkRate = -1;
         }
         
         return networkRate;
