@@ -18,18 +18,28 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -1095,6 +1105,333 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
     
+    private void migrateEvents(Connection conn){
+        try {
+        //get last processed event Id
+        Long lastProcessedEvent = getMostRecentEvent(conn); 
+        //Events not yet processed
+        String sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.id > ? and vmevt.state = 'Completed' ";
+        if (lastProcessedEvent == null) {
+            System.out.println("no events are processed earlier, copying all events");
+            sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.state = 'Completed' ";
+        }
+
+        PreparedStatement pstmt = null;
+
+            pstmt = conn.prepareStatement(sql);
+            int i = 1;
+            if (lastProcessedEvent != null) {
+                pstmt.setLong(i++, lastProcessedEvent);
+            }
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                EventVO event = new EventVO();
+                event.setType(rs.getString(1));
+                event.setDescription(rs.getString(2));
+                event.setUserId(rs.getLong(3));
+                event.setAccountId(rs.getLong(4));
+                event.setCreatedDate(DateUtil.parseDateString(TimeZone.getTimeZone("GMT"), rs.getString(5)));
+                event.setLevel(rs.getString(6));
+                event.setParameters(rs.getString(7));
+                convertEvent(event, conn);
+            }
+            s_logger.trace("Migrating events completed");
+        } catch (Exception e) {
+            System.out.println("Error: "+e.getMessage());
+            throw new CloudRuntimeException("Failed to migrate usage events: ", e);
+        }
+    }
+    
+    private Long getMostRecentEvent(Connection conn) {
+        PreparedStatement pstmt = null;
+        String sql = "SELECT id FROM cloud_usage.event ORDER BY created DESC LIMIT 1";
+        try {
+            pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        } catch (Exception ex) {
+            throw new CloudRuntimeException("error getting most recent event date: "+ ex.getMessage());
+        }
+        return null;
+    }
+    
+    private void convertEvent(EventVO event, Connection conn) throws IOException, SQLException {
+        // we only create usage for success cases as error cases mean
+        // the event didn't happen, so it couldn't result in usage
+        if (!EventVO.LEVEL_INFO.equals(event.getLevel())) {
+            return;
+        }
+        String eventType = event.getType();
+        UsageEventVO usageEvent = null;
+        if (isVMEvent(eventType)) {
+            usageEvent= convertVMEvent(event);
+        } else if (isIPEvent(eventType)) {
+            usageEvent= convertIPEvent(event);
+        } else if (isVolumeEvent(eventType)) {
+            usageEvent = convertVolumeEvent(event);
+        } else if (isTemplateEvent(eventType)) {
+            usageEvent = convertTemplateEvent(event);
+        } else if (isISOEvent(eventType)) {
+            usageEvent = convertISOEvent(event);
+        } else if (isSnapshotEvent(eventType)) {
+            usageEvent = convertSnapshotEvent(event);
+        } /*else if (isSecurityGrpEvent(eventType)) {
+            usageEvent = convertSecurityGrpEvent(event);
+        } else if (isLoadBalancerEvent(eventType)) {
+            usageEvent = convertLoadBalancerEvent(event);
+        }*/
+        if(usageEvent != null){
+            usageEvent.setCreatedDate(event.getCreateDate());
+          //update firewall_rules table
+            PreparedStatement pstmt = null;
+            pstmt = conn.prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id, usage_event.resource_name," +
+            		" usage_event.offering_id, usage_event.template_id, usage_event.size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            pstmt.setString(1, usageEvent.getType());
+            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usageEvent.getCreateDate()));
+            pstmt.setLong(3, usageEvent.getAccountId());
+            pstmt.setLong(4, usageEvent.getZoneId());
+            pstmt.setLong(5, usageEvent.getResourceId());
+            pstmt.setString(6, usageEvent.getResourceName());
+            if(usageEvent.getOfferingId() != null){
+                pstmt.setLong(7, usageEvent.getOfferingId());
+            } else {
+                pstmt.setNull(7, Types.BIGINT);
+            }
+            if(usageEvent.getTemplateId() != null){
+                pstmt.setLong(8, usageEvent.getTemplateId());
+            } else {
+                pstmt.setNull(8, Types.BIGINT);
+            }
+            if(usageEvent.getSize() != null){
+                pstmt.setLong(9, usageEvent.getSize());
+            } else {
+                pstmt.setNull(9, Types.BIGINT);
+            }
+            //pstmt.setString(10, usageEvent.getResourceType());
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
+    }
+
+    private boolean isVMEvent(String eventType) {
+        if (eventType == null) return false;
+        return eventType.startsWith("VM.");
+    }
+
+    private boolean isIPEvent(String eventType) {
+        if (eventType == null) return false;
+        return eventType.startsWith("NET.IP");
+    }
+    
+    private boolean isVolumeEvent(String eventType) {
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) ||
+                eventType.equals(EventTypes.EVENT_VOLUME_DELETE));
+    }
+
+    private boolean isTemplateEvent(String eventType) {
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_TEMPLATE_CREATE) ||
+                eventType.equals(EventTypes.EVENT_TEMPLATE_COPY) ||
+                eventType.equals(EventTypes.EVENT_TEMPLATE_DELETE));
+    }
+    
+    private boolean isISOEvent(String eventType) {
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_ISO_CREATE) ||
+                eventType.equals(EventTypes.EVENT_ISO_COPY) ||
+                eventType.equals(EventTypes.EVENT_ISO_DELETE));
+    }
+    
+    private boolean isSnapshotEvent(String eventType) {
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_SNAPSHOT_CREATE) ||
+                eventType.equals(EventTypes.EVENT_SNAPSHOT_DELETE));
+    }
+    
+    private boolean isLoadBalancerEvent(String eventType) {
+        if (eventType == null) return false;
+        return eventType.startsWith("LB.");
+    }
+    
+    private UsageEventVO convertVMEvent(EventVO event) throws IOException {
+        
+        Properties vmEventParams = new Properties();
+        UsageEventVO usageEvent = null;
+        long vmId = -1L;
+        long soId = -1L; // service offering id
+        long zoneId = -1L;
+        String eventParams = event.getParameters();
+        if (eventParams != null) {
+            vmEventParams.load(new StringReader(eventParams));
+            vmId = Long.parseLong(vmEventParams.getProperty("id"));
+            soId = Long.parseLong(vmEventParams.getProperty("soId"));
+            zoneId = Long.parseLong(vmEventParams.getProperty("dcId"));
+        }
+
+        if (EventTypes.EVENT_VM_START.equals(event.getType())) {
+            long templateId = 0;
+            String tId = vmEventParams.getProperty("tId");
+            if (tId != null) {
+                templateId = Long.parseLong(tId);
+            }
+
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, event.getAccountId(), zoneId, vmId, vmEventParams.getProperty("vmName"), soId, templateId, "");
+        } else if (EventTypes.EVENT_VM_STOP.equals(event.getType())) {
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, event.getAccountId(), zoneId, vmId, vmEventParams.getProperty("vmName"));
+        } else if (EventTypes.EVENT_VM_CREATE.equals(event.getType())) {
+            Long templateId = null;
+            String tId = vmEventParams.getProperty("tId");
+            if (tId != null) {
+                templateId = new Long(Long.parseLong(tId));
+            }
+
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, event.getAccountId(), zoneId, vmId, vmEventParams.getProperty("vmName"), soId, templateId, "");
+        } else if (EventTypes.EVENT_VM_DESTROY.equals(event.getType())) {
+            
+        }
+        return usageEvent;
+    }
+
+    private UsageEventVO convertIPEvent(EventVO event) throws IOException {
+        
+        Properties ipEventParams = new Properties();
+        String ipAddress = null;
+        boolean isSourceNat = false;
+        UsageEventVO usageEvent = null;
+        ipEventParams.load(new StringReader(event.getParameters()));
+        ipAddress = ipEventParams.getProperty("address");
+        if (ipAddress == null) {
+            ipAddress = ipEventParams.getProperty("guestIPaddress");
+            if (ipAddress == null) {
+                // can not find IP address, bail for this event
+                return null;
+            }
+        }
+        isSourceNat = Boolean.parseBoolean(ipEventParams.getProperty("sourceNat"));
+        if (isSourceNat) return null; // skip source nat IP addresses as we don't charge for them
+
+        if (EventTypes.EVENT_NET_IP_ASSIGN.equals(event.getType())) {
+            long zoneId = Long.parseLong(ipEventParams.getProperty("dcId"));
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, event.getAccountId(), zoneId, 0L, ipAddress, 0L);
+        } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
+            if (!isSourceNat) {
+                // at this point it's not a sourceNat IP, so find the usage record with this IP and a null released date, update the released date
+                usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, event.getAccountId(), 0L, 0L, ipAddress, 0L);
+            }
+        }
+        return usageEvent;
+    }
+
+    private UsageEventVO convertVolumeEvent(EventVO event) throws IOException {
+        
+        Properties volEventParams = new Properties();
+        long volId = -1L;
+        Long doId = -1L;
+        long zoneId = -1L;
+        Long templateId = -1L;
+        long size = -1L;
+        UsageEventVO usageEvent = null;
+        volEventParams.load(new StringReader(event.getParameters()));
+        volId = Long.parseLong(volEventParams.getProperty("id"));
+        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
+            doId = Long.parseLong(volEventParams.getProperty("doId"));
+            zoneId = Long.parseLong(volEventParams.getProperty("dcId"));
+            templateId = Long.parseLong(volEventParams.getProperty("tId"));
+            size = Long.parseLong(volEventParams.getProperty("size"));
+            if(doId == -1){
+                doId = null;
+            }
+            if(templateId == -1){
+                templateId = null;
+            }
+        }
+
+        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, event.getAccountId(), zoneId, volId,
+                    "", doId, templateId, size);
+        } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, event.getAccountId(), 0, volId,
+                    "");
+            
+        }
+        return usageEvent;
+    }
+
+    private UsageEventVO convertTemplateEvent(EventVO event) throws IOException {
+        
+        Properties templateEventParams = new Properties();
+        long templateId = -1L;
+        long zoneId = -1L;
+        long templateSize = -1L;
+        UsageEventVO usageEvent = null;
+
+        templateEventParams.load(new StringReader(event.getParameters()));
+        templateId = Long.parseLong(templateEventParams.getProperty("id"));
+        if(templateEventParams.getProperty("dcId") != null){
+            zoneId = Long.parseLong(templateEventParams.getProperty("dcId"));
+        }
+        if (EventTypes.EVENT_TEMPLATE_CREATE.equals(event.getType()) || EventTypes.EVENT_TEMPLATE_COPY.equals(event.getType())) {
+            templateSize = Long.parseLong(templateEventParams.getProperty("size"));
+            if(templateSize < 1){
+                return null;
+            }
+            if(zoneId == -1L){
+                return null;
+            }
+            usageEvent = new UsageEventVO(event.getType(), event.getAccountId(), zoneId, templateId, "", null, null , templateSize);
+        } else if (EventTypes.EVENT_TEMPLATE_DELETE.equals(event.getType())) {
+            usageEvent = new UsageEventVO(event.getType(), event.getAccountId(), zoneId, templateId, null);
+        }
+        return usageEvent;
+    }
+    
+    private UsageEventVO convertISOEvent(EventVO event) throws IOException {
+        Properties isoEventParams = new Properties();
+        long isoId = -1L;
+        long isoSize = -1L;
+        long zoneId = -1L;
+        UsageEventVO usageEvent = null;
+
+        isoEventParams.load(new StringReader(event.getParameters()));
+        isoId = Long.parseLong(isoEventParams.getProperty("id"));
+        if(isoEventParams.getProperty("dcId") != null){
+            zoneId = Long.parseLong(isoEventParams.getProperty("dcId"));
+        }
+
+        if (EventTypes.EVENT_ISO_CREATE.equals(event.getType()) || EventTypes.EVENT_ISO_COPY.equals(event.getType())) {
+            isoSize = Long.parseLong(isoEventParams.getProperty("size"));
+            usageEvent = new UsageEventVO(event.getType(), event.getAccountId(), zoneId, isoId, "", null, null , isoSize);
+        } else if (EventTypes.EVENT_ISO_DELETE.equals(event.getType())) {
+            usageEvent = new UsageEventVO(event.getType(), event.getAccountId(), zoneId, isoId, null);
+        }
+        return usageEvent;
+    }
+    
+    private UsageEventVO convertSnapshotEvent(EventVO event) throws IOException {
+        Properties snapEventParams = new Properties();
+        long snapId = -1L;
+        long snapSize = -1L;
+        long zoneId = -1L;
+        UsageEventVO usageEvent = null;
+
+        snapEventParams.load(new StringReader(event.getParameters()));
+        snapId = Long.parseLong(snapEventParams.getProperty("id"));
+
+        if (EventTypes.EVENT_SNAPSHOT_CREATE.equals(event.getType())) {
+            snapSize = Long.parseLong(snapEventParams.getProperty("size"));
+            zoneId = Long.parseLong(snapEventParams.getProperty("dcId"));
+
+            usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, event.getAccountId(), zoneId, snapId, "", null, null, snapSize);
+        } else if (EventTypes.EVENT_SNAPSHOT_DELETE.equals(event.getType())) {
+            usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, event.getAccountId(), zoneId, snapId, "", null, null, 0L);
+        }
+        return usageEvent;
+    }
+
+    
     @Override
     public void performDataMigration(Connection conn) {
         upgradeDataCenter(conn);
@@ -1102,6 +1439,7 @@ public class Upgrade218to22 implements DbUpgrade {
         upgradeInstanceGroups(conn);
         upgradePortForwardingRules(conn);
         upgradeLoadBalancingRules(conn);
+        migrateEvents(conn);
     }
 
     @Override
