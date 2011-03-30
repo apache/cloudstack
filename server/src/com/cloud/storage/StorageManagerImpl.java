@@ -1111,9 +1111,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         pool.setClusterId(clusterId);
         pool.setStatus(StoragePoolStatus.Up);
         pool = _storagePoolDao.persist(pool, details);
-        if (allHosts.isEmpty()) {
-            return pool;
-        }
+
         boolean success = false;
         for (HostVO h : allHosts) {
             success = createStoragePool(h.getId(), pool);
@@ -1123,6 +1121,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         if ( !success ) {
             s_logger.warn("Can not create storage pool " + pool + " on cluster " + clusterId);
+            _storagePoolDao.expunge(pool.getId());
             return null;
         }
         s_logger.debug("In createPool Adding the pool to each of the hosts");
@@ -1136,7 +1135,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         if (poolHosts.isEmpty()) {
             _storagePoolDao.expunge(pool.getId());
-            pool = null;
+            return null;
         } else {
             createCapacityEntry(pool);
         }
