@@ -733,6 +733,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (resources != null) {
 				for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
 					ServerResource resource = entry.getKey();
+
+					// For Hyper-V, we are here means agent have already started and connected to management server
+					if (hypervisorType == Hypervisor.HypervisorType.Hyperv) {
+						break;
+					}
+
 					AgentAttache attache = simulateStart(resource, entry.getValue(), true, null, null);
 					if (attache != null) {
 						hosts.add(_hostDao.findById(attache.getId()));

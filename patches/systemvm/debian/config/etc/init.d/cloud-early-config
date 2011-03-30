@@ -68,6 +68,13 @@ get_boot_params() {
      vmware)
           vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
           ;;
+     virtualpc)
+          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed in the NTFS data-disk
+          mkdir -p $EXTRA_MOUNT
+          mount -t ntfs /dev/sdb1 $EXTRA_MOUNT
+          cp -f $EXTRA_MOUNT/cmdline /var/cache/cloud/cmdline
+          umount $EXTRA_MOUNT
+          ;;          
   esac
 
 }

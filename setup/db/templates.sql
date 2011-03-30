@@ -15,6 +15,9 @@ INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type,
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (8, 'routing-8', 'SystemVM Template (vSphere)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.ova', '3c9d4c704af44ebd1736e1bc78cec1fa', 0, 'SystemVM Template (vSphere)', 'OVA', 15, 0, 1, 'VMware');
 
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (9, 'routing-9', 'SystemVM Template (HyperV)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.vhd.bz2', 'c33dfaf0937b35c25ef6a0fdd98f24d3', 0, 'SystemVM Template (HyperV)', 'VHD', 15, 0, 1, 'Hyperv');
+
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (1, 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (2, 'Debian');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (3, 'Oracle');

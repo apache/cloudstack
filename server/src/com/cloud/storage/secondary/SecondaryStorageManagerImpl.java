@@ -55,6 +55,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
@@ -860,9 +861,12 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         buf.append(" mount.path=").append(nfsMountPoint);
-        if(_configDao.isPremium())
-            buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
-        else	
+        if(_configDao.isPremium()) {
+            if (profile.getHypervisorType() == HypervisorType.Hyperv) {
+            	buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
+            } else
+            	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
+        } else	
         	buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
