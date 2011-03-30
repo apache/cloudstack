@@ -394,7 +394,7 @@ public class ApiDBUtils {
     }
 
     public static StoragePoolVO findStoragePoolById(Long storagePoolId) {
-        return _storagePoolDao.findById(storagePoolId);
+        return _storagePoolDao.findByIdIncludingRemoved(storagePoolId);
     }
 
     public static VMTemplateVO findTemplateById(Long templateId) {
