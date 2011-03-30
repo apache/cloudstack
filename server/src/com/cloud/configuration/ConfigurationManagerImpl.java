@@ -127,6 +127,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -2779,12 +2781,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
     
     @Override
-    public Integer getNetworkRate(long networkOfferingId) {
+    public Integer getNetworkRate(long networkOfferingId, Type vmType) {
         
         //validate network offering information
         NetworkOffering no = getNetworkOffering(networkOfferingId);
         if (no == null) {
             throw new InvalidParameterValueException("Unable to find network offering by id=" + networkOfferingId);
+        }
+        
+        //For router's public network we use networkRate from guestNetworkOffering
+        if (vmType != null && vmType == VirtualMachine.Type.DomainRouter && no.getTrafficType() == TrafficType.Public && no.getGuestType() == null) {
+            List<? extends NetworkOffering> guestOfferings = _networkOfferingDao.listByTrafficTypeAndGuestType(false, TrafficType.Guest, GuestIpType.Virtual);
+            if (!guestOfferings.isEmpty()) {
+                //We have one default guest virtual network offering now
+                no = guestOfferings.get(0);
+            }
         }
         
         Integer networkRate;

@@ -982,7 +982,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             nics.add(vo);
 
             NetworkOffering no = _configMgr.getNetworkOffering(config.getNetworkOfferingId());
-            Integer networkRate = _configMgr.getNetworkRate(no.getId());
+            Integer networkRate = _configMgr.getNetworkRate(no.getId(), vm.getType());
             vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate));
         }
         
@@ -1075,7 +1075,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             to.setDns2(profile.getDns2());
         }
 
-        Integer networkRate = _configMgr.getNetworkRate(config.getNetworkOfferingId());
+        Integer networkRate = _configMgr.getNetworkRate(config.getNetworkOfferingId(), null);
         to.setNetworkRateMbps(networkRate);
 
         return to;
@@ -1196,7 +1196,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkGuru guru = implemented.first();
             NetworkVO network = implemented.second();
             NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-            Integer networkRate = _configMgr.getNetworkRate(no.getId());
+            Integer networkRate = _configMgr.getNetworkRate(no.getId(), vmProfile.getType());
             NicProfile profile = null;
             if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
                 nic.setState(Nic.State.Reserving);
@@ -1246,7 +1246,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
             NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-            Integer networkRate = _configMgr.getNetworkRate(no.getId());
+            Integer networkRate = _configMgr.getNetworkRate(no.getId(), vm.getType());
 
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
@@ -1303,7 +1303,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             for (Nic nic : nics) {
                 NetworkVO network = _networksDao.findById(nic.getNetworkId());
                 NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-                Integer networkRate = _configMgr.getNetworkRate(no.getId());
+                Integer networkRate = _configMgr.getNetworkRate(no.getId(), vm.getType());
 
                 NetworkGuru guru = _networkGurus.get(network.getGuruName());
                 NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);

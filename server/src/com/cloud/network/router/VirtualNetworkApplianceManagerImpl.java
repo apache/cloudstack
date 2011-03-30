@@ -1417,7 +1417,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                  //Get network rate - required for IpAssoc
                  Network network = _networkMgr.getNetwork(ipAddr.getNetworkId());
                  NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-                 Integer networkRate = _configMgr.getNetworkRate(no.getId());
+                 Integer networkRate = _configMgr.getNetworkRate(no.getId(), null);
                  
                  IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate);
                  ipsToSend[i++] = ip;
