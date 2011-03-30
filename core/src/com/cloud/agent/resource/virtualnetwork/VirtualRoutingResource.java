@@ -274,7 +274,7 @@ public class VirtualRoutingResource implements Manager {
         for (IpAddressTO ip : ips) {
             result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), 
                      ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
-                     ip.getVifMacAddress(), ip.getGuestIp());
+                     ip.getVifMacAddress(), ip.getGuestIp(), 2);
             if (result != null) {
                 results[i++] = IpAssocAnswer.errorResult;
             } else {
@@ -415,11 +415,11 @@ public class VirtualRoutingResource implements Manager {
         return command.execute();
     }
 
-    protected String assignPublicIpAddress(final String vmName,
+    public String assignPublicIpAddress(final String vmName,
             final String privateIpAddress, final String publicIpAddress,
             final boolean add, final boolean firstIP, final boolean sourceNat,
             final String vlanId, final String vlanGateway,
-            final String vlanNetmask, final String vifMacAddress, String guestIp){
+            final String vlanNetmask, final String vifMacAddress, String guestIp, int nicNum){
 
         final Script command = new Script(_ipassocPath, _timeout, s_logger);
         command.add( privateIpAddress);
@@ -439,13 +439,41 @@ public class VirtualRoutingResource implements Manager {
             command.add("-l", publicIpAddress);
         }
 
-        //FIXME: figure out the right interface
-        command.add("-c", "eth2");
+        String publicNic = "eth" + nicNum;
+        command.add("-c", publicNic);
 
         return command.execute();
     }
-
     
+    private void deletExitingLinkLocalRoutTable(String linkLocalBr) {
+        Script command = new Script("/bin/bash", _timeout);
+        command.add("-c");
+        command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        boolean foundLinkLocalBr = false;
+        if (result == null && parser.getLines() != null) {
+            String[] lines = parser.getLines().split("\\n");
+            for (String line : lines) {
+                String[] tokens = line.split(" ");
+                if (!tokens[2].equalsIgnoreCase(linkLocalBr)) {
+                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR());
+                } else {
+                    foundLinkLocalBr = true;
+                }
+            }
+        }
+        if (!foundLinkLocalBr) {
+            Script.runSimpleBashScript("ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " + NetUtils.getLinkLocalGateway());
+        }
+    }
+
+    public void createControlNetwork(String privBrName) {
+        deletExitingLinkLocalRoutTable(privBrName);
+        if (!isBridgeExists(privBrName)) {
+            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ifconfig " + privBrName + " up;", _timeout);
+        }
+    }
 
     private boolean isBridgeExists(String bridgeName) {
         Script command = new Script("/bin/sh", _timeout);

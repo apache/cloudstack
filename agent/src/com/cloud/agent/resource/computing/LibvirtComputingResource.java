@@ -134,6 +134,8 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.IPAssocCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -141,6 +143,7 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -160,6 +163,7 @@ import com.cloud.agent.resource.computing.LibvirtVMDef.InterfaceDef.hostNicType;
 import com.cloud.agent.resource.computing.LibvirtVMDef.SerialDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.TermPolicy;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -863,7 +867,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             	return execute((FenceCommand) cmd);
             } else if (cmd instanceof StartCommand ) {
             	return execute((StartCommand) cmd);
-            } else if (cmd instanceof NetworkElementCommand) {
+            }  else if (cmd instanceof IPAssocCommand) {
+                return execute((IPAssocCommand)cmd);
+            }else if (cmd instanceof NetworkElementCommand) {
             	return _virtRouterResource.executeRequest(cmd);
             } else if (cmd instanceof CheckSshCommand) {
             	return execute((CheckSshCommand) cmd);
@@ -981,6 +987,86 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		 s_logger.debug("Failed to delete volume: " + e.toString());
     		 return new Answer(cmd, false, e.toString());
     	 }
+    }
+    
+    private String getVlanIdFromBridge(String brName) {
+        OutputInterpreter.OneLineParser vlanIdParser = new  OutputInterpreter.OneLineParser();
+        final Script cmd = new Script("/bin/bash", s_logger);
+        cmd.add("-c");
+        cmd.add("vlanid=$(brctl show |grep " + brName + " |awk '{print $4}' | cut -d. -f 2);echo $vlanid");
+        if (cmd.execute(vlanIdParser) != null) {
+            return null;
+        }
+        return vlanIdParser.getLine();
+    }
+    
+    private void VifHotPlug(Connect conn, String vmName, String vlanId, String macAddr) throws InternalErrorException, LibvirtException {
+        NicTO nicTO = new NicTO();
+        nicTO.setMac(macAddr);
+        nicTO.setType(TrafficType.Public);
+        if (vlanId == null) {
+            nicTO.setBroadcastType(BroadcastDomainType.Native);
+        } else {
+            nicTO.setBroadcastType(BroadcastDomainType.Vlan);
+            nicTO.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
+        }
+        
+        InterfaceDef nic = createVif(conn, nicTO, InterfaceDef.nicModel.VIRTIO);
+        Domain vm = getDomain(conn, vmName);
+        vm.attachDevice(nic.toString());
+    }
+    
+    public Answer execute(IPAssocCommand cmd) {
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getIpAddresses().length];
+        Connect conn;
+        try {
+            conn = LibvirtConnection.getConnection();
+            List<InterfaceDef> nics = getInterfaces(conn, routerName);
+            Map<String, Integer> vlanAllocatedToVM = new HashMap<String, Integer>();
+            Integer nicPos = 0;
+            for (InterfaceDef nic : nics) {
+                if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
+                    vlanAllocatedToVM.put("LinkLocal", nicPos);
+                } else {
+                    String vlanId = getVlanIdFromBridge(nic.getBrName());
+                    if (vlanId != null) {
+                        vlanAllocatedToVM.put(vlanId, nicPos);
+                    } else {
+                        vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
+                    }
+                }
+                nicPos++;
+            }
+            IpAddressTO[] ips = cmd.getIpAddresses(); 
+            int i = 0;
+            String result = null;
+            int nicNum = 0;
+            for (IpAddressTO ip : ips) {
+                if (!vlanAllocatedToVM.containsKey(ip.getVlanId())) {
+                    /*plug a vif into router*/
+                    VifHotPlug(conn, routerName, ip.getVlanId(), ip.getVifMacAddress());
+                    vlanAllocatedToVM.put(ip.getVlanId(), nicPos++);
+                }
+                nicNum = vlanAllocatedToVM.get(ip.getVlanId());
+                result = _virtRouterResource.assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), 
+                                                                   ip.isFirstIP(), ip.isSourceNat(), 
+                                                                   ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
+                                                                   ip.getVifMacAddress(), ip.getGuestIp(), nicNum);
+                
+                if (result != null) {
+                    results[i++] = IpAssocAnswer.errorResult;
+                } else {
+                    results[i++] = ip.getPublicIp() + " - success";;
+                }
+            }
+            return new IpAssocAnswer(cmd, results);
+        } catch (LibvirtException e) {
+            return new ManageSnapshotAnswer(cmd, false, e.toString());
+        } catch (InternalErrorException e) {
+            return new ManageSnapshotAnswer(cmd, false, e.toString());
+        }
     }
     
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
@@ -2196,42 +2282,43 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		createVnet(vlanId, nic);
 		return brName;
 	}
+	
+	private InterfaceDef createVif(Connect conn, NicTO nic, InterfaceDef.nicModel model) throws InternalErrorException, LibvirtException {
+	    InterfaceDef intf = new InterfaceDef();
 
-	private InterfaceDef createVif(Connect conn, LibvirtVMDef vm, NicTO nic) throws InternalErrorException, LibvirtException {
-		InterfaceDef intf = new InterfaceDef();
+        String vlanId = null;
+        if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+            URI broadcastUri = nic.getBroadcastUri();
+            vlanId = broadcastUri.getHost();
+        }
 
-		String vlanId = null;
-		if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
-			URI broadcastUri = nic.getBroadcastUri();
-			vlanId = broadcastUri.getHost();
-			s_logger.debug("vlanId: " + vlanId);
-		}
-		InterfaceDef.nicModel model = getGuestNicModel(vm.getGuestOSType());
+        if (nic.getType() == TrafficType.Guest) {
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
+                String brName = createVlanBr(vlanId, _pifs.first());
+                intf.defBridgeNet(brName, null, nic.getMac(), model);
+            } else {
+                intf.defBridgeNet(_guestBridgeName, null,  nic.getMac(), model);
+            }
+        } else if (nic.getType() == TrafficType.Control) {
+            /*Make sure the network is still there*/
+            createControlNetwork(conn);
+            intf.defBridgeNet(_linkLocalBridgeName, null, nic.getMac(), model);
+        } else if (nic.getType() == TrafficType.Public) {
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
+                String brName = createVlanBr(vlanId, _pifs.second());
+                intf.defBridgeNet(brName, null, nic.getMac(), model);
+            } else {
+                intf.defBridgeNet(_publicBridgeName, null, nic.getMac(), model);
+            }
+        } else if (nic.getType() == TrafficType.Management) {
+            intf.defBridgeNet(_privBridgeName, null, nic.getMac(), model);
+        }
 
-		if (nic.getType() == TrafficType.Guest) {
-			if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
-				String brName = createVlanBr(vlanId, _pifs.first());
-				intf.defBridgeNet(brName, null, nic.getMac(), model);
-			} else {
-				intf.defBridgeNet(_privBridgeName, null,  nic.getMac(), model);
-			}
-		} else if (nic.getType() == TrafficType.Control) {
-			/*Make sure the network is still there*/
-			createControlNetwork(conn);
-			intf.defPrivateNet(_privNwName, null, nic.getMac(), model);
-		} else if (nic.getType() == TrafficType.Public) {
-			if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
-				String brName = createVlanBr(vlanId, _pifs.second());
-				intf.defBridgeNet(brName, null, nic.getMac(), model);
-			} else {
-				intf.defBridgeNet(_publicBridgeName, null, nic.getMac(), model);
-			}
-		} else if (nic.getType() == TrafficType.Management) {
-			intf.defBridgeNet(_privBridgeName, null, nic.getMac(), model);
-		}
+        return intf;
+	}
 
-		vm.getDevices().addDevice(intf);
-		return intf;
+	private void createVif(Connect conn, LibvirtVMDef vm, NicTO nic) throws InternalErrorException, LibvirtException {
+		vm.getDevices().addDevice(createVif(conn, nic, getGuestNicModel(vm.getGuestOSType())));
 	}
 	
 	
@@ -3018,6 +3105,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private String setVnetBrName(String vnetId) {
+        if (vnetId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+            return _guestBridgeName;
+        }
     	return "cloudVirBr" + vnetId;
     }
     private String getVnetIdFromBrName(String vnetBrName) {
@@ -3356,27 +3446,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private void createControlNetwork(Connect conn) throws LibvirtException {
-    	Network vmopsNw = null;
-
-    	try {
-    		vmopsNw = conn.networkLookupByName(_privNwName);
-    	} catch (LibvirtException e) {
-    		
-    	}
-    	
-    	if (vmopsNw == null) {
-    		deletExitingLinkLocalRoutTable(_linkLocalBridgeName);
-    		_virtRouterResource.cleanupPrivateNetwork(_privNwName, _linkLocalBridgeName);
-    		LibvirtNetworkDef networkDef = new LibvirtNetworkDef(_privNwName, null, null);
-    		networkDef.defLocalNetwork(_linkLocalBridgeName, false, 0, NetUtils.getLinkLocalGateway(), NetUtils.getLinkLocalNetMask());
-
-    		String nwXML = networkDef.toString();
-    		s_logger.debug(nwXML);
-    		vmopsNw = conn.networkCreateXML(nwXML);
-    	}
+        _virtRouterResource.createControlNetwork(_linkLocalBridgeName);
     }
-    
-    
     
     private Answer execute(NetworkRulesSystemVmCommand cmd) {
         boolean success = false;
