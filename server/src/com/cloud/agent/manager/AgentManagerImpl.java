@@ -2903,7 +2903,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			// If this command is from a KVM agent, or from an agent that has a
 			// null hypervisor type, don't do the CIDR check
 			if (hypervisorType == null || hypervisorType == HypervisorType.KVM
-					|| hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal) {
+					|| hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal || hypervisorType == HypervisorType.Simulator) {
 				doCidrCheck = false;
 			}
 
