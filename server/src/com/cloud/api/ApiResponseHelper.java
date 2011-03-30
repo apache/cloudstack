@@ -1034,22 +1034,27 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             // Data Center Info
-            if (!dataCenters.containsKey(userVm.getDataCenterId())) {
-                dataCenters.put(userVm.getDataCenterId(), ApiDBUtils.findZoneById(userVm.getDataCenterId()));
-            } 
-            userVmResponse.setZoneId(userVm.getDataCenterId());
-            userVmResponse.setZoneName(dataCenters.get(userVm.getDataCenterId()).getName());
+            DataCenter zone = dataCenters.get(userVm.getDataCenterId());
+            if (zone == null) {
+                zone = ApiDBUtils.findZoneById(userVm.getDataCenterId());
+                dataCenters.put(zone.getId(), zone);
+            }
+            
+            userVmResponse.setZoneId(zone.getId());
+            userVmResponse.setZoneName(zone.getName());
 
             
             // if user is an admin, display host id
             if (((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)) {
-                Long hostId = userVm.getHostId();
-                if (!hosts.containsKey(hostId)) {
-                    hosts.put(hostId, ApiDBUtils.findHostById(hostId));
+                Host host = hosts.get(userVm.getHostId());
+                
+                if (host == null) {
+                    host = ApiDBUtils.findHostById(userVm.getHostId());
+                    hosts.put(host.getId(), host);
                 }
                 
-                userVmResponse.setHostId(hostId);
-                userVmResponse.setHostName(hosts.get(hostId).getName());
+                userVmResponse.setHostId(host.getId());
+                userVmResponse.setHostName(host.getName());
             }
 
             if(userVm.getHypervisorType() != null){
@@ -1057,11 +1062,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             
             // Template Info
-            if (!templates.containsKey(userVm.getTemplateId())) {
-                templates.put(userVm.getTemplateId(),ApiDBUtils.findTemplateById(userVm.getTemplateId()));
+            VMTemplateVO template = templates.get(userVm.getTemplateId());
+            if (template == null) {
+                template =  ApiDBUtils.findTemplateById(userVm.getTemplateId());
+                if (template != null) {
+                    templates.put(template.getId(), template);
+                }
             }
             
-            VMTemplateVO template = templates.get(userVm.getTemplateId());
             if (template != null) {
                 userVmResponse.setTemplateId(userVm.getTemplateId());
                 userVmResponse.setTemplateName(template.getName());
@@ -1079,23 +1087,28 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             // ISO Info
-            Long isoId = userVm.getIsoId();
-            if (isoId != null) {
-                if (!templates.containsKey(isoId)) {
-                    templates.put(isoId,ApiDBUtils.findTemplateById(isoId));
-                }    
-                userVmResponse.setIsoId(isoId);
-                userVmResponse.setIsoName(templates.get(isoId).getName());
+            VMTemplateVO iso = templates.get(userVm.getIsoId());
+            if (iso == null) {
+                iso =  ApiDBUtils.findTemplateById(userVm.getIsoId());
+                if (iso != null) {
+                    templates.put(iso.getId(), iso);
+                }
+            }
+
+            if (iso != null) {
+                userVmResponse.setIsoId(iso.getId());
+                userVmResponse.setIsoName(iso.getName());
             }
 
             // Service Offering Info
-            Long soId = userVm.getServiceOfferingId();
-            if (!serviceOfferings.containsKey(soId)) {
-                serviceOfferings.put(soId, ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId()));
+            ServiceOffering offering = serviceOfferings.get(userVm.getServiceOfferingId());
+            
+            if (offering == null) {
+                offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
+                serviceOfferings.put(offering.getId(), offering);
             }
-  
-            ServiceOffering offering = serviceOfferings.get(soId);
-            userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
+            
+            userVmResponse.setServiceOfferingId(offering.getId());
             userVmResponse.setServiceOfferingName(offering.getName());
             userVmResponse.setCpuNumber(offering.getCpu());
             userVmResponse.setCpuSpeed(offering.getSpeed());
@@ -1129,19 +1142,21 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             userVmResponse.setGuestOsId(userVm.getGuestOSId());
-            // security groups
-            List<SecurityGroupVO> securityGroups = ApiDBUtils.getSecurityGroupsForVm(userVm.getId());
-            List<SecurityGroupResponse> securityGroupResponse = new ArrayList<SecurityGroupResponse>();
-            for(SecurityGroupVO grp : securityGroups) {
-                SecurityGroupResponse resp = new SecurityGroupResponse();
-                resp.setId(grp.getId());
-                resp.setName(grp.getName());
-                resp.setDescription(grp.getDescription());
-                resp.setObjectName("securitygroup");
-                securityGroupResponse.add(resp);
+            // security groups - list only when zone is security group enabled
+            if (zone.isSecurityGroupEnabled()) {
+                List<SecurityGroupVO> securityGroups = ApiDBUtils.getSecurityGroupsForVm(userVm.getId());
+                List<SecurityGroupResponse> securityGroupResponse = new ArrayList<SecurityGroupResponse>();
+                for(SecurityGroupVO grp : securityGroups) {
+                    SecurityGroupResponse resp = new SecurityGroupResponse();
+                    resp.setId(grp.getId());
+                    resp.setName(grp.getName());
+                    resp.setDescription(grp.getDescription());
+                    resp.setObjectName("securitygroup");
+                    securityGroupResponse.add(resp);
+                }
+                
+                userVmResponse.setSecurityGroupList(securityGroupResponse);
             }
-            
-            userVmResponse.setSecurityGroupList(securityGroupResponse);
             
             List<NicProfile> nicProfiles = ApiDBUtils.getNics(userVm);
             List<NicResponse> nicResponses = new ArrayList<NicResponse>();
@@ -1161,12 +1176,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                     }
                 } 
                 
-                Long networkId = singleNicProfile.getNetworkId();
-                if (!networks.containsKey(networkId)) {
-                    networks.put(networkId, ApiDBUtils.findNetworkById(networkId));
+                //Long networkId = singleNicProfile.getNetworkId();
+                Network network = networks.get(singleNicProfile.getNetworkId());
+                if (network == null) {
+                    network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
+                    networks.put(singleNicProfile.getNetworkId(), network);
                 }
-                
-                Network network = networks.get(networkId);
+         
                 nicResponse.setTrafficType(network.getTrafficType().toString());
                 nicResponse.setType(network.getGuestType().toString());
                 nicResponse.setIsDefault(singleNicProfile.isDefaultNic());
