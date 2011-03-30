@@ -1741,7 +1741,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         //Allow adding untagged direct vlan only for Basic zone
         if (zone.getNetworkType() == NetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && (!forVirtualNetwork || zone.isSecurityGroupEnabled())) {
             throw new InvalidParameterValueException("Direct untagged network is not supported for the zone " + zone.getId() + " of type " + zone.getNetworkType());
-        } else if (zone.getNetworkType() == NetworkType.Basic && !((vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork) || (!vlanId.equals(Vlan.UNTAGGED) && forVirtualNetwork))) {
+        } else if (zone.getNetworkType() == NetworkType.Basic && !((vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork) || (forVirtualNetwork))) {
             throw new InvalidParameterValueException("Only Direct Untagged and Virtual networks are supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());
         }
         
