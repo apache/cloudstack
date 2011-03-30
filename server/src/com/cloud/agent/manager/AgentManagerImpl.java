@@ -1069,7 +1069,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         return null;
     }
-
+    
     @Override
     @DB
     public boolean deleteHost(long hostId) {
@@ -2611,10 +2611,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
             // If this command is from a KVM agent, or from an agent that has a
             // null hypervisor type, don't do the CIDR check
-            if (hypervisorType == null || hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal) {
-                doCidrCheck = false;
-            }
-
+            if (hypervisorType == null || hypervisorType == HypervisorType.KVM
+					|| hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal || hypervisorType == HypervisorType.Simulator) {
+				doCidrCheck = false;
+			}
+            
             if (doCidrCheck) {
                 s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + hypervisorType + ". Checking CIDR...");
             } else {
@@ -3044,5 +3045,4 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     protected AgentManagerImpl() {
     }
-
 }
