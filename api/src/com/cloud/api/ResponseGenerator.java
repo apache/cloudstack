@@ -116,7 +116,7 @@ public interface ResponseGenerator {
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
 
-    UserVmResponse createUserVmResponse(UserVm userVm);
+    List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
 
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 

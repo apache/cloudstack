@@ -107,9 +107,8 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         }
         try{
         	UserVm migratedVm = _userVmService.migrateVirtualMachine(userVm, destinationHost);
-        
 	        if (migratedVm != null) {
-	            UserVmResponse response = _responseGenerator.createUserVmResponse(migratedVm);
+	            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", migratedVm).get(0);
 	            response.setResponseName(getCommandName());
 	            this.setResponseObject(response);
 	        } else {

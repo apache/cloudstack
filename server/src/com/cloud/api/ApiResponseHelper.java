@@ -992,157 +992,193 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public UserVmResponse createUserVmResponse(UserVm userVm) {
-        UserVmResponse userVmResponse = new UserVmResponse();
-        Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
-        if (acct != null) {
-            userVmResponse.setAccountName(acct.getAccountName());
-            userVmResponse.setDomainId(acct.getDomainId());
-            userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-        }
-
-        userVmResponse.setId(userVm.getId());
-        userVmResponse.setName(userVm.getName());
-        userVmResponse.setCreated(userVm.getCreated());
-
-        if (userVm.getState() != null) {
-            userVmResponse.setState(userVm.getState().toString());
-        }
-
-        userVmResponse.setHaEnable(userVm.isHaEnabled());
-
-        if (userVm.getDisplayName() != null) {
-            userVmResponse.setDisplayName(userVm.getDisplayName());
-        } else {
-            userVmResponse.setDisplayName(userVm.getName());
-        }
-
-        InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
-        if (group != null) {
-            userVmResponse.setGroup(group.getName());
-            userVmResponse.setGroupId(group.getId());
-        }
-
-        // Data Center Info
-        userVmResponse.setZoneId(userVm.getDataCenterId());
-        userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
-
-        Account account = UserContext.current().getCaller();
-        // if user is an admin, display host id
-        if (((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)) {
-            userVmResponse.setHostId(userVm.getHostId());
-            userVmResponse.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
-        }
-
-        if(userVm.getHypervisorType() != null){
-        	userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
-        }
-        // Template Info
-        VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
-        if (template != null) {
-            userVmResponse.setTemplateId(userVm.getTemplateId());
-            userVmResponse.setTemplateName(template.getName());
-            userVmResponse.setTemplateDisplayText(template.getDisplayText());
-            userVmResponse.setPasswordEnabled(template.getEnablePassword());
-        } else {
-            userVmResponse.setTemplateId(-1L);
-            userVmResponse.setTemplateName("ISO Boot");
-            userVmResponse.setTemplateDisplayText("ISO Boot");
-            userVmResponse.setPasswordEnabled(false);
-        }
-
-        if (userVm.getPassword() != null) {
-            userVmResponse.setPassword(userVm.getPassword());
-        }
-
-        // ISO Info
-        if (userVm.getIsoId() != null) {
-            VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId());
-            if (iso != null) {
-                userVmResponse.setIsoId(userVm.getIsoId());
-                userVmResponse.setIsoName(iso.getName());
-            }
-        }
-
-        // Service Offering Info
-        ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
-        userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
-        userVmResponse.setServiceOfferingName(offering.getName());
-        userVmResponse.setCpuNumber(offering.getCpu());
-        userVmResponse.setCpuSpeed(offering.getSpeed());
-        userVmResponse.setMemory(offering.getRamSize());
-
-        VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
-        if (rootVolume != null) {
-            userVmResponse.setRootDeviceId(rootVolume.getDeviceId());
-            String rootDeviceType = "Not created";
-            if (rootVolume.getPoolId() != null) {
-                StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
-                rootDeviceType = storagePool.getPoolType().toString();
-            }
-            userVmResponse.setRootDeviceType(rootDeviceType);
-        }
-
-        // stats calculation
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
-        String cpuUsed = null;
-        VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
-        if (vmStats != null) {
-            float cpuUtil = (float) vmStats.getCPUUtilization();
-            cpuUsed = decimalFormat.format(cpuUtil) + "%";
-            userVmResponse.setCpuUsed(cpuUsed);
-
-            Double networkKbRead = Double.valueOf(vmStats.getNetworkReadKBs());
-            userVmResponse.setNetworkKbsRead(networkKbRead.longValue());
-
-            Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
-            userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
-        }
-
-        userVmResponse.setGuestOsId(userVm.getGuestOSId());
-        // security groups
-        List<SecurityGroupVO> securityGroups = ApiDBUtils.getSecurityGroupsForVm(userVm.getId());
-        List<SecurityGroupResponse> securityGroupResponse = new ArrayList<SecurityGroupResponse>();
-        for(SecurityGroupVO grp : securityGroups) {
-            SecurityGroupResponse resp = new SecurityGroupResponse();
-            resp.setId(grp.getId());
-            resp.setName(grp.getName());
-            resp.setDescription(grp.getDescription());
-            resp.setObjectName("securitygroup");
-            securityGroupResponse.add(resp);
-        }
+    public List<UserVmResponse> createUserVmResponse(String objectName, UserVm...userVms) {
+        Account caller = UserContext.current().getCaller();
+        Map<Long, DataCenter> dataCenters = new HashMap<Long, DataCenter>();
+        Map<Long, Host> hosts = new HashMap<Long, Host>();
+        Map<Long, VMTemplateVO> templates = new HashMap<Long, VMTemplateVO>();
+        Map<Long, ServiceOffering> serviceOfferings = new HashMap<Long, ServiceOffering>();
+        Map<Long, Network> networks = new HashMap<Long, Network>();
         
-        userVmResponse.setSecurityGroupList(securityGroupResponse);
-        
-        List<NicProfile> nicProfiles = ApiDBUtils.getNics(userVm);
-        List<NicResponse> nicResponses = new ArrayList<NicResponse>();
-        for (NicProfile singleNicProfile : nicProfiles) {
-            NicResponse nicResponse = new NicResponse();
-            nicResponse.setId(singleNicProfile.getId());
-            nicResponse.setIpaddress(singleNicProfile.getIp4Address());
-            nicResponse.setGateway(singleNicProfile.getGateway());
-            nicResponse.setNetmask(singleNicProfile.getNetmask());
-            nicResponse.setNetworkid(singleNicProfile.getNetworkId());
-            if (acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                if (singleNicProfile.getBroadCastUri() != null) {
-                    nicResponse.setBroadcastUri(singleNicProfile.getBroadCastUri().toString());
-                }
-                if (singleNicProfile.getIsolationUri() != null) {
-                    nicResponse.setIsolationUri(singleNicProfile.getIsolationUri().toString());
-                }
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
+         
+        for (UserVm userVm : userVms) {
+            UserVmResponse userVmResponse = new UserVmResponse();
+            Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
+            if (acct != null) {
+                userVmResponse.setAccountName(acct.getAccountName());
+                userVmResponse.setDomainId(acct.getDomainId());
+                userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+            }
+
+            userVmResponse.setId(userVm.getId());
+            userVmResponse.setName(userVm.getName());
+            userVmResponse.setCreated(userVm.getCreated());
+
+            if (userVm.getState() != null) {
+                userVmResponse.setState(userVm.getState().toString());
+            }
+
+            userVmResponse.setHaEnable(userVm.isHaEnabled());
+
+            if (userVm.getDisplayName() != null) {
+                userVmResponse.setDisplayName(userVm.getDisplayName());
+            } else {
+                userVmResponse.setDisplayName(userVm.getName());
+            }
+
+            InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
+            if (group != null) {
+                userVmResponse.setGroup(group.getName());
+                userVmResponse.setGroupId(group.getId());
+            }
+
+            // Data Center Info
+            if (!dataCenters.containsKey(userVm.getDataCenterId())) {
+                dataCenters.put(userVm.getDataCenterId(), ApiDBUtils.findZoneById(userVm.getDataCenterId()));
             } 
-            Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
-            nicResponse.setTrafficType(network.getTrafficType().toString());
-            nicResponse.setType(network.getGuestType().toString());
-            nicResponse.setIsDefault(singleNicProfile.isDefaultNic());
+            userVmResponse.setZoneId(userVm.getDataCenterId());
+            userVmResponse.setZoneName(dataCenters.get(userVm.getDataCenterId()).getName());
+
             
-            nicResponse.setObjectName("nic");
+            // if user is an admin, display host id
+            if (((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)) {
+                Long hostId = userVm.getHostId();
+                if (!hosts.containsKey(hostId)) {
+                    hosts.put(hostId, ApiDBUtils.findHostById(hostId));
+                }
+                
+                userVmResponse.setHostId(hostId);
+                userVmResponse.setHostName(hosts.get(hostId).getName());
+            }
+
+            if(userVm.getHypervisorType() != null){
+                userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
+            }
             
-            nicResponses.add(nicResponse);
-        }
-        userVmResponse.setNics(nicResponses);
-        userVmResponse.setObjectName("virtualmachine");
-        return userVmResponse;
+            // Template Info
+            if (!templates.containsKey(userVm.getTemplateId())) {
+                templates.put(userVm.getTemplateId(),ApiDBUtils.findTemplateById(userVm.getTemplateId()));
+            }
+            
+            VMTemplateVO template = templates.get(userVm.getTemplateId());
+            if (template != null) {
+                userVmResponse.setTemplateId(userVm.getTemplateId());
+                userVmResponse.setTemplateName(template.getName());
+                userVmResponse.setTemplateDisplayText(template.getDisplayText());
+                userVmResponse.setPasswordEnabled(template.getEnablePassword());
+            } else {
+                userVmResponse.setTemplateId(-1L);
+                userVmResponse.setTemplateName("ISO Boot");
+                userVmResponse.setTemplateDisplayText("ISO Boot");
+                userVmResponse.setPasswordEnabled(false);
+            }
+
+            if (userVm.getPassword() != null) {
+                userVmResponse.setPassword(userVm.getPassword());
+            }
+
+            // ISO Info
+            Long isoId = userVm.getIsoId();
+            if (isoId != null) {
+                if (!templates.containsKey(isoId)) {
+                    templates.put(isoId,ApiDBUtils.findTemplateById(isoId));
+                }    
+                userVmResponse.setIsoId(isoId);
+                userVmResponse.setIsoName(templates.get(isoId).getName());
+            }
+
+            // Service Offering Info
+            Long soId = userVm.getServiceOfferingId();
+            if (!serviceOfferings.containsKey(soId)) {
+                serviceOfferings.put(soId, ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId()));
+            }
+  
+            ServiceOffering offering = serviceOfferings.get(soId);
+            userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
+            userVmResponse.setServiceOfferingName(offering.getName());
+            userVmResponse.setCpuNumber(offering.getCpu());
+            userVmResponse.setCpuSpeed(offering.getSpeed());
+            userVmResponse.setMemory(offering.getRamSize());
+
+            VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
+            if (rootVolume != null) {
+                userVmResponse.setRootDeviceId(rootVolume.getDeviceId());
+                String rootDeviceType = "Not created";
+                if (rootVolume.getPoolId() != null) {
+                    StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
+                    rootDeviceType = storagePool.getPoolType().toString();
+                }
+                userVmResponse.setRootDeviceType(rootDeviceType);
+            }
+
+            // stats calculation
+            DecimalFormat decimalFormat = new DecimalFormat("#.##");
+            String cpuUsed = null;
+            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+            if (vmStats != null) {
+                float cpuUtil = (float) vmStats.getCPUUtilization();
+                cpuUsed = decimalFormat.format(cpuUtil) + "%";
+                userVmResponse.setCpuUsed(cpuUsed);
+
+                Double networkKbRead = Double.valueOf(vmStats.getNetworkReadKBs());
+                userVmResponse.setNetworkKbsRead(networkKbRead.longValue());
+
+                Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
+                userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
+            }
+
+            userVmResponse.setGuestOsId(userVm.getGuestOSId());
+            // security groups
+            List<SecurityGroupVO> securityGroups = ApiDBUtils.getSecurityGroupsForVm(userVm.getId());
+            List<SecurityGroupResponse> securityGroupResponse = new ArrayList<SecurityGroupResponse>();
+            for(SecurityGroupVO grp : securityGroups) {
+                SecurityGroupResponse resp = new SecurityGroupResponse();
+                resp.setId(grp.getId());
+                resp.setName(grp.getName());
+                resp.setDescription(grp.getDescription());
+                resp.setObjectName("securitygroup");
+                securityGroupResponse.add(resp);
+            }
+            
+            userVmResponse.setSecurityGroupList(securityGroupResponse);
+            
+            List<NicProfile> nicProfiles = ApiDBUtils.getNics(userVm);
+            List<NicResponse> nicResponses = new ArrayList<NicResponse>();
+            for (NicProfile singleNicProfile : nicProfiles) {
+                NicResponse nicResponse = new NicResponse();
+                nicResponse.setId(singleNicProfile.getId());
+                nicResponse.setIpaddress(singleNicProfile.getIp4Address());
+                nicResponse.setGateway(singleNicProfile.getGateway());
+                nicResponse.setNetmask(singleNicProfile.getNetmask());
+                nicResponse.setNetworkid(singleNicProfile.getNetworkId());
+                if (acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                    if (singleNicProfile.getBroadCastUri() != null) {
+                        nicResponse.setBroadcastUri(singleNicProfile.getBroadCastUri().toString());
+                    }
+                    if (singleNicProfile.getIsolationUri() != null) {
+                        nicResponse.setIsolationUri(singleNicProfile.getIsolationUri().toString());
+                    }
+                } 
+                
+                Long networkId = singleNicProfile.getNetworkId();
+                if (!networks.containsKey(networkId)) {
+                    networks.put(networkId, ApiDBUtils.findNetworkById(networkId));
+                }
+                
+                Network network = networks.get(networkId);
+                nicResponse.setTrafficType(network.getTrafficType().toString());
+                nicResponse.setType(network.getGuestType().toString());
+                nicResponse.setIsDefault(singleNicProfile.isDefaultNic());
+                nicResponse.setObjectName("nic");
+                nicResponses.add(nicResponse);
+            }
+            userVmResponse.setNics(nicResponses);
+            userVmResponse.setObjectName(objectName);
+            vmResponses.add(userVmResponse);
+        } 
+       
+        return vmResponses;
     }
 
     @Override
