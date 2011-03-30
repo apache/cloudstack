@@ -125,31 +125,6 @@ public class VolumeVO implements Volume {
     @Column(name="chain_info")
     String chainInfo;
     
-    /**
-     * Constructor for data disk.
-     * @param type
-     * @param instanceId
-     * @param name
-     * @param dcId
-     * @param podId
-     * @param accountId
-     * @param domainId
-     * @param size
-     */
-    public VolumeVO(Type type, long instanceId, String name, long dcId, long podId, long accountId, long domainId, long size) {
-        this.volumeType = type;
-        this.name = name;
-        this.dataCenterId = dcId;
-        this.podId = podId;
-        this.accountId = accountId;
-        this.domainId = domainId;
-        this.instanceId = instanceId;
-        this.size = size;
-        this.templateId = null;
-        this.storageResourceType = Storage.StorageResourceType.STORAGE_POOL;
-        this.poolType = null;
-    }
- 
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
         this.volumeType = type;
@@ -162,25 +137,6 @@ public class VolumeVO implements Volume {
         this.state = State.Allocated;
     }
 
-    /**
-     * Constructor for volume based on a template.
-     * 
-     * @param type
-     * @param instanceId
-     * @param templateId
-     * @param name
-     * @param dcId
-     * @param podId
-     * @param accountId
-     * @param domainId
-     */
-    public VolumeVO(Type type, long instanceId, long templateId, String name, long dcId, long podId, long accountId, long domainId, boolean recreatable) {
-        this(type, instanceId, name, dcId, podId, accountId, domainId, 0l);
-        this.templateId = templateId;
-        this.recreatable = recreatable;
-    }
-    
-    
     public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
@@ -195,7 +151,22 @@ public class VolumeVO implements Volume {
         this.recreatable = false;
     }
 
+    // Copy Constructor
+    public VolumeVO(Volume that) {
+        this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that.getInstanceId(), that.getFolder(), that.getPath(), that.getSize(), that.getVolumeType());
+        this.recreatable = that.isRecreatable();
+        this.state = that.getState();
+        this.size = that.getSize();
+        this.diskOfferingId = that.getDiskOfferingId();
+        this.poolId = that.getPoolId();
+        this.storageResourceType = that.getStorageResourceType();
+        this.attached = that.getAttached();
+        this.chainInfo = that.getChainInfo();
+        this.templateId = that.getTemplateId();
+        this.deviceId = that.getDeviceId();
+    }
     
+    @Override
     public boolean isRecreatable() {
         return recreatable;
     }
