@@ -51,9 +51,11 @@ public class Hypervisor {
     			return HypervisorType.Parralels;
     		}else if (hypervisor.equalsIgnoreCase("BareMetal")) {
         		return HypervisorType.BareMetal;
+    		} else if (hypervisor.equalsIgnoreCase("Simulator")) {
+    			return HypervisorType.Simulator;
     		} else if (hypervisor.equalsIgnoreCase("Any")) {
     			return HypervisorType.Any;
-    		}  else {
+    		} else {
     			return HypervisorType.None;
     		}
     	}
