@@ -74,7 +74,8 @@ CREATE TABLE `cloud`.`network_offerings` (
   `userdata_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides user data service',
   `vpn_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides vpn service',
   `dhcp_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dhcp service',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  INDEX `i_network_offerings__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`networks` (
@@ -110,7 +111,8 @@ CREATE TABLE `cloud`.`networks` (
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
   CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
-  CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`)
+  CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
+  INDEX `i_networks__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_networks`(
@@ -167,7 +169,8 @@ CREATE TABLE `cloud`.`nics` (
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nics__instance_id` FOREIGN KEY `fk_nics__instance_id`(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`)
+  CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`),
+  INDEX `i_nics__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `network_offerings` VALUES (1,'System-Public-Network','System Offering for System-Public-Network',NULL,NULL,NULL,'Public',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(2,'System-Management-Network','System Offering for System-Management-Network',NULL,NULL,NULL,'Management',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(3,'System-Control-Network','System Offering for System-Control-Network',NULL,NULL,NULL,'Control',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(4,'System-Storage-Network','System Offering for System-Storage-Network',NULL,NULL,NULL,'Storage',NULL,1,0,NULL,now(),NULL,0,'Required',0,0,0,0,0,0,0),(5,'System-Guest-Network','System-Guest-Network',NULL,NULL,NULL,'Guest',NULL,1,0,NULL,now(),NULL,1,'Required',1,0,0,0,1,0,1),(6,'DefaultVirtualizedNetworkOffering','Virtual Vlan',NULL,NULL,NULL,'Guest',NULL,0,0,NULL,now(),NULL,1,'Required',1,1,1,1,1,1,1),(7,'DefaultDirectNetworkOffering','Direct',NULL,NULL,NULL,'Public',NULL,0,0,NULL,now(),NULL,1,'Required',1,0,0,0,1,0,1);
@@ -565,3 +568,44 @@ DELETE FROM `cloud`.`sync_queue`;
 DELETE FROM `cloud`.`sync_queue_item`;
 DELETE FROM `cloud`.`async_job`;
 UPDATE `cloud`.`vm_template` SET unique_name='routing-xenserver-2.4',type='SYSTEM' WHERE name='systemvm-xenserver-2.4';
+DELETE FROM template_host_ref WHERE install_path LIKE '%xs-tools%'
+DELETE FROM configuration where name='upgrade.url';
+DELETE FROM configuration where name='router.template.id';
+INSERT INTO configuration (category, instance, component, name, value, description)
+    VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.client.iprange', '10.1.2.1-10.1.2.8', 'The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server');
+INSERT INTO configuration (category, instance, component, name, value, description)
+    VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.psk.length', '48', 'The length of the ipsec preshared key (minimum 8, maximum 256)');
+INSERT INTO configuration (category, instance, component, name, value, description)
+    VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.user.limit', '8', 'The maximum number of VPN users that can be created per account');
+INSERT INTO configuration (category, instance, component, name, value, description)
+    VALUES ('Advanced', 'DEFAULT', 'management-server', 'management-server', NULL, 'The cidr of management server network');
+UPDATE vm_template set unique_name='routing_old'  where id=1;
+INSERT INTO vm_template (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones)
+    VALUES (10, 'routing', 'SystemVM Template', 0, now(), 'ext3', 0, 64, 1, 'http://download.cloud.com/releases/2.2/systemvm.vhd.bz2', 'bcc7f290f4c27ab4d0fe95d1012829ea', 0, 'SystemVM Template', 'VHD', 15, 0, 1);
+Update configuration set name='storage.max.volume.size' where name='max.volume.size.mb';
+INSERT INTO sequence (name, value)
+    VALUES ('snapshots_seq', '1')
+UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, (SELECT max(id) FROM cloud.snapshots) + 1, 1) WHERE name='snapshots_seq'
+UPDATE configuration set name='direct.attach.security.groups.enabled' where name='direct.attach.network.groups.enabled';
+UPDATE configuration set name='guest.domain.suffix' where name='domain.suffix';
+
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (132, 2, 'Debian GNU/Linux 6(32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (133, 2, 'Debian GNU/Linux 6(64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (134, 3, 'Oracle Enterprise Linux 5.5 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (135, 3, 'Oracle Enterprise Linux 5.5 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (136, 4, 'Red Hat Enterprise Linux 6.0 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (137, 4, 'Red Hat Enterprise Linux 6.0 (64-bit)');
+
+ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `fk_instance_group__account_id` FOREIGN KEY `fk_instance_group__account_id` (`account_id`) REFERENCES `account` (`id`);
+
+ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm_map___group_id` FOREIGN KEY `fk_instance_group_vm_map___group_id` (`group_id`) REFERENCES `instance_group` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm_map___instance_id` FOREIGN KEY `fk_instance_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn___account_id` FOREIGN KEY `fk_remote_access_vpn__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn__zone_id` FOREIGN KEY `fk_remote_access_vpn__zone_id` (`zone_id`) REFERENCES `data_center` (`id`);
+ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn__server_addr` FOREIGN KEY `fk_remote_access_vpn__server_addr` (`vpn_server_addr`) REFERENCES `user_ip_address` (`public_ip_address`);
+ALTER TABLE `cloud`.`remote_access_vpn` ADD INDEX `i_remote_access_vpn_addr`(`vpn_server_addr`);
+
+ALTER TABLE `cloud`.`vpn_users` ADD CONSTRAINT `fk_vpn_users___account_id` FOREIGN KEY `fk_vpn_users__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`vpn_users` ADD INDEX `i_vpn_users_username`(`username`);
+ALTER TABLE `cloud`.`vpn_users` ADD UNIQUE `i_vpn_users__account_id__username`(`account_id`, `username`); 
