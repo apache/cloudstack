@@ -2280,7 +2280,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIsDefault(offering.isDefault());
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
-        response.setNetworkRate(offering.getRateMbps());
+        response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
