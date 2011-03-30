@@ -2417,11 +2417,6 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
 
-        // Don't return DomR and ConsoleProxy volumes
-        sb.and("domRNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
-        sb.and("domPNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
-        sb.and("domSNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
-
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         
@@ -2439,6 +2434,11 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }  
+        
+        //display user vm volumes only
+        SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
+        vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
+        sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
@@ -2483,11 +2483,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // Don't return DomR and ConsoleProxy volumes
-        /*
-        sc.setParameters("domRNameLabel", "r-%");
-        sc.setParameters("domPNameLabel", "v-%");
-        sc.setParameters("domSNameLabel", "s-%");
-		*/
+        sc.setJoinParameters("vmSearch", "type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
         
         // Only return volumes that are not destroyed
         sc.setParameters("state", Volume.State.Destroy);
