@@ -1481,4 +1481,13 @@ CREATE TABLE `cloud`.`domain_network_ref` (
   CONSTRAINT `fk_domain_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`cmd_exec_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'instance id of the system VM that command is executed on',
+  `command_name` bigint unsigned NOT NULL COMMENT 'command name',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks = 1;
