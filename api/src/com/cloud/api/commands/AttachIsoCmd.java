@@ -95,7 +95,7 @@ public class AttachIsoCmd extends BaseAsyncCmd {
         if (result) {
             UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);
             if (userVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse(userVm);            
+                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);            
                 response.setResponseName(DeployVMCmd.getResultObjectName());           
                 this.setResponseObject(response);
             } else {

@@ -84,8 +84,8 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     public void execute(){
         boolean result = _templateService.detachIso(this);
         if (result) {
-            UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);           
-            UserVmResponse response = _responseGenerator.createUserVmResponse(userVm);            
+            UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);         
+            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);            
             response.setResponseName(DeployVMCmd.getResultObjectName());           
             this.setResponseObject(response);
         } else {

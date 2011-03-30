@@ -86,7 +86,7 @@ public class UpgradeVMCmd extends BaseCmd {
         UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.upgradeVirtualMachine(this);
         if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse(result);
+            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

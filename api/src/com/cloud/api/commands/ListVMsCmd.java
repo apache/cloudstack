@@ -17,7 +17,6 @@
  */
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -163,14 +162,7 @@ public class ListVMsCmd extends BaseListCmd {
     public void execute(){
         List<? extends UserVm> result = _userVmService.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-        for (UserVm userVm : result) {
-            UserVmResponse userVmResponse = _responseGenerator.createUserVmResponse(userVm);
-            if (userVmResponse != null) {
-                userVmResponse.setObjectName("virtualmachine");
-                vmResponses.add(userVmResponse);
-            }
-        }
+        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", result.toArray(new UserVm[result.size()]));
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
