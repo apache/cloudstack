@@ -26,7 +26,9 @@ dictionary = {
 	'label.action.delete.snapshot' : '<fmt:message key="label.action.delete.snapshot"/>',
 	'label.action.delete.snapshot.processing' : '<fmt:message key="label.action.delete.snapshot.processing"/>',
 	'message.action.delete.snapshot' : '<fmt:message key="message.action.delete.snapshot"/>',
-	'message.download.volume' : '<fmt:message key="message.download.volume"/>'
+	'message.download.volume' : '<fmt:message key="message.download.volume"/>',
+	'message.disable.snapshot.policy' : '<fmt:message key="message.disable.snapshot.policy"/>',
+	'message.apply.snapshot.policy' : '<fmt:message key="message.apply.snapshot.policy"/>'
 };	
 </script>
 
@@ -308,12 +310,11 @@ dictionary = {
                 <div class="dialog_snapshots_editcontent_title">
 					<div class="dialog_snapshotleft_label" style="width:120px">&nbsp;<fmt:message key="label.snapshot.schedule"/>: &nbsp;&nbsp;</div>
                     <select class="snapselect" id="snapshot_interval">
-						<option value="-1"><fmt:message key="label.disabled"/></option>
-						<option value="0"><fmt:message key="label.hourly"/></option>
-						<option value="1"><fmt:message key="label.daily"/></option>
-						<option value="2"><fmt:message key="label.weekly"/></option>
-						<option value="3"><fmt:message key="label.monthly"/></option>
-					</select>
+						<option id="snapshot_interval_0" value="0"><fmt:message key="label.hourly"/></option>
+						<option id="snapshot_interval_1" value="1"><fmt:message key="label.daily"/></option>
+						<option id="snapshot_interval_2" value="2"><fmt:message key="label.weekly"/></option>
+						<option id="snapshot_interval_3" value="3"><fmt:message key="label.monthly"/></option>
+					</select> : <i id="policy_enabled">Enabled</i>
                 </div>
                 <div class="dialog_formcontent" id="snapshot_form">
                     <form action="#" method="post" id="form4">
@@ -540,6 +541,12 @@ dictionary = {
                 </div>
             </div>
         </div>
+    </div>
+	<div id="info_container" class="ui_dialog_messagebox" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text">
+            (info)</div>
     </div>
 </div>
 <!-- Take Snapshots Dialog (end) -->
