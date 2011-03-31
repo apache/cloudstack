@@ -114,7 +114,8 @@ patch() {
       echo ${newmd5} > ${md5file}
     fi
     log_it "Patching  cloud service"
-    /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT 
+    hyperVisor=$(hypervisor)
+    /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
     umount $PATCH_MOUNT
     if [ "$shouldpatch" == "true" ] 
     then
