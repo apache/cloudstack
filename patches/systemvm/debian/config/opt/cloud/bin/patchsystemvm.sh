@@ -69,6 +69,13 @@ dhcpsrvr_svcs() {
    echo "cloud nfs-common haproxy portmap" > /var/cache/cloud/disabled_svcs
 }
 
+enable_pcihotplug() {
+   sed -i -e "/acpiphp/d" /etc/modules
+   sed -i -e "/pci_hotplug/d" /etc/modules
+   echo acpiphp >> /etc/modules
+   echo pci_hotplug >> /etc/modules
+}
+
 CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="router"
 PATCH_MOUNT=$1
@@ -100,6 +107,8 @@ fi
 
 #empty known hosts
 echo "" > /root/.ssh/known_hosts
+
+enable_pcihotplug
 
 if [ "$TYPE" == "router" ]
 then
