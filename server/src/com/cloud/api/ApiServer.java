@@ -408,14 +408,8 @@ public class ApiServer implements HttpRequestHandler {
             job.setInstanceId((objectId == null) ? asyncCmd.getInstanceId() : objectId);
             job.setInstanceType(asyncCmd.getInstanceType());
             job.setUserId(userId);
-            if (account != null) {
-                job.setAccountId(ctx.getCaller().getId());
-            } else {
-                // Just have SYSTEM own the job for now.  Users won't be able to see this job,
-                // but in an admin case (like domain admin) they won't be able to see it anyway
-                // so no loss of service.
-                job.setAccountId(1L);
-            }
+            job.setAccountId(asyncCmd.getEntityOwnerId());
+          
             job.setCmd(cmdObj.getClass().getName());
             job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
             
