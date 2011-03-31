@@ -928,7 +928,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 						success: function(json) {	
 							$snapshotIntervalOption.data("jsonObj", json.createsnapshotpolicyresponse.snapshotpolicy);
 							$snapshotInterval.change();
-							thisDialog.find("#info").text(dictionary[message.apply.snapshot.policy]);
+							thisDialog.find("#info").text(dictionary["message.apply.snapshot.policy"]);
 							thisDialog.find("#info_container").show();
 						},
 						error: function(XMLHttpResponse) {                            					
@@ -948,7 +948,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							success: function(json) {      
 								$snapshotIntervalOption.data("jsonObj", null);
 								$snapshotInterval.change();
-								thisDialog.find("#info").text(dictionary[message.disable.snapshot.policy]);
+								thisDialog.find("#info").text(dictionary["message.disable.snapshot.policy"]);
 								thisDialog.find("#info_container").show();
 							},
 							error: function(XMLHttpResponse) {                                                   					
