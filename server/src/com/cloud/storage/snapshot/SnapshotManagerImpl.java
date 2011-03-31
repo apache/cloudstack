@@ -1011,7 +1011,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 policy = _snapshotPolicyDao.acquireInLockTable(policy.getId());
                 policy.setSchedule(cmd.getSchedule());
                 policy.setTimezone(timezoneId);
-                policy.setInterval((short) type.ordinal());
+                policy.setInterval((short)intvType.ordinal());
                 policy.setMaxSnaps(cmd.getMaxSnaps());
                 policy.setActive(true);
                 _snapshotPolicyDao.update(policy.getId(), policy);
