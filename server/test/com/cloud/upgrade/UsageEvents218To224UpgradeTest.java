@@ -74,8 +74,8 @@ public class UsageEvents218To224UpgradeTest extends TestCase {
             
             pstmt = conn.prepareStatement("SELECT COUNT(*) FROM usage_event");
             rs = pstmt.executeQuery();
-            assert rs.next() : "Unable to get the count of network offerings.";
-            assert (rs.getInt(1) == 37) : "Didn't find 7 network offerings but found " + rs.getInt(1);
+            assert rs.next() : "Unable to get the count of usage events";
+            assert (rs.getInt(1) == 37) : "Didn't find 37 usage events but found " + rs.getInt(1);
             rs.close();
             pstmt.close();
             

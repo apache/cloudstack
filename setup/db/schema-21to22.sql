@@ -568,7 +568,7 @@ DELETE FROM `cloud`.`sync_queue`;
 DELETE FROM `cloud`.`sync_queue_item`;
 DELETE FROM `cloud`.`async_job`;
 UPDATE `cloud`.`vm_template` SET unique_name='routing-xenserver-2.4',type='SYSTEM' WHERE name='systemvm-xenserver-2.4';
-DELETE FROM template_host_ref WHERE install_path LIKE '%xs-tools%'
+DELETE FROM template_host_ref WHERE install_path LIKE '%xs-tools%';
 DELETE FROM configuration where name='upgrade.url';
 DELETE FROM configuration where name='router.template.id';
 INSERT INTO configuration (category, instance, component, name, value, description)
@@ -584,8 +584,8 @@ INSERT INTO vm_template (id, unique_name, name, public, created, type, hvm, bits
     VALUES (10, 'routing', 'SystemVM Template', 0, now(), 'ext3', 0, 64, 1, 'http://download.cloud.com/releases/2.2/systemvm.vhd.bz2', 'bcc7f290f4c27ab4d0fe95d1012829ea', 0, 'SystemVM Template', 'VHD', 15, 0, 1);
 Update configuration set name='storage.max.volume.size' where name='max.volume.size.mb';
 INSERT INTO sequence (name, value)
-    VALUES ('snapshots_seq', '1')
-UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, (SELECT max(id) FROM cloud.snapshots) + 1, 1) WHERE name='snapshots_seq'
+    VALUES ('snapshots_seq', '1');
+UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, (SELECT max(id) FROM cloud.snapshots) + 1, 1) WHERE name='snapshots_seq';
 UPDATE configuration set name='direct.attach.security.groups.enabled' where name='direct.attach.network.groups.enabled';
 UPDATE configuration set name='guest.domain.suffix' where name='domain.suffix';
 
@@ -608,4 +608,4 @@ ALTER TABLE `cloud`.`remote_access_vpn` ADD INDEX `i_remote_access_vpn_addr`(`vp
 
 ALTER TABLE `cloud`.`vpn_users` ADD CONSTRAINT `fk_vpn_users___account_id` FOREIGN KEY `fk_vpn_users__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`vpn_users` ADD INDEX `i_vpn_users_username`(`username`);
-ALTER TABLE `cloud`.`vpn_users` ADD UNIQUE `i_vpn_users__account_id__username`(`account_id`, `username`); 
+ALTER TABLE `cloud`.`vpn_users` ADD UNIQUE `i_vpn_users__account_id__username`(`account_id`, `username`);
