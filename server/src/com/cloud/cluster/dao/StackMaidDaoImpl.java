@@ -1,4 +1,4 @@
-package com.cloud.maid.dao;
+package com.cloud.cluster.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,7 +12,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.maid.StackMaidVO;
+import com.cloud.cluster.TaskVO;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
@@ -20,14 +20,16 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-@Local(value = { StackMaidDao.class })
-public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implements StackMaidDao {
-    private static final Logger s_logger = Logger.getLogger(StackMaidDaoImpl.class.getName());
+@Local(value = { StackMaidDao.class }) @DB(txn=false)
+public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements StackMaidDao {
+    private static final Logger s_logger = Logger.getLogger(StackMaidDaoImpl.class);
     
-	private SearchBuilder<StackMaidVO> popSearch;
-	private SearchBuilder<StackMaidVO> clearSearch;
+	private SearchBuilder<TaskVO> popSearch;
+	private SearchBuilder<TaskVO> clearSearch;
+	private final SearchBuilder<TaskVO> AllFieldsSearch;
 	
 	public StackMaidDaoImpl() {
 		popSearch = createSearchBuilder();
@@ -36,64 +38,76 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
 		
 		clearSearch = createSearchBuilder();
 		clearSearch.and("msid", clearSearch.entity().getMsid(), SearchCriteria.Op.EQ);
+		
+		AllFieldsSearch = createSearchBuilder();
+		AllFieldsSearch.and("msid", AllFieldsSearch.entity().getMsid(), Op.EQ);
+		AllFieldsSearch.and("thread", AllFieldsSearch.entity().getThreadId(), Op.EQ);
+		AllFieldsSearch.done();
+	}
+	
+	@Override
+	public boolean takeover(long takeOverMsid, long selfId) {
+	    TaskVO task = createForUpdate();
+	    task.setMsid(selfId);
+	    task.setThreadId(0);
+	    
+	    SearchCriteria<TaskVO> sc = AllFieldsSearch.create();
+	    sc.setParameters("msid", takeOverMsid);
+	    return update(task, sc) > 0;
+	    
+	}
+	
+	@Override
+	public List<TaskVO> listCleanupTasks(long msId) {
+	    SearchCriteria<TaskVO> sc = AllFieldsSearch.create();
+        sc.setParameters("msid", msId);
+        sc.setParameters("thread", 0);
+	    
+        return this.search(sc, null);
 	}
 
-    @DB
-	public void pushCleanupDelegate(long msid, int seq, String delegateClzName, Object context) {
+    @Override
+	public long pushCleanupDelegate(long msid, int seq, String delegateClzName, Object context) {
+		TaskVO delegateItem = new TaskVO();
+		delegateItem.setMsid(msid);
+		delegateItem.setThreadId(Thread.currentThread().getId());
+		delegateItem.setSeq(seq);
+		delegateItem.setDelegate(delegateClzName);
+		delegateItem.setContext(SerializerHelper.toSerializedStringOld(context));
+		delegateItem.setCreated(DateUtil.currentGMTTime());
+		
+		super.persist(delegateItem);
+		return delegateItem.getId();
+	}
+
+    @Override
+	public TaskVO popCleanupDelegate(long msid) {
+        SearchCriteria<TaskVO> sc = popSearch.create();
+        sc.setParameters("msid", msid);
+        sc.setParameters("threadId", Thread.currentThread().getId());
         
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-        try {
-    		StackMaidVO delegateItem = new StackMaidVO();
-    		delegateItem.setMsid(msid);
-    		delegateItem.setThreadId(Thread.currentThread().getId());
-    		delegateItem.setSeq(seq);
-    		delegateItem.setDelegate(delegateClzName);
-    		delegateItem.setContext(SerializerHelper.toSerializedStringOld(context));
-    		delegateItem.setCreated(DateUtil.currentGMTTime());
-    		
-    		super.persist(delegateItem);
-        } finally {
-            txn.close();
-        }
-	}
-
-    @DB
-	public StackMaidVO popCleanupDelegate(long msid) {
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-        try {
-            SearchCriteria<StackMaidVO> sc = popSearch.create();
-            sc.setParameters("msid", msid);
-            sc.setParameters("threadId", Thread.currentThread().getId());
-            
-    		Filter filter = new Filter(StackMaidVO.class, "seq", false, 0L, (long)1);
-    		List<StackMaidVO> l = listIncludingRemovedBy(sc, filter);
-    		if(l != null && l.size() > 0) {
-    			expunge(l.get(0).getId());
-    			return l.get(0);
-    		}
-        } finally {
-            txn.close();
-        }
+		Filter filter = new Filter(TaskVO.class, "seq", false, 0L, (long)1);
+		List<TaskVO> l = listIncludingRemovedBy(sc, filter);
+		if(l != null && l.size() > 0) {
+			expunge(l.get(0).getId());
+			return l.get(0);
+		}
 		
 		return null;
 	}
-	
-    @DB
+    
+    @Override
 	public void clearStack(long msid) {
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-        try {
-            SearchCriteria<StackMaidVO> sc = clearSearch.create();
-            sc.setParameters("msid", msid);
-            
-            expunge(sc);
-        } finally {
-            txn.close();
-        }
+        SearchCriteria<TaskVO> sc = clearSearch.create();
+        sc.setParameters("msid", msid);
+        
+        expunge(sc);
 	}
     
+    @Override
     @DB
-	public List<StackMaidVO> listLeftoversByMsid(long msid) {
-    	List<StackMaidVO> l = new ArrayList<StackMaidVO>();
+	public List<TaskVO> listLeftoversByMsid(long msid) {
+    	List<TaskVO> l = new ArrayList<TaskVO>();
     	String sql = "select * from stack_maid where msid=? order by msid asc, thread_id asc, seq desc";
     	
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -116,10 +130,11 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
         return l;
     }
     
+    @Override
     @DB
-	public List<StackMaidVO> listLeftoversByCutTime(Date cutTime) {
+	public List<TaskVO> listLeftoversByCutTime(Date cutTime) {
     	
-    	List<StackMaidVO> l = new ArrayList<StackMaidVO>();
+    	List<TaskVO> l = new ArrayList<TaskVO>();
     	String sql = "select * from stack_maid where created < ? order by msid asc, thread_id asc, seq desc";
     	
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);

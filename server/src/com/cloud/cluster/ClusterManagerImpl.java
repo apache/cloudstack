@@ -51,7 +51,6 @@ import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
-import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
 
@@ -90,7 +89,7 @@ public class ClusterManagerImpl implements ClusterManager {
     // _msid is the unique persistent identifier that peer name is based upon
     //
     private Long _mshostId = null;
-    protected long _msid = MacAddress.getMacAddress().toLong();
+    protected long _msid = ManagementServerNode.getManagementServerId();
     protected long _runId = System.currentTimeMillis();
     
     private boolean _peerScanInited = false;

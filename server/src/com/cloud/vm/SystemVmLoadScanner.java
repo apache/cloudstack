@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.maid.StackMaid;
+import com.cloud.cluster.StackMaid;
 import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;

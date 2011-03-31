@@ -32,8 +32,8 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.cluster.StackMaid;
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.maid.StackMaid;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;

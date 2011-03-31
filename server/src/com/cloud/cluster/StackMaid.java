@@ -1,12 +1,12 @@
-package com.cloud.maid;
+package com.cloud.cluster;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.maid.dao.StackMaidDao;
-import com.cloud.maid.dao.StackMaidDaoImpl;
+import com.cloud.cluster.dao.StackMaidDao;
+import com.cloud.cluster.dao.StackMaidDaoImpl;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.CleanupDelegate;
 import com.cloud.utils.db.Transaction;
@@ -99,7 +99,7 @@ public class StackMaid {
 	
 	public void exitCleanup(long currentMsid) {
 		if(currentSeq > 0) {
-			StackMaidVO maid = null;
+			TaskVO maid = null;
 			while((maid = maidDao.popCleanupDelegate(currentMsid)) != null) {
 				doCleanup(maid);
 			}
@@ -109,7 +109,7 @@ public class StackMaid {
 		context.clear();
 	}
 	
-	public static boolean doCleanup(StackMaidVO maid) {
+	public static boolean doCleanup(TaskVO maid) {
 		if(maid.getDelegate() != null) {
 			try {
 				Class<?> clz = Class.forName(maid.getDelegate());

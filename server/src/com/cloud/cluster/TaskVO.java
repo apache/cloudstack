@@ -1,4 +1,4 @@
-package com.cloud.maid;
+package com.cloud.cluster;
 
 import java.util.Date;
 
@@ -13,12 +13,12 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="stack_maid")
-public class StackMaidVO {
+public class TaskVO {
 
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id = null;
+    private long id;
 
 	@Column(name="msid")
 	private long msid;
@@ -38,15 +38,11 @@ public class StackMaidVO {
     @Column(name=GenericDao.CREATED_COLUMN)
 	private Date created;
 	
-	public StackMaidVO() {
+	public TaskVO() {
 	}
 
-	public Long getId() {
+	public long getId() {
 		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
 	}
 
 	public long getMsid() {
@@ -95,5 +91,10 @@ public class StackMaidVO {
 	
 	public void setCreated(Date created) {
 		this.created = created;
+	}
+	
+	@Override
+    public String toString() {
+	    return new StringBuilder("Task[").append(id).append("-").append(context).append("-").append(delegate).append("]").toString();
 	}
 }

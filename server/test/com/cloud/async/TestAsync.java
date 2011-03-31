@@ -26,10 +26,10 @@ import org.apache.log4j.Logger;
 import junit.framework.Assert;
 
 import com.cloud.async.AsyncJobVO;
-import com.cloud.maid.StackMaid;
-import com.cloud.maid.StackMaidVO;
-import com.cloud.maid.dao.StackMaidDao;
-import com.cloud.maid.dao.StackMaidDaoImpl;
+import com.cloud.cluster.StackMaid;
+import com.cloud.cluster.TaskVO;
+import com.cloud.cluster.dao.StackMaidDao;
+import com.cloud.cluster.dao.StackMaidDaoImpl;
 import com.cloud.serializer.Param;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.Pair;
@@ -216,7 +216,7 @@ public class TestAsync extends Log4jEnabledTestCase {
 		dao.pushCleanupDelegate(1L, 1, "delegate2", new Long(100));
 		dao.pushCleanupDelegate(1L, 2, "delegate3", null);
 		
-		StackMaidVO item = dao.popCleanupDelegate(1L);
+		TaskVO item = dao.popCleanupDelegate(1L);
 		Assert.assertTrue(item.getDelegate().equals("delegate3"));
 		Assert.assertTrue(item.getContext() == null);
 		
@@ -283,8 +283,8 @@ public class TestAsync extends Log4jEnabledTestCase {
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		
 		StackMaidDao dao = new StackMaidDaoImpl();
-		List<StackMaidVO> l = dao.listLeftoversByMsid(1L);
-		for(StackMaidVO maid : l) {
+		List<TaskVO> l = dao.listLeftoversByMsid(1L);
+		for(TaskVO maid : l) {
 			s_logger.info("" + maid.getThreadId() + " " + maid.getDelegate() + " " + maid.getContext());
 		}
 		
