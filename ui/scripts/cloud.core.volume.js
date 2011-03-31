@@ -226,12 +226,16 @@ function afterLoadVolumeJSP() {
 	$("#snapshot_interval").change(function(event) {
 		var thisElement = $(this);
 		var snapshotInterval = thisElement.val();
-		var jsonObj = thisElement.data("jsonObj");
+		var $snapshotIntervalOption = thisElement.find("#snapshot_interval_"+snapshotInterval);
+		var jsonObj = $snapshotIntervalOption.data("jsonObj");
 		var $dialog = $("#dialog_recurring_snapshot");
+		if (jsonObj == undefined || jsonObj == null) {
+			$dialog.find("#policy_enabled").text("Disabled");
+		} else {
+			$dialog.find("#policy_enabled").text("Enabled");
+		}
+		$dialog.find("#info_container").hide();
 		switch (snapshotInterval) {
-			case "-1":
-			    $dialog.find("#snapshot_form").hide();
-				break;
 			case "0": 
 	            $dialog.find("#edit_time_colon, #edit_hour_container, #edit_meridiem_container, #edit_day_of_week_container, #edit_day_of_month_container").hide(); 
 	            $dialog.find("#edit_past_the_hour, #edit_minute_container").show();	
@@ -239,6 +243,10 @@ function afterLoadVolumeJSP() {
 					$dialog.find("#edit_minute").val(jsonObj.schedule);            
 					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
 					$dialog.find("#edit_timezone").val(jsonObj.timezone);
+				} else {
+					$dialog.find("#edit_minute").val("");            
+					$dialog.find("#edit_max").val(""); 
+					$dialog.find("#edit_timezone").val("");
 				}
 				$dialog.find("#snapshot_form").show();
 	            break;
@@ -266,7 +274,13 @@ function afterLoadVolumeJSP() {
 					$dialog.find("#edit_meridiem").val(meridiem);          
 					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
 					$dialog.find("#edit_timezone").val(jsonObj.timezone); 
-				}
+				} else {
+					$dialog.find("#edit_minute").val("");
+					$dialog.find("#edit_hour").val(""); 
+					$dialog.find("#edit_meridiem").val("");          
+					$dialog.find("#edit_max").val(""); 
+					$dialog.find("#edit_timezone").val(""); 
+				}	
 				$dialog.find("#snapshot_form").show();
 	            break;
 	        case "2":
@@ -294,6 +308,13 @@ function afterLoadVolumeJSP() {
 					$dialog.find("#edit_day_of_week").val(parts[2]);         
 					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
 					$dialog.find("#edit_timezone").val(jsonObj.timezone); 
+				} else {
+					$dialog.find("#edit_minute").val("");
+					$dialog.find("#edit_hour").val(""); 
+					$dialog.find("#edit_meridiem").val(""); 	
+					$dialog.find("#edit_day_of_week").val("");         
+					$dialog.find("#edit_max").val(""); 
+					$dialog.find("#edit_timezone").val(""); 
 				}
 				$dialog.find("#snapshot_form").show();
 	            break;
@@ -321,6 +342,13 @@ function afterLoadVolumeJSP() {
 					$dialog.find("#edit_day_of_month").val(parts[2]);         
 					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
 					$dialog.find("#edit_timezone").val(jsonObj.timezone); 
+				} else {
+					$dialog.find("#edit_minute").val("");
+					$dialog.find("#edit_hour").val(""); 
+					$dialog.find("#edit_meridiem").val(""); 	
+					$dialog.find("#edit_day_of_month").val("");         
+					$dialog.find("#edit_max").val(""); 
+					$dialog.find("#edit_timezone").val("");
 				}
 				$dialog.find("#snapshot_form").show();
 	            break;
@@ -806,12 +834,15 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
             var items = json.listsnapshotpoliciesresponse.snapshotpolicy;
 			var $snapInterval = dialogBox.find("#snapshot_interval");
             if(items!=null && items.length>0) {
-				var item = items[0]; // We only expect a single policy.
-				$snapInterval.val(item.intervaltype).data("jsonObj", item);
+				for (var i = 0; i < items.length; i++) {
+					var item = items[i];
+					$snapInterval.find("#snapshot_interval_"+item.intervaltype).data("jsonObj", item);
+				}
             } else {
-				$snapInterval.val("-1").data("jsonObj", null);
+				// Maybe use a different message
 			}
 			clearBottomPanel();
+			$snapInterval.val("0"); //default to hourly
 			$snapInterval.change();
 			
 			dialogBox.dialog('option', 'buttons', { 
@@ -823,23 +854,6 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 					var intervalType = thisDialog.find("#snapshot_interval").val();
 					var minute, hour12, hour24, meridiem, dayOfWeek, dayOfWeekString, dayOfMonth, schedule, max, timezone;   			                   
 					switch(intervalType) {
-						 case "-1":
-							var $snapshotInterval = $(this).find("#snapshot_interval");
-							var jsonObj = $snapshotInterval.data("jsonObj");                 
-							if(jsonObj != null) {
-								$.ajax({
-									data: createURL("command=deleteSnapshotPolicies&id="+jsonObj.id),
-									dataType: "json",                        
-									success: function(json) {        
-										$snapshotInterval.val("-1");
-									},
-									error: function(XMLHttpResponse) {                                                   					
-										handleError(XMLHttpResponse);					
-									}
-								});	 
-							}
-							thisDialog.dialog("close");
-							return false;
 						 case "0":
 							 var isValid = true;	 
 							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
@@ -906,11 +920,16 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 break;		                
 					}	
 					var thisLink;
+					var $snapshotInterval = thisDialog.find("#snapshot_interval");
+					var $snapshotIntervalOption = thisDialog.find("#snapshot_interval_"+$snapshotInterval.val());
 					$.ajax({
 						data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+todb(timezone)),
 						dataType: "json",                        
 						success: function(json) {	
-							thisDialog.dialog("close");								
+							$snapshotIntervalOption.data("jsonObj", json.createsnapshotpolicyresponse.snapshotpolicy);
+							$snapshotInterval.change();
+							thisDialog.find("#info").text(dictionary[message.apply.snapshot.policy]);
+							thisDialog.find("#info_container").show();
 						},
 						error: function(XMLHttpResponse) {                            					
 							handleError(XMLHttpResponse);					
@@ -918,21 +937,25 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 					});	 
 				},
 				"Disable": function() {
-					var $snapshotInterval = $(this).find("#snapshot_interval");
-					var jsonObj = $snapshotInterval.data("jsonObj");                 
+					var thisDialog = $(this);
+					var $snapshotInterval = thisDialog.find("#snapshot_interval");
+					var $snapshotIntervalOption = thisDialog.find("#snapshot_interval_"+$snapshotInterval.val());
+					var jsonObj = $snapshotIntervalOption.data("jsonObj");                 
 					if(jsonObj != null) {
 						$.ajax({
 							data: createURL("command=deleteSnapshotPolicies&id="+jsonObj.id),
 							dataType: "json",                        
-							success: function(json) {        
-								$snapshotInterval.val("-1");
+							success: function(json) {      
+								$snapshotIntervalOption.data("jsonObj", null);
+								$snapshotInterval.change();
+								thisDialog.find("#info").text(dictionary[message.disable.snapshot.policy]);
+								thisDialog.find("#info_container").show();
 							},
 							error: function(XMLHttpResponse) {                                                   					
 								handleError(XMLHttpResponse);					
 							}
 						});	 
 					}
-					$(this).dialog("close"); 
 				},
 				"Close": function() { 
 					$(this).dialog("close"); 
