@@ -76,9 +76,21 @@ enable_pcihotplug() {
    echo pci_hotplug >> /etc/modules
 }
 
+enable_serial_console() {
+   sed -i -e "/^serial.*/d" /boot/grub/grub.conf
+   sed -i -e "/^terminal.*/d" /boot/grub/grub.conf
+   sed -i -e "/^default.*/a\serial --unit=0 --speed=115200 --parity=no --stop=1" /boot/grub/grub.conf
+   sed -i -e "/^serial.*/a\terminal --timeout=0 serial console" /boot/grub/grub.conf
+   sed -i -e "s/\(^kernel.* ro\) \(console.*\)/\1 console=tty0 console=ttyS0,115200n8/" /boot/grub/grub.conf
+   sed -i -e "/^s0:2345:respawn.*/d" /etc/inittab
+   sed -i -e "/6:23:respawn/a\s0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102" /etc/inittab
+}
+
+
 CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="router"
 PATCH_MOUNT=$1
+Hypervisor=$2
 
 for i in $CMDLINE
   do
@@ -108,7 +120,11 @@ fi
 #empty known hosts
 echo "" > /root/.ssh/known_hosts
 
-enable_pcihotplug
+if [ "$Hypervisor" == "kvm" ]
+then
+   enable_pcihotplug
+   enable_serial_console
+fi
 
 if [ "$TYPE" == "router" ]
 then
