@@ -39,7 +39,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -1226,43 +1225,57 @@ public class Upgrade218to22 implements DbUpgrade {
     }
 
     private boolean isVMEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return eventType.startsWith("VM.");
     }
 
     private boolean isIPEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return eventType.startsWith("NET.IP");
     }
     
     private boolean isVolumeEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) ||
                 eventType.equals(EventTypes.EVENT_VOLUME_DELETE));
     }
 
     private boolean isTemplateEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_TEMPLATE_CREATE) ||
                 eventType.equals(EventTypes.EVENT_TEMPLATE_COPY) ||
                 eventType.equals(EventTypes.EVENT_TEMPLATE_DELETE));
     }
     
     private boolean isISOEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_ISO_CREATE) ||
                 eventType.equals(EventTypes.EVENT_ISO_COPY) ||
                 eventType.equals(EventTypes.EVENT_ISO_DELETE));
     }
     
     private boolean isSnapshotEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_SNAPSHOT_CREATE) ||
                 eventType.equals(EventTypes.EVENT_SNAPSHOT_DELETE));
     }
     
     private boolean isLoadBalancerEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return eventType.startsWith("LB.");
     }
     
@@ -1321,7 +1334,10 @@ public class Upgrade218to22 implements DbUpgrade {
             }
         }
         isSourceNat = Boolean.parseBoolean(ipEventParams.getProperty("sourceNat"));
-        if (isSourceNat) return null; // skip source nat IP addresses as we don't charge for them
+        if (isSourceNat)
+         {
+            return null; // skip source nat IP addresses as we don't charge for them
+        }
 
         if (EventTypes.EVENT_NET_IP_ASSIGN.equals(event.getType())) {
             long zoneId = Long.parseLong(ipEventParams.getProperty("dcId"));
