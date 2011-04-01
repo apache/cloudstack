@@ -409,14 +409,6 @@ CREATE TABLE `cloud`.`vpn_users` (
 
 ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `status` varchar(32);
 
-CREATE TABLE `cloud`.`guest_os_hypervisor` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `hypervisor_type` varchar(32) NOT NULL,
-  `guest_os_name` varchar(255) NOT NULL,
-  `guest_os_id` bigint unsigned NOT NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
 --drop network group related constraints/indexes;
 ALTER TABLE `cloud`.`network_group` drop foreign key `fk_network_group__domain_id`;
 alter table `cloud`.`network_group` drop index `i_network_group_name`;
