@@ -589,12 +589,12 @@ UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, 
 UPDATE configuration set name='direct.attach.security.groups.enabled' where name='direct.attach.network.groups.enabled';
 UPDATE configuration set name='guest.domain.suffix' where name='domain.suffix';
 
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (132, 2, 'Debian GNU/Linux 6(32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (133, 2, 'Debian GNU/Linux 6(64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (134, 3, 'Oracle Enterprise Linux 5.5 (32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (135, 3, 'Oracle Enterprise Linux 5.5 (64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (136, 4, 'Red Hat Enterprise Linux 6.0 (32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (137, 4, 'Red Hat Enterprise Linux 6.0 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (132, 2, 'Debian GNU/Linux 6(32-bit)', 'Debian GNU/Linux 6(32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (133, 2, 'Debian GNU/Linux 6(64-bit)', 'Debian GNU/Linux 6(64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (134, 3, 'Oracle Enterprise Linux 5.5 (32-bit)', 'Oracle Enterprise Linux 5.5 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (135, 3, 'Oracle Enterprise Linux 5.5 (64-bit)', 'Oracle Enterprise Linux 5.5 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (136, 4, 'Red Hat Enterprise Linux 6.0 (32-bit)', 'Red Hat Enterprise Linux 6.0 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (137, 4, 'Red Hat Enterprise Linux 6.0 (64-bit)', 'Red Hat Enterprise Linux 6.0 (64-bit)');
 
 ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `fk_instance_group__account_id` FOREIGN KEY `fk_instance_group__account_id` (`account_id`) REFERENCES `account` (`id`);
 
