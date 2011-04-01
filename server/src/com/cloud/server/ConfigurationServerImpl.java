@@ -137,10 +137,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				for (Config c : configs) {
 					String name = c.key();
 					
-					// If the value is already in the table, don't reinsert it
-					if (_configDao.getValue(name) != null) {
-						continue;
-					}
+					//if the config value already present in the db, don't insert it again
+					if (_configDao.findByName(name) != null) { 
+					    continue;
+					} 
 					
 					String instance = "DEFAULT";
 					String component = c.getComponent();
