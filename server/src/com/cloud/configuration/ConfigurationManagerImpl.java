@@ -284,6 +284,36 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
+        
+        if(Config.SystemVMUseLocalStorage.key().equalsIgnoreCase(name)){
+    		if(s_logger.isDebugEnabled()){
+    			s_logger.debug("Config 'system.vm.use.local.storage' changed to value:" + value + ", need to update System VM offerings");
+    		}
+            boolean useLocalStorage = Boolean.parseBoolean(_configDao.getValue(Config.SystemVMUseLocalStorage.key()));
+            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName("Cloud.com-ConsoleProxy");
+            if(serviceOffering != null){
+	            serviceOffering.setUseLocalStorage(useLocalStorage);
+	            if(!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)){
+	                s_logger.error("Failed to update ConsoleProxy offering's use_local_storage option to value:" + useLocalStorage);
+	            }
+            }
+
+            serviceOffering = _serviceOfferingDao.findByName("Cloud.Com-SoftwareRouter");
+            if(serviceOffering != null){
+	            serviceOffering.setUseLocalStorage(useLocalStorage);
+	            if(!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)){
+	            	s_logger.error("Failed to update SoftwareRouter offering's use_local_storage option to value:" + useLocalStorage);
+	            }
+            }
+            
+            serviceOffering = _serviceOfferingDao.findByName("Cloud.com-SecondaryStorage");
+            if(serviceOffering != null){            
+	            serviceOffering.setUseLocalStorage(useLocalStorage);
+	            if(!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)){
+	            	s_logger.error("Failed to update SecondaryStorage offering's use_local_storage option to value:" + useLocalStorage);
+	            }
+            }
+    	}        
 
     }
 
