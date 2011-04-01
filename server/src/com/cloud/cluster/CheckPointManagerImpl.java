@@ -155,6 +155,7 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
     @Override
     public long pushCheckPoint(CleanupMaid context) {
         long seq =  _maidDao.pushCleanupDelegate(_msId, 0, context.getClass().getName(), context);
+        return seq;
     }
 
     @Override
