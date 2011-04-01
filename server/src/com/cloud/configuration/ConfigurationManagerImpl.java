@@ -127,8 +127,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -1450,12 +1448,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override @ActionEvent (eventType=EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription="creating service offering")
     public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, String tags, Long domainId, String hostTag) {
-        String networkRateStr = _configDao.getValue("network.throttling.rate");
-        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
-        int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
-        int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, localStorageRequired, false, tags, false, domainId, hostTag);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, localStorageRequired, false, tags, false, domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());
@@ -2851,21 +2845,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public Integer getNetworkRate(long networkOfferingId, Type vmType) {
+    public Integer getNetworkOfferingNetworkRate(long networkOfferingId) {
 
         // validate network offering information
         NetworkOffering no = getNetworkOffering(networkOfferingId);
         if (no == null) {
             throw new InvalidParameterValueException("Unable to find network offering by id=" + networkOfferingId);
-        }
-
-        // For router's public network we use networkRate from guestNetworkOffering
-        if (vmType != null && vmType == VirtualMachine.Type.DomainRouter && no.getTrafficType() == TrafficType.Public && no.getGuestType() == null) {
-            List<? extends NetworkOffering> guestOfferings = _networkOfferingDao.listByTrafficTypeAndGuestType(false, TrafficType.Guest, GuestIpType.Virtual);
-            if (!guestOfferings.isEmpty()) {
-                // We have one default guest virtual network offering now
-                no = guestOfferings.get(0);
-            }
         }
 
         Integer networkRate;
@@ -2973,5 +2958,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public Long getDefaultPageSize() {
         return _defaultPageSize;
+    }
+    
+    @Override
+    public Integer getServiceOfferingNetworkRate(long serviceOfferingId) {
+
+        // validate network offering information
+        ServiceOffering offering = getServiceOffering(serviceOfferingId);
+        if (offering == null) {
+            throw new InvalidParameterValueException("Unable to find service offering by id=" + serviceOfferingId);
+        }
+
+        Integer networkRate;
+        if (offering.getRateMbps() != null) {
+            networkRate = offering.getRateMbps();
+        } else {
+            networkRate = Integer.parseInt(_configDao.getValue(Config.VmNetworkThrottlingRate.key()));
+        }
+
+        // networkRate is unsigned int in serviceOffering table, and can't be set to -1
+        // so 0 means unlimited; we convert it to -1, so we are consistent with all our other resources where -1 means unlimited
+        if (networkRate == 0) {
+            networkRate = -1;
+        }
+
+        return networkRate;
     }
 }

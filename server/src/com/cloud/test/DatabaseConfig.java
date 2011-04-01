@@ -162,8 +162,6 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("volume.stats.interval", "the interval in milliseconds when volume stats are retrieved from agents");
         s_configurationDescriptions.put("host", "host address to listen on for agent connection");
         s_configurationDescriptions.put("port", "port to listen on for agent connection");
-        //s_configurationDescriptions.put("guest.ip.network", "ip address for the router");
-        //s_configurationDescriptions.put("guest.netmask", "default netmask for the guest network");
         s_configurationDescriptions.put("guest.domain.suffix", "domain suffix for users");
         s_configurationDescriptions.put("instance.name", "Name of the deployment instance");
         s_configurationDescriptions.put("storage.overprovisioning.factor", "Storage Allocator overprovisioning factor");
@@ -211,7 +209,6 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("snapshot.test.days.per.month", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.weeks.per.month", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.months.per.year", "Set it to a smaller value to take more recurring snapshots");
-//        s_configurationDescriptions.put("network.type", "The type of network that this deployment will use.");
         s_configurationDescriptions.put("hypervisor.type", "The type of hypervisor that this deployment will use.");
         
         
@@ -246,8 +243,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("expunge.interval", "UserVmManager");
         s_configurationComponents.put("host", "AgentManager");
         s_configurationComponents.put("port", "AgentManager");
-//        s_configurationComponents.put("guest.ip.network", "AgentManager");
-//        s_configurationComponents.put("guest.netmask", "AgentManager");
         s_configurationComponents.put("domain", "AgentManager");
         s_configurationComponents.put("instance.name", "AgentManager");
         s_configurationComponents.put("storage.overprovisioning.factor", "StorageAllocator");
@@ -289,7 +284,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("snapshot.test.days.per.month", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.weeks.per.month", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.months.per.year", "SnapshotManager");
-//        s_configurationComponents.put("network.type", "ManagementServer");
         s_configurationComponents.put("hypervisor.type", "ManagementServer");
 
         
@@ -300,8 +294,6 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("integration.api.port", "8096");
         s_defaultConfigurationValues.put("usage.stats.job.exec.time", "00:15"); // run at 12:15am
         s_defaultConfigurationValues.put("usage.stats.job.aggregation.range", "1440"); // do a daily aggregation
-//        s_defaultConfigurationValues.put("guest.ip.network", "10.1.1.1");
-//        s_defaultConfigurationValues.put("guest.netmask", "255.255.255.0");
         s_defaultConfigurationValues.put("storage.overprovisioning.factor", "2");
         s_defaultConfigurationValues.put("retries.per.host", "2");
         s_defaultConfigurationValues.put("ping.timeout", "2.5");
@@ -331,13 +323,10 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("restart.retry.interval", "600");
         s_defaultConfigurationValues.put("investigate.retry.interval", "60");
         s_defaultConfigurationValues.put("migrate.retry.interval", "120");
-        // s_defaultConfigurationValues.put("network.throttling.rate", "200");
-        // s_defaultConfigurationValues.put("multicast.throttling.rate", "10");
         s_defaultConfigurationValues.put("account.cleanup.interval", "86400");
         s_defaultConfigurationValues.put("system.vm.use.local.storage", "false");
         s_defaultConfigurationValues.put("use.local.storage", "false");
         s_defaultConfigurationValues.put("init", "false");
-//        s_defaultConfigurationValues.put("network.type", "vnet");
     }
     
     protected DatabaseConfig() {
@@ -431,8 +420,6 @@ public class DatabaseConfig {
             saveDefaultConfiguations();
             
             txn.commit();
-            // Save network.throttling.rate and multicast.throttling.rate for all service offerings, if these values are in the configuration table
-            saveThrottlingRates();
             // Check pod CIDRs against each other, and against the guest ip network/netmask
             pzc.checkAllPodCidrSubnets();
             
@@ -776,8 +763,6 @@ public class DatabaseConfig {
                 
 //        int nwRate = Integer.parseInt(_currentObjectParams.get("nwRate"));
 //        int mcRate = Integer.parseInt(_currentObjectParams.get("mcRate"));
-        int nwRate = 200;
-        int mcRate = 10;
         boolean ha = Boolean.parseBoolean(_currentObjectParams.get("enableHA"));
         boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
         
@@ -792,7 +777,7 @@ public class DatabaseConfig {
         	useLocalStorage = false;
         }
         
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, nwRate, mcRate, ha, displayText, useLocalStorage, false, null, false);
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false);
         ServiceOfferingDaoImpl dao = ComponentLocator.inject(ServiceOfferingDaoImpl.class);
         try {
             dao.persist(serviceOffering);

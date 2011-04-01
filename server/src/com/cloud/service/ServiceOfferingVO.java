@@ -43,10 +43,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 	private int ramSize;
     
     @Column(name="nw_rate")
-    private int rateMbps;
+    private Integer rateMbps;
     
     @Column(name="mc_rate")
-    private int multicastRateMbps;
+    private Integer multicastRateMbps;
     
     @Column(name="ha_enabled")
     private boolean offerHA;
@@ -58,7 +58,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         super();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -68,7 +68,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.offerHA = offerHA;
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true, domainId);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -78,7 +78,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.offerHA = offerHA;
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId, String hostTag) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId, String hostTag) {
         this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, useLocalStorage, recreatable, tags, systemUse, domainId);
         this.hostTag = hostTag;
     }       
@@ -130,21 +130,21 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 	    return ramSize;
 	}
 	
-	public void setRateMbps(int rateMbps) {
+	public void setRateMbps(Integer rateMbps) {
 		this.rateMbps = rateMbps;
 	}
 
 	@Override
-    public int getRateMbps() {
+    public Integer getRateMbps() {
 		return rateMbps;
 	}
 
-	public void setMulticastRateMbps(int multicastRateMbps) {
+	public void setMulticastRateMbps(Integer multicastRateMbps) {
 		this.multicastRateMbps = multicastRateMbps;
 	}
 	
 	@Override
-    public int getMulticastRateMbps() {
+    public Integer getMulticastRateMbps() {
 		return multicastRateMbps;
 	}
 

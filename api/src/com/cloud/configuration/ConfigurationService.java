@@ -34,8 +34,6 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
 
 public interface ConfigurationService {
     
@@ -184,7 +182,7 @@ public interface ConfigurationService {
     
     NetworkOffering getNetworkOffering(long id);
     
-    Integer getNetworkRate(long networkOfferingId, Type vmType);
+    Integer getNetworkOfferingNetworkRate(long networkOfferingId);
     
     Account getVlanAccount(long vlanId);
     
@@ -195,5 +193,7 @@ public interface ConfigurationService {
     ServiceOffering getServiceOffering(long serviceOfferingId);
     
     Long getDefaultPageSize();
+    
+    Integer getServiceOfferingNetworkRate(long serviceOfferingId);
    
 }

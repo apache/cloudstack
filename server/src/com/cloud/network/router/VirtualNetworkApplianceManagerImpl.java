@@ -565,7 +565,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, 0, 0, true, null, useLocalStorage, true, null, true);
+        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, useLocalStorage, true, null, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
 
@@ -1415,9 +1415,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                  String vmGuestAddress = null;
                  
                  //Get network rate - required for IpAssoc
-                 Network network = _networkMgr.getNetwork(ipAddr.getNetworkId());
-                 NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-                 Integer networkRate = _configMgr.getNetworkRate(no.getId(), null);
+                 Integer networkRate = _networkMgr.getNetworkRate(ipAddr.getNetworkId(), null);
                  
                  IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate);
                  ipsToSend[i++] = ip;

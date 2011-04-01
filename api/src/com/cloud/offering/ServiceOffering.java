@@ -60,12 +60,12 @@ public interface ServiceOffering {
     /**
      * @return the rate in megabits per sec to which a VM's network interface is throttled to
      */
-    int getRateMbps();
+    Integer getRateMbps();
     
     /**
      * @return the rate megabits per sec to which a VM's multicast&broadcast traffic is throttled to
      */
-    int getMulticastRateMbps();
+    Integer getMulticastRateMbps();
     
     /**
      * @return whether or not the service offering requires local storage

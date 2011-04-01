@@ -139,6 +139,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -167,7 +168,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    UserVmDao _vmDao = null;
+    UserVmDao _userVmDao = null;
     @Inject
     ResourceLimitDao _limitDao = null;
     @Inject
@@ -202,6 +203,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     Adapters<NetworkElement> _networkElements;
     @Inject
     NetworkDomainDao _networkDomainDao;
+    @Inject
+    VMInstanceDao _vmDao;
 
     private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -981,8 +984,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             deviceIds[devId] = true;
             nics.add(vo);
 
-            NetworkOffering no = _configMgr.getNetworkOffering(config.getNetworkOfferingId());
-            Integer networkRate = _configMgr.getNetworkRate(no.getId(), vm.getType());
+            Integer networkRate =  getNetworkRate(config.getId(), vm.getId());
             vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate));
         }
         
@@ -1075,7 +1077,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             to.setDns2(profile.getDns2());
         }
 
-        Integer networkRate = _configMgr.getNetworkRate(config.getNetworkOfferingId(), null);
+        Integer networkRate = getNetworkRate(config.getId(), null);
         to.setNetworkRateMbps(networkRate);
 
         return to;
@@ -1195,8 +1197,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
             NetworkGuru guru = implemented.first();
             NetworkVO network = implemented.second();
-            NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-            Integer networkRate = _configMgr.getNetworkRate(no.getId(), vmProfile.getType());
+            Integer networkRate = getNetworkRate(network.getId(), vmProfile.getId());
             NicProfile profile = null;
             if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
                 nic.setState(Nic.State.Reserving);
@@ -1245,8 +1246,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-            Integer networkRate = _configMgr.getNetworkRate(no.getId(), vm.getType());
+            Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
@@ -1302,8 +1302,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (nics != null) {
             for (Nic nic : nics) {
                 NetworkVO network = _networksDao.findById(nic.getNetworkId());
-                NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-                Integer networkRate = _configMgr.getNetworkRate(no.getId(), vm.getType());
+                Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
                 NetworkGuru guru = _networkGurus.get(network.getGuruName());
                 NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
@@ -1986,7 +1985,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //Make sure that there are no user vms in the network that are not Expunged/Error
-        List<UserVmVO> userVms = _vmDao.listByNetworkId(networkId);
+        List<UserVmVO> userVms = _userVmDao.listByNetworkId(networkId);
         
         for (UserVmVO vm : userVms) {
             if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
@@ -2801,6 +2800,33 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _networksDao.update(networkId, network);
         
         return network;
-       
     }
+    
+    @Override
+    public Integer getNetworkRate(long networkId, Long vmId) {
+        VMInstanceVO vm = null;
+        if (vmId != null) {
+            vm = _vmDao.findById(vmId);
+        }
+        Network network = getNetwork(networkId);
+        NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        
+        //For default vms network offering get rate information from the service offering; for other situations get information from the network offering
+        if (vm != null && vm.getType() == Type.User && network.isDefault()) {
+            return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId());
+        } else {
+            // For router's public network we use networkRate from guestNetworkOffering
+            if (vm != null && vm.getType() == Type.DomainRouter && networkOffering.getTrafficType() == TrafficType.Public && networkOffering.getGuestType() == null) {
+                List<? extends NetworkOffering> guestOfferings = _networkOfferingDao.listByTrafficTypeAndGuestType(false, TrafficType.Guest, GuestIpType.Virtual);
+                if (!guestOfferings.isEmpty()) {
+                    // We have one default guest virtual network offering now
+                    networkOffering = guestOfferings.get(0);
+                }
+            }
+            
+            return _configMgr.getNetworkOfferingNetworkRate(networkOffering.getId());
+        }
+         
+    }
+    
 }

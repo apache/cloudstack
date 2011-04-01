@@ -36,6 +36,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachine.Type;
 
 
 public interface NetworkService {
@@ -77,4 +78,6 @@ public interface NetworkService {
     Long getDedicatedNetworkDomain(long networkId);
     
     Network updateNetwork(long networkId, String name, String displayText, Account caller);
+    
+    Integer getNetworkRate(long networkId, Long vmId);
 }
