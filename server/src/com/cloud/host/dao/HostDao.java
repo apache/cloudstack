@@ -97,6 +97,8 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	 */
 	public HostVO findByGuid(String macAddress);
 	
+	public HostVO findByName(String name);
+	
 
 	/**
 	 * find all hosts of a certain type in a data center

@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import com.cloud.maid.StackMaid;
+import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
@@ -86,16 +87,18 @@ public class SystemVmLoadScanner<T> {
 	    	T[] pools = _scanHandler.getScannablePools();
 	    	for(T p : pools) {
 	    		if(_scanHandler.isPoolReadyForScan(p)) {
-	    			switch(_scanHandler.scanPool(p)) {
+	    			Pair<AfterScanAction, Object> actionInfo = _scanHandler.scanPool(p);
+	    			
+	    			switch(actionInfo.first()) {
 	    			case nop:
 	    				break;
 	    				
 	    			case expand:
-	    				_scanHandler.expandPool(p);
+	    				_scanHandler.expandPool(p, actionInfo.second());
 	    				break;
 	    				
 	    			case shrink:
-	    				_scanHandler.shrinkPool(p);
+	    				_scanHandler.shrinkPool(p, actionInfo.second());
 	    				break;
 	    			}
 	    		}

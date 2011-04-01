@@ -2488,23 +2488,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Host.Type type = null;
 
 		if (startup instanceof StartupStorageCommand) {
-
 			StartupStorageCommand ssCmd = ((StartupStorageCommand) startup);
-			if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
-				type = Host.Type.SecondaryStorage;
-				if (resource != null
-						&& resource instanceof DummySecondaryStorageResource) {
-					resource = null;
-				}
+			if(ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
+				type = ssCmd.getHostType();
 			} else {
-				type = Host.Type.Storage;
-			}
-			final Map<String, String> hostDetails = ssCmd.getHostDetails();
-			if (hostDetails != null) {
-				if (details != null) {
-					details.putAll(hostDetails);
+				if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
+					type = Host.Type.SecondaryStorage;
+					if (resource != null
+							&& resource instanceof DummySecondaryStorageResource) {
+						resource = null;
+					}
 				} else {
-					details = hostDetails;
+					type = Host.Type.Storage;
+				}
+				final Map<String, String> hostDetails = ssCmd.getHostDetails();
+				if (hostDetails != null) {
+					if (details != null) {
+						details.putAll(hostDetails);
+					} else {
+						details = hostDetails;
+					}
 				}
 			}
 		} else if (startup instanceof StartupRoutingCommand) {
@@ -2530,7 +2533,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			type = Host.Type.PxeServer;
 		} else if (startup instanceof StartupExternalDhcpCommand) {
 			type = Host.Type.ExternalDhcp;
-		}else {
+		} else {
 			assert false : "Did someone add a new Startup command?";
 		}
 

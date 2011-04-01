@@ -951,6 +951,7 @@ CREATE TABLE  `cloud`.`secondary_storage_vm` (
   `guid` varchar(255)  COMMENT 'copied from guid of secondary storage host',
   `nfs_share` varchar(255)  COMMENT 'server and path exported by the nfs server ',
   `last_update` DATETIME NULL COMMENT 'Last session update time',
+  `role` varchar(64) NOT NULL DEFAULT 'templateProcessor' COMMENT 'work role of secondary storage host(templateProcessor | commandExecutor)',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_secondary_storage_vm__id` FOREIGN KEY `fk_secondary_storage_vm__id`(`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
@@ -1483,8 +1484,9 @@ CREATE TABLE `cloud`.`domain_network_ref` (
 
 CREATE TABLE `cloud`.`cmd_exec_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id of the system VM agent that command is sent to',
   `instance_id` bigint unsigned NOT NULL COMMENT 'instance id of the system VM that command is executed on',
-  `command_name` bigint unsigned NOT NULL COMMENT 'command name',
+  `command_name` varchar(255) NOT NULL COMMENT 'command name',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE

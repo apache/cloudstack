@@ -1,5 +1,6 @@
 package com.cloud.vm;
 
+import com.cloud.utils.Pair;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 
 public interface SystemVmLoadScanHandler<T> {
@@ -9,9 +10,9 @@ public interface SystemVmLoadScanHandler<T> {
 	
 	T[] getScannablePools();
 	boolean isPoolReadyForScan(T pool);
-	AfterScanAction scanPool(T pool);
-	void expandPool(T pool);
-	void shrinkPool(T pool);
+	Pair<AfterScanAction, Object> scanPool(T pool);
+	void expandPool(T pool, Object actionArgs);
+	void shrinkPool(T pool, Object actionArgs);
 	
 	void onScanEnd();
 }

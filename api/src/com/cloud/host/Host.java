@@ -30,6 +30,7 @@ public interface Host {
         Storage(false),
         Routing(false),
         SecondaryStorage(false),
+        SecondaryStorageCmdExecutor(false),
         ConsoleProxy(true),
         ExternalFirewall(false),
         ExternalLoadBalancer(false),

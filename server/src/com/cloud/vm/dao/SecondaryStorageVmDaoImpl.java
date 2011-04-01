@@ -33,6 +33,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -54,28 +55,34 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         DataCenterStatusSearch = createSearchBuilder();
         DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.and("states", DataCenterStatusSearch.entity().getState(), SearchCriteria.Op.IN);
+        DataCenterStatusSearch.and("role", DataCenterStatusSearch.entity().getRole(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.done();
         
         StateSearch = createSearchBuilder();
         StateSearch.and("states", StateSearch.entity().getState(), SearchCriteria.Op.IN);
+        StateSearch.and("role", StateSearch.entity().getRole(), SearchCriteria.Op.EQ);
         StateSearch.done();
         
         HostSearch = createSearchBuilder();
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        HostSearch.and("role", HostSearch.entity().getRole(), SearchCriteria.Op.EQ);
         HostSearch.done();
         
         LastHostSearch = createSearchBuilder();
         LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
         LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
+        LastHostSearch.and("role", LastHostSearch.entity().getRole(), SearchCriteria.Op.EQ);
         LastHostSearch.done();
         
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostUpSearch.and("states", HostUpSearch.entity().getState(), SearchCriteria.Op.NIN);
+        HostUpSearch.and("role", HostUpSearch.entity().getRole(), SearchCriteria.Op.EQ);
         HostUpSearch.done();
         
         ZoneSearch = createSearchBuilder();
         ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneSearch.and("role", ZoneSearch.entity().getRole(), SearchCriteria.Op.EQ);
         ZoneSearch.done();
         
         StateChangeSearch = createSearchBuilder();
@@ -83,6 +90,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         StateChangeSearch.and("states", StateChangeSearch.entity().getState(), SearchCriteria.Op.EQ);
         StateChangeSearch.and("host", StateChangeSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         StateChangeSearch.and("update", StateChangeSearch.entity().getUpdated(), SearchCriteria.Op.EQ);
+        StateChangeSearch.and("role", StateChangeSearch.entity().getUpdated(), SearchCriteria.Op.EQ);
         StateChangeSearch.done();
         
         _updateTimeAttr = _allAttributes.get("updateTime");
@@ -108,46 +116,67 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     }
     
     @Override
-    public List<SecondaryStorageVmVO> getSecStorageVmListInStates(long dataCenterId, State... states) {
+    public List<SecondaryStorageVmVO> getSecStorageVmListInStates(SecondaryStorageVm.Role role, long dataCenterId, State... states) {
         SearchCriteria<SecondaryStorageVmVO> sc = DataCenterStatusSearch.create();
         sc.setParameters("states", (Object[])states);
         sc.setParameters("dc", dataCenterId);
+        if(role != null)
+        	sc.setParameters("role", role);
         return listBy(sc);
     }
 
     @Override
-    public List<SecondaryStorageVmVO> getSecStorageVmListInStates(State... states) {
+    public List<SecondaryStorageVmVO> getSecStorageVmListInStates(SecondaryStorageVm.Role role, State... states) {
         SearchCriteria<SecondaryStorageVmVO> sc = StateSearch.create();
         sc.setParameters("states", (Object[])states);
+        if(role != null)
+        	sc.setParameters("role", role);
+        
         return listBy(sc);
     }
     
     @Override
-    public List<SecondaryStorageVmVO> listByHostId(long hostId) {
+    public List<SecondaryStorageVmVO> listByHostId(SecondaryStorageVm.Role role, long hostId) {
         SearchCriteria<SecondaryStorageVmVO> sc = HostSearch.create();
         sc.setParameters("host", hostId);
+        if(role != null)
+        	sc.setParameters("role", role);
         return listBy(sc);
     }
     
     @Override
-    public List<SecondaryStorageVmVO> listUpByHostId(long hostId) {
+    public List<SecondaryStorageVmVO> listUpByHostId(SecondaryStorageVm.Role role, long hostId) {
         SearchCriteria<SecondaryStorageVmVO> sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
         sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});        
+        if(role != null)
+        	sc.setParameters("role", role);
         return listBy(sc);
     }
     
     @Override
-    public List<Long> getRunningSecStorageVmListByMsid(long msid) {
+    public List<Long> getRunningSecStorageVmListByMsid(SecondaryStorageVm.Role role, long msid) {
     	List<Long> l = new ArrayList<Long>();
         Transaction txn = Transaction.currentTxn();;
         PreparedStatement pstmt = null;
         try {
-            pstmt = txn.prepareAutoCloseStatement(
-            		"SELECT s.id FROM secondary_storage_vm s, vm_instance v, host h " +
-            		"WHERE s.id=v.id AND v.state='Running' AND v.host_id=h.id AND h.mgmt_server_id=?");
+        	String sql;
+        	if(role == null)
+        		sql = "SELECT s.id FROM secondary_storage_vm s, vm_instance v, host h " +
+        			"WHERE s.id=v.id AND v.state='Running' AND v.host_id=h.id AND h.mgmt_server_id=?";
+        	else
+        		sql = "SELECT s.id FROM secondary_storage_vm s, vm_instance v, host h " +
+    				"WHERE s.id=v.id AND v.state='Running' AND s.role=? AND v.host_id=h.id AND h.mgmt_server_id=?";
+        	
+            pstmt = txn.prepareAutoCloseStatement(sql);
             
-            pstmt.setLong(1, msid);
+            if(role == null) {
+            	pstmt.setLong(1, msid);
+            } else {
+            	pstmt.setString(1, role.toString());
+            	pstmt.setLong(2, msid);
+            }
+            
             ResultSet rs = pstmt.executeQuery();
             while(rs.next()) {
             	l.add(rs.getLong(1));
@@ -159,17 +188,57 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     }
 
 	@Override
-	public List<SecondaryStorageVmVO> listByZoneId(long zoneId) {
+	public List<SecondaryStorageVmVO> listByZoneId(SecondaryStorageVm.Role role, long zoneId) {
 		SearchCriteria<SecondaryStorageVmVO> sc = ZoneSearch.create();
         sc.setParameters("zone", zoneId);
+        if(role != null)
+        	sc.setParameters("role", role);
         return listBy(sc);
 	}
 
 	@Override
-	public List<SecondaryStorageVmVO> listByLastHostId(long hostId) {
+	public List<SecondaryStorageVmVO> listByLastHostId(SecondaryStorageVm.Role role, long hostId) {
 		SearchCriteria<SecondaryStorageVmVO> sc = LastHostSearch.create();
 		sc.setParameters("lastHost", hostId);
 		sc.setParameters("state", State.Stopped);
+        if(role != null)
+        	sc.setParameters("role", role);
+		
 		return listBy(sc);
 	}
+	
+	@Override
+    public List<Long> listRunningSecStorageOrderByLoad(SecondaryStorageVm.Role role, long zoneId) {
+    	
+    	List<Long> l = new ArrayList<Long>();
+        Transaction txn = Transaction.currentTxn();;
+        PreparedStatement pstmt = null;
+        try {
+        	String sql;
+        	if(role == null)
+        		sql = "SELECT s.id, count(l.id) as count FROM secondary_storage_vm s, vm_instance v, cmd_exec_log l " +
+        			"WHERE s.id=v.id AND v.state='Running' AND v.data_center_id=? AND v.id=l.instance_id GROUP BY s.id ORDER BY count";
+        	else
+        		sql = "SELECT s.id, count(l.id) as count FROM secondary_storage_vm s, vm_instance v, cmd_exec_log l " +
+    				"WHERE s.id=v.id AND v.state='Running' AND v.data_center_id=? AND s.role=? AND v.id=l.instance_id GROUP BY s.id ORDER BY count";
+        	
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            
+            if(role == null) {
+            	pstmt.setLong(1, zoneId);
+            } else {
+            	pstmt.setLong(1, zoneId);
+            	pstmt.setString(2, role.toString());
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()) {
+            	l.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+        	s_logger.error("Unexpected exception ", e);
+        }
+        
+        return l;
+    }
 }

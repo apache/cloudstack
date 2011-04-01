@@ -1478,12 +1478,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 	}
 	
 	@Override
-	public AfterScanAction scanPool(Long pool) {
+	public Pair<AfterScanAction, Object> scanPool(Long pool) {
 		long dataCenterId = pool.longValue();
 		
 		ConsoleProxyLoadInfo proxyInfo = this._zoneProxyCountMap.get(dataCenterId);
 		if(proxyInfo == null)
-			return AfterScanAction.nop;
+			return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
 			
         ConsoleProxyLoadInfo vmInfo = this._zoneVmCountMap.get(dataCenterId);
         if(vmInfo == null)
@@ -1493,20 +1493,20 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Expand console proxy standby capacity for zone " + proxyInfo.getName());
         	
-        	return AfterScanAction.expand;
+        	return new Pair<AfterScanAction, Object>(AfterScanAction.expand, null);
         }
         
-		return AfterScanAction.nop;
+		return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
 	}
 	
 	@Override
-	public void expandPool(Long pool) {
+	public void expandPool(Long pool, Object actionArgs) {
 		long dataCenterId = pool.longValue();
 		allocCapacity(dataCenterId);
 	}
 	
 	@Override
-	public void shrinkPool(Long pool) {
+	public void shrinkPool(Long pool, Object actionArgs) {
 	}
 
 	@Override

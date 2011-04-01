@@ -22,6 +22,8 @@ import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -54,15 +56,18 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     @Column(name="nfs_share", nullable=false)
     private String nfsShare;
     
+    @Column(name="role", nullable=false)
+    @Enumerated(value=EnumType.STRING)
+    private Role role;
+    
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name="last_update", updatable=true, nullable=true)
     private Date lastUpdateTime;
     
-    
-    
     public SecondaryStorageVmVO(long id, long serviceOfferingId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long dataCenterId, 
-    							long domainId, long accountId) {
+    							long domainId, long accountId, Role role) {
 	    super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, hypervisorType, guestOSId, domainId, accountId, true);
+	    this.role = role;
 	}
     
     protected SecondaryStorageVmVO() {
@@ -119,5 +124,13 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
 
 	public String getNfsShare() {
 		return nfsShare;
+	}
+	
+	public Role getRole() {
+		return this.role;
+	}
+	
+	public void setRole(Role role) {
+		this.role = role;
 	}
 }
