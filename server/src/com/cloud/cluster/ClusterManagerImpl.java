@@ -670,7 +670,7 @@ public class ClusterManagerImpl implements ClusterManager {
 	
 	private static boolean isIdInList(Long id, List<ManagementServerHostVO> l) {
 		for(ManagementServerHostVO mshost : l) {
-			if(mshost.getId() != null && mshost.getId() == id) {
+			if(mshost.getId() == id) {
                 return true;
             }
 		}

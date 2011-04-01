@@ -52,8 +52,8 @@ import com.cloud.utils.component.MockComponentLocator;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class TaskManagerTest extends TestCase {
-    private final static Logger s_logger = Logger.getLogger(TaskManagerTest.class);
+public class CheckPointManagerTest extends TestCase {
+    private final static Logger s_logger = Logger.getLogger(CheckPointManagerTest.class);
     
     @Override
     @Before
@@ -85,46 +85,46 @@ public class TaskManagerTest extends TestCase {
     public void testCompleteCase() throws Exception {
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
-        TaskManagerImpl taskMgr = ComponentLocator.inject(TaskManagerImpl.class);
+        CheckPointManagerImpl taskMgr = ComponentLocator.inject(CheckPointManagerImpl.class);
         assertTrue(taskMgr.configure("TaskManager", new HashMap<String, Object>()));
         assertTrue(taskMgr.start());
         
         MockMaid delegate = new MockMaid();
         delegate.setValue("first");
-        long taskId = taskMgr.addTask(delegate);
+        long taskId = taskMgr.pushCheckPoint(delegate);
         
         StackMaidDao maidDao = locator.getDao(StackMaidDao.class);
-        TaskVO task = maidDao.findById(taskId);
+        CheckPointVO task = maidDao.findById(taskId);
         
         assertEquals(task.getDelegate(), MockMaid.class.getName());
         MockMaid retrieved = (MockMaid)SerializerHelper.fromSerializedString(task.getContext()); 
         assertEquals(retrieved.getValue(), delegate.getValue());
         
         delegate.setValue("second");
-        taskMgr.updateTask(taskId, delegate);
+        taskMgr.updateCheckPointState(taskId, delegate);
 
         task = maidDao.findById(taskId);
         assertEquals(task.getDelegate(), MockMaid.class.getName());
         retrieved = (MockMaid)SerializerHelper.fromSerializedString(task.getContext()); 
         assertEquals(retrieved.getValue(), delegate.getValue());
         
-        taskMgr.taskCompleted(taskId);
+        taskMgr.popCheckPoint(taskId);
         assertNull(maidDao.findById(taskId));
     }
     
     public void testSimulatedReboot() throws Exception {
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
-        TaskManagerImpl taskMgr = ComponentLocator.inject(TaskManagerImpl.class);
+        CheckPointManagerImpl taskMgr = ComponentLocator.inject(CheckPointManagerImpl.class);
         assertTrue(taskMgr.configure("TaskManager", new HashMap<String, Object>()));
         assertTrue(taskMgr.start());
         
         MockMaid maid = new MockMaid();
         maid.setValue("first");
-        long taskId = taskMgr.addTask(maid);
+        long taskId = taskMgr.pushCheckPoint(maid);
         
         StackMaidDao maidDao = locator.getDao(StackMaidDao.class);
-        TaskVO task = maidDao.findById(taskId);
+        CheckPointVO task = maidDao.findById(taskId);
         
         assertEquals(task.getDelegate(), MockMaid.class.getName());
         MockMaid retrieved = (MockMaid)SerializerHelper.fromSerializedString(task.getContext()); 
@@ -134,7 +134,7 @@ public class TaskManagerTest extends TestCase {
         
         assertNotNull(MockMaid.map.get(maid.getSeq()));
         
-        taskMgr = ComponentLocator.inject(TaskManagerImpl.class);
+        taskMgr = ComponentLocator.inject(CheckPointManagerImpl.class);
         HashMap<String, Object> params = new HashMap<String, Object>();
         params.put(Config.TaskCleanupRetryInterval.key(), "1");
         taskMgr.configure("TaskManager", params);
@@ -151,16 +151,16 @@ public class TaskManagerTest extends TestCase {
     public void testTakeover() throws Exception {
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
-        TaskManagerImpl taskMgr = ComponentLocator.inject(TaskManagerImpl.class);
+        CheckPointManagerImpl taskMgr = ComponentLocator.inject(CheckPointManagerImpl.class);
         assertTrue(taskMgr.configure("TaskManager", new HashMap<String, Object>()));
         assertTrue(taskMgr.start());
         
         MockMaid delegate = new MockMaid();
         delegate.setValue("first");
-        long taskId = taskMgr.addTask(delegate);
+        long taskId = taskMgr.pushCheckPoint(delegate);
         
         StackMaidDao maidDao = locator.getDao(StackMaidDao.class);
-        TaskVO task = maidDao.findById(taskId);
+        CheckPointVO task = maidDao.findById(taskId);
         
         assertEquals(task.getDelegate(), MockMaid.class.getName());
         MockMaid retrieved = (MockMaid)SerializerHelper.fromSerializedString(task.getContext()); 

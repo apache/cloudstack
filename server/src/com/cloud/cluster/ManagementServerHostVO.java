@@ -38,10 +38,10 @@ public class ManagementServerHostVO {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="id")
-	private Long id;
+	private long id;
 
 	@Column(name="msid", updatable=true, nullable=false)
-	private Long msid;
+	private long msid;
 
 	@Column(name="name", updatable=true, nullable=true)
 	private String name;
@@ -75,19 +75,19 @@ public class ManagementServerHostVO {
     	this.lastUpdateTime = updateTime;
     }
     
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 
-	public Long getMsid() {
+	public long getMsid() {
 		return msid;
 	}
 
-	public void setMsid(Long msid) {
+	public void setMsid(long msid) {
 		this.msid = msid;
 	}
 	

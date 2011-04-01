@@ -12,7 +12,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.cluster.TaskVO;
+import com.cloud.cluster.CheckPointVO;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
@@ -24,12 +24,12 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value = { StackMaidDao.class }) @DB(txn=false)
-public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements StackMaidDao {
+public class StackMaidDaoImpl extends GenericDaoBase<CheckPointVO, Long> implements StackMaidDao {
     private static final Logger s_logger = Logger.getLogger(StackMaidDaoImpl.class);
     
-	private SearchBuilder<TaskVO> popSearch;
-	private SearchBuilder<TaskVO> clearSearch;
-	private final SearchBuilder<TaskVO> AllFieldsSearch;
+	private SearchBuilder<CheckPointVO> popSearch;
+	private SearchBuilder<CheckPointVO> clearSearch;
+	private final SearchBuilder<CheckPointVO> AllFieldsSearch;
 	
 	public StackMaidDaoImpl() {
 		popSearch = createSearchBuilder();
@@ -47,19 +47,19 @@ public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements St
 	
 	@Override
 	public boolean takeover(long takeOverMsid, long selfId) {
-	    TaskVO task = createForUpdate();
+	    CheckPointVO task = createForUpdate();
 	    task.setMsid(selfId);
 	    task.setThreadId(0);
 	    
-	    SearchCriteria<TaskVO> sc = AllFieldsSearch.create();
+	    SearchCriteria<CheckPointVO> sc = AllFieldsSearch.create();
 	    sc.setParameters("msid", takeOverMsid);
 	    return update(task, sc) > 0;
 	    
 	}
 	
 	@Override
-	public List<TaskVO> listCleanupTasks(long msId) {
-	    SearchCriteria<TaskVO> sc = AllFieldsSearch.create();
+	public List<CheckPointVO> listCleanupTasks(long msId) {
+	    SearchCriteria<CheckPointVO> sc = AllFieldsSearch.create();
         sc.setParameters("msid", msId);
         sc.setParameters("thread", 0);
 	    
@@ -68,7 +68,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements St
 
     @Override
 	public long pushCleanupDelegate(long msid, int seq, String delegateClzName, Object context) {
-		TaskVO delegateItem = new TaskVO();
+		CheckPointVO delegateItem = new CheckPointVO();
 		delegateItem.setMsid(msid);
 		delegateItem.setThreadId(Thread.currentThread().getId());
 		delegateItem.setSeq(seq);
@@ -81,13 +81,13 @@ public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements St
 	}
 
     @Override
-	public TaskVO popCleanupDelegate(long msid) {
-        SearchCriteria<TaskVO> sc = popSearch.create();
+	public CheckPointVO popCleanupDelegate(long msid) {
+        SearchCriteria<CheckPointVO> sc = popSearch.create();
         sc.setParameters("msid", msid);
         sc.setParameters("threadId", Thread.currentThread().getId());
         
-		Filter filter = new Filter(TaskVO.class, "seq", false, 0L, (long)1);
-		List<TaskVO> l = listIncludingRemovedBy(sc, filter);
+		Filter filter = new Filter(CheckPointVO.class, "seq", false, 0L, (long)1);
+		List<CheckPointVO> l = listIncludingRemovedBy(sc, filter);
 		if(l != null && l.size() > 0) {
 			expunge(l.get(0).getId());
 			return l.get(0);
@@ -98,7 +98,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements St
     
     @Override
 	public void clearStack(long msid) {
-        SearchCriteria<TaskVO> sc = clearSearch.create();
+        SearchCriteria<CheckPointVO> sc = clearSearch.create();
         sc.setParameters("msid", msid);
         
         expunge(sc);
@@ -106,11 +106,11 @@ public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements St
     
     @Override
     @DB
-	public List<TaskVO> listLeftoversByMsid(long msid) {
-    	List<TaskVO> l = new ArrayList<TaskVO>();
+	public List<CheckPointVO> listLeftoversByMsid(long msid) {
+    	List<CheckPointVO> l = new ArrayList<CheckPointVO>();
     	String sql = "select * from stack_maid where msid=? order by msid asc, thread_id asc, seq desc";
     	
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
@@ -132,9 +132,9 @@ public class StackMaidDaoImpl extends GenericDaoBase<TaskVO, Long> implements St
     
     @Override
     @DB
-	public List<TaskVO> listLeftoversByCutTime(Date cutTime) {
+	public List<CheckPointVO> listLeftoversByCutTime(Date cutTime) {
     	
-    	List<TaskVO> l = new ArrayList<TaskVO>();
+    	List<CheckPointVO> l = new ArrayList<CheckPointVO>();
     	String sql = "select * from stack_maid where created < ? order by msid asc, thread_id asc, seq desc";
     	
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);

@@ -7,8 +7,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.alert.AlertAdapter;
-import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterNodeJoinEventArgs;
 import com.cloud.cluster.ClusterNodeLeftEventArgs;
@@ -30,8 +28,9 @@ public class ClusterAlertAdapter implements AlertAdapter {
     private ManagementServerHostDao _mshostDao;
     
     public void onClusterAlert(Object sender, EventArgs args) {
-		if(s_logger.isDebugEnabled())
-			s_logger.debug("Receive cluster alert, EventArgs: " + args.getClass().getName());
+		if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Receive cluster alert, EventArgs: " + args.getClass().getName());
+        }
     	
     	if(args instanceof ClusterNodeJoinEventArgs) {
     		onClusterNodeJoined(sender, (ClusterNodeJoinEventArgs)args);
@@ -43,13 +42,15 @@ public class ClusterAlertAdapter implements AlertAdapter {
     }
     
     private void onClusterNodeJoined(Object sender, ClusterNodeJoinEventArgs args) {
-		if(s_logger.isDebugEnabled())
-			s_logger.debug("Handle cluster node join alert, self node: " + args.getSelf());
+		if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Handle cluster node join alert, self node: " + args.getSelf());
+        }
     	
     	for(ManagementServerHostVO mshost : args.getJoinedNodes()) {
-    		if(mshost.getId().longValue() == args.getSelf().longValue()) {
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Management server node " + mshost.getServiceIP() + " is up, send alert");
+    		if(mshost.getId() == args.getSelf().longValue()) {
+				if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Management server node " + mshost.getServiceIP() + " is up, send alert");
+                }
 				
 			    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
 		    		"Management server node " + mshost.getServiceIP() + " is up", "");
@@ -60,11 +61,12 @@ public class ClusterAlertAdapter implements AlertAdapter {
     
     private void onClusterNodeLeft(Object sender, ClusterNodeLeftEventArgs args) {
     	
-		if(s_logger.isDebugEnabled())
-			s_logger.debug("Handle cluster node left alert, self node: " + args.getSelf());
+		if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Handle cluster node left alert, self node: " + args.getSelf());
+        }
     	
     	for(ManagementServerHostVO mshost : args.getLeftNodes()) {
-    		if(mshost.getId().longValue() != args.getSelf().longValue()) {
+    		if(mshost.getId() != args.getSelf().longValue()) {
     			GlobalLock lock = GlobalLock.getInternLock("ManagementAlert." + mshost.getId());
     			try {
     				if(lock.lock(180)) {
@@ -73,14 +75,16 @@ public class ClusterAlertAdapter implements AlertAdapter {
     						if(alertHost.getAlertCount() == 0) {
     							_mshostDao.increaseAlertCount(mshost.getId());
 
-    							if(s_logger.isDebugEnabled())
-    								s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, send alert");
+    							if(s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, send alert");
+                                }
     							
     						    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
 						    		"Management server node " + mshost.getServiceIP() + " is down", "");
     						} else {
-    							if(s_logger.isDebugEnabled())
-    								s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, but alert has already been set");
+    							if(s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, but alert has already been set");
+                                }
     						}
     					} finally {
     						lock.unlock();
@@ -97,14 +101,16 @@ public class ClusterAlertAdapter implements AlertAdapter {
 	public boolean configure(String name, Map<String, Object> params)
 		throws ConfigurationException {
 		
-		if (s_logger.isInfoEnabled())
-			s_logger.info("Start configuring cluster alert manager : " + name);
+		if (s_logger.isInfoEnabled()) {
+            s_logger.info("Start configuring cluster alert manager : " + name);
+        }
 
 		ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
         _mshostDao = locator.getDao(ManagementServerHostDao.class);
-        if(_mshostDao == null)
-        	throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
+        if(_mshostDao == null) {
+            throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
+        }
 		
 		_alertMgr = locator.getManager(AlertManager.class);
 		if (_alertMgr == null) {

@@ -13,7 +13,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="stack_maid")
-public class TaskVO {
+public class CheckPointVO {
 
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -27,7 +27,7 @@ public class TaskVO {
 	private long threadId;
 	
 	@Column(name="seq")
-	private int seq;
+	private long seq;
 	
 	@Column(name="cleanup_delegate", length=128)
 	private String delegate;
@@ -38,7 +38,11 @@ public class TaskVO {
     @Column(name=GenericDao.CREATED_COLUMN)
 	private Date created;
 	
-	public TaskVO() {
+	public CheckPointVO() {
+	}
+	
+	public CheckPointVO(long seq) {
+	    this.seq = seq;
 	}
 
 	public long getId() {
@@ -61,11 +65,11 @@ public class TaskVO {
 		this.threadId = threadId;
 	}
 
-	public int getSeq() {
+	public long getSeq() {
 		return seq;
 	}
 
-	public void setSeq(int seq) {
+	public void setSeq(long seq) {
 		this.seq = seq;
 	}
 

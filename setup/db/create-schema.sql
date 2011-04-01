@@ -362,6 +362,7 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('private_mac_address_seq', 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('checkpoint_seq', 1);
 
 CREATE TABLE `cloud`.`volumes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',

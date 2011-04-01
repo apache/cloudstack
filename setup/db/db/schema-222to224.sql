@@ -61,6 +61,7 @@ ALTER TABLE `cloud`.`host` ADD INDEX `i_host__allocation_state`(`allocation_stat
 
 ALTER TABLE `cloud`.`domain` ADD INDEX `i_domain__path`(`path`);
 
+<<<<<<< HEAD
 INSERT INTO `cloud`.`configuration` VALUES 
 ('Advanced','DEFAULT','management-server','control.cidr','169.254.0.0/16','Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods'),
 ('Advanced','DEFAULT','management-server','control.gateway','169.254.0.1','gateway for the control network traffic'),
@@ -101,8 +102,5 @@ INSERT INTO `cloud`.`configuration` VALUES
 ('Advanced','DEFAULT','management-server','vmware.service.console','Service Console','Specify the service console network name (ESX host only)'),
 ('Advanced','DEFAULT','AgentManager','xapiwait','600','Time (in seconds) to wait for XAPI to return');
 
-
-
-
-
-
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('checkpoint_seq', 1);
+DELETE FROM `cloud`.`sequence` WHERE name='snapshots_seq';

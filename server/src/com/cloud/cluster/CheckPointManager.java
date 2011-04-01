@@ -1,6 +1,5 @@
 package com.cloud.cluster;
 
-import com.cloud.utils.component.Manager;
 
 /**
  * TaskManager helps business logic deal with clustering failover.
@@ -14,23 +13,22 @@ import com.cloud.utils.component.Manager;
  * cleanup when the dead server resumes.
  *
  */
-public interface TaskManager extends Manager {
+public interface CheckPointManager {
     /**
      * Adds a task with the context as to what the task is and the class
      * responsible for cleaning up.
      * 
      * @param context context information to be stored.
-     * @param cleaner clazz responsible for cleanup if the process was interrupted.
-     * @return task id.
+     * @return Check point id.
      */
-    long addTask(CleanupMaid context);
+    long pushCheckPoint(CleanupMaid context);
     
     /**
      * update the task with new context
      * @param taskId
      * @param updatedContext new updated context.
      */
-    void updateTask(long taskId, CleanupMaid updatedContext);
+    void updateCheckPointState(long taskId, CleanupMaid updatedContext);
     
     
     /**
@@ -38,5 +36,5 @@ public interface TaskManager extends Manager {
      * 
      * @param taskId
      */
-    void taskCompleted(long taskId);
+    void popCheckPoint(long taskId);
 }

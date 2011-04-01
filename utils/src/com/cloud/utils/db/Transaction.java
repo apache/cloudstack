@@ -69,6 +69,7 @@ public class Transaction {
     private static final String CREATE_TXN = "create_txn";
     private static final String CREATE_CONN = "create_conn";
     private static final String STATEMENT = "statement";
+    private static final String ATTACHMENT = "attachment";
 
     public static final short CLOUD_DB = 0;
     public static final short USAGE_DB = 1;
@@ -89,8 +90,7 @@ public class Transaction {
         Transaction txn = tls.get();
         assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
         
-        // loosen the requirement to let people use explicit transaction management (i.e., in Unit tests) 
-        // assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn.toString();
+        assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn.toString();
         return txn;
     }
     
@@ -168,6 +168,39 @@ public class Transaction {
             s_logger.warn("Unexpected exception: ", e);
             return null;
         }
+    } 
+    
+    protected void attach(TransactionAttachment value) {
+        _stack.push(new StackElement(ATTACHMENT, value));
+    }
+    
+    protected TransactionAttachment detach(String name) {
+        Iterator<StackElement> it = _stack.descendingIterator();
+        while (it.hasNext()) {
+            StackElement element = it.next();
+            if (element.type == ATTACHMENT) {
+                TransactionAttachment att = (TransactionAttachment)element.ref;
+                if (name.equals(att.getName())) {
+                    it.remove();
+                    return att;
+                }
+            }
+        }
+        assert false : "Are you sure you attached this: " + name;
+        return null;
+    }
+    
+    public static void attachToTxn(TransactionAttachment value) {
+        Transaction txn = tls.get();
+        assert txn != null && txn.peekInStack(CURRENT_TXN) != null: "Come on....how can we attach something to the transaction if you haven't started it?";
+        
+        txn.attach(value);
+    }
+    
+    public static TransactionAttachment detachFromTxn(String name) {
+        Transaction txn = tls.get();
+        assert txn != null : "No Transaction in TLS";
+        return txn.detach(name);
     }
     
     protected static boolean checkAnnotation(int stack, Transaction txn) {
@@ -484,7 +517,6 @@ public class Transaction {
         closeConnection();
         
         _stack.clear();
-        
         if (_lockMaster != null) {
         	_lockMaster.clear();
         }
@@ -608,45 +640,55 @@ public class Transaction {
 
             it.remove();
             
-            if (item.type == type && (ref == null || item.ref == ref)) {
-                break;
-            }
-            
-            if (item.type == CURRENT_TXN) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Releasing the current txn: " + (item.ref != null ? item.ref : ""));
+            try {
+                if (item.type == type && (ref == null || item.ref == ref)) {
+                    break;
                 }
-            } else if (item.type == CREATE_CONN) {
-                closeConnection();
-            } else if (item.type == START_TXN) {
-                if (item.ref == null) {
-                    rollback = true;
-                } else {
+                
+                if (item.type == CURRENT_TXN) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("Releasing the current txn: " + (item.ref != null ? item.ref : ""));
+                    }
+                } else if (item.type == CREATE_CONN) {
+                    closeConnection();
+                } else if (item.type == START_TXN) {
+                    if (item.ref == null) {
+                        rollback = true;
+                    } else {
+                        try {
+                            _conn.rollback((Savepoint)ref);
+                            rollback = false;
+                        } catch (final SQLException e) {
+                            s_logger.warn("Unable to rollback Txn.", e);
+                        }
+                    }
+                } else if (item.type == STATEMENT) {
                     try {
-                        _conn.rollback((Savepoint)ref);
-                        rollback = false;
-                    } catch (final SQLException e) {
-                        s_logger.warn("Unable to rollback Txn.", e);
-                    }
-                }
-            } else if (item.type == STATEMENT) {
-                try {
-                    if (s_stmtLogger.isTraceEnabled()) {
-                        s_stmtLogger.trace("Closing: " + ref.toString());
-                    }
-                    Statement stmt = (Statement)ref;
-                	try {
-                    	ResultSet rs = stmt.getResultSet();
-                    	if (rs != null) {
-                    		rs.close();
+                        if (s_stmtLogger.isTraceEnabled()) {
+                            s_stmtLogger.trace("Closing: " + ref.toString());
+                        }
+                        Statement stmt = (Statement)ref;
+                    	try {
+                        	ResultSet rs = stmt.getResultSet();
+                        	if (rs != null) {
+                        		rs.close();
+                        	}
+                    	} catch(SQLException e) {
+                    		s_stmtLogger.trace("Unable to close resultset");
                     	}
-                	} catch(SQLException e) {
-                		s_stmtLogger.trace("Unable to close resultset");
-                	}
-                    stmt.close();
-                } catch (final SQLException e) {
-                    s_stmtLogger.trace("Unable to close statement: " + item.toString());
+                        stmt.close();
+                    } catch (final SQLException e) {
+                        s_stmtLogger.trace("Unable to close statement: " + item.toString());
+                    }
+                } else if (item.type == ATTACHMENT) {
+                        TransactionAttachment att = (TransactionAttachment)item.ref;
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Cleaning up " + att.getName());
+                        }
+                        att.cleanup();
                 }
+            } catch(Exception e) {
+                s_logger.error("Unable to clean up " + item, e);
             }
         }
         

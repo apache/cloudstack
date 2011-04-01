@@ -39,7 +39,7 @@ import com.cloud.certificate.dao.CertificateDaoImpl;
 import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.cluster.DummyClusterManagerImpl;
 import com.cloud.cluster.ManagementServerNode;
-import com.cloud.cluster.TaskManagerImpl;
+import com.cloud.cluster.CheckPointManagerImpl;
 import com.cloud.cluster.dao.ManagementServerHostDaoImpl;
 import com.cloud.cluster.dao.StackMaidDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
@@ -273,7 +273,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     }
 
     protected void populateManagers() {
-        addManager("StackMaidManager", TaskManagerImpl.class);
+        addManager("StackMaidManager", CheckPointManagerImpl.class);
         addManager("agent manager", AgentManagerImpl.class);
         addManager("account manager", AccountManagerImpl.class);
         addManager("configuration manager", ConfigurationManagerImpl.class);

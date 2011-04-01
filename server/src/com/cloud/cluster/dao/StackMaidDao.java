@@ -3,16 +3,16 @@ package com.cloud.cluster.dao;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.cluster.TaskVO;
+import com.cloud.cluster.CheckPointVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface StackMaidDao extends GenericDao<TaskVO, Long> {
+public interface StackMaidDao extends GenericDao<CheckPointVO, Long> {
 	public long pushCleanupDelegate(long msid, int seq, String delegateClzName, Object context);
-	public TaskVO popCleanupDelegate(long msid);
+	public CheckPointVO popCleanupDelegate(long msid);
 	public void clearStack(long msid);
 	
-	public List<TaskVO> listLeftoversByMsid(long msid); 
-	public List<TaskVO> listLeftoversByCutTime(Date cutTime);
+	public List<CheckPointVO> listLeftoversByMsid(long msid); 
+	public List<CheckPointVO> listLeftoversByCutTime(Date cutTime);
 	
 	/**
 	 * Take over the task items of another management server and clean them up.
@@ -26,5 +26,5 @@ public interface StackMaidDao extends GenericDao<TaskVO, Long> {
 	 */
 	boolean takeover(long takeOverMsid, long selfId);
 	
-	List<TaskVO> listCleanupTasks(long selfId);
+	List<CheckPointVO> listCleanupTasks(long selfId);
 }

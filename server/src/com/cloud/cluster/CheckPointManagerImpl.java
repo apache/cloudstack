@@ -21,13 +21,14 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 
-@Local(value=TaskManager.class)
-public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
-    private static final Logger s_logger = Logger.getLogger(TaskManagerImpl.class);
+@Local(value=CheckPointManager.class)
+public class CheckPointManagerImpl implements CheckPointManager, Manager, ClusterManagerListener {
+    private static final Logger s_logger = Logger.getLogger(CheckPointManagerImpl.class);
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; // 3 seconds
     private static final int GC_INTERVAL = 10000; // 10 seconds
@@ -47,7 +48,7 @@ public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
     
     private final ScheduledExecutorService _cleanupScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Task-Cleanup"));
     
-    protected TaskManagerImpl() {
+    protected CheckPointManagerImpl() {
     }
 
     @Override
@@ -73,8 +74,8 @@ public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
         return true;
     }
 
-    private void cleanupLeftovers(List<TaskVO> l) {
-        for (TaskVO maid : l) {
+    private void cleanupLeftovers(List<CheckPointVO> l) {
+        for (CheckPointVO maid : l) {
             if (StackMaid.doCleanup(maid)) {
                 _maidDao.expunge(maid.getId());
             }
@@ -103,7 +104,7 @@ public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
             public void reallyRun() {
                 try {
                     Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - 7200000);
-                    List<TaskVO> l = _maidDao.listLeftoversByCutTime(cutTime);
+                    List<CheckPointVO> l = _maidDao.listLeftoversByCutTime(cutTime);
                     cleanupLeftovers(l);
                 } catch (Throwable e) {
                     s_logger.error("Unexpected exception when trying to execute queue item, ", e);
@@ -152,24 +153,24 @@ public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
     }
     
     @Override
-    public long addTask(CleanupMaid context) {
-        return _maidDao.pushCleanupDelegate(_msId, 0, context.getClass().getName(), context);
+    public long pushCheckPoint(CleanupMaid context) {
+        long seq =  _maidDao.pushCleanupDelegate(_msId, 0, context.getClass().getName(), context);
     }
 
     @Override
-    public void updateTask(long taskId, CleanupMaid updatedContext) {
-        TaskVO task = _maidDao.createForUpdate();
+    public void updateCheckPointState(long taskId, CleanupMaid updatedContext) {
+        CheckPointVO task = _maidDao.createForUpdate();
         task.setDelegate(updatedContext.getClass().getName());
         task.setContext(SerializerHelper.toSerializedStringOld(updatedContext));
         _maidDao.update(taskId, task);
     }
 
     @Override
-    public void taskCompleted(long taskId) {
+    public void popCheckPoint(long taskId) {
         _maidDao.remove(taskId);
     }
     
-    protected boolean cleanup(TaskVO task) {
+    protected boolean cleanup(CheckPointVO task) {
         s_logger.info("Cleaning up " + task);
         CleanupMaid delegate = (CleanupMaid)SerializerHelper.fromSerializedString(task.getContext());
         assert delegate.getClass().getName().equals(task.getDelegate()) : "Deserializer says " + delegate.getClass().getName() + " but it's suppose to be " + task.getDelegate();
@@ -181,7 +182,7 @@ public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
             } else {
                 s_logger.warn("Unsuccessful in cleaning up " + task + ".  Procedure to cleanup manaully: " + delegate.getCleanupProcedure());
             }
-            taskCompleted(task.getId());
+            popCheckPoint(task.getId());
             return true;
         } else {
             s_logger.error("Unable to cleanup " + task.getId());
@@ -197,11 +198,11 @@ public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
         @Override
         public void run() {
             try {
-                List<TaskVO> tasks = _maidDao.listCleanupTasks(_msId);
+                List<CheckPointVO> tasks = _maidDao.listCleanupTasks(_msId);
                 
-                List<TaskVO> retries = new ArrayList<TaskVO>();
+                List<CheckPointVO> retries = new ArrayList<CheckPointVO>();
                 
-                for (TaskVO task : tasks) {
+                for (CheckPointVO task : tasks) {
                     try {
                         if (!cleanup(task)) {
                             retries.add(task);
@@ -216,7 +217,7 @@ public class TaskManagerImpl implements TaskManager, ClusterManagerListener {
                     if (_cleanupRetryInterval > 0) {
                         _cleanupScheduler.schedule(this, _cleanupRetryInterval, TimeUnit.SECONDS);
                     } else {
-                        for (TaskVO task : retries) {
+                        for (CheckPointVO task : retries) {
                             s_logger.warn("Cleanup procedure for " + task + ": " + ((CleanupMaid)SerializerHelper.fromSerializedString(task.getContext())).getCleanupProcedure());
                         }
                     }

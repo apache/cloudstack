@@ -99,7 +99,7 @@ public class StackMaid {
 	
 	public void exitCleanup(long currentMsid) {
 		if(currentSeq > 0) {
-			TaskVO maid = null;
+			CheckPointVO maid = null;
 			while((maid = maidDao.popCleanupDelegate(currentMsid)) != null) {
 				doCleanup(maid);
 			}
@@ -109,7 +109,7 @@ public class StackMaid {
 		context.clear();
 	}
 	
-	public static boolean doCleanup(TaskVO maid) {
+	public static boolean doCleanup(CheckPointVO maid) {
 		if(maid.getDelegate() != null) {
 			try {
 				Class<?> clz = Class.forName(maid.getDelegate());
