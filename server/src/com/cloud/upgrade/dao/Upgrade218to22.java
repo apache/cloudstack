@@ -1112,7 +1112,7 @@ public class Upgrade218to22 implements DbUpgrade {
         //Events not yet processed
         String sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.id > ? and vmevt.state = 'Completed' ";
         if (lastProcessedEvent == null) {
-            System.out.println("no events are processed earlier, copying all events");
+            s_logger.trace("no events are processed earlier, copying all events");
             sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.state = 'Completed' ";
         }
 
@@ -1124,6 +1124,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt.setLong(i++, lastProcessedEvent);
             }
             ResultSet rs = pstmt.executeQuery();
+            s_logger.trace("Begin Migrating events");
             while (rs.next()) {
                 EventVO event = new EventVO();
                 event.setType(rs.getString(1));
@@ -1184,6 +1185,9 @@ public class Upgrade218to22 implements DbUpgrade {
         }*/
         if(usageEvent != null){
             usageEvent.setCreatedDate(event.getCreateDate());
+            if(usageEvent.getZoneId() == -1){
+                usageEvent.setZoneId(0);
+            }
           //update firewall_rules table
             PreparedStatement pstmt = null;
             pstmt = conn.prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id, usage_event.resource_name," +
