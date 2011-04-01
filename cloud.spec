@@ -523,6 +523,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-sshkey
 %dir %{_datadir}/%{name}/setup
 %{_datadir}/%{name}/setup/*.sql
+%{_datadir}/%{name}/setup/db/*.sql
 %{_datadir}/%{name}/setup/*.sh
 %{_datadir}/%{name}/setup/server-setup.xml
 
