@@ -464,14 +464,14 @@ public class VirtualRoutingResource implements Manager {
             }
         }
         if (!foundLinkLocalBr) {
-            Script.runSimpleBashScript("ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " + NetUtils.getLinkLocalGateway());
+            Script.runSimpleBashScript("ifconfig " + linkLocalBr + " 169.254.0.1;" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " + NetUtils.getLinkLocalGateway());
         }
     }
 
     public void createControlNetwork(String privBrName) {
         deletExitingLinkLocalRoutTable(privBrName);
         if (!isBridgeExists(privBrName)) {
-            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ifconfig " + privBrName + " up;", _timeout);
+            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ifconfig " + privBrName + " up; ifconfig " + privBrName + " 169.254.0.1", _timeout);
         }
     }
 
