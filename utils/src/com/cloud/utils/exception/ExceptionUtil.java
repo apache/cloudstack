@@ -22,12 +22,19 @@ import java.io.StringWriter;
 
 public class ExceptionUtil {
     public static String toString(Throwable th) {
+        return toString(th, true);
+    }
+    
+    public static String toString(Throwable th, boolean printStack) {
         final StringWriter writer = new StringWriter();
 		writer.append("Exception: " + th.getClass().getName() + "\n");
         writer.append("Message: ");
-        writer.append(th.getMessage());
-        writer.append("\n  Stack: ");
-        th.printStackTrace(new PrintWriter(writer));
+        writer.append(th.getMessage()).append("\n");
+        
+        if(printStack) {
+            writer.append("Stack: ");
+            th.printStackTrace(new PrintWriter(writer));
+        }
         return writer.toString();
     }
 }
