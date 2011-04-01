@@ -261,7 +261,7 @@ ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `volume_type` VARCHAR(64) NOT NULL;
 
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `state` VARCHAR(32);
 UPDATE `cloud`.`volumes` SET state='Destroyed' WHERE removed IS NOT NULL OR destroyed=1 OR status='Creating' OR status='Corrupted' OR status='Failed';
-UPDATE `cloud`.`volumes` SET state='Ready' WHERE removed IS NULL AND destroyed=0 AND status='Created';
+UPDATE `cloud`.`volumes` SET state='Ready' WHERE removed IS NULL AND (destroyed=0 OR destroyed is NULL) AND status='Created';
 ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `state` VARCHAR(32) NOT NULL;
 
 ALTER TABLE `cloud`.`vlan` ADD COLUMN `network_id` bigint unsigned NOT NULL;
