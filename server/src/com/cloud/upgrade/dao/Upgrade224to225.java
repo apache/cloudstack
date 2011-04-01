@@ -42,9 +42,9 @@ public class Upgrade224to225 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/data-224to225.sql");
+        String script = Script.findScript("", "db/schema-224to225.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/data-224to225.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-224to225.sql");
         }
         
         return new File[] { new File(script) };
