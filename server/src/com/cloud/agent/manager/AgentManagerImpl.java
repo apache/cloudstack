@@ -484,6 +484,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			}
 		}
 	}
+	
+    public void notifyAnswersFromAttache(long agentId, long seq, Answer[] answers) {
+		for (Pair<Integer, Listener> listener : _cmdMonitors) {
+			listener.second().processCommands(agentId, seq, answers);
+		}
+    }
 
 	public AgentAttache findAttache(long hostId) {
 		return _agents.get(hostId);
@@ -2656,7 +2662,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 	protected AgentAttache createAttache(long id, HostVO server, Link link) {
 		s_logger.debug("create ConnectedAgentAttache for " + id);
-		final AgentAttache attache = new ConnectedAgentAttache(id, link,
+		final AgentAttache attache = new ConnectedAgentAttache(this, id, link,
 				server.getStatus() == Status.Maintenance
 						|| server.getStatus() == Status.ErrorInMaintenance
 						|| server.getStatus() == Status.PrepareForMaintenance);
@@ -2676,10 +2682,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			ServerResource resource) {
 		if (resource instanceof DummySecondaryStorageResource
 				|| resource instanceof KvmDummyResourceBase) {
-			return new DummyAttache(id, false);
+			return new DummyAttache(this, id, false);
 		}
 		s_logger.debug("create DirectAgentAttache for " + id);
-		final DirectAgentAttache attache = new DirectAgentAttache(id, resource,
+		final DirectAgentAttache attache = new DirectAgentAttache(this, id, resource,
 				server.getStatus() == Status.Maintenance
 						|| server.getStatus() == Status.ErrorInMaintenance
 						|| server.getStatus() == Status.PrepareForMaintenance,

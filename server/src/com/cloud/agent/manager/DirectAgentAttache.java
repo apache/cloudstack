@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CronCommand;
@@ -48,8 +49,8 @@ public class DirectAgentAttache extends AgentAttache {
     AgentManagerImpl _mgr;
     long _seq = 0;
 
-	public DirectAgentAttache(long id, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
-		super(id, maintenance);
+	public DirectAgentAttache(AgentManager agentMgr, long id, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
+		super(agentMgr, id, maintenance);
 		_resource = resource;
 		_mgr = mgr;
 	}

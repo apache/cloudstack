@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -98,6 +99,8 @@ public abstract class AgentAttache {
     protected Status _status = Status.Connecting;
     protected boolean _maintenance;
     
+    protected AgentManager _agentMgr;
+    
     public final static String[] s_commandsAllowedInMaintenanceMode =
         new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString(), ShutdownCommand.class.toString() };
     protected final static String[] s_commandsNotAllowedInConnectingMode =
@@ -108,12 +111,13 @@ public abstract class AgentAttache {
     }
     
 
-    protected AgentAttache(final long id, boolean maintenance) {
+    protected AgentAttache(AgentManager agentMgr, final long id, boolean maintenance) {
         _id = id;
         _waitForList = new ConcurrentHashMap<Long, Listener>();
         _currentSequence = null;
         _maintenance = maintenance;
         _requests = new LinkedList<Request>();
+        _agentMgr = agentMgr;
     }
 
     public synchronized void setMaintenanceMode(final boolean value) {
@@ -263,6 +267,8 @@ public abstract class AgentAttache {
         if (resp.executeInSequence()) {
             sendNext(seq);
         }
+        
+        _agentMgr.notifyAnswersFromAttache(_id, seq, answers);
         return processed;
     }
 
@@ -384,6 +390,8 @@ public abstract class AgentAttache {
                         new Response(req, answers).log(_id, "Received after timeout: ");
 //                        s_logger.debug(log(seq, "Received after timeout: " + new Response(req, answers).toString()));
                     }
+                    
+                    _agentMgr.notifyAnswersFromAttache(_id, seq, answers);
                     return answers;
                 }
 

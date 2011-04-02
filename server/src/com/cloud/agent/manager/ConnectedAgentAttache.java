@@ -22,6 +22,7 @@ import java.nio.channels.ClosedChannelException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
@@ -35,8 +36,8 @@ public class ConnectedAgentAttache extends AgentAttache {
     
     protected Link _link;
 
-    public ConnectedAgentAttache(final long id, final Link link, boolean maintenance) {
-        super(id, maintenance);
+    public ConnectedAgentAttache(AgentManager agentMgr, final long id, final Link link, boolean maintenance) {
+        super(agentMgr, id, maintenance);
         _link = link;
     }
 

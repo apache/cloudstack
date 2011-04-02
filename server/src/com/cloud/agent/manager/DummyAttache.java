@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.manager;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
@@ -24,8 +25,8 @@ import com.cloud.host.Status;
 
 public class DummyAttache extends AgentAttache {
 
-	public DummyAttache(long id, boolean maintenance) {
-		super(id, maintenance);
+	public DummyAttache(AgentManager agentMgr, long id, boolean maintenance) {
+		super(agentMgr, id, maintenance);
 	}
 
 
