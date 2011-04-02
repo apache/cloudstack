@@ -443,12 +443,10 @@ public class ApiXmlDocWriter {
             SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
             Param paramAnnotation = responseField.getAnnotation(Param.class);
             Argument respArg = new Argument(nameAnnotation.value());   
-            boolean toExpose = true;
             boolean hasChildren = false;
-            if (paramAnnotation != null) {
+            if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
                 String description = paramAnnotation.description();
                 Class fieldClass = paramAnnotation.responseObject();
-                toExpose = paramAnnotation.expose();
                 if (description != null && !description.isEmpty()) {
                     respArg.setDescription(description);
                 } 
@@ -468,7 +466,7 @@ public class ApiXmlDocWriter {
                 }
             } 
                 
-            if (toExpose) {
+            if (paramAnnotation.includeInApiDoc()) {
                 if (nameAnnotation.value().equals("id")) {
                     id = respArg;
                 } else {

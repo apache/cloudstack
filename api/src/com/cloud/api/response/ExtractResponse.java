@@ -42,7 +42,7 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
     private Long accountId;    
  
-    @SerializedName("resultstring") @Param(expose=false)
+    @SerializedName("resultstring") @Param(includeInApiDoc=false)
     private String resultString;    
 
     @SerializedName(ApiConstants.CREATED) @Param(description="the time and date the object was created")

@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.BaseCmd;
@@ -51,7 +52,10 @@ public class ApiResponseSerializer {
                     int count = responses.size();
                     String jsonStr = gson.toJson(responses.get(0));;
                     jsonStr = unescape(jsonStr);
-                    sb.append("{ \"" + responses.get(0).getObjectName() + "\" : [  " + jsonStr);
+                    
+                    if (((ListResponse)result).getCount() != null) {
+                        sb.append("{ \"" + ApiConstants.COUNT + "\":" + ((ListResponse)result).getCount() + " ,\"" + responses.get(0).getObjectName() + "\" : [  " + jsonStr);
+                    }
                     for (int i = 1; i < count; i++) {
                         jsonStr = gson.toJson(responses.get(i));
                         jsonStr = unescape(jsonStr);
@@ -88,6 +92,11 @@ public class ApiResponseSerializer {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
         sb.append("<" + result.getResponseName() + " cloud-stack-version=\""+ApiDBUtils.getVersion()+ "\">");
+        
+        if (((ListResponse)result).getCount() != null) {
+            sb.append("<" + ApiConstants.COUNT + ">" + ((ListResponse)result).getCount() + "</" + ApiConstants.COUNT + ">");
+
+        }
 
         if (result instanceof ListResponse) {
             List<? extends ResponseObject> responses = ((ListResponse)result).getResponses();
@@ -95,7 +104,7 @@ public class ApiResponseSerializer {
                 for (ResponseObject obj : responses) {
                     serializeResponseObjXML(sb, obj);
                 }
-            }
+            }  
         } else {
             if (result instanceof CreateCmdResponse || result instanceof AsyncJobResponse) {
                 serializeResponseObjFieldsXML(sb, result);

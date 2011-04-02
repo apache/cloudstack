@@ -28,6 +28,6 @@ public @interface Param {
 	String description() default "";
 	
 	// 2 parameters below are used by cloudstack api
-	boolean expose() default true;
 	Class<?> responseObject() default Object.class;
+	boolean includeInApiDoc() default true;
 }
