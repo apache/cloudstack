@@ -842,10 +842,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	throw new InvalidParameterValueException("Unable to find a service offering with id " + serviceOfferingId);
         }
             
-        // Check that the VM is stopped or running
-        if (!(vmInstance.getState().equals(State.Stopped) || vmInstance.getState().equals(State.Running))) {
+        // Check that the VM is stopped
+        if (!vmInstance.getState().equals(State.Stopped)) {
             s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState() + "; make sure the virtual machine is in Stopped or Running state before upgrading.");
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
         }
         
         // Check if the service offering being upgraded to is what the VM is already running with
@@ -2527,9 +2527,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVO user = _userDao.findById(userId);
 
         try {
-            if (!_itMgr.advanceStop(vm, forced, user, caller)) {
-                throw new CloudRuntimeException("Unable to stop vm " + vm);
-            }
+            _itMgr.advanceStop(vm, forced, user, caller);
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
         } catch (OperationTimedoutException e) {
