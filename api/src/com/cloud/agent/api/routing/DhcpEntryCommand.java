@@ -24,6 +24,9 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String vmMac;
     String vmIpAddress;
     String vmName;
+    String dns;
+    String gateway;
+    String nextServer;
     
     protected DhcpEntryCommand() {
     	
@@ -40,6 +43,20 @@ public class DhcpEntryCommand extends NetworkElementCommand {
         this.vmName = vmName;
     }
     
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String dns, String gateway) {
+    	this(vmMac, vmIpAddress, vmName);
+    	this.dns = dns;
+    	this.gateway = gateway;
+    }
+    
+    public String getDns() {
+    	return dns;
+    }
+    
+    public String getGateway() {
+    	return gateway;
+    }
+    
 	public String getVmMac() {
 		return vmMac;
 	}
@@ -50,6 +67,14 @@ public class DhcpEntryCommand extends NetworkElementCommand {
 	
 	public String getVmName() {
 		return vmName;
+	}
+	
+	public void setNextServer(String ip) {
+		nextServer = ip;
+	}
+	
+	public String getNextServer() {
+		return nextServer;
 	}
 	
 }
