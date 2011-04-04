@@ -1337,7 +1337,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @Override
     public boolean isVmSecurityGroupEnabled(Long vmId) {
-        VirtualMachine vm = _vmDao.findById(vmId);
+        VirtualMachine vm = _vmDao.findByIdIncludingRemoved(vmId);
         List<NicProfile> nics = _networkMgr.getNicProfiles(vm);
         for (NicProfile nic : nics) {
             if (nic.isSecurityGroupEnabled() && vm.getHypervisorType() != HypervisorType.VMware) {
