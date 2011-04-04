@@ -339,7 +339,7 @@ CREATE TABLE `cloud`.`user_vm_details` (
 
 ALTER TABLE `cloud`.`domain_router` MODIFY COLUMN `guest_netmask` varchar(15);
 ALTER TABLE `cloud`.`domain_router` MODIFY COLUMN `guest_ip_address` varchar(15);
-ALTER TABLE `cloud`.`domain_router` ADD COLUMN `network_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN `network_id` bigint unsigned NOT NULL DEFAULT 0;
 
 CREATE TABLE  `cloud`.`upload` (
   `id` bigint unsigned NOT NULL auto_increment,

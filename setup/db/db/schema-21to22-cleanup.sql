@@ -62,6 +62,7 @@ ALTER TABLE `cloud`.`domain_router` DROP COLUMN `vlan_id`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `domain_id`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `account_id`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `dhcp_ip_address`;
+ALTER TABLE `cloud`.`domain_router` DROP COLUMN `domain`;
 
 ALTER TABLE `cloud`.`console_proxy` DROP FOREIGN KEY `fk_console_proxy__vlan_id`;
 ALTER TABLE `cloud`.`console_proxy` DROP INDEX `i_console_proxy__vlan_id`;
