@@ -70,6 +70,7 @@ CREATE TABLE `cloud`.`data_center_details` (
   CONSTRAINT `fk_dc_details__dc_id` FOREIGN KEY (`dc_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+#('Advanced','DEFAULT','management-server','management.network.cidr','192.168.130.0/24','The cidr of management server network'),;
 INSERT INTO `cloud`.`configuration` VALUES 
 ('Advanced','DEFAULT','management-server','control.cidr','169.254.0.0/16','Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods'),
 ('Advanced','DEFAULT','management-server','control.gateway','169.254.0.1','gateway for the control network traffic'),
@@ -89,7 +90,6 @@ INSERT INTO `cloud`.`configuration` VALUES
 ('Advanced','DEFAULT','management-server','job.cancel.threshold.minutes','60','Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long'),
 ('Advanced','DEFAULT','management-server','kvm.private.network.device',NULL,'Specify the private bridge on host for private network'),
 ('Advanced','DEFAULT','management-server','kvm.public.network.device',NULL,'Specify the public bridge on host for public network'),
-('Advanced','DEFAULT','management-server','management.network.cidr','192.168.130.0/24','The cidr of management server network'),
 ('Advanced','DEFAULT','management-server','network.gc.interval','600','Seconds to wait before checking for networks to shutdown'),
 ('Advanced','DEFAULT','management-server','network.gc.wait','600','Time (in seconds) to wait before shutting down a network that\'s not in used'),
 ('Network','DEFAULT','management-server','open.vswitch.tunnel.network','false','enable/disable open vswitch tunnel network(no vlan)'),

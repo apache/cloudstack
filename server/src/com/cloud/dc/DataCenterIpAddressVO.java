@@ -53,7 +53,7 @@ public class DataCenterIpAddressVO {
     @Column(name="reservation_id")
     String reservationId;
     
-    @Column(name="instance_id")
+    @Column(name="nic_id")
     private Long instanceId;
     
     @Column(name="mac_address")

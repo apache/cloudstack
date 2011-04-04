@@ -167,10 +167,10 @@ public class Upgrade218to22 implements DbUpgrade {
         pstmt.close();
     }
     
-    protected void insertNic(Connection conn, long networkId, long instanceId, boolean running, String macAddress, String ipAddress, String netmask, String strategy, String gateway, String vnet, String guru, boolean defNic, int deviceId, String mode, String reservationId) throws SQLException {
+    protected long insertNic(Connection conn, long networkId, long instanceId, boolean running, String macAddress, String ipAddress, String netmask, String strategy, String gateway, String vnet, String guru, boolean defNic, int deviceId, String mode, String reservationId) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(
                 "INSERT INTO nics (instance_id, network_id, mac_address, ip4_address, netmask, strategy, ip_type, broadcast_uri, mode, reserver_name, reservation_id, device_id, update_time, isolation_uri, ip6_address, default_nic, created, removed, state, gateway) " +
-                          "VALUES (?,           ?,          ?,           ?,           ?,       ?,        'Ip4',   ?,             ?,    ?,             ?,              ?,         now(),       ?,          NULL,         ?,          now(),   NULL,    ?,     ?)");
+                          "VALUES (?,           ?,          ?,           ?,           ?,       ?,        'Ip4',   ?,             ?,    ?,             ?,              ?,         now(),       ?,          NULL,         ?,          now(),   NULL,    ?,     ?)", Statement.RETURN_GENERATED_KEYS);
         int i = 1;
         String isolationUri = null;
         
@@ -199,7 +199,15 @@ public class Upgrade218to22 implements DbUpgrade {
         pstmt.setString(i++, running ? "Reserved" : "Allocated");
         pstmt.setString(i++, gateway);
         pstmt.executeUpdate();
+        ResultSet rs = pstmt.getGeneratedKeys();
+        long nicId = 0;
+        if (!rs.next()) {
+            throw new CloudRuntimeException("Unable to get id for nic");
+        }
+        nicId = rs.getLong(1);
+        rs.close();
         pstmt.close();
+        return nicId;
     }
     
     protected void upgradeDomR(Connection conn, long domrId, Long publicNetworkId, long guestNetworkId, long controlNetworkId, String zoneType) throws SQLException {
@@ -293,10 +301,18 @@ public class Upgrade218to22 implements DbUpgrade {
         }
         
         insertNic(conn, controlNetworkId, ssvmId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (ssvmId + guestIp) : null);
-        insertNic(conn, managementNetworkId, ssvmId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", null);
+        long mgmtNicId = insertNic(conn, managementNetworkId, ssvmId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", null);
+        if (privateIp != null) {
+            pstmt = conn.prepareStatement("UPDATE op_dc_ip_address_alloc SET nic_id=? WHERE ip_address=? AND data_center_id=?");
+            pstmt.setLong(1, mgmtNicId);
+            pstmt.setString(2, privateIp);
+            pstmt.setLong(3, dataCenterId);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
     }
     
-    protected void upgradeConsoleProxy(Connection conn, long cpId, long publicNetworkId, long managementNetworkId, long controlNetworkId, String zoneType) throws SQLException {
+    protected void upgradeConsoleProxy(Connection conn, long dcId, long cpId, long publicNetworkId, long managementNetworkId, long controlNetworkId, String zoneType) throws SQLException {
         s_logger.debug("Upgrading cp" + cpId);
         PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, console_proxy.public_mac_address, console_proxy.public_ip_address, console_proxy.public_netmask, console_proxy.guest_mac_address, console_proxy.guest_ip_address, console_proxy.guest_netmask, console_proxy.gateway, vm_instance.type FROM vm_instance INNER JOIN console_proxy ON vm_instance.id=console_proxy.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
         pstmt.setLong(1, cpId);
@@ -343,7 +359,15 @@ public class Upgrade218to22 implements DbUpgrade {
         }
         
         insertNic(conn, controlNetworkId, cpId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (cpId + guestIp) : null);
-        insertNic(conn, managementNetworkId, cpId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", null);
+        long mgmtNicId = insertNic(conn, managementNetworkId, cpId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", privateIp != null ? (cpId + privateIp) : null);
+        if (privateIp != null) {
+            pstmt = conn.prepareStatement("UPDATE op_dc_ip_address_alloc SET nic_id=? WHERE ip_address=? AND data_center_id=?");
+            pstmt.setLong(1, mgmtNicId);
+            pstmt.setString(2, privateIp);
+            pstmt.setLong(3, dcId);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
     }
     
     protected void upgradeVirtualUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet) throws SQLException {
@@ -779,7 +803,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
                     while (rs.next()) {
-                        upgradeConsoleProxy(conn, rs.getLong(1), basicDefaultDirectNetworkId, mgmtNetworkId, controlNetworkId, "Basic");
+                        upgradeConsoleProxy(conn, dcId, rs.getLong(1), basicDefaultDirectNetworkId, mgmtNetworkId, controlNetworkId, "Basic");
                     }
                     
                 } 
@@ -886,7 +910,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
                     while (rs.next()) {
-                        upgradeConsoleProxy(conn, rs.getLong(1), publicNetworkId, mgmtNetworkId, controlNetworkId, "Advanced");
+                        upgradeConsoleProxy(conn, dcId, rs.getLong(1), publicNetworkId, mgmtNetworkId, controlNetworkId, "Advanced");
                     }
                     
                 }
