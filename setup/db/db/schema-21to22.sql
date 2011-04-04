@@ -372,6 +372,9 @@ ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `system_use` tinyint(1) unsigned 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `customized` tinyint(1) unsigned NOT NULL DEFAULT 0;
 
 update `cloud`.`disk_offering` set system_use=1, removed=null WHERE unique_name like 'Cloud.Com-%';
+update `cloud`.`disk_offering` set name='System Offering For Console Proxy' where name='Fake Offering For DomP' and system_use=1;
+update `cloud`.`disk_offering` set name='System Offering For Software Router' where name='Fake Offering For DomR' and system_use=1;
+update `cloud`.`disk_offering` set name='System Offering For Secondary Storage VM' where name='Fake Offering For Secondary Storage VM' and system_use=1;
 
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `public_ip_address` varchar(15) DEFAULT NULL;
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL;
