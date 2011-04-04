@@ -231,5 +231,5 @@ public interface AgentManager extends Manager {
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
     
-    void notifyAnswersFromAttache(long agentId, long seq, Answer[] answers);
+    void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers);
 }

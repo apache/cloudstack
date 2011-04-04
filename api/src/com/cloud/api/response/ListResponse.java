@@ -22,5 +22,4 @@ public class ListResponse<T extends ResponseObject> extends BaseResponse {
             return null;
         }
     }
-
 }

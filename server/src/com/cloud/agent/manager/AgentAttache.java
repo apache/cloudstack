@@ -268,7 +268,7 @@ public abstract class AgentAttache {
             sendNext(seq);
         }
         
-        _agentMgr.notifyAnswersFromAttache(_id, seq, answers);
+        _agentMgr.notifyAnswersToMonitors(_id, seq, answers);
         return processed;
     }
 
@@ -391,7 +391,7 @@ public abstract class AgentAttache {
 //                        s_logger.debug(log(seq, "Received after timeout: " + new Response(req, answers).toString()));
                     }
                     
-                    _agentMgr.notifyAnswersFromAttache(_id, seq, answers);
+                    _agentMgr.notifyAnswersToMonitors(_id, seq, answers);
                     return answers;
                 }
 

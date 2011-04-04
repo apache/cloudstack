@@ -485,9 +485,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		}
 	}
 	
-    public void notifyAnswersFromAttache(long agentId, long seq, Answer[] answers) {
+    public void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers) {
 		for (Pair<Integer, Listener> listener : _cmdMonitors) {
-			listener.second().processCommands(agentId, seq, answers);
+			listener.second().processAnswers(agentId, seq, answers);
 		}
     }
 
@@ -1449,7 +1449,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Request req = new Request(seq, hostId, _nodeId, cmds,
 				commands.stopOnError(), true, commands.revertOnError());
 		Answer[] answers = agent.send(req, timeout);
-		notifyAnswersFromAttache(hostId, seq, answers);
+		notifyAnswersToMonitors(hostId, seq, answers);
 		commands.setAnswers(answers);
 		return answers;
 	}
