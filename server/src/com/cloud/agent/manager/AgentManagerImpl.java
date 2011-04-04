@@ -1449,6 +1449,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Request req = new Request(seq, hostId, _nodeId, cmds,
 				commands.stopOnError(), true, commands.revertOnError());
 		Answer[] answers = agent.send(req, timeout);
+		notifyAnswersFromAttache(hostId, seq, answers);
 		commands.setAnswers(answers);
 		return answers;
 	}
