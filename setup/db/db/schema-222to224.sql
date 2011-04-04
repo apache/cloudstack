@@ -70,7 +70,7 @@ CREATE TABLE `cloud`.`data_center_details` (
   CONSTRAINT `fk_dc_details__dc_id` FOREIGN KEY (`dc_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `configuration` VALUES 
+INSERT INTO `cloud`.`configuration` VALUES 
 ('Advanced','DEFAULT','management-server','control.cidr','169.254.0.0/16','Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods'),
 ('Advanced','DEFAULT','management-server','control.gateway','169.254.0.1','gateway for the control network traffic'),
 ('Advanced','DEFAULT','AgentManager','cmd.wait','7200','Time (in seconds) to wait for some heavy time-consuming commands'),
@@ -80,7 +80,6 @@ INSERT INTO `configuration` VALUES
 ('Console Proxy','DEFAULT','AgentManager','consoleproxy.restart','true','Console proxy restart flag, defaulted to true'),
 ('Console Proxy','DEFAULT','AgentManager','consoleproxy.url.domain','realhostip.com','Console proxy url domain'),
 ('Advanced','DEFAULT','management-server','extract.url.cleanup.interval','120','The interval (in seconds) to wait before cleaning up the extract URL\'s '),
-('Network','DEFAULT','AgentManager','guest.domain.suffix','cloud.internal','Default domain name for vms inside virtualized networks fronted by router'),
 ('Network','DEFAULT','AgentManager','guest.ip.network','10.1.1.1','The network address of the guest virtual network. Virtual machines will be assigned an IP in this subnet.'),
 ('Network','DEFAULT','AgentManager','guest.netmask','255.255.255.0','The netmask of the guest virtual network.'),
 ('Network','DEFAULT','management-server','guest.vlan.bits','12','The number of bits to reserve for the VLAN identifier in the guest subnet.'),
@@ -99,7 +98,6 @@ INSERT INTO `configuration` VALUES
 ('Advanced','DEFAULT','none','router.template.id','1','Default ID for template.'),
 ('Advanced','DEFAULT','AgentManager','secstorage.vm.cpu.mhz','500','CPU speed (in MHz) used to create new secondary storage vms'),
 ('Snapshots','DEFAULT','none','snapshot.delta.max','16','max delta snapshots between two full snapshots.'),
-('Storage','DEFAULT','management-server','storage.max.volume.size','2000','The maximum size for a volume (in GB).'),
 ('Advanced','DEFAULT','management-server','system.vm.auto.reserve.capacity','true','Indicates whether or not to automatically reserver system VM standby capacity.'),
 ('Advanced','DEFAULT','management-server','use.user.concentrated.pod.allocation','true','If true, deployment planner applies the user concentration heuristic during VM resource allocation'),
 ('Advanced','DEFAULT','management-server','vm.op.cancel.interval','3600','Time (in seconds) to wait before cancelling a operation'),
