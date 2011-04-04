@@ -289,23 +289,19 @@ ALTER TABLE `cloud`.`data_center` ADD COLUMN `vpn_provider` char(64) DEFAULT 'Vi
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `userdata_provider` char(64) DEFAULT 'VirtualRouter';
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `enable` tinyint NOT NULL DEFAULT 1;
 
-#TODO: We need something to adjust the networktype for all of the existing data centers.  How to tell if it is Basic/Advance?;
+ALTER TABLE `cloud`.`data_center` ADD   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`);
 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD COLUMN `reservation_id` char(40) NULL;
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD COLUMN `mac_address` bigint unsigned NOT NULL;
 UPDATE `cloud`.`op_dc_ip_address_alloc` SET reservation_id=concat(cast(instance_id as CHAR), ip_address) WHERE taken is NOT NULL;
-#UPDATE `cloud`.`op_dc_ip_address_alloc` as alloc1 SET mac_address=id-(SELECT min(alloc2.id) from op_dc_ip_address_alloc as alloc2 WHERE alloc2.data_center_id=alloc1.data_center_id)+1;  
 
 ALTER TABLE `cloud`.`op_dc_link_local_ip_address_alloc` ADD COLUMN `reservation_id` char(40) NULL;
 UPDATE `cloud`.`op_dc_link_local_ip_address_alloc` SET reservation_id=concat(cast(instance_id as CHAR),ip_address) WHERE taken is NOT NULL;
-
-#TODO: Set the Reservation id for this table?;
 
 ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `enabled` tinyint NOT NULL DEFAULT 1;
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `reservation_id` char(40) NULL;
 UPDATE op_dc_vnet_alloc set reservation_id=concat(cast(data_center_id as CHAR), concat("-", vnet)) WHERE taken is NOT NULL; 
-#TODO: Set the Reservation id for this table;
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `service_offering_id` bigint unsigned NOT NULL;
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `reservation_id` char(40);
