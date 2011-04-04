@@ -773,7 +773,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         upgradeDomR(conn, (Long)router[0], null, basicDefaultDirectNetworkId, controlNetworkId, "Basic");
                     }
                     
-                    upgradeSsvm(conn, dcId, basicDefaultDirectNetworkId, storageNetworkId, controlNetworkId, "Basic");
+                    upgradeSsvm(conn, dcId, basicDefaultDirectNetworkId, mgmtNetworkId, controlNetworkId, "Basic");
                     
                     pstmt = conn.prepareStatement("SELECT vm_instance.id FROM vm_instance WHERE removed IS NULL AND type='ConsoleProxy' AND data_center_id=?");
                     pstmt.setLong(1, dcId);
@@ -880,7 +880,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         upgradeDirectUserIpAddress(conn, dcId, vlanNetworkMap.get(tag), "DirectAttached");
                     }
                     
-                    upgradeSsvm(conn, dcId, publicNetworkId, storageNetworkId, controlNetworkId, "Advanced");
+                    upgradeSsvm(conn, dcId, publicNetworkId, mgmtNetworkId, controlNetworkId, "Advanced");
                     
                     pstmt = conn.prepareStatement("SELECT vm_instance.id FROM vm_instance WHERE removed IS NULL AND type='ConsoleProxy' AND data_center_id=?");
                     pstmt.setLong(1, dcId);

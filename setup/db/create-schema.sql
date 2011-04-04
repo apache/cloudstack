@@ -492,6 +492,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this data center enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
+  INDEX `i_data_center__domain_id`(`domain_id`),
   INDEX `i_data_center__allocation_state`(`allocation_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -960,7 +961,7 @@ CREATE TABLE  `cloud`.`domain` (
   `parent` bigint unsigned,
   `name` varchar(255),
   `owner` bigint unsigned NOT NULL,
-  `path` varchar(255),
+  `path` varchar(255) UNIQUE NOT NULL,
   `level` int(10) NOT NULL DEFAULT 0,
   `child_count` int(10) NOT NULL DEFAULT 0,
   `next_child_seq` bigint unsigned NOT NULL DEFAULT 1,
