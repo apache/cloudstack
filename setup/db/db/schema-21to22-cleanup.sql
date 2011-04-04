@@ -99,5 +99,5 @@ ALTER TABLE `cloud`.`service_offering` DROP COLUMN `guest_ip_type`;
 
 ALTER TABLE `cloud`.`load_balancer_vm_map` DROP COLUMN `pending`;
 
-ALTER TABLE `cloud`.`account_vlan_map` ALTER COLUMN `account_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`account_vlan_map` MODIFY COLUMN `account_id` bigint unsigned NOT NULL;
 
