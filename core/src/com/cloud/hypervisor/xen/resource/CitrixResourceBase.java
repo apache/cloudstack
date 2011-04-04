@@ -4327,6 +4327,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             cmd.setHostDetails(details);
             cmd.setName(hr.nameLabel);
             cmd.setGuid(_host.uuid);
+            cmd.setPool(_host.pool);
             cmd.setDataCenter(Long.toString(_dcId));
             for (final String cap : hr.capabilities) {
                 if (cap.length() > 0) {
@@ -4424,7 +4425,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         _name = _host.uuid;
         _host.ip = (String) params.get("ipaddress");
-        _host.pool = (String) params.get("pool");
 
         _username = (String) params.get("username");
         _password = (String) params.get("password");
@@ -4476,17 +4476,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if( conn == null ) {
             throw new ConfigurationException("Can not create slave connection to " + _host.ip);
         }
-        Host.Record hostRec = null;
         try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-            hostRec = host.getRecord(conn);
-        } catch (Exception e) {
-            throw new ConfigurationException("Can not get host information from " + _host.ip);
-        }
-        if( !hostRec.address.equals(_host.ip) ) {
-            String msg = "Host " + _host.ip + " seems be reinstalled, please remove this host and readd";
-            s_logger.error(msg);
-            throw new ConfigurationException(msg);
+            Host.Record hostRec = null;
+            try {
+                Host host = Host.getByUuid(conn, _host.uuid);
+                hostRec = host.getRecord(conn);
+                Pool.Record poolRec = Pool.getAllRecords(conn).values().iterator().next();
+                _host.pool = poolRec.uuid;
+               
+            } catch (Exception e) {
+                throw new ConfigurationException("Can not get host information from " + _host.ip);
+            }
+            if( !hostRec.address.equals(_host.ip) ) {
+                String msg = "Host " + _host.ip + " seems be reinstalled, please remove this host and readd";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
+        } finally {
+            try { 
+                Session.localLogout(conn);
+            } catch (Exception e) {
+            }
         }
     }
 
