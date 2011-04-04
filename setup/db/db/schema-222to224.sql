@@ -61,3 +61,53 @@ ALTER TABLE `cloud`.`host` ADD INDEX `i_host__allocation_state`(`allocation_stat
 
 ALTER TABLE `cloud`.`domain` ADD INDEX `i_domain__path`(`path`);
 
+INSERT INTO `configuration` VALUES 
+('Advanced','DEFAULT','management-server','control.cidr','169.254.0.0/16','Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods'),
+('Advanced','DEFAULT','management-server','control.gateway','169.254.0.1','gateway for the control network traffic'),
+('Advanced','DEFAULT','AgentManager','cmd.wait','7200','Time (in seconds) to wait for some heavy time-consuming commands'),
+('Console Proxy','DEFAULT','AgentManager','consoleproxy.cpu.mhz','500','CPU speed (in MHz) used to create new console proxy VMs'),
+('Console Proxy','DEFAULT','AgentManager','consoleproxy.disable.rpfilter','true','disable rp_filter on console proxy VM public interface'),
+('Console Proxy','DEFAULT','AgentManager','consoleproxy.launch.max','10','maximum number of console proxy instances per zone can be launched'),
+('Console Proxy','DEFAULT','AgentManager','consoleproxy.restart','true','Console proxy restart flag, defaulted to true'),
+('Console Proxy','DEFAULT','AgentManager','consoleproxy.url.domain','realhostip.com','Console proxy url domain'),
+('Advanced','DEFAULT','management-server','extract.url.cleanup.interval','120','The interval (in seconds) to wait before cleaning up the extract URL\'s '),
+('Network','DEFAULT','AgentManager','guest.domain.suffix','cloud.internal','Default domain name for vms inside virtualized networks fronted by router'),
+('Network','DEFAULT','AgentManager','guest.ip.network','10.1.1.1','The network address of the guest virtual network. Virtual machines will be assigned an IP in this subnet.'),
+('Network','DEFAULT','AgentManager','guest.netmask','255.255.255.0','The netmask of the guest virtual network.'),
+('Network','DEFAULT','management-server','guest.vlan.bits','12','The number of bits to reserve for the VLAN identifier in the guest subnet.'),
+('Advanced','DEFAULT','management-server','host.capacity.checker.interval','3600','Time (in seconds) to wait before recalculating host\'s capacity'),
+('Advanced','DEFAULT','management-server','host.capacity.checker.wait','3600','Time (in seconds) to wait before starting host capacity background checker'),
+('Advanced','DEFAULT','management-server','host.capacityType.to.order.clusters','CPU','The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation'),
+('Advanced','DEFAULT','management-server','job.cancel.threshold.minutes','60','Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long'),
+('Advanced','DEFAULT','management-server','kvm.private.network.device',NULL,'Specify the private bridge on host for private network'),
+('Advanced','DEFAULT','management-server','kvm.public.network.device',NULL,'Specify the public bridge on host for public network'),
+('Advanced','DEFAULT','management-server','management.network.cidr','192.168.130.0/24','The cidr of management server network'),
+('Advanced','DEFAULT','management-server','network.gc.interval','600','Seconds to wait before checking for networks to shutdown'),
+('Advanced','DEFAULT','management-server','network.gc.wait','600','Time (in seconds) to wait before shutting down a network that\'s not in used'),
+('Network','DEFAULT','management-server','open.vswitch.tunnel.network','false','enable/disable open vswitch tunnel network(no vlan)'),
+('Network','DEFAULT','management-server','open.vswitch.vlan.network','false','enable/disable vlan remapping of  open vswitch network'),
+('Advanced','DEFAULT','none','router.cpu.mhz','500','Default CPU speed (MHz) for router VM.'),
+('Advanced','DEFAULT','none','router.template.id','1','Default ID for template.'),
+('Advanced','DEFAULT','AgentManager','secstorage.vm.cpu.mhz','500','CPU speed (in MHz) used to create new secondary storage vms'),
+('Snapshots','DEFAULT','none','snapshot.delta.max','16','max delta snapshots between two full snapshots.'),
+('Storage','DEFAULT','management-server','storage.max.volume.size','2000','The maximum size for a volume (in GB).'),
+('Advanced','DEFAULT','management-server','system.vm.auto.reserve.capacity','true','Indicates whether or not to automatically reserver system VM standby capacity.'),
+('Advanced','DEFAULT','management-server','use.user.concentrated.pod.allocation','true','If true, deployment planner applies the user concentration heuristic during VM resource allocation'),
+('Advanced','DEFAULT','management-server','vm.op.cancel.interval','3600','Time (in seconds) to wait before cancelling a operation'),
+('Advanced','DEFAULT','management-server','vm.op.cleanup.interval','86400','Interval to run the thread that cleans up the vm operations (in seconds)'),
+('Advanced','DEFAULT','management-server','vm.op.cleanup.wait','3600','Time (in seconds) to wait before cleanuping up any vm work items'),
+('Advanced','DEFAULT','management-server','vm.op.lock.state.retry','5','Times to retry locking the state of a VM for operations'),
+('Advanced','DEFAULT','management-server','vm.op.wait.interval','120','Time (in seconds) to wait before checking if a previous operation has succeeded'),
+('Advanced','DEFAULT','management-server','vm.stats.interval','60000','The interval (in milliseconds) when vm stats are retrieved from agents.'),
+('Advanced','DEFAULT','management-server','vm.tranisition.wait.interval','3600','Time (in seconds) to wait before taking over a VM in transition state'),
+('Advanced','DEFAULT','management-server','vmware.guest.vswitch',NULL,'Specify the vSwitch on host for guest network'),
+('Advanced','DEFAULT','management-server','vmware.private.vswitch',NULL,'Specify the vSwitch on host for private network'),
+('Advanced','DEFAULT','management-server','vmware.public.vswitch',NULL,'Specify the vSwitch on host for public network'),
+('Advanced','DEFAULT','management-server','vmware.service.console','Service Console','Specify the service console network name (ESX host only)'),
+('Advanced','DEFAULT','AgentManager','xapiwait','600','Time (in seconds) to wait for XAPI to return');
+
+
+
+
+
+
