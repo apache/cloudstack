@@ -39,7 +39,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -728,7 +727,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     Long dcId = (Long)dc[0];
                     long mgmtNetworkId = insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static", managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     long storageNetworkId = insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                    long controlNetworkId = insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    long controlNetworkId = insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, NetUtils.getLinkLocalGateway(), NetUtils.getLinkLocalCIDR(), "Static", controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     upgradeManagementIpAddress(conn, dcId);
                     long basicDefaultDirectNetworkId = insertNetwork(conn, "BasicZoneDirectNetwork" + dcId, "Basic Zone Direct Network created for Zone " + dcId, "Guest", "Native", null, null, null, "Dhcp", 5, dcId, "DirectPodBasedNetworkGuru", "Setup", 1, 1, null, null, "Direct", true, null, true, null);
                 
@@ -1226,43 +1225,57 @@ public class Upgrade218to22 implements DbUpgrade {
     }
 
     private boolean isVMEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return eventType.startsWith("VM.");
     }
 
     private boolean isIPEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return eventType.startsWith("NET.IP");
     }
     
     private boolean isVolumeEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) ||
                 eventType.equals(EventTypes.EVENT_VOLUME_DELETE));
     }
 
     private boolean isTemplateEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_TEMPLATE_CREATE) ||
                 eventType.equals(EventTypes.EVENT_TEMPLATE_COPY) ||
                 eventType.equals(EventTypes.EVENT_TEMPLATE_DELETE));
     }
     
     private boolean isISOEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_ISO_CREATE) ||
                 eventType.equals(EventTypes.EVENT_ISO_COPY) ||
                 eventType.equals(EventTypes.EVENT_ISO_DELETE));
     }
     
     private boolean isSnapshotEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return (eventType.equals(EventTypes.EVENT_SNAPSHOT_CREATE) ||
                 eventType.equals(EventTypes.EVENT_SNAPSHOT_DELETE));
     }
     
     private boolean isLoadBalancerEvent(String eventType) {
-        if (eventType == null) return false;
+        if (eventType == null) {
+            return false;
+        }
         return eventType.startsWith("LB.");
     }
     
@@ -1321,7 +1334,10 @@ public class Upgrade218to22 implements DbUpgrade {
             }
         }
         isSourceNat = Boolean.parseBoolean(ipEventParams.getProperty("sourceNat"));
-        if (isSourceNat) return null; // skip source nat IP addresses as we don't charge for them
+        if (isSourceNat)
+         {
+            return null; // skip source nat IP addresses as we don't charge for them
+        }
 
         if (EventTypes.EVENT_NET_IP_ASSIGN.equals(event.getType())) {
             long zoneId = Long.parseLong(ipEventParams.getProperty("dcId"));
