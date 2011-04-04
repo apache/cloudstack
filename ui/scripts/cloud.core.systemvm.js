@@ -150,7 +150,8 @@ function systemvmJsonToDetailsTab() {
     $thisTab.find("#id").text(fromdb(jsonObj.id));  
     $thisTab.find("#name").text(fromdb(jsonObj.name));     
     $thisTab.find("#publicip").text(fromdb(jsonObj.publicip)); 
-    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
+    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip));
+	$thisTab.find("#linklocalip").text(fromdb(jsonObj.linklocalip));
     $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
     $thisTab.find("#created").text(fromdb(jsonObj.created));   
@@ -213,7 +214,8 @@ function systemvmClearDetailsTab() {
     $thisTab.find("#id").text(fromdb(jsonObj.id));  
     $thisTab.find("#name").text(fromdb(jsonObj.name));     
     $thisTab.find("#publicip").text(fromdb(jsonObj.publicip)); 
-    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
+    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip));
+	$thisTab.find("#linklocalip").text(fromdb(jsonObj.linklocalip));	
     $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
     $thisTab.find("#created").text(fromdb(jsonObj.created));   
