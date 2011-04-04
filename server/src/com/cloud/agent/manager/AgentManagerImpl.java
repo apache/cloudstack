@@ -207,17 +207,13 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         seconds | 300s || * }
  **/
 @Local(value = { AgentManager.class, ResourceService.class })
-public class AgentManagerImpl implements AgentManager, HandlerFactory,
-		ResourceService, Manager {
+public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceService, Manager {
 	private static final Logger s_logger = Logger
 			.getLogger(AgentManagerImpl.class);
 
-	protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(
-			10007);
-	protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(
-			17);
-	protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(
-			17);
+	protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
+	protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(17);
+	protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(17);
 	protected int _monitorId = 0;
 
 	protected NioServer _connection;
@@ -1125,7 +1121,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		return cluster;
 	}
 
-	public Cluster getCluster(Long clusterId){
+	@Override
+    public Cluster getCluster(Long clusterId){
 		return _clusterDao.findById(clusterId);
 	}
 	
@@ -2983,7 +2980,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 	}
 	
-	public Host getHost(long hostId){
+	@Override
+    public Host getHost(long hostId){
 		return _hostDao.findById(hostId);
 	}
 
