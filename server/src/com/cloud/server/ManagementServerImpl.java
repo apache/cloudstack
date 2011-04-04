@@ -2580,11 +2580,9 @@ public class ManagementServerImpl implements ManagementServer {
             sb.and("addressLIKE", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         }
         
-        if (forVirtualNetwork != null) {
-        	SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
-        	vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
-        	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+    	SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
+    	vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
+    	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
         if ((isAllocated != null) && (isAllocated == true)) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
@@ -2598,10 +2596,14 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
         
+        VlanType vlanType = null;
         if (forVirtualNetwork != null) {
-        	VlanType vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-        	sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
+            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+        } else {
+            vlanType = VlanType.VirtualNetwork;
         }
+        
+        sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
