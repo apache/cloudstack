@@ -6,7 +6,6 @@ import com.cloud.api.ResponseObject;
 
 public class ListResponse<T extends ResponseObject> extends BaseResponse {
     List<T> responses;
-    Integer count;
 
     public List<T> getResponses() {
         return responses;
@@ -17,10 +16,11 @@ public class ListResponse<T extends ResponseObject> extends BaseResponse {
     }
 
     public Integer getCount() {
-        return count;
+        if (responses != null) {
+            return responses.size();
+        } else {
+            return null;
+        }
     }
 
-    public void setCount(Integer count) {
-        this.count = count;
-    }
 }

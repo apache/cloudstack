@@ -92,13 +92,11 @@ public class ApiResponseSerializer {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
         sb.append("<" + result.getResponseName() + " cloud-stack-version=\""+ApiDBUtils.getVersion()+ "\">");
-        
-        if (((ListResponse)result).getCount() != null) {
-            sb.append("<" + ApiConstants.COUNT + ">" + ((ListResponse)result).getCount() + "</" + ApiConstants.COUNT + ">");
-
-        }
 
         if (result instanceof ListResponse) {
+            if (((ListResponse)result).getCount() != null) {
+                sb.append("<" + ApiConstants.COUNT + ">" + ((ListResponse)result).getCount() + "</" + ApiConstants.COUNT + ">");
+            }
             List<? extends ResponseObject> responses = ((ListResponse)result).getResponses();
             if ((responses != null) && !responses.isEmpty()) {
                 for (ResponseObject obj : responses) {

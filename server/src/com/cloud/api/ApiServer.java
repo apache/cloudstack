@@ -445,10 +445,6 @@ public class ApiServer implements HttpRequestHandler {
         if (responses != null && responses.size() > defaultPageLimit && command.getPage() == null && command.getPageSize() == null) {
             throw new ServerApiException(BaseCmd.PAGE_LIMIT_EXCEED, "Number of returned objects per page exceed default page limit " + defaultPageLimit + "; please specify \"page\"/\"pagesize\" parameters");
         }
-        
-        if (responses.size() > 0) {
-            ((ListResponse<ResponseObject>)command.getResponseObject()).setCount(responses.size());   
-        }
     }
     
     private void buildAsyncListResponse(BaseListCmd command, Account account) {
