@@ -1606,14 +1606,35 @@ function doDetachISO($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {   		
+function doResetPassword($actionLink, $detailsTab, $midmenuItem1) { 
+	var jsonObj = $midmenuItem1.data("jsonObj");
+	
+	if (jsonObj.passwordenabled == false) {
+		$("#dialog_info")
+			.text(dictionary["message.action.reset.password.off"])    
+			.dialog('option', 'buttons', { 	
+			"OK": function() { 
+				$(this).dialog("close"); 
+			}	 
+		}).dialog("open");
+		return;
+	} else if (jsonObj.state != 'Stopped') {
+		$("#dialog_info")
+			.text(dictionary["message.action.reset.password.warning"])    
+			.dialog('option', 'buttons', { 	
+			"OK": function() { 
+				$(this).dialog("close"); 
+			}	 
+		}).dialog("open");
+		return;
+	}
+  		
 	$("#dialog_confirmation")
 	.text(dictionary["message.action.instance.reset.password"])	
 	.dialog('option', 'buttons', { 						
 		"Yes": function() { 
 			$(this).dialog("close"); 
 						
-			var jsonObj = $midmenuItem1.data("jsonObj");				
 			if(jsonObj.passwordenabled != true) {
 			    var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");
 			    $afterActionInfoContainer.find("#after_action_info").text("Reset password failed. Reason: This instance is not using a template that has the password reset feature enabled.  If you have forgotten your root password, please contact support.");  
@@ -1634,6 +1655,17 @@ function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {
 function doChangeService($actionLink, $detailsTab, $midmenuItem1) {    
     var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
+	
+	if (jsonObj.state != 'Stopped') {
+		$("#dialog_info")
+			.text(dictionary['message.action.change.service.warning'])    
+			.dialog('option', 'buttons', { 	
+			"OK": function() { 
+				$(this).dialog("close"); 
+			}	 
+		}).dialog("open");
+		return;
+	}
 	
 	$.ajax({	   
 	    data: createURL("command=listServiceOfferings&VirtualMachineId="+id), 
@@ -1905,6 +1937,7 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 			buildActionLinkForTab("label.action.detach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 			
 		buildActionLinkForTab("label.action.reset.password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.change.service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		noAvailableActions = false;	
 	} 
 	else if (jsonObj.state == 'Stopped') {	    
