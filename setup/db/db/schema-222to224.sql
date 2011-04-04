@@ -61,3 +61,11 @@ ALTER TABLE `cloud`.`host` ADD INDEX `i_host__allocation_state`(`allocation_stat
 
 ALTER TABLE `cloud`.`domain` ADD INDEX `i_domain__path`(`path`);
 
+CREATE TABLE `cloud`.`data_center_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `dc_id` bigint unsigned NOT NULL COMMENT 'dc id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dc_details__dc_id` FOREIGN KEY (`dc_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
