@@ -1107,16 +1107,23 @@ public class Upgrade218to22 implements DbUpgrade {
     
     private void migrateEvents(Connection conn){
         try {
-        //get last processed event Id
-        Long lastProcessedEvent = getMostRecentEvent(conn); 
-        //Events not yet processed
-        String sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.id > ? and vmevt.state = 'Completed' ";
-        if (lastProcessedEvent == null) {
-            s_logger.trace("no events are processed earlier, copying all events");
-            sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.state = 'Completed' ";
-        }
+            PreparedStatement pstmt1 = conn.prepareStatement("SHOW DATABASES LIKE 'cloud_usage'");
+            ResultSet rs1 = pstmt1.executeQuery();
+            if (!rs1.next()) {
+                s_logger.debug("cloud_usage db doesn't exist. Skipping events migration");
+                return;
+            }
 
-        PreparedStatement pstmt = null;
+            //get last processed event Id
+            Long lastProcessedEvent = getMostRecentEvent(conn); 
+            //Events not yet processed
+            String sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.id > ? and vmevt.state = 'Completed' ";
+            if (lastProcessedEvent == null) {
+                s_logger.trace("no events are processed earlier, copying all events");
+                sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.state = 'Completed' ";
+            }
+
+            PreparedStatement pstmt = null;
 
             pstmt = conn.prepareStatement(sql);
             int i = 1;
@@ -1124,7 +1131,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt.setLong(i++, lastProcessedEvent);
             }
             ResultSet rs = pstmt.executeQuery();
-            s_logger.trace("Begin Migrating events");
+            s_logger.debug("Begin Migrating events");
             while (rs.next()) {
                 EventVO event = new EventVO();
                 event.setType(rs.getString(1));
@@ -1136,9 +1143,8 @@ public class Upgrade218to22 implements DbUpgrade {
                 event.setParameters(rs.getString(7));
                 convertEvent(event, conn);
             }
-            s_logger.trace("Migrating events completed");
+            s_logger.debug("Migrating events completed");
         } catch (Exception e) {
-            System.out.println("Error: "+e.getMessage());
             throw new CloudRuntimeException("Failed to migrate usage events: ", e);
         }
     }
