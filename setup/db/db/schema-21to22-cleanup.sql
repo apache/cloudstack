@@ -101,3 +101,7 @@ ALTER TABLE `cloud`.`load_balancer_vm_map` DROP COLUMN `pending`;
 
 ALTER TABLE `cloud`.`account_vlan_map` MODIFY COLUMN `account_id` bigint unsigned NOT NULL;
 
+ALTER TABLE `cloud`.`load_balancer_vm_map` ADD UNIQUE KEY (`load_balancer_id`, `instance_id`);
+ALTER TABLE `cloud`.`load_balancer_vm_map` ADD CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`load_balancer_vm_map` ADD CONSTRAINT `fk_load_balancer_vm_map__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
+

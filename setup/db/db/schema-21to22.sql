@@ -950,3 +950,4 @@ ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `fk_instance_group__account_
 ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm_map___group_id` FOREIGN KEY `fk_instance_group_vm_map___group_id` (`group_id`) REFERENCES `instance_group` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm_map___instance_id` FOREIGN KEY `fk_instance_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`domain` MODIFY COLUMN `path` varchar(255) UNIQUE NOT NULL;
+
