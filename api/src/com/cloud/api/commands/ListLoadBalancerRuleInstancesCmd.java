@@ -73,11 +73,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         if (result != null) {
-            for (UserVm instance : result) {
-                UserVmResponse userVmResponse = _responseGenerator.createUserVmResponse(instance);
-                userVmResponse.setObjectName("loadbalancerruleinstance");
-                vmResponses.add(userVmResponse);
-            }
+            vmResponses = _responseGenerator.createUserVmResponse("loadbalancerruleinstance", result.toArray(new UserVm[result.size()])); 
         }
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());

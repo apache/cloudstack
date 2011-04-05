@@ -40,35 +40,33 @@ public interface ServerResource extends Manager {
      * Generate a startup command containing information regarding the resource.
      * @return StartupCommand ready to be sent to the management server.
      */
-    public StartupCommand[] initialize();
+    StartupCommand[] initialize();
         
     /**
      * @param id id of the server to put in the PingCommand
      * @return PingCommand
      */
-    public PingCommand getCurrentStatus(long id);
+    PingCommand getCurrentStatus(long id);
     
     /**
      * Execute the request coming from the computing server.
      * @param cmd Command to execute.
      * @return Answer
      */
-    public Answer executeRequest(Command cmd);
-    
-//    public void revertRequest(Command cmd, Answer answer);
+    Answer executeRequest(Command cmd);
     
     /**
      * disconnected() is called when the connection is down between the
      * agent and the management server.  If there are any cleanups, this
      * is the time to do it.
      */
-    public void disconnected();
+    void disconnected();
 
     /**
      * This is added to allow calling agent control service from within the resource
      * @return
      */
-    public IAgentControl getAgentControl();
+    IAgentControl getAgentControl();
     
-    public void setAgentControl(IAgentControl agentControl);
+    void setAgentControl(IAgentControl agentControl);
 }

@@ -4,13 +4,13 @@ update network_offerings set system_only=1 where name='System-Guest-Network';
 update network_offerings set dns_service=1,userdata_service=1,dhcp_service=1 where system_only=0;
 update network_offerings set firewall_service=1, lb_service=1,vpn_service=1,gateway_service=1 where traffic_type='guest' and system_only=0;
 alter table domain add column `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain';
-alter table nics add column `vm_type` char(32) NOT NULL;
+alter table nics add column `vm_type` char(32);
 update nics set vm_type=(select type from vm_instance where vm_instance.id=nics.instance_id);
 INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Network','DEFAULT','none','network.guest.cidr.limit','22','size limit for guest cidr; cant be less than this value'); 
 alter table user_statistics add column `network_id` bigint unsigned;
 update op_networks set nics_count=(nics_count-1) where id in (select d.network_id from domain_router d, vm_instance i where i.state='Running' and i.id=d.id);
 update network_offerings set traffic_type='Guest' where system_only=0;
-alter table network_offerings add column `guest_type` char(32) NOT NULL;
+alter table network_offerings add column `guest_type` char(32);
 update network_offerings set guest_type='Direct' where id=5;
 update network_offerings set guest_type='Virtual' where id=6;
 update network_offerings set guest_type='Direct' where id=7;
@@ -25,3 +25,5 @@ update network_offerings set specify_vlan=1 where system_only=0 and guest_type='
 update networks set traffic_type='Guest' where network_offering_id in (select id from network_offerings where system_only=0);
 update network_offerings set availability='Optional' where id=7;
 delete from configuration where name='router.cleanup.interval';
+INSERT INTO configuration (category, instance, component, name, value, description)
+    VALUES ('Advanced', 'DEFAULT', 'management-server', 'management.network.cidr', NULL, 'The cidr of management server network');

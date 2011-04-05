@@ -300,7 +300,7 @@ function afterLoadTemplateJSP() {
 }
 
 function templateGetMidmenuId(jsonObj) {
-    return "midmenuItem_" + jsonObj.id + "_" + fromdb(jsonObj.zonename).replace(/\s/g, ""); //remove all spaces in zonename
+    return "midmenuItem_" + jsonObj.id + "_z" +jsonObj.zoneid;
 }
 
 function templateToMidmenu(jsonObj, $midmenuItem1) {    

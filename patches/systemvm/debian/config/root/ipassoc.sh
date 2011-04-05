@@ -16,14 +16,19 @@ add_nat_entry() {
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   sudo ip link set $ethDev up
   sudo ip addr add dev $ethDev $pubIp
+  sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
+  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
   sudo iptables -A FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -A FORWARD -i eth0 -o $ethDev  -j ACCEPT
   sudo iptables -t nat -I POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
   sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   if [ $? -gt 0  -a $? -ne 2 ]
   then
+     logger -t cloud "$(basename $0):Failed adding nat entry for ip $pubIp on interface $ethDev"
      return 1
   fi
+  logger -t cloud "$(basename $0):Added nat entry for ip $pubIp on interface $ethDev"
 
   return 0
    

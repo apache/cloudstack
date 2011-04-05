@@ -186,7 +186,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     
     protected AgentAttache createAttache(long id) {
         s_logger.debug("create forwarding ClusteredAgentAttache for " + id);
-        final AgentAttache attache = new ClusteredAgentAttache(id);
+        final AgentAttache attache = new ClusteredAgentAttache(this, id);
         AgentAttache old = null;
         synchronized(_agents) {
         	old = _agents.get(id);
@@ -201,7 +201,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
 	protected AgentAttache createAttache(long id, HostVO server, Link link) {
         s_logger.debug("create ClusteredAgentAttache for " + id);
-        final AgentAttache attache = new ClusteredAgentAttache(id, link, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance || server.getStatus() == Status.PrepareForMaintenance);
+        final AgentAttache attache = new ClusteredAgentAttache(this, id, link, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance || server.getStatus() == Status.PrepareForMaintenance);
         link.attach(attache);
         AgentAttache old = null;
         synchronized(_agents) {
@@ -217,10 +217,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     protected AgentAttache createAttache(long id, HostVO server, ServerResource resource) {
         if (resource instanceof DummySecondaryStorageResource) {
-            return new DummyAttache(id, false);
+            return new DummyAttache(this, id, false);
         }
         s_logger.debug("create ClusteredDirectAgentAttache for " + id);
-        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(id, _nodeId, resource, server.getStatus() == Status.Maintenance
+        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, id, _nodeId, resource, server.getStatus() == Status.Maintenance
                 || server.getStatus() == Status.ErrorInMaintenance || server.getStatus() == Status.PrepareForMaintenance, this);
         AgentAttache old = null;
         synchronized (_agents) {

@@ -74,7 +74,7 @@ public class RecoverVMCmd extends BaseCmd {
     public void execute() throws ResourceAllocationException{
         UserVm result = _userVmService.recoverVirtualMachine(this);
         if (result != null){
-            UserVmResponse recoverVmResponse = _responseGenerator.createUserVmResponse(result);
+            UserVmResponse recoverVmResponse = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             recoverVmResponse.setResponseName(getCommandName());
             this.setResponseObject(recoverVmResponse);
         } else {

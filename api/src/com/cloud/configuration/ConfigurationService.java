@@ -182,7 +182,7 @@ public interface ConfigurationService {
     
     NetworkOffering getNetworkOffering(long id);
     
-    Integer getNetworkRate(long networkOfferingId);
+    Integer getNetworkOfferingNetworkRate(long networkOfferingId);
     
     Account getVlanAccount(long vlanId);
     
@@ -193,5 +193,7 @@ public interface ConfigurationService {
     ServiceOffering getServiceOffering(long serviceOfferingId);
     
     Long getDefaultPageSize();
+    
+    Integer getServiceOfferingNetworkRate(long serviceOfferingId);
    
 }

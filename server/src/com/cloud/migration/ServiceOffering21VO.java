@@ -27,10 +27,10 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	private int ramSize;
     
     @Column(name="nw_rate")
-    private int rateMbps;
+    private Integer rateMbps;
     
     @Column(name="mc_rate")
-    private int multicastRateMbps;
+    private Integer multicastRateMbps;
     
     @Column(name="ha_enabled")
     private boolean offerHA;
@@ -46,7 +46,7 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         super();
     }
 
-    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags) {
+    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags) {
         super(name, displayText, false, tags, recreatable, useLocalStorage);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -57,7 +57,7 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         this.guestIpType = guestIpType;
     }
     
-    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, String hostTag) {
+    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, String hostTag) {
     	this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, guestIpType, useLocalStorage, recreatable, tags);
        	this.hostTag = hostTag;
     }
@@ -109,21 +109,21 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	    return ramSize;
 	}
 	
-	public void setRateMbps(int rateMbps) {
+	public void setRateMbps(Integer rateMbps) {
 		this.rateMbps = rateMbps;
 	}
 
 	@Override
-    public int getRateMbps() {
+    public Integer getRateMbps() {
 		return rateMbps;
 	}
 
-	public void setMulticastRateMbps(int multicastRateMbps) {
+	public void setMulticastRateMbps(Integer multicastRateMbps) {
 		this.multicastRateMbps = multicastRateMbps;
 	}
 	
 	@Override
-    public int getMulticastRateMbps() {
+    public Integer getMulticastRateMbps() {
 		return multicastRateMbps;
 	}
 

@@ -1080,7 +1080,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
 
-            ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
+            ServiceOfferingVO offering = _offeringsDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
             
             // Only return offerings with the same Guest IP type and storage pool preference
@@ -2417,11 +2417,6 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
 
-        // Don't return DomR and ConsoleProxy volumes
-        sb.and("domRNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
-        sb.and("domPNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
-        sb.and("domSNameLabel", sb.entity().getName(), SearchCriteria.Op.NLIKE);
-
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         
@@ -2439,6 +2434,11 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }  
+        
+        //display user vm volumes only
+        SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
+        vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
+        sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
@@ -2483,11 +2483,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // Don't return DomR and ConsoleProxy volumes
-        /*
-        sc.setParameters("domRNameLabel", "r-%");
-        sc.setParameters("domPNameLabel", "v-%");
-        sc.setParameters("domSNameLabel", "s-%");
-		*/
+        sc.setJoinParameters("vmSearch", "type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
         
         // Only return volumes that are not destroyed
         sc.setParameters("state", Volume.State.Destroy);
@@ -2584,11 +2580,9 @@ public class ManagementServerImpl implements ManagementServer {
             sb.and("addressLIKE", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         }
         
-        if (forVirtualNetwork != null) {
-        	SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
-        	vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
-        	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+    	SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
+    	vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
+    	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
         if ((isAllocated != null) && (isAllocated == true)) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
@@ -2602,10 +2596,14 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
         
+        VlanType vlanType = null;
         if (forVirtualNetwork != null) {
-        	VlanType vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-        	sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
+            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+        } else {
+            vlanType = VlanType.VirtualNetwork;
         }
+        
+        sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);

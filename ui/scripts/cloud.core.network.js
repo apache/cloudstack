@@ -1189,13 +1189,19 @@ function bindAddNetworkButton($button) {
     if(zoneObj.securitygroupsenabled)
         $dialogAddNetworkForZone.find("#add_publicip_vlan_scope").empty().append('<option value="account-specific">account-specific</option>');
 	else		
-        $dialogAddNetworkForZone.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>').append('<option value="account-specific">account-specific</option>');
+        $dialogAddNetworkForZone.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>')
+			.append('<option value="domain-specific">domain-specific</option>')
+			.append('<option value="account-specific">account-specific</option>');
          
 	$dialogAddNetworkForZone.find("#add_publicip_vlan_scope").change(function(event) {		    
 	    if($(this).val() == "zone-wide") {
 	        $dialogAddNetworkForZone.find("#domain_container").hide();
 			$dialogAddNetworkForZone.find("#add_publicip_vlan_account_container").hide();    
-	    } 
+	    }
+		else if($(this).val() == "domain-specific") { 
+	        $dialogAddNetworkForZone.find("#domain_container").show();
+			$dialogAddNetworkForZone.find("#add_publicip_vlan_account_container").hide();    
+	    }
 	    else if($(this).val() == "account-specific") { 
 	        $dialogAddNetworkForZone.find("#domain_container").show();
 			$dialogAddNetworkForZone.find("#add_publicip_vlan_account_container").show();    
@@ -1206,7 +1212,7 @@ function bindAddNetworkButton($button) {
     $button.unbind("click").bind("click", function(event) {   
 	    $dialogAddNetworkForZone.find("#info_container").hide();
         $dialogAddNetworkForZone.find("#zone_name").text(fromdb(zoneObj.name));  
-		$dialogAddNetworkForZone.find("#add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
+		$dialogAddNetworkForZone.find("#add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #domain, #add_publicip_vlan_account").val("");
 		$dialogAddNetworkForZone.find("#add_publicip_vlan_scope").change();  	                    
         				
 		if (zoneObj.networktype == 'Basic') {
@@ -1281,7 +1287,11 @@ function bindAddNetworkButton($button) {
 								
 				var scopeParams = "";
 				if($thisDialog.find("#domain_container").css("display") != "none") {
-				    scopeParams = "&domainId="+domainId+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());  
+					if ($thisDialog.find("#add_publicip_vlan_account_container").css("display") != "none") {
+						scopeParams = "&domainId="+domainId+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val()); 
+					} else {
+						scopeParams = "&domainId="+domainId+"&isshared=true"; 
+					}
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
 				}

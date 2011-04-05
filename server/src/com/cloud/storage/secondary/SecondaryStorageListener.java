@@ -49,10 +49,6 @@ public class SecondaryStorageListener implements Listener {
     	boolean processed = false;
     	if(answers != null) {
     		for(int i = 0; i < answers.length; i++) {
-    			/*if(answers[i] instanceof ConsoleProxyLoadAnswer) {
-    				_ssVmMgr.onLoadAnswer((ConsoleProxyLoadAnswer)answers[i]);
-    				processed = true;
-    			}*/
     		}
     	}
     	
@@ -66,11 +62,6 @@ public class SecondaryStorageListener implements Listener {
     
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-    /*	if(cmd instanceof ConsoleProxyLoadReportCommand) {
-    		_ssVmMgr.onLoadReport((ConsoleProxyLoadReportCommand)cmd);
-    	} else if(cmd instanceof ConsoleAccessAuthenticationCommand) {
-    		return _ssVmMgr.onConsoleAccessAuthentication((ConsoleAccessAuthenticationCommand)cmd);
-    	}*/
     	return null;
     }
 

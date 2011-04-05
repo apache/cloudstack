@@ -85,6 +85,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.Host;
@@ -430,7 +431,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             ItWorkVO vo = _workDao.findByOutstandingWork(vm.getId(), state);
             if (vo == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find work for " + vm);
+                    s_logger.debug("Unable to find work for VM: " + vm + " and state: " + state);
                 }
                 return true;
             }
@@ -959,36 +960,37 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
     
     @Override
-    public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException {
+    public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         s_logger.info("Migrating " + vm + " to " + dest);
         
         long dstHostId = dest.getHost().getId();
         Host fromHost = _hostDao.findById(srcHostId);
         if (fromHost == null) {
             s_logger.info("Unable to find the host to migrate from: " + srcHostId);
-            throw new ManagementServerException("Unable to find the host to migrate from: " + srcHostId);
+            throw new CloudRuntimeException("Unable to find the host to migrate from: " + srcHostId);
         } 
         
         if(fromHost.getClusterId().longValue() != dest.getCluster().getId()){
             s_logger.info("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
-            throw new ManagementServerException("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
+            throw new CloudRuntimeException("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
         }
         
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
         
-        vm = vmGuru.findById(vm.getId());
+        long vmId = vm.getId();
+        vm = vmGuru.findById(vmId);
         if (vm == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find the vm " + vm);
             }
-            throw new ManagementServerException("Unable to find a virtual machine with id " + vm.getId());
+            throw new ManagementServerException("Unable to find a virtual machine with id " + vmId);
         }
         
         if(vm.getState() != State.Running){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
-            throw new ManagementServerException("VM is not Running, unable to migrate the vm " + vm);
+            throw new VirtualMachineMigrationException("VM is not Running, unable to migrate the vm currently " + vm);
         }
         
         short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
@@ -1058,12 +1060,16 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             try {
                 if (!checkVmOnHost(vm, dstHostId)) {
                     s_logger.error("Unable to complete migration for " + vm);
-                    _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                    try{
+                    	_agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                    }catch (AgentUnavailableException e) {
+                        s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
+                    }
                     cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
                     return null;
                 }
             } catch (OperationTimedoutException e) {
-            }
+            } 
             
             migrated = true;
             return vm;
@@ -1072,8 +1078,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
 
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
-
-                _agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                try{
+                	_agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                }catch(AgentUnavailableException ae){
+                	s_logger.info("Looks like the destination Host is unavailable for cleanup");
+                }
                 
                 stateTransitTo(vm, Event.OperationFailed, srcHostId);
             }
@@ -1082,6 +1091,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             _workDao.update(work.getId(), work);
         }
     }
+
     
     protected void cancelWorkItems(long nodeId) {
         GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
@@ -1119,7 +1129,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
     
     @Override
-    public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException {
+    public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
         VirtualMachineGuru<? extends VMInstanceVO> vmGuru = _vmGurus.get(vmType);
         VMInstanceVO vm = vmGuru.findById(vmId);
         if (vm == null) {
@@ -1170,6 +1180,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             	s_logger.debug("Unable to migrate VM due to: " + e.getMessage());
 			} catch (ManagementServerException e) {
 				s_logger.debug("Unable to migrate VM: " + e.getMessage());
+			} catch (VirtualMachineMigrationException e) {
+				s_logger.debug("Got VirtualMachineMigrationException, Unable to migrate: " + e.getMessage());
+				if(vm.getState() == State.Starting){
+					s_logger.debug("VM seems to be still Starting, we should retry migration later");
+					throw e;
+				}else{
+					s_logger.debug("Unable to migrate VM, VM is not in Running or even Starting state, current state: "+vm.getState().toString());
+				}
 			}
             if (vmInstance != null) {
                 return true;

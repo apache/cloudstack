@@ -53,8 +53,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.GuestIpType;
@@ -63,7 +61,6 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.guru.ControlNetworkGuru;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
@@ -77,7 +74,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -94,33 +90,27 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 	
 	private final ConfigurationDao _configDao;
-	private final SnapshotPolicyDao _snapPolicyDao;
 	private final DataCenterDao _zoneDao;
     private final HostPodDao _podDao;
     private final DiskOfferingDao _diskOfferingDao;
     private final ServiceOfferingDao _serviceOfferingDao;
-    private final DomainDao _domainDao;
     private final NetworkOfferingDao _networkOfferingDao;
     private final DataCenterDao _dataCenterDao;
     private final NetworkDao _networkDao;
     private final VlanDao _vlanDao;
-    private final IPAddressDao _ipAddressDao;
 
 	
 	public ConfigurationServerImpl() {
 		ComponentLocator locator = ComponentLocator.getLocator(Name);
 		_configDao = locator.getDao(ConfigurationDao.class);
-		_snapPolicyDao = locator.getDao(SnapshotPolicyDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _podDao = locator.getDao(HostPodDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
         _dataCenterDao = locator.getDao(DataCenterDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
-        _ipAddressDao = locator.getDao(IPAddressDao.class);
 	}
 
 	@Override @DB
@@ -147,10 +137,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				for (Config c : configs) {
 					String name = c.key();
 					
-					// If the value is already in the table, don't reinsert it
-					if (_configDao.getValue(name) != null) {
-						continue;
-					}
+					//if the config value already present in the db, don't insert it again
+					if (_configDao.findByName(name) != null) { 
+					    continue;
+					} 
 					
 					String instance = "DEFAULT";
 					String component = c.getComponent();
@@ -171,23 +161,18 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");          
 
 			
-			// Save Direct Networking service offerings
+			// Save default service offerings
 			createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, null);			
 			createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, $0.10 per hour", false, false, null);
-			 // Save Virtual Networking service offerings
-			//createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
-			//createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
 			// Save default disk offerings
 			createDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
 			createDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
 			createDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null);
-			//_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Private", "Private Disk", 0, null);
 			
 			// Save the mount parent to the configuration table
 			String mountParent = getMountParent();
 			if (mountParent != null) {
 			    _configDao.update("mount.parent", mountParent);
-//				_configMgr.updateConfiguration(User.UID_SYSTEM, "mount.parent", mountParent);
 				s_logger.debug("ConfigurationServer saved \"" + mountParent + "\" as mount.parent.");
 			} else {
 				s_logger.debug("ConfigurationServer could not detect mount.parent.");
@@ -196,7 +181,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			String hostIpAdr = getHost();
 			if (hostIpAdr != null) {
 			    _configDao.update("host", hostIpAdr);
-//				_configMgr.updateConfiguration(User.UID_SYSTEM, "host", hostIpAdr);
 				s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
 			}
 
@@ -562,7 +546,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         try {
             String encodedKey = null;
 
-            // Algorithm for SSO Keys is SHA1, should this be configuable?
+            // Algorithm for SSO Keys is SHA1, should this be configurable?
             KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
             SecretKey key = generator.generateKey();
             encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
@@ -572,48 +556,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             s_logger.error("error generating sso key", ex);
         }
 	}
-
-    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType) throws InvalidParameterValueException, InternalErrorException {
-        int vnetStart = 0;
-        int vnetEnd = 0;
-        if (vnetRange != null) {
-            String[] tokens = vnetRange.split("-");
-            try {
-                vnetStart = Integer.parseInt(tokens[0]);
-                if (tokens.length == 1) {
-                    vnetEnd = vnetStart;
-                } else {
-                    vnetEnd = Integer.parseInt(tokens[1]);
-                }
-            } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
-            }
-        } 
-        
-        //checking the following params outside checkzoneparams method as we do not use these params for updatezone
-        //hence the method below is generic to check for common params
-        if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
-            throw new InvalidParameterValueException("Please enter a valid guest cidr");
-        }
-
-        if(domainId!=null){
-        	DomainVO domainVo = _domainDao.findById(domainId);
-        	
-        	if(domainVo == null) {
-                throw new InvalidParameterValueException("Please specify a valid domain id");
-            }
-        }
-        // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType, false);
-        zone = _zoneDao.persist(zone);
-
-        // Add vnet entries for the new zone
-        if (vnetRange != null){
-            _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
-        }
-
-        return zone;
-    }
 
     @DB
     protected HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
@@ -685,12 +627,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     }
 
     private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, String tags) {
-        String networkRateStr = _configDao.getValue("network.throttling.rate");
-        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
-        int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
-        int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, localStorageRequired, false, tags, false);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, localStorageRequired, false, tags, false);
         
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             return offering;
@@ -752,14 +690,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 true, true, true, //services - all true except for firewall/lb/vpn and gateway
                 false, false, false, false, GuestIpType.Direct);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
-    }
-    
-    private Integer getIntegerConfigValue(String configKey, Integer dflt) {
-        String value = _configDao.getValue(configKey);
-        if (value != null) {
-            return Integer.parseInt(value);
-        }
-        return dflt;
     }
     
     private void createDefaultNetworks() {

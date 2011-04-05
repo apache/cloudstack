@@ -484,6 +484,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			}
 		}
 	}
+	
+    public void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers) {
+		for (Pair<Integer, Listener> listener : _cmdMonitors) {
+			listener.second().processAnswers(agentId, seq, answers);
+		}
+    }
 
 	public AgentAttache findAttache(long hostId) {
 		return _agents.get(hostId);
@@ -733,6 +739,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (resources != null) {
 				for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
 					ServerResource resource = entry.getKey();
+
+					// For Hyper-V, we are here means agent have already started and connected to management server
+					if (hypervisorType == Hypervisor.HypervisorType.Hyperv) {
+						break;
+					}
+
 					AgentAttache attache = simulateStart(resource, entry.getValue(), true, null, null);
 					if (attache != null) {
 						hosts.add(_hostDao.findById(attache.getId()));
@@ -1144,6 +1156,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	@Override
 	@DB
 	public boolean deleteHost(long hostId) {
+	    
+	    //Check if there are vms running/starting/stopping on this host
+	    List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+	    
+	    if (!vms.isEmpty()) {
+	        throw new CloudRuntimeException("Unable to delete the host as there are vms in " + vms.get(0).getState() + " state using this host");
+	    } 
+	    
 		Transaction txn = Transaction.currentTxn();
 		try {
 			HostVO host = _hostDao.findById(hostId);
@@ -1429,6 +1449,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Request req = new Request(seq, hostId, _nodeId, cmds,
 				commands.stopOnError(), true, commands.revertOnError());
 		Answer[] answers = agent.send(req, timeout);
+		notifyAnswersToMonitors(hostId, seq, answers);
 		commands.setAnswers(answers);
 		return answers;
 	}
@@ -2474,23 +2495,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Host.Type type = null;
 
 		if (startup instanceof StartupStorageCommand) {
-
 			StartupStorageCommand ssCmd = ((StartupStorageCommand) startup);
-			if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
-				type = Host.Type.SecondaryStorage;
-				if (resource != null
-						&& resource instanceof DummySecondaryStorageResource) {
-					resource = null;
-				}
+			if(ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
+				type = ssCmd.getHostType();
 			} else {
-				type = Host.Type.Storage;
-			}
-			final Map<String, String> hostDetails = ssCmd.getHostDetails();
-			if (hostDetails != null) {
-				if (details != null) {
-					details.putAll(hostDetails);
+				if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
+					type = Host.Type.SecondaryStorage;
+					if (resource != null
+							&& resource instanceof DummySecondaryStorageResource) {
+						resource = null;
+					}
 				} else {
-					details = hostDetails;
+					type = Host.Type.Storage;
+				}
+				final Map<String, String> hostDetails = ssCmd.getHostDetails();
+				if (hostDetails != null) {
+					if (details != null) {
+						details.putAll(hostDetails);
+					} else {
+						details = hostDetails;
+					}
 				}
 			}
 		} else if (startup instanceof StartupRoutingCommand) {
@@ -2516,7 +2540,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			type = Host.Type.PxeServer;
 		} else if (startup instanceof StartupExternalDhcpCommand) {
 			type = Host.Type.ExternalDhcp;
-		}else {
+		} else {
 			assert false : "Did someone add a new Startup command?";
 		}
 
@@ -2639,7 +2663,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 	protected AgentAttache createAttache(long id, HostVO server, Link link) {
 		s_logger.debug("create ConnectedAgentAttache for " + id);
-		final AgentAttache attache = new ConnectedAgentAttache(id, link,
+		final AgentAttache attache = new ConnectedAgentAttache(this, id, link,
 				server.getStatus() == Status.Maintenance
 						|| server.getStatus() == Status.ErrorInMaintenance
 						|| server.getStatus() == Status.PrepareForMaintenance);
@@ -2659,10 +2683,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			ServerResource resource) {
 		if (resource instanceof DummySecondaryStorageResource
 				|| resource instanceof KvmDummyResourceBase) {
-			return new DummyAttache(id, false);
+			return new DummyAttache(this, id, false);
 		}
 		s_logger.debug("create DirectAgentAttache for " + id);
-		final DirectAgentAttache attache = new DirectAgentAttache(id, resource,
+		final DirectAgentAttache attache = new DirectAgentAttache(this, id, resource,
 				server.getStatus() == Status.Maintenance
 						|| server.getStatus() == Status.ErrorInMaintenance
 						|| server.getStatus() == Status.PrepareForMaintenance,
@@ -2889,7 +2913,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			// If this command is from a KVM agent, or from an agent that has a
 			// null hypervisor type, don't do the CIDR check
 			if (hypervisorType == null || hypervisorType == HypervisorType.KVM
-					|| hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal) {
+					|| hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal || hypervisorType == HypervisorType.Simulator) {
 				doCidrCheck = false;
 			}
 

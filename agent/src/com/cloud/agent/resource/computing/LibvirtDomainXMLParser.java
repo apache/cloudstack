@@ -240,6 +240,13 @@ public class LibvirtDomainXMLParser {
 		}
 		System.out.println(parser.getVncPort());
 		System.out.println(parser.getDescription());
+		
+		List<String> test = new ArrayList<String>(1);
+		test.add("1");
+		test.add("2");
+		if (test.contains("1")) {
+		    System.out.print("fdf");
+		}
 	}
 
 }

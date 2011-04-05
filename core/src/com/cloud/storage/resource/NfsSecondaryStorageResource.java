@@ -69,6 +69,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.utils.script.Script;
+import com.cloud.vm.SecondaryStorageVm;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
@@ -82,6 +83,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     String _guid;
     String _nfsPath;
     String _mountParent;
+    String _role;
     Map<String, Object> _params;
     StorageLayer _storage;
     boolean _inSystemVM = false;
@@ -183,8 +185,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     	return null;
 	}
     
-    
-
 	private Answer execute(SecStorageFirewallCfgCommand cmd) {
 		if (!_inSystemVM){
 			return new Answer(cmd, true, null);
@@ -294,7 +294,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public Type getType() {
-        return Host.Type.SecondaryStorage;
+    	if(SecondaryStorageVm.Role.templateProcessor.toString().equals(_role))
+    		return Host.Type.SecondaryStorage;
+    	
+    	return Host.Type.SecondaryStorageCmdExecutor;
     }
     
     @Override
@@ -352,6 +355,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (_configIpFirewallScr != null) {
             s_logger.info("_configIpFirewallScr found in " + _configIpFirewallScr);
         }
+        
+        _role = (String)params.get("role");
+        if(_role == null)
+        	_role = SecondaryStorageVm.Role.templateProcessor.toString();
+        s_logger.info("Secondary storage runs in role " + _role);
         
         _guid = (String)params.get("guid");
         if (_guid == null) {
@@ -636,6 +644,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         
         final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.NetworkFilesystem, getTotalSize(), new HashMap<String, TemplateInfo>());
         
+        cmd.setHostType(getType());
         cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);
         
@@ -646,7 +655,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         cmd.setName(_guid);
         cmd.setVersion(NfsSecondaryStorageResource.class.getPackage().getImplementationVersion());
         /* gather TemplateInfo in second storage */
-        final Map<String, TemplateInfo> tInfo = _dlMgr.gatherTemplateInfo();
+        
+        Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+        if(SecondaryStorageVm.Role.templateProcessor.toString().equals(_role)) 
+        	tInfo = _dlMgr.gatherTemplateInfo();
         cmd.setTemplateInfo(tInfo);
         cmd.getHostDetails().put("mount.parent", _mountParent);
         cmd.getHostDetails().put("mount.path", _nfsPath);

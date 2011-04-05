@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -57,11 +58,38 @@ public class Upgrade222to224 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
     	updateClusterIdInOpHostCapacity(conn);
+    	updateGuestOsType(conn);
+    	updateNicsWithMode(conn);
     }
 
     @Override
     public File[] getCleanupScripts() {
-        return null;
+        String file = Script.findScript("", "db/schema-222to224-cleanup.sql");
+        if (file == null) {
+            throw new CloudRuntimeException("Unable to find the upgrade script, schema-222to224-cleanup.sql");
+        }
+        
+        return new File[] {new File(file)};
+    }
+    
+    private void updateGuestOsType(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`guest_os` WHERE `display_name`='CentOS 5.3 (64-bit)'");
+            ResultSet rs = pstmt.executeQuery();
+            Long osId = null;
+            if (rs.next()) {
+                osId = rs.getLong(1);
+            }
+            
+            if (osId != null) {
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET `guest_os_id`=? WHERE id=2");
+                pstmt.setLong(1, osId);
+                pstmt.executeUpdate();
+            }
+    
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update the guest os type for default template as a part of 222 to 224 upgrade", e);
+        }
     }
 
     private void updateClusterIdInOpHostCapacity(Connection conn){
@@ -117,6 +145,34 @@ public class Upgrade222to224 implements DbUpgrade {
             }
 
         }
-        
+    }
+    
+    private void updateNicsWithMode(Connection conn) {
+        try {
+            HashMap<Long, Long> nicNetworkMaps = new HashMap<Long, Long>();
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id, network_id FROM nics WHERE mode IS NULL");
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                nicNetworkMaps.put(rs.getLong(1), rs.getLong(2));
+            }
+            
+            for (Long nic : nicNetworkMaps.keySet()) {
+                pstmt = conn.prepareStatement("SELECT mode FROM networks WHERE id=?");
+                pstmt.setLong(1, nicNetworkMaps.get(nic));
+                rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    String mode = rs.getString(1);
+                    pstmt = conn.prepareStatement("UPDATE nics SET mode=? where id=?");
+                    pstmt.setString(1, mode);
+                    pstmt.setLong(2, nic);
+                    pstmt.executeUpdate();
+                }
+            }
+            rs.close();
+            pstmt.close();
+    
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update the Mode field for nics as a part of 222 to 224 upgrade", e);
+        }
     }
 }

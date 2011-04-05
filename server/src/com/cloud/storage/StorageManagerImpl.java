@@ -46,6 +46,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
@@ -961,6 +962,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
 		}
 		
+        // Check if there is host up in this cluster
+        List<HostVO> allHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, zoneId);
+        if (allHosts.isEmpty()) {
+            throw new ResourceUnavailableException("No host up to associate a storage pool with in cluster " + clusterId, HostPodVO.class, podId);
+        }
         URI uri = null;
         try {
             uri = new URI(cmd.getUrl());
@@ -1073,14 +1079,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     uri.toASCIIString());
         }
 
-        // iterate through all the hosts and ask them to mount the filesystem.
-        // FIXME Not a very scalable implementation. Need an async listener, or
-        // perhaps do this on demand, or perhaps mount on a couple of hosts per
-        // pod
-        List<HostVO> allHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, zoneId);
-        if (allHosts.isEmpty()) {
-            throw new ResourceUnavailableException("No host exists to associate a storage pool with in pod: ", HostPodVO.class, podId);
-        }
+
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
         String uuid = null;
         if (scheme.equalsIgnoreCase("sharedmountpoint")) {
@@ -1112,13 +1111,23 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         pool.setClusterId(clusterId);
         pool.setStatus(StoragePoolStatus.Up);
         pool = _storagePoolDao.persist(pool, details);
-        if (allHosts.isEmpty()) {
-            return pool;
+
+        boolean success = false;
+        for (HostVO h : allHosts) {
+            success = createStoragePool(h.getId(), pool);
+            if (success) {
+                break;
+            }
+        }
+        if ( !success ) {
+            s_logger.warn("Can not create storage pool " + pool + " on cluster " + clusterId);
+            _storagePoolDao.expunge(pool.getId());
+            return null;
         }
         s_logger.debug("In createPool Adding the pool to each of the hosts");
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
-            boolean success = addPoolToHost(h.getId(), pool);
+            success = addPoolToHost(h.getId(), pool);
             if (success) {
                 poolHosts.add(h);
             }
@@ -1126,7 +1135,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         if (poolHosts.isEmpty()) {
             _storagePoolDao.expunge(pool.getId());
-            pool = null;
+            return null;
         } else {
             createCapacityEntry(pool);
         }
@@ -1262,6 +1271,29 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return true;
 
     }
+    
+    @Override
+    public boolean createStoragePool(long hostId, StoragePoolVO pool) {
+        s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem 
+            && pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS
+            && pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup) {
+            s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
+            return false;
+        }
+        CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
+        final Answer answer = _agentMgr.easySend(hostId, cmd);
+        if (answer != null && answer.getResult()) {
+            return true;
+        } else {
+            if( answer != null) {
+                s_logger.warn(" can not create strorage pool through host " + hostId + " due to " + answer.getDetails());
+            } else {
+                s_logger.warn(" can not create strorage pool through host " + hostId + " due to CreateStoragePoolCommand returns null");
+            }
+            return false;
+        }
+    }
 
     @Override
     public boolean addPoolToHost(long hostId, StoragePoolVO pool) {
@@ -1270,7 +1302,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         	&& pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS
         	&& pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
-            return true;
+            return false;
         }
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
@@ -2421,7 +2453,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         }
     }
-
 
     @Override
     public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException,

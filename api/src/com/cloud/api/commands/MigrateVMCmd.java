@@ -31,6 +31,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -107,9 +108,8 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         }
         try{
         	UserVm migratedVm = _userVmService.migrateVirtualMachine(userVm, destinationHost);
-        
 	        if (migratedVm != null) {
-	            UserVmResponse response = _responseGenerator.createUserVmResponse(migratedVm);
+	            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", migratedVm).get(0);
 	            response.setResponseName(getCommandName());
 	            this.setResponseObject(response);
 	        } else {
@@ -124,6 +124,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 		} catch (ManagementServerException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		} 
+		} catch (VirtualMachineMigrationException e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+		}  
     }
 }

@@ -64,7 +64,7 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
     
     @Override
     public ItWorkVO findByOutstandingWork(long instanceId, State state) {
-        SearchCriteria<ItWorkVO> sc = AllFieldsSearch.create();
+        SearchCriteria<ItWorkVO> sc = OutstandingWorkSearch.create();
         sc.setParameters("instance", instanceId);
         sc.setParameters("op", state);
         sc.setParameters("step", Step.Done);

@@ -12,6 +12,7 @@ import java.nio.channels.SocketChannel;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
@@ -28,13 +29,13 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
 		s_clusteredAgentMgr = agentMgr;
 	}
 
-	public ClusteredAgentAttache(long id) {
-		super(id, null, false);
+	public ClusteredAgentAttache(AgentManager agentMgr, long id) {
+		super(agentMgr, id, null, false);
 		_forward = true;
 	}
 	
-	public ClusteredAgentAttache(long id, Link link, boolean maintenance) {
-		super(id, link, maintenance);
+	public ClusteredAgentAttache(AgentManager agentMgr, long id, Link link, boolean maintenance) {
+		super(agentMgr, id, link, maintenance);
 		_forward = link == null;
 	}
 	

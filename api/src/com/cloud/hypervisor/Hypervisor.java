@@ -25,9 +25,11 @@ public class Hypervisor {
     	XenServer,
     	KVM,
     	VMware,
+    	Hyperv,    	
     	VirtualBox,
     	Parralels,
     	BareMetal,
+    	Simulator,
     	
     	Any; /*If you don't care about the hypervisor type*/
 
@@ -44,15 +46,19 @@ public class Hypervisor {
     			return HypervisorType.KVM;
     		} else if (hypervisor.equalsIgnoreCase("VMware")) {
     			return HypervisorType.VMware;
+    		} else if (hypervisor.equalsIgnoreCase("Hyperv")) {
+    			return HypervisorType.Hyperv;
     		} else if (hypervisor.equalsIgnoreCase("VirtualBox")) {
     			return HypervisorType.VirtualBox;
     		} else if (hypervisor.equalsIgnoreCase("Parralels")) {
     			return HypervisorType.Parralels;
     		}else if (hypervisor.equalsIgnoreCase("BareMetal")) {
         		return HypervisorType.BareMetal;
+    		} else if (hypervisor.equalsIgnoreCase("Simulator")) {
+    			return HypervisorType.Simulator;
     		} else if (hypervisor.equalsIgnoreCase("Any")) {
     			return HypervisorType.Any;
-    		}  else {
+    		} else {
     			return HypervisorType.None;
     		}
     	}

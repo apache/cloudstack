@@ -189,7 +189,8 @@ CREATE TABLE `cloud`.`networks` (
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
   CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
-  CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`)
+  CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
+  INDEX `i_networks__removed`(`removed`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`account_network_ref` (
@@ -237,7 +238,8 @@ CREATE TABLE `cloud`.`nics` (
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nics__instance_id` FOREIGN KEY `fk_nics__instance_id`(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`)
+  CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`),
+  INDEX `i_nics__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`network_offerings` (
@@ -264,18 +266,20 @@ CREATE TABLE `cloud`.`network_offerings` (
   `vpn_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides vpn service',
   `dhcp_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dhcp service',
   `guest_type` char(32) COMMENT 'guest ip type of network offering',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  INDEX `i_network_offerings__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name for the cluster',
+  `name` varchar(255) COMMENT 'name for the cluster',
   `guid` varchar(255) UNIQUE DEFAULT NULL COMMENT 'guid for the cluster',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
   `hypervisor_type` varchar(32),
   `cluster_type` varchar(64) DEFAULT 'CloudManaged',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this cluster enabled for allocation for new resources',
+  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`),
   CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
@@ -434,7 +438,7 @@ CREATE TABLE `cloud`.`vlan` (
   `data_center_id` bigint unsigned NOT NULL,
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
   PRIMARY KEY (`id`),
-#  CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  #CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -947,6 +951,7 @@ CREATE TABLE  `cloud`.`secondary_storage_vm` (
   `guid` varchar(255)  COMMENT 'copied from guid of secondary storage host',
   `nfs_share` varchar(255)  COMMENT 'server and path exported by the nfs server ',
   `last_update` DATETIME NULL COMMENT 'Last session update time',
+  `role` varchar(64) NOT NULL DEFAULT 'templateProcessor' COMMENT 'work role of secondary storage host(templateProcessor | commandExecutor)',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_secondary_storage_vm__id` FOREIGN KEY `fk_secondary_storage_vm__id`(`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
@@ -963,7 +968,8 @@ CREATE TABLE  `cloud`.`domain` (
   `removed` datetime COMMENT 'date removed',
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   PRIMARY KEY  (`id`),
-  UNIQUE (parent, name, removed)
+  UNIQUE (parent, name, removed),
+  INDEX `i_domain__path`(`path`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`account` (
@@ -1474,6 +1480,17 @@ CREATE TABLE `cloud`.`domain_network_ref` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_network_ref__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_domain_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`cmd_exec_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id of the system VM agent that command is sent to',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'instance id of the system VM that command is executed on',
+  `command_name` varchar(255) NOT NULL COMMENT 'command name',
+  `weight` integer NOT NULL DEFAULT 1 COMMENT 'command weight in consideration of the load factor added to host that is executing the command',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

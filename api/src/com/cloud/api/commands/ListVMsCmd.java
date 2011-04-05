@@ -17,7 +17,6 @@
  */
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -47,7 +46,7 @@ public class ListVMsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all vms from the parent specified by the domain id till leaves.")
+    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="Must be used with domainId parameter. Defaults to false, but if true, lists all vms from the parent specified by the domain id till leaves.")
     private Boolean recursive;
 
     @Parameter(name=ApiConstants.GROUP_ID, type=CommandType.LONG, description="the group ID")
@@ -79,6 +78,9 @@ public class ListVMsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the target hypervisor for the template")
     private String hypervisor;
+    
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
+    private Long storageId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -139,6 +141,11 @@ public class ListVMsCmd extends BaseListCmd {
     public String getHypervisor() {
 		return hypervisor;
 	}
+    
+    public Long getStorageId() {
+        return storageId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -155,14 +162,7 @@ public class ListVMsCmd extends BaseListCmd {
     public void execute(){
         List<? extends UserVm> result = _userVmService.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-        for (UserVm userVm : result) {
-            UserVmResponse userVmResponse = _responseGenerator.createUserVmResponse(userVm);
-            if (userVmResponse != null) {
-                userVmResponse.setObjectName("virtualmachine");
-                vmResponses.add(userVmResponse);
-            }
-        }
+        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", result.toArray(new UserVm[result.size()]));
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

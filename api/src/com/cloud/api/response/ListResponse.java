@@ -14,4 +14,12 @@ public class ListResponse<T extends ResponseObject> extends BaseResponse {
     public void setResponses(List<T> responses) {
         this.responses = responses;
     }
+
+    public Integer getCount() {
+        if (responses != null) {
+            return responses.size();
+        } else {
+            return null;
+        }
+    }
 }

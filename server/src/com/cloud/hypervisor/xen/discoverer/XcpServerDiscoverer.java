@@ -518,6 +518,16 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
         
         HostVO host = _hostDao.findById(agentId);
+        
+        ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+        if ( cluster.getGuid() == null) {
+            cluster.setGuid(startup.getPool());
+            _clusterDao.update(cluster.getId(), cluster);
+        } else if (! cluster.getGuid().equals(startup.getPool()) ) {
+            String msg = "pool uuid for cluster " + cluster.getId() + " changed from " + cluster.getGuid() + " to " + cmd.getPod();
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
         if (host.isSetup()) {
             return;
         }

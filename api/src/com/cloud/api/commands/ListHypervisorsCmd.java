@@ -38,7 +38,6 @@ public class ListHypervisorsCmd extends BaseCmd {
 	public String getCommandName() {
 		return s_name;
 	}
-	
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

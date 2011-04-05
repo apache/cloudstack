@@ -7,7 +7,8 @@
 
 <script language="javascript">
 dictionary = { 	
-	'label.action.edit.network.offering' : '<fmt:message key="label.action.edit.network.offering"/>'
+	'label.action.edit.network.offering' : '<fmt:message key="label.action.edit.network.offering"/>',
+	'label.unlimited' : '<fmt:message key="label.unlimited"/>'
 };	
 </script>
 

@@ -47,6 +47,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -210,7 +211,7 @@ public class UploadMonitorImpl implements UploadMonitor {
     	    }
     	    
     	    //Construct actual URL locally now that the symlink exists at SSVM
-    	    List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
+    	    List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running);
             if (ssVms.size() > 0) {
                 SecondaryStorageVmVO ssVm = ssVms.get(0);
                 if (ssVm.getPublicIpAddress() == null) {
@@ -259,7 +260,7 @@ public class UploadMonitorImpl implements UploadMonitor {
             uploadJob.setLastUpdated(new Date());
             _uploadDao.update(uploadJob.getId(), uploadJob);
             
-            List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
+            List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running);
             if (ssVms.size() == 0){
             	errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
                 throw new CloudRuntimeException(errorString);

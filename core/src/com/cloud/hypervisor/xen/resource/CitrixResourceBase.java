@@ -67,6 +67,7 @@ import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
@@ -171,6 +172,7 @@ import com.cloud.network.ovs.OvsDestroyTunnelCommand;
 import com.cloud.network.ovs.OvsSetTagAndFlowAnswer;
 import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -220,7 +222,7 @@ import com.xensource.xenapi.XenAPIObject;
  * 
  */
 @Local(value = ServerResource.class)
-public abstract class CitrixResourceBase implements ServerResource {
+public abstract class CitrixResourceBase implements ServerResource, HypervisorResource {
     private static final Logger s_logger = Logger.getLogger(CitrixResourceBase.class);
     protected static final XenServerConnectionPool _connPool = XenServerConnectionPool.getInstance();
     protected static final int MB = 1024 * 1024;
@@ -375,7 +377,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     @Override
     public Answer executeRequest(Command cmd) {
-
         if (cmd instanceof CreateCommand) {
             return execute((CreateCommand) cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
@@ -418,6 +419,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((MigrateCommand) cmd);
         } else if (cmd instanceof DestroyCommand) {
             return execute((DestroyCommand) cmd);
+        } else if (cmd instanceof CreateStoragePoolCommand) {
+            return execute((CreateStoragePoolCommand) cmd);
         } else if (cmd instanceof ModifyStoragePoolCommand) {
             return execute((ModifyStoragePoolCommand) cmd);
         } else if (cmd instanceof DeleteStoragePoolCommand) {
@@ -638,11 +641,11 @@ public abstract class CitrixResourceBase implements ServerResource {
 
         vifr.network = getNetwork(conn, nic);
         
-        if (nic.getNetworkRateMbps() != null) {
+        if (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) {
             vifr.qosAlgorithmType = "ratelimit";
             vifr.qosAlgorithmParams = new HashMap<String, String>();
             // convert mbs to kilobyte per second
-            vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 1024));
+            vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 128));
         }
         
         VIF vif = VIF.create(conn, vifr);
@@ -1003,7 +1006,8 @@ public abstract class CitrixResourceBase implements ServerResource {
 		}
     }
     
-    protected StartAnswer execute(StartCommand cmd) {
+    @Override
+    public StartAnswer execute(StartCommand cmd) {
         Connection conn = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName(); 
@@ -2572,7 +2576,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         return NumbersUtil.parseInt(vncport, -1);
     }
 
-    protected Answer execute(final RebootCommand cmd) {
+    @Override
+    public RebootAnswer execute(RebootCommand cmd) {
         Connection conn = getConnection();
         synchronized (_vms) {
             _vms.put(cmd.getVmName(), State.Starting);
@@ -2614,7 +2619,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             bytesSent = stats[0];
             bytesRcvd = stats[1];
         }
-        RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
+        RebootAnswer answer = execute((RebootCommand) cmd);
         answer.setBytesSent(bytesSent);
         answer.setBytesReceived(bytesRcvd);
         if (answer.getResult()) {
@@ -2949,8 +2954,9 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         return null;
     }
-  
-    protected StopAnswer execute(final StopCommand cmd) {
+    
+    @Override
+    public StopAnswer execute(StopCommand cmd) {
         Connection conn = getConnection();
         String vmName = cmd.getVmName();
         try {
@@ -3079,7 +3085,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         return new StopAnswer(cmd, "Stop VM failed");
     }
-
+    
     private List<VDI> getVdis(Connection conn, VM vm) {
         List<VDI> vdis = new ArrayList<VDI>();
         try {
@@ -4044,6 +4050,27 @@ public abstract class CitrixResourceBase implements ServerResource {
         return true;
     }
 
+    protected Answer execute(CreateStoragePoolCommand cmd) {
+        Connection conn = getConnection();
+        StorageFilerTO pool = cmd.getPool();
+        try {
+            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
+                getNfsSR(conn, pool);
+            } else if (pool.getType() == StoragePoolType.IscsiLUN) {
+                getIscsiSR(conn, pool);
+            } else if (pool.getType() == StoragePoolType.PreSetup) {
+            } else {
+                return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + ", create StoragePool failed due to " + e.toString() + " on host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
+            s_logger.warn(msg, e);
+            return new Answer(cmd, false, msg);
+        } 
+
+    }
+    
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         Connection conn = getConnection();
         StorageFilerTO pool = cmd.getPool();
@@ -4300,6 +4327,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             cmd.setHostDetails(details);
             cmd.setName(hr.nameLabel);
             cmd.setGuid(_host.uuid);
+            cmd.setPool(_host.pool);
             cmd.setDataCenter(Long.toString(_dcId));
             for (final String cap : hr.capabilities) {
                 if (cap.length() > 0) {
@@ -4397,7 +4425,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 
         _name = _host.uuid;
         _host.ip = (String) params.get("ipaddress");
-        _host.pool = (String) params.get("pool");
 
         _username = (String) params.get("username");
         _password = (String) params.get("password");
@@ -4449,17 +4476,27 @@ public abstract class CitrixResourceBase implements ServerResource {
         if( conn == null ) {
             throw new ConfigurationException("Can not create slave connection to " + _host.ip);
         }
-        Host.Record hostRec = null;
         try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-            hostRec = host.getRecord(conn);
-        } catch (Exception e) {
-            throw new ConfigurationException("Can not get host information from " + _host.ip);
-        }
-        if( !hostRec.address.equals(_host.ip) ) {
-            String msg = "Host " + _host.ip + " seems be reinstalled, please remove this host and readd";
-            s_logger.error(msg);
-            throw new ConfigurationException(msg);
+            Host.Record hostRec = null;
+            try {
+                Host host = Host.getByUuid(conn, _host.uuid);
+                hostRec = host.getRecord(conn);
+                Pool.Record poolRec = Pool.getAllRecords(conn).values().iterator().next();
+                _host.pool = poolRec.uuid;
+               
+            } catch (Exception e) {
+                throw new ConfigurationException("Can not get host information from " + _host.ip);
+            }
+            if( !hostRec.address.equals(_host.ip) ) {
+                String msg = "Host " + _host.ip + " seems be reinstalled, please remove this host and readd";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
+        } finally {
+            try { 
+                Session.localLogout(conn);
+            } catch (Exception e) {
+            }
         }
     }
 
@@ -4676,10 +4713,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                         continue;
                     }
                     if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
-                        if (checkSR(conn, sr)) {
-                            return sr;
-                        }
-                        throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
+                        throw new CloudRuntimeException("There is a SR using the same configuration target:" + dc.get("target") +  ",  targetIQN:" 
+                                    + dc.get("targetIQN")  + ", lunid:" + dc.get("lunid") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
                     }
                 }
                 deviceConfig.put("target", target);
@@ -4791,14 +4826,11 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
-                    if (checkSR(conn, sr)) {
-                        return sr;
-                    }
-                    throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
+                    throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:" 
+                            + dc.get("serverpath") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
                 }
 
             }
-
             deviceConfig.put("server", server);
             deviceConfig.put("serverpath", serverpath);
             Host host = Host.getByUuid(conn, _host.uuid);
@@ -5658,20 +5690,10 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
         } else {
-            
-	
-	        if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-                return getNfsSR(conn, pool);
-            } else if (pool.getType() == StoragePoolType.IscsiLUN) {
-                return getIscsiSR(conn, pool);
-            } else if (pool.getType() == StoragePoolType.PreSetup) {
-                throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " uuid " + pool.getUuid() + " doesn't exist");
-            } else {
-                throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
-            }
+            throw new CloudRuntimeException("Can not see storage pool: " + pool.getUuid() + " from on host:" + _host.uuid);
         }
-
     }
+    
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());

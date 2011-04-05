@@ -135,4 +135,6 @@ public interface Volume extends ControlledEntity, BasedOn {
 	long getDiskOfferingId();
 	
 	String getChainInfo();
+	
+	boolean isRecreatable();
 }

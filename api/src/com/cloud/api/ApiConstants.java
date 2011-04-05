@@ -182,6 +182,7 @@ public class ApiConstants {
     public static final String NETWORK_TYPE = "networktype";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pagesize";
+    public static final String COUNT = "count";
     public static final String TRAFFIC_TYPE = "traffictype";
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String NETWORK_OFFERING_ID = "networkofferingid";
@@ -213,5 +214,6 @@ public class ApiConstants {
     public static final String PRIVATE_NETMASK = "privatenetmask";
     public static final String PRIVATE_NETWORK_ID = "privatenetworkid";
     public static final String ALLOCATION_STATE = "allocationstate";
+    public static final String STORAGE_ID="storageid";
 }
  

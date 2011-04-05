@@ -30,7 +30,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import com.cloud.host.Status;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 

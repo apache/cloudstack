@@ -47,11 +47,13 @@ public class JmxUtil {
         ArrayList<MBeanServer> server = MBeanServerFactory.findMBeanServer(null);
         if (server.size() > 0) {
             MBeanServer mBeanServer = server.get(0);
-            mBeanServer.registerMBean(mbean, objectName);
+            if(!mBeanServer.isRegistered(objectName))
+            	mBeanServer.registerMBean(mbean, objectName);
             return objectName;
         } else {
         	MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            mBeanServer.registerMBean(mbean, objectName);
+        	if(!mBeanServer.isRegistered(objectName))
+        		mBeanServer.registerMBean(mbean, objectName);
             return objectName;
         }
     }

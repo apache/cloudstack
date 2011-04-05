@@ -76,6 +76,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> TypeSearch;
     protected final SearchBuilder<HostVO> StatusSearch;
     protected final SearchBuilder<HostVO> NameLikeSearch;
+    protected final SearchBuilder<HostVO> NameSearch;
     protected final SearchBuilder<HostVO> SequenceSearch;
     protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
@@ -183,6 +184,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         NameLikeSearch = createSearchBuilder();
         NameLikeSearch.and("name", NameLikeSearch.entity().getName(), SearchCriteria.Op.LIKE);
         NameLikeSearch.done();
+        
+        NameSearch = createSearchBuilder();
+        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameSearch.done();
         
         SequenceSearch = createSearchBuilder();
         SequenceSearch.and("id", SequenceSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -512,6 +517,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     public HostVO findByGuid(String guid) {
         SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
+        return findOneBy(sc);
+    }
+    
+    @Override 
+    public HostVO findByName(String name) {
+        SearchCriteria<HostVO> sc = NameSearch.create("name", name);
         return findOneBy(sc);
     }
 

@@ -30,7 +30,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -57,7 +56,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
@@ -87,7 +85,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
@@ -299,7 +296,7 @@ public class ApiDBUtils {
     /////////////////////////////////////////////////////////////
 
     public static Account findAccountById(Long accountId) {
-        return _accountDao.findById(accountId);
+        return _accountDao.findByIdIncludingRemoved(accountId);
     }
     
     public static Account findAccountByIdIncludingRemoved(Long accountId) {
@@ -397,7 +394,7 @@ public class ApiDBUtils {
     }
 
     public static StoragePoolVO findStoragePoolById(Long storagePoolId) {
-        return _storagePoolDao.findById(storagePoolId);
+        return _storagePoolDao.findByIdIncludingRemoved(storagePoolId);
     }
 
     public static VMTemplateVO findTemplateById(Long templateId) {
@@ -527,7 +524,7 @@ public class ApiDBUtils {
     }
     
     public static Integer getNetworkRate(long networkOfferingId) {
-       return _configMgr.getNetworkRate(networkOfferingId);
+       return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId);
     }
     
     public static Account getVlanAccount(long vlanId) {

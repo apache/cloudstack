@@ -28,7 +28,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
@@ -252,7 +251,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             }
             
             if (result != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse(result);
+                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {

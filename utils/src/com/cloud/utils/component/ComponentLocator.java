@@ -856,7 +856,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
             if (info.name == null) {
                 throw new CloudRuntimeException("Missing name attribute for " + interphace.getName());
             }
-            info.name = info.name;
             s_logger.debug("Looking for class " + clazzName);
             try {
                 info.clazz = Class.forName(clazzName);
@@ -868,6 +867,10 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
             if (!interphace.isAssignableFrom(info.clazz)) {
                 throw new CloudRuntimeException("Class " + info.clazz.toString() + " does not implment " + interphace);
+            }
+            String singleton = getAttribute(atts, "singleton");
+            if (singleton != null) {
+                info.singleton = Boolean.parseBoolean(singleton);
             }
             
             info.fillInfo();

@@ -49,6 +49,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.dao.HighAvailabilityDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -477,6 +478,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             return null;
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Insufficient capacity for migrating a VM.");
+            _agentMgr.maintenanceFailed(srcHostId);
+            return  (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
+        } catch (VirtualMachineMigrationException e) {
+            s_logger.warn("Looks like VM is still starting, we need to retry migrating the VM later.");
             _agentMgr.maintenanceFailed(srcHostId);
             return  (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         }

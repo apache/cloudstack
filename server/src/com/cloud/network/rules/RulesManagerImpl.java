@@ -306,23 +306,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         Network network = _networkMgr.getNetwork(networkId);
         assert network != null : "Can't create static nat rule as network associated with public ip address is null...how is it possible?";
-        
-        //Validate user vm information
-        UserVmVO vm = _vmDao.findById(ipAddress.getAssociatedWithVmId());
-        if (vm == null) {
-            throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + vm.getId() + ").");
-        } else {
-            checkRuleAndUserVm(rule, vm, caller);
-        }
-        
-        //Verify that vm has nic in the network
-        String dstIp = rule.getDestIpAddress();
-        Nic guestNic = _networkMgr.getNicInNetwork(vm.getId(), networkId);
-        if (guestNic == null || guestNic.getIp4Address() == null) {
-            throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
-        } else {
-            dstIp = guestNic.getIp4Address();
-        }
+
+        //Get nic IP4 address
+        Nic guestNic = _networkMgr.getNicInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
+        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
+        String dstIp = guestNic.getIp4Address();
         
         //verify that firewall service is supported by the network
         if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {
@@ -398,6 +386,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         if (networkId == null) {
             throw new InvalidParameterValueException("Unable to enable static nat for the ipAddress id=" + ipId + " as ip is not associated with any network");
+        }
+        
+        //Check that vm has a nic in the network
+        Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
+        if (guestNic == null) {
+            throw new InvalidParameterValueException("Vm doesn't belong to the network " + networkId);
         }
 
         if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {

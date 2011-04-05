@@ -25,10 +25,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -51,8 +48,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
@@ -90,7 +85,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     private static int RETURN_UPTO_ALL = -1;
 	
 	@Override
-	public DeployDestination plan(VirtualMachineProfile vmProfile,
+	public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
 			DeploymentPlan plan, ExcludeList avoid)
 			throws InsufficientServerCapacityException {
  	    String _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
@@ -311,7 +306,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	
 	                                          
 	
-	private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile vmProfile,
+	private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
 			DeploymentPlan plan, ExcludeList avoid, DataCenter dc, String _allocationAlgorithm){
 		
     	if (s_logger.isDebugEnabled()) {
@@ -391,7 +386,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		List<Long> reorderedClusters = new ArrayList<Long>();
 		for (Long pod : podIds){
 			if(podClusterMap.containsKey(pod)){
-				List<Long> clustersOfThisPod = (List<Long>)podClusterMap.get(pod);
+				List<Long> clustersOfThisPod = podClusterMap.get(pod);
 				if(clustersOfThisPod != null){
 					for(Long clusterId : clusterIds){
 						if(clustersOfThisPod.contains(clusterId)){
@@ -489,7 +484,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		return hostCanAccessSPool;
 	}
 
-	protected List<Host> findSuitableHosts(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
+	protected List<Host> findSuitableHosts(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
 		List<Host> suitableHosts = new ArrayList<Host>();
 		Enumeration<HostAllocator> enHost = _hostAllocators.enumeration();
 		s_logger.debug("Calling HostAllocators to find suitable hosts");
@@ -508,7 +503,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		return suitableHosts;
 	}
 	
-	protected Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
+	protected Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
 		List<VolumeVO> volumesTobeCreated = _volsDao.findUsableVolumesForInstance(vmProfile.getId());
 		Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
 		
@@ -571,7 +566,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
 	
 	@Override
-	public boolean check(VirtualMachineProfile vm, DeploymentPlan plan,
+	public boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan,
 			DeployDestination dest, ExcludeList exclude) {
 		// TODO Auto-generated method stub
 		return false;

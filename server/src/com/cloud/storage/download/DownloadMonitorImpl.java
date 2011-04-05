@@ -44,7 +44,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
@@ -68,6 +67,7 @@ import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -238,7 +238,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	}
 	
 	private String generateCopyUrl(HostVO sourceServer, VMTemplateHostVO srcTmpltHost) {
-		List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(sourceServer.getDataCenterId(), State.Running);
+		List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, sourceServer.getDataCenterId(), State.Running);
 		if (ssVms.size() > 0) {
 			SecondaryStorageVmVO ssVm = ssVms.get(0);
 			if (ssVm.getPublicIpAddress() == null) {

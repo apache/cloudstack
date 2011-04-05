@@ -167,7 +167,12 @@ function networkOfferingJsonToDetailsTab() {
     setBooleanReadField(jsonObj.isdefault, $thisTab.find("#isdefault"));
     setBooleanReadField(jsonObj.specifyvlan, $thisTab.find("#specifyvlan"));
       
-    $thisTab.find("#rate").text(fromdb(jsonObj.networkrate) + " Mb/s");
+	var networkRate = jsonObj.networkrate;
+	if (networkRate == undefined || networkRate == -1) {
+		$thisTab.find("#rate").text(dictionary["label.unlimited"]);
+	} else {
+		$thisTab.find("#rate").text(fromdb(networkRate) + " Mb/s");
+	}
     $thisTab.find("#traffictype").text(fromdb(jsonObj.traffictype));
    
     //actions ***

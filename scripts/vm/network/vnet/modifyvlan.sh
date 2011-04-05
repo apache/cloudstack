@@ -15,19 +15,21 @@ addVlan() {
 	local pif=$2
 	local vlanDev=$pif.$vlanId
 	local vlanBr=$VIRBR$vlanId
-	
+    
+    vconfig set_name_type DEV_PLUS_VID_NO_PAD	
+
 	if [ ! -d /sys/class/net/$vlanDev ]
 	then
 		vconfig add $pif $vlanId > /dev/null
 		
 		if [ $? -gt 0 ]
 		then
-                        # race condition that someone already creates the vlan 
+            # race condition that someone already creates the vlan 
 			if [ ! -d /sys/class/net/$vlanDev ]
-                        then
-			   printf "Failed to create vlan $vlanId on pif: $pif."
-			   return 1
-                        fi
+            then
+			    printf "Failed to create vlan $vlanId on pif: $pif."
+			    return 1
+            fi
 		fi
 	fi
 	

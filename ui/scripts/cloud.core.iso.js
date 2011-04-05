@@ -291,7 +291,7 @@ function initCreateVmFromIsoDialog() {
 }
 
 function isoGetMidmenuId(jsonObj) {
-    return "midmenuItem_" + jsonObj.id + "_" + fromdb(jsonObj.zonename).replace(/\s/g, ""); //remove all spaces in zonename
+    return "midmenuItem_" + jsonObj.id + "_z" + jsonObj.zoneid; //remove all spaces in zonename
 }
 
 function isoToMidmenu(jsonObj, $midmenuItem1) {    

@@ -104,7 +104,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
         }
         
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse(result);
+            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName("virtualmachine");
             this.setResponseObject(response);
         } else {

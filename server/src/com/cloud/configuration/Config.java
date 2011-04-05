@@ -60,11 +60,12 @@ public enum Config {
 	GuestNetmask("Network", AgentManager.class, String.class, "guest.netmask", "255.255.255.0", "The netmask of the guest virtual network.", "netmask"),
 	GuestVlanBits("Network", ManagementServer.class, Integer.class, "guest.vlan.bits", "12", "The number of bits to reserve for the VLAN identifier in the guest subnet.", null),
 	//MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
-	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed.", null),
+	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed in network.", null),
 	GuestDomainSuffix("Network", AgentManager.class, String.class, "guest.domain.suffix", "cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
 	DirectNetworkNoDefaultRoute("Network", ManagementServer.class, Boolean.class, "direct.network.no.default.route", "false", "Direct Network Dhcp Server should not send a default route", "true/false"),
 	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.vlan.network", "false", "enable/disable vlan remapping of  open vswitch network", null),
 	OvsTunnelNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.tunnel.network", "false", "enable/disable open vswitch tunnel network(no vlan)", null),
+	VmNetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "vm.network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed in User vm's default network.", null),
 	
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),
@@ -152,7 +153,11 @@ public enum Config {
 	MaxTemplateAndIsoSize("Advanced",  ManagementServer.class, Long.class, "max.template.iso.size", "50", "The maximum size for a downloaded template or ISO (in GB).", null),
 	SecStorageAllowedInternalDownloadSites("Advanced", ManagementServer.class, String.class, "secstorage.allowed.internal.sites", null, "Comma separated list of cidrs internal to the datacenter that can host template download servers", null),
 	SecStorageEncryptCopy("Advanced", ManagementServer.class, Boolean.class, "secstorage.encrypt.copy", "false", "Use SSL method used to encrypt copy traffic between zones", "true,false"),
-	SecStorageSecureCopyCert("Advanced", ManagementServer.class, String.class, "secstorage.ssl.cert.domain", "realhostip.com", "SSL certificate used to encrypt copy traffic between zones", null),
+	SecStorageSecureCopyCert("Advanced", ManagementServer.class, String.class, "secstorage.ssl.cert.domain", "realhostip.com", "SSL certificate used to encrypt copy traffic between zones", null),	
+	SecStorageCapacityStandby("Advanced", AgentManager.class, Integer.class, "secstorage.capacity.standby", "10", "The minimal number of command execution sessions that system is able to serve immediately(standby capacity)", null),
+	SecStorageSessionMax("Advanced", AgentManager.class, Integer.class, "secstorage.session.max", "50", "The max number of command execution sessions that a SSVM can handle", null),
+	SecStorageCmdExecutionTimeMax("Advanced", AgentManager.class, Integer.class, "secstorage.cmd.execution.time.max", "30", "The max command execution time in minute", null),
+
 	DirectAttachNetworkEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.externalIpAllocator.enabled", "false", "Direct-attach VMs using external DHCP server", "true,false"),
 	DirectAttachNetworkExternalAPIURL("Advanced", ManagementServer.class, String.class, "direct.attach.network.externalIpAllocator.url", null, "Direct-attach VMs using external DHCP server (API url)", null),
 	CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),

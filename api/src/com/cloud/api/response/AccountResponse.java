@@ -102,7 +102,7 @@ public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_CLEANUP_REQUIRED) @Param(description="true if the account requires cleanup")
     private Boolean cleanupRequired;
     
-    @SerializedName("user")  @Param(description="the list of users associated with account", responseObject = NicResponse.class)
+    @SerializedName("user")  @Param(description="the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
 
     public Long getId() {

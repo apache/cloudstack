@@ -63,6 +63,10 @@ public class StartupCommand extends Command {
         return type;
     }
     
+    public void setHostType(Host.Type type) {
+    	this.type = type;
+    }
+    
     public String getIqn() {
         return iqn;
     }

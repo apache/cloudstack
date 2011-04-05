@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -116,6 +114,9 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.SystemVmLoadScanHandler;
+import com.cloud.vm.SystemVmLoadScanner;
+import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -141,13 +142,10 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
-public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, AgentHook, VirtualMachineGuru<ConsoleProxyVO> {
+public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, AgentHook, VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long> {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
-    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000;    // 30 seconds
-    private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000;          // 1 second
-
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;   // 3 seconds
+    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000;    		// 30 seconds
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180;        // 3 minutes
 
     private static final int API_WAIT_TIMEOUT = 5000;   // 5 seconds (in milliseconds)
@@ -187,7 +185,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Inject private VirtualMachineManager _itMgr;
     
-    private final ScheduledExecutorService _capacityScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("CP-Scan"));
     private final ExecutorService _requestHandlerScheduler = Executors.newCachedThreadPool(new NamedThreadFactory("Request-handler"));
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
@@ -204,7 +201,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
     private boolean _sslEnabled = false;
 
-    private final GlobalLock _capacityScanLock = GlobalLock.getInternLock(getCapacityScanLockName());
+    // global load picture at zone basis
+    private SystemVmLoadScanner<Long> _loadScanner;
+    private Map<Long, ZoneHostInfo> _zoneHostInfoMap;					// map <zone id, info about running host in zone>
+    private Map<Long, ConsoleProxyLoadInfo> _zoneProxyCountMap; 		// map <zone id, info about proxy VMs count in zone> 
+    private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; 			// map <zone id, info about running VMs count in zone>
+    
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
 
     @Override
@@ -867,135 +869,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return l.size() < launchLimit;
     }
 
-    private Runnable getCapacityScanTask() {
-        return new Runnable() {
-
-            @Override
-            public void run() {
-                Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-                try {
-                    reallyRun();
-                } catch (Throwable e) {
-                    s_logger.warn("Unexpected exception " + e.getMessage(), e);
-                } finally {
-                    StackMaid.current().exitCleanup();
-                    txn.close();
-                }
-            }
-
-            private void reallyRun() {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Begin console proxy capacity scan");
-                }
-                
-                if(!reserveStandbyCapacity()) {
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Reserving standby capacity is disable, skip capacity scan");
-                    }
-                    return;
-                }
-
-                // config var for consoleproxy.restart check
-                String restart = _configDao.getValue("consoleproxy.restart");
-                if (restart != null && restart.equalsIgnoreCase("false")) {
-                    s_logger.debug("Capacity scan disabled purposefully, consoleproxy.restart = false. This happens when the primarystorage is in maintenance mode");
-                    return;
-                }
-
-
-                Map<Long, ZoneHostInfo> zoneHostInfoMap = getZoneHostInfo();
-                if (isServiceReady(zoneHostInfoMap)) {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Service is ready, check to see if we need to allocate standby capacity");
-                    }
-
-                    if (!_capacityScanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("Capacity scan lock is used by others, skip and wait for my turn");
-                        }
-                        return;
-                    }
-
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("*** Begining capacity scan... ***");
-                    }
-
-                    try {
-                        // scan default data center first
-                        long defaultId = 0;
-
-                        // proxy count info by data-centers (zone-id, zone-name,
-                        // count)
-                        List<ConsoleProxyLoadInfo> l = _consoleProxyDao.getDatacenterProxyLoadMatrix();
-
-                        // running VM session count by data-centers (zone-id,
-                        // zone-name, count)
-                        List<ConsoleProxyLoadInfo> listVmCounts = _consoleProxyDao.getDatacenterSessionLoadMatrix();
-
-                        // indexing load info by data-center id
-                        Map<Long, ConsoleProxyLoadInfo> mapVmCounts = new HashMap<Long, ConsoleProxyLoadInfo>();
-                        if (listVmCounts != null) {
-                            for (ConsoleProxyLoadInfo info : listVmCounts) {
-                                mapVmCounts.put(info.getId(), info);
-                            }
-                        }
-
-                        for (ConsoleProxyLoadInfo info : l) {
-                            if (info.getName().equals(_instance)) {
-                                ConsoleProxyLoadInfo vmInfo = mapVmCounts.get(info.getId());
-
-                                if (!checkCapacity(info, vmInfo != null ? vmInfo : new ConsoleProxyLoadInfo())) {
-                                    if (isZoneReady(zoneHostInfoMap, info.getId())) {
-                                        allocCapacity(info.getId());
-                                    } else {
-                                        if (s_logger.isTraceEnabled()) {
-                                            s_logger.trace("Zone " + info.getId() + " is not ready to alloc standy console proxy");
-                                        }
-                                    }
-                                }
-
-                                defaultId = info.getId();
-                                break;
-                            }
-                        }
-
-                        // scan rest of data-centers
-                        for (ConsoleProxyLoadInfo info : l) {
-                            if (info.getId() != defaultId) {
-                                ConsoleProxyLoadInfo vmInfo = mapVmCounts.get(info.getId());
-
-                                if (!checkCapacity(info, vmInfo != null ? vmInfo : new ConsoleProxyLoadInfo())) {
-                                    if (isZoneReady(zoneHostInfoMap, info.getId())) {
-                                        allocCapacity(info.getId());
-                                    } else {
-                                        if (s_logger.isTraceEnabled()) {
-                                            s_logger.trace("Zone " + info.getId() + " is not ready to alloc standy console proxy");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("*** Stop capacity scan ***");
-                        }
-                    } finally {
-                        _capacityScanLock.unlock();
-                    }
-
-                } else {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Service is not ready for capacity preallocation, wait for next time");
-                    }
-                }
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("End of console proxy capacity scan");
-                }
-            }
-        };
-    }
-
     private boolean checkCapacity(ConsoleProxyLoadInfo proxyCountInfo, ConsoleProxyLoadInfo vmCountInfo) {
 
         if (proxyCountInfo.getCount() * _capacityPerProxy - vmCountInfo.getCount() <= _standbyCapacity) {
@@ -1048,19 +921,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
             }
         }
-    }
-
-    public boolean isServiceReady(Map<Long, ZoneHostInfo> zoneHostInfoMap) {
-        for (ZoneHostInfo zoneHostInfo : zoneHostInfoMap.values()) {
-            if (isZoneHostReady(zoneHostInfo)) {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Zone " + zoneHostInfo.getDcId() + " is ready to launch");
-                }
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
@@ -1137,14 +997,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Stop console proxy manager");
         }
-        _capacityScanScheduler.shutdownNow();
-
-        try {
-            _capacityScanScheduler.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-        }
-
-        _capacityScanLock.releaseRef();
+        
+        this._loadScanner.stop();
         _allocProxyLock.releaseRef();
         return true;
     }
@@ -1247,10 +1101,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
     }
 
-    private String getCapacityScanLockName() {
-        return "consoleproxy.capacity.scan";
-    }
-
     private String getAllocProxyLockName() {
         return "consoleproxy.alloc";
     }
@@ -1337,11 +1187,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, 0, 0, true, null, useLocalStorage, true, null, true);
+        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, null, null, true, null, useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 
-        _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), STARTUP_DELAY, _capacityScanInterval, TimeUnit.MILLISECONDS);
+        _loadScanner = new SystemVmLoadScanner<Long>(this);
+        _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
         
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Console Proxy Manager is configured.");
@@ -1560,4 +1411,105 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Override
     public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
     }
+
+    @Override
+	public void onScanStart() {
+        // to reduce possible number of DB queries for capacity scan, we run following aggregated queries in preparation stage
+        _zoneHostInfoMap = getZoneHostInfo();
+        
+        _zoneProxyCountMap = new HashMap<Long, ConsoleProxyLoadInfo>();
+        List<ConsoleProxyLoadInfo> listProxyCounts = _consoleProxyDao.getDatacenterProxyLoadMatrix();
+        for (ConsoleProxyLoadInfo info : listProxyCounts) {
+        	_zoneProxyCountMap.put(info.getId(), info);
+        }
+
+        _zoneVmCountMap = new HashMap<Long, ConsoleProxyLoadInfo>();
+        List<ConsoleProxyLoadInfo> listVmCounts = _consoleProxyDao.getDatacenterSessionLoadMatrix();
+        for (ConsoleProxyLoadInfo info : listVmCounts) {
+        	_zoneVmCountMap.put(info.getId(), info);
+        }
+    }
+    
+    @Override
+	public boolean canScan() {
+        if(!reserveStandbyCapacity()) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Reserving standby capacity is disable, skip capacity scan");
+            }
+            return false;
+        }
+
+        // config var for consoleproxy.restart check
+        String restart = _configDao.getValue("consoleproxy.restart");
+        if (restart != null && restart.equalsIgnoreCase("false")) {
+            s_logger.debug("Capacity scan disabled purposefully, consoleproxy.restart = false. This happens when the primarystorage is in maintenance mode");
+            return false;
+        }
+        
+        return true;
+	}
+
+    @Override
+	public Long[] getScannablePools() {
+		List<DataCenterVO> zones = _dcDao.listEnabledZones();
+
+		Long[] dcIdList = new Long[zones.size()];
+		int i = 0;
+		for(DataCenterVO dc : zones) {
+			dcIdList[i++] = dc.getId();
+		}
+		
+		return dcIdList;
+	}
+	
+	public boolean isPoolReadyForScan(Long pool) {
+		// pool is at zone basis
+		long dataCenterId = pool.longValue();
+		
+		if(!isZoneReady(_zoneHostInfoMap, dataCenterId)) {
+			if(s_logger.isDebugEnabled())
+				s_logger.debug("Zone " + dataCenterId + " is not ready to launch console proxy yet");
+			return false;
+		}
+
+		if(s_logger.isDebugEnabled())
+			s_logger.debug("Zone " + dataCenterId + " is ready to launch console proxy");
+		return true;
+	}
+	
+	@Override
+	public Pair<AfterScanAction, Object> scanPool(Long pool) {
+		long dataCenterId = pool.longValue();
+		
+		ConsoleProxyLoadInfo proxyInfo = this._zoneProxyCountMap.get(dataCenterId);
+		if(proxyInfo == null)
+			return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+			
+        ConsoleProxyLoadInfo vmInfo = this._zoneVmCountMap.get(dataCenterId);
+        if(vmInfo == null)
+        	vmInfo = new ConsoleProxyLoadInfo();
+        
+        if (!checkCapacity(proxyInfo, vmInfo)) {
+        	if(s_logger.isDebugEnabled())
+        		s_logger.debug("Expand console proxy standby capacity for zone " + proxyInfo.getName());
+        	
+        	return new Pair<AfterScanAction, Object>(AfterScanAction.expand, null);
+        }
+        
+		return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+	}
+	
+	@Override
+	public void expandPool(Long pool, Object actionArgs) {
+		long dataCenterId = pool.longValue();
+		allocCapacity(dataCenterId);
+	}
+	
+	@Override
+	public void shrinkPool(Long pool, Object actionArgs) {
+	}
+
+	@Override
+	public void onScanEnd() {
+	}
 }

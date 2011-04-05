@@ -332,7 +332,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, null, null, null, false, Availability.Required, false, false, false, false, false, false, false, null);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, false, false, false, false, false, false, false, null);
     }
     
     @Override
