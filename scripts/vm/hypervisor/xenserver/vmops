@@ -347,7 +347,15 @@ def get_private_nic(session, args):
     
     return mgmtnic
 
-    
+def chain_name(vm_name):
+	if vm_name.startswith('i-') or vm_name.startswith('r-'):
+		return '-'.join(vm_name.split('-'))
+	return vm_name
+
+def chain_name_def(vm_name):
+	if vm_name.startswith('i-') or vm_name.startswith('r-'):
+		return '-'.join(vm_name.split('-')[:-1]) + "-def"
+	return vm_name
     
 @echo
 def can_bridge_firewall(session, args):
@@ -407,13 +415,11 @@ def ipset(ipsetname, proto, start, end, ips):
 @echo 
 def destroy_network_rules_for_vm(session, args):
     vm_name = args.pop('vmName')
-    vmchain = vm_name
+    vmchain = chain_name(vm_name)
+    vmchain_default = chain_name_def(vm_name)
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vmchain =  '-'.join(vm_name.split('-')[:-1])
-        vmchain_default =  '-'.join(vm_name.split('-')[:-2]) + "-def"
-
         try:
             util.pread2(['iptables', '-F', vmchain_default])
             util.pread2(['iptables', '-X', vmchain_default])
@@ -449,9 +455,9 @@ def destroy_network_rules_for_vm(session, args):
     return 'true'
 
 @echo
-def destroy_ebtables_rules(vm_name):
+def destroy_ebtables_rules(vm_chain):
     
-    delcmd = "ebtables-save | grep ROUTING | grep " +  vm_name + " | sed 's/-A/-D/'"
+    delcmd = "ebtables-save | grep ROUTING | grep " +  vm_chain + " | sed 's/-A/-D/'"
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
     delcmds.pop()
     for cmd in delcmds:
@@ -462,22 +468,22 @@ def destroy_ebtables_rules(vm_name):
             dc.insert(2, 'nat')
             util.pread2(dc)
         except:
-            util.SMlog("Ignoring failure to delete ebtables rules for vm " + vm_name)
-    chains = [vm_name+"-in", vm_name+"-out"]
+            util.SMlog("Ignoring failure to delete ebtables rules for vm " + vm_chain)
+    chains = [vm_chain+"-in", vm_chain+"-out"]
     for chain in chains:
         try:
             util.pread2(['ebtables', '-t', 'nat', '-F', chain])
             util.pread2(['ebtables', '-t', 'nat', '-X', chain])
         except:
-            util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_name)   
+            util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain)   
 
          
               
 @echo
-def default_ebtables_rules(vm_name, vif, vm_ip, vm_mac):
+def default_ebtables_rules(vm_chain, vif, vm_ip, vm_mac):
     
-    vmchain_in = vm_name + "-in"
-    vmchain_out = vm_name + "-out"
+    vmchain_in = vm_chain + "-in"
+    vmchain_out = vm_chain + "-out"
     
     for chain in [vmchain_in, vmchain_out]:
         try:
@@ -542,9 +548,8 @@ def default_network_rules_systemvm(session, args):
 
     vifs = ["vif" + domid + "." + v for v in vifnums]
     #vm_name =  '-'.join(vm_name.split('-')[:-1])
-    vmchain = vm_name
-    if vm_name.startswith('r-'):
-        vmchain = '-'.join(vm_name.split('-')[:-1])
+    vmchain = chain_name(vm_name)
+   
  
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
   
@@ -571,8 +576,7 @@ def default_network_rules_systemvm(session, args):
 
 @echo
 def default_network_rules(session, args):
-    vmName = args.pop('vmName')
-    vm_name = vmName
+    vm_name = args.pop('vmName')
     vm_ip = args.pop('vmIP')
     vm_id = args.pop('vmID')
     vm_mac = args.pop('vmMAC')
@@ -603,8 +607,8 @@ def default_network_rules(session, args):
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
      
-    vmchain =  '-'.join(vm_name.split('-')[:-1])
-    vmchain_default = '-'.join(vm_name.split('-')[:-2]) + "-def"
+    vmchain =  chain_name(vm_name)
+    vmchain_default = chain_name_def(vm_name)
     
     destroy_ebtables_rules(vmchain)
     
@@ -640,7 +644,7 @@ def default_network_rules(session, args):
     for v in vifs:
         default_ebtables_rules(vm_name, v, vm_ip, vm_mac)
     
-    if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, '_initial_', '-1') == False:
+    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, '_initial_', '-1') == False:
         util.SMlog("Failed to log default network rules, ignoring")
         
     util.SMlog("Programmed default rules for vm " + vm_name)
@@ -674,9 +678,7 @@ def check_domid_changed(session, vmName):
 
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
-    vmchain = vm_name
-    if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vmchain =  '-'.join(vm_name.split('-')[:-2])
+    vmchain = chain_name_def(vm_name)
     
     delcmd = "iptables -S BRIDGE-FIREWALL | grep " +  vmchain + " | sed 's/-A/-D/'"
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
@@ -693,7 +695,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
   
 def network_rules_for_rebooted_vm(session, vmName):
     vm_name = vmName
-    [curr_domid, old_domid] = check_domid_changed(session, vmName)
+    [curr_domid, old_domid] = check_domid_changed(session, vm_name)
     
     if curr_domid == old_domid:
         return True
@@ -704,11 +706,11 @@ def network_rules_for_rebooted_vm(session, vmName):
     if curr_domid == '-1':
         return True
     
-    util.SMlog("Found a rebooted VM -- reprogramming rules for  " + vmName)
+    util.SMlog("Found a rebooted VM -- reprogramming rules for  " + vm_name)
     
-    delete_rules_for_vm_in_bridge_firewall_chain(vmName)
+    delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
-        default_network_rules_systemvm(session, {"vmName":vmName})
+        default_network_rules_systemvm(session, {"vmName":vm_name})
         return True
     
     vif = "vif" + curr_domid + ".0"
@@ -719,8 +721,8 @@ def network_rules_for_rebooted_vm(session, vmName):
         vifs.append(tap)
     except:
         pass
-    vmchain = '-'.join(vm_name.split('-')[:-1])
-    vmchain_default = '-'.join(vm_name.split('-')[:-2]) + "-def"
+    vmchain = chain_name(vm_name)
+    vmchain_default = chain_name_def(vm_name)
 
     for v in vifs:
         util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
@@ -746,12 +748,11 @@ def network_rules_for_rebooted_vm(session, vmName):
             try:
                 util.pread2(ipt)
             except:
-                util.SMlog("Failed to rewrite antispoofing rules for vm " + vmName)
+                util.SMlog("Failed to rewrite antispoofing rules for vm " + vm_name)
     except:
-        util.SMlog("No rules found for vm " + vmchain)
+        util.SMlog("No rules found for vm " + vm_name)
 
-
-    rewrite_rule_log_for_vm(vmName, curr_domid)
+    rewrite_rule_log_for_vm(vm_name, curr_domid)
     return True
 
 def rewrite_rule_log_for_vm(vm_name, new_domid):
@@ -842,11 +843,6 @@ def cleanup_rules(session, args):
     cleanup = []
     for chain in chains:
         if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
-            if chain.startswith('i-') or chain.startswith('r-'):
-                vm_name = chain + '-untagged'
-            else:
-                vm_name = chain
-                
             vm = session.xenapi.VM.get_by_name_label(vm_name)
             if len(vm) != 1:
                 util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
@@ -858,8 +854,8 @@ def cleanup_rules(session, args):
                 util.SMlog("vm " + vm_name + " is not running, cleaning up")
                 cleanup.append(vm_name)
                 
-    for vmname in cleanup:
-        destroy_network_rules_for_vm(session, {'vmName':vmname})
+    for vm_name in cleanup:
+        destroy_network_rules_for_vm(session, {'vmName':vm_name})
                     
     util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")
     return str(len(cleanup))                
@@ -931,7 +927,6 @@ def remove_rule_log_for_vm(vmName):
 def network_rules(session, args):
   try:
     vm_name = args.get('vmName')
-    vmName = vm_name
     vm_ip = args.get('vmIP')
     vm_id = args.get('vmID')
     signature = args.pop('signature')
@@ -958,10 +953,10 @@ def network_rules(session, args):
         vifs.append(tap)
     except:
         pass
-    vm_name =  '-'.join(vm_name.split('-')[:-1])
-    vmchain = vm_name
+   
+    vmchain = chain_name(vm_name)
     
-    changes = check_rule_log_for_vm (vmName, vm_id, vm_ip, domid, signature, seqno)
+    changes = check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
     
     if not 1 in changes:
         util.SMlog("Rules already programmed for vm " + vm_name)
@@ -994,9 +989,9 @@ def network_rules(session, args):
             allow_any = True
         range = start + ":" + end
         if ips:    
-            ipsetname = vm_name + "_" + protocol + "_" + start + "_" + end
+            ipsetname = vmchain + "_" + protocol + "_" + start + "_" + end
             if start == "-1":
-                ipsetname = vm_name + "_" + protocol + "_any"
+                ipsetname = vmchain + "_" + protocol + "_any"
 
             if ipset(ipsetname, protocol, start, end, ips) == False:
                 util.SMlog(" failed to create ipset for rule " + str(tokens))
@@ -1026,7 +1021,7 @@ def network_rules(session, args):
             
     util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
-    if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, signature, seqno) == False:
+    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno) == False:
         return 'false'
     
     return 'true'
