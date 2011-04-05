@@ -210,7 +210,7 @@ public class Upgrade218to22 implements DbUpgrade {
         return nicId;
     }
     
-    protected void upgradeDomR(Connection conn, long domrId, Long publicNetworkId, long guestNetworkId, long controlNetworkId, String zoneType) throws SQLException {
+    protected void upgradeDomR(Connection conn, long dcId, long domrId, Long publicNetworkId, long guestNetworkId, long controlNetworkId, String zoneType) throws SQLException {
         s_logger.debug("Upgrading domR" + domrId);
         PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, domain_router.public_mac_address, domain_router.public_ip_address, domain_router.public_netmask, domain_router.guest_mac_address, domain_router.guest_ip_address, domain_router.guest_netmask, domain_router.vnet, domain_router.gateway, vm_instance.type FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
         pstmt.setLong(1, domrId);
@@ -239,11 +239,28 @@ public class Upgrade218to22 implements DbUpgrade {
         pstmt.close();
         
         if (zoneType.equalsIgnoreCase("Basic")) {
-            insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
+            long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
+            if (privateIp != null) {
+                pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
+                pstmt.setLong(1, controlNicId);
+                pstmt.setString(2, privateIp);
+                pstmt.setLong(3, dcId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+            
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", gateway, vnet, "DirectPodBasedNetworkGuru", false, 0, "Static", null);
         } else {
             insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
-            insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
+            long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
+            if (privateIp != null) {
+                pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
+                pstmt.setLong(1, controlNicId);
+                pstmt.setString(2, privateIp);
+                pstmt.setLong(3, dcId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "ExternalGuestNetworkGuru", false, 0, "Static", null);
         }
         
@@ -300,10 +317,19 @@ public class Upgrade218to22 implements DbUpgrade {
             insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
         }
         
-        insertNic(conn, controlNetworkId, ssvmId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (ssvmId + guestIp) : null);
+        long controlNicId = insertNic(conn, controlNetworkId, ssvmId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (ssvmId + guestIp) : null);
+        if (guestIp != null) {
+            pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
+            pstmt.setLong(1, controlNicId);
+            pstmt.setString(2, guestIp);
+            pstmt.setLong(3, dataCenterId);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
+        
         long mgmtNicId = insertNic(conn, managementNetworkId, ssvmId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", null);
         if (privateIp != null) {
-            pstmt = conn.prepareStatement("UPDATE op_dc_ip_address_alloc SET nic_id=? WHERE ip_address=? AND data_center_id=?");
+            pstmt = conn.prepareStatement("UPDATE op_dc_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
             pstmt.setLong(1, mgmtNicId);
             pstmt.setString(2, privateIp);
             pstmt.setLong(3, dataCenterId);
@@ -358,10 +384,18 @@ public class Upgrade218to22 implements DbUpgrade {
             insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
         }
         
-        insertNic(conn, controlNetworkId, cpId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (cpId + guestIp) : null);
+        long controlNicId = insertNic(conn, controlNetworkId, cpId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (cpId + guestIp) : null);
+        if (guestIp != null) {
+            pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
+            pstmt.setLong(1, controlNicId);
+            pstmt.setString(2, guestIp);
+            pstmt.setLong(3, dcId);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
         long mgmtNicId = insertNic(conn, managementNetworkId, cpId, running, privateMac, privateIp, privateNetmask, "Start", podGateway, null, "PodBasedNetworkGuru", false, 1, "Static", privateIp != null ? (cpId + privateIp) : null);
         if (privateIp != null) {
-            pstmt = conn.prepareStatement("UPDATE op_dc_ip_address_alloc SET nic_id=? WHERE ip_address=? AND data_center_id=?");
+            pstmt = conn.prepareStatement("UPDATE op_dc_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
             pstmt.setLong(1, mgmtNicId);
             pstmt.setString(2, privateIp);
             pstmt.setLong(3, dcId);
@@ -794,7 +828,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         pstmt.close();
                         
                         upgradeBasicUserVms(conn, (Long)router[0], basicDefaultDirectNetworkId, (String)router[1], "untagged");
-                        upgradeDomR(conn, (Long)router[0], null, basicDefaultDirectNetworkId, controlNetworkId, "Basic");
+                        upgradeDomR(conn, dcId, (Long)router[0], null, basicDefaultDirectNetworkId, controlNetworkId, "Basic");
                     }
                     
                     upgradeSsvm(conn, dcId, basicDefaultDirectNetworkId, mgmtNetworkId, controlNetworkId, "Basic");
@@ -852,7 +886,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         s_logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
                         
                         upgradeVirtualUserVms(conn, (Long)router[0], virtualNetworkId, (String)router[3], vnet);
-                        upgradeDomR(conn, (Long)router[0], publicNetworkId, virtualNetworkId, controlNetworkId, "Advanced");
+                        upgradeDomR(conn, dcId, (Long)router[0], publicNetworkId, virtualNetworkId, controlNetworkId, "Advanced");
                     }
                     
                     upgradePublicUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");

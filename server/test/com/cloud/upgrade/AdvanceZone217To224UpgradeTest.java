@@ -92,6 +92,19 @@ public class AdvanceZone217To224UpgradeTest extends TestCase {
             rs.close();
             pstmt.close();
             
+            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM op_dc_link_local_ip_address_alloc WHERE nic_id IS NOT NULL");
+            rs = pstmt.executeQuery();
+            rs.next();
+            int controlNics = rs.getInt(1);
+            rs.close();
+            pstmt.close();
+            
+            pstmt = conn.prepareStatement("SELECT COUNT(*) FROM nics WHERE reserver_name='ControlNetworkGuru' and ip4_address is NOT NULL");
+            rs = pstmt.executeQuery();
+            assert (rs.next() && controlNics == rs.getInt(1)) : "Allocated nics should have been " + controlNics + " but it is " + rs.getInt(1);
+            rs.close();
+            pstmt.close();
+            
             
         } finally {
             try {

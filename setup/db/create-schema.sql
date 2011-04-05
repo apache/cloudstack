@@ -518,7 +518,7 @@ CREATE TABLE `cloud`.`op_dc_link_local_ip_address_alloc` (
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center it belongs to',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
-  `instance_id` bigint unsigned NULL COMMENT 'instance id',
+  `nic_id` bigint unsigned NULL COMMENT 'instance id',
   `reservation_id` char(40) NULL COMMENT 'reservation id used to reserve this network',
   `taken` datetime COMMENT 'Date taken',
   PRIMARY KEY (`id`)

@@ -50,7 +50,7 @@ public class DataCenterLinkLocalIpAddressVO {
     @Column(name="pod_id", updatable=false, nullable=false)
     private long podId;
     
-    @Column(name="instance_id")
+    @Column(name="nic_id")
     private Long instanceId;
     
     @Column(name="reservation_id")

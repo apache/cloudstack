@@ -113,3 +113,6 @@ INSERT INTO `cloud`.`configuration` VALUES
 ('Advanced','DEFAULT','management-server','vmware.service.console','Service Console','Specify the service console network name (ESX host only)'),
 ('Advanced','DEFAULT','AgentManager','xapiwait','600','Time (in seconds) to wait for XAPI to return');
 
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc` CHANGE COLUMN `instance_id` `nic_id` bigint unsigned DEFAULT NULL;
+ALTER TABLE op_dc_ip_address_alloc ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`op_dc_link_local_ip_address_alloc` CHANGE COLUMN `instance_id` `nic_id` bigint unsigned DEFAULT NULL;
