@@ -161,6 +161,15 @@ public class Transaction {
 		}
     }
     
+    public static Connection getStandaloneUsageConnection() {
+        try {
+            return s_usageDS.getConnection();
+        } catch (SQLException e) {
+            s_logger.warn("Unexpected exception: ", e);
+            return null;
+        }
+    }
+    
     protected static boolean checkAnnotation(int stack, Transaction txn) {
         final StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
         StackElement se = txn.peekInStack(CURRENT_TXN);
