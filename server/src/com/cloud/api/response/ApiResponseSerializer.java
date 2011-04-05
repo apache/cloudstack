@@ -43,7 +43,7 @@ public class ApiResponseSerializer {
 
     private static String toJSONSerializedString(ResponseObject result) {
         if (result != null) {
-            Gson gson = ApiGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
+            Gson gson = ApiGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
             StringBuilder sb = new StringBuilder();
 
             sb.append("{ \"" + result.getResponseName() + "\" : ");
