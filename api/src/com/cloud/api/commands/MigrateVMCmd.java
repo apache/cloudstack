@@ -34,6 +34,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="Attempts Migration of a virtual machine to the host specified.", responseObject=UserVmResponse.class)
@@ -92,7 +93,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Attempting to migrate VM: " + getVirtualMachineId() + " to host: "+ getHostId();
+        return  "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId();
     }
     
     @Override
@@ -107,6 +108,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
         }
         try{
+        	UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
         	UserVm migratedVm = _userVmService.migrateVirtualMachine(userVm, destinationHost);
 	        if (migratedVm != null) {
 	            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", migratedVm).get(0);
