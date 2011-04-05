@@ -100,6 +100,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -2910,7 +2911,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
     
     @Override
-    public UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException{
+    public UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
     	//access check - only root admin can migrate VM
     	Account caller = UserContext.current().getCaller();
     	if(caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
