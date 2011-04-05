@@ -429,7 +429,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                     publicIps.add(publicIp);
             }
         }

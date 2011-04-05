@@ -1010,7 +1010,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             List<PublicIpAddress> publicIps = new ArrayList<PublicIpAddress>();
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {
-                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                     publicIps.add(publicIp);
                 }
             }
