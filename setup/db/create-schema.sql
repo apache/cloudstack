@@ -1182,7 +1182,7 @@ CREATE TABLE `cloud`.`vpn_users` (
 CREATE TABLE  `cloud`.`storage_pool` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `name` varchar(255) COMMENT 'should be NOT NULL',
-  `uuid` varchar(255),
+  `uuid` varchar(255) UNIQUE,
   `pool_type` varchar(32) NOT NULL,
   `port` int unsigned NOT NULL,
   `data_center_id` bigint unsigned NOT NULL,
