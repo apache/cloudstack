@@ -147,15 +147,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	sc.setParameters("hostId", hostId);
     	sc.setParameters("type", capacityType);
     	return findOneBy(sc);
-    }
-    
-    @Override
-    public java.util.List<CapacityVO> findByHostorPoolId(Long hostorPoolId){
-    	SearchCriteria<CapacityVO> sc = _hostOrPoolIdSearch.create();
-    	sc.setParameters("hostId", hostorPoolId);
-    	return listBy(sc);
-    }
-    
+    }  
     
     @Override
     public List<Long> orderClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone){

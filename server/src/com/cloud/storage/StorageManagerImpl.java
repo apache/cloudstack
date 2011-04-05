@@ -1200,7 +1200,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             sPool.setUuid(null);
             _storagePoolDao.update(id, sPool);
             _storagePoolDao.remove(id);
-            deleteHostorPoolStats(id);
+            deletePoolStats(id);
             return true;
         } else {
             // 1. Check if the pool has associated volumes in the volumes table
@@ -1250,7 +1250,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     sPool.setStatus(StoragePoolStatus.Removed);
                     _storagePoolDao.update(id, sPool);
                     _storagePoolDao.remove(id);
-                    deleteHostorPoolStats(id);
+                    deletePoolStats(id);
                     return true;
                 }
             }
@@ -1260,14 +1260,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @DB
-    private boolean deleteHostorPoolStats(Long hostorPoolId) {
+    private boolean deletePoolStats(Long poolId) {
 
-        List<CapacityVO> capacities = _capacityDao.findByHostorPoolId(hostorPoolId);
+        CapacityVO capacity1 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE);       
+        CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED); 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        for (CapacityVO capacity : capacities) {
-            _capacityDao.remove(capacity.getId());
-        }
+        _capacityDao.remove(capacity1.getId());
+        _capacityDao.remove(capacity2.getId());
         txn.commit();
         return true;
 
