@@ -275,6 +275,7 @@ setup_router() {
   enable_svc haproxy 1
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
+  disable_rpfilter
   enable_fwding 1
   chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
