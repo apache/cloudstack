@@ -55,8 +55,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
 	
 	private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
-			"AND a.total_capacity - (a.used_capacity + a.reserved_capacity) >= ? and a.capacity_type = 1) " +
-			"JOIN op_host_capacity b ON a.host_id = b.host_id AND b.total_capacity - (b.used_capacity + b.reserved_capacity) >= ? AND b.capacity_type = 0";
+			"AND a.total_capacity - a.used_capacity >= ? and a.capacity_type = 1) " +
+			"JOIN op_host_capacity b ON a.host_id = b.host_id AND b.total_capacity - b.used_capacity >= ? AND b.capacity_type = 0";
     
     public CapacityDaoImpl() {
     	_hostIdTypeSearch = createSearchBuilder();

@@ -70,6 +70,10 @@ CREATE TABLE `cloud`.`data_center_details` (
   CONSTRAINT `fk_dc_details__dc_id` FOREIGN KEY (`dc_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`op_host_capacity` MODIFY `used_capacity` bigint signed NOT NULL;
+ALTER TABLE `cloud`.`op_host_capacity` MODIFY `reserved_capacity` bigint signed NOT NULL;
+ALTER TABLE `cloud`.`op_host_capacity` MODIFY `total_capacity` bigint signed NOT NULL;
+
 #('Advanced','DEFAULT','management-server','management.network.cidr','192.168.130.0/24','The cidr of management server network'),;
 INSERT INTO `cloud`.`configuration` VALUES 
 ('Advanced','DEFAULT','management-server','control.cidr','169.254.0.0/16','Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods'),
