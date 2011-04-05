@@ -870,7 +870,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
   `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
   `guest_ip_address` char(40) COMMENT ' ip address in the guest network',   
-  `network_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network configuration that this domain router belongs to',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
