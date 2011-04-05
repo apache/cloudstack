@@ -44,6 +44,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Volume;
@@ -286,6 +287,7 @@ public interface UserVmService {
      * @throws ManagementServerException in case we get error finding the VM or host or access errors or other internal errors.
      * @throws ConcurrentOperationException if there are multiple users working on the same VM.
      * @throws ResourceUnavailableException if the destination host to migrate the VM is not currently available.
+     * @throws VirtualMachineMigrationException if the VM to be migrated is not in Running state
      */
-    UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException;
+    UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 }

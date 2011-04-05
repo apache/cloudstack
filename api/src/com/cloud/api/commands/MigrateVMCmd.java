@@ -31,6 +31,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -123,6 +124,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 		} catch (ManagementServerException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		} 
+		} catch (VirtualMachineMigrationException e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+		}  
     }
 }
