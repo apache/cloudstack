@@ -238,6 +238,16 @@ public class Upgrade218to22 implements DbUpgrade {
         rs.close();
         pstmt.close();
         
+        
+        pstmt = conn.prepareStatement("SELECT v.vlan_id from vlan v, user_ip_address u where v.id=u.vlan_db_id and u.public_ip_address=?");
+        pstmt.setString(1, publicIp);
+        rs = pstmt.executeQuery();
+        
+        String publicVlan = null;
+        while (rs.next()) {
+            publicVlan = rs.getString(1);
+        }
+        
         if (zoneType.equalsIgnoreCase("Basic")) {
             long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
             if (privateIp != null) {
@@ -251,7 +261,7 @@ public class Upgrade218to22 implements DbUpgrade {
             
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", gateway, vnet, "DirectPodBasedNetworkGuru", false, 0, "Static", null);
         } else {
-            insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
+            insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
             long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static", privateIp != null ? (domrId + privateIp) : null);
             if (privateIp != null) {
                 pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
@@ -310,11 +320,24 @@ public class Upgrade218to22 implements DbUpgrade {
         
         s_logger.debug("Gateway is " + podGateway);
         
+        pstmt = conn.prepareStatement("SELECT v.vlan_id from vlan v, user_ip_address u where v.id=u.vlan_db_id and u.public_ip_address=?");
+        pstmt.setString(1, publicIp);
+        rs = pstmt.executeQuery();
+        
+        String publicVlan = null;
+        while (rs.next()) {
+            publicVlan = rs.getString(1);
+        }
+        
+        rs.close();
+        pstmt.close();
+        
+        
         if (zoneType.equalsIgnoreCase("Basic")) {
-            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Start", gateway, null, "DirectPodBasedNetworkGuru", true, 2, "Static", null);
+            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Start", gateway, publicVlan, "DirectPodBasedNetworkGuru", true, 2, "Static", null);
 
         } else {
-            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
+            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
         }
         
         long controlNicId = insertNic(conn, controlNetworkId, ssvmId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (ssvmId + guestIp) : null);
@@ -377,11 +400,22 @@ public class Upgrade218to22 implements DbUpgrade {
         rs.close();
         pstmt.close();
         
+        pstmt = conn.prepareStatement("SELECT v.vlan_id from vlan v, user_ip_address u where v.id=u.vlan_db_id and u.public_ip_address=?");
+        pstmt.setString(1, publicIp);
+        rs = pstmt.executeQuery();
+        
+        String publicVlan = null;
+        while (rs.next()) {
+            publicVlan = rs.getString(1);
+        }
+        
+        rs.close();
+        pstmt.close();
         
         if (zoneType.equalsIgnoreCase("Basic")) {
-            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Start", gateway, null, "DirectPodBasedNetworkGuru", true, 2, "Static", null);
+            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Start", gateway, publicVlan, "DirectPodBasedNetworkGuru", true, 2, "Static", null);
         } else {
-            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Create", gateway, null, "PublicNetworkGuru", true, 2, "Static", null);
+            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
         }
         
         long controlNicId = insertNic(conn, controlNetworkId, cpId, running, guestMac, guestIp, guestNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 0, "Static", guestIp != null ? (cpId + guestIp) : null);
