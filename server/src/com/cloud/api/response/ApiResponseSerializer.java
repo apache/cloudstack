@@ -29,15 +29,16 @@ public class ApiResponseSerializer {
             return toXMLSerializedString(result);
         }
     }
-    
+
     private static final Pattern s_unicodeEscapePattern = Pattern.compile("\\\\u([0-9A-Fa-f]{4})");
+
     public static String unescape(String escaped) {
-	    String str = escaped;
-	    Matcher matcher = s_unicodeEscapePattern.matcher(str);
-	    while(matcher.find()) {
-	    	str = str.replaceAll("\\" + matcher.group(0), Character.toString((char)Integer.parseInt(matcher.group(1), 16)));
-	    }
-	    return str;
+        String str = escaped;
+        Matcher matcher = s_unicodeEscapePattern.matcher(str);
+        while (matcher.find()) {
+            str = str.replaceAll("\\" + matcher.group(0), Character.toString((char) Integer.parseInt(matcher.group(1), 16)));
+        }
+        return str;
     }
 
     private static String toJSONSerializedString(ResponseObject result) {
@@ -47,14 +48,15 @@ public class ApiResponseSerializer {
 
             sb.append("{ \"" + result.getResponseName() + "\" : ");
             if (result instanceof ListResponse) {
-                List<? extends ResponseObject> responses = ((ListResponse)result).getResponses();
+                List<? extends ResponseObject> responses = ((ListResponse) result).getResponses();
                 if ((responses != null) && !responses.isEmpty()) {
-                    int count = responses.size();
-                    String jsonStr = gson.toJson(responses.get(0));;
+
+                    Integer count = ((ListResponse) result).getCount();
+                    String jsonStr = gson.toJson(responses.get(0));
                     jsonStr = unescape(jsonStr);
-                    
-                    if (((ListResponse)result).getCount() != null) {
-                        sb.append("{ \"" + ApiConstants.COUNT + "\":" + ((ListResponse)result).getCount() + " ,\"" + responses.get(0).getObjectName() + "\" : [  " + jsonStr);
+
+                    if (count != null && count != 0) {
+                        sb.append("{ \"" + ApiConstants.COUNT + "\":" + ((ListResponse) result).getCount() + " ,\"" + responses.get(0).getObjectName() + "\" : [  " + jsonStr);
                     }
                     for (int i = 1; i < count; i++) {
                         jsonStr = gson.toJson(responses.get(i));
@@ -66,18 +68,18 @@ public class ApiResponseSerializer {
                     sb.append("{ }");
                 }
             } else if (result instanceof SuccessResponse) {
-            	sb.append("{ \"success\" : \""+((SuccessResponse)result).getSuccess()+"\"} ");
+                sb.append("{ \"success\" : \"" + ((SuccessResponse) result).getSuccess() + "\"} ");
             } else if (result instanceof ExceptionResponse) {
-                sb.append("{\"errorcode\" : "+((ExceptionResponse)result).getErrorCode() + ", \"errortext\" : \""+ ((ExceptionResponse)result).getErrorText() +"\"} ");
-            }else {
+                sb.append("{\"errorcode\" : " + ((ExceptionResponse) result).getErrorCode() + ", \"errortext\" : \"" + ((ExceptionResponse) result).getErrorText() + "\"} ");
+            } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
-                	jsonStr = unescape(jsonStr);
-                	if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse) {
-                		sb.append(jsonStr);
-                	} else {
-                		sb.append(" { \"" + result.getObjectName() + "\" : " + jsonStr + " } ");
-                	}
+                    jsonStr = unescape(jsonStr);
+                    if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse) {
+                        sb.append(jsonStr);
+                    } else {
+                        sb.append(" { \"" + result.getObjectName() + "\" : " + jsonStr + " } ");
+                    }
                 } else {
                     sb.append("{ }");
                 }
@@ -91,49 +93,51 @@ public class ApiResponseSerializer {
     private static String toXMLSerializedString(ResponseObject result) {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-        sb.append("<" + result.getResponseName() + " cloud-stack-version=\""+ApiDBUtils.getVersion()+ "\">");
+        sb.append("<" + result.getResponseName() + " cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
 
         if (result instanceof ListResponse) {
-            if (((ListResponse)result).getCount() != null) {
-                sb.append("<" + ApiConstants.COUNT + ">" + ((ListResponse)result).getCount() + "</" + ApiConstants.COUNT + ">");
+            Integer count = ((ListResponse) result).getCount();
+
+            if (count != null && count != 0) {
+                sb.append("<" + ApiConstants.COUNT + ">" + ((ListResponse) result).getCount() + "</" + ApiConstants.COUNT + ">");
             }
-            List<? extends ResponseObject> responses = ((ListResponse)result).getResponses();
+            List<? extends ResponseObject> responses = ((ListResponse) result).getResponses();
             if ((responses != null) && !responses.isEmpty()) {
                 for (ResponseObject obj : responses) {
                     serializeResponseObjXML(sb, obj);
                 }
-            }  
+            }
         } else {
             if (result instanceof CreateCmdResponse || result instanceof AsyncJobResponse) {
                 serializeResponseObjFieldsXML(sb, result);
             } else {
                 serializeResponseObjXML(sb, result);
-            }   
+            }
         }
-        
+
         sb.append("</" + result.getResponseName() + ">");
         return sb.toString();
     }
-    
-    private static void serializeResponseObjXML(StringBuilder sb, ResponseObject obj){
-        if (!(obj instanceof SuccessResponse)&& !(obj instanceof ExceptionResponse)){
+
+    private static void serializeResponseObjXML(StringBuilder sb, ResponseObject obj) {
+        if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse)) {
             sb.append("<" + obj.getObjectName() + ">");
         }
-            serializeResponseObjFieldsXML(sb, obj);
-        if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse)){
+        serializeResponseObjFieldsXML(sb, obj);
+        if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse)) {
             sb.append("</" + obj.getObjectName() + ">");
         }
     }
 
-    private static void serializeResponseObjFieldsXML(StringBuilder sb, ResponseObject obj){
+    private static void serializeResponseObjFieldsXML(StringBuilder sb, ResponseObject obj) {
         boolean isAsync = false;
         if (obj instanceof AsyncJobResponse)
             isAsync = true;
-        
+
         Field[] fields = obj.getClass().getDeclaredFields();
         for (Field field : fields) {
             if ((field.getModifiers() & Modifier.TRANSIENT) != 0) {
-                continue;  // skip transient fields
+                continue; // skip transient fields
             }
 
             SerializedName serializedName = field.getAnnotation(SerializedName.class);
@@ -141,14 +145,14 @@ public class ApiResponseSerializer {
                 continue; // skip fields w/o serialized name
             }
 
-            String propName = field.getName();                
+            String propName = field.getName();
             Method method = getGetMethod(obj, propName);
             if (method != null) {
                 try {
                     Object fieldValue = method.invoke(obj);
                     if (fieldValue != null) {
                         if (fieldValue instanceof ResponseObject) {
-                            ResponseObject subObj = (ResponseObject)fieldValue;
+                            ResponseObject subObj = (ResponseObject) fieldValue;
                             if (isAsync) {
                                 sb.append("<jobresult>");
                             }
@@ -156,20 +160,20 @@ public class ApiResponseSerializer {
                             if (isAsync) {
                                 sb.append("</jobresult>");
                             }
-                        } else if (fieldValue instanceof List<?>){
-                            List<?> subResponseList = (List<Object>)fieldValue;
-                            for (Object value: subResponseList) {
-                                if (value instanceof ResponseObject){
-                                    ResponseObject subObj = (ResponseObject)value;
+                        } else if (fieldValue instanceof List<?>) {
+                            List<?> subResponseList = (List<Object>) fieldValue;
+                            for (Object value : subResponseList) {
+                                if (value instanceof ResponseObject) {
+                                    ResponseObject subObj = (ResponseObject) value;
                                     if (serializedName != null) {
                                         subObj.setObjectName(serializedName.value());
                                     }
                                     serializeResponseObjXML(sb, subObj);
                                 }
                             }
-                            
-                        }else if (fieldValue instanceof Date) {
-                            sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date)fieldValue) + "</" + serializedName.value() + ">");
+
+                        } else if (fieldValue instanceof Date) {
+                            sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");
                         } else {
                             sb.append("<" + serializedName.value() + ">" + escapeSpecialXmlChars(fieldValue.toString()) + "</" + serializedName.value() + ">");
                         }
@@ -191,12 +195,10 @@ public class ApiResponseSerializer {
         try {
             method = o.getClass().getMethod(methodName);
         } catch (SecurityException e1) {
-            s_logger.error("Security exception in getting ResponseObject " + o.getClass().getName() + " get method for property: "
-                    + propName);
+            s_logger.error("Security exception in getting ResponseObject " + o.getClass().getName() + " get method for property: " + propName);
         } catch (NoSuchMethodException e1) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("ResponseObject " + o.getClass().getName() + " does not have " + methodName
-                        + "() method for property: " + propName
+                s_logger.trace("ResponseObject " + o.getClass().getName() + " does not have " + methodName + "() method for property: " + propName
                         + ", will check is-prefixed method to see if it is boolean property");
             }
         }
@@ -208,11 +210,9 @@ public class ApiResponseSerializer {
         try {
             method = o.getClass().getMethod(methodName);
         } catch (SecurityException e1) {
-            s_logger.error("Security exception in getting ResponseObject " + o.getClass().getName() + " get method for property: "
-                    + propName);
+            s_logger.error("Security exception in getting ResponseObject " + o.getClass().getName() + " get method for property: " + propName);
         } catch (NoSuchMethodException e1) {
-            s_logger.warn("ResponseObject " + o.getClass().getName() + " does not have " + methodName + "() method for property: "
-                    + propName);
+            s_logger.warn("ResponseObject " + o.getClass().getName() + " does not have " + methodName + "() method for property: " + propName);
         }
         return method;
     }
@@ -229,11 +229,11 @@ public class ApiResponseSerializer {
 
         return sb.toString();
     }
-    
+
     private static String escapeSpecialXmlChars(String originalString) {
         char[] origChars = originalString.toCharArray();
         StringBuilder resultString = new StringBuilder();
-        
+
         for (char singleChar : origChars) {
             if (singleChar == '"') {
                 resultString.append("&quot;");

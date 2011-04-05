@@ -22,41 +22,57 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class LoadBalancerResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the load balancer rule ID")
+    @SerializedName("id")
+    @Param(description = "the load balancer rule ID")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the load balancer")
+    @SerializedName("name")
+    @Param(description = "the name of the load balancer")
     private String name;
 
-    @SerializedName("description") @Param(description="the description of the load balancer")
+    @SerializedName("description")
+    @Param(description = "the description of the load balancer")
     private String description;
-    
-    @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address id")
+
+    @SerializedName(ApiConstants.PUBLIC_IP_ID)
+    @Param(description = "the public ip address id")
     private Long publicIpId;
 
-    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address")
+    @SerializedName(ApiConstants.PUBLIC_IP)
+    @Param(description = "the public ip address")
     private String publicIp;
 
-    @SerializedName("publicport") @Param(description="the public port")
+    @SerializedName("publicport")
+    @Param(description = "the public port")
     private String publicPort;
 
-    @SerializedName("privateport") @Param(description="the private port")
+    @SerializedName("privateport")
+    @Param(description = "the private port")
     private String privatePort;
 
-    @SerializedName("algorithm") @Param(description="the load balancer algorithm (source, roundrobin, leastconn)")
+    @SerializedName("algorithm")
+    @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @SerializedName("account") @Param(description="the account of the load balancer rule")
+    @SerializedName("account")
+    @Param(description = "the account of the load balancer rule")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the load balancer rule")
+    @SerializedName("domainid")
+    @Param(description = "the domain ID of the load balancer rule")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain of the load balancer rule")
+    @SerializedName("domain")
+    @Param(description = "the domain of the load balancer rule")
     private String domainName;
-    
-    @SerializedName("state") @Param(description="the state of the rule")
+
+    @SerializedName("state")
+    @Param(description = "the state of the rule")
     private String state;
+
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the id of the zone the rule belongs to")
+    private Long zoneId;
 
     public Long getId() {
         return id;
@@ -153,5 +169,12 @@ public class LoadBalancerResponse extends BaseResponse {
     public void setPublicIpId(Long publicIpId) {
         this.publicIpId = publicIpId;
     }
-    
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
 }
