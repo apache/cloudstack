@@ -953,6 +953,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 continue;
             }
             
+            if (requested != null && requested.getMode() == null) {
+                profile.setMode(requested.getMode());
+            } else {
+                profile.setMode(config.getMode());
+            }
+            
             NicVO vo = new NicVO(guru.getName(), vm.getId(), config.getId(), vm.getType());
 
             while (deviceIds[deviceId] && deviceId < deviceIds.length) {
