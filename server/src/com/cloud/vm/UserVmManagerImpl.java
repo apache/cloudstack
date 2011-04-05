@@ -2910,7 +2910,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	return _vmDao.findById(vmId);
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_VM_MIGRATE, eventDescription="migrating VM", async=true)
     public UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
     	//access check - only root admin can migrate VM
     	Account caller = UserContext.current().getCaller();
