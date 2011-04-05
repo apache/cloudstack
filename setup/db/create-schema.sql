@@ -493,6 +493,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this data center enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
+  INDEX `i_data_center__domain_id`(`domain_id`),
   INDEX `i_data_center__allocation_state`(`allocation_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -501,13 +502,13 @@ CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center it belongs to',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
-  `instance_id` bigint unsigned NULL COMMENT 'instance id',
+  `nic_id` bigint unsigned NULL COMMENT 'nic id',
   `reservation_id` char(40) NULL COMMENT 'reservation id',
   `taken` datetime COMMENT 'Date taken',
   `mac_address` bigint unsigned NOT NULL COMMENT 'mac address for management ips',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
-  INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `instance_id`),
+  INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `nic_id`),
   UNIQUE `i_op_dc_ip_address_alloc__ip_address__data_center_id`(`ip_address`, `data_center_id`),
   CONSTRAINT `fk_op_dc_ip_address_alloc__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
   INDEX `i_op_dc_ip_address_alloc__pod_id`(`pod_id`)
@@ -518,7 +519,7 @@ CREATE TABLE `cloud`.`op_dc_link_local_ip_address_alloc` (
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center it belongs to',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
-  `instance_id` bigint unsigned NULL COMMENT 'instance id',
+  `nic_id` bigint unsigned NULL COMMENT 'instance id',
   `reservation_id` char(40) NULL COMMENT 'reservation id used to reserve this network',
   `taken` datetime COMMENT 'Date taken',
   PRIMARY KEY (`id`)
@@ -870,7 +871,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
   `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
   `guest_ip_address` char(40) COMMENT ' ip address in the guest network',   
-  `network_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network configuration that this domain router belongs to',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
@@ -962,7 +963,7 @@ CREATE TABLE  `cloud`.`domain` (
   `parent` bigint unsigned,
   `name` varchar(255),
   `owner` bigint unsigned NOT NULL,
-  `path` varchar(255),
+  `path` varchar(255) UNIQUE NOT NULL,
   `level` int(10) NOT NULL DEFAULT 0,
   `child_count` int(10) NOT NULL DEFAULT 0,
   `next_child_seq` bigint unsigned NOT NULL DEFAULT 1,

@@ -61,7 +61,16 @@ ALTER TABLE `cloud`.`host` ADD INDEX `i_host__allocation_state`(`allocation_stat
 
 ALTER TABLE `cloud`.`domain` ADD INDEX `i_domain__path`(`path`);
 
-<<<<<<< HEAD
+CREATE TABLE `cloud`.`data_center_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `dc_id` bigint unsigned NOT NULL COMMENT 'dc id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dc_details__dc_id` FOREIGN KEY (`dc_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#('Advanced','DEFAULT','management-server','management.network.cidr','192.168.130.0/24','The cidr of management server network'),;
 INSERT INTO `cloud`.`configuration` VALUES 
 ('Advanced','DEFAULT','management-server','control.cidr','169.254.0.0/16','Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods'),
 ('Advanced','DEFAULT','management-server','control.gateway','169.254.0.1','gateway for the control network traffic'),
@@ -72,6 +81,8 @@ INSERT INTO `cloud`.`configuration` VALUES
 ('Console Proxy','DEFAULT','AgentManager','consoleproxy.restart','true','Console proxy restart flag, defaulted to true'),
 ('Console Proxy','DEFAULT','AgentManager','consoleproxy.url.domain','realhostip.com','Console proxy url domain'),
 ('Advanced','DEFAULT','management-server','extract.url.cleanup.interval','120','The interval (in seconds) to wait before cleaning up the extract URL\'s '),
+('Network','DEFAULT','AgentManager','guest.ip.network','10.1.1.1','The network address of the guest virtual network. Virtual machines will be assigned an IP in this subnet.'),
+('Network','DEFAULT','AgentManager','guest.netmask','255.255.255.0','The netmask of the guest virtual network.'),
 ('Network','DEFAULT','management-server','guest.vlan.bits','12','The number of bits to reserve for the VLAN identifier in the guest subnet.'),
 ('Advanced','DEFAULT','management-server','host.capacity.checker.interval','3600','Time (in seconds) to wait before recalculating host\'s capacity'),
 ('Advanced','DEFAULT','management-server','host.capacity.checker.wait','3600','Time (in seconds) to wait before starting host capacity background checker'),
@@ -102,5 +113,8 @@ INSERT INTO `cloud`.`configuration` VALUES
 ('Advanced','DEFAULT','management-server','vmware.service.console','Service Console','Specify the service console network name (ESX host only)'),
 ('Advanced','DEFAULT','AgentManager','xapiwait','600','Time (in seconds) to wait for XAPI to return');
 
-INSERT INTO `cloud`.`sequence` (name, value) VALUES ('checkpoint_seq', 1);
-DELETE FROM `cloud`.`sequence` WHERE name='snapshots_seq';
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc` CHANGE COLUMN `instance_id` `nic_id` bigint unsigned DEFAULT NULL;
+ALTER TABLE op_dc_ip_address_alloc ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`op_dc_link_local_ip_address_alloc` CHANGE COLUMN `instance_id` `nic_id` bigint unsigned DEFAULT NULL;
+
+DELETE FROM `sequence` WHERE name='snapshots_seq';

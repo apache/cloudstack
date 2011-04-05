@@ -289,23 +289,19 @@ ALTER TABLE `cloud`.`data_center` ADD COLUMN `vpn_provider` char(64) DEFAULT 'Vi
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `userdata_provider` char(64) DEFAULT 'VirtualRouter';
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `enable` tinyint NOT NULL DEFAULT 1;
 
-#TODO: We need something to adjust the networktype for all of the existing data centers.  How to tell if it is Basic/Advance?;
+ALTER TABLE `cloud`.`data_center` ADD   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`);
 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD COLUMN `reservation_id` char(40) NULL;
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD COLUMN `mac_address` bigint unsigned NOT NULL;
 UPDATE `cloud`.`op_dc_ip_address_alloc` SET reservation_id=concat(cast(instance_id as CHAR), ip_address) WHERE taken is NOT NULL;
-#UPDATE `cloud`.`op_dc_ip_address_alloc` as alloc1 SET mac_address=id-(SELECT min(alloc2.id) from op_dc_ip_address_alloc as alloc2 WHERE alloc2.data_center_id=alloc1.data_center_id)+1;  
 
 ALTER TABLE `cloud`.`op_dc_link_local_ip_address_alloc` ADD COLUMN `reservation_id` char(40) NULL;
 UPDATE `cloud`.`op_dc_link_local_ip_address_alloc` SET reservation_id=concat(cast(instance_id as CHAR),ip_address) WHERE taken is NOT NULL;
-
-#TODO: Set the Reservation id for this table?;
 
 ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `enabled` tinyint NOT NULL DEFAULT 1;
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `reservation_id` char(40) NULL;
 UPDATE op_dc_vnet_alloc set reservation_id=concat(cast(data_center_id as CHAR), concat("-", vnet)) WHERE taken is NOT NULL; 
-#TODO: Set the Reservation id for this table;
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `service_offering_id` bigint unsigned NOT NULL;
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `reservation_id` char(40);
@@ -372,6 +368,9 @@ ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `system_use` tinyint(1) unsigned 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `customized` tinyint(1) unsigned NOT NULL DEFAULT 0;
 
 update `cloud`.`disk_offering` set system_use=1, removed=null WHERE unique_name like 'Cloud.Com-%';
+update `cloud`.`disk_offering` set name='System Offering For Console Proxy' where name='Fake Offering For DomP' and system_use=1;
+update `cloud`.`disk_offering` set name='System Offering For Software Router' where name='Fake Offering For DomR' and system_use=1;
+update `cloud`.`disk_offering` set name='System Offering For Secondary Storage VM' where name='Fake Offering For Secondary Storage VM' and system_use=1;
 
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `public_ip_address` varchar(15) DEFAULT NULL;
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL;
@@ -950,4 +949,8 @@ ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `fk_instance_group__account_
 
 ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm_map___group_id` FOREIGN KEY `fk_instance_group_vm_map___group_id` (`group_id`) REFERENCES `instance_group` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm_map___instance_id` FOREIGN KEY `fk_instance_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`secondary_storage_vm` MODIFY COLUMN `guid` varchar(255);
 ALTER TABLE `cloud`.`domain` MODIFY COLUMN `path` varchar(255) UNIQUE NOT NULL;
+
+ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypair__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;

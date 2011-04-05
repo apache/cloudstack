@@ -24,7 +24,6 @@ public class ExceptionUtil {
     public static String toString(Throwable th) {
     	return toString(th, true);
     }
-	
     public static String toString(Throwable th, boolean printStack) {
         final StringWriter writer = new StringWriter();
 		writer.append("Exception: " + th.getClass().getName() + "\n");
@@ -32,8 +31,8 @@ public class ExceptionUtil {
         writer.append(th.getMessage()).append("\n");
         
         if(printStack) {
-	        writer.append("Stack: ");
-	        th.printStackTrace(new PrintWriter(writer));
+            writer.append("Stack: ");
+            th.printStackTrace(new PrintWriter(writer));
         }
         return writer.toString();
     }
