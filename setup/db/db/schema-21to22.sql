@@ -568,7 +568,9 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
 DELETE FROM `cloud`.`sync_queue`;
 DELETE FROM `cloud`.`sync_queue_item`;
 DELETE FROM `cloud`.`async_job`;
-UPDATE `cloud`.`vm_template` SET unique_name='routing-xenserver-2.4',type='SYSTEM' WHERE name='systemvm-xenserver-2.4';
+UPDATE `cloud`.`vm_template` SET unique_name='routing-xenserver-2.2.4', type='SYSTEM' WHERE name='systemvm-xenserver-2.2.4';
+UPDATE `cloud`.`vm_template` SET type='BUILTIN' WHERE unique_name='centos53-x86_64';
+UPDATE `cloud`.`vm_template` SET type='PERHOST' WHERE unique_name='xs-tools.iso';
 DELETE FROM template_host_ref WHERE install_path LIKE '%xs-tools%';
 DELETE FROM configuration where name='upgrade.url';
 DELETE FROM configuration where name='router.template.id';
@@ -580,15 +582,15 @@ INSERT INTO configuration (category, instance, component, name, value, descripti
     VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.user.limit', '8', 'The maximum number of VPN users that can be created per account');
 INSERT INTO configuration (category, instance, component, name, value, description)
     VALUES ('Advanced', 'DEFAULT', 'management-server', 'management-server', NULL, 'The cidr of management server network');
-UPDATE vm_template set unique_name='routing_old'  where id=1;
-INSERT INTO vm_template (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones)
-    VALUES (10, 'routing', 'SystemVM Template', 0, now(), 'ext3', 0, 64, 1, 'http://download.cloud.com/releases/2.2/systemvm.vhd.bz2', 'bcc7f290f4c27ab4d0fe95d1012829ea', 0, 'SystemVM Template', 'VHD', 15, 0, 1);
 Update configuration set name='storage.max.volume.size' where name='max.volume.size.mb';
 INSERT INTO sequence (name, value)
     VALUES ('snapshots_seq', '1');
 UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, (SELECT max(id) FROM cloud.snapshots) + 1, 1) WHERE name='snapshots_seq';
 UPDATE configuration set name='direct.attach.security.groups.enabled' where name='direct.attach.network.groups.enabled';
 UPDATE configuration set name='guest.domain.suffix' where name='domain.suffix';
+UPDATE vm_template set unique_name='routing_old', type='SYSTEM'  where id=1;
+UPDATE vm_template set type='SYSTEM' WHERE unique_name LIKE 'routing%';
+UPDATE `cloud`.`vm_template` SET type='USER' WHERE type!='BUILTIN' AND type!='PERHOST' AND type!='SYSTEM';
 
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (8, 'Novel');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (9, 'Unix');
@@ -954,3 +956,7 @@ ALTER TABLE `cloud`.`domain` MODIFY COLUMN `path` varchar(255) UNIQUE NOT NULL;
 
 ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypair__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
+UPDATE vm_template SET hypervisor_type='XenServer' WHERE hypervisor_type IS NULL AND format='VHD';
+UPDATE vm_template SET hypervisor_type='KVM' WHERE hypervisor_type IS NULL AND format='QCOW2';
+UPDATE vm_template SET hypervisor_type='VmWare' WHERE hypervisor_type IS NULL AND format='OVA';
+UPDATE vm_template SET hypervisor_type='None' WHERE hypervisor_type IS NULL AND format='ISO';
