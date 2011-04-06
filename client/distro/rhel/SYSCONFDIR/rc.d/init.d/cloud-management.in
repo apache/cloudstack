@@ -27,37 +27,45 @@ fi
 
 
 NAME="$(basename $0)"
+stop() {
+	SHUTDOWN_WAIT="30"
+	count="0"
+	if [ -f /var/run/cloud-management.pid ]; then
+		pid=`cat /var/run/cloud-management.pid`
+		kill $pid &>/dev/null
+		until [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ] || \
+			[ "$count" -gt "$SHUTDOWN_WAIT" ]
+		do
+			sleep 1
+			let count="${count}+1"
+		done
+		if [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ]; then
+			log_success_msg "Stopping Cloud-management"
+		else
+			log_failure_msg "Stopping Cloud-management"
+		fi
+	else
+		echo "Cannot find PID file of Cloud-management"
+		log_failure_msg "Stopping Cloud-management"
+	fi
+}
 
 # See how we were called.
 case "$1" in
     status)
-           status ${NAME}
-           RETVAL=$?
-        ;;
-	stop)
-		SHUTDOWN_WAIT="30"
-		count="0"
-		if [ -f /var/run/cloud-management.pid ]; then
-			pid=`cat /var/run/cloud-management.pid`
-			kill $pid &>/dev/null
-			until [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ] || \
-				[ "$count" -gt "$SHUTDOWN_WAIT" ]
-			do
-				sleep 1
-				let count="${count}+1"
-			done
-			if [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ]; then
-				log_success_msg "Stopping Cloud-management"
-			else
-				log_failure_msg "Stopping Cloud-management"
-			fi
-		else
-			echo "Cannot find PID file of Cloud-management"
-			log_failure_msg "Stopping Cloud-management"
-		fi
+		status ${NAME}
+		RETVAL=$?
+		;;
+    stop)
+		stop
+		;;
+    restart)
+		stop
+		set start
+		. /etc/rc.d/init.d/tomcat6
 		;;
 	*)
-	   . /etc/rc.d/init.d/tomcat6
+		. /etc/rc.d/init.d/tomcat6
 esac
 
 exit $RETVAL
