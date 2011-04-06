@@ -894,6 +894,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 			+ ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmt_host);
                     }
                 	
+                	if(s_logger.isInfoEnabled()) {
+                        s_logger.info("Add management server explicit route to DomR.");
+                    }
+                	
+                	// always add management explicit route, for basic networking setup, DomR may have two interfaces while both are on the same subnet
+                	_mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+                	if (NetUtils.isValidCIDR(_mgmt_cidr)) {
+                	    buf.append(" mgmtcidr=").append(_mgmt_cidr);
+                	    buf.append(" localgw=").append(dest.getPod().getGateway());
+                	}
+                	
+/*                	
                 	if(!NetUtils.sameSubnetCIDR(_mgmt_host, dest.getPod().getGateway(), dest.getPod().getCidrSize())) {
                     	if(s_logger.isInfoEnabled()) {
                             s_logger.info("Add management server explicit route to DomR.");
@@ -906,9 +918,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     	}
                 	} else {
                     	if(s_logger.isInfoEnabled()) {
-                            s_logger.info("Management server host is at same subnet at pod private network, don't add explict route to DomR");
+                            s_logger.info("Management server host is at same subnet at pod private network");
                         }
                 	}
+*/                	
                 }
 
                 controlNic = nic;
