@@ -1492,6 +1492,8 @@ CREATE TABLE `cloud`.`cmd_exec_log` (
   `weight` integer NOT NULL DEFAULT 1 COMMENT 'command weight in consideration of the load factor added to host that is executing the command',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),
+  INDEX `i_cmd_exec_log__host_id`(`host_id`),
+  INDEX `i_cmd_exec_log__instance_id`(`instance_id`),
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
