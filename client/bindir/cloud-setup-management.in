@@ -129,15 +129,15 @@ def checkselinux():
 
 
 ip = Command("ip")
-service = Command("service")
-chkconfig = Command("chkconfig")
+service = Command("/sbin/service")
+chkconfig = Command("/sbin/chkconfig")
 updatercd = Command("update-rc.d")
 ufw = Command("ufw")
-iptables = Command("iptables")
-iptables_save = Command("iptables-save")
+iptables = Command("/sbin/iptables")
+iptables_save = Command("/sbin/iptables-save")
 augtool = Command("augtool")
 kvmok = Command("kvm-ok")
-ifconfig = Command("ifconfig")
+ifconfig = Command("/sbin/ifconfig")
 uuidgen = Command("uuidgen")
 
 Fedora = os.path.exists("/etc/fedora-release")
