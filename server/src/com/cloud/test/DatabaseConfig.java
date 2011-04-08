@@ -191,8 +191,6 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("storage.capacity.threshold", "percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available");
         s_configurationDescriptions.put("public.ip.capacity.threshold", "percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent");
         s_configurationDescriptions.put("private.ip.capacity.threshold", "percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent");
-        s_configurationDescriptions.put("max.account.user.vms", "the maximum number of user VMs that can be deployed for an account");
-        s_configurationDescriptions.put("max.account.public.ips", "the maximum number of public IPs that can be reserved for an account");
         s_configurationDescriptions.put("expunge.interval", "the interval to wait before running the expunge thread");
         s_configurationDescriptions.put("network.throttling.rate", "default data transfer rate in megabits per second allowed per user");
         s_configurationDescriptions.put("multicast.throttling.rate", "default multicast rate in megabits per second allowed");
@@ -237,8 +235,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("public.ip.capacity.threshold", "management-server");
         s_configurationComponents.put("private.ip.capacity.threshold", "management-server");
         s_configurationComponents.put("capacity.check.period", "management-server");
-        s_configurationComponents.put("max.account.user.vms", "management-server");
-        s_configurationComponents.put("max.account.public.ips", "management-server");
         s_configurationComponents.put("network.throttling.rate", "management-server");
         s_configurationComponents.put("multicast.throttling.rate", "management-server");
         s_configurationComponents.put("account.cleanup.interval", "management-server");
@@ -321,8 +317,6 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("snapshot.test.months.per.year", "12");
         s_defaultConfigurationValues.put("alert.wait", "1800");
         s_defaultConfigurationValues.put("update.wait", "600");
-        s_defaultConfigurationValues.put("max.account.user.vms", "20");
-        s_defaultConfigurationValues.put("max.account.public.ips", "20");
         s_defaultConfigurationValues.put("expunge.interval", "86400");
         s_defaultConfigurationValues.put("extract.url.cleanup.interval",  "120");
         s_defaultConfigurationValues.put("instance.name", "VM");

@@ -219,8 +219,15 @@ public enum Config {
 	VmOpCleanupWait("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.wait", "3600", "Time (in seconds) to wait before cleanuping up any vm work items", "Seconds"),
 	VmOpCancelInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cancel.interval", "3600", "Time (in seconds) to wait before cancelling a operation", "Seconds"),
 	
-	DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null);
+	DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 	
+	
+	// Account Default Limits
+	DefaultMaxAccountUserVms("Account Defaults", ManagementServer.class, Long.class, "max.account.user.vms", "20", "The default maximum number of user VMs that can be deployed for an account", null),
+	DefaultMaxAccountPublicIPs("Account Defaults", ManagementServer.class, Long.class, "max.account.public.ips", "20", "The default maximum number of public IPs that can be consumed by an account", null),
+	DefaultMaxAccountTemplates("Account Defaults", ManagementServer.class, Long.class, "max.account.templates", "20", "The default maximum number of templates that can be deployed for an account", null),
+	DefaultMaxAccountSnapshots("Account Defaults", ManagementServer.class, Long.class, "max.account.snapshots", "20", "The default maximum number of snapshots that can be created for an account", null),
+	DefaultMaxAccountVolumes("Account Defaults", ManagementServer.class, Long.class, "max.account.volumes", "20", "The default maximum number of volumes that can be created for an account", null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;
@@ -243,6 +250,7 @@ public enum Config {
     	_configs.put("Premium", new ArrayList<Config>());
     	_configs.put("Developer", new ArrayList<Config>());
     	_configs.put("Hidden", new ArrayList<Config>());
+    	_configs.put("Account Defaults", new ArrayList<Config>());
     	
     	// Add values into HashMap
         for (Config c : Config.values()) {
