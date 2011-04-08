@@ -1501,6 +1501,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (templateSize > 0) {
                 templateResponse.setSize(templateSize);
             }
+            
+            templateResponse.setChecksum(template.getChecksum());
 
             templateResponse.setObjectName("template");
             responses.add(templateResponse);
