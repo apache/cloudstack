@@ -1499,6 +1499,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 templateResponse.setSize(templateSize);
             }
             
+            templateResponse.setChecksum(template.getChecksum());
+
             templateResponse.setObjectName("template");
             responses.add(templateResponse);
         }
