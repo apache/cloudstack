@@ -1636,9 +1636,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // Delete the recurring snapshot policies for this volume.
         _snapshotMgr.deletePoliciesForVolume(volumeId);
 
-        // Decrement the resource count for volumes
-        _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
-
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
+        if(vmInstance.getType().equals(VirtualMachine.Type.User)) {
+	        // Decrement the resource count for volumes belonging user VM's only
+	        _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
+        }
         txn.commit();
     }
 
