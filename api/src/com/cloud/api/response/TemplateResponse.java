@@ -107,6 +107,9 @@ public class TemplateResponse extends BaseResponse {
     @SerializedName("isextractable") @Param(description="true if the template is extractable, false otherwise")
     private Boolean extractable;
     
+    @SerializedName("checksum") @Param(description="checksum of the template")
+    private String checksum;
+    
     public Long getObjectId() {
     	return getId();
     }
@@ -326,4 +329,12 @@ public class TemplateResponse extends BaseResponse {
 	public void setExtractable(Boolean extractable) {
 		this.extractable = extractable;
 	}
+	
+    public String getChecksum() {
+        return checksum;
+    }
+
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }	
 }

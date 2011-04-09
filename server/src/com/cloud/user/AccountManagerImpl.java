@@ -119,6 +119,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	
 	private String _name;
 	@Inject private AccountDao _accountDao;
+	@Inject ConfigurationDao _configDao;
 	@Inject private DomainDao _domainDao;
 	@Inject private ResourceLimitDao _resourceLimitDao;
 	@Inject private ResourceCountDao _resourceCountDao;
@@ -250,22 +251,33 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public long findCorrectResourceLimit(AccountVO account, ResourceType type) {
     	long max = -1;
     	
-    	// Check account
 		ResourceLimitVO limit = _resourceLimitDao.findByAccountIdAndType(account.getId(), type);
-		
+
+    	// Check if limit is configured for account
 		if (limit != null) {
 			max = limit.getMax().longValue();
 		} else {
-			// If the account has an infinite limit, check the ROOT domain
-			Long domainId = account.getDomainId();
-			while ((domainId != null) && (limit == null)) {
-				limit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-				DomainVO domain = _domainDao.findById(domainId);
-				domainId = domain.getParent();
-			}
-	
-			if (limit != null) {
-				max = limit.getMax().longValue();
+			// If the account has an no limit set, then return global default account limits
+			try {
+				switch (type) {
+				case public_ip:
+					max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key()));
+					break;
+				case snapshot:
+					max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key()));
+					break;
+				case template:
+					max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountTemplates.key()));
+					break;
+				case user_vm:
+					max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountUserVms.key()));
+					break;
+				case volume:
+					max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVolumes.key()));
+					break;
+				}
+			} catch (NumberFormatException nfe) {
+				s_logger.error("Invalid value is set for the default account limit.");
 			}
 		}
 
@@ -310,14 +322,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (m_resourceCountLock.lock(120)) { // 2 minutes
             try {
-                // Check account
-                ResourceLimitVO limit = _resourceLimitDao.findByAccountIdAndType(account.getId(), type);
-                
-                if (limit != null) {
-                    long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
-                    if (potentialCount > limit.getMax().longValue()) {
-                        return true;
-                    }
+                // Check account limits
+            	AccountVO accountVo = _accountDao.findById(account.getAccountId());
+                long accountLimit   = findCorrectResourceLimit(accountVo, type);
+            	long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
+                if (potentialCount > accountLimit) {
+                    return true;
                 }
 
                 // check all domains in the account's domain hierarchy

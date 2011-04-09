@@ -621,6 +621,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
         cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
         cmd.addVmData("metadata", "public-keys", publicKey);
+        
+        String cloudIdentifier = _configDao.getValue("cloud.identifier");
+    	if (cloudIdentifier == null) {
+    	    cloudIdentifier = "";
+    	}else{
+    		cloudIdentifier = "CloudStack-{"+cloudIdentifier+"}";
+    	}
+        cmd.addVmData("metadata", "cloud-identifier", cloudIdentifier);
 
         return cmd;
     }
