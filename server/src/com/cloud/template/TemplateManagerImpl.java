@@ -282,6 +282,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         Long domainId = cmd.getDomainId();
         Account resourceAccount = null;
         Long accountId = null;
+        String chksum = cmd.getChecksum();
 
         //parameters verification
         if (bits == null) {
@@ -369,7 +370,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             userId = Long.valueOf(1);
         }
         
-        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, format, TemplateType.USER, url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
+        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, format, TemplateType.USER, url, chksum, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
     	
     }
     
