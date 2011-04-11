@@ -29,7 +29,7 @@ def prepare_boot_file():
 		if exists(pxelinux) == False:
 			makedirs(pxelinux)
 
-		cfg_name = "01-" + mac.replace(':','-')
+		cfg_name = "01-" + mac.replace(':','-').lower()
 		cfg_path = join(pxelinux, cfg_name)
 		f = open(cfg_path, "w")
 		stuff = template % (cifs_server, share, directory, image_to_restore, cifs_username, cifs_password)
