@@ -18,7 +18,9 @@
 
 package com.cloud.cluster.dao;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -33,6 +35,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={ManagementServerHostDao.class})
 public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServerHostVO, Long> implements ManagementServerHostDao {
@@ -41,7 +44,77 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
-    
+
+	public void update(Connection conn, long id, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0 where id=?");
+            pstmt.setString(1, name);
+            pstmt.setString(2, version);
+            pstmt.setString(3, serviceIP);
+            pstmt.setInt(4, servicePort);
+            pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+            pstmt.setLong(6, id);
+            
+            pstmt.executeUpdate();
+        } catch(SQLException e ) {
+        	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+        } finally {
+        	if(pstmt != null) {
+        		try {
+        			pstmt.close();
+        		} catch(Exception e) {
+        			s_logger.warn("Unable to close prepared statement due to exception ", e);
+        		}
+        	}
+        }
+	}
+
+	public void update(Connection conn, long id, Date lastUpdate) {
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=?");
+            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+            pstmt.setLong(2, id);
+            
+            pstmt.executeUpdate();
+        } catch (SQLException e) { 
+        	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+        } finally {
+        	if(pstmt != null) {
+        		try {
+        			pstmt.close();
+        		} catch(Exception e) {
+        			s_logger.warn("Unable to close prepared statement due to exception ", e);
+        		}
+        	}
+        }
+	}
+	
+	public List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime) {
+		Transaction txn = Transaction.openNew("getActiveList", conn);
+		try {
+		    SearchCriteria<ManagementServerHostVO> sc = ActiveSearch.create();
+		    sc.setParameters("lastUpdateTime", cutTime);
+		    
+		    return listIncludingRemovedBy(sc);
+		} finally {
+			txn.close();
+		}
+	}
+	
+	public List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime) {
+		Transaction txn = Transaction.openNew("getInactiveList", conn);
+		try {
+		    SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
+		    sc.setParameters("lastUpdateTime", cutTime);
+		    
+		    return listIncludingRemovedBy(sc);
+		} finally {
+			txn.close();
+		}
+	}
+	
 	public ManagementServerHostVO findByMsid(long msid) {
         SearchCriteria<ManagementServerHostVO> sc = MsIdSearch.create();
         sc.setParameters("msid", msid);
@@ -54,7 +127,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	}
 	
 	public void update(long id, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
-		// Can't get removed column to work with null value, switch to raw JDBC that I can control
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         try {
@@ -75,9 +147,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.rollback();
         }
 	}
-	
+
 	public void update(long id, Date lastUpdate) {
-		// Can't get removed column to work with null value, switch to raw JDBC that I can control
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         try {
@@ -101,7 +172,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	    
 	    return listIncludingRemovedBy(sc);
 	}
-	
+
 	public List<ManagementServerHostVO> getInactiveList(Date cutTime) {
 	    SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
 	    sc.setParameters("lastUpdateTime", cutTime);

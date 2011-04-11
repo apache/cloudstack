@@ -18,6 +18,7 @@
 
 package com.cloud.cluster.dao;
 
+import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
@@ -26,10 +27,15 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ManagementServerHostDao extends GenericDao<ManagementServerHostVO, Long> {
 	ManagementServerHostVO findByMsid(long msid);
+	void increaseAlertCount(long id);
+	
 	void update(long id, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
 	void update(long id, Date lastUpdate);
-	
 	List<ManagementServerHostVO> getActiveList(Date cutTime);
 	List<ManagementServerHostVO> getInactiveList(Date cutTime);
-	void increaseAlertCount(long id);
+
+	void update(Connection conn, long id, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
+	void update(Connection conn, long id, Date lastUpdate);
+	List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime);
+	List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime);
 }

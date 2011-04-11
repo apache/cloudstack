@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -40,6 +42,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.Adapters;
@@ -71,11 +74,12 @@ public class ClusterManagerImpl implements ClusterManager {
     
     private AgentManager _agentMgr;
     
-    private final ScheduledExecutorService _heartbeatScheduler =
-        Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-Heartbeat"));
-    private final ScheduledExecutorService _peerScanScheduler = 
-    	Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-PeerScan"));
+    private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-Heartbeat"));
     
+    private final ExecutorService _notificationExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("Cluster-Notification"));
+    private List< Pair<List<ManagementServerHostVO>, List<ManagementServerHostVO>> > _notificationMsgs = new ArrayList< Pair<List<ManagementServerHostVO>, List<ManagementServerHostVO>> >();
+    private Connection _heartbeatConnection = null;
+
     private final ExecutorService _executor;
     
     private ClusterServiceAdapter _currentServiceAdapter;
@@ -539,50 +543,140 @@ public class ClusterManagerImpl implements ClusterManager {
                         s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
                     }
     	    		
-        			_mshostDao.update(_mshostId, DateUtil.currentGMTTime());
+    	    		Connection conn = getHeartbeatConnection();
+        			_mshostDao.update(conn, _mshostId, DateUtil.currentGMTTime());
+
+    	    		if(s_logger.isTraceEnabled()) {
+                        s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
+                    }
+        			
+    	    		if(!_peerScanInited) {
+    	    			_peerScanInited = true;
+    	    			initPeerScan(conn);
+    	    		}
+    	    		
+        			peerScan(conn);
+			    } catch(CloudRuntimeException e) {
+			    	// TODO, if the exception is caused by lost of DB connection
+			    	// start fencing and shutdown the management server
+			        s_logger.error("Runtime DB exception ", e.getCause());
+			    	
+			    	invalidHeartbeatConnection();
 			    } catch (Throwable e) {
 			        s_logger.error("Problem with the cluster heartbeat!", e);
 			    }
 			}
 		};
 	}
-
-	private Runnable getPeerScanTask() {
+	
+	private Connection getHeartbeatConnection() {
+		if(_heartbeatConnection != null) {
+			return _heartbeatConnection;
+		}
+		
+		_heartbeatConnection = Transaction.getStandaloneUsageConnection();
+		return _heartbeatConnection;
+	}
+	
+	private void invalidHeartbeatConnection() {
+		if(_heartbeatConnection != null) {
+			try {
+				_heartbeatConnection.close();
+			} catch (SQLException e) {
+				s_logger.warn("Unable to close hearbeat DB connection. ", e);
+			}
+			
+			_heartbeatConnection = null;
+		}
+	}
+	
+	private Runnable getNotificationTask() {
 		return new Runnable() {
 			@Override
             public void run() {
-			    try {
-    	    		if(s_logger.isTraceEnabled()) {
-                        s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
-                    }
-    	    		
-    	    		if(!_peerScanInited) {
-    	    			_peerScanInited = true;
-    	    			initPeerScan();
-    	    		}
-    	    		
-        			peerScan();
-			    } catch (Throwable e) {
-			        s_logger.error("Problem with the cluster peer-scan!", e);
-			    }
+				while(true) {
+					synchronized(_notificationMsgs) {
+						try {
+							_notificationMsgs.wait(1000);
+						} catch (InterruptedException e) {
+						}
+					}
+					
+					Pair<List<ManagementServerHostVO>, List<ManagementServerHostVO>> msgPair = null;
+					while((msgPair = getNextNotificationMessage()) != null) {
+					    try {
+							if(msgPair.first() != null && msgPair.first().size() > 0) {
+								Profiler profiler = new Profiler();
+								profiler.start();
+								
+					            notifyNodeJoined(msgPair.first());
+					            
+								profiler.stop();
+								if(profiler.getDuration() > 1000) {
+									if(s_logger.isDebugEnabled()) {
+					                    s_logger.debug("Notifying management server join event took " + profiler.getDuration() + " ms");
+					                }
+								} else {
+									s_logger.warn("Notifying management server join event took " + profiler.getDuration() + " ms");
+								}
+							}
+							
+							if(msgPair.second() != null && msgPair.second().size() > 0) {
+								Profiler profiler = new Profiler();
+								profiler.start();
+
+								notifyNodeLeft(msgPair.second());
+								
+								profiler.stop();
+								if(profiler.getDuration() > 1000) {
+									if(s_logger.isDebugEnabled()) {
+					                    s_logger.debug("Notifying management server leave event took " + profiler.getDuration() + " ms");
+					                }
+								} else {
+									s_logger.warn("Notifying management server leave event took " + profiler.getDuration() + " ms");
+								}
+					        }
+					    } catch (Throwable e) {
+					    	s_logger.warn("Unexpected exception during cluster notification. ", e);
+					    }
+					}
+					
+					try { Thread.currentThread().sleep(1000); } catch (InterruptedException e) {}
+				}
 			}
 		};
 	}
 	
-	private void initPeerScan() {
+	private void queueNotification(List<ManagementServerHostVO> addedNodeList, List<ManagementServerHostVO> removedNodeList) {
+		synchronized(this._notificationMsgs) {
+			this._notificationMsgs.add(new Pair<List<ManagementServerHostVO>, List<ManagementServerHostVO>>(addedNodeList, removedNodeList));
+			this._notificationMsgs.notifyAll();
+		}
+	}
+	
+	private Pair<List<ManagementServerHostVO>, List<ManagementServerHostVO>> getNextNotificationMessage() {
+		synchronized(this._notificationMsgs) {
+			if(this._notificationMsgs.size() > 0)
+				return this._notificationMsgs.remove(0);
+		}
+		
+		return null;
+	}
+	
+	private void initPeerScan(Connection conn) {
 		// upon startup, for all inactive management server nodes that we see at startup time, we will send notification also to help upper layer perform
 		// missed cleanup 
 		Date cutTime = DateUtil.currentGMTTime();
-		List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - heartbeatThreshold));
+		List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(conn, new Date(cutTime.getTime() - heartbeatThreshold));
 		if(inactiveList.size() > 0) {
             notifyNodeLeft(inactiveList);
         }
 	}
 	
-	private void peerScan() {
+	private void peerScan(Connection conn) {
 		Date cutTime = DateUtil.currentGMTTime();
 		
-		List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - heartbeatThreshold));
+		List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(conn, new Date(cutTime.getTime() - heartbeatThreshold));
 
 		List<ManagementServerHostVO> removedNodeList = new ArrayList<ManagementServerHostVO>();
 		if(_mshostId != null) {
@@ -602,7 +696,7 @@ public class ClusterManagerImpl implements ClusterManager {
 		Iterator<ManagementServerHostVO> it = removedNodeList.iterator();
 		while(it.hasNext()) {
 			ManagementServerHostVO mshost = it.next();
-			if(!pingManagementNode(mshost.getMsid())) {
+			if(!pingManagementNode(mshost)) {
 				s_logger.warn("Management node " + mshost.getId() + " is detected inactive by timestamp and also not pingable");
 				activePeers.remove(mshost.getId());
 				
@@ -635,37 +729,8 @@ public class ClusterManagerImpl implements ClusterManager {
 			}
 		}
 		
-		if(newNodeList.size() > 0) {
-			Profiler profiler = new Profiler();
-			profiler.start();
-			
-            notifyNodeJoined(newNodeList);
-            
-			profiler.stop();
-			if(profiler.getDuration() > 1000) {
-				if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Notifying management server join event took " + profiler.getDuration() + " ms");
-                }
-			} else {
-				s_logger.warn("Notifying management server join event took " + profiler.getDuration() + " ms");
-			}
-		}
-		
-		if(removedNodeList.size() > 0) {
-			Profiler profiler = new Profiler();
-			profiler.start();
-
-			notifyNodeLeft(removedNodeList);
-			
-			profiler.stop();
-			if(profiler.getDuration() > 1000) {
-				if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Notifying management server leave event took " + profiler.getDuration() + " ms");
-                }
-			} else {
-				s_logger.warn("Notifying management server leave event took " + profiler.getDuration() + " ms");
-			}
-        }
+		if(newNodeList.size() > 0 || removedNodeList.size() > 0)
+			this.queueNotification(newNodeList, removedNodeList);
 	}
 	
 	private static boolean isIdInList(Long id, List<ManagementServerHostVO> l) {
@@ -731,9 +796,7 @@ public class ClusterManagerImpl implements ClusterManager {
 	        // use seperated thread for heartbeat updates
 			_heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval,
 					heartbeatInterval, TimeUnit.MILLISECONDS);
-			_peerScanScheduler.scheduleAtFixedRate(getPeerScanTask(), heartbeatInterval,
-					heartbeatInterval, TimeUnit.MILLISECONDS);
-	        
+			_notificationExecutor.submit(getNotificationTask());
         } catch (Throwable e) {
         	s_logger.error("Unexpected exception : ", e);
             txn.rollback();
@@ -882,6 +945,11 @@ public class ClusterManagerImpl implements ClusterManager {
     	if(mshost == null) {
             return false;
         }
+    	
+    	return pingManagementNode(mshost);
+    }
+    
+    private boolean pingManagementNode(ManagementServerHostVO mshost) {
 
     	String targetIp = mshost.getServiceIP();
     	if("127.0.0.1".equals(targetIp) || "0.0.0.0".equals(targetIp)) {
@@ -889,7 +957,7 @@ public class ClusterManagerImpl implements ClusterManager {
     		return false;
     	}
     	
-    	String targetPeer = String.valueOf(msid);
+    	String targetPeer = String.valueOf(mshost.getMsid());
     	ClusterService peerService = null;
     	for(int i = 0; i < 2; i++) {
 	    	try {
@@ -906,12 +974,13 @@ public class ClusterManagerImpl implements ClusterManager {
 					invalidatePeerService(targetPeer);
 				}
 	    	} else {
-	    		s_logger.warn("Remote peer " + msid + " no longer exists");
+	    		s_logger.warn("Remote peer " + mshost.getMsid() + " no longer exists");
 	    	}
     	}
     	
     	return false;
     }
+    
     
     @Override
 	public int getHeartbeatThreshold() {

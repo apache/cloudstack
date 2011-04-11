@@ -73,6 +73,7 @@ public class Transaction {
 
     public static final short CLOUD_DB = 0;
     public static final short USAGE_DB = 1;
+    public static final short CONNECTED_DB = -1;
 
     private final LinkedList<StackElement> _stack;
     
@@ -85,6 +86,8 @@ public class Transaction {
     private long _txnTime;
     private Statement _stmt;
     private final Merovingian _lockMaster;
+    
+    private Transaction _prev = null;
  
     public static Transaction currentTxn() {
         Transaction txn = tls.get();
@@ -100,6 +103,22 @@ public class Transaction {
             name = CURRENT_TXN;
         }
         return open(name, databaseId, true);
+    }
+
+    //
+    // Usage of this transaction setup should be limited, it will always open a new transaction context regardless of whether or not there is other
+    // transaction context in the stack. It is used in special use cases that we want to control DB connection explicitly and in the mean time utilize
+    // the existing DAO features
+    // 
+    public static Transaction openNew(final String name, Connection conn) {
+    	assert(conn != null);
+        Transaction txn = new Transaction(name, false, CONNECTED_DB);
+        txn._conn = conn;
+        txn._prev = tls.get();
+        tls.set(txn);
+        
+        txn.takeOver(name, true);
+        return txn;
     }
     
     public static Transaction open(final String name) {
@@ -529,6 +548,9 @@ public class Transaction {
             s_logger.trace("Transaction is done");
             cleanup();
         }
+        
+        tls.set(_prev);
+        _prev = null;
     }
     
     /**
@@ -625,7 +647,9 @@ public class Transaction {
 
         try {
             s_logger.trace("conn: Closing DB connection");
-            _conn.close();
+            if(this._dbId != CONNECTED_DB)
+            	_conn.close();
+            
             _conn = null;
         } catch (final SQLException e) {
             s_logger.warn("Unable to close connection", e);
