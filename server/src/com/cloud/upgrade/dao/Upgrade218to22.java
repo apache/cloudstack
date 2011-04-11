@@ -1459,6 +1459,7 @@ public class Upgrade218to22 implements DbUpgrade {
             zoneId = Long.parseLong(volEventParams.getProperty("dcId"));
             templateId = Long.parseLong(volEventParams.getProperty("tId"));
             size = Long.parseLong(volEventParams.getProperty("size"));
+            size = (size * 1048576);
             if(doId == -1){
                 doId = null;
             }
