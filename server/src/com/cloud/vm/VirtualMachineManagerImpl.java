@@ -486,7 +486,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     s_logger.debug("Determining why we're unable to update the state to Starting for " + vm);
                 } 
                 
-                VMInstanceVO instance = _vmDao.lockRow(vmId, true);
+                VMInstanceVO instance = _vmDao.findById(vmId);
                 if (instance == null) {
                     throw new ConcurrentOperationException("Unable to acquire lock on " + vm);
                 }
