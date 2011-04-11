@@ -132,3 +132,9 @@ UPDATE `cloud`.`service_offering` s, `cloud`.`disk_offering` d SET s.ha_enabled=
 
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`);
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`);
+
+
+
+ALTER TABLE `cloud`.`user_vm` DROP COLUMN guest_ip_address;
+ALTER TABLE `cloud`.`user_vm` DROP COLUMN guest_mac_address;
+ALTER TABLE `cloud`.`user_vm` DROP COLUMN guest_netmask;
