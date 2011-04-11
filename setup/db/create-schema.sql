@@ -847,9 +847,6 @@ CREATE TABLE `cloud`.`user_vm` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `iso_id` bigint unsigned,
   `display_name` varchar(255),
-  `guest_ip_address` char(40) COMMENT 'ip address within the guest network',
-  `guest_mac_address` varchar(17) COMMENT 'mac address within the guest network',
-  `guest_netmask` varchar(15) COMMENT 'netmask within the guest network',
   `user_data` varchar(2048),
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_user_vm__id` FOREIGN KEY `fk_user_vm__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
