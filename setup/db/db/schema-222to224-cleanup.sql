@@ -7,6 +7,8 @@ DELETE FROM `cloud`.`configuration` WHERE name in ('direct.attach.security.group
 
 ALTER TABLE `cloud`.`volumes` DROP COLUMN `status`;
 ALTER TABLE `cloud`.`volumes` DROP COLUMN `resource_type`;
+ALTER TABLE `cloud`.`volumes` DROP COLUMN `source_id`;
+ALTER TABLE `cloud`.`volumes` DROP COLUMN `source_type`;
 
 ALTER TABLE `cloud`.`user_vm` DROP COLUMN guest_ip_address;
 ALTER TABLE `cloud`.`user_vm` DROP COLUMN guest_mac_address;

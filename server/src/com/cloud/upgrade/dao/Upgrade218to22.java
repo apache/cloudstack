@@ -1000,18 +1000,16 @@ public class Upgrade218to22 implements DbUpgrade {
                     }
                     pstmt.close();
                 }
-
-                // Update hypervisor type for user vm to be consistent with original 2.2.4
-                pstmt = conn.prepareStatement("UPDATE vm_instance SET hypervisor_type='XenServer' WHERE hypervisor_type='xenserver'");
-                pstmt.executeUpdate();
-                pstmt.close();
-
-                // Set account=systemAccount and domain=ROOT for CPVM/SSVM
-                pstmt = conn.prepareStatement("UPDATE vm_instance SET account_id=1, domain_id=1 WHERE type='ConsoleProxy' or type='SecondaryStorageVm'");
-                pstmt.executeUpdate();
-                pstmt.close();
-
             }
+            // Update hypervisor type for user vm to be consistent with original 2.2.4
+            pstmt = conn.prepareStatement("UPDATE vm_instance SET hypervisor_type='XenServer' WHERE hypervisor_type='xenserver'");
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // Set account=systemAccount and domain=ROOT for CPVM/SSVM
+            pstmt = conn.prepareStatement("UPDATE vm_instance SET account_id=1, domain_id=1 WHERE type='ConsoleProxy' or type='SecondaryStorageVm'");
+            pstmt.executeUpdate();
+            pstmt.close();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't update data center ", e);
         }

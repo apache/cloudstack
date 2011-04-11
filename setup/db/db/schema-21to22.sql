@@ -976,3 +976,6 @@ UPDATE vm_template SET hypervisor_type='XenServer' WHERE hypervisor_type IS NULL
 UPDATE vm_template SET hypervisor_type='KVM' WHERE hypervisor_type IS NULL AND format='QCOW2';
 UPDATE vm_template SET hypervisor_type='VmWare' WHERE hypervisor_type IS NULL AND format='OVA';
 UPDATE vm_template SET hypervisor_type='None' WHERE hypervisor_type IS NULL AND format='ISO';
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_id` bigint unsigned  COMMENT 'id for the source';
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_type` varchar(32) COMMENT 'source from which the volume is created -- snapshot, diskoffering, template, blank';
