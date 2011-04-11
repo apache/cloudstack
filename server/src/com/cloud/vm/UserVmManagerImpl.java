@@ -2594,6 +2594,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         User caller = _userDao.findById(userId);
         
         boolean status;
+        State vmState = vm.getState();
+
         try {
             status = _itMgr.destroy(vm, caller, account);
         } catch (OperationTimedoutException e) {
@@ -2612,8 +2614,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName());
             _usageEventDao.persist(usageEvent);
-            _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-            return _vmDao.findById(vmId);
+
+            if (vmState != State.Error) {
+                _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+            }
+
+           return _vmDao.findById(vmId);
         } else {
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }

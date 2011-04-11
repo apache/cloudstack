@@ -605,7 +605,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
                 
                 if (dest == null) {
-                	_accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
                     throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());                    
                 }
                 
@@ -693,6 +692,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             } 
         } finally {
             if (startedVm == null) {
+                _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
                 changeState(vm, Event.OperationFailed, null, work, Step.Done);
             }
         }

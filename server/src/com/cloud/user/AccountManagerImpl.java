@@ -230,6 +230,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (m_resourceCountLock.lock(120)) { // 2 minutes
             try {
+                assert ((_resourceCountDao.getAccountCount(accountId, type) - numToDecrement) >= 0) : "Resource counts can not be negative. Check where we skipped increment.";
                 _resourceCountDao.updateAccountCount(accountId, type, false, numToDecrement);
 
                 // on a per-domain basis, decrement the count
@@ -237,6 +238,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 Account account = _accountDao.findByIdIncludingRemoved(accountId);  // find all accounts, even removed accounts if this happens to be for an account that's being deleted
                 Long domainId = account.getDomainId();
                 while (domainId != null) {
+                    assert ((_resourceCountDao.getDomainCount(domainId, type) - numToDecrement) >= 0) : "Resource counts can not be negative. Check where we skipped increment.";
                     _resourceCountDao.updateDomainCount(domainId, type, false, numToDecrement);
                     DomainVO domain = _domainDao.findById(domainId);
                     domainId = domain.getParent();
