@@ -67,7 +67,7 @@ then
 elif [ "$hyper" == "xenserver" ]
 then
    ext="vhd"
-   templateId=1
+   templateId=${templateId:-1}
 elif [ "$hyper" == "vmware" ]
 then
    ext="ova"
@@ -110,7 +110,8 @@ fi
 
 if [ -f $destdir/template.properties ]
 then
-  echo "Data already exists at destination $destdir -- use -f to force cleanup of old template"
+  echo "Data already exists at destination $destdir -- use -F to force cleanup of old template"
+  echo "IF YOU ARE ATTEMPTING AN UPGRADE, YOU MAY NEED TO SPECIFY A TEMPLATE ID USING THE -t FLAG"
   failed 4
 fi
 
