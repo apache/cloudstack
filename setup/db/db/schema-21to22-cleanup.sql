@@ -105,3 +105,12 @@ ALTER TABLE `cloud`.`load_balancer_vm_map` ADD UNIQUE KEY (`load_balancer_id`, `
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD CONSTRAINT `fk_load_balancer_vm_map__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
 
+
+ALTER TABLE `cloud`.`user_ip_address` DROP PRIMARY KEY;
+ALTER TABLE `cloud`.`user_ip_address` ADD PRIMARY KEY (`id`);
+ALTER TABLE `cloud`.`user_ip_address` DROP INDEX public_ip_address;
+ALTER TABLE `cloud`.`user_ip_address` DROP KEY `i_user_ip_address__public_ip_address`;
+ALTER TABLE `cloud`.`user_ip_address` ADD UNIQUE (`public_ip_address`, `source_network_id`);
+ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`);
+ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`);
+
