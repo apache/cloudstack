@@ -220,4 +220,5 @@ public class ApiConstants {
     public static final String TFTP_DIR = "tftpdir";
     public static final String PING_CIFS_USERNAME = "pingcifsusername";
     public static final String PING_CIFS_PASSWORD = "pingcifspassword";
+    public static final String CHECKSUM="checksum";
 }
