@@ -26,21 +26,20 @@ import com.cloud.template.BasedOn;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
 
-
 public interface Volume extends ControlledEntity, BasedOn {
-	enum Type {UNKNOWN, ROOT, SWAP, DATADISK, ISO};
-	
-	enum State implements FiniteState<State, Event> {
-	    Allocated("The volume is allocated but has not been created yet."),
-	    Creating("The volume is being created.  getPoolId() should reflect the pool where it is being created."),
-	    Ready("The volume is ready to be used."),
-	    Destroy("The volume is set to be destroyed but can be recovered.");
-	    
-	    String _description;
-	    
-	    private State(String description) {
-	        _description = description;
-	    }
+    enum Type {
+        UNKNOWN, ROOT, SWAP, DATADISK, ISO
+    };
+
+    enum State implements FiniteState<State, Event> {
+        Allocated("The volume is allocated but has not been created yet."), Creating("The volume is being created.  getPoolId() should reflect the pool where it is being created."), Ready(
+                "The volume is ready to be used."), Destroy("The volume is set to be destroyed but can be recovered.");
+
+        String _description;
+
+        private State(String description) {
+            _description = description;
+        }
 
         @Override
         public StateMachine<State, Event> getStateMachine() {
@@ -61,12 +60,12 @@ public interface Volume extends ControlledEntity, BasedOn {
         public Set<Event> getPossibleEvents() {
             return s_fsm.getPossibleEvents(this);
         }
-        
+
         @Override
         public String getDescription() {
             return _description;
         }
-        
+
         private final static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
             s_fsm.addTransition(Allocated, Event.Create, Creating);
@@ -78,63 +77,58 @@ public interface Volume extends ControlledEntity, BasedOn {
             s_fsm.addTransition(Creating, Event.Create, Creating);
             s_fsm.addTransition(Ready, Event.Destroy, Destroy);
         }
-	}
-	
-	enum Event {
-	    Create,
-	    OperationFailed,
-	    OperationSucceeded,
-	    OperationRetry,
-	    Destroy;
-	}
-	
-	long getId();
-	/**
+    }
+
+    enum Event {
+        Create, OperationFailed, OperationSucceeded, OperationRetry, Destroy;
+    }
+
+    long getId();
+
+    /**
      * @return the volume name
      */
     String getName();
-    
+
     /**
      * @return total size of the partition
      */
     long getSize();
-    
+
     /**
      * @return the vm instance id
      */
     Long getInstanceId();
-    
+
     /**
      * @return the folder of the volume
      */
     String getFolder();
-    
+
     /**
      * @return the path created.
      */
     String getPath();
-    
-    Long getPodId();
-    
-    long getDataCenterId();
-    
-    Type getVolumeType();
-    
-    Storage.StorageResourceType getStorageResourceType();
-    
-	Long getPoolId();
-	
-	State getState();
-	
-	Date getAttached();
 
-	Long getDeviceId();
-	
-	Date getCreated();
-	
-	long getDiskOfferingId();
-	
-	String getChainInfo();
-	
-	boolean isRecreatable();
+    Long getPodId();
+
+    long getDataCenterId();
+
+    Type getVolumeType();
+
+    Long getPoolId();
+
+    State getState();
+
+    Date getAttached();
+
+    Long getDeviceId();
+
+    Date getCreated();
+
+    long getDiskOfferingId();
+
+    String getChainInfo();
+
+    boolean isRecreatable();
 }
