@@ -55,14 +55,14 @@ public class HostPodVO implements Pod {
 	@Column(name = "external_dhcp")
 	private Boolean externalDhcp;
 
-	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description, Boolean externalDhcp) {
+	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
 		this.name = name;
 		this.dataCenterId = dcId;
 		this.gateway = gateway;
 		this.cidrAddress = cidrAddress;
 		this.cidrSize = cidrSize;
 		this.description = description;
-		this.externalDhcp = externalDhcp;
+		this.externalDhcp = false;
 	}
 
 	/*

@@ -633,7 +633,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             ipRange = "";
         }
         
-        HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange, false);
+        HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();

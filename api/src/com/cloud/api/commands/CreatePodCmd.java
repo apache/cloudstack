@@ -57,9 +57,6 @@ public class CreatePodCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created	")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.USE_EXTERNAL_DHCP, type=CommandType.BOOLEAN, description="whether use external dhcp server, true/false, default is false ")
-    private Boolean useExternalDhcp;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -87,12 +84,7 @@ public class CreatePodCmd extends BaseCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-    
-    public Boolean getUseExternalDhcp() {
-    	return useExternalDhcp;
-    }
-
+    }    
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

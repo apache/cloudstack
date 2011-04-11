@@ -212,7 +212,6 @@ public class ApiConstants {
     public static final String PRIVATE_MAC_ADDRESS = "privatemacaddress";
     public static final String PRIVATE_NETMASK = "privatenetmask";
     public static final String PRIVATE_NETWORK_ID = "privatenetworkid";
-    public static final String USE_EXTERNAL_DHCP = "useexternaldhcp";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
     public static final String PING_DIR = "pingdir";
     public static final String TFTP_DIR = "tftpdir";
