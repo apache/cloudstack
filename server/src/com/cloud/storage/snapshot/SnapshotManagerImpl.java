@@ -324,7 +324,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Account owner = _accountMgr.getAccount(v.getAccountId());
         SnapshotVO snapshot = null;
         boolean backedUp = false;
-
+        //does the caller have the authority to act on this volume
+        checkAccountPermissions(v.getAccountId(), v.getDomainId(), "volume", volumeId);
         try {
             if (v != null && _volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
                 /* KVM needs to lock on the vm of volume, because it takes snapshot on behalf of vm, not volume */
@@ -589,21 +590,23 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         Account account = UserContext.current().getCaller();
         if (account != null) {
-            if (!isAdmin(account.getType())) {
+        	
+            /*if (!isAdmin(account.getType())) {
                 if (account.getId() != targetAccountId) {
                     throw new InvalidParameterValueException("Unable to find a " + targetDesc + " with id " + targetId + " for this account");
                 }
             } else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {
                 throw new PermissionDeniedException("Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
             }
-            accountId = account.getId();
+            accountId = account.getId();*/
+        	_accountMgr.checkAccess(account, _domainDao.findById(targetDomainId));
         }
 
         return accountId;
     }
 
     private static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
     @Override
@@ -773,7 +776,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     throw new PermissionDeniedException("Unable to list templates for domain " + domainId + ", permission denied.");
                 }
-            } else if ((account != null) && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+            } else if ((account != null) && ((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN))) {
                 domainId = account.getDomainId();
             }
 

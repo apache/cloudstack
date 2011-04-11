@@ -187,7 +187,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 	public List<AccountVO> findAdminAccountsForDomain(Long domain) {
         SearchCriteria<AccountVO> sc = AccountTypeSearch.create();
         sc.addAnd("domainId", Op.EQ,  domain);
-        sc.addAnd("type", Op.IN, Account.ACCOUNT_TYPE_ADMIN, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, Account.ACCOUNT_TYPE_READ_ONLY_ADMIN);
+        sc.addAnd("type", Op.IN, Account.ACCOUNT_TYPE_ADMIN, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, Account.ACCOUNT_TYPE_READ_ONLY_ADMIN, Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
 		return null;
 	}
 	

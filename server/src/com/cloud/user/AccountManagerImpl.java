@@ -53,6 +53,8 @@ import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -146,6 +148,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private RemoteAccessVpnDao _remoteAccessVpnDao;
 	@Inject private RemoteAccessVpnService _remoteAccessVpnMgr;
 	@Inject private VpnUserDao _vpnUser;
+	@Inject private DataCenterDao _dcDao;
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 	
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
@@ -470,11 +473,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Long accountId = null;
         Account account = UserContext.current().getCaller();
 
-        if ((account == null) ||
-            (account.getType() == Account.ACCOUNT_TYPE_ADMIN) ||
-            (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
-            (account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
-
+        if ((account == null) || isAdmin(account.getType())) {
             if (accountName != null) {
                 // Look up limits for the specified account
 
@@ -486,7 +485,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 
                 if (userAccount == null) {
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                } else if (account != null && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
+                } else if (account != null && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
                     // If this is a non-root admin, make sure that the admin and the user account belong in the same domain or
                     // that the user account's domain is a child domain of the parent
                     if (account.getDomainId() != userAccount.getDomainId() && !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
@@ -572,7 +571,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 domainId = DomainVO.ROOT_DOMAIN; // for root admin, default to root domain if domain is not specified
             }                 
             
-            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 if ((domainId != null) && (accountName == null) && domainId.equals(account.getDomainId())) {
                     // if the admin is trying to update their own domain, disallow...
                     throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
@@ -700,6 +699,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+        		(accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
                 (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
                 (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
@@ -707,6 +707,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public boolean isRootAdmin(short accountType) {
         return (accountType == Account.ACCOUNT_TYPE_ADMIN); 
+    }
+    
+    public boolean isResourceDomainAdmin(short accountType){
+    	return (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
     }
 
     @Override
@@ -770,7 +774,31 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
-    private boolean doSetUserStatus(long userId, State state) {
+    @Override
+    public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId){
+    	//We just care for resource domain admin for now. He should be permitted to see only his zone.
+    	if (isResourceDomainAdmin(caller.getType())){
+    		if (zoneId == null)
+    			return getZoneIdForAccount(caller); 
+    		else if (getZoneIdForAccount(caller) != zoneId)
+    			throw new PermissionDeniedException("Caller " +caller+ "is not allowed to access the zone " +zoneId);
+    		else 
+    			return zoneId;
+    	}
+    	
+    	else
+    		return zoneId;    	
+    }
+    
+    private Long getZoneIdForAccount(Account account) {
+    	
+    	/*
+    	 *_dcDao.findZonesByDomainId(account.getDomainId()); 
+    	 */
+		return 1L;
+	}
+
+	private boolean doSetUserStatus(long userId, State state) {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setState(state);
         return _userDao.update(Long.valueOf(userId), userForUpdate);
@@ -1019,6 +1047,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String timezone = cmd.getTimezone();
         String accountName = cmd.getAccountName();
         short userType = cmd.getAccountType().shortValue();
+        DomainVO domain = _domainDao.findById(domainId);
+        checkAccess(UserContext.current().getCaller(), domain);
         
         try {
             if (accountName == null) {
@@ -1032,8 +1062,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (account != null) {
                 throw new CloudRuntimeException("The specified account: "+account.getAccountName()+" already exists");
             }
-            
-            DomainVO domain = _domainDao.findById(domainId);
+                        
             if(domain == null) {
                 throw new CloudRuntimeException("The domain "+domainId+" does not exist; unable to create account");
             } else {
@@ -1070,6 +1099,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 accountId = newAccount.getId();
             }
 
+            if(userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
+            	List<DataCenterVO> dc = _dcDao.findZonesByDomainId(domainId);
+            	if (dc == null || dc.size() == 0 ){
+            		throw new CloudRuntimeException("The account cannot be created as domain "+domain.getName()+" is not associated with any private Zone");
+            	}
+            }
             if (accountId == null) {
                 throw new CloudRuntimeException("Failed to create account for user: " + username + "; unable to create user");
             }
@@ -1122,7 +1157,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     	if (domainId == null) {
     	    domainId = Domain.ROOT_DOMAIN;
     	}
-    	
+    	DomainVO domain = _domainDao.findById(domainId);
+    	checkAccess(UserContext.current().getCaller(), domain);
     	Account account = _accountDao.findActiveAccount(accountName, domainId);
     	
     	if(account == null){
@@ -1130,8 +1166,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     	}else{
     		accountId = account.getAccountId();
     	}
-    	
-        DomainVO domain = _domainDao.findById(domainId);
+    	        
         if(domain == null) {
             throw new CloudRuntimeException("The domain "+domainId+" does not exist; unable to create user");
         } else {
@@ -1196,7 +1231,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
-
+        checkAccess(UserContext.current().getCaller(), account);
+        
         if (firstName == null) { 
             firstName = user.getFirstname();
         }
@@ -1375,6 +1411,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DELETE, eventDescription = "deleting account", async=true)
     //This method deletes the account
     public boolean deleteUserAccount(DeleteAccountCmd cmd) {
+
         UserContext ctx = UserContext.current();
         long callerUserId = ctx.getCallerUserId();
         Account caller = ctx.getCaller();
@@ -1383,6 +1420,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 
         // If the user is a System user, return an error.  We do not allow this
         AccountVO account = _accountDao.findById(accountId);
+    	checkAccess(UserContext.current().getCaller(), account);
         if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
         }
@@ -1540,7 +1578,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if ((user != null) && (user.getAccountId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
-        
+        checkAccess(UserContext.current().getCaller(), _accountDao.findById(user.getAccountId()));
         return _userDao.remove(id);
 	}
 	

@@ -746,6 +746,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	
 	private static boolean isAdmin(short accountType) {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	    		(accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
@@ -760,7 +761,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	    Account account = UserContext.current().getCaller();
         if (account != null) {
-            if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+            if (isAdmin(account.getType())) {
                 if ((domainId != null) && (accountName != null)) {
                     if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                         throw new PermissionDeniedException("Unable to create security group in domain " + domainId + ", permission denied.");

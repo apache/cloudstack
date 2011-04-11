@@ -416,7 +416,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         Long domainId = accountDomainPair.second();
         
         
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             Domain domain = _accountMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
@@ -477,7 +477,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         String accountName = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
         
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             Domain domain = _accountMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }

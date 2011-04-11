@@ -116,4 +116,6 @@ public interface AccountManager extends AccountService {
 	@Override
     UserVO createUser(CreateUserCmd cmd);
 
+	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
+
 }

@@ -2258,6 +2258,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
 	private boolean isAdmin(short accountType) {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	    		(accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
@@ -2283,23 +2284,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	}
     	
     	// If the account is not an admin, check that the volume is owned by the account that was passed in
-    	if (!isAdmin) {
-    		if (account.getId() != volume.getAccountId()) {
-                throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-    		}
-    	} else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
-    	}
-
-        // If the account is not an admin, check that the volume is owned by the account that was passed in
-        if (!isAdmin) {
-            if (account.getId() != volume.getAccountId()) {
-                throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: "
-                        + account.getAccountName());
-            }
-        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
-        }
+    	_accountMgr.checkAccess(account, volume);
 
         // Check that the volume is stored on shared storage
         // NOTE: We used to ensure the volume is on shared storage before deleting. However, this seems like an unnecessary check since all we allow

@@ -623,7 +623,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, ipAddressVO);
         }
         
-        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             Domain domain = _accountMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
@@ -835,7 +835,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
              _accountMgr.checkAccess(caller, ipAddressVO);
          }
          
-         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
              Domain domain = _accountMgr.getDomain(caller.getDomainId());
              path = domain.getPath();
          }

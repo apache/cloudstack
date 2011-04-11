@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -124,7 +125,7 @@ public class ListTemplatesCmd extends BaseListCmd {
                 
         boolean isAdmin = false;
         Account account = UserContext.current().getCaller();
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
             isAdmin = true;
         }
 

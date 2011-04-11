@@ -756,7 +756,7 @@ public class ManagementServerImpl implements ManagementServer {
     		//add all public zones too
     		dcs.addAll(_dcDao.listPublicZones());    	
     		removeDisabledZones = true;
-    	}else if(account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
+    	}else if(account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
     		//it was decided to return all zones for the domain admin, and everything above till root
     		dcs = new ArrayList<DataCenterVO>();
     		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
@@ -1058,7 +1058,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //For non-root users
-        if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
+        if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
         	return searchServiceOfferingsInternal(account, name, id, vmId, keyword, searchFilter);
         }
         
@@ -1191,10 +1191,12 @@ public class ManagementServerImpl implements ManagementServer {
         Object id = cmd.getId();
         Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
-        Object zoneId = cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();
         Object hypervisorType = cmd.getHypervisorType();
         Object clusterType = cmd.getClusterType();
         Object allocationState = cmd.getAllocationState();
+        
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -1229,17 +1231,18 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<HostVO> searchForServers(ListHostsCmd cmd) {
+    	
+    	Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
         Object name = cmd.getHostName();
         Object type = cmd.getType();
-        Object state = cmd.getState();
-        Object zone = cmd.getZoneId();
+        Object state = cmd.getState();        
         Object pod = cmd.getPodId();
         Object cluster = cmd.getClusterId();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
 
-        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zone, pod, cluster, id, keyword, allocationState);
+        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, allocationState);
     }
     
     @Override
@@ -1364,6 +1367,8 @@ public class ManagementServerImpl implements ManagementServer {
         Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
+        
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
@@ -2005,20 +2010,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     	
     	//do a permission check
-        if (account != null) {
-            Long templateOwner = template.getAccountId();
-            if (!BaseCmd.isAdmin(account.getType())) {
-                if ((templateOwner == null) || (account.getId() != templateOwner.longValue())) {
-                    throw new PermissionDeniedException("Unable to modify template/iso with id " + id + ", permission denied.");
-                }
-            } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                Long templateOwnerDomainId = findDomainIdByAccountId(templateOwner);
-                if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
-                    throw new PermissionDeniedException("Unable to modify template/iso with id " + id + ", permission denied");
-                }
-            }
-        }
-        
+        _accountMgr.checkAccess(account, template);       
 
     	boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null);
     	if (!updateNeeded) {
@@ -2876,7 +2868,7 @@ public class ManagementServerImpl implements ManagementServer {
         Account account = UserContext.current().getCaller();
         String path = null;
         
-        if (account != null && account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        if (account != null && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
             DomainVO domain = _domainDao.findById(account.getDomainId());
             if (domain != null) {
                 path = domain.getPath();
@@ -3218,9 +3210,12 @@ public class ManagementServerImpl implements ManagementServer {
         Object type = cmd.getType();
         Object keyword = cmd.getKeyword();
 
-        
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
         if (id != null) {
         	sc.addAnd("id", SearchCriteria.Op.EQ, id);        
+        }
+        if (zoneId != null){
+        	sc.addAnd("data_center_id", SearchCriteria.Op.EQ, zoneId);
         }
         
         if (keyword != null) {
@@ -3248,6 +3243,8 @@ public class ManagementServerImpl implements ManagementServer {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         Long hostId = cmd.getHostId();
+        
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
         if (type != null) {
             sc.addAnd("capacityType", SearchCriteria.Op.EQ, type);
@@ -3315,6 +3312,7 @@ public class ManagementServerImpl implements ManagementServer {
     
 	public static boolean isAdmin(short accountType) {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	    		(accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
@@ -3366,17 +3364,7 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         }
         
-        if (account != null) 
-        {
-            if (!isAdmin(account.getType()) && (template.getAccountId() != account.getId())) {
-                throw new PermissionDeniedException("unable to update permissions for " + mediaType + " with id " + id);
-            } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                Long templateOwnerDomainId = findDomainIdByAccountId(template.getAccountId());
-                if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
-                    throw new PermissionDeniedException("Unable to update permissions for " + mediaType + " with id " + id);
-                }
-            }
-        }
+        _accountMgr.checkAccess(account, template);
 
         // If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null) {
@@ -3510,7 +3498,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null && !template.isPublicTemplate()) {
             if (account.getType() == Account.ACCOUNT_TYPE_NORMAL && template.getAccountId() != accountId) {
                 throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
-            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 DomainVO accountDomain = _domainDao.findById(account.getDomainId());
                 Account templateAccount = _accountDao.findById(template.getAccountId());
                 DomainVO templateDomain = _domainDao.findById(templateAccount.getDomainId());                    
@@ -3633,7 +3621,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //For non-root users
-        if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
+        if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
         	return searchDiskOfferingsInternal(account, name, id, keyword, searchFilter);
         }
         
@@ -3835,6 +3823,8 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd) {
+    	
+    	Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         c.addCriteria(Criteria.ID, cmd.getId());
         c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
@@ -3843,7 +3833,7 @@ public class ManagementServerImpl implements ManagementServer {
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
         c.addCriteria(Criteria.PATH, cmd.getPath());
         c.addCriteria(Criteria.PODID, cmd.getPodId());
-        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+        c.addCriteria(Criteria.DATACENTERID, zoneId);
 
         return searchForStoragePools(c);
     }
@@ -4050,10 +4040,11 @@ public class ManagementServerImpl implements ManagementServer {
 	@Override @SuppressWarnings({"unchecked", "rawtypes"})
 	public List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd) {
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
 
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
         c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+        c.addCriteria(Criteria.DATACENTERID, zoneId);
         c.addCriteria(Criteria.PODID, cmd.getPodId());
         c.addCriteria(Criteria.HOSTID, cmd.getHostId());
         c.addCriteria(Criteria.NAME, cmd.getSystemVmName());
@@ -4853,20 +4844,8 @@ public class ManagementServerImpl implements ManagementServer {
         Account caller = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
-        Account owner = null;
-        
-        if (accountName != null) {
-            if (domainId != null) {
-                owner = _accountMgr.getActiveAccount(accountName, domainId);
-            } else {
-                throw new InvalidParameterValueException("DomainId has to be specified along with account");
-            }
-            
-            //check account permissions
-            _accountMgr.checkAccess(caller, owner);
-        } else {
-            owner = caller;
-        }
+        Account owner = null;        
+        _accountMgr.finalizeOwner(caller, accountName, domainId);
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {
@@ -4888,7 +4867,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             accountId = caller.getId();
             domainId = caller.getDomainId();
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
             path = domain.getPath();
         }
