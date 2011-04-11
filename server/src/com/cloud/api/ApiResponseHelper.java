@@ -1562,7 +1562,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setZoneId(zone.getId());
             templateResponse.setZoneName(zone.getName());
             templateResponse.setHypervisor(template.getHypervisorType().toString());
-            templateResponse.setObjectName("template");
+            templateResponse.setObjectName("template");            
+            templateResponse.setChecksum(template.getChecksum());
 
             responses.add(templateResponse);
         }
