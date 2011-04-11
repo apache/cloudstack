@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +63,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -159,6 +161,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject ConfigurationDao _configDao;
     @Inject UsageEventDao _usageEventDao;
     @Inject HypervisorGuruManager _hvGuruMgr;
+    @Inject VMTemplateHostDao _vmTemplateHostDao;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     @Override
@@ -383,8 +386,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
               
             String uriStr;
-        	if (url.startsWith("baremetal://")) {
-        		uriStr = url.substring("baremetal://".length());
+        	if (hypervisorType == hypervisorType.BareMetal) {
+        		uriStr = url;
 			} else {
 				URI uri = new URI(url);
 				if ((uri.getScheme() == null)
@@ -469,7 +472,27 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 			_tmpltDao.addTemplateToZone(template, zoneId);
         }
 
-        _downloadMonitor.downloadTemplateToStorage(id, zoneId);
+        if (hyperType == HypervisorType.BareMetal) {
+        	// There is no secondary storage vm for baremetal, we use zone id as identifier
+        	VMTemplateHostVO vmTemplateHost = null;
+        	if (zoneId == null) {
+        		List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
+        		for (DataCenterVO dc: dcs) {
+        			vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(dc.getId(), template.getId());
+        			if (vmTemplateHost == null) {
+        				vmTemplateHost = new VMTemplateHostVO(dc.getId(), template.getId(), new Date(), 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+        						null, null, null, null, template.getUrl());
+        				_vmTemplateHostDao.persist(vmTemplateHost);
+        			}
+        		}
+        	} else {
+        		vmTemplateHost = new VMTemplateHostVO(zoneId, template.getId(), new Date(), 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+						null, null, null, null, template.getUrl());
+			    _vmTemplateHostDao.persist(vmTemplateHost);
+        	}
+        } else {
+        	_downloadMonitor.downloadTemplateToStorage(id, zoneId);
+        }
         
         _accountMgr.incrementResourceCount(accountId, ResourceType.template);
         

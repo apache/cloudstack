@@ -30,6 +30,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -39,6 +41,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -91,12 +94,23 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             return networkId;
         }
         
-        List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
-        if (networks.size() == 0) {
-            throw new InvalidParameterValueException("Account name=" + getAccountName() + " domainId=" + getDomainId() + " doesn't have virtual networks in zone " + getZoneId());
+        DataCenter zone = _configService.getZone(getZoneId());
+        if (zone.getNetworkType() == NetworkType.Advanced) {
+            List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
+            if (networks.size() == 0) {
+                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domainId=" + getDomainId() + " doesn't have virtual networks in zone " + getZoneId());
+            }
+            assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
+            return networks.get(0).getId();
+        } else {
+            Network defaultGuestNetwork = _networkService.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+            
+            if (defaultGuestNetwork == null) {
+                throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
+            } else {
+                return defaultGuestNetwork.getId();
+            }
         }
-        assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
-        return networks.get(0).getId();
     }
     
     @Override

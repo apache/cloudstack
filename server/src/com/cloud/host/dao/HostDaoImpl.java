@@ -599,7 +599,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
-    protected void saveDetails(HostVO host) {
+    @Override
+    public void saveDetails(HostVO host) {
         Map<String, String> details = host.getDetails();
         if (details == null) {
             return;

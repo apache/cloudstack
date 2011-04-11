@@ -789,10 +789,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 		String username = cmd.getUsername();
 		String password = cmd.getPassword();
 		Long memCapacity = cmd.getMemCapacity();
-		Long cpuCapacity = cmd.getCpuCapacity();
+		Long cpuSpeed = cmd.getCpuSpeed();
 		Long cpuNum = cmd.getCpuNum();
 		String mac = cmd.getMac();
-		String hostTag = cmd.getHostTag();
+		List<String> hostTags = cmd.getHostTags();
 		Map<String, String>bareMetalParams = new HashMap<String, String>();
 		
 		dcId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), dcId);
@@ -806,8 +806,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 			if (memCapacity == null) {
 				memCapacity = Long.valueOf(0);
 			}
-			if (cpuCapacity == null) {
-				cpuCapacity = Long.valueOf(0);
+			if (cpuSpeed == null) {
+				cpuSpeed = Long.valueOf(0);
 			}
 			if (cpuNum == null) {
 				cpuNum = Long.valueOf(0);
@@ -817,15 +817,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 			}
 			
 			bareMetalParams.put("cpuNum", cpuNum.toString());
-			bareMetalParams.put("cpuCapacity", cpuCapacity.toString());
+			bareMetalParams.put("cpuCapacity", cpuSpeed.toString());
 			bareMetalParams.put("memCapacity", memCapacity.toString());
 			bareMetalParams.put("mac", mac);
-			if (hostTag != null) {
-				bareMetalParams.put("hostTag", hostTag);
+			if (hostTags != null) {
+				bareMetalParams.put("hostTag", hostTags.get(0));
 			}
 		}
 		
-		List<String> hostTags = cmd.getHostTags();
 		String allocationState = cmd.getAllocationState();
 		if (allocationState == null) {
 			allocationState = Host.HostAllocationState.Enabled.toString();

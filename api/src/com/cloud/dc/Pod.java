@@ -31,4 +31,6 @@ public interface Pod extends Grouping {
     String getName();
     
     AllocationState getAllocationState();
+
+    boolean getExternalDhcp();
 }

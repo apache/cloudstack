@@ -27,6 +27,8 @@ touch /var/log/dnsmasq.log
 [ $? -ne 0 ] && exit_with_error "touch /var/log/dnsmasq.log failed"
 touch /etc/dnsmasq-resolv.conf
 [ $? -ne 0 ] && exit_with_error "touch /etc/dnsmasq-resolv.conf failed"
+echo "nameserver $dns">/etc/dnsmasq-resolv.conf
+[ $? -ne 0 ] && exit_with_error "echo \"nameserver $dns\">/etc/dnsmasq-resolv.conf failed"
 touch /var/lib/dnsmasq.trace
 [ $? -ne 0 ] && exit_with_error "touch /var/lib/dnsmasq.trace failed"
 
@@ -159,13 +161,19 @@ config_dnsmasq "
 config_dnsmasq dhcp-script=/usr/bin/echoer.sh
 config_dnsmasq dhcp-scriptuser=root
 config_dnsmasq dhcp-authoritative
+config_dnsmasq "
+# Ignore any bootp and pxe boot request
+"
+config_dnsmasq dhcp-ignore=bootp
+config_dnsmasq dhcp-vendorclass=pxestuff,PXEClient
+config_dnsmasq dhcp-ignore=pxestuff
 
 [ -f /usr/sbin/setenforce ] && /usr/sbin/setenforce 0
 [ $? -ne 0 ] && exit_with_error "Can not set seLinux to passive mode"
 
 # Open DHCP ports in iptable
 chkconfig --list iptables | grep "on"
-if [ $? -ne 0 ]; then
+if [ $? -eq 0 ]; then
 	iptables-save | grep 'A INPUT -p udp -m udp --dport 67 -j ACCEPT' >/dev/null
 	if [ $? -ne 0 ]; then
 		iptables -I INPUT 1 -p udp --dport 67 -j ACCEPT

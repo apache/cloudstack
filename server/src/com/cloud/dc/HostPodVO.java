@@ -60,6 +60,9 @@ public class HostPodVO implements Pod {
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
 
+	@Column(name = "external_dhcp")
+	private Boolean externalDhcp;
+
 	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
 		this.name = name;
 		this.dataCenterId = dcId;
@@ -68,8 +71,9 @@ public class HostPodVO implements Pod {
 		this.cidrSize = cidrSize;
 		this.description = description;
 		this.allocationState = Grouping.AllocationState.Enabled;
+		this.externalDhcp = false;
 	}
-	
+
 	/*
 	 * public HostPodVO(String name, long dcId) { this(null, name, dcId); }
 	 */
@@ -148,6 +152,14 @@ public class HostPodVO implements Pod {
 	@Override
     public int hashCode() {
 	    return  NumbersUtil.hash(id);
+	}
+	
+	public boolean getExternalDhcp() {
+		return externalDhcp;
+	}
+	
+	public void setExternalDhcp(boolean use) {
+		externalDhcp = use;
 	}
 	
 	@Override

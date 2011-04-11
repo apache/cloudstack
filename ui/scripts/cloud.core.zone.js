@@ -696,10 +696,16 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
     	if(clusterObj.hypervisortype == "VMware") {
     		$('li[input_group="vmware"]', $dialogAddHost).show();
     		$('li[input_group="general"]', $dialogAddHost).hide();
-    	} else {
+			$('li[input_group="baremetal"]', $dialogAddHost).hide();
+    	} else if (clusterObj.hypervisortype == "BareMetal") {
+			$('li[input_group="vmware"]', $dialogAddHost).hide();
+    		$('li[input_group="general"]', $dialogAddHost).show();
+			$('li[input_group="baremetal"]', $dialogAddHost).show();
+		} else {
     		$('li[input_group="vmware"]', $dialogAddHost).hide();
     		$('li[input_group="general"]', $dialogAddHost).show();
-    	}   
+			$('li[input_group="baremetal"]', $dialogAddHost).hide();
+    	} 
     });
      
     $button.unbind("click").bind("click", function(event) {              
@@ -731,10 +737,16 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 			            isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
 			            isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
 		            } else {
-			            isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
-			            isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
-			            isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
-		            }	
+						if (hypervisor == "BareMetal") {
+							isValid &= validateString("CPU Cores", $thisDialog.find("#host_baremetal_cpucores"), $thisDialog.find("#host_baremetal_cpucores_errormsg"));
+							isValid &= validateString("CPU", $thisDialog.find("#host_baremetal_cpu"), $thisDialog.find("#host_baremetal_cpu_errormsg"));
+							isValid &= validateString("Memory", $thisDialog.find("#host_baremetal_memory"), $thisDialog.find("#host_baremetal_memory_errormsg"));
+							isValid &= validateString("MAC", $thisDialog.find("#host_baremetal_mac"), $thisDialog.find("#host_baremetal_mac_errormsg"));	
+						} 
+						isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+						isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+						isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+					}
 		        }	        
 		        if (!isValid) 
 		            return;		            			
@@ -758,7 +770,8 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
                  
 			    array1.push("&hypervisor="+hypervisor);			    
 			    var clustertype = clusterObj.clustertype;
-                array1.push("&clustertype=" + clustertype);				    
+                array1.push("&clustertype=" + clustertype);
+				array1.push("&hosttags=" + todb(trim($thisDialog.find("#host_tags").val())));			    
 
 			    if(hypervisor == "VMware") {
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());
@@ -779,6 +792,20 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 			        array1.push("&url="+todb(url));
 			    	
 			    } else {
+					if (hypervisor == "BareMetal") {
+						var cpuCores = trim($thisDialog.find("#host_baremetal_cpucores").val());
+						array1.push("&cpunumber="+todb(cpuCores));
+						
+						var cpuSpeed = trim($thisDialog.find("#host_baremetal_cpu").val());
+						array1.push("&cpuspeed="+todb(cpuSpeed));
+						
+						var memory = trim($thisDialog.find("#host_baremetal_memory").val());
+						array1.push("&memory="+todb(memory));
+						
+						var mac = trim($thisDialog.find("#host_baremetal_mac").val());
+						array1.push("&hostmac="+todb(mac));
+					}
+					
 			        var username = trim($thisDialog.find("#host_username").val());
 			        array1.push("&username="+todb(username));
 					

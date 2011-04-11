@@ -68,20 +68,17 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
     private String hypervisor;
     
-    @Parameter(name=ApiConstants.HOST_CPU_CAPACITY, type=CommandType.LONG, description="Only for hypervisor is BareMetal, HZ per CPU of host")
-    private Long cpuCapacity;
+    @Parameter(name=ApiConstants.CPU_SPEED, type=CommandType.LONG, description="Only for hypervisor is BareMetal, HZ per CPU of host")
+    private Long cpuSpeed;
     
-    @Parameter(name=ApiConstants.HOST_CPU_NUM, type=CommandType.LONG, description="Only for hypervisor is BareMetal, number of CPU on host")
+    @Parameter(name=ApiConstants.CPU_NUMBER, type=CommandType.LONG, description="Only for hypervisor is BareMetal, number of CPU on host")
     private Long cpuNum;
     
-    @Parameter(name=ApiConstants.HOST_MEM_CAPACITY, type=CommandType.LONG, description="Only for hypervisor is BareMetal, memory capacity of host(in MB)")
+    @Parameter(name=ApiConstants.MEMORY, type=CommandType.LONG, description="Only for hypervisor is BareMetal, memory capacity of host(in MB)")
     private Long memCapacity;
     
     @Parameter(name=ApiConstants.HOST_MAC, type=CommandType.STRING, description="Only for hypervisor is BareMetal, Mac of PXE nic")
     private String mac;
-    
-    @Parameter(name=ApiConstants.HOST_TAG, type=CommandType.STRING, description="Only for hypervisor is BareMetal, Tag of host")
-    private String hostTag;
     
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Host for allocation of new resources")
     private String allocationState;
@@ -129,8 +126,8 @@ public class AddHostCmd extends BaseCmd {
         return hostTags;
     }
 
-    public Long getCpuCapacity() {
-    	return cpuCapacity;
+    public Long getCpuSpeed() {
+    	return cpuSpeed;
     }
     
     public Long getCpuNum() {
@@ -143,11 +140,7 @@ public class AddHostCmd extends BaseCmd {
     
     public String getMac() {
     	return mac;
-    }
-    
-    public String getHostTag() {
-    	return hostTag;
-    }
+    } 
     
     public String getAllocationState() {
     	return allocationState;

@@ -53,7 +53,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly() && !dc.isSecurityGroupEnabled()) {
+        if (((dc.getNetworkType() == NetworkType.Advanced && !dc.isSecurityGroupEnabled()) || dc.getNetworkType() == NetworkType.Basic) && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of System only Public Virtual Network");

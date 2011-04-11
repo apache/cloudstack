@@ -215,5 +215,9 @@ public class ApiConstants {
     public static final String PRIVATE_NETWORK_ID = "privatenetworkid";
     public static final String ALLOCATION_STATE = "allocationstate";
     public static final String STORAGE_ID="storageid";
+    public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
+    public static final String PING_DIR = "pingdir";
+    public static final String TFTP_DIR = "tftpdir";
+    public static final String PING_CIFS_USERNAME = "pingcifsusername";
+    public static final String PING_CIFS_PASSWORD = "pingcifspassword";
 }
- 

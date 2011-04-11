@@ -667,8 +667,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 TrafficType.Guest, 
                 true, false, null, null, null, true, 
                 Availability.Required, 
-                true, true, true, //services - all true except for firewall/lb/vpn and gateway
-                false, false, false, false, GuestIpType.Direct);
+                true, true, true, //services - all true except for lb/vpn and gateway
+                false, true, false, false, GuestIpType.Direct);
 
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         
@@ -729,7 +729,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     } else if (trafficType == TrafficType.Control) {
                         broadcastDomainType = BroadcastDomainType.LinkLocal;
                     } else if (offering.getTrafficType() == TrafficType.Public) {
-                        if (zone.getNetworkType() == NetworkType.Advanced) {
+                        if ((zone.getNetworkType() == NetworkType.Advanced && !zone.isSecurityGroupEnabled()) || zone.getNetworkType() == NetworkType.Basic) {
                             broadcastDomainType = BroadcastDomainType.Vlan;
                         } else {
                             continue;

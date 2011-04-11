@@ -213,6 +213,7 @@
       <fileset dir="${scripts.dir}">
         <include name="**/*"/>
 	<exclude name="**/fsimage.so"/>
+	<exclude name="**/ping.tar.bz2"/>
 	<exclude name="**/vhd-util"/>
         <exclude name="**/.*" />
       </fileset>
@@ -223,7 +224,8 @@
    <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/fsimage.so"/>
-	<include name="**/vhd-util"/>
+		<include name="**/ping.tar.bz2"/>
+		<include name="**/vhd-util"/>
       </fileset>
    </copy>
   </target>

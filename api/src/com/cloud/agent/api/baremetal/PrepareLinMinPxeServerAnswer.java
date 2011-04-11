@@ -9,6 +9,5 @@ public class PrepareLinMinPxeServerAnswer extends Answer {
 	
 	public PrepareLinMinPxeServerAnswer(PrepareLinMinPxeServerCommand cmd, String details) {
 		super(cmd, false, details);
-	}
-	
+	}	
 }

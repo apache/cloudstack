@@ -34,6 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine.Type;
@@ -80,4 +81,6 @@ public interface NetworkService {
     Network updateNetwork(long networkId, String name, String displayText, Account caller);
     
     Integer getNetworkRate(long networkId, Long vmId);
+
+    Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 }

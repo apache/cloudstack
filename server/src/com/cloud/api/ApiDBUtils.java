@@ -402,12 +402,17 @@ public class ApiDBUtils {
     }
 
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
-        HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-        if (secondaryStorageHost == null) {
-            return null;
-        } else {
-            return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-        }
+    	VMTemplateVO vmTemplate = findTemplateById(templateId);
+    	if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
+    		return _templateHostDao.findByHostTemplate(zoneId, templateId);
+    	} else {
+			HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+			if (secondaryStorageHost == null) {
+				return null;
+			} else {
+				return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
+			}
+    	}
     }
     
     public static UploadVO findUploadById(Long id){
@@ -453,12 +458,17 @@ public class ApiDBUtils {
 
     public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {
         if (zoneId != null) {
-            HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-            if (secondaryStorageHost == null) {
-                return new ArrayList<VMTemplateHostVO>();
-            } else {
-                return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
-            }
+        	VMTemplateVO vmTemplate = findTemplateById(templateId);
+        	if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
+        		return _templateHostDao.listByHostTemplate(zoneId, templateId);
+        	} else {
+				HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+				if (secondaryStorageHost == null) {
+					return new ArrayList<VMTemplateHostVO>();
+				} else {
+					return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
+				}
+        	}
         } else {
             return _templateHostDao.listByOnlyTemplateId(templateId);
         }
