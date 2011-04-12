@@ -549,8 +549,10 @@ public class Transaction {
             cleanup();
         }
         
-        tls.set(_prev);
-        _prev = null;
+        if(this._dbId == CONNECTED_DB) {
+	        tls.set(_prev);
+	        _prev = null;
+        }
     }
     
     /**

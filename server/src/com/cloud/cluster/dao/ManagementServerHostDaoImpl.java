@@ -57,6 +57,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             pstmt.setLong(6, id);
             
             pstmt.executeUpdate();
+            conn.commit();
         } catch(SQLException e ) {
         	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         } finally {
@@ -78,6 +79,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             pstmt.setLong(2, id);
             
             pstmt.executeUpdate();
+            conn.commit();
         } catch (SQLException e) { 
         	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         } finally {

@@ -574,7 +574,7 @@ public class ClusterManagerImpl implements ClusterManager {
 			return _heartbeatConnection;
 		}
 		
-		_heartbeatConnection = Transaction.getStandaloneUsageConnection();
+		_heartbeatConnection = Transaction.getStandaloneConnection();
 		return _heartbeatConnection;
 	}
 	
