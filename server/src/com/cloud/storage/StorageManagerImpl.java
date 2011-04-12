@@ -2477,6 +2477,18 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
+    	
+    	if(dest == null){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DeployDestination cannot be null, cannot prepare Volumes for the vm: "+ vm);
+            }
+            throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination is null");
+    	}else if(dest.getStorageForDisks() == null){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DeployDestination has no storage pools specified, cannot prepare Volumes for the vm: "+ vm);
+            }
+            throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination DeployDestination has no storage pools specified");
+    	}
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
@@ -2489,6 +2501,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         		 recreateVols.add(vol);
         	}else{
         		StoragePool assignedPool = dest.getStorageForDisks().get(vol);
+        		if(assignedPool == null){
+        			throw new StorageUnavailableException("No storage pool assigned in DeployDestination, Unable to create " + vol,  -1L);
+        		}
         		if(vol.getPoolId() != assignedPool.getId()){
         			if (vol.isRecreatable()) {
                         if (s_logger.isDebugEnabled()) {
