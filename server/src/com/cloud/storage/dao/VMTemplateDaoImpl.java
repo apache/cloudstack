@@ -37,6 +37,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
@@ -76,6 +77,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> UniqueNameSearch;
     protected SearchBuilder<VMTemplateVO> tmpltTypeSearch;
     protected SearchBuilder<VMTemplateVO> tmpltTypeHyperSearch;
+    protected SearchBuilder<VMTemplateVO> tmpltTypeHyperSearch2;
+
     protected SearchBuilder<VMTemplateVO> AccountIdSearch;
     protected SearchBuilder<VMTemplateVO> NameSearch;
     protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
@@ -220,6 +223,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		tmpltTypeHyperSearch.join("tmplHyper", hostHyperSearch, hostHyperSearch.entity().getHypervisorType(), tmpltTypeHyperSearch.entity().getHypervisorType(), JoinBuilder.JoinType.INNER);
 		hostHyperSearch.done();
 		tmpltTypeHyperSearch.done();
+		
+		tmpltTypeHyperSearch2 = createSearchBuilder();
+		tmpltTypeHyperSearch2.and("templateType", tmpltTypeHyperSearch2.entity().getTemplateType(), SearchCriteria.Op.EQ);
+		tmpltTypeHyperSearch2.and("hypervisorType", tmpltTypeHyperSearch2.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+
 		
 		tmpltTypeSearch = createSearchBuilder();
 		tmpltTypeSearch.and("templateType", tmpltTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
@@ -443,6 +451,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		sc.setJoinParameters("tmplHyper",  "type", Host.Type.Routing);
 		sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
 
+		//order by descending order of id and select the first (this is going to be the latest)
 		List<VMTemplateVO> tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1l));
 		
 		if (tmplts.size() > 0) {
@@ -452,14 +461,36 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		}
 	}
 	
-	@Override
-	public VMTemplateVO findRoutingTemplate(HypervisorType type) {
-	    List<VMTemplateVO> templates = listAllSystemVMTemplates();
-	    for (VMTemplateVO template : templates) {
-	        if (template.getHypervisorType() == type) {
-	            return template;
+	public VMTemplateVO findSystemVMTemplate(long zoneId, HypervisorType hType) {
+	    SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch.create();
+	    sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+	    sc.setJoinParameters("tmplHyper",  "type", Host.Type.Routing);
+	    sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
+
+	    //order by descending order of id
+	    List<VMTemplateVO> tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, null));
+
+	    for (VMTemplateVO tmplt: tmplts) {
+	        if (tmplt.getHypervisorType() == hType) {
+	            return tmplt;
 	        }
 	    }
 	    return null;
+	}
+
+	@Override
+	public VMTemplateVO findRoutingTemplate(HypervisorType hType) {
+	    SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
+        sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+        sc.setParameters("hypervisorType", hType);
+
+        //order by descending order of id and select the first (this is going to be the latest)
+        List<VMTemplateVO> tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1l));
+        
+        if (tmplts.size() > 0) {
+            return tmplts.get(0);
+        } else {
+            return null;
+        }
 	}
 }
