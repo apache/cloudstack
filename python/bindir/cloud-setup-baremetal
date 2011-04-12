@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
 # 
@@ -15,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#!/usr/bin/python
+
 import sys, os
 from subprocess import PIPE, Popen
 import logging
