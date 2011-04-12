@@ -36,50 +36,49 @@ import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@Implementation(responseObject=StoragePoolResponse.class, description="Creates a template of a virtual machine. " +
-																															"The virtual machine must be in a STOPPED state. " +
-																															"A template created from this command is automatically designated as a private template visible to the account that created it.")
+@Implementation(responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
+        + "A template created from this command is automatically designated as a private template visible to the account that created it.")
 public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.BITS, type=CommandType.INTEGER, description="32 or 64 bit")
+    @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bit")
     private Integer bits;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the template. This is usually used for display purposes.")
     private String displayText;
 
-    @Parameter(name=ApiConstants.IS_FEATURED, type=CommandType.BOOLEAN, description="true if this template is a featured template, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if this template is a public template, false otherwise")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if this template is a public template, false otherwise")
     private Boolean publicTemplate;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the template")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the template")
     private String templateName;
 
-    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this template.")
+    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.LONG, required = true, description = "the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
-    @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
+    @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name=ApiConstants.REQUIRES_HVM, type=CommandType.BOOLEAN, description="true if the template requres HVM, false otherwise")
+    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise")
     private Boolean requiresHvm;
 
-    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the ID of the snapshot the template is being created from")
+    @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.LONG, description = "the ID of the snapshot the template is being created from. Either this parameter, or volumeId has to be passed in")
     private Long snapshotId;
 
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, description="the ID of the disk volume the template is being created from")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
     private Long volumeId;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Integer getBits() {
         return bits;
@@ -121,17 +120,17 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         return volumeId;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "template";  
+        return "template";
     }
 
     @Override
@@ -161,31 +160,32 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return  "creating template: " + getTemplateName();
-    }
-    
-    public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Template;
+        return "creating template: " + getTemplateName();
     }
 
     @Override
-    public void create() throws ResourceAllocationException{
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.Template;
+    }
+
+    @Override
+    public void create() throws ResourceAllocationException {
         VirtualMachineTemplate template = null;
-		template = _userVmService.createPrivateTemplateRecord(this);		
-		
-        if (template != null){
+        template = _userVmService.createPrivateTemplateRecord(this);
+
+        if (template != null) {
             this.setEntityId(template.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a template");
         }
     }
-    
+
     @Override
-    public void execute(){
+    public void execute() {
         VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
         if (template != null) {
             TemplateResponse response = _responseGenerator.createTemplateResponse(template, snapshotId, volumeId);
-            response.setResponseName(getCommandName());      
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create template");

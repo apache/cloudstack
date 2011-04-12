@@ -9,31 +9,31 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Parameter;
 
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
-	public Logger s_logger = getLogger();
+    public Logger s_logger = getLogger();
     protected String s_name = getResponseName();
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNTS, type=CommandType.LIST, collectionType=CommandType.STRING, description="a comma delimited list of accounts")
+    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "a comma delimited list of accounts. If specified, \"op\" parameter has to be passed in.")
     private List<String> accountNames;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the template ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.IS_FEATURED, type=CommandType.BOOLEAN, description="true for featured templates/isos, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true for featured templates/isos, false otherwise")
     private Boolean featured;
 
-    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true for public templates/isos, false for private templates/isos")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true for public templates/isos, false for private templates/isos")
     private Boolean isPublic;
 
-    @Parameter(name=ApiConstants.OP, type=CommandType.STRING, description="permission operator (add, remove, reset)")
+    @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
     private String operation;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public List<String> getAccountNames() {
         return accountNames;
@@ -55,25 +55,25 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
         return operation;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
-    }    
-    
+    }
+
     protected String getResponseName() {
-    	return "updatetemplateorisopermissionsresponse";
+        return "updatetemplateorisopermissionsresponse";
     }
-    
+
     protected Logger getLogger() {
-    	return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());    
+        return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());
     }
-    
+
     @Override
-    public void execute(){
-        //method is implemented in updateTemplate/updateIsoPermissions
+    public void execute() {
+        // method is implemented in updateTemplate/updateIsoPermissions
     }
 }
