@@ -669,7 +669,7 @@ public class ClusterManagerImpl implements ClusterManager {
 		Date cutTime = DateUtil.currentGMTTime();
 		List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(conn, new Date(cutTime.getTime() - heartbeatThreshold));
 		if(inactiveList.size() > 0) {
-            notifyNodeLeft(inactiveList);
+			this.queueNotification(null, inactiveList);
         }
 	}
 	
