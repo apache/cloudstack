@@ -222,6 +222,18 @@ Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 
+%package baremetal-agent
+Summary: Cloud.com baremetal agent
+Requires: PING
+Requires: tftp-server
+Requires: xinetd
+Requires: syslinux
+Requires: chkconfig
+Requires: dhcp
+Group:     System Environment/Libraries
+%description baremetal-agent
+The Cloud.com baremetal agent
+
 %if 0%{?rhel} >= 6
 Requires: cloud-kvm
 %else
@@ -590,6 +602,9 @@ fi
 %dir %{_prefix}/lib*/python*/site-packages/%{name}tool
 %{_prefix}/lib*/python*/site-packages/%{name}tool/*
 %{_prefix}/lib*/python*/site-packages/%{name}apis.py
+
+%files baremetal-agent
+%attr(0755,root,root) %{_bindir}/cloud-setup-baremetal
 
 %if %{_premium}
 
