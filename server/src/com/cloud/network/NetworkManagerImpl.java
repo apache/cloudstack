@@ -207,7 +207,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     VMInstanceDao _vmDao;
 
-    private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
+    private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
     ScheduledExecutorService _executor;
 
@@ -232,7 +232,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @DB
-    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign) throws InsufficientAddressCapacityException {
+    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign)
+            throws InsufficientAddressCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<IPAddressVO> sc = null;
@@ -281,36 +282,36 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (vlanUse != VlanType.DirectAttached) {
             addr.setAssociatedWithNetworkId(networkId);
         }
-        
+
         _ipAddressDao.update(addr.getId(), addr);
-        
+
         txn.commit();
         long macAddress = NetUtils.createSequenceBasedMacAddress(addr.getMacAddress());
 
         return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
     }
-    
+
     @DB
     protected void markPublicIpAsAllocated(IPAddressVO addr) {
-        
+
         assert (addr.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free) : "Unable to transition from state " + addr.getState() + " to " + IpAddress.State.Allocated;
-        
+
         Transaction txn = Transaction.currentTxn();
-        
+
         Account owner = _accountMgr.getAccount(addr.getAccountId());
         long isSourceNat = (addr.isSourceNat()) ? 1 : 0;
-        
+
         txn.start();
         addr.setState(IpAddress.State.Allocated);
         _ipAddressDao.update(addr.getId(), addr);
-        
-        //Save usage event
+
+        // Save usage event
         if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat);
             _usageEventDao.persist(usageEvent);
             _accountMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
-        }   
-       
+        }
+
         txn.commit();
     }
 
@@ -357,9 +358,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, network.getId(), true, false);
                 sourceNat = ip.ip();
-                
+
                 markPublicIpAsAllocated(sourceNat);
-                _ipAddressDao.update(sourceNat.getId(), sourceNat);       
+                _ipAddressDao.update(sourceNat.getId(), sourceNat);
             } else {
                 // Account already has ip addresses
                 for (IPAddressVO addr : addrs) {
@@ -399,7 +400,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
      *            - non-null if the domainId was passed in in the command.
      * @return
      */
-    protected Account getAccountForApiCommand(String accountName, Long domainId){
+    protected Account getAccountForApiCommand(String accountName, Long domainId) {
         Account account = UserContext.current().getCaller();
 
         if (_accountMgr.isAdmin(account.getType())) {
@@ -430,8 +431,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                    publicIps.add(publicIp);
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                publicIps.add(publicIp);
             }
         }
 
@@ -452,14 +453,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (success) {
             for (IPAddressVO addr : userIps) {
-                
+
                 if (addr.getState() == IpAddress.State.Allocating) {
-                   
+
                     addr.setAssociatedWithNetworkId(network.getId());
                     markPublicIpAsAllocated(addr);
-                    
+
                 } else if (addr.getState() == IpAddress.State.Releasing) {
-                    //Cleanup all the resources for ip address if there are any, and only then unassign ip in the system
+                    // Cleanup all the resources for ip address if there are any, and only then unassign ip in the system
                     if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
                         _ipAddressDao.unassignIpAddress(addr.getId());
                     } else {
@@ -483,7 +484,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networksDao.listBy(owner.getId(), zoneId, GuestIpType.Virtual);
     }
 
-    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_ASSIGN, eventDescription="allocating Ip", create=true)
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
     public IpAddress allocateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();
@@ -497,17 +500,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         _accountMgr.checkAccess(caller, ipOwner);
-        
-        if(zoneId != null){
-	        DataCenterVO zone = _dcDao.findById(zoneId);
-			if (zone == null) {
-				throw new InvalidParameterValueException("Can't find zone by id "
-						+ zoneId);
-			}
-			
-			if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
-				throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
-			}
+
+        if (zoneId != null) {
+            DataCenterVO zone = _dcDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Can't find zone by id " + zoneId);
+            }
+
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+                throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+            }
         }
         long ownerId = ipOwner.getId();
         Long networkId = cmd.getNetworkId();
@@ -518,8 +520,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Network id is invalid: " + networkId);
             }
         }
-        
-        //Check that network belongs to IP owner
+
+        // Check that network belongs to IP owner
         if (network.getAccountId() != ipOwner.getId()) {
             throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
@@ -549,23 +551,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 rae.setResourceType("ip");
                 throw rae;
             }
-            
+
             boolean isSourceNat = false;
 
             txn.start();
-            //First IP address should be source nat
+            // First IP address should be source nat
             List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
-            
+
             if (addrs.isEmpty()) {
                 isSourceNat = true;
             }
-            
+
             ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), isSourceNat, false);
 
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
             }
-            UserContext.current().setEventDetails("Ip Id: "+ip.getId());
+            UserContext.current().setEventDetails("Ip Id: " + ip.getId());
             Ip ipAddress = ip.getAddress();
 
             s_logger.debug("Got " + ipAddress + " to assign for account " + ipOwner.getId() + " in zone " + network.getDataCenterId());
@@ -581,7 +583,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return ip;
     }
 
-    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_ASSIGN, eventDescription="associating Ip", async=true)
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
     public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
@@ -617,7 +621,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         s_logger.warn("Failed to associate ip address " + ip);
                         _ipAddressDao.markAsUnavailable(ip.getId());
                         if (!applyIpAssociations(network, true)) {
-                            //if fail to apply ip assciations again, unassign ip address without updating resource count and generating usage event as there is no need to keep it in the db
+                            // if fail to apply ip assciations again, unassign ip address without updating resource count and
+                            // generating usage event as there is no need to keep it in the db
                             _ipAddressDao.unassignIpAddress(ip.getId());
                         }
                     } catch (Exception e) {
@@ -628,11 +633,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override @DB
+    @Override
+    @DB
     public boolean releasePublicIpAddress(long addrId, long userId, Account caller) {
-        
+
         IPAddressVO ip = markIpAsUnavailable(addrId);
-        
+
         assert (ip != null) : "Unable to mark the ip address id=" + addrId + " as unavailable.";
         if (ip == null) {
             return true;
@@ -643,14 +649,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         boolean success = true;
-        
-        //Cleanup all ip address resources - PF/LB/Static nat rules
+
+        // Cleanup all ip address resources - PF/LB/Static nat rules
         if (!cleanupIpResources(addrId, userId, caller)) {
             success = false;
             s_logger.warn("Failed to release resources for ip address id=" + addrId);
         }
 
-        if (ip.getAssociatedWithNetworkId() != null) {    
+        if (ip.getAssociatedWithNetworkId() != null) {
             Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
                 if (!applyIpAssociations(network, true)) {
@@ -679,7 +685,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _configs = _configDao.getConfiguration("Network", params);
         _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
-        
+
         _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
@@ -694,50 +700,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.SystemGuestNetwork, 
-                "System Offering for System-Guest-Network", 
-                TrafficType.Guest, 
-                true, 
-                false, 
-                null, 
-                null, 
-                null, 
-                true, 
-                Availability.Required, 
-                //services - all true except for lb/vpn and gateway services
-                true, true, true, false, true,false, false, GuestIpType.Direct);
+        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, true, false, null, null,
+                null, true, Availability.Required,
+                // services - all true except for firewall/lb/vpn and gateway services
+                true, true, true, false, false, false, false, GuestIpType.Direct);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
 
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultVirtualizedNetworkOffering, 
-                "Virtual Vlan", 
-                TrafficType.Guest, 
-                false, 
-                false, 
-                null, 
-                null, 
-                null, 
-                true, 
-                Availability.Required, 
-                //services
-                true, true, true, true,true, true, true, GuestIpType.Virtual);
-        
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null,
+                true, Availability.Required,
+                // services
+                true, true, true, true, true, true, true, GuestIpType.Virtual);
+
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultDirectNetworkOffering, 
-                "Direct", 
-                TrafficType.Guest, 
-                false, 
-                true, 
-                null, 
-                null, 
-                null, 
-                true, 
-                Availability.Optional, 
-                //services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false,false, false, GuestIpType.Direct);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, false, true, null, null, null, true,
+                Availability.Optional,
+                // services - all true except for firewall/lb/vpn and gateway services
+                true, true, true, false, false, false, false, GuestIpType.Direct);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
@@ -819,7 +798,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (associatedNetworkId != null) {
             sc.setParameters("associatedWithNetworkId", associatedNetworkId);
         }
-        
+
         if (sourceNat != null) {
             sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
         }
@@ -829,13 +808,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault) throws ConcurrentOperationException {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
+            throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, isShared, isDefault, false, null);
     }
 
     @Override
     @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault, boolean errorIfAlreadySetup, Long domainId) throws ConcurrentOperationException {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault,
+            boolean errorIfAlreadySetup, Long domainId) throws ConcurrentOperationException {
         Transaction.currentTxn();
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
@@ -849,7 +830,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     }
-                    
+
                     if (errorIfAlreadySetup) {
                         throw new InvalidParameterValueException("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     } else {
@@ -862,7 +843,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     }
-                    
+
                     if (errorIfAlreadySetup) {
                         throw new InvalidParameterValueException("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     } else {
@@ -895,9 +876,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     related = id;
                 }
 
-                NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault, predefined.isSecurityGroupEnabled());
+                NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault,
+                        predefined.isSecurityGroupEnabled());
                 configs.add(_networksDao.persist(vo, vo.getGuestType() != null));
-                
+
                 if (domainId != null) {
                     _networksDao.addDomainToNetwork(id, domainId);
                 }
@@ -957,13 +939,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (profile == null) {
                 continue;
             }
-            
+
             if (requested != null && requested.getMode() == null) {
                 profile.setMode(requested.getMode());
             } else {
                 profile.setMode(config.getMode());
             }
-            
+
             NicVO vo = new NicVO(guru.getName(), vm.getId(), config.getId(), vm.getType());
 
             while (deviceIds[deviceId] && deviceId < deviceIds.length) {
@@ -992,10 +974,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             deviceIds[devId] = true;
             nics.add(vo);
 
-            Integer networkRate =  getNetworkRate(config.getId(), vm.getId());
+            Integer networkRate = getNetworkRate(config.getId(), vm.getId());
             vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate));
         }
-        
+
         if (nics.size() != networks.size()) {
             s_logger.warn("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
             throw new CloudRuntimeException("Number of nics " + nics.size() + " doesn't match number of requested networks " + networks.size());
@@ -1055,7 +1037,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         vo.setIsolationUri(profile.getIsolationUri());
         vo.setNetmask(profile.getNetmask());
     }
-    
+
     protected void applyProfileToNetwork(NetworkVO network, NetworkProfile profile) {
         network.setBroadcastUri(profile.getBroadcastUri());
         network.setDns1(profile.getDns1());
@@ -1093,7 +1075,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
@@ -1127,13 +1110,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setGateway(result.getGateway());
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
-            
-            //If network if guest virtual and there is no source nat ip, associate a new one
+
+            // If network if guest virtual and there is no source nat ip, associate a new one
             if (network.getGuestType() == GuestIpType.Virtual) {
                 List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(networkId, true);
-                
+
                 if (ips.isEmpty()) {
-                    s_logger.debug("Creating a source natp ip for " + network);
+                    s_logger.debug("Creating a source nat ip for " + network);
                     Account owner = _accountMgr.getAccount(network.getAccountId());
                     PublicIp sourceNatIp = assignSourceNatIpAddress(owner, network, context.getCaller().getId());
                     if (sourceNatIp == null) {
@@ -1141,21 +1124,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     }
                 }
             }
-            
+
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to implmenet " + network);
+                    s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
                 }
                 element.implement(network, offering, dest, context);
             }
-            
-            //reapply all the firewall/staticNat/lb rules
-            s_logger.debug("Applying network rules as a part of network " +  network + " implement...");
+
+            // reapply all the firewall/staticNat/lb rules
+            s_logger.debug("Applying network rules as a part of network " + network + " implement...");
             if (!restartNetwork(networkId, false, context.getAccount())) {
                 s_logger.warn("Failed to reapply network rules as a part of network " + network + " implement");
                 throw new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
-            } 
-            
+            }
+
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
@@ -1165,7 +1148,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.debug("Cleaning up because we're unable to implement the network " + network);
                 network.setState(Network.State.Shutdown);
                 _networksDao.update(networkId, network);
-                
+
                 shutdownNetwork(networkId, context);
             }
             _networksDao.releaseFromLockTable(networkId);
@@ -1177,30 +1160,33 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
         _nicDao.update(nic.getId(), nic);
-        
-         if (nic.getVmType() == VirtualMachine.Type.User) {
-             s_logger.debug("Changing active number of nics for network id=" + networkId + " on " + count);
-             _networksDao.changeActiveNicsBy(networkId, count);
-         }
+
+        if (nic.getVmType() == VirtualMachine.Type.User) {
+            s_logger.debug("Changing active number of nics for network id=" + networkId + " on " + count);
+            _networksDao.changeActiveNicsBy(networkId, count);
+        }
         txn.commit();
     }
 
     @Override
-    public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
-        
-        // we have to implement default nics first - to ensure that default network elements start up first in multiple nics case)
+
+        // we have to implement default nics first - to ensure that default network elements start up first in multiple nics
+        // case)
         // (need for setting DNS on Dhcp to domR's Ip4 address)
         Collections.sort(nics, new Comparator<NicVO>() {
-            
-            public int compare(NicVO nic1, NicVO nic2){
+
+            @Override
+            public int compare(NicVO nic1, NicVO nic2) {
                 boolean isDefault1 = getNetwork(nic1.getNetworkId()).isDefault();
                 boolean isDefault2 = getNetwork(nic2.getNetworkId()).isDefault();
-               
+
                 return (isDefault1 ^ isDefault2) ? ((isDefault1 ^ true) ? 1 : -1) : 0;
             }
         });
-        
+
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
             NetworkGuru guru = implemented.first();
@@ -1291,12 +1277,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
     }
-    
+
     @Override
     public List<? extends Nic> getNics(long vmId) {
         return _nicDao.listByVmId(vmId);
     }
-    
+
     @Override
     public List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm) {
         return _nicDao.listByVmIdIncludingRemoved(vm.getId());
@@ -1321,8 +1307,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return profiles;
     }
 
-    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_RELEASE, eventDescription="disassociating Ip", async=true)
-    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd){
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
+    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) {
 
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
@@ -1333,7 +1321,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ipVO == null) {
             throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
         }
-        
+
         if (ipVO.getAllocatedTime() == null) {
             s_logger.debug("Ip Address id= " + ipAddressId + " is not allocated, so do nothing.");
             return true;
@@ -1436,7 +1424,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NETWORK_CREATE, eventDescription="creating network")
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
     public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long zoneId = cmd.getZoneId();
@@ -1453,16 +1443,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
         boolean isDomainSpecific = false;
-        
+
         Transaction txn = Transaction.currentTxn();
-        
+
         // Check if network offering exists
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOffering == null || networkOffering.isSystemOnly()) {
             throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
         }
-       
-        //Check if the network is domain specific
+
+        // Check if the network is domain specific
         if (cmd.getDomainId() != null && cmd.getAccountName() == null) {
             if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Direct) {
                 throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest Ip type " + GuestIpType.Direct);
@@ -1477,41 +1467,41 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 isDomainSpecific = true;
             }
         }
-        
+
         Account owner = null;
         if (cmd.getAccountName() != null && cmd.getDomainId() != null) {
             owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId());
         } else {
             owner = caller;
         }
-        
+
         UserContext.current().setAccountId(owner.getAccountId());
-        
+
         // if end ip is not specified, default it to startIp
         if (endIP == null && startIP != null) {
             endIP = startIP;
         }
-        
+
         // Check if zone exists
         if (zoneId == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
 
-		DataCenterVO zone = _dcDao.findById(zoneId);
+        DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
-        
-		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
-			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
-		}
 
-        //Check if network offering is Available
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+        }
+
+        // Check if network offering is Available
         if (networkOffering.getAvailability() == Availability.Unavailable) {
             throw new InvalidParameterValueException("Can't create network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability());
         }
 
-        //If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
+        // If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
         ArrayList<String> networkConfigs = new ArrayList<String>();
         networkConfigs.add(gateway);
         networkConfigs.add(startIP);
@@ -1519,54 +1509,55 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         networkConfigs.add(netmask);
         boolean defineNetworkConfig = false;
         short configElementsCount = 0;
-        
+
         for (String networkConfig : networkConfigs) {
             if (networkConfig != null) {
                 configElementsCount++;
             }
         }
-        
+
         if (configElementsCount > 0 && configElementsCount != networkConfigs.size()) {
             throw new InvalidParameterValueException("startIP/endIP/netmask/gateway must be specified together");
         } else if (configElementsCount == networkConfigs.size()) {
             defineNetworkConfig = true;
         }
-        
+
         String cidr = null;
         if (gateway != null && netmask != null) {
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
-        
-        //Regular user can create guest virtual network only
+
+        // Regular user can create guest virtual network only
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Virtual)) {
-            throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and Guest Ip type " + GuestIpType.Virtual);
+            throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and Guest Ip type "
+                    + GuestIpType.Virtual);
         }
-        
-        //Don't allow to specify cidr if the caller is a regular user
+
+        // Don't allow to specify cidr if the caller is a regular user
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (cidr != null || vlanId != null)) {
             throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange/vlanId");
         }
-        
-        //For non-root admins check cidr limit - if it's allowed by global config value
+
+        // For non-root admins check cidr limit - if it's allowed by global config value
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && cidr != null) {
-            
+
             String[] cidrPair = cidr.split("\\/");
             int cidrSize = Integer.valueOf(cidrPair[1]);
-  
+
             if (cidrSize < _cidrLimit) {
                 throw new InvalidParameterValueException("Cidr size can't be less than " + _cidrLimit);
             }
         }
-        
+
         txn.start();
-        
+
         Long domainId = null;
         if (isDomainSpecific) {
             domainId = cmd.getDomainId();
         }
-        
+
         Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId);
-        
+
         // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
         if (network.getGuestType() == GuestIpType.Direct) {
@@ -1577,28 +1568,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
         }
-        
+
         txn.commit();
-        
+
         return network;
     }
 
-    @Override @DB
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId)
-            throws ConcurrentOperationException, InsufficientCapacityException {
-        
+    @Override
+    @DB
+    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId,
+            String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId) throws ConcurrentOperationException, InsufficientCapacityException {
+
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         DataCenterVO zone = _dcDao.findById(zoneId);
-        
-        //Only Direct Account specific networks can be created in Advanced Security Group enabled zone
-        if (zone.isSecurityGroupEnabled() && (networkOffering.getGuestType() == GuestIpType.Virtual  || (isShared != null && isShared))) {
+
+        // Only Direct Account specific networks can be created in Advanced Security Group enabled zone
+        if (zone.isSecurityGroupEnabled() && (networkOffering.getGuestType() == GuestIpType.Virtual || (isShared != null && isShared))) {
             throw new InvalidParameterValueException("Virtual Network and Direct Shared Network creation is not allowed if zone is security group enabled");
         }
-        
+
         if (zone.getNetworkType() == NetworkType.Basic) {
             throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
         }
-        
+
         // allow isDefault/isShared to be set only for Direct network
         if (networkOffering.getGuestType() == GuestIpType.Virtual) {
             if (isDefault != null && !isDefault) {
@@ -1614,12 +1606,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 isDefault = false;
             }
         }
-        
-        //if network is shared, defult its owner to be system
+
+        // if network is shared, defult its owner to be system
         if (isShared) {
             owner = _accountMgr.getSystemAccount();
         }
-        
+
         // Don't allow to create network with vlan that already exists in the system
         if (vlanId != null) {
             String uri = "vlan://" + vlanId;
@@ -1628,33 +1620,36 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
             }
         }
-        
+
         // VlanId can be specified only when network offering supports it
         if (vlanId != null && !networkOffering.getSpecifyVlan()) {
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
         }
-        
-        //Don't allow to create guest virtual network with Vlan specified
+
+        // Don't allow to create guest virtual network with Vlan specified
         if (networkOffering.getGuestType() == GuestIpType.Virtual && vlanId != null) {
             throw new InvalidParameterValueException("Can't specify vlan when create network with Guest IP Type " + GuestIpType.Virtual);
         }
-        
+
         // If networkDomain is not specified, take it from the global configuration
         if (networkDomain == null) {
-            networkDomain = "cs"+Long.toHexString(owner.getId())+_networkDomain;
+            networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
         } else {
-            //validate network domain
+            // validate network domain
             if (!NetUtils.verifyDomainName(networkDomain)) {
-                throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +  "and the hyphen ('-'); can't start or end with \"-\"");
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
-        
-        //Cidr for Direct network can't be NULL - 2.2.x limitation, remove after we introduce support for multiple ip ranges with different Cidrs for the same Shared network
+
+        // Cidr for Direct network can't be NULL - 2.2.x limitation, remove after we introduce support for multiple ip ranges
+        // with different Cidrs for the same Shared network
         if (cidr == null && networkOffering.getTrafficType() == TrafficType.Guest && networkOffering.getGuestType() == GuestIpType.Direct) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required for Direct network creation");
         }
-        
-        //Check if cidr is RFC1918 compliant if the network is Guest Virtual
+
+        // Check if cidr is RFC1918 compliant if the network is Guest Virtual
         if (cidr != null && networkOffering.getGuestType() == GuestIpType.Virtual && networkOffering.getTrafficType() == TrafficType.Guest) {
             if (!NetUtils.validateGuestCidr(cidr)) {
                 throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC1918 compliant");
@@ -1663,7 +1658,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
+
         DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null);
         NetworkVO userNetwork = new NetworkVO();
         userNetwork.setNetworkDomain(networkDomain);
@@ -1682,7 +1677,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
-        
+
         List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault, true, domainId);
 
         Network network = null;
@@ -1703,7 +1698,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         txn.commit();
-        UserContext.current().setEventDetails("Network Id: "+ network.getId());
+        UserContext.current().setEventDetails("Network Id: " + network.getId());
         return network;
     }
 
@@ -1750,7 +1745,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 accountId = account.getId();
             }
-            
+
             if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                 DomainVO domain = _domainDao.findById(account.getDomainId());
                 if (domain != null) {
@@ -1777,17 +1772,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         SearchBuilder<DataCenterVO> zoneSearch = _dcDao.createSearchBuilder();
         zoneSearch.and("networkType", zoneSearch.entity().getNetworkType(), SearchCriteria.Op.EQ);
         sb.join("zoneSearch", zoneSearch, sb.entity().getDataCenterId(), zoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        
-        
+
         if (path != null) {
-            //for domain admin we should show only subdomains information
+            // for domain admin we should show only subdomains information
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         sb.and("removed", sb.entity().getRemoved(), Op.NULL);
-        
+
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -1812,17 +1806,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
 
-        if (!isSystem) { 
-            if (accountName != null && domainId != null) {  
+        if (!isSystem) {
+            if (accountName != null && domainId != null) {
                 if (isShared == null) {
                     sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                    //sc.addOr("isShared", SearchCriteria.Op.EQ, true);
+                    // sc.addOr("isShared", SearchCriteria.Op.EQ, true);
                 } else if (!isShared) {
                     sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
                 } else {
                     sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
                 }
-                
+
                 if (isShared == null || isShared) {
                     List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
                     for (NetworkVO network : allNetworks) {
@@ -1833,13 +1827,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         }
                     }
                 }
-                
+
             } else if (isShared != null) {
                 sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
-            }    
+            }
         }
-        
-        //find list of shared networks to avoid
+
+        // find list of shared networks to avoid
         if (domainId != null && accountName == null) {
             List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
             for (NetworkVO network : allNetworks) {
@@ -1849,11 +1843,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
         }
-        
+
         for (Long avoidNetwork : avoidNetworks) {
             sc.addAnd("id", SearchCriteria.Op.NOTIN, avoidNetwork);
         }
-        
+
         for (Long allowerdSharedNetwork : allowedSharedNetworks) {
             sc.addOr("id", SearchCriteria.Op.IN, allowerdSharedNetwork);
         }
@@ -1865,7 +1859,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (trafficType != null) {
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
-        
+
         if (!isSystem && path != null && (isShared == null || !isShared)) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
@@ -1875,17 +1869,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return networks;
     }
 
-    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_DELETE, eventDescription="deleting network", async=true)
-    public boolean deleteNetwork(long networkId){   
-        
-        Account caller = UserContext.current().getCaller(); 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_DELETE, eventDescription = "deleting network", async = true)
+    public boolean deleteNetwork(long networkId) {
+
+        Account caller = UserContext.current().getCaller();
 
         // Verify network id
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("unable to find network " + networkId);
         }
-        
+
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
         // Perform permission check
@@ -1899,14 +1894,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
-        
+
         return destroyNetwork(networkId, context);
     }
 
     @Override
     @DB
     public void shutdownNetwork(long networkId, ReservationContext context) {
-        
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
         NetworkVO network = _networksDao.lockRow(networkId, true);
@@ -1918,7 +1913,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Network is not implemented: " + network);
             return;
         }
-        
+
         network.setState(Network.State.Shutdown);
         _networksDao.update(network.getId(), network);
         txn.commit();
@@ -1929,7 +1924,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Sending network shutdown to " + element.getName());
                 }
-                
+
                 element.shutdown(network, context);
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
@@ -1951,13 +1946,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             NetworkProfile profile = convertNetworkToNetworkProfile(network.getId());
             guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
-            
+
             applyProfileToNetwork(network, profile);
-            
+
             network.setState(Network.State.Allocated);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
-            
+
         } else {
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
@@ -1965,26 +1960,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.commit();
     }
 
-    @Override @DB
+    @Override
+    @DB
     public boolean destroyNetwork(long networkId, ReservationContext context) {
         Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());
-        
+
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             s_logger.debug("Unable to find network with id: " + networkId);
             return false;
         }
-        
-        //Don't allow to delete network via api call when it has vms assigned to it
+
+        // Don't allow to delete network via api call when it has vms assigned to it
         int nicCount = getActiveNicsInNetwork(networkId);
         if (nicCount > 0) {
             s_logger.debug("Unable to remove the network id=" + networkId + " as it has active Nics.");
             return false;
         }
-        
-        //Make sure that there are no user vms in the network that are not Expunged/Error
+
+        // Make sure that there are no user vms in the network that are not Expunged/Error
         List<UserVmVO> userVms = _userVmDao.listByNetworkId(networkId);
-        
+
         for (UserVmVO vm : userVms) {
             if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
                 s_logger.warn("Can't delete the network, not all user vms are expunged. Vm " + vm + " is in " + vm.getState() + " state");
@@ -2049,12 +2045,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return success;
     }
-    
+
     private boolean cleanupNetworkResources(long networkId, Account caller, long callerUserId) {
         boolean success = true;
         Network network = getNetwork(networkId);
-        
-        //remove all PF/Static Nat rules for the network
+
+        // remove all PF/Static Nat rules for the network
         try {
             if (_rulesMgr.revokeAllRulesForNetwork(networkId, callerUserId, caller)) {
                 s_logger.debug("Successfully cleaned up portForwarding/staticNat rules for network id=" + networkId);
@@ -2064,26 +2060,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         } catch (ResourceUnavailableException ex) {
             success = false;
-            //shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
             s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
         }
-        
-        //remove all LB rules for the network
+
+        // remove all LB rules for the network
         if (_lbMgr.removeAllLoadBalanacersForNetwork(networkId, caller, callerUserId)) {
             s_logger.debug("Successfully cleaned up load balancing rules for network id=" + networkId);
         } else {
-            //shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
             success = false;
             s_logger.warn("Failed to cleanup LB rules as a part of network id=" + networkId + " cleanup");
         }
-        
-        //release all ip addresses
+
+        // release all ip addresses
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         for (IPAddressVO ipToRelease : ipsToRelease) {
             IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
             assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
         }
-        
+
         try {
             if (!applyIpAssociations(network, true)) {
                 s_logger.warn("Unable to apply ip address associations for " + network);
@@ -2092,7 +2088,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
         }
-        
+
         return success;
     }
 
@@ -2163,19 +2159,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _lastNetworkIdsToFree = stillFree;
 
                 for (Long networkId : shutdownList) {
-                    
-                    //If network is removed, unset gc flag for it
+
+                    // If network is removed, unset gc flag for it
                     if (getNetwork(networkId) == null) {
                         s_logger.debug("Network id=" + networkId + " is removed, so clearing up corresponding gc check");
                         _networksDao.clearCheckForGc(networkId);
                     } else {
                         try {
-                            
+
                             User caller = _accountMgr.getSystemUser();
                             Account owner = _accountMgr.getAccount(getNetwork(networkId).getAccountId());
-                            
+
                             ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
-                            
+
                             shutdownNetwork(networkId, context);
                         } catch (Exception e) {
                             s_logger.warn("Unable to shutdown network: " + networkId);
@@ -2187,118 +2183,117 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
     }
-    
-  
 
-    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_RESTART, eventDescription="restarting network", async=true)
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // This method restarts all network elements belonging to the network and re-applies all the rules
         Long networkId = cmd.getNetworkId();
-        
+
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         Account callerAccount = _accountMgr.getActiveAccount(caller.getAccountId());
-        
-        //Check if network exists
+
+        // Check if network exists
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Network with id=" + networkId + " doesn't exist");
         }
-        
-        //Don't allow to restart network if it's not in Implemented/Setup state
+
+        // Don't allow to restart network if it's not in Implemented/Setup state
         if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
-        
+
         _accountMgr.checkAccess(callerAccount, network);
-        
+
         boolean success = true;
 
-        //Restart network - network elements restart is required
+        // Restart network - network elements restart is required
         success = restartNetwork(networkId, true, callerAccount);
-        
+
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
         } else {
             s_logger.warn("Network id=" + networkId + " failed to restart.");
         }
-        
+
         return success;
     }
-    
+
     @Override
-    public boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        
-        //Check if network exists
+    public boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+
+        // Check if network exists
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Network with id=" + networkId + " doesn't exist");
         }
-        
-        //implement the network
+
+        // implement the network
         s_logger.debug("Starting network " + network + "...");
         Pair<NetworkGuru, NetworkVO> implementedNetwork = implementNetwork(networkId, dest, context);
         if (implementedNetwork.first() == null) {
             s_logger.warn("Failed to start the network " + network);
             return false;
         } else {
-            return true;   
+            return true;
         }
     }
-    
+
     private boolean restartNetwork(long networkId, boolean restartElements, Account caller) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         boolean success = true;
-        
+
         NetworkVO network = _networksDao.findById(networkId);
-        
+
         s_logger.debug("Restarting network " + networkId + "...");
-        
+
         if (restartElements) {
             s_logger.debug("Restarting network elements for the network " + network);
             for (NetworkElement element : _networkElements) {
-                //stop and start the network element
+                // stop and start the network element
                 if (!element.restart(network, null)) {
                     s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
                     success = false;
-                }   
+                }
             }
         }
-            
-        //associate all ip addresses
+
+        // associate all ip addresses
         if (!applyIpAssociations(network, false)) {
             s_logger.warn("Failed to apply ip addresses as a part of network id" + networkId + " restart");
             success = false;
         }
-        
-        //apply port forwarding rules
+
+        // apply port forwarding rules
         if (!_rulesMgr.applyPortForwardingRulesForNetwork(networkId, false, caller)) {
             s_logger.warn("Failed to reapply port forwarding rule(s) as a part of network id=" + networkId + " restart");
             success = false;
         }
-        
-        //apply static nat rules
+
+        // apply static nat rules
         if (!_rulesMgr.applyStaticNatRulesForNetwork(networkId, false, caller)) {
             s_logger.warn("Failed to reapply static nat rule(s) as a part of network id=" + networkId + " restart");
             success = false;
         }
-        
-        //apply load balancer rules
+
+        // apply load balancer rules
         if (!_lbMgr.applyLoadBalancersForNetwork(networkId)) {
             s_logger.warn("Failed to reapply load balancer rules as a part of network id=" + networkId + " restart");
             success = false;
         }
-        
-        //apply vpn rules
+
+        // apply vpn rules
         List<? extends RemoteAccessVpn> vpnsToReapply = _vpnMgr.listRemoteAccessVpns(networkId);
         if (vpnsToReapply != null) {
             for (RemoteAccessVpn vpn : vpnsToReapply) {
-                //Start remote access vpn per ip
+                // Start remote access vpn per ip
                 if (_vpnMgr.startRemoteAccessVpn(vpn.getServerAddressId()) == null) {
                     s_logger.warn("Failed to reapply vpn rules as a part of network id=" + networkId + " restart");
                     success = false;
                 }
             }
         }
-        
+
         return success;
     }
 
@@ -2356,34 +2351,33 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return zoneCapabilities;
     }
-    
-    
+
     @Override
     public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {
         Network network = getNetwork(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Unable to find network by id " + networkId);
         }
-        
+
         Map<Service, Map<Capability, String>> zoneCapabilities = getZoneCapabilities(network.getDataCenterId());
         Map<Service, Map<Capability, String>> networkCapabilities = new HashMap<Service, Map<Capability, String>>();
-        
+
         for (Service service : zoneCapabilities.keySet()) {
             if (isServiceSupported(networkId, service)) {
                 networkCapabilities.put(service, zoneCapabilities.get(service));
             }
         }
-        
+
         return networkCapabilities;
     }
-    
+
     @Override
     public Map<Capability, String> getServiceCapabilities(long zoneId, Service service) {
         Map<Service, Map<Capability, String>> networkCapabilities = getZoneCapabilities(zoneId);
         if (networkCapabilities.get(service) == null) {
             throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in zone id=" + zoneId);
         }
-        
+
         return networkCapabilities.get(service);
     }
 
@@ -2409,14 +2403,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return networks.get(0);
     }
-    
+
     @Override
     public NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId) {
         List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
         if (networks == null || networks.isEmpty()) {
             return null;
         }
-        
+
         if (networks.size() > 1) {
             s_logger.debug("There are multiple network with security group enabled? select one of them...");
         }
@@ -2461,22 +2455,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public Nic getNicInNetwork(long vmId, long networkId) {
         return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
     }
-    
-    
+
     @Override
     public Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
         return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
     }
 
-    @Override @DB
-    public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    @Override
+    @DB
+    public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException,
+            ResourceUnavailableException {
         Account owner = _accountMgr.getActiveAccount(accountId);
         boolean createNetwork = false;
-        
-        Transaction txn= Transaction.currentTxn();
-        
+
+        Transaction txn = Transaction.currentTxn();
+
         txn.start();
-        
+
         if (network == null) {
             List<? extends Network> networks = getVirtualNetworksOwnedByAccountInZone(owner.getAccountName(), owner.getDomainId(), zoneId);
             if (networks.size() == 0) {
@@ -2485,7 +2480,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 network = networks.get(0);
             }
         }
-         
+
         // create new Virtual network for the user if it doesn't exist
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
@@ -2494,17 +2489,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                 return false;
-            } 
+            }
         }
-        
-        //Check if there is a source nat ip address for this account; if not - we have to allocate one
+
+        // Check if there is a source nat ip address for this account; if not - we have to allocate one
         boolean allocateSourceNat = false;
         List<IPAddressVO> sourceNat = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
         if (sourceNat.isEmpty()) {
             allocateSourceNat = true;
         }
-        
-        //update all ips with a network id, mark them as allocated and update resourceCount/usage
+
+        // update all ips with a network id, mark them as allocated and update resourceCount/usage
         List<IPAddressVO> ips = _ipAddressDao.listByVlanId(vlanId);
         boolean isSourceNatAllocated = false;
         for (IPAddressVO addr : ips) {
@@ -2523,7 +2518,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 markPublicIpAsAllocated(addr);
             }
         }
-        
+
         txn.commit();
         return true;
     }
@@ -2602,18 +2597,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean zoneIsConfiguredForExternalNetworking(long zoneId) {
         DataCenterVO zone = _dcDao.findById(zoneId);
-        
+
         if (zone.getNetworkType() == NetworkType.Advanced) {
-            return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) 
-                    && zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) 
-                    && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(
-                            Network.Provider.F5BigIp.getName()));
+            return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getFirewallProvider() != null
+                    && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(
+                    Network.Provider.F5BigIp.getName()));
         } else {
             return (zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));
         }
 
     }
-    
+
     @Override
     public boolean isServiceSupported(long networkId, Network.Service service) {
         Network network = getNetwork(networkId);
@@ -2633,13 +2627,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else if (service == Service.Gateway) {
             return offering.isGatewayService();
         }
-        
+
         return false;
     }
-    
+
     private boolean cleanupIpResources(long ipId, long userId, Account caller) {
         boolean success = true;
-        
+
         try {
             s_logger.debug("Revoking all PF/StaticNat rules as a part of public IP id=" + ipId + " release...");
             if (!_rulesMgr.revokeAllRulesForIp(ipId, userId, caller)) {
@@ -2656,9 +2650,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Unable to revoke all the load balancer rules for ip id=" + ipId + " as a part of ip release");
             success = false;
         }
-        
-        //remote access vpn can be enabled only for static nat ip, so this part should never be executed under normal conditions
-        //only when ip address failed to be cleaned up as a part of account destroy and was marked as Releasing, this part of the code would be triggered
+
+        // remote access vpn can be enabled only for static nat ip, so this part should never be executed under normal
+        // conditions
+        // only when ip address failed to be cleaned up as a part of account destroy and was marked as Releasing, this part of
+        // the code would be triggered
         s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
         try {
             _vpnMgr.destroyRemoteAccessVpn(ipId);
@@ -2666,24 +2662,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
             success = false;
         }
-        
+
         return success;
     }
-    
+
     @Override
     public String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId) {
-   
-        List<NetworkVO> virtualNetworks = _networksDao.listBy(accountId, dataCenterId , GuestIpType.Virtual);
-        
+
+        List<NetworkVO> virtualNetworks = _networksDao.listBy(accountId, dataCenterId, GuestIpType.Virtual);
+
         if (virtualNetworks.isEmpty()) {
             s_logger.trace("Unable to find default Virtual network account id=" + accountId);
             return null;
         }
-        
+
         NetworkVO virtualNetwork = virtualNetworks.get(0);
-        
+
         NicVO networkElementNic = _nicDao.findByNetworkIdAndType(virtualNetwork.getId(), Type.DomainRouter);
-        
+
         if (networkElementNic != null) {
             return networkElementNic.getIp4Address();
         } else {
@@ -2691,51 +2687,51 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         }
     }
-    
+
     @Override
     public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault) {
         List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
         List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
-        
+
         for (NetworkVO network : zoneNetworks) {
             NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (!no.isSystemOnly()) {
                 if (network.getIsShared() || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
                     if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault == network.isDefault)) {
-                        accountNetworks.add(network); 
-                    } 
+                        accountNetworks.add(network);
+                    }
                 }
             }
         }
         return accountNetworks;
     }
-    
+
     @DB
     private IPAddressVO markIpAsUnavailable(long addrId) {
         Transaction txn = Transaction.currentTxn();
- 
+
         IPAddressVO ip = _ipAddressDao.findById(addrId);
-        
+
         if (ip.getState() != State.Releasing) {
             txn.start();
-            
+
             ip = _ipAddressDao.markAsUnavailable(addrId);
-            
+
             _accountMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
-            
+
             long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
-            
+
             if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat);
                 _usageEventDao.persist(usageEvent);
             }
-            
+
             txn.commit();
         }
-        
+
         return ip;
     }
-    
+
     @Override
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
         boolean result = false;
@@ -2745,8 +2741,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.trace("Network id=" + networkId + " is not shared");
             return false;
         }
-        
-        
+
         List<NetworkDomainVO> networkDomainMap = _networkDomainDao.listDomainNetworkMapByNetworkId(networkId);
         if (networkDomainMap.isEmpty()) {
             s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
@@ -2754,11 +2749,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             networkDomainId = networkDomainMap.get(0).getDomainId();
         }
-        
+
         if (domainId == networkDomainId.longValue()) {
             return true;
         }
-        
+
         Domain domain = _domainDao.findById(domainId);
         while (domain.getParent() != null) {
             if (domain.getParent().longValue() == networkDomainId) {
@@ -2766,10 +2761,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             domain = _domainDao.findById(domain.getParent());
         }
-        
+
         return result;
     }
-    
+
     @Override
     public Long getDedicatedNetworkDomain(long networkId) {
         List<NetworkDomainVO> networkMaps = _networkDomainDao.listDomainNetworkMapByNetworkId(networkId);
@@ -2779,37 +2774,39 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         }
     }
-    
-    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_UPDATE, eventDescription="updating network", async=false)
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = false)
     public Network updateNetwork(long networkId, String name, String displayText, Account caller) {
-        
-        //verify input parameters
+
+        // verify input parameters
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
         }
-        
-        //Don't allow to update system network
+
+        // Don't allow to update system network
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (offering.isSystemOnly()) {
             throw new InvalidParameterValueException("Can't update system networks");
         }
-        
+
         _accountMgr.checkAccess(caller, network);
-        
+
         if (name != null) {
             network.setName(name);
         }
-        
+
         if (displayText != null) {
             network.setDisplayText(displayText);
         }
-        
+
         _networksDao.update(networkId, network);
-        
+
         return network;
+
     }
-    
+
     @Override
     public Integer getNetworkRate(long networkId, Long vmId) {
         VMInstanceVO vm = null;
@@ -2818,8 +2815,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         Network network = getNetwork(networkId);
         NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-        
-        //For default vms network offering get rate information from the service offering; for other situations get information from the network offering
+
+        // For default vms network offering get rate information from the service offering; for other situations get information
+        // from the network offering
         if (vm != null && vm.getType() == Type.User && network.isDefault()) {
             return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId());
         } else {
@@ -2831,10 +2829,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     networkOffering = guestOfferings.get(0);
                 }
             }
-            
+
             return _configMgr.getNetworkOfferingNetworkRate(networkOffering.getId());
         }
-         
+
     }
-    
+
 }

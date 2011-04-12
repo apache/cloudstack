@@ -24,113 +24,135 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class VolumeResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="ID of the disk volume")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "ID of the disk volume")
     private Long id;
 
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
+    @SerializedName(ApiConstants.JOB_ID)
+    @Param(description = "shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private Long jobId;
 
-    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
+    @SerializedName("jobstatus")
+    @Param(description = "shows the current pending asynchronous job status")
     private Integer jobStatus;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="name of the disk volume")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name of the disk volume")
     private String name;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="ID of the availability zone")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "ID of the availability zone")
     private Long zoneId;
 
-    @SerializedName("zonename") @Param(description="name of the availability zone")
+    @SerializedName("zonename")
+    @Param(description = "name of the availability zone")
     private String zoneName;
 
-    @SerializedName(ApiConstants.TYPE) @Param(description="type of the disk volume (ROOT or DATADISK)")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "type of the disk volume (ROOT or DATADISK)")
     private String volumeType;
 
-    @SerializedName(ApiConstants.DEVICE_ID) @Param(description="the ID of the device on user vm the volume is attahed to. This tag is not returned when the volume is detached.")
+    @SerializedName(ApiConstants.DEVICE_ID)
+    @Param(description = "the ID of the device on user vm the volume is attahed to. This tag is not returned when the volume is detached.")
     private Long deviceId;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="id of the virtual machine")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "id of the virtual machine")
     private Long virtualMachineId;
 
-    @SerializedName("vmname") @Param(description="name of the virtual machine")
+    @SerializedName("vmname")
+    @Param(description = "name of the virtual machine")
     private String virtualMachineName;
 
-    @SerializedName("vmdisplayname") @Param(description="display name of the virtual machine")
+    @SerializedName("vmdisplayname")
+    @Param(description = "display name of the virtual machine")
     private String virtualMachineDisplayName;
 
-    @SerializedName("vmstate") @Param(description="state of the virtual machine")
+    @SerializedName("vmstate")
+    @Param(description = "state of the virtual machine")
     private String virtualMachineState;
 
-    @SerializedName(ApiConstants.SIZE) @Param(description="size of the disk volume")
+    @SerializedName(ApiConstants.SIZE)
+    @Param(description = "size of the disk volume")
     private Long size;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date the disk volume was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date the disk volume was created")
     private Date created;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the disk volume")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the disk volume")
     private String state;
-    
-    @SerializedName(ApiConstants.STATUS) @Param(description="the status of the disk volume")
-    private String status;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the disk volume")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the disk volume")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain associated with the disk volume")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain associated with the disk volume")
     private Long domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the disk volume")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain associated with the disk volume")
     private String domainName;
 
-    @SerializedName("storagetype") @Param(description="shared or local storage")
+    @SerializedName("storagetype")
+    @Param(description = "shared or local storage")
     private String storageType;
 
-    @SerializedName("sourceid") @Param(description="Id of the snapshot or diskOffering volume is created from")
-    private Long sourceId;
-
-    @SerializedName("sourcetype") @Param(description="Type of the source the volume is created from. Can be: Snapshot,DiskOffering")
-    private String sourceType;
-
-    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="Hypervisor the volume belongs to")
+    @SerializedName(ApiConstants.HYPERVISOR)
+    @Param(description = "Hypervisor the volume belongs to")
     private String hypervisor;
 
-    @SerializedName(ApiConstants.DISK_OFFERING_ID) @Param(description="ID of the disk offering")
+    @SerializedName(ApiConstants.DISK_OFFERING_ID)
+    @Param(description = "ID of the disk offering")
     private Long diskOfferingId;
 
-    @SerializedName("diskofferingname") @Param(description="name of the disk offering")
+    @SerializedName("diskofferingname")
+    @Param(description = "name of the disk offering")
     private String diskOfferingName;
 
-    @SerializedName("diskofferingdisplaytext") @Param(description="the display text of the disk offering")
+    @SerializedName("diskofferingdisplaytext")
+    @Param(description = "the display text of the disk offering")
     private String diskOfferingDisplayText;
 
-    @SerializedName("storage") @Param(description="name of the primary storage hosting the disk volume")
+    @SerializedName("storage")
+    @Param(description = "name of the primary storage hosting the disk volume")
     private String storagePoolName;
 
-    @SerializedName(ApiConstants.SNAPSHOT_ID) @Param(description="ID of the snapshot from which this volume was created")
+    @SerializedName(ApiConstants.SNAPSHOT_ID)
+    @Param(description = "ID of the snapshot from which this volume was created")
     private Long snapshotId;
 
-    @SerializedName("attached") @Param(description="the date the volume was attached to a VM instance")
+    @SerializedName("attached")
+    @Param(description = "the date the volume was attached to a VM instance")
     private Date attached;
 
-    @SerializedName("destroyed") @Param(description="the boolean state of whether the volume is destroyed or not")
+    @SerializedName("destroyed")
+    @Param(description = "the boolean state of whether the volume is destroyed or not")
     private Boolean destroyed;
 
-    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="ID of the service offering for root disk")
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
+    @Param(description = "ID of the service offering for root disk")
     private Long serviceOfferingId;
 
-    @SerializedName("serviceofferingname") @Param(description="name of the service offering for root disk")
+    @SerializedName("serviceofferingname")
+    @Param(description = "name of the service offering for root disk")
     private String serviceOfferingName;
 
-    @SerializedName("serviceofferingdisplaytext") @Param(description="the display text of the service offering for root disk")
+    @SerializedName("serviceofferingdisplaytext")
+    @Param(description = "the display text of the service offering for root disk")
     private String serviceOfferingDisplayText;
-    
-    @SerializedName("isextractable") @Param(description="true if the volume is extractable, false otherwise")
+
+    @SerializedName("isextractable")
+    @Param(description = "true if the volume is extractable, false otherwise")
     private Boolean extractable;
-    
+
     @Override
     public Long getObjectId() {
-    	return getId();
+        return getId();
     }
-    
+
     @Override
     public Long getJobId() {
         return jobId;
@@ -140,7 +162,7 @@ public class VolumeResponse extends BaseResponse {
     public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
-    
+
     @Override
     public Integer getJobStatus() {
         return jobStatus;
@@ -152,14 +174,14 @@ public class VolumeResponse extends BaseResponse {
     }
 
     public Boolean getDestroyed() {
-		return destroyed;
-	}
+        return destroyed;
+    }
 
-	public void setDestroyed(Boolean destroyed) {
-		this.destroyed = destroyed;
-	}
+    public void setDestroyed(Boolean destroyed) {
+        this.destroyed = destroyed;
+    }
 
-	public Long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -255,14 +277,6 @@ public class VolumeResponse extends BaseResponse {
         this.created = created;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
     public String getAccountName() {
         return accountName;
     }
@@ -293,22 +307,6 @@ public class VolumeResponse extends BaseResponse {
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
-    }
-
-    public Long getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(Long sourceId) {
-        this.sourceId = sourceId;
-    }
-
-    public String getSourceType() {
-        return sourceType;
-    }
-
-    public void setSourceType(String sourceType) {
-        this.sourceType = sourceType;
     }
 
     public String getHypervisor() {
@@ -367,43 +365,43 @@ public class VolumeResponse extends BaseResponse {
         this.attached = attached;
     }
 
-	public Long getServiceOfferingId() {
-		return serviceOfferingId;
-	}
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
 
-	public void setServiceOfferingId(Long serviceOfferingId) {
-		this.serviceOfferingId = serviceOfferingId;
-	}
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
 
-	public String getServiceOfferingName() {
-		return serviceOfferingName;
-	}
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
 
-	public void setServiceOfferingName(String serviceOfferingName) {
-		this.serviceOfferingName = serviceOfferingName;
-	}
+    public void setServiceOfferingName(String serviceOfferingName) {
+        this.serviceOfferingName = serviceOfferingName;
+    }
 
-	public String getServiceOfferingDisplayText() {
-		return serviceOfferingDisplayText;
-	}
+    public String getServiceOfferingDisplayText() {
+        return serviceOfferingDisplayText;
+    }
 
-	public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
-		this.serviceOfferingDisplayText = serviceOfferingDisplayText;
-	}
+    public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
+        this.serviceOfferingDisplayText = serviceOfferingDisplayText;
+    }
 
-	public Boolean getExtractable() {
-		return extractable;
-	}
+    public Boolean getExtractable() {
+        return extractable;
+    }
 
-	public void setExtractable(Boolean extractable) {
-		this.extractable = extractable;
-	}
-	
+    public void setExtractable(Boolean extractable) {
+        this.extractable = extractable;
+    }
+
     public String getState() {
         return state;
     }
 
     public void setState(String state) {
         this.state = state;
-    }	
+    }
 }
