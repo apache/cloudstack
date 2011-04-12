@@ -351,7 +351,10 @@ CREATE TABLE  `cloud`.`upload` (
   `error_str` varchar(255),
   `url` varchar(255),
   `install_path` varchar(255),
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_upload__host_id` FOREIGN KEY `fk_upload__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
+  INDEX `i_upload__host_id`(`host_id`),
+  INDEX `i_upload__type_id`(`type_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`console_proxy` MODIFY COLUMN `public_mac_address` varchar(17);
