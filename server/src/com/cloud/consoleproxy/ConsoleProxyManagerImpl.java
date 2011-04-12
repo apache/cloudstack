@@ -74,6 +74,8 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.info.ConsoleProxyLoadInfo;
@@ -528,8 +530,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.warn("The number of launched console proxy on zone " + dataCenterId + " has reached to limit");
             return null;
         }
-
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        HypervisorType currentHyp = currentHypervisorType(dataCenterId);
+        
+        Map<String, Object> context = createProxyInstance(dataCenterId, currentHyp);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -558,7 +561,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return null;
     }
 
-    protected Map<String, Object> createProxyInstance(long dataCenterId) throws ConcurrentOperationException {
+    protected Map<String, Object> createProxyInstance(long dataCenterId, HypervisorType desiredHyp) throws ConcurrentOperationException {
 
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, _instance);
@@ -582,7 +585,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
         }
         
-        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
+        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId, desiredHyp);
         if (template == null) {
             s_logger.debug("Can't find a template to start");
             throw new CloudRuntimeException("Insufficient capacity exception");
@@ -867,6 +870,14 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         String value = _configDao.getValue(Config.ConsoleProxyLaunchMax.key());
         int launchLimit = NumbersUtil.parseInt(value, 10);
         return l.size() < launchLimit;
+    }
+    
+    private HypervisorType currentHypervisorType(long dcId) {
+        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, 
+          VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Stopped,
+          VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
+        
+        return l.size() > 0? l.get(0).getHypervisorType():HypervisorType.Any;
     }
 
     private boolean checkCapacity(ConsoleProxyLoadInfo proxyCountInfo, ConsoleProxyLoadInfo vmCountInfo) {
