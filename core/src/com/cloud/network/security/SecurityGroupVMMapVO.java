@@ -31,37 +31,33 @@ import javax.persistence.Table;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
-@Table(name=("security_group_vm_map"))
-@SecondaryTables({
-@SecondaryTable(name="user_vm",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="instance_id", referencedColumnName="id")}),
-@SecondaryTable(name="vm_instance",
-                pkJoinColumns={@PrimaryKeyJoinColumn(name="instance_id", referencedColumnName="id")}),
-@SecondaryTable(name="security_group", 
-		pkJoinColumns={@PrimaryKeyJoinColumn(name="security_group_id", referencedColumnName="id")})
-		})
+@Table(name = ("security_group_vm_map"))
+@SecondaryTables({ @SecondaryTable(name = "nics", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "instance_id") }),
+        @SecondaryTable(name = "vm_instance", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id") }),
+        @SecondaryTable(name = "security_group", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "security_group_id", referencedColumnName = "id") }) })
 public class SecurityGroupVMMapVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="security_group_id")
+    @Column(name = "security_group_id")
     private long securityGroupId;
 
-    @Column(name="instance_id")
+    @Column(name = "instance_id")
     private long instanceId;
-    
-    @Column(name="guest_ip_address", table="user_vm", insertable=false, updatable=false)
+
+    @Column(name = "ip4_address", table = "nics", insertable = false, updatable = false)
     private String guestIpAddress;
-    
-    @Column(name="state", table="vm_instance", insertable=false, updatable=false)
+
+    @Column(name = "state", table = "vm_instance", insertable = false, updatable = false)
     private State vmState;
-    
-    @Column(name="name", table="security_group", insertable=false, updatable=false)
+
+    @Column(name = "name", table = "security_group", insertable = false, updatable = false)
     private String groupName;
 
-    public SecurityGroupVMMapVO() { }
+    public SecurityGroupVMMapVO() {
+    }
 
     public SecurityGroupVMMapVO(long securityGroupId, long instanceId) {
         this.securityGroupId = securityGroupId;
@@ -84,11 +80,11 @@ public class SecurityGroupVMMapVO {
         return instanceId;
     }
 
-	public State getVmState() {
-		return vmState;
-	}
+    public State getVmState() {
+        return vmState;
+    }
 
-	public String getGroupName() {
-		return groupName;
-	}
+    public String getGroupName() {
+        return groupName;
+    }
 }
