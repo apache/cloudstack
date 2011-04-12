@@ -23,7 +23,7 @@ create_htaccess() {
   touch $htaccessFile
   grep -F \"$entry\" $htaccessFile 
   if [ \$? -gt 0 ]; then 
-    echo -e \"$entry\" >> $htaccessFile; 
+    echo -e $entry >> $htaccessFile; 
   fi
   result=$?
   
@@ -33,7 +33,7 @@ create_htaccess() {
     htaccessFile=$htaccessFolder/.htaccess
     
     mkdir -p $htaccessFolder
-    echo -e \"$entry\" > $htaccessFile
+    echo -e $entry > $htaccessFile
     result=$?
   fi
   
