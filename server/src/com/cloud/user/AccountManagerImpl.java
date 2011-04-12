@@ -792,10 +792,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     
     private Long getZoneIdForAccount(Account account) {
     	
-    	/*
-    	 *_dcDao.findZonesByDomainId(account.getDomainId()); 
-    	 */
-		return 1L;
+    	//Currently just for resource domain admin
+    	List<DataCenterVO> dcList = _dcDao.findZonesByDomainId(account.getDomainId()); 
+    	if(dcList != null && dcList.size()!=0)
+    		return dcList.get(0).getId();
+    	else 
+    		throw new CloudRuntimeException("Failed to find any private zone for Resource domain admin.");
+
 	}
 
 	private boolean doSetUserStatus(long userId, State state) {
