@@ -519,15 +519,17 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 					s_logger.debug("Volume is in READY state and has pool already allocated.");
 					List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 					StoragePoolVO pool = _storagePoolDao.findById(toBeCreated.getPoolId());
-					suitablePools.add(pool);
-					suitableVolumeStoragePools.put(toBeCreated, suitablePools);
-					continue;
+					if(!avoid.shouldAvoid(pool)){
+						suitablePools.add(pool);
+						suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+						continue;
+					}
 	            }
 			}
 			DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
-	         DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
+	        DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
 
-	         boolean useLocalStorage = false;
+	        boolean useLocalStorage = false;
 			if (vmProfile.getType() != VirtualMachine.Type.User) {
 			    String ssvmUseLocalStorage = _configDao.getValue(Config.SystemVMUseLocalStorage.key());
 			    if (ssvmUseLocalStorage.equalsIgnoreCase("true")) {
