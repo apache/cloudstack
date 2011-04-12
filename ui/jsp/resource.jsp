@@ -499,7 +499,7 @@
                                 <label>
                                     <fmt:message key="label.domain"/>:</label>
                                 <input class="text" type="text" id="vlan_domain" />
-                				<div id="vlan_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
+                				<div id="vlan_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
                 				<!--  
                                 <select class="select" id="vlan_domain">
                                 </select>
