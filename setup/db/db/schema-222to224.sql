@@ -130,3 +130,5 @@ DELETE FROM `sequence` WHERE name='snapshots_seq';
 
 UPDATE `cloud`.`service_offering` s, `cloud`.`disk_offering` d SET s.ha_enabled=1 where s.id=d.id and d.system_use=1;
 
+UPDATE `cloud`.`data_center` SET is_security_group_enabled=1 WHERE networktype='Basic';
+
