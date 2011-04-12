@@ -475,6 +475,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	            return tmplt;
 	        }
 	    }
+	    if (tmplts.size() > 0 && hType == HypervisorType.Any) {
+	        return tmplts.get(0);
+	    }
 	    return null;
 	}
 
