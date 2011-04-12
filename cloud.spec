@@ -221,6 +221,7 @@ Requires: jpackage-utils
 Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
+Group:     System Environment/Libraries
 
 %package baremetal-agent
 Summary: Cloud.com baremetal agent
