@@ -36,95 +36,91 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="volumes")
+@Table(name = "volumes")
 public class VolumeVO implements Volume {
     @Id
-    @TableGenerator(name="volume_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="volume_seq", allocationSize=1)
-    @GeneratedValue(strategy=GenerationType.TABLE)
-    @Column(name="id")
+    @TableGenerator(name = "volume_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "volume_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.TABLE)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     String name;
-    
-    @Column(name="pool_id")
+
+    @Column(name = "pool_id")
     Long poolId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     long accountId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     long domainId;
-    
-    @Column(name="instance_id")
+
+    @Column(name = "instance_id")
     Long instanceId = null;
-    
-    @Column(name="device_id")
+
+    @Column(name = "device_id")
     Long deviceId = null;
-    
-    @Column(name="size")
+
+    @Column(name = "size")
     long size;
 
-    @Column(name="folder")
+    @Column(name = "folder")
     String folder;
-    
-    @Column(name="path")
+
+    @Column(name = "path")
     String path;
-    
-    @Column(name="pod_id")
+
+    @Column(name = "pod_id")
     Long podId;
-    
-    @Column(name="created")
+
+    @Column(name = "created")
     Date created;
-    
-    @Column(name="attached")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "attached")
+    @Temporal(value = TemporalType.TIMESTAMP)
     Date attached;
-    
-    @Column(name="data_center_id")
+
+    @Column(name = "data_center_id")
     long dataCenterId;
-    
-    @Column(name="host_ip")
+
+    @Column(name = "host_ip")
     String hostip;
 
-    @Column(name="disk_offering_id")
+    @Column(name = "disk_offering_id")
     long diskOfferingId;
 
-    @Column(name="template_id")
+    @Column(name = "template_id")
     Long templateId;
-    
-    @Column(name="first_snapshot_backup_uuid")
+
+    @Column(name = "first_snapshot_backup_uuid")
     String firstSnapshotBackupUuid;
 
-    @Column(name="volume_type")
+    @Column(name = "volume_type")
     @Enumerated(EnumType.STRING)
-	Type volumeType = Volume.Type.UNKNOWN;
+    Type volumeType = Volume.Type.UNKNOWN;
 
-    @Column(name="pool_type")
+    @Column(name = "pool_type")
     @Enumerated(EnumType.STRING)
     StoragePoolType poolType;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
-    
-    @Column(name="resource_type")
-    @Enumerated(EnumType.STRING)
-	Storage.StorageResourceType storageResourceType;
-    
-    @Column(name="updated")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
 
-    @Column(name="recreatable")
+    @Column(name = "recreatable")
     boolean recreatable;
-    
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     private State state;
-    
-    @Column(name="chain_info")
+
+    @Column(name = "chain_info")
     String chainInfo;
-    
+
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
         this.volumeType = type;
@@ -153,33 +149,33 @@ public class VolumeVO implements Volume {
 
     // Copy Constructor
     public VolumeVO(Volume that) {
-        this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that.getInstanceId(), that.getFolder(), that.getPath(), that.getSize(), that.getVolumeType());
+        this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that.getInstanceId(), that.getFolder(), that.getPath(), that.getSize(), that
+                .getVolumeType());
         this.recreatable = that.isRecreatable();
         this.state = that.getState();
         this.size = that.getSize();
         this.diskOfferingId = that.getDiskOfferingId();
         this.poolId = that.getPoolId();
-        this.storageResourceType = that.getStorageResourceType();
         this.attached = that.getAttached();
         this.chainInfo = that.getChainInfo();
         this.templateId = that.getTemplateId();
         this.deviceId = that.getDeviceId();
     }
-    
+
     @Override
     public boolean isRecreatable() {
         return recreatable;
     }
-    
+
     public void setRecreatable(boolean recreatable) {
         this.recreatable = recreatable;
     }
-    
-	@Override
+
+    @Override
     public long getId() {
         return id;
-	}
-	
+    }
+
     @Override
     public Long getPodId() {
         return podId;
@@ -189,21 +185,21 @@ public class VolumeVO implements Volume {
     public long getDataCenterId() {
         return dataCenterId;
     }
-    
+
     @Override
     public String getName() {
         return name;
     }
-    
+
     @Override
     public long getAccountId() {
         return accountId;
     }
-    
+
     public void setPoolType(StoragePoolType poolType) {
         this.poolType = poolType;
     }
-    
+
     public StoragePoolType getPoolType() {
         return poolType;
     }
@@ -212,35 +208,35 @@ public class VolumeVO implements Volume {
     public long getDomainId() {
         return domainId;
     }
-    
+
     @Override
     public String getFolder() {
-    	return folder;
+        return folder;
     }
 
     @Override
     public String getPath() {
         return path;
     }
-    
+
     protected VolumeVO() {
     }
-    
+
     @Override
     public long getSize() {
         return size;
     }
-    
+
     public void setSize(long size) {
-		this.size = size;
-	}
-    
+        this.size = size;
+    }
+
     @Override
     public Long getInstanceId() {
-    	return instanceId;
+        return instanceId;
     }
-    
-	@Override
+
+    @Override
     public Long getDeviceId() {
         return deviceId;
     }
@@ -250,121 +246,112 @@ public class VolumeVO implements Volume {
     }
 
     @Override
-	public Type getVolumeType() {
-		return volumeType;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public void setFolder(String folder) {
-		this.folder = folder;
-	}
+    public Type getVolumeType() {
+        return volumeType;
+    }
 
-	public void setAccountId(long accountId) {
-		this.accountId = accountId;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setFolder(String folder) {
+        this.folder = folder;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
 
     public void setDomainId(long domainId) {
         this.domainId = domainId;
     }
 
-	public void setInstanceId(Long instanceId) {
-		this.instanceId = instanceId;
-	}
-	
-	public void setPath(String path) {
-		this.path = path;
-	}
+    public void setInstanceId(Long instanceId) {
+        this.instanceId = instanceId;
+    }
 
-	public String getHostIp() {
-		return hostip;
-	}
+    public void setPath(String path) {
+        this.path = path;
+    }
 
-	public void setHostIp(String hostip) {
-		this.hostip = hostip;
-	}
+    public String getHostIp() {
+        return hostip;
+    }
 
-	public void setPodId(Long podId) {
-		this.podId = podId;
-	}
+    public void setHostIp(String hostip) {
+        this.hostip = hostip;
+    }
 
-	public void setDataCenterId(long dataCenterId) {
-		this.dataCenterId = dataCenterId;
-	}
+    public void setPodId(Long podId) {
+        this.podId = podId;
+    }
 
-	public void setVolumeType(Type type) {
-		volumeType = type;
-	}
-	
-	@Override
+    public void setDataCenterId(long dataCenterId) {
+        this.dataCenterId = dataCenterId;
+    }
+
+    public void setVolumeType(Type type) {
+        volumeType = type;
+    }
+
+    @Override
     public Date getCreated() {
-		return created;
-	}
-	
-	public Date getRemoved() {
-	    return removed;
-	}
-	
-	public void setRemoved(Date removed) {
-		this.removed = removed;
-	}
+        return created;
+    }
 
-	@Override
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    @Override
     public long getDiskOfferingId() {
-		return diskOfferingId;
-	}
+        return diskOfferingId;
+    }
 
-	public void setDiskOfferingId(long diskOfferingId) {
-		this.diskOfferingId = diskOfferingId;
-	}
+    public void setDiskOfferingId(long diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
+    }
 
-	@Override
+    @Override
     public Long getTemplateId() {
-		return templateId;
-	}
+        return templateId;
+    }
 
-	public void setTemplateId(Long templateId) {
-		this.templateId = templateId;
-	}
-	
-	public String getFirstSnapshotBackupUuid() {
-	    return firstSnapshotBackupUuid;
-	}
-	
-	public void setFirstSnapshotBackupUuid(String firstSnapshotBackupUuid) {
-	    this.firstSnapshotBackupUuid = firstSnapshotBackupUuid;
-	}
-	
-	@Override
-	public Storage.StorageResourceType getStorageResourceType() {
-		return storageResourceType;
-	}
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
 
-	public void setStorageResourceType(Storage.StorageResourceType storageResourceType2) {
-		this.storageResourceType = storageResourceType2;
-	}
+    public String getFirstSnapshotBackupUuid() {
+        return firstSnapshotBackupUuid;
+    }
 
-	@Override
+    public void setFirstSnapshotBackupUuid(String firstSnapshotBackupUuid) {
+        this.firstSnapshotBackupUuid = firstSnapshotBackupUuid;
+    }
+
+    @Override
     public Long getPoolId() {
-		return poolId;
-	}
-	
-	public void setPoolId(Long poolId) {
-		this.poolId = poolId;
-	}
-	
-	public Date getUpdated() {
+        return poolId;
+    }
+
+    public void setPoolId(Long poolId) {
+        this.poolId = poolId;
+    }
+
+    public Date getUpdated() {
         return updated;
     }
-	
-	@Override
+
+    @Override
     public State getState() {
-	    return state;
-	}
-	
-	public void setState(State state) {
+        return state;
+    }
+
+    public void setState(State state) {
         this.state = state;
     }
 
@@ -372,40 +359,40 @@ public class VolumeVO implements Volume {
         this.updated = updated;
     }
 
-	@Override
+    @Override
     public String toString() {
-	    return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
-	}
+        return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
+    }
 
-	@Override
-	public Date getAttached(){
-		return this.attached; 
-	}
-	
-	public void setAttached(Date attached){
-		this.attached = attached;
-	}
-	
-	@Override
-	public String getChainInfo() {
-		return this.chainInfo;
-	}
-	
-	public void setChainInfo(String chainInfo) {
-		this.chainInfo = chainInfo;
-	}
-	
-	@Override
+    @Override
+    public Date getAttached() {
+        return this.attached;
+    }
+
+    public void setAttached(Date attached) {
+        this.attached = attached;
+    }
+
+    @Override
+    public String getChainInfo() {
+        return this.chainInfo;
+    }
+
+    public void setChainInfo(String chainInfo) {
+        this.chainInfo = chainInfo;
+    }
+
+    @Override
     public int hashCode() {
-	    return  NumbersUtil.hash(id);
-	}
-	
-	@Override
+        return NumbersUtil.hash(id);
+    }
+
+    @Override
     public boolean equals(Object obj) {
-	    if (obj instanceof VolumeVO) {
-	        return id == ((VolumeVO)obj).id;
-	    } else {
-	        return false;
-	    }
-	}
+        if (obj instanceof VolumeVO) {
+            return id == ((VolumeVO) obj).id;
+        } else {
+            return false;
+        }
+    }
 }

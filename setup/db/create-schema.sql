@@ -380,7 +380,6 @@ CREATE TABLE `cloud`.`volumes` (
   `iscsi_name` varchar(255) COMMENT 'iscsi target name',
   `host_ip` char(40)  COMMENT 'host ip address for convenience',
   `volume_type` varchar(64) NOT NULL COMMENT 'root, swap or data',
-  `resource_type` varchar(64) COMMENT 'pool-based or host-based',
   `pool_type` varchar(64) COMMENT 'type of the pool',
   `disk_offering_id` bigint unsigned NOT NULL COMMENT 'can be null for system VMs',
   `template_id` bigint unsigned COMMENT 'fk to vm_template.id',

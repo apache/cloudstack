@@ -949,8 +949,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         		  disksize = dskch.getSize();
         		  vol = _storageResource.createVolume(conn, primaryPool, UUID.randomUUID().toString(),  dskch.getSize(), volFormat.QCOW2);
         	  }
-        	  VolumeTO volume = new VolumeTO(cmd.getVolumeId(), dskch.getType(), getStorageResourceType(), pool.getType(), 
-    			  pool.getUuid(), pool.getPath(), vol.getName(),vol.getKey(), disksize, null);
+        	  VolumeTO volume = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), 
+    			  pool.getPath(), vol.getName(), vol.getKey(),disksize, null);
         	  return new CreateAnswer(cmd, volume);
           } catch (LibvirtException e) {
         	 

@@ -17,7 +17,6 @@
  */
 package com.cloud.agent.api.to;
 
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -25,76 +24,66 @@ import com.cloud.storage.Volume;
 public class VolumeTO {
     protected VolumeTO() {
     }
-    
+
     private long id;
     private String name;
     private String mountPoint;
     private String path;
     private long size;
     private Volume.Type type;
-    private Storage.StorageResourceType resourceType;
     private StoragePoolType storagePoolType;
     private String storagePoolUuid;
     private long deviceId;
     private String chainInfo;
     private String guestOsType;
-    
-    public VolumeTO(long id, Volume.Type type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
-    	String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
+
+    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
-        this.name= name;
+        this.name = name;
         this.path = path;
         this.size = size;
         this.type = type;
-        this.resourceType = resourceType;
         this.storagePoolType = poolType;
         this.storagePoolUuid = poolUuid;
         this.mountPoint = mountPoint;
         this.chainInfo = chainInfo;
     }
-    
-    public VolumeTO(long id, Volume.Type type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
-        	String poolUuid, String name, String mountPoint, String path, long size, String chainInfo, String guestOsType) {
-            this.id = id;
-            this.name= name;
-            this.path = path;
-            this.size = size;
-            this.type = type;
-            this.resourceType = resourceType;
-            this.storagePoolType = poolType;
-            this.storagePoolUuid = poolUuid;
-            this.mountPoint = mountPoint;
-            this.chainInfo = chainInfo;
-            this.guestOsType = guestOsType;
-        }
-    
+
+    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo, String guestOsType) {
+        this.id = id;
+        this.name = name;
+        this.path = path;
+        this.size = size;
+        this.type = type;
+        this.storagePoolType = poolType;
+        this.storagePoolUuid = poolUuid;
+        this.mountPoint = mountPoint;
+        this.chainInfo = chainInfo;
+        this.guestOsType = guestOsType;
+    }
+
     public VolumeTO(Volume volume, StoragePool pool) {
         this.id = volume.getId();
         this.name = volume.getName();
         this.path = volume.getPath();
         this.size = volume.getSize();
         this.type = volume.getVolumeType();
-        this.resourceType = volume.getStorageResourceType();
         this.storagePoolType = pool.getPoolType();
         this.storagePoolUuid = pool.getUuid();
         this.mountPoint = volume.getFolder();
         this.chainInfo = volume.getChainInfo();
         if (volume.getDeviceId() != null)
-        	this.deviceId = volume.getDeviceId();
+            this.deviceId = volume.getDeviceId();
     }
-   
+
     public long getDeviceId() {
         return deviceId;
     }
-    
+
     public void setDeviceId(long id) {
-    	this.deviceId = id;
+        this.deviceId = id;
     }
 
-    public Storage.StorageResourceType getResourceType() {
-        return resourceType;
-    }
-    
     public long getId() {
         return id;
     }
@@ -114,27 +103,27 @@ public class VolumeTO {
     public String getName() {
         return name;
     }
-    
+
     public String getMountPoint() {
         return mountPoint;
     }
-    
+
     public StoragePoolType getPoolType() {
         return storagePoolType;
     }
-    
+
     public String getPoolUuid() {
-    	return storagePoolUuid;
+        return storagePoolUuid;
     }
-    
+
     public String getChainInfo() {
-    	return chainInfo;
+        return chainInfo;
     }
-    
+
     public String getOsType() {
-    	return guestOsType;
+        return guestOsType;
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("Vol[").append(id).append("|").append(type).append("|").append(path).append("|").append(size).append("]").toString();

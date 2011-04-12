@@ -139,7 +139,6 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
@@ -2436,15 +2435,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			if (guestOS != null) {
 				displayName = guestOS.getDisplayName();
 			}
-			VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, isoPath,
-										0, null, displayName);
+			VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, template.getName(), null, isoPath, 0,
+										null, displayName);
 			
 			iso.setDeviceId(3);
 			profile.addDisk(iso);
 		} else {
 			/*create a iso placeholder*/
-			VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, null,
-					0, null);
+			VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, template.getName(), null, null, 0,
+					null);
 			iso.setDeviceId(3);
 			profile.addDisk(iso);
 		}
