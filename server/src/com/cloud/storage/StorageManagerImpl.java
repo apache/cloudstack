@@ -2462,38 +2462,31 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
 
         for (VolumeVO vol : vols) {
-            Volume.State state = vol.getState();
-            if (state == Volume.State.Ready) {
-                StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
-                if (pool.getRemoved() != null || pool.isInMaintenance()) {
-                    if (vol.isRecreatable()) {
+        	if(vol.getPoolId() == null){
+        		 recreateVols.add(vol);
+        	}else{
+        		StoragePool assignedPool = dest.getStorageForDisks().get(vol);
+        		if(vol.getPoolId() != assignedPool.getId()){
+        			if (vol.isRecreatable()) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Volume " + vol + " has to be recreated due to storage pool " + pool + " is unavailable");
+                            s_logger.debug("Volume " + vol + " has to be recreated since a different storage pool " + assignedPool + " is assigned by deploymentPlanner");
                         }
                         recreateVols.add(vol);
                     } else {
-                        throw new StorageUnavailableException("Volume " + vol + " is not available on the storage pool.", pool.getId());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Volume " + vol + " is not recreatable! Cannot create storagepool...");
+                        }
+                        throw new StorageUnavailableException("Unable to create " + vol, assignedPool.getId());
+                        //copy volume usecase - not yet developed.
                     }
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Volume " + vol + " is ready.");
+        		}else{
+        		    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Volume " + vol + " already has the poolId set to the assigned pool: " + assignedPool);
                     }
-                    vm.addDisk(new VolumeTO(vol, pool));
-                }
-            } else if (state == Volume.State.Allocated) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating volume " + vol + " for the first time.");
-                }
-                recreateVols.add(vol);
-            } else if (state == Volume.State.Creating && vol.isRecreatable()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Re-creating volume " + vol + " as it was left with Creating state");
-                }
-                recreateVols.add(vol);
-            } else {
-                // the pool id here can potentially be null if the volume was never associated with any pool id (bug: 7899)
-                throw new StorageUnavailableException("Volume " + vol + " can not be used", vol.getPoolId() != null ? vol.getPoolId() : null);
-            }
+        			StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+        			vm.addDisk(new VolumeTO(vol, pool));
+        		}
+        	}
         }
 
         for (VolumeVO vol : recreateVols) {

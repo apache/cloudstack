@@ -576,6 +576,23 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 for (VolumeVO vol : vols) {
                     Volume.State state = vol.getState();
                     if (state == Volume.State.Ready) {
+                    	//make sure if this is a System VM, templateId is unchanged. If it is changed, let planner
+                    	//reassign pool for the volume
+                    	if(VirtualMachine.Type.DomainRouter.equals(vm.getType())
+                    			|| VirtualMachine.Type.ConsoleProxy.equals(vm.getType())
+                    			|| VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())){
+
+                    		Long volTemplateId = vol.getTemplateId();
+                    		if(volTemplateId != null && volTemplateId.longValue() != vm.getTemplateId()){
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Root Volume " + vol + " of "+vm.getType().toString() +" System VM is ready, but volume's templateId does not match the VM, updating templateId and reassigning a new pool");
+                                }
+                    			vol.setTemplateId(vm.getTemplateId());
+                    			_volsDao.update(vol.getId(), vol);
+                    			continue;
+                    		}
+
+                    	}
                         StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                         if (!pool.isInMaintenance()) {
                             long rootVolDcId = pool.getDataCenterId();
