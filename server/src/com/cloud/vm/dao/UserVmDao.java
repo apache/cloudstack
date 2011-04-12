@@ -20,7 +20,6 @@ package com.cloud.vm.dao;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
 
@@ -33,8 +32,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<UserVmVO> listByLastHostId(Long hostId);
     List<UserVmVO> listUpByHostId(Long hostId);
 
-    UserVmVO findByName(String name);
-    
     /**
      * Updates display name and group for vm; enables/disables ha
      * @param id vm id.
@@ -62,7 +59,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	
 	List<UserVmVO> listByNetworkId(long networkId);
 	
-	UserVm findVmByZoneIdAndName(long zoneId, String name);
 	List<UserVmVO> listByAccountIdAndHostId(long accountId, long hostId);
 	
 	void loadDetails(UserVmVO vm);

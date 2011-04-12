@@ -31,7 +31,6 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
     private static final Logger s_logger = Logger.getLogger(CheckPointManagerImpl.class);
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; // 3 seconds
-    private static final int GC_INTERVAL = 10000; // 10 seconds
     private int _cleanupRetryInterval;
 
     private String _name;
@@ -44,8 +43,6 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
     
     long _msId;
 
-    private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("TaskMgr-Heartbeat"));
-    
     private final ScheduledExecutorService _cleanupScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Task-Cleanup"));
     
     protected CheckPointManagerImpl() {
@@ -119,14 +116,6 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
 
     @Override
     public boolean start() {
-//        try {
-//            List<TaskVO> l = _maidDao.listLeftoversByMsid(_clusterMgr.getManagementNodeId());
-//            cleanupLeftovers(l);
-//        } catch (Throwable e) {
-//            s_logger.error("Unexpected exception " + e.getMessage(), e);
-//        }
-//
-//        _heartbeatScheduler.scheduleAtFixedRate(getGCTask(), GC_INTERVAL, GC_INTERVAL, TimeUnit.MILLISECONDS);
         _cleanupScheduler.schedule(new CleanupTask(), _cleanupRetryInterval > 0 ? _cleanupRetryInterval : 600, TimeUnit.SECONDS);
         return true;
     }

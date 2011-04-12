@@ -29,20 +29,15 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.capacity.CapacityVO;
-import com.cloud.host.HostVO;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
@@ -59,9 +54,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> LastHostSearch;
     protected final SearchBuilder<UserVmVO> HostUpSearch;
     protected final SearchBuilder<UserVmVO> HostRunningSearch;
-    protected final SearchBuilder<UserVmVO> NameSearch;
     protected final SearchBuilder<UserVmVO> StateChangeSearch;
-    protected final SearchBuilder<UserVmVO> ZoneNameSearch;
     protected final SearchBuilder<UserVmVO> AccountHostSearch;
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
@@ -102,10 +95,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         HostRunningSearch.and("state", HostRunningSearch.entity().getState(), SearchCriteria.Op.EQ);
         HostRunningSearch.done();
         
-        NameSearch = createSearchBuilder();
-        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        NameSearch.done();
-        
         AccountPodSearch = createSearchBuilder();
         AccountPodSearch.and("account", AccountPodSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountPodSearch.and("pod", AccountPodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -128,11 +117,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         DestroySearch.and("updateTime", DestroySearch.entity().getUpdateTime(), SearchCriteria.Op.LT);
         DestroySearch.done();
 
-        ZoneNameSearch = createSearchBuilder();
-        ZoneNameSearch.and("dataCenterId", ZoneNameSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        ZoneNameSearch.and("name", ZoneNameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        ZoneNameSearch.done();
-        
         AccountHostSearch = createSearchBuilder();
         AccountHostSearch.and("accountId", AccountHostSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountHostSearch.and("hostId", AccountHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -216,13 +200,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         
         return listBy(sc);
     }
-    
-    @Override
-    public UserVmVO findByName(String name) {
-        SearchCriteria<UserVmVO> sc = NameSearch.create();
-        sc.setParameters("name", name);
-        return findOneIncludingRemovedBy(sc);
-    }
 
     @Override
     public List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId, long networkId) {
@@ -274,14 +251,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 		return listBy(sc);
 	}
 	
-    @Override
-    public UserVm findVmByZoneIdAndName(long zoneId, String name) {
-        SearchCriteria<UserVmVO> sc = ZoneNameSearch.create();
-        sc.setParameters("dataCenterId", zoneId);
-        sc.setParameters("name", name);
-        return findOneBy(sc);
-    }
-
 	@Override
 	public List<UserVmVO> listByAccountIdAndHostId(long accountId, long hostId) {
 		SearchCriteria<UserVmVO> sc = AccountHostSearch.create();
