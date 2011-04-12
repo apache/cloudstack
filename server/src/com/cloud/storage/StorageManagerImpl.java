@@ -1230,69 +1230,87 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
         }
 
+        // Check if the pool has associated volumes in the volumes table
+        // If it does, then you cannot delete the pool
+        Pair<Long, Long> volumeRecords = _volsDao.getCountAndTotalByPool(id);
+
+        if (volumeRecords.first() > 0) {
+            s_logger.warn("Cannot delete pool " + sPool.getName() + " as there are associated vols for this pool");
+            return false; // cannot delete as there are associated vols
+        }
+
+        // First get the host_id from storage_pool_host_ref for given pool id
+        StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
+
+        if (lock == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
+            }
+            return false;
+        }
+
+        // mark storage pool as removed (so it can't be used for new volumes creation), release the lock
+        boolean isLockReleased = false;
+        sPool.setStatus(StoragePoolStatus.Removed);
+        _storagePoolDao.update(id, sPool);
+        isLockReleased = _storagePoolDao.releaseFromLockTable(lock.getId());
+        s_logger.trace("Released lock for storage pool " + id);
+
         // for the given pool id, find all records in the storage_pool_host_ref
         List<StoragePoolHostVO> hostPoolRecords = _storagePoolHostDao.listByPoolId(id);
+        Transaction txn = Transaction.currentTxn();
+        try {
+            // if not records exist, delete the given pool (base case)
+            if (hostPoolRecords.size() == 0) {
 
-        // if not records exist, delete the given pool (base case)
-        if (hostPoolRecords.size() == 0) {
-            sPool.setUuid(null);
-            _storagePoolDao.update(id, sPool);
-            _storagePoolDao.remove(id);
-            deletePoolStats(id);
-            return true;
-        } else {
-            // 1. Check if the pool has associated volumes in the volumes table
-            // 2. If it does, then you cannot delete the pool
-            Pair<Long, Long> volumeRecords = _volsDao.getCountAndTotalByPool(id);
+                txn.start();
+                sPool.setUuid(null);
+                _storagePoolDao.update(id, sPool);
+                _storagePoolDao.remove(id);
+                deletePoolStats(id);
+                txn.commit();
 
-            if (volumeRecords.first() > 0) {
-                s_logger.warn("Cannot delete pool " + sPool.getName() + " as there are associated vols for this pool");
-                return false; // cannot delete as there are associated vols
+                deleteFlag = true;
+                return true;
+            } else {
+                // Remove the SR associated with the Xenserver
+                for (StoragePoolHostVO host : hostPoolRecords) {
+                    DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(sPool);
+                    final Answer answer = _agentMgr.easySend(host.getHostId(), cmd);
+
+                    if (answer != null && answer.getResult()) {
+                        deleteFlag = true;
+                        break;
+                    }
+                }
             }
-            // 3. Else part, remove the SR associated with the Xenserver
-            else {
-                // First get the host_id from storage_pool_host_ref for given
-                // pool id
-                StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
-                try {
-                    if (lock == null) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
-                        }
-                        return false;
-                    }
-
-                    for (StoragePoolHostVO host : hostPoolRecords) {
-                        DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(sPool);
-                        final Answer answer = _agentMgr.easySend(host.getHostId(), cmd);
-
-                        if (answer != null && answer.getResult()) {
-                            deleteFlag = true;
-                            break;
-                        }
-                    }
-
-                } finally {
-                    if (lock != null) {
-                        _storagePoolDao.releaseFromLockTable(lock.getId());
-                    }
+        } finally {
+            if (deleteFlag) {
+                // now delete the storage_pool_host_ref and storage_pool records
+                txn.start();
+                for (StoragePoolHostVO host : hostPoolRecords) {
+                    _storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(), host.getPoolId());
                 }
+                sPool.setUuid(null);
+                _storagePoolDao.update(id, sPool);
+                _storagePoolDao.remove(id);
+                deletePoolStats(id);
+                txn.commit();
 
-                if (deleteFlag) {
-                    // now delete the storage_pool_host_ref and storage_pool
-                    // records
-                    for (StoragePoolHostVO host : hostPoolRecords) {
-                        _storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(), host.getPoolId());
-                    }
-                    sPool.setUuid(null);
-                    sPool.setStatus(StoragePoolStatus.Removed);
-                    _storagePoolDao.update(id, sPool);
-                    _storagePoolDao.remove(id);
-                    deletePoolStats(id);
-                    return true;
-                }
+                s_logger.debug("Storage pool id=" + id + " is removed successfully");
+                return true;
+            } else {
+                // alert that the storage cleanup is required
+                s_logger.warn("Failed to Delete storage pool id: " + id);
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_STORAGE_DELETE, sPool.getDataCenterId(), sPool.getPodId(), "Unable to delete storage pool id= " + id,
+                        "Delete storage pool command failed.  Please check logs.");
+            }
+
+            if (lock != null && !isLockReleased) {
+                _storagePoolDao.releaseFromLockTable(lock.getId());
             }
         }
+
         return false;
 
     }
@@ -1304,8 +1322,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        _capacityDao.remove(capacity1.getId());
-        _capacityDao.remove(capacity2.getId());
+        if (capacity1 != null) {
+            _capacityDao.remove(capacity1.getId());
+        }
+
+        if (capacity2 != null) {
+            _capacityDao.remove(capacity2.getId());
+        }
+
         txn.commit();
         return true;
 
@@ -2059,7 +2083,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         }
                     }
                 }
-
             }
 
             // 5. Update the status
@@ -2826,4 +2849,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return capacities;
     }
 
+    @Override
+    public StoragePool getStoragePool(long id) {
+        return _storagePoolDao.findById(id);
+    }
 }

@@ -37,18 +37,23 @@ import com.cloud.exception.ResourceUnavailableException;
 public interface StorageService {
     /**
      * Create StoragePool based on uri
-     * @param cmd the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the storage pool.
+     * 
+     * @param cmd
+     *            the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the storage pool.
      * @return
      * @throws ResourceInUseException
      * @throws IllegalArgumentException
      * @throws UnknownHostException
-     * @throws ResourceUnavailableException TODO
+     * @throws ResourceUnavailableException
+     *             TODO
      */
     StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException;
-    
+
     /**
      * Creates the database object for a volume based on the given criteria
-     * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+     * 
+     * @param cmd
+     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
      * @return the volume object
      * @throws InvalidParameterValueException
      * @throws PermissionDeniedException
@@ -57,39 +62,51 @@ public interface StorageService {
 
     /**
      * Creates the volume based on the given criteria
-     * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+     * 
+     * @param cmd
+     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
      * @return the volume object
      */
     Volume createVolume(CreateVolumeCmd cmd);
 
     boolean deleteVolume(DeleteVolumeCmd cmd) throws ConcurrentOperationException;
+
     /**
      * Delete the storage pool
-     * @param cmd - the command specifying poolId
+     * 
+     * @param cmd
+     *            - the command specifying poolId
      * @return success or failure
      * @throws InvalidParameterValueException
      */
     boolean deletePool(DeletePoolCmd cmd) throws InvalidParameterValueException;
+
     /**
      * Enable maintenance for primary storage
-     * @param cmd - the command specifying primaryStorageId
+     * 
+     * @param cmd
+     *            - the command specifying primaryStorageId
      * @return the primary storage pool
-     * @throws ResourceUnavailableException TODO
-     * @throws InsufficientCapacityException TODO
+     * @throws ResourceUnavailableException
+     *             TODO
+     * @throws InsufficientCapacityException
+     *             TODO
      */
     public StoragePool preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
-    
+
     /**
      * Complete maintenance for primary storage
-     * @param cmd - the command specifying primaryStorageId
+     * 
+     * @param cmd
+     *            - the command specifying primaryStorageId
      * @return the primary storage pool
-     * @throws ResourceUnavailableException TODO
+     * @throws ResourceUnavailableException
+     *             TODO
      */
     public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException;
 
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
-    
 
-
+    public StoragePool getStoragePool(long id);
 
 }
