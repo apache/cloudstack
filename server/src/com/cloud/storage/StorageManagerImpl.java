@@ -2480,12 +2480,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("DeployDestination cannot be null, cannot prepare Volumes for the vm: "+ vm);
             }
-            throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination is null");
-    	}else if(dest.getStorageForDisks() == null){
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("DeployDestination has no storage pools specified, cannot prepare Volumes for the vm: "+ vm);
-            }
-            throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination DeployDestination has no storage pools specified");
+            throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination is null, vm:"+vm);
     	}
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
@@ -2495,34 +2490,35 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
 
         for (VolumeVO vol : vols) {
-        	if(vol.getPoolId() == null){
-        		 recreateVols.add(vol);
-        	}else{
-        		StoragePool assignedPool = dest.getStorageForDisks().get(vol);
-        		if(assignedPool == null){
-        			throw new StorageUnavailableException("No storage pool assigned in DeployDestination, Unable to create " + vol,  -1L);
-        		}
-        		if(vol.getPoolId() != assignedPool.getId()){
-        			if (vol.isRecreatable()) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Volume " + vol + " has to be recreated since a different storage pool " + assignedPool + " is assigned by deploymentPlanner");
-                        }
-                        recreateVols.add(vol);
-                    } else {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Volume " + vol + " is not recreatable! Cannot create storagepool...");
-                        }
-                        throw new StorageUnavailableException("Unable to create " + vol, assignedPool.getId());
-                        //copy volume usecase - not yet developed.
-                    }
-        		}else{
-        		    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Volume " + vol + " already has the poolId set to the assigned pool: " + assignedPool);
-                    }
-        			StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
-        			vm.addDisk(new VolumeTO(vol, pool));
-        		}
-        	}
+    		StoragePool assignedPool = null;
+    		if(dest.getStorageForDisks() != null){
+    			assignedPool = dest.getStorageForDisks().get(vol);
+    		}
+    		if(assignedPool != null){
+    			Volume.State state = vol.getState();
+    			if(state == Volume.State.Allocated){
+    				recreateVols.add(vol);
+    			}else{
+	    			if (vol.isRecreatable()) {
+	                    if (s_logger.isDebugEnabled()) {
+	                        s_logger.debug("Volume " + vol + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+	                    }
+	    				recreateVols.add(vol);
+	    			}else{
+	    				if (s_logger.isDebugEnabled()) {
+	                        s_logger.debug("Volume " + vol + " is not recreatable! Cannot recreate on storagepool: "+assignedPool);
+	                    }
+	                    throw new StorageUnavailableException("Volume is not recreatable, Unable to create " + vol, Volume.class, vol.getId());
+	                    //copy volume usecase - not yet developed.
+	    			}
+    			}
+    		}else{
+    			if(vol.getPoolId() == null){
+    				throw new StorageUnavailableException("Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol,  Volume.class, vol.getId());
+    			}
+    			StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+    			vm.addDisk(new VolumeTO(vol, pool));
+    		}
         }
 
         for (VolumeVO vol : recreateVols) {

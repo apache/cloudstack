@@ -515,14 +515,17 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			
 			//skip the volume if its already in READY state and has pool allocated
 			if(plan.getPoolId() != null){
-				if (toBeCreated.getPoolId() != null && toBeCreated.getPoolId().longValue() == plan.getPoolId().longValue()) {
-					s_logger.debug("Volume is in READY state and has pool already allocated.");
+				if (toBeCreated.getVolumeType() == Volume.Type.ROOT && toBeCreated.getPoolId() != null && toBeCreated.getPoolId().longValue() == plan.getPoolId().longValue()) {
+					s_logger.debug("ROOT Volume is in READY state and has pool already allocated.");
 					List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 					StoragePoolVO pool = _storagePoolDao.findById(toBeCreated.getPoolId());
 					if(!avoid.shouldAvoid(pool)){
+						s_logger.debug("Planner need not allocate a pool for this volume since its READY");
 						suitablePools.add(pool);
 						suitableVolumeStoragePools.put(toBeCreated, suitablePools);
 						continue;
+					}else{
+						s_logger.debug("Pool of the ROOT volume is in avoid set, need to allocate a pool for this volume");
 					}
 	            }
 			}
