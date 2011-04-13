@@ -45,7 +45,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.BaseResponse;
@@ -304,7 +303,7 @@ public class ApiXmlDocWriter {
             String superName = superClass.getName();
             if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
                 Field[] superClassFields = superClass.getDeclaredFields();
-                if (superClassFields != null && !superClass.getName().equals(BaseListCmd.class.getName())) {
+                if (superClassFields != null) {
                     Field[] tmpFields = new Field[fields.length + superClassFields.length];
                     System.arraycopy(fields, 0, tmpFields, 0, fields.length);
                     System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
@@ -438,6 +437,7 @@ public class ApiXmlDocWriter {
             SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
             Param paramAnnotation = responseField.getAnnotation(Param.class);
             Argument respArg = new Argument(nameAnnotation.value());
+
             boolean hasChildren = false;
             if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
                 String description = paramAnnotation.description();
