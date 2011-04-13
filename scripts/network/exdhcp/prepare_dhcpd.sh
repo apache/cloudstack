@@ -1,9 +1,8 @@
 #!/bin/sh
-# usage prepare_ping.sh subnet tftp_dir
+# usage prepare_ping.sh subnet
 
 dhcpd_conf=
 subnet=$1
-tftp_dir=$2
 
 exit_with_error() {
 	echo $1
@@ -19,7 +18,7 @@ config_dhcpd() {
 	[ $? -ne 0 ] && exit_with_error "echo $* failed"
 }
 
-[ $# -ne 2 ] && exit_with_error "Usage:prepare_ping.sh subnet tftp_dir"
+[ $# -ne 1 ] && exit_with_error "Usage:prepare_ping.sh subnet"
 
 if [ -f "/etc/dhcp/dhcpd.conf" ]; then
 	dhcpd_conf="/etc/dhcp/dhcpd.conf"
@@ -45,19 +44,6 @@ if [ x"$signature" != x"# CloudStack" ]; then
 	config_dhcpd allow booting\;
 	config_dhcpd allow bootp\;
 fi
-
-# prepare tftp
-pushd $tftp_dir $>/dev/null
-[ -f ping.tar.bz2 ] || exit_with_error "Cannot find ping.tar.bz2 at $tftp_dir"
-tar xjf ping.tar.bz2
-exit_if_fail "tar xjf ping.tar.bz2 failed"
-#rm ping.tar.bz2 -f
-#exit_if_fail "rm ping.tar.bz2 failed"
-if [ ! -d pxelinux.cfg ]; then
-	mkdir pxelinux.cfg
-	exit_if_fail "Cannot create pxelinux.cfg"
-fi
-popd
 
 service dhcpd restart
 exit_if_fail "service dhcpd restart failed"
