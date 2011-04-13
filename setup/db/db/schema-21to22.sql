@@ -379,8 +379,6 @@ ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `public_ip_address` varchar(15)
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL default 0;
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL default 'DomainRouter';
 
-INSERT INTO user_statistics ( account_id, data_center_id, device_id, device_type ) SELECT VM.account_id, VM.data_center_id, DR.id,'DomainRouter' FROM vm_instance VM, domain_router DR WHERE VM.id = DR.id;
-
 CREATE TABLE `cloud`.`remote_access_vpn` (
   `vpn_server_addr_id` bigint unsigned UNIQUE NOT NULL,
   `account_id` bigint unsigned NOT NULL,

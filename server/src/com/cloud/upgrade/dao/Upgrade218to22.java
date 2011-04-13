@@ -1010,8 +1010,56 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt = conn.prepareStatement("UPDATE vm_instance SET account_id=1, domain_id=1 WHERE type='ConsoleProxy' or type='SecondaryStorageVm'");
             pstmt.executeUpdate();
             pstmt.close();
+
+            // Update user statistics
+            upadteUserStats(conn);
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't update data center ", e);
+        }
+    }
+
+    private void upadteUserStats(Connection conn) {
+        try {
+
+            // update device_type information
+            PreparedStatement pstmt = conn.prepareStatement("UPDATE user_statistics SET device_type='DomainRouter'");
+            pstmt.executeUpdate();
+            pstmt.close();
+            s_logger.debug("Upgraded userStatistcis with device_type=DomainRouter");
+
+            // update device_id infrormation
+            pstmt = conn.prepareStatement("SELECT id, account_id, data_center_id FROM user_statistics");
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Long id = rs.getLong(1); // user stats id
+                Long accountId = rs.getLong(2); // account id
+                Long dataCenterId = rs.getLong(3); // zone id
+
+                pstmt = conn.prepareStatement("SELECT id from vm_instance where account_id=? AND data_center_id=? AND type='DomainRouter'");
+                pstmt.setLong(1, accountId);
+                pstmt.setLong(2, dataCenterId);
+                ResultSet rs1 = pstmt.executeQuery();
+
+                if (!rs1.next()) {
+                    throw new CloudRuntimeException("Unable to update user_statistics table with device id");
+                }
+
+                Long deviceId = rs1.getLong(1);
+
+                pstmt = conn.prepareStatement("UPDATE user_statistics SET device_id=? where id=?");
+                pstmt.setLong(1, deviceId);
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+
+                pstmt = conn.prepareStatement("");
+
+            }
+            s_logger.debug("Upgraded userStatistcis with deviceId(s)");
+
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to migrate usage events: ", e);
         }
     }
 
