@@ -1644,17 +1644,23 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", async = true)
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
+        boolean created = false;
 
         try {
             if (cmd.getSnapshotId() != null) {
-                return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
+                volume = createVolumeFromSnapshot(volume, cmd.getSnapshotId());
+                if (volume.getState() == Volume.State.Ready) {
+                    created = true;
+                }
+                return volume;
             } else {
                 _volsDao.update(volume.getId(), volume);
+                created = true;
             }
 
             return _volsDao.findById(volume.getId());
         } finally {
-            if (volume.getState() != Volume.State.Ready) {
+            if (!created) {
                 s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
                 _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
             }
@@ -1673,11 +1679,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // Delete the recurring snapshot policies for this volume.
         _snapshotMgr.deletePoliciesForVolume(volumeId);
 
-        VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
-        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
+        Long instanceId = volume.getInstanceId();
+        VMInstanceVO vmInstance = null;
+        if (instanceId != null) {
+            vmInstance = _vmInstanceDao.findById(instanceId);
+        }
+
+        if (instanceId == null || (vmInstance.getType().equals(VirtualMachine.Type.User))) {
             // Decrement the resource count for volumes belonging user VM's only
             _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
         }
+
         txn.commit();
     }
 
