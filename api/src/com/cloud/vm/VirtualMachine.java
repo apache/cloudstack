@@ -151,7 +151,16 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no
          * VM with this type. UserBareMetal should treat exactly as User.
          */
-        UserBareMetal,
+        UserBareMetal;
+        
+        public static boolean isSystemVM(VirtualMachine.Type vmtype) {
+        	if(DomainRouter.equals(vmtype)
+        			|| ConsoleProxy.equals(vmtype)
+        			|| SecondaryStorageVm.equals(vmtype)){
+        		return true;
+        	}
+            return false;
+        }
     }
     
     public String getInstanceName();
