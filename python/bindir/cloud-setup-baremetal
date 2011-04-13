@@ -95,13 +95,13 @@ def initLoging(logFile=None):
     except:
         logging.basicConfig(level=logging.DEBUG) 
 
-def writeProgressBar(msg, result=None):
+def writeProgressBar(msg, result=None):    
     if msg is not None:
         output = "%-80s"%msg
     elif result is True:
-        output = "[%-2s]\n"%"OK"
+        output = "[ \033[92m%-2s\033[0m ]\n"%"OK"
     elif result is False:
-        output = "[%-6s]\n"%"Failed"
+        output = "[ \033[91m%-6s\033[0m ]\n"%"FAILED"
     sys.stdout.write(output)
     sys.stdout.flush()
     
