@@ -728,7 +728,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             } 
         } finally {
             if (startedVm == null) {
-                _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+                if(vm.getType().equals(VirtualMachine.Type.User)) {
+                    _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+                }
                 changeState(vm, Event.OperationFailed, null, work, Step.Done);
             }
         }
