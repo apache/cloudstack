@@ -26,16 +26,19 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ManagementServerHostDao extends GenericDao<ManagementServerHostVO, Long> {
+    boolean remove(Long id);
+
 	ManagementServerHostVO findByMsid(long msid);
 	void increaseAlertCount(long id);
 	
-	void update(long id, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
-	void update(long id, Date lastUpdate);
+	void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
+	void update(long id, long runid, Date lastUpdate);
 	List<ManagementServerHostVO> getActiveList(Date cutTime);
 	List<ManagementServerHostVO> getInactiveList(Date cutTime);
 
-	void update(Connection conn, long id, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
-	void update(Connection conn, long id, Date lastUpdate);
+	void update(Connection conn, long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
+	void update(Connection conn, long id, long runid, Date lastUpdate);
+	void invalidateRunSession(Connection conn, long id, long runid);
 	List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime);
 	List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime);
 }

@@ -2,6 +2,9 @@
 -- Schema upgrade from 2.2.4 to 2.2.5;
 --;
 
+ALTER TABLE `cloud`.`mshost` ADD COLUMN `runid` bigint NOT NULL DEFAULT 0 COMMENT 'run id, combined with msid to form a cluster session';
+ALTER TABLE `cloud`.`mshost` ADD COLUMN `state` varchar(10) NOT NULL default 'Down';
+
 CREATE TABLE `cloud`.`cmd_exec_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id of the system VM agent that command is sent to',

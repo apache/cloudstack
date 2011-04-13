@@ -23,6 +23,8 @@ import com.cloud.utils.net.MacAddress;
 
 public class ManagementServerNode implements SystemIntegrityChecker {
     private static final long s_nodeId = MacAddress.getMacAddress().toLong();
+    
+    public static enum State { Up, Down };
 
     @Override
     public void check() {

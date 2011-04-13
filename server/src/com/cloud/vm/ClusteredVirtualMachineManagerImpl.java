@@ -43,6 +43,10 @@ public class ClusteredVirtualMachineManagerImpl extends VirtualMachineManagerImp
             cancelWorkItems(node.getMsid());
         }
     }
+
+    @Override
+	public void onManagementNodeIsolated() {
+	}
     
     @Override
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {

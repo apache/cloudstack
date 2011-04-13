@@ -81,6 +81,10 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
             }
         }
     }
+    
+    @Override
+	public void onManagementNodeIsolated() {
+	}
 
     @DB
     private Runnable getGCTask() {

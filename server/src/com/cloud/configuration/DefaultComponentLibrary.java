@@ -36,10 +36,11 @@ import com.cloud.async.dao.SyncQueueItemDaoImpl;
 import com.cloud.capacity.CapacityManagerImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.certificate.dao.CertificateDaoImpl;
+import com.cloud.cluster.CheckPointManagerImpl;
+import com.cloud.cluster.ClusterFenceManagerImpl;
 import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.cluster.DummyClusterManagerImpl;
 import com.cloud.cluster.ManagementServerNode;
-import com.cloud.cluster.CheckPointManagerImpl;
 import com.cloud.cluster.dao.ManagementServerHostDaoImpl;
 import com.cloud.cluster.dao.StackMaidDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
@@ -308,7 +309,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
-        
+        addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
         
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");

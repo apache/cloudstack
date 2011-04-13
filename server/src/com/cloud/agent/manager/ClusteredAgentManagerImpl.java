@@ -588,4 +588,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             _hostDao.markHostsAsDisconnected(vo.getMsid(), Status.Up, Status.Connecting, Status.Updating, Status.Disconnected, Status.Down);
         }
     }
+
+    @Override
+	public void onManagementNodeIsolated() {
+	}
 }

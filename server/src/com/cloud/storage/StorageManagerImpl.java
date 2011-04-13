@@ -2786,6 +2786,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
+	public void onManagementNodeIsolated() {
+	}
+    
+    @Override
     public List<CapacityVO> getSecondaryStorageUsedStats(Long hostId, Long podId, Long zoneId) {
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
         if (zoneId != null) {

@@ -171,6 +171,10 @@ public class Transaction {
         return _txn;
     }
     
+    public static Connection getStandaloneConnectionWithException() throws SQLException {
+		return s_ds.getConnection();
+    }
+    
     public static Connection getStandaloneConnection() {
     	try {
 			return s_ds.getConnection();

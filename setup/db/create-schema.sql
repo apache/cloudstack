@@ -674,7 +674,9 @@ CREATE TABLE `cloud`.`host_details` (
 CREATE TABLE  `cloud`.`mshost` (
   `id` bigint unsigned NOT NULL auto_increment,
   `msid` bigint unsigned NOT NULL UNIQUE COMMENT 'management server id derived from MAC address',
+  `runid` bigint NOT NULL DEFAULT 0 COMMENT 'run id, combined with msid to form a cluster session',
   `name` varchar(255),
+  `state` varchar(10) NOT NULL DEFAULT 'Down',
   `version` varchar(255),
   `service_ip` char(40) NOT NULL,
   `service_port` integer NOT NULL,

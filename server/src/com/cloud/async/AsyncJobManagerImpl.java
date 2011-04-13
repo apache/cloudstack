@@ -688,6 +688,10 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     		}
     	}
     }
+    
+    @Override
+	public void onManagementNodeIsolated() {
+	}
 
     @Override
     public boolean start() {

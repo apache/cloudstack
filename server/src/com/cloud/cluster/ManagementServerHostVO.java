@@ -22,6 +22,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -42,9 +44,16 @@ public class ManagementServerHostVO {
 
 	@Column(name="msid", updatable=true, nullable=false)
 	private long msid;
+	
+	@Column(name="runid", updatable=true, nullable=false)
+	private long runid;
 
 	@Column(name="name", updatable=true, nullable=true)
 	private String name;
+	
+    @Column(name="state", updatable = true, nullable=false)
+    @Enumerated(value=EnumType.STRING)
+	private ManagementServerNode.State state;
 	
 	@Column(name="version", updatable=true, nullable=true)
 	private String version;
@@ -68,8 +77,9 @@ public class ManagementServerHostVO {
     public ManagementServerHostVO() {
     }
     
-    public ManagementServerHostVO(long msid, String serviceIP, int servicePort, Date updateTime) {
+    public ManagementServerHostVO(long msid, long runid, String serviceIP, int servicePort, Date updateTime) {
     	this.msid = msid;
+    	this.runid = runid;
     	this.serviceIP = serviceIP;
     	this.servicePort = servicePort;
     	this.lastUpdateTime = updateTime;
@@ -81,6 +91,14 @@ public class ManagementServerHostVO {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+	
+	public long getRunid() {
+		return runid;
+	}
+	
+	public void setRunid(long runid) {
+		this.runid = runid;
 	}
 
 	public long getMsid() {
@@ -97,6 +115,14 @@ public class ManagementServerHostVO {
 	
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public ManagementServerNode.State getState() {
+		return this.state;
+	}
+	
+	public void setState(ManagementServerNode.State state) {
+		this.state = state;
 	}
 	
 	public String getVersion() {

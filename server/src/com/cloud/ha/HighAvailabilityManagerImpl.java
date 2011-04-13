@@ -800,4 +800,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         }
     }
     
+    @Override
+	public void onManagementNodeIsolated() {
+	}
 }
