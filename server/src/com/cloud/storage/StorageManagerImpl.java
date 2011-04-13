@@ -1305,8 +1305,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        _capacityDao.remove(capacity1.getId());
-        _capacityDao.remove(capacity2.getId());
+        if ( capacity1 != null ) {
+            _capacityDao.remove(capacity1.getId());
+        }
+        if ( capacity2 != null ) {
+            _capacityDao.remove(capacity2.getId());
+        }
         txn.commit();
         return true;
 
