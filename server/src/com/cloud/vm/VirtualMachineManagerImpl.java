@@ -555,6 +555,22 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         T startedVm = null;
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+        //if System VM template has been changed, update vm templateId if this is a System VM
+        if(VirtualMachine.Type.DomainRouter.equals(vm.getType())
+    			|| VirtualMachine.Type.ConsoleProxy.equals(vm.getType())
+    			|| VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())){
+        	VMTemplateVO systemVMTemplate = _templateDao.findSystemVMTemplate(vm.getDataCenterId(), vm.getHypervisorType());
+        	if(template != null && systemVMTemplate != null){
+    			if(template.getId() != systemVMTemplate.getId()){
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("System VM's templateId does not match the current System VM Template, updating templateId of the VM: "+ vm);
+                    }
+                    vm.setTemplateId(systemVMTemplate.getId());
+                    _vmDao.update(vm.getId(), vm);
+    			}
+        	}
+        }
+        
         Long clusterSpecified = null;
         if(hostIdSpecified != null){
         	Host destinationHost = _hostDao.findById(hostIdSpecified);
@@ -583,13 +599,16 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     			|| VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())){
 
                     		Long volTemplateId = vol.getTemplateId();
-                    		if(volTemplateId != null && volTemplateId.longValue() != vm.getTemplateId()){
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Root Volume " + vol + " of "+vm.getType().toString() +" System VM is ready, but volume's templateId does not match the VM, updating templateId and reassigning a new pool");
-                                }
-                    			vol.setTemplateId(vm.getTemplateId());
-                    			_volsDao.update(vol.getId(), vol);
-                    			continue;
+                    		VMTemplateVO systemVMTemplate = _templateDao.findSystemVMTemplate(vm.getDataCenterId(), vm.getHypervisorType());
+                    		if(volTemplateId != null && systemVMTemplate != null){
+                    			if(volTemplateId.longValue() != systemVMTemplate.getId()){
+	                                if (s_logger.isDebugEnabled()) {
+	                                    s_logger.debug("Root Volume " + vol + " of "+vm.getType().toString() +" System VM is ready, but volume's templateId does not match the System VM Template, updating templateId and reassigning a new pool");
+	                                }
+	                    			vol.setTemplateId(systemVMTemplate.getId());
+	                    			_volsDao.update(vol.getId(), vol);
+	                    			continue;
+	                    		}
                     		}
 
                     	}
