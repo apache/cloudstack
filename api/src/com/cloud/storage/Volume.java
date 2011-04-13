@@ -33,7 +33,7 @@ public interface Volume extends ControlledEntity, BasedOn {
 
     enum State implements FiniteState<State, Event> {
         Allocated("The volume is allocated but has not been created yet."), Creating("The volume is being created.  getPoolId() should reflect the pool where it is being created."), Ready(
-                "The volume is ready to be used."), Destroy("The volume is set to be destroyed but can be recovered.");
+                "The volume is ready to be used."), Destroy("The volume is destroyed, and can't be recovered.");
 
         String _description;
 
