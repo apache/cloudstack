@@ -1298,22 +1298,22 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     }
 
-    @DB
     private boolean deletePoolStats(Long poolId) {
-
-        CapacityVO capacity1 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE);
-        CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
+        CapacityVO capacity1 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE);       
+        CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED); 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        if ( capacity1 != null ) {
-            _capacityDao.remove(capacity1.getId());
+        try {
+            if ( capacity1 != null ) {
+                _capacityDao.remove(capacity1.getId());
+            }
+            if ( capacity2 != null ) {
+                _capacityDao.remove(capacity2.getId());
+            }
+        } finally {       
+            txn.commit();
         }
-        if ( capacity2 != null ) {
-            _capacityDao.remove(capacity2.getId());
-        }
-        txn.commit();
         return true;
-
     }
 
     @Override
