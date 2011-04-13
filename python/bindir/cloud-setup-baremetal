@@ -110,6 +110,10 @@ def printError(msg):
     sys.stderr.write("\n")
     sys.stderr.flush()
 
+def printMsg(msg):
+    sys.stdout.write(msg+"\n")
+    sys.stdout.flush()
+
 def checkRpm(pkgName):
     chkPkg = bash("rpm -q %s"%pkgName)
     writeProgressBar("Checking %s"%pkgName, None)
@@ -154,10 +158,17 @@ def bashWithResult(cmd):
 def configurePxeStuff(): 
     stuff = ['tftp', 'xinetd', 'dhcpd']
     cmds = ['chkconfig --level 345 %s on' % i for i in stuff]
-    cmds.append('service xinetd restart')
+    cmds.append('/etc/init.d/xinetd restart')
     
     for cmd in cmds:
         if not bashWithResult(cmd): return False
+        
+    chkIptable = bash('chkconfig --list iptables')
+    if 'on' in chkIptable.getStdout():
+        printMsg("Detected iptables is running, need to open tftp port 69")
+        if not bashWithResult('iptables -I INPUT 1 -p udp --dport 69 -j ACCEPT'): return False
+        if not bashWithResult('/etc/init.d/iptables save'): return False
+        
     return True  
     
 def getTftpRootDir(tftpRootDirList):
@@ -200,10 +211,8 @@ if __name__ == "__main__":
     
     tftpRootDir = tftpRootDirList[0].strip()
     exitIfFail(preparePING(tftpRootDir))
-    print ""
-    writeProgressBar("Setup BareMetal PXE server successfully")
-    print ""
-    writeProgressBar("TFTP root directory is: %s\n"%tftpRootDir)
-    print ""
+    printMsg("")
+    printMsg("Setup BareMetal PXE server successfully")
+    printMsg("TFTP root directory is: %s\n"%tftpRootDir)
     sys.exit(0)
     
