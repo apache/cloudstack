@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.DomainVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
@@ -134,6 +135,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     }
 
     @Override
+    @DB
     public boolean remove(Long id) {
         // check for any active users / domains assigned to the given domain id and don't remove the domain if there are any
     	if (id != null && id.longValue() == DomainVO.ROOT_DOMAIN) {
@@ -162,20 +164,17 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
             DomainVO parentDomain = super.lockRow(domain.getParent(), true);
             if(parentDomain == null) {
                 s_logger.error("Unable to load parent domain: " + domain.getParent());
-                txn.commit();
                 return false;
             }
         	
             PreparedStatement stmt = txn.prepareAutoCloseStatement(sql);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                txn.commit();
                 return false;
             }
             stmt = txn.prepareAutoCloseStatement(sql1);
             rs = stmt.executeQuery();
             if (rs.next()) {
-                txn.commit();
                 return false;
             }
             

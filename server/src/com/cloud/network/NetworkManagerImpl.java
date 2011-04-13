@@ -817,7 +817,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @DB
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault,
             boolean errorIfAlreadySetup, Long domainId) throws ConcurrentOperationException {
-        Transaction.currentTxn();
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + owner);

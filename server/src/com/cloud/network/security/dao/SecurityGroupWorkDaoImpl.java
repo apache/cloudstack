@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import com.cloud.ha.HaWorkVO;
 import com.cloud.network.security.SecurityGroupWorkVO;
 import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -93,6 +94,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
 	@Override
+	@DB
 	public SecurityGroupWorkVO take(long serverId) {
 		final Transaction txn = Transaction.currentTxn();
         try {
@@ -104,7 +106,6 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             txn.start();
             final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
-                txn.commit();
                 return null;
             }
             SecurityGroupWorkVO work = null;
@@ -116,7 +117,6 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             	}
             }
             if (work == null) {
-            	txn.commit();
             	return null;
             }
             work.setServerId(serverId);
@@ -135,6 +135,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 	}
 
 	@Override
+	@DB
 	public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
@@ -146,7 +147,6 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 
         final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
         if (vos.size() == 0) {
-            txn.commit();
             return;
         }
         SecurityGroupWorkVO work = vos.get(0);
@@ -165,13 +165,13 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 	}
 
 	@Override
+	@DB
 	public void updateStep(Long workId, Step step) {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
         
         SecurityGroupWorkVO work = lockRow(workId, true);
         if (work == null) {
-        	txn.commit();
         	return;
         }
         work.setStep(step);

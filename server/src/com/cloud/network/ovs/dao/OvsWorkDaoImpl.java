@@ -74,6 +74,7 @@ public class OvsWorkDaoImpl extends GenericDaoBase<OvsWorkVO, Long> implements
     }
 
 	@Override
+	@DB
 	public OvsWorkVO take(long serverId) {
 		final Transaction txn = Transaction.currentTxn();
         try {
@@ -85,7 +86,6 @@ public class OvsWorkDaoImpl extends GenericDaoBase<OvsWorkVO, Long> implements
             txn.start();
             final List<OvsWorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
-                txn.commit();
                 return null;
             }
             OvsWorkVO work = null;
@@ -97,7 +97,6 @@ public class OvsWorkDaoImpl extends GenericDaoBase<OvsWorkVO, Long> implements
             	}
             }
             if (work == null) {
-            	txn.commit();
             	return null;
             }
             work.setServerId(serverId);
@@ -128,7 +127,6 @@ public class OvsWorkDaoImpl extends GenericDaoBase<OvsWorkVO, Long> implements
 
         final List<OvsWorkVO> vos = lockRows(sc, filter, true);
         if (vos.size() == 0) {
-            txn.commit();
             return;
         }
         OvsWorkVO work = vos.get(0);
@@ -147,13 +145,13 @@ public class OvsWorkDaoImpl extends GenericDaoBase<OvsWorkVO, Long> implements
 	}
 
 	@Override
+	@DB
 	public void updateStep(Long workId, Step step) {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
         
 		OvsWorkVO work = lockRow(workId, true);
         if (work == null) {
-        	txn.commit();
         	return;
         }
         work.setStep(step);
