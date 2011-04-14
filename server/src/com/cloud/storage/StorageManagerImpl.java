@@ -650,7 +650,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
 
         if (diskOffering != null && diskOffering.isCustomized()) {
-            diskOffering.setDiskSize(size);
+            diskOffering.setDiskSize(size/(1024*1024));
         }
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
