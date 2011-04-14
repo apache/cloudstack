@@ -353,10 +353,8 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
                 } catch (InterruptedException e1) {
 
                 }
-                // get all hosts..
-                SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-                sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-                List<HostVO> hosts = _hostDao.search(sc, null);
+                // get all hosts...even if they are not in 'UP' state
+                List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
 
                 // prep the service offerings
                 List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
@@ -366,9 +364,6 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
                 }
 
                 for (HostVO host : hosts) {
-                    if (host.getType() != Host.Type.Routing) {
-                        continue;
-                    }
 
                     long usedCpu = 0;
                     long usedMemory = 0;
