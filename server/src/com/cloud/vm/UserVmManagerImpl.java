@@ -1607,7 +1607,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Long osTypeId = cmd.getOsTypeId();
         Account account = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
-    
+        String userData = cmd.getUserData();
+        
         //Input validation
         UserVmVO vmInstance = null;
 
@@ -1624,6 +1625,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         userId = accountAndUserValidation(id, account, userId,vmInstance);  
+        
         
     	if (displayName == null) {
     		displayName = vmInstance.getDisplayName();
@@ -1643,6 +1645,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Vm with id " + id + " is not in the right state");
         }
 
+        if(userData != null){
+        	validateUserData(userData);
+        	//update userData on domain router.
+        }else{
+        	userData = vmInstance.getUserData();
+        }
+        
         String description = "";
         
         if(displayName != vmInstance.getDisplayName()){
@@ -1668,7 +1677,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        _vmDao.updateVM(id, displayName, ha, osTypeId);
+        _vmDao.updateVM(id, displayName, ha, osTypeId, userData);
 
         return _vmDao.findById(id);
     }
@@ -2222,19 +2231,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        byte [] decodedUserData = null;
-        if (userData != null) {
-            if (userData.length() >= 2 * MAX_USER_DATA_LENGTH_BYTES) {
-                throw new InvalidParameterValueException("User data is too long");
-            }
-            decodedUserData = org.apache.commons.codec.binary.Base64.decodeBase64(userData.getBytes());
-            if (decodedUserData.length > MAX_USER_DATA_LENGTH_BYTES){
-                throw new InvalidParameterValueException("User data is too long");
-            }
-            if (decodedUserData.length < 1) {
-                throw new InvalidParameterValueException("User data is too short");
-            }
-        }
+        validateUserData(userData);
         
         // Find an SSH public key corresponding to the key pair name, if one is given
         String sshPublicKey = null;
@@ -2340,6 +2337,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _networkGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
         
         return vm;
+	}
+	
+	private void validateUserData(String userData){
+        byte [] decodedUserData = null;
+        if (userData != null) {
+            if (userData.length() >= 2 * MAX_USER_DATA_LENGTH_BYTES) {
+                throw new InvalidParameterValueException("User data is too long");
+            }
+            decodedUserData = org.apache.commons.codec.binary.Base64.decodeBase64(userData.getBytes());
+            if (decodedUserData.length > MAX_USER_DATA_LENGTH_BYTES){
+                throw new InvalidParameterValueException("User data is too long");
+            }
+            if (decodedUserData.length < 1) {
+                throw new InvalidParameterValueException("User data is too short");
+            }
+        }
 	}
 	
 	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="starting Vm", async=true)
