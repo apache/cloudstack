@@ -40,7 +40,7 @@ import com.cloud.utils.db.GenericDaoBase;
 public class StoragePoolHostVO implements StoragePoolHostAssoc {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	Long id;
+	private Long id;
 	
 	@Column(name="pool_id")
 	private long poolId;
@@ -77,7 +77,12 @@ public class StoragePoolHostVO implements StoragePoolHostAssoc {
 	}
 
 
-	@Override
+    public Long getId() {
+        return id;
+    }
+
+
+    @Override
 	public String getLocalPath() {
 		return localPath;
 	}
