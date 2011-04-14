@@ -552,12 +552,20 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.setString(i++, reservationId);
             pstmt.setString(i++, broadcastUri);
             pstmt.executeUpdate();
-
+            
+            pstmt = conn.prepareStatement("INSERT INTO op_networks(id, mac_address_seq, nics_count, gc, check_for_gc) VALUES(?, ?, ?, ?, ?)");
+            pstmt.setLong(1, seq);
+            pstmt.setLong(2, 0);
+            pstmt.setLong(3, 1);
+            pstmt.setLong(4, 0);
+            pstmt.setBoolean(5, true);
+            pstmt.executeUpdate();
+            
             pstmt = conn.prepareStatement("INSERT INTO account_network_ref (account_id, network_id, is_owner) VALUES (?,    ?,  1)");
             pstmt.setLong(1, accountId);
             pstmt.setLong(2, seq);
             pstmt.executeUpdate();
-
+            
             return seq;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create network", e);
