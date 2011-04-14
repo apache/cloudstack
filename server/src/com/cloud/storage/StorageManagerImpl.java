@@ -1920,7 +1920,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             // set the pool state to prepare for maintenance
             primaryStorage.setStatus(StoragePoolStatus.PrepareForMaintenance);
             _storagePoolDao.update(primaryStorageId, primaryStorage);
-            txn.commit();
 
             // check to see if other ps exist
             // if they do, then we can migrate over the system vms to them
@@ -1962,7 +1961,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             txn.commit();
-            txn.close();
 
             // 4. Process the queue
             List<StoragePoolWorkVO> pendingWork = _storagePoolWorkDao.listPendingWorkForPrepareForMaintenanceByPoolId(primaryStorageId);

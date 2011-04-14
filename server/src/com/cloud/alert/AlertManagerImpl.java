@@ -315,8 +315,6 @@ public class AlertManagerImpl implements AlertManager {
         } catch (Exception ex) {
         	txn.rollback();
         	s_logger.error("Unable to start transaction for capacity update");
-        }finally {
-        	txn.close();
         }
     }
 
