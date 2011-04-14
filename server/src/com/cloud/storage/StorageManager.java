@@ -191,4 +191,6 @@ public interface StorageManager extends Manager {
 	List<CapacityVO> getStoragePoolUsedStats(Long poolId, Long podId, Long zoneId);
 
     boolean createStoragePool(long hostId, StoragePoolVO pool);
+
+    boolean delPoolFromHost(long hostId);
 }

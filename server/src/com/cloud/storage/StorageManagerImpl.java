@@ -1341,6 +1341,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
     }
 
+    
+    @Override
+    public boolean delPoolFromHost(long hostId) {
+        List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostId(hostId);
+        for (StoragePoolHostVO poolHost : poolHosts) {
+            s_logger.debug("Deleting pool " + poolHost.getPoolId() + " from  host " + hostId);
+            _poolHostDao.remove(poolHost.getId());
+        }
+        return true;
+    }
+    
     @Override
     public boolean addPoolToHost(long hostId, StoragePoolVO pool) {
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
