@@ -1874,7 +1874,7 @@ function sanitizeXSS(val) {
         return val; 
     val = val.replace(/</g, "&lt;");  //replace < whose unicode is \u003c     
     val = val.replace(/>/g, "&gt;");  //replace > whose unicode is \u003e  
-    return val;
+    return unescape(val);
 }
 
 function getVmName(p_vmName, p_vmDisplayname) {
