@@ -5,6 +5,7 @@ help() {
                     -m mount point 
                     -h host  
                     -r write/read hb log 
+                    -c cleanup
                     -t interval between read hb log\n"
   exit 1
 }
@@ -15,8 +16,9 @@ MountPoint=
 HostIP=
 interval=
 rflag=0
+cflag=0
 
-while getopts 'i:p:m:h:t:r' OPTION
+while getopts 'i:p:m:h:t:rc' OPTION
 do
   case $OPTION in
   i)
@@ -37,6 +39,9 @@ do
   t)
      interval="$OPTARG"
      ;;
+  c)
+    cflag=1
+     ;;
   *)
      help
      ;;
@@ -52,7 +57,7 @@ fi
 #delete VMs on this mountpoint
 deleteVMs() {
   local mountPoint=$1
-  vmPids=$(ps aux| grep qemu | grep $mountPoint* | awk '{print $2}' &> /dev/null) 
+  vmPids=$(ps aux| grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null) 
   if [ $? -gt 0 ]
   then
      return
@@ -63,7 +68,7 @@ deleteVMs() {
      return
   fi
 
-  for pid in vmPids
+  for pid in $vmPids
   do
      kill -9 $pid &> /dev/null
   done
@@ -130,6 +135,10 @@ then
     echo "=====> DEAD <======"
   fi
   exit 0
+elif [ "$cflag" == "1" ]
+then
+  reboot
+  exit $?
 else
   write_hbLog 
   exit $?
