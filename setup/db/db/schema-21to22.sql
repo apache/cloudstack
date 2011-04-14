@@ -950,8 +950,6 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 UPDATE `cloud`.`guest_os` SET name = display_name;
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (100, 'routing-1', 'SystemVM Template (XenServer)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.vhd.bz2', 'c33dfaf0937b35c25ef6a0fdd98f24d3', 0, 'SystemVM Template (XenServer)', 'VHD', 15, 0, 1, 'XenServer');
-INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (3, 'routing-3', 'SystemVM Template (KVM)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.qcow2.bz2', 'ec463e677054f280f152fcc264255d2f', 0, 'SystemVM Template (KVM)', 'QCOW2', 15, 0, 1, 'KVM');
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (8, 'routing-8', 'SystemVM Template (vSphere)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.ova', '3c9d4c704af44ebd1736e1bc78cec1fa', 0, 'SystemVM Template (vSphere)', 'OVA', 15, 0, 1, 'VMware');
@@ -962,7 +960,7 @@ INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type,
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (7, 'centos53-x64', 'CentOS 5.3(64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova', 'f6f881b7f2292948d8494db837fe0f47', 0, 'CentOS 5.3(64-bit) no GUI (vSphere)', 'OVA', 12, 1, 1, 'VMware', 1);
 UPDATE vm_instance SET guest_os_id=15 where vm_template_id=1;
-UPDATE vm_instance SET vm_template_id=100 where vm_template_id=1;
+UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE unique_name='routing-xenserver-2.2.4') where vm_template_id=1;
 
 
 ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `fk_instance_group__account_id` FOREIGN KEY `fk_instance_group__account_id` (`account_id`) REFERENCES `account` (`id`);
