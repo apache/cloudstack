@@ -1161,6 +1161,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         if (!success) {
             s_logger.warn("Can not create storage pool " + pool + " on cluster " + clusterId);
+            _storagePoolDao.expunge(pool.getId());
             return null;
         }
         s_logger.debug("In createPool Adding the pool to each of the hosts");
@@ -1173,6 +1174,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         if (poolHosts.isEmpty()) {
+            s_logger.warn("No host can access storage pool " + pool + " on cluster " + clusterId);
             _storagePoolDao.expunge(pool.getId());
             pool = null;
         } else {
