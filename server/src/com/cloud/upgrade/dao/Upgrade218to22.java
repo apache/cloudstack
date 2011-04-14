@@ -258,7 +258,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt.close();
             }
 
-            insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", gateway, vnet, "DirectPodBasedNetworkGuru", false, 0, "Static", null);
+            insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", gateway, vnet, "DirectPodBasedNetworkGuru", false, 0, "Dhcp", null);
         } else {
             insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
             long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static",
@@ -271,7 +271,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt.executeUpdate();
                 pstmt.close();
             }
-            insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "ExternalGuestNetworkGuru", false, 0, "Static", null);
+            insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "ExternalGuestNetworkGuru", false, 0, "Dhcp", null);
         }
 
     }
@@ -334,7 +334,7 @@ public class Upgrade218to22 implements DbUpgrade {
         pstmt.close();
 
         if (zoneType.equalsIgnoreCase("Basic")) {
-            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Start", gateway, publicVlan, "DirectPodBasedNetworkGuru", true, 2, "Static", null);
+            insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Start", gateway, publicVlan, "DirectPodBasedNetworkGuru", true, 2, "Dhcp", null);
 
         } else {
             insertNic(conn, publicNetworkId, ssvmId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
@@ -415,7 +415,7 @@ public class Upgrade218to22 implements DbUpgrade {
         pstmt.close();
 
         if (zoneType.equalsIgnoreCase("Basic")) {
-            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Start", gateway, publicVlan, "DirectPodBasedNetworkGuru", true, 2, "Static", null);
+            insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Start", gateway, publicVlan, "DirectPodBasedNetworkGuru", true, 2, "Dhcp", null);
         } else {
             insertNic(conn, publicNetworkId, cpId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
         }
@@ -1036,6 +1036,21 @@ public class Upgrade218to22 implements DbUpgrade {
                 Long id = rs.getLong(1); // user stats id
                 Long accountId = rs.getLong(2); // account id
                 Long dataCenterId = rs.getLong(3); // zone id
+
+                pstmt = conn.prepareStatement("SELECT networktype from data_center where id=?");
+                pstmt.setLong(1, dataCenterId);
+
+                ResultSet dcSet = pstmt.executeQuery();
+
+                if (!dcSet.next()) {
+                    throw new CloudRuntimeException("Unable to get data_center information as a part of user_statistics update");
+                }
+
+                String dataCenterType = dcSet.getString(1);
+
+                if (dataCenterType.equalsIgnoreCase("basic")) {
+                    accountId = 1L;
+                }
 
                 pstmt = conn.prepareStatement("SELECT id from vm_instance where account_id=? AND data_center_id=? AND type='DomainRouter'");
                 pstmt.setLong(1, accountId);
