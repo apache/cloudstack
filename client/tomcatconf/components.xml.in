@@ -64,6 +64,7 @@
         <adapters key="com.cloud.ha.Investigator">
             <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
             <adapter name="PingInvestigator" class="com.cloud.ha.InvestigatorImpl"/>
+            <adapter name="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator"/>
         </adapters>
         <adapters key="com.cloud.ha.FenceBuilder">
             <adapter name="XenServerFenceBuilder" class="com.cloud.ha.XenServerFencer"/>
