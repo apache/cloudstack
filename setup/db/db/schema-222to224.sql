@@ -60,6 +60,7 @@ ALTER TABLE `cloud`.`host_pod_ref` ADD INDEX `i_host_pod_ref__allocation_state`(
 ALTER TABLE `cloud`.`host` ADD COLUMN `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled';
 ALTER TABLE `cloud`.`host` ADD INDEX `i_host__allocation_state`(`allocation_state`);
 
+ALTER TABLE `cloud`.`domain` DROP index `path`;
 ALTER TABLE `cloud`.`domain` ADD INDEX `i_domain__path`(`path`);
 
 CREATE TABLE `cloud`.`data_center_details` (

@@ -959,7 +959,7 @@ CREATE TABLE  `cloud`.`domain` (
   `parent` bigint unsigned,
   `name` varchar(255),
   `owner` bigint unsigned NOT NULL,
-  `path` varchar(255) UNIQUE NOT NULL,
+  `path` varchar(255) NOT NULL,
   `level` int(10) NOT NULL DEFAULT 0,
   `child_count` int(10) NOT NULL DEFAULT 0,
   `next_child_seq` bigint unsigned NOT NULL DEFAULT 1,
