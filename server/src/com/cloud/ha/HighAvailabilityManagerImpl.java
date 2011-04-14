@@ -299,6 +299,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
 
         final List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
         int maxRetries = 0;
+        boolean NeedToAddNew = true;
         for (final HaWorkVO item : items) {
             if (maxRetries < item.getTimesTried() && !item.canScheduleNew(_timeBetweenFailures)) {
                 maxRetries = item.getTimesTried();
@@ -306,15 +307,23 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             }
         }
 
-        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(),
-                maxRetries + 1, vm.getUpdated());
-        _haDao.persist(work);
-
+        for (final HaWorkVO item : items) {
+            if (!(item.getStep() == Step.Error || item.getStep() == Step.Done || item.getStep() == Step.Cancelled)) {
+                NeedToAddNew = false;
+            }
+        }
+        if (NeedToAddNew) {
+            final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(),
+                    maxRetries + 1, vm.getUpdated());
+            _haDao.persist(work);
+        }
+        
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Schedule vm for HA:  " + vm.toString());
         }
 
         wakeupWorkers();
+
     }
 
     protected Long restart(final HaWorkVO work) {

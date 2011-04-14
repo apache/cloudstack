@@ -304,6 +304,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	public void incrUpdated() {
 		updated++;
 	}
+	
+	public void decrUpdated() {
+	    updated--;
+	}
 
 	@Override
 	public Long getHostId() {

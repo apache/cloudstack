@@ -250,8 +250,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     		}
     		return false;
     	}
+    	
     	VMInstanceVO vmi = (VMInstanceVO)vm;
-
+    	Long oldHostId = vmi.getHostId();
+    	
     	SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
     	sc.setParameters("id", vmi.getId());
     	sc.setParameters("states", oldState);
@@ -260,12 +262,18 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     	vmi.incrUpdated();
     	UpdateBuilder ub = getUpdateBuilder(vmi);
+    	
     	ub.set(vmi, "state", newState);
     	ub.set(vmi, "hostId", hostId);
     	ub.set(vmi, _updateTimeAttr, new Date());
 
     	int result = update(vmi, sc);
     	if (result == 0 && s_logger.isDebugEnabled()) {
+    	    /*update builder will change the state/hostid/updated, even update is failed*/
+    	    vmi.setState(oldState);
+    	    vmi.setHostId(oldHostId);
+    	    vmi.decrUpdated();
+    	    
     		VMInstanceVO vo = findById(vm.getId());
     		StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
     		str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
