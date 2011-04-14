@@ -1172,6 +1172,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         if (poolHosts.isEmpty()) {
+            s_logger.warn("No host can access storage pool " + pool + " on cluster " + clusterId);
             _storagePoolDao.expunge(pool.getId());
             return null;
         } else {

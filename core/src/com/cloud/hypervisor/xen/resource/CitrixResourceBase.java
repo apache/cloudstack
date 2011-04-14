@@ -4771,9 +4771,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else {
                     sr = SR.introduce(conn, pooluuid, pool.getUuid(), poolId, 
                             type, "user", true, smConfig);
+                    Pool.Record pRec = XenServerConnectionPool.getPoolRecord(conn);                   
                     PBD.Record rec = new PBD.Record();
                     rec.deviceConfig = deviceConfig;
-                    rec.host = host;
+                    rec.host = pRec.master;
                     rec.SR = sr;
                     PBD pbd = PBD.create(conn, rec);
                     pbd.plug(conn);
