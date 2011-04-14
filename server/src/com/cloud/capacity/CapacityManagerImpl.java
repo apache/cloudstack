@@ -438,11 +438,13 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
     
     @Override
     public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Long oldHostId) {
-        s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event +
-                "vm's original host id: " + vm.getLastHostId() + " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
         if (!status) {
             return false;
         }
+        
+        s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event +
+                "vm's original host id: " + vm.getLastHostId() + " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
+      
 
         if (oldState == State.Starting) {
             if (event == Event.OperationFailed) {
