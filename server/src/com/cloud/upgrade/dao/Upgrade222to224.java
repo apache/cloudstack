@@ -64,6 +64,7 @@ public class Upgrade222to224 implements DbUpgrade {
         updateGuestOsType(conn);
         updateNicsWithMode(conn);
         updateUserStatsWithNetwork(conn);
+        dropIndexIfExists(conn);
     }
 
     @Override
@@ -219,4 +220,22 @@ public class Upgrade222to224 implements DbUpgrade {
         }
     }
 
+    private void dropIndexIfExists(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SHOW INDEX FROM domain WHERE KEY_NAME = 'path'");
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`domain` DROP INDEX `path`");
+                pstmt.executeUpdate();
+                s_logger.debug("Unique key 'path' is removed successfully");
+            }
+
+            rs.close();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to drop 'path' index for 'domain' table due to:", e);
+        }
+
+    }
 }
