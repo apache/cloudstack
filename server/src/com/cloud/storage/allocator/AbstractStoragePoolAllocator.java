@@ -233,6 +233,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 			} else {
 				VMTemplateHostVO templateHostVO = _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), template.getId());
 				if (templateHostVO == null) {
+					s_logger.debug("Cannot allocate this pool " + pool.getId() + " since no entry found in template_host_ref, hostId: " + secondaryStorageHost.getId() + " and templateId: "+template.getId());
 					return false;
 				} else {
 					s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 2);
