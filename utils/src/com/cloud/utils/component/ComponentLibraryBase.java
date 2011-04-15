@@ -69,6 +69,17 @@ public abstract class ComponentLibraryBase implements ComponentLibrary {
         return lst;
     }
     
+    protected <T> void addAdapter(Class<T> interphace, String name, Class<? extends T> adapterClass) {
+    	List<ComponentInfo<Adapter>> lst = _adapters.get(interphace.getName());
+    	if (lst == null) {
+    		addOneAdapter(interphace, name, adapterClass);
+    	} else {
+    		@SuppressWarnings("unchecked")
+    		Class<? extends Adapter> clazz = (Class<? extends Adapter>)adapterClass;
+    		lst.add(new ComponentInfo<Adapter>(name, clazz));
+    	}
+    }
+    
     protected <T> ComponentInfo<Adapter> addOneAdapter(Class<T> interphace, String name, Class<? extends T> adapterClass) {
         List<Pair<String, Class<? extends T>>> adapters = new ArrayList<Pair<String, Class<? extends T>>>();
         adapters.add(new Pair<String, Class<? extends T>>(name, adapterClass));

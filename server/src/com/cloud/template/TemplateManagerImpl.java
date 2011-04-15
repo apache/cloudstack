@@ -23,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -63,13 +62,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.org.Grouping;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -99,6 +96,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.upload.UploadMonitor;
+import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -109,8 +107,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -161,349 +159,32 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject ConfigurationDao _configDao;
     @Inject UsageEventDao _usageEventDao;
     @Inject HypervisorGuruManager _hvGuruMgr;
-    @Inject VMTemplateHostDao _vmTemplateHostDao;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
+    
+    @Inject (adapter=TemplateAdapter.class)
+    protected Adapters<TemplateAdapter> _adapters;
+    
+    private TemplateAdapter getAdapter(HypervisorType type) {
+    	if (type != HypervisorType.BareMetal) {
+    		return _adapters.get(TemplateAdapterType.BareMetal.getName());
+    	} else {
+    		// see HyervisorTemplateAdapter
+    		return _adapters.get(TemplateAdapterType.Hypervisor.getName());
+    	}
+    }
     
     @Override
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
-        Account ctxAccount = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
-        String name = cmd.getIsoName();
-        String displayText = cmd.getDisplayText();
-        String url = cmd.getUrl();
-        Boolean isPublic = cmd.isPublic();
-        Boolean featured = cmd.isFeatured();
-        Long guestOSId = cmd.getOsTypeId();
-        Boolean bootable = cmd.isBootable();
-        Long zoneId = cmd.getZoneId();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Account resourceAccount = null;
-        Long accountId = null;
-        
-        if (isPublic == null) {
-            isPublic = Boolean.FALSE;
-        }
-        
-        if (zoneId.longValue() == -1) {
-        	zoneId = null;
-        }        
-        
-        if ( (accountName == null) ^ (domainId == null) ){// XOR - Both have to be passed or don't pass any of them 
-        	throw new InvalidParameterValueException("Please specify both account and domainId or dont specify any of them");
-        }
-        
-        if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
-            if (domainId != null) {
-                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Failed to register ISO, invalid domain id (" + domainId + ") given.");
-                }
-                if (accountName != null) {
-                	resourceAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (resourceAccount == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = resourceAccount.getId();
-                }
-            } else {
-                accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
-            }
-        } else {
-            accountId = ctxAccount.getId();
-        }
-        
-        if (null == accountId && null == accountName && null == domainId && null == ctxAccount){
-        	accountId = 1L;
-        }
-        if (accountId == null) {
-            throw new InvalidParameterValueException("No valid account specified for registering an ISO.");
-        }
-        
-        boolean isAdmin = _accountDao.findById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
-        
-        if (!isAdmin && zoneId == null) {
-        	throw new InvalidParameterValueException("Please specify a valid zone Id.");
-        }
-        String urlPath = "";
-		try {
-			urlPath = (new URI(url)).getPath();
-		} catch (URISyntaxException e) {
-			throw new IllegalArgumentException("Invalid URL " + url);			
-		}
-        if((!url.toLowerCase().endsWith("iso"))&&(!url.toLowerCase().endsWith("iso.zip"))&&(!url.toLowerCase().endsWith("iso.bz2"))
-        		&&(!url.toLowerCase().endsWith("iso.gz"))
-        		&&(!(urlPath.endsWith("iso")))){
-        	throw new InvalidParameterValueException("Please specify a valid iso");
-        }
-        
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
-        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-        	throw new InvalidParameterValueException("Only private ISOs can be created.");
-        }
-        
-        if (!isAdmin || featured == null) {
-        	featured = Boolean.FALSE;
-        }
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-                
-        if (bootable == null) {
-        	bootable = Boolean.TRUE;
-        }
-        
-        if ((guestOSId == null || guestOSId == 138L) && bootable == true){
-        	throw new InvalidParameterValueException("Please pass a valid GuestOS Id");
-        }
-        if (bootable == false){
-        	guestOSId = 138L; //Guest os id of None.
-        }
-
-        //removing support for file:// type urls (bug: 4239)
-        if(url.toLowerCase().contains("file://")){
-        	throw new InvalidParameterValueException("File:// type urls are currently unsupported");
-        }
-        
-        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), true, ImageFormat.ISO.toString(), TemplateType.USER, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
+    	TemplateAdapter adapter = getAdapter(HypervisorType.None);
+    	TemplateProfile profile = adapter.prepare(cmd);
+    	return adapter.create(profile);
     }
 
     @Override
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
-    	
-        Account ctxAccount = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
-        String name = cmd.getTemplateName();
-        String displayText = cmd.getDisplayText(); 
-        Integer bits = cmd.getBits();
-        Boolean passwordEnabled = cmd.isPasswordEnabled();
-        Boolean requiresHVM = cmd.getRequiresHvm();
-        String url = cmd.getUrl();
-        Boolean isPublic = cmd.isPublic();
-        Boolean featured = cmd.isFeatured();
-        Boolean isExtractable = cmd.isExtractable();
-        String format = cmd.getFormat();
-        Long guestOSId = cmd.getOsTypeId();
-        Long zoneId = cmd.getZoneId();
-        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Account resourceAccount = null;
-        Long accountId = null;
-        String chksum = cmd.getChecksum();
-
-        //parameters verification
-        if (bits == null) {
-            bits = Integer.valueOf(64);
-        }
-        if (passwordEnabled == null) {
-            passwordEnabled = false;
-        }
-        if (requiresHVM == null) {
-            requiresHVM = true;
-        }
-        if (isPublic == null) {
-            isPublic = Boolean.FALSE;
-        }
-        if(isExtractable == null){
-        	isExtractable = Boolean.FALSE;
-        }
-        
-        if (zoneId.longValue() == -1) {
-        	zoneId = null;
-        }
-        
-        if ( (accountName == null) ^ (domainId == null) ){// XOR - Both have to be passed or don't pass any of them 
-        	throw new InvalidParameterValueException("Please specify both account and domainId or dont specify any of them");
-        }
-        
-        // This complex logic is just for figuring out the template owning account because a user can register templates on other account's behalf.
-        if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
-            if (domainId != null) {
-                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Failed to register template, invalid domain id (" + domainId + ") given.");
-                }
-                if (accountName != null) {
-                	resourceAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (resourceAccount == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = resourceAccount.getId();
-                }
-            } else {
-                accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
-            }
-        } else {
-            accountId = ctxAccount.getId();
-        }
-        
-        if (null == accountId && null == accountName && null == domainId && null == ctxAccount){
-        	accountId = 1L;
-        }
-        if (null == accountId) {
-            throw new InvalidParameterValueException("No valid account specified for registering template.");
-        }
-        
-        boolean isAdmin = _accountDao.findById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
-        
-        if (!isAdmin && zoneId == null) {
-        	throw new InvalidParameterValueException("Please specify a valid zone Id.");
-        }
-        
-        if(url.toLowerCase().contains("file://")){
-        	throw new InvalidParameterValueException("File:// type urls are currently unsupported");
-        }
-        
-        if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
-        	&&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz")) 
-        	&&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
-        	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
-        	&&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
-        	&&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
-        	&&hypervisorType != HypervisorType.BareMetal){
-        	throw new InvalidParameterValueException("Please specify a valid "+format.toLowerCase());
-        }
-        	
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
-        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-        	throw new InvalidParameterValueException("Only private templates can be created.");
-        }
-        
-        if (!isAdmin || featured == null) {
-        	featured = Boolean.FALSE;
-        }
-
-        //If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-        
-        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, format, TemplateType.USER, url, chksum, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
-    	
-    }
-    
-    private VMTemplateVO createTemplateOrIso(long userId, Long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, String format, TemplateType diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
-        try
-        {
-        	
-            ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
-            if (imgfmt == null) {
-                throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-            }
-              
-            String uriStr;
-        	if (hypervisorType == hypervisorType.BareMetal) {
-        		uriStr = url;
-			} else {
-				URI uri = new URI(url);
-				if ((uri.getScheme() == null)
-						|| (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme()
-								.equalsIgnoreCase("file"))) {
-					throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-				}
-
-				int port = uri.getPort();
-				if (!(port == 80 || port == 443 || port == -1)) {
-					throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
-				}
-				String host = uri.getHost();
-				try {
-					InetAddress hostAddr = InetAddress.getByName(host);
-					if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-						throw new IllegalArgumentException("Illegal host specified in url");
-					}
-					if (hostAddr instanceof Inet6Address) {
-						throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-					}
-				} catch (UnknownHostException uhe) {
-					throw new IllegalArgumentException("Unable to resolve " + host);
-				}
-				uriStr = uri.toString();
-			}
-            
-            // Check that the resource limit for templates/ISOs won't be exceeded
-            UserVO user = _userDao.findById(userId);
-            if (user == null) {
-                throw new IllegalArgumentException("Unable to find user with id " + userId);
-            }
-        	AccountVO account = _accountDao.findById(accountId);
-            if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
-            	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-            	rae.setResourceType("template");
-            	throw rae;
-            }
-            
-            // If a zoneId is specified, make sure it is valid
-            if (zoneId != null) {
-            	DataCenterVO zone = _dcDao.findById(zoneId);
-            	if (zone == null) {
-            		throw new IllegalArgumentException("Please specify a valid zone.");
-            	}
-        		Account caller = UserContext.current().getCaller();
-        		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
-        			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
-        		}
-            }
-           
-            List<VMTemplateVO> systemvmTmplts = _tmpltDao.listAllSystemVMTemplates();
-            for (VMTemplateVO template : systemvmTmplts) {
-                if (template.getName().equalsIgnoreCase(name) || template.getDisplayText().equalsIgnoreCase(displayText)) {
-                    throw new IllegalArgumentException("Cannot use reserved names for templates");
-                }
-            }
-            
-            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, imgfmt, diskType, uriStr, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URL " + url);
-        }
-    }
-
-    private VMTemplateVO create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, ImageFormat format,  TemplateType type, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
-        Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-                
-        AccountVO account = _accountDao.findById(accountId);
-        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && zoneId == null) {
-        	throw new IllegalArgumentException("Only admins can create templates in all zones");
-        }
-        
-        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
-        if (zoneId == null) {
-            List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
-
-        	for (DataCenterVO dc: dcs) {
-    			_tmpltDao.addTemplateToZone(template, dc.getId());
-    		}
-        	template.setCrossZones(true);
-        } else {
-			_tmpltDao.addTemplateToZone(template, zoneId);
-        }
-
-        if (hyperType == HypervisorType.BareMetal) {
-        	// There is no secondary storage vm for baremetal, we use zone id as identifier
-        	VMTemplateHostVO vmTemplateHost = null;
-        	if (zoneId == null) {
-        		List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
-        		for (DataCenterVO dc: dcs) {
-        			vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(dc.getId(), template.getId());
-        			if (vmTemplateHost == null) {
-        				vmTemplateHost = new VMTemplateHostVO(dc.getId(), template.getId(), new Date(), 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-        						null, null, null, null, template.getUrl());
-        				_vmTemplateHostDao.persist(vmTemplateHost);
-        			}
-        		}
-        	} else {
-        		vmTemplateHost = new VMTemplateHostVO(zoneId, template.getId(), new Date(), 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-						null, null, null, null, template.getUrl());
-			    _vmTemplateHostDao.persist(vmTemplateHost);
-        	}
-        } else {
-        	_downloadMonitor.downloadTemplateToStorage(id, zoneId);
-        }
-        
-        _accountMgr.incrementResourceCount(accountId, ResourceType.template);
-        
-        return template;
+    	TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
+    	TemplateProfile profile = adapter.prepare(cmd);
+    	return adapter.create(profile);
     }
 
     @Override
@@ -935,115 +616,15 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         return copiedTemplate;
     }
 
-    @Override @DB
+    @Override
     public boolean delete(long userId, long templateId, Long zoneId) {
-    	boolean success = true;
-    	
     	VMTemplateVO template = _tmpltDao.findById(templateId);
     	if (template == null || template.getRemoved() != null) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
-        
-    	String zoneName;
-    	List<HostVO> secondaryStorageHosts;
-    	if (!template.isCrossZones() && zoneId != null) {
-    		DataCenterVO zone = _dcDao.findById(zoneId);
-    		zoneName = zone.getName();
-    		secondaryStorageHosts = new ArrayList<HostVO>();
-			secondaryStorageHosts.add(_hostDao.findSecondaryStorageHost(zoneId));
-    	} else {
-    		zoneName = "(all zones)";
-    		secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
-    	}
     	
-    	s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
-    	
-		// Make sure the template is downloaded to all the necessary secondary storage hosts
-		for (HostVO secondaryStorageHost : secondaryStorageHosts) {
-			long hostId = secondaryStorageHost.getId();
-			List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
-			for (VMTemplateHostVO templateHostVO : templateHostVOs) {
-				if (templateHostVO.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-					String errorMsg = "Please specify a template that is not currently being downloaded.";
-					s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + secondaryStorageHost.getName() + "; cant' delete it.");
-					throw new CloudRuntimeException(errorMsg);
-				}
-			}
-		}
-		
-		Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
-		String eventType = "";
-		
-		if (template.getFormat().equals(ImageFormat.ISO)){
-			eventType = EventTypes.EVENT_ISO_DELETE;
-		} else {
-			eventType = EventTypes.EVENT_TEMPLATE_DELETE;
-		}
-		
-		// Iterate through all necessary secondary storage hosts and mark the template on each host as destroyed
-		for (HostVO secondaryStorageHost : secondaryStorageHosts) {
-			long hostId = secondaryStorageHost.getId();
-			long sZoneId = secondaryStorageHost.getDataCenterId();
-			List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
-			for (VMTemplateHostVO templateHostVO : templateHostVOs) {
-				VMTemplateHostVO lock = _tmpltHostDao.acquireInLockTable(templateHostVO.getId());
-				
-				try {
-					if (lock == null) {
-						s_logger.debug("Failed to acquire lock when deleting templateHostVO with ID: " + templateHostVO.getId());
-						success = false;
-						break;
-					}
-					
-					templateHostVO.setDestroyed(true);
-					_tmpltHostDao.update(templateHostVO.getId(), templateHostVO);
-					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
-					
-					if (templateZone != null) {
-						_tmpltZoneDao.remove(templateZone.getId());
-					}
-					
-					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null);
-					_usageEventDao.persist(usageEvent);
-				} finally {
-					if (lock != null) {
-						_tmpltHostDao.releaseFromLockTable(lock.getId());
-					}
-				}
-			}
-			
-			if (!success) {
-				break;
-			}
-		}
-		
-		s_logger.debug("Successfully marked template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
-		
-		// If there are no more non-destroyed template host entries for this template, delete it
-		if (success && (_tmpltHostDao.listByTemplateId(templateId).size() == 0)) {
-			long accountId = template.getAccountId();
-			
-			VMTemplateVO lock = _tmpltDao.acquireInLockTable(templateId);
-
-			try {
-				if (lock == null) {
-					s_logger.debug("Failed to acquire lock when deleting template with ID: " + templateId);
-					success = false;
-				} else if (_tmpltDao.remove(templateId)) {
-					// Decrement the number of templates
-					_accountMgr.decrementResourceCount(accountId, ResourceType.template);
-				}
-
-			} finally {
-				if (lock != null) {
-					_tmpltDao.releaseFromLockTable(lock.getId());
-				}
-			}
-			
-			s_logger.debug("Removed template: " + template.getName() + " because all of its template host refs were marked as destroyed.");
-		}
-		
-		return success;
+    	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
+    	return adapter.delete(new TemplateProfile(userId, template, zoneId));
     }
     
     @Override
@@ -1322,64 +903,24 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
     public boolean deleteTemplate(DeleteTemplateCmd cmd) {
-        Long templateId = cmd.getId();
-        Long userId = UserContext.current().getCallerUserId();
-        Account account = UserContext.current().getCaller();
-        Long zoneId = cmd.getZoneId();
-        
-        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
-        if (template == null) {
-            throw new InvalidParameterValueException("unable to find template with id " + templateId);
-        }
-        
-        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete template " );
-        
-    	UserVO user = _userDao.findById(userId);
-    	if (user == null) {
-    		throw new InvalidParameterValueException("Please specify a valid user.");
-    	}
-    	
-    	if (template.getFormat() == ImageFormat.ISO) {
+		VMTemplateVO template = _tmpltDao.findById(cmd.getId());
+    	if (template == null || template.getRemoved() != null) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
-    	
-    	if (template.getTemplateType() == TemplateType.SYSTEM) {
-    		throw new InvalidParameterValueException("The DomR template cannot be deleted.");
-    	}
-    	
-    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
-    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
-    	}
-    	return delete(userId, templateId, zoneId);
+    	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
+    	TemplateProfile profile = adapter.prepareDelete(cmd);
+    	return adapter.delete(profile);
 	}
 	
 	@Override
     public boolean deleteIso(DeleteIsoCmd cmd) {
-        Long templateId = cmd.getId();
-        Long userId = UserContext.current().getCallerUserId();
-        Account account = UserContext.current().getCaller();
-        Long zoneId = cmd.getZoneId();
-        
-        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
-        if (template == null) {
-            throw new InvalidParameterValueException("unable to find iso with id " + templateId);
-        }
-        
-        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete iso " );
-        
-    	UserVO user = _userDao.findById(userId);
-    	if (user == null) {
-    		throw new InvalidParameterValueException("Please specify a valid user.");
+		VMTemplateVO template = _tmpltDao.findById(cmd.getId());
+    	if (template == null || template.getRemoved() != null) {
+    		throw new InvalidParameterValueException("Please specify a valid ISO.");
     	}
-    	
-    	if (template.getFormat() != ImageFormat.ISO) {
-    		throw new InvalidParameterValueException("Please specify a valid iso.");
-    	}
-    	
-    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
-    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
-    	}
-    	return delete(userId, templateId, zoneId);
+    	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
+    	TemplateProfile profile = adapter.prepareDelete(cmd);
+    	return adapter.delete(profile);
 	}
 	
 	@Override

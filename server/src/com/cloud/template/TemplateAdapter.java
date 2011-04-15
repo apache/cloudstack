@@ -1,0 +1,38 @@
+package com.cloud.template;
+
+import com.cloud.api.commands.DeleteIsoCmd;
+import com.cloud.api.commands.DeleteTemplateCmd;
+import com.cloud.api.commands.RegisterIsoCmd;
+import com.cloud.api.commands.RegisterTemplateCmd;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.utils.component.Adapter;
+
+public interface TemplateAdapter extends Adapter {
+	public static class TemplateAdapterType {
+		String _name;
+		
+		public static final TemplateAdapterType Hypervisor = new TemplateAdapterType("Hypervisor");
+		public static final TemplateAdapterType BareMetal = new TemplateAdapterType("BareMetal");
+		
+		public TemplateAdapterType(String name) {
+			_name = name;
+		}
+		
+		public String getName() {
+			return _name;
+		}
+	}
+	
+	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException;
+
+	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException;
+
+	public VMTemplateVO create(TemplateProfile profile);
+
+	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd);
+
+	public TemplateProfile prepareDelete(DeleteIsoCmd cmd);
+
+	public boolean delete(TemplateProfile profile);
+}

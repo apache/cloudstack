@@ -126,7 +126,10 @@ import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
+import com.cloud.template.HyervisorTemplateAdapter;
+import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateManagerImpl;
+import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.upgrade.DatabaseUpgradeChecker;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
@@ -328,6 +331,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     }
     
     protected void populateAdapters() {
+    	addAdapter(TemplateAdapter.class, TemplateAdapterType.BareMetal.getName(), HyervisorTemplateAdapter.class);
     }
 
     @Override
