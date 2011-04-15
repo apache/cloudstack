@@ -190,33 +190,34 @@ public class Upgrade222to224 implements DbUpgrade {
                 Long id = rs.getLong(1);
                 Long instanceId = rs.getLong(2);
 
-                // Check if domR is already expunged; we shouldn't update user stats in this case as nics are gone too
-                pstmt = conn.prepareStatement("SELECT * from vm_instance where id=? and removed is not null");
-                pstmt.setLong(1, instanceId);
-                ResultSet rs1 = pstmt.executeQuery();
+                if (instanceId != null && instanceId.longValue() != 0) {
+                    // Check if domR is already expunged; we shouldn't update user stats in this case as nics are gone too
+                    pstmt = conn.prepareStatement("SELECT * from vm_instance where id=? and removed is not null");
+                    pstmt.setLong(1, instanceId);
+                    ResultSet rs1 = pstmt.executeQuery();
 
-                if (rs1.next()) {
-                    s_logger.debug("Not updating user_statistics table for domR id=" + instanceId + " as domR is already expunged");
-                    continue;
+                    if (rs1.next()) {
+                        s_logger.debug("Not updating user_statistics table for domR id=" + instanceId + " as domR is already expunged");
+                        continue;
+                    }
+
+                    pstmt = conn.prepareStatement("SELECT network_id FROM nics WHERE instance_id=? AND mode='Dhcp'");
+                    pstmt.setLong(1, instanceId);
+                    ResultSet rs2 = pstmt.executeQuery();
+
+                    if (!rs2.next()) {
+                        throw new CloudRuntimeException("Failed to update user_statistics table as a part of 222 to 224 upgrade: couldn't get network_id from nics table");
+                    }
+
+                    Long networkId = rs2.getLong(1);
+
+                    if (networkId != null) {
+                        pstmt = conn.prepareStatement("UPDATE user_statistics SET network_id=? where id=?");
+                        pstmt.setLong(1, networkId);
+                        pstmt.setLong(2, id);
+                        pstmt.executeUpdate();
+                    }
                 }
-
-                pstmt = conn.prepareStatement("SELECT network_id FROM nics WHERE instance_id=? AND mode='Dhcp'");
-                pstmt.setLong(1, instanceId);
-                ResultSet rs2 = pstmt.executeQuery();
-
-                if (!rs2.next()) {
-                    throw new CloudRuntimeException("Failed to update user_statistics table as a part of 222 to 224 upgrade: couldn't get network_id from nics table");
-                }
-
-                Long networkId = rs2.getLong(1);
-
-                if (networkId != null) {
-                    pstmt = conn.prepareStatement("UPDATE user_statistics SET network_id=? where id=?");
-                    pstmt.setLong(1, networkId);
-                    pstmt.setLong(2, id);
-                    pstmt.executeUpdate();
-                }
-
             }
 
             s_logger.debug("Successfully update user_statistics table with network_ids as a part of 222 to 224 upgrade");
