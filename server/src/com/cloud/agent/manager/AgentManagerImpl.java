@@ -138,6 +138,7 @@ import com.cloud.org.Grouping;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceService;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -1285,6 +1286,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 					_storagePoolDao.remove(poolId);
 				}
 			}
+			
+			//delete the op_host_capacity entry
+			Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU,Capacity.CAPACITY_TYPE_MEMORY};
+			SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();			
+			hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
+			hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);	
+			_capacityDao.remove(hostCapacitySC);
+
 			txn.commit();
 			return true;
 		} catch (Throwable t) {
