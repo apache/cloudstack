@@ -40,6 +40,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -157,7 +158,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			sshConnection.connect(null, 60000, 60000);
 			if (!sshConnection.authenticateWithPassword(username, password)) {
 				s_logger.debug("Failed to authenticate");
-				return null;
+				throw new DiscoveredWithErrorException("Authetication error");
 			}
 			
 			if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm >& /dev/null", 3)) {
@@ -198,7 +199,9 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			
 			details.put("guid", guidWithTail);
 			return resources;
-		} catch (Exception e) {
+		} catch (DiscoveredWithErrorException e){ 
+			throw e;
+		}catch (Exception e) {
 			String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
 			s_logger.warn(msg);
 		} finally {

@@ -46,6 +46,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostEnvironment;
@@ -290,9 +291,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 resource.start();
                 resources.put(resource, details);
             }                        
-        } catch (SessionAuthenticationFailed e) {
-            s_logger.warn("Authentication error", e);           
-            return null;
+        } catch (SessionAuthenticationFailed e) {       
+            throw new DiscoveredWithErrorException("Authetication error");
         } catch (XenAPIException e) {
             s_logger.warn("XenAPI exception", e);
             return null;

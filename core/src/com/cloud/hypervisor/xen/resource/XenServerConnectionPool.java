@@ -298,7 +298,7 @@ public class XenServerConnectionPool {
     }
     
   
-    public String getMasterIp(String ip, String username, String password) {
+    public String getMasterIp(String ip, String username, String password) throws XenAPIException {
         Connection slaveConn = null;
         try{ 
             slaveConn = new Connection(getURL(ip), 10);
@@ -312,6 +312,9 @@ public class XenServerConnectionPool {
             Host master = pr.master;
             masterIp = master.getAddress(slaveConn);
             return masterIp;
+        }catch(Types.SessionAuthenticationFailed e){
+        	s_logger.debug("Failed to slave local login to " + ip + " due to " + e.toString());
+        	throw e;
         }catch ( Exception e){
             s_logger.debug("Failed to slave local login to " + ip + " due to " + e.toString());
         } finally {

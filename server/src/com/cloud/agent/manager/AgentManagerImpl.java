@@ -106,6 +106,7 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -970,7 +971,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 			try {
 				resources = discoverer.find(dcId, podId, clusterId, uri,
 						username, password);
-			} catch (Exception e) {
+			} catch (DiscoveredWithErrorException e){ 
+				throw e;
+			}catch (Exception e) {
 				s_logger.info("Exception in host discovery process with discoverer: "
 						+ discoverer.getName()
 						+ ", skip to another discoverer if there is any");
