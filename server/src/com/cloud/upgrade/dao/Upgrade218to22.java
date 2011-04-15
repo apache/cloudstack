@@ -987,9 +987,15 @@ public class Upgrade218to22 implements DbUpgrade {
                             reservationId = dcId + "-" + vnet;
                             state = "Implemented";
                         }
-                        long virtualNetworkId = insertNetwork(conn, "VirtualNetwork" + router[0], "Virtual Network for " + router[0], "Guest", "Vlan", "vlan://" + vnet, (String) router[3],
-                                (String) dc[1], "Dhcp", 6, dcId, "ExternalGuestNetworkGuru", state, (Long) router[1], (Long) router[2], (String) router[5], (String) router[6], "Virtual", false,
-                                (String) router[4], true, reservationId);
+
+                        String vlan = null;
+                        if (vnet != null) {
+                            vlan = "vlan://" + vnet;
+                        }
+
+                        long virtualNetworkId = insertNetwork(conn, "VirtualNetwork" + router[0], "Virtual Network for " + router[0], "Guest", "Vlan", vlan, (String) router[3], (String) dc[1],
+                                "Dhcp", 6, dcId, "ExternalGuestNetworkGuru", state, (Long) router[1], (Long) router[2], (String) router[5], (String) router[6], "Virtual", false, (String) router[4],
+                                true, reservationId);
                         pstmt = conn.prepareStatement("UPDATE domain_router SET network_id = ? wHERE id = ? ");
                         pstmt.setLong(1, virtualNetworkId);
                         pstmt.setLong(2, (Long) router[0]);
