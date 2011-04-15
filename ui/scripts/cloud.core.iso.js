@@ -739,7 +739,8 @@ function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {
 	$dialog1	
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
-			$(this).dialog("close");			
+			$(this).dialog("close");	
+			$("body").stopTime("isoDownloadProgress");
 			var apiCommand = "command=deleteIso&id="+id+moreCriteria.join("");
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
