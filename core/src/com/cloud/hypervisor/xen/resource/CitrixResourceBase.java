@@ -1678,7 +1678,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             hostStats.setCpuUtilization(hostStats.getCpuUtilization() / hostStats.getNumCpus());
             s_logger.debug("Host cpu utilization " + hostStats.getCpuUtilization());
         }
-*/        
+*/
 
         return hostStats;
     }
@@ -1769,7 +1769,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 if (param.contains("cpu")) {
                     vmStatsAnswer.setNumCPUs(vmStatsAnswer.getNumCPUs() + 1);
-                    vmStatsAnswer.setCPUUtilization((vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows))*100);
+                    vmStatsAnswer.setCPUUtilization(((vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows))));
                 } else if (param.equals("vif_0_rx")) {
                 	vmStatsAnswer.setNetworkReadKBs(getDataAverage(dataNode, col, numRows)/(8*2));
                 } else if (param.equals("vif_0_tx")) {
@@ -1784,8 +1784,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (vmStatsAnswer.getNumCPUs() != 0) {
                 vmStatsAnswer.setCPUUtilization(vmStatsAnswer.getCPUUtilization() / vmStatsAnswer.getNumCPUs());
-                s_logger.debug("Vm cpu utilization " + vmStatsAnswer.getCPUUtilization());
             }
+            
+            vmStatsAnswer.setCPUUtilization(vmStatsAnswer.getCPUUtilization()*100);
+            if(s_logger.isDebugEnabled())
+            	s_logger.debug("Vm cpu utilization " + vmStatsAnswer.getCPUUtilization());
         }
 
         return vmResponseMap;
