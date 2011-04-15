@@ -294,7 +294,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected int _retry = 2;
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
-    protected int _overProvisioningFactor = 1;
+    protected float _overProvisioningFactor = 1;
     private int _maxVolumeSizeInGb;
     private long _serverId;
 
@@ -794,7 +794,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         String overProvisioningFactorStr = configs.get("storage.overprovisioning.factor");
         if (overProvisioningFactorStr != null) {
-            _overProvisioningFactor = Integer.parseInt(overProvisioningFactorStr);
+            _overProvisioningFactor = Float.parseFloat(overProvisioningFactorStr);
         }
 
         _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
@@ -1741,9 +1741,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         capacities = _capacityDao.search(capacitySC, null);
 
-        int provFactor = 1;
+        long provFactor = 1;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            provFactor = _overProvisioningFactor;
+            provFactor = (long) _overProvisioningFactor;
         }
         if (capacities.size() == 0) {
             CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, storagePool.getCapacityBytes()

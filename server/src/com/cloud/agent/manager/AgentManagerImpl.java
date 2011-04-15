@@ -290,7 +290,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 	protected int _updateWait;
 	protected int _alertWait;
 	protected long _nodeId = -1;
-	protected int _overProvisioningFactor = 1;
+	protected float _overProvisioningFactor = 1;
 	protected float _cpuOverProvisioningFactor = 1;
 
 	protected Random _rand = new Random(System.currentTimeMillis());
@@ -380,7 +380,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
 		String overProvisioningFactorStr = configs
 				.get("storage.overprovisioning.factor");
-		_overProvisioningFactor = NumbersUtil.parseInt(
+		_overProvisioningFactor = NumbersUtil.parseFloat(
 				overProvisioningFactorStr, 1);
 
 		String cpuOverProvisioningFactorStr = configs
@@ -3010,7 +3010,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 			if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
 				CapacityVO capacity = new CapacityVO(server.getId(),
 						server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
-						server.getTotalSize() * _overProvisioningFactor,
+						(long)(server.getTotalSize() * _overProvisioningFactor),
 						CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
 				_capacityDao.persist(capacity);
 			}
