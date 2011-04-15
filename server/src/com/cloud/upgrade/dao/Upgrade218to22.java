@@ -319,8 +319,6 @@ public class Upgrade218to22 implements DbUpgrade {
         rs.close();
         pstmt.close();
 
-        s_logger.debug("Gateway is " + podGateway);
-
         pstmt = conn.prepareStatement("SELECT v.vlan_id from vlan v, user_ip_address u where v.id=u.vlan_db_id and u.public_ip_address=?");
         pstmt.setString(1, publicIp);
         rs = pstmt.executeQuery();
@@ -1169,6 +1167,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     rs = pstmt.executeQuery();
 
                     if (!rs.next()) {
+                        s_logger.error("Unable to find public IP address " + publicIp);
                         throw new CloudRuntimeException("Unable to find public IP address " + publicIp);
                     }
 
@@ -1176,54 +1175,59 @@ public class Upgrade218to22 implements DbUpgrade {
                     long accountId = rs.getLong(2);
                     long domainId = rs.getLong(3);
                     long networkId = rs.getLong(4);
+                    String privateIp = (String) rule[3];
 
                     rs.close();
                     pstmt.close();
 
-                    // update firewall_rules table
-                    s_logger.trace("Updating firewall_rules table as a part of PF rules upgrade...");
-                    pstmt = conn
-                            .prepareStatement("INSERT INTO firewall_rules (id, ip_address_id, start_port, end_port, state, protocol, purpose, account_id, domain_id, network_id, xid, is_static_nat, created) VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'PortForwarding',       ?,      ?,      ?,      ?,       0,     now())");
-                    pstmt.setLong(1, id);
-                    pstmt.setInt(2, ipAddressId);
-                    pstmt.setInt(3, Integer.valueOf(sourcePort));
-                    pstmt.setInt(4, Integer.valueOf(sourcePort));
-                    pstmt.setString(5, protocol);
-                    pstmt.setLong(6, accountId);
-                    pstmt.setLong(7, domainId);
-                    pstmt.setLong(8, networkId);
-                    pstmt.setString(9, UUID.randomUUID().toString());
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    s_logger.trace("firewall_rules table is updated as a part of PF rules upgrade");
-
                     // update port_forwarding_rules table
                     s_logger.trace("Updating port_forwarding_rules table...");
-                    String privateIp = (String) rule[3];
                     pstmt = conn.prepareStatement("SELECT instance_id FROM nics where network_id=? AND ip4_address=?");
                     pstmt.setLong(1, networkId);
                     pstmt.setString(2, privateIp);
                     rs = pstmt.executeQuery();
 
                     if (!rs.next()) {
-                        throw new CloudRuntimeException("Unable to find vmId for private ip address " + privateIp + " for account id=" + accountId);
+                        // the vm might be expunged already...so just give the warning
+                        s_logger.warn("Unable to find vmId for private ip address " + privateIp + " for account id=" + accountId + "; assume that the vm is expunged");
+                        // throw new CloudRuntimeException("Unable to find vmId for private ip address " + privateIp +
+                        // " for account id=" + accountId);
+                    } else {
+                        long instanceId = rs.getLong(1);
+                        s_logger.debug("Instance id is " + instanceId);
+                        // update firewall_rules table
+                        s_logger.trace("Updating firewall_rules table as a part of PF rules upgrade...");
+                        pstmt = conn
+                                .prepareStatement("INSERT INTO firewall_rules (id, ip_address_id, start_port, end_port, state, protocol, purpose, account_id, domain_id, network_id, xid, is_static_nat, created) VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'PortForwarding',       ?,      ?,      ?,      ?,       0,     now())");
+                        pstmt.setLong(1, id);
+                        pstmt.setInt(2, ipAddressId);
+                        pstmt.setInt(3, Integer.valueOf(sourcePort.trim()));
+                        pstmt.setInt(4, Integer.valueOf(sourcePort.trim()));
+                        pstmt.setString(5, protocol);
+                        pstmt.setLong(6, accountId);
+                        pstmt.setLong(7, domainId);
+                        pstmt.setLong(8, networkId);
+                        pstmt.setString(9, UUID.randomUUID().toString());
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                        s_logger.trace("firewall_rules table is updated as a part of PF rules upgrade");
+
+                        rs.close();
+                        pstmt.close();
+
+                        String privatePort = (String) rule[4];
+                        pstmt = conn.prepareStatement("INSERT INTO port_forwarding_rules VALUES (?,    ?,      ?,      ?,       ?)");
+                        pstmt.setLong(1, id);
+                        pstmt.setLong(2, instanceId);
+                        pstmt.setString(3, privateIp);
+                        pstmt.setInt(4, Integer.valueOf(privatePort.trim()));
+                        pstmt.setInt(5, Integer.valueOf(privatePort.trim()));
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                        s_logger.trace("port_forwarding_rules table is updated");
+
                     }
 
-                    long instanceId = rs.getLong(1);
-                    ;
-                    rs.close();
-                    pstmt.close();
-
-                    String privatePort = (String) rule[4];
-                    pstmt = conn.prepareStatement("INSERT INTO port_forwarding_rules VALUES (?,    ?,      ?,      ?,       ?)");
-                    pstmt.setLong(1, id);
-                    pstmt.setLong(2, instanceId);
-                    pstmt.setString(3, privateIp);
-                    pstmt.setInt(4, Integer.valueOf(privatePort));
-                    pstmt.setInt(5, Integer.valueOf(privatePort));
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    s_logger.trace("port_forwarding_rules table is updated");
                 }
             }
             s_logger.debug("Port forwarding rules are updated");
