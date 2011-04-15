@@ -1147,11 +1147,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
-            throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
+            throw new ResourceUnavailableException("Failed to start remote access VPN: no router found for account and zone", DataCenter.class, network.getDataCenterId());
         }
         if (router.getState() != State.Running) {
-            s_logger.warn("Failed to start remote access VPN: router not in running state");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+            s_logger.warn("Failed to start remote access VPN: router not in right state " + router.getState());
+            throw new ResourceUnavailableException("Failed to start remote access VPN: router not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
 
         Commands cmds = new Commands(OnError.Stop);
@@ -1187,10 +1187,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DomainRouterVO router = getRouter(vpn.getAccountId(), network.getDataCenterId());
         if (router == null) {
             s_logger.warn("Failed to delete remote access VPN: no router found for account and zone");
-            throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
+            throw new ResourceUnavailableException("Failed to delete remote access VPN", DataCenter.class, network.getDataCenterId());
         }
         if (router.getState() != State.Running) {
-            s_logger.warn("Failed to delete remote access VPN: router not in running state");
+            s_logger.warn("Failed to delete remote access VPN: domR is not in right state " + router.getState());
             throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
         Commands cmds = new Commands(OnError.Continue);
