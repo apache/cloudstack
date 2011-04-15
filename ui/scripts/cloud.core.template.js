@@ -614,7 +614,7 @@ var templateActionMap = {
             if((jsonObj.id == $("#right_panel_content").find("#tab_content_details").find("#id").text()) 
                && ((jsonObj.zoneid == null) || (jsonObj.zoneid != null && jsonObj.zoneid == $("#right_panel_content").find("#tab_content_details").find("#zoneid").text()))) {
                 clearRightPanel();
-                isoClearRightPanel();  
+                isoClearRightPanel(); 
             }     
             
             /*
@@ -769,6 +769,7 @@ function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
+			$("body").stopTime("templateDownloadProgress");
 			var apiCommand = "command=deleteTemplate&id="+id+moreCriteria.join("");
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
