@@ -509,25 +509,7 @@ public class XenServer56Resource extends CitrixResourceBase {
     public StartupCommand[] initialize() {
         pingxenserver();
         StartupCommand[] cmds = super.initialize();
-        Connection conn = getConnection();
-        try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-            Set<String> tags = host.getTags(conn);
-            Iterator<String> it = tags.iterator();
-            while (it.hasNext()) {
-                String heartbeatTag = it.next();
-                if (heartbeatTag.contains("cloud-heartbeat-")) {
-                    s_logger.debug("Removing heatbeat tag: " + heartbeatTag);
-                    it.remove();
-                }
-            }
-            host.setTags(conn, tags);
-        } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to remove heartbeat tag", e);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to remove heartbeat tag", e);
-        }
-        
+        Connection conn = getConnection();       
         if (!setIptables(conn)) {
             s_logger.warn("set xenserver Iptable failed");
             return null;
