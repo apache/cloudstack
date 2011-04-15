@@ -317,7 +317,10 @@ function isoToRightPanel($midmenuItem1) {
     isoJsonToDetailsTab();   
 }
 
-function isoJsonToDetailsTab() {     
+function isoJsonToDetailsTab() {  
+	var timerKey = "isoDownloadProgress";	
+	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in ISO page	
+	
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null) {
         isoClearDetailsTab(); 
@@ -333,6 +336,8 @@ function isoJsonToDetailsTab() {
     var strCmd = "command=listIsos&isofilter=self&id="+jsonObj.id;
     if(jsonObj.zoneid != null)
         strCmd = strCmd + "&zoneid="+jsonObj.zoneid;    
+    
+    var itemExists = true; 
     $.ajax({
         data: createURL(strCmd),
         dataType: "json",
@@ -343,8 +348,19 @@ function isoJsonToDetailsTab() {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);                  
             }
-        }    
+            else {
+                itemExists = false;
+            }
+        } 
+	    ,			
+	    error: function(XMLHttpResponse) {	
+			handleError(XMLHttpResponse, function() {
+				itemExists = false;
+			});
+	    }	      
     });
+    if(itemExists == false)
+        return;
     
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -368,13 +384,12 @@ function isoJsonToDetailsTab() {
     
     
     //refresh status field every 2 seconds if ISO is in download progress	
-	var timerKey = "isoDownloadProgress";	
-	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in ISO page			
+			
 	if(jsonObj.isready == true){
 	    setTemplateStateInRightPanel("Ready", $thisTab.find("#status"));
 	    $("#progressbar_container").hide();
 	}
-	else {
+	else if(jsonObj.status == null || jsonObj.status == "" || jsonObj.status.indexOf("%") != -1) {  //ISO is downloading....
 	    $("#progressbar_container").show();	   
 	    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
         var progressBarValue = 0;
@@ -396,7 +411,10 @@ function isoJsonToDetailsTab() {
             }
         )	     
 	}
-	
+	else { //error status
+	    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
+	    $("#progressbar_container").hide();
+	}
 	
 	if(jsonObj.size != null)
 	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));  
@@ -503,17 +521,24 @@ function isoRefreshStatusDownloadProgress(oldJsonObj, $thisTab, $midmenuItem1, t
                     $("body").stopTime(timerKey);   
                 }
                 else {
-                    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
-                    var progressBarValue = 0;
-                    if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
-                        var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
-                        if(isNaN(s) == false) {	        
-                            progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
-                        } 
+                	if(jsonObj.status != null && jsonObj.status != "" &&  jsonObj.status.indexOf("%") == -1) { //error state 
+                        setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
+                        $("#progressbar_container").hide();
+                        $("body").stopTime(timerKey);  
                     }
-                    $("#progressbar").progressbar({
-                        value: progressBarValue             //e.g. progressBarValue	== 95  
-                    });	 
+                    else { 
+	                    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
+	                    var progressBarValue = 0;
+	                    if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
+	                        var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
+	                        if(isNaN(s) == false) {	        
+	                            progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
+	                        } 
+	                    }
+	                    $("#progressbar").progressbar({
+	                        value: progressBarValue             //e.g. progressBarValue	== 95  
+	                    });	 
+                    } 
                 }   
             }            
         }    
