@@ -46,15 +46,23 @@ def getvncport(session, args):
     domid = args['domID']
     hvm = args['hvm']
     if hvm == 'true':
-        path = "/local/domain/" + domid + "/console/vnc-port"
+        path1 = "/local/domain/" + domid + "/qemu-pid"
+        path2 = "/local/domain/" + domid + "/console/vnc-port"
     else:
-        path = "/local/domain/" + domid + "/serial/0/vnc-port"
+        path1 = "/local/domain/" + domid + "/serial/0/vncterm-pid"
+        path2 = "/local/domain/" + domid + "/serial/0/vnc-port"
     try:
-        cmd = ["xenstore-read", path]
-        txt = util.pread2(cmd)
+        cmd = ["xenstore-read", path1]
+        pid = util.pread2(cmd)
+        pid = pid.strip()
+        cmd = ["ps", pid]
+        util.pread2(cmd)
+        cmd = ["xenstore-read", path2]
+        vncport = util.pread2(cmd)
+        vncport = vncport.strip()
+        return vncport
     except:
-        txt = ''
-    return txt
+        return ''
    
 @echo
 def getgateway(session, args):
