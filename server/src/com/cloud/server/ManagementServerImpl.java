@@ -3532,7 +3532,7 @@ public class ManagementServerImpl implements ManagementServer {
         // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till
         // root
 
-        Filter searchFilter = new Filter(DiskOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(DiskOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
 
         // SearchBuilder and SearchCriteria are now flexible so that the search builder can be built with all possible
