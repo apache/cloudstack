@@ -184,23 +184,31 @@ public class Upgrade222to224 implements DbUpgrade {
     private void updateUserStatsWithNetwork(Connection conn) {
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id, device_id FROM user_statistics WHERE network_id=0 or network_id is NULL");
-            s_logger.debug("Query is " + pstmt);
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 Long id = rs.getLong(1);
                 Long instanceId = rs.getLong(2);
 
-                pstmt = conn.prepareStatement("SELECT network_id FROM nics WHERE instance_id=? AND mode='Dhcp'");
+                // Check if domR is already expunged; we shouldn't update user stats in this case as nics are gone too
+                pstmt = conn.prepareStatement("SELECT * from vm_instance where id=? and removed is not null");
                 pstmt.setLong(1, instanceId);
-                s_logger.debug("Query is " + pstmt);
                 ResultSet rs1 = pstmt.executeQuery();
 
-                if (!rs1.next()) {
+                if (rs1.next()) {
+                    s_logger.debug("Not updating user_statistics table for domR id=" + instanceId + " as domR is already expunged");
+                    continue;
+                }
+
+                pstmt = conn.prepareStatement("SELECT network_id FROM nics WHERE instance_id=? AND mode='Dhcp'");
+                pstmt.setLong(1, instanceId);
+                ResultSet rs2 = pstmt.executeQuery();
+
+                if (!rs2.next()) {
                     throw new CloudRuntimeException("Failed to update user_statistics table as a part of 222 to 224 upgrade: couldn't get network_id from nics table");
                 }
 
-                Long networkId = rs1.getLong(1);
+                Long networkId = rs2.getLong(1);
 
                 if (networkId != null) {
                     pstmt = conn.prepareStatement("UPDATE user_statistics SET network_id=? where id=?");
