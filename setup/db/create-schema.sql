@@ -523,7 +523,7 @@ CREATE TABLE `cloud`.`op_dc_link_local_ip_address_alloc` (
 
 CREATE TABLE  `cloud`.`host_pod_ref` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255),
   `data_center_id` bigint unsigned NOT NULL,
   `gateway` varchar(255) NOT NULL COMMENT 'gateway for the pod',
   `cidr_address` varchar(15) NOT NULL COMMENT 'CIDR address for the pod',
@@ -531,6 +531,7 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',  
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this Pod enabled for allocation for new resources',
   `external_dhcp` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this Pod using external DHCP',
+  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`name`, `data_center_id`),
   INDEX `i_host_pod_ref__data_center_id`(`data_center_id`),

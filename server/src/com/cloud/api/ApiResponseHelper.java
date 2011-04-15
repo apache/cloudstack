@@ -503,7 +503,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
 
         if (host.getPodId() != null) {
-            hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
+        	HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
+        	if(pod != null){
+        		hostResponse.setPodName(pod.getName());
+        	}
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
@@ -587,7 +590,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (podId != null) {
             HostPodVO pod = ApiDBUtils.findPodById(podId);
             vlanResponse.setPodId(podId);
-            vlanResponse.setPodName(pod.getName());
+            if(pod != null){
+            	vlanResponse.setPodName(pod.getName());
+            }
         }
 
         vlanResponse.setGateway(vlan.getVlanGateway());
@@ -886,7 +891,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (pool.getPodId() != null) {
             poolResponse.setPodId(pool.getPodId());
-            poolResponse.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
+        	HostPodVO pod = ApiDBUtils.findPodById(pool.getPodId());
+        	if(pod != null){
+        		poolResponse.setPodName(pod.getName());
+        	}
         }
         if (pool.getCreated() != null) {
             poolResponse.setCreated(pool.getCreated());
@@ -926,7 +934,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
-        clusterResponse.setPodName(pod.getName());
+    	if(pod != null){
+    		clusterResponse.setPodName(pod.getName());
+    	}
         DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
         clusterResponse.setZoneName(zone.getName());
         clusterResponse.setObjectName("cluster");
@@ -2189,7 +2199,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (summedCapacity.getPodId() != null) {
                 capacityResponse.setPodId(summedCapacity.getPodId());
                 if (summedCapacity.getPodId() > 0) {
-                    capacityResponse.setPodName(ApiDBUtils.findPodById(summedCapacity.getPodId()).getName());
+                	HostPodVO pod = ApiDBUtils.findPodById(summedCapacity.getPodId());
+                	if(pod != null){
+                		capacityResponse.setPodName(pod.getName());
+                	}
                 } else {
                     capacityResponse.setPodName("All");
                 }

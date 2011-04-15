@@ -490,7 +490,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
             String selectSql = "SELECT * FROM `" + dbName + "`.`" + tableName + "` WHERE " + column + " = ?";
 
-            if (tableName.equals("host")) {
+            if (tableName.equals("host") || tableName.equals("cluster")) {
                 selectSql += " and removed IS NULL";
             }
 
@@ -621,7 +621,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Delete the pod
-        if (!(_podDao.expunge(podId))) {
+        if (!(_podDao.remove(podId))) {
             throw new CloudRuntimeException("Failed to delete pod " + podId);
         }
 

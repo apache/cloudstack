@@ -18,6 +18,8 @@
 
 package com.cloud.dc;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -28,8 +30,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.org.Grouping;
-import com.cloud.org.Grouping.AllocationState;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "host_pod_ref")
@@ -62,6 +64,10 @@ public class HostPodVO implements Pod {
 
 	@Column(name = "external_dhcp")
 	private Boolean externalDhcp;
+	
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    private Date removed;
+
 
 	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
 		this.name = name;
@@ -170,4 +176,8 @@ public class HostPodVO implements Pod {
 	        return false;
 	    }
 	}
+	
+    public Date getRemoved() {
+        return removed;
+    }
 }
