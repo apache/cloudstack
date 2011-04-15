@@ -107,10 +107,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         return files;
     }
 
-    protected String callHostPluginPremium(Connection conn, String cmd, String... params) {
-        return callHostPlugin(conn, "vmopspremium", cmd, params);
-    }
-
     @Override
     protected void disableVlanNetwork(Connection conn, Network network) {
         try {
@@ -149,91 +145,6 @@ public class XenServer56Resource extends CitrixResourceBase {
             String msg = "Unable to disable VLAN network due to " + e.getMessage();
             s_logger.warn(msg, e);
         }
-    }
-
-    @Override
-    protected SR getStorageRepository(Connection conn, StorageFilerTO pool) {
-        try {
-            SR sr = super.getStorageRepository(conn, pool);
-            setupHeartbeatSr(conn, sr, false);
-            return sr;
-        } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + ", Unable to setup heartbeat sr on " + pool.getUuid() +  " due to " + e.toString();
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg);
-        }
-    }
-
-    protected String callHostPluginThroughMaster(Connection conn, String plugin, String cmd, String... params) {
-        Map<String, String> args = new HashMap<String, String>();
-
-        try {
-            Map<Pool, Pool.Record> poolRecs = Pool.getAllRecords(conn);
-            if (poolRecs.size() != 1) {
-                throw new CloudRuntimeException("There are " + poolRecs.size() + " pool for host :" + _host.uuid);
-            }
-            Host master = poolRecs.values().iterator().next().master;
-            for (int i = 0; i < params.length; i += 2) {
-                args.put(params[i], params[i + 1]);
-            }
-
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
-            }
-            String result = master.callPlugin(conn, plugin, cmd, args);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("callHostPlugin Result: " + result);
-            }
-            return result.replace("\n", "");
-        } catch (Types.HandleInvalid e) {
-            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args)
-                    + " due to HandleInvalid clazz:" + e.clazz + ", handle:" + e.handle);
-        } catch (XenAPIException e) {
-            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to "
-                    + e.toString(), e);
-        } catch (XmlRpcException e) {
-            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to "
-                    + e.getMessage(), e);
-        }
-        return null;
-    }
-
-    protected String setupHeartbeatSr(Connection conn, SR sr, boolean force) throws XenAPIException, XmlRpcException {
-        SR.Record srRec = sr.getRecord(conn);
-        String srUuid = srRec.uuid;
-        if (!srRec.shared || (!SRType.LVMOHBA.equals(srRec.type) && !SRType.LVMOISCSI.equals(srRec.type) && !SRType.NFS.equals(srRec.type) )) {
-            return srUuid;
-        }
-        Host host = Host.getByUuid(conn, _host.uuid);
-        Set<String> tags = host.getTags(conn);
-        if (force || !tags.contains("cloud-heartbeat-" + srUuid)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Setting up the heartbeat sr for host " + _host.ip + " and sr " + srUuid);
-            }
-            Set<PBD> pbds = sr.getPBDs(conn);
-            for (PBD pbd : pbds) {
-                PBD.Record pbdr = pbd.getRecord(conn);
-                if (!pbdr.currentlyAttached && pbdr.host.getUuid(conn).equals(_host.uuid)) {
-                    pbd.plug(conn);
-                    break;
-                }
-            }
-            String result = callHostPluginThroughMaster(conn, "vmopspremium", "setup_heartbeat_sr", "host", _host.uuid,
-                    "sr", srUuid);
-            if (result == null || !result.split("#")[1].equals("0")) {
-                throw new CloudRuntimeException("Unable to setup heartbeat sr on SR " + srUuid + " due to " + result);
-            }
-            result = callHostPluginPremium(conn, "setup_heartbeat_file", "host", _host.uuid, "sr", srUuid);
-            if (result == null || !result.split("#")[1].equals("0")) {
-                throw new CloudRuntimeException("Unable to setup heartbeat file entry on SR " + srUuid + " due to "
-                        + result);
-            }
-            if (!tags.contains("cloud-heartbeat-" + srUuid)) {
-                tags.add("cloud-heartbeat-" + srUuid);
-                host.setTags(conn, tags);
-            }
-        }
-        return srUuid;
     }
 
     @Override
