@@ -571,7 +571,7 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
 DELETE FROM `cloud`.`sync_queue`;
 DELETE FROM `cloud`.`sync_queue_item`;
 DELETE FROM `cloud`.`async_job`;
-UPDATE `cloud`.`vm_template` SET unique_name='routing-xenserver-2.2.4', type='SYSTEM' WHERE name='systemvm-xenserver-2.2.4';
+UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-xenserver-2.2.4';
 UPDATE `cloud`.`vm_template` SET type='BUILTIN' WHERE unique_name='centos53-x86_64';
 UPDATE `cloud`.`vm_template` SET type='PERHOST' WHERE unique_name='xs-tools.iso';
 DELETE FROM template_host_ref WHERE install_path LIKE '%xs-tools%';
@@ -591,7 +591,7 @@ INSERT INTO sequence (name, value)
 UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, (SELECT max(id) FROM cloud.snapshots) + 1, 1) WHERE name='snapshots_seq';
 UPDATE configuration set name='direct.attach.security.groups.enabled' where name='direct.attach.network.groups.enabled';
 UPDATE configuration set name='guest.domain.suffix' where name='domain.suffix';
-UPDATE vm_template set unique_name='routing_old', type='SYSTEM'  where id=1;
+UPDATE vm_template set type='SYSTEM'  where id=1;
 UPDATE vm_template set type='SYSTEM' WHERE unique_name LIKE 'routing%';
 UPDATE `cloud`.`vm_template` SET type='USER' WHERE type!='BUILTIN' AND type!='PERHOST' AND type!='SYSTEM';
 
