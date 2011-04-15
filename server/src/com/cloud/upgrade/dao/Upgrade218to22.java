@@ -443,7 +443,8 @@ public class Upgrade218to22 implements DbUpgrade {
     }
 
     protected void upgradeVirtualUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state, vm_instance.type FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
+        PreparedStatement pstmt = conn
+                .prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state, vm_instance.type FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
         pstmt.setLong(1, domainRouterId);
         ResultSet rs = pstmt.executeQuery();
         List<Object[]> vms = new ArrayList<Object[]>();
@@ -462,7 +463,7 @@ public class Upgrade218to22 implements DbUpgrade {
         s_logger.debug("Upgrading " + vms.size() + " vms for router " + domainRouterId);
 
         int count = 0;
-        
+
         for (Object[] vm : vms) {
             String state = (String) vm[4];
 
@@ -485,7 +486,7 @@ public class Upgrade218to22 implements DbUpgrade {
         }
         rs.close();
         pstmt.close();
-        
+
         pstmt = conn.prepareStatement("UPDATE op_networks SET nics_count=?, check_for_gc=? WHERE id=?");
         pstmt.setLong(1, count);
         if (count == 0) {
@@ -530,7 +531,7 @@ public class Upgrade218to22 implements DbUpgrade {
             }
             insertNic(conn, networkId, (Long) vm[0], running, (String) vm[1], (String) vm[2], (String) vm[3], "Start", gateway, vnet, "DirectPodBasedNetworkGuru", true, 0, "Dhcp", null);
         }
-        
+
         pstmt = conn.prepareStatement("SELECT state FROM vm_instance WHERE id=?");
         pstmt.setLong(1, domainRouterId);
         rs = pstmt.executeQuery();
@@ -541,7 +542,7 @@ public class Upgrade218to22 implements DbUpgrade {
         }
         rs.close();
         pstmt.close();
-        
+
         pstmt = conn.prepareStatement("UPDATE op_networks SET nics_count=?, check_for_gc=? WHERE id=?");
         pstmt.setLong(1, count);
         if (count == 0) {
@@ -599,7 +600,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.setString(i++, reservationId);
             pstmt.setString(i++, broadcastUri);
             pstmt.executeUpdate();
-            
+
             pstmt = conn.prepareStatement("INSERT INTO op_networks(id, mac_address_seq, nics_count, gc, check_for_gc) VALUES(?, ?, ?, ?, ?)");
             pstmt.setLong(1, seq);
             pstmt.setLong(2, 0);
@@ -610,13 +611,13 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt.setBoolean(4, false);
             }
             pstmt.setBoolean(5, false);
-           pstmt.executeUpdate();
-            
+            pstmt.executeUpdate();
+
             pstmt = conn.prepareStatement("INSERT INTO account_network_ref (account_id, network_id, is_owner) VALUES (?,    ?,  1)");
             pstmt.setLong(1, accountId);
             pstmt.setLong(2, seq);
             pstmt.executeUpdate();
-            
+
             return seq;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create network", e);
@@ -1251,7 +1252,7 @@ public class Upgrade218to22 implements DbUpgrade {
 
             if (!lbs.isEmpty()) {
                 s_logger.debug("Found " + lbs.size() + " lb rules to upgrade");
-                pstmt = conn.prepareStatement("SELECT id FROM firewall_rules");
+                pstmt = conn.prepareStatement("SELECT id FROM firewall_rules order by id");
                 rs = pstmt.executeQuery();
                 long newLbId = 0;
                 while (rs.next()) {
