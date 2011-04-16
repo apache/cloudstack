@@ -1078,6 +1078,9 @@ public class Upgrade218to22 implements DbUpgrade {
             // Update user statistics
             upadteUserStats(conn);
 
+            // delete orphaned (storage pool no longer exists) template_spool_ref(s)
+            deleteOrphanedTemplateRef(conn);
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't update data center ", e);
         }
@@ -1300,7 +1303,8 @@ public class Upgrade218to22 implements DbUpgrade {
                     rs = pstmt.executeQuery();
 
                     if (!rs.next()) {
-                        throw new CloudRuntimeException("Unable to find public IP address " + publicIp);
+                        s_logger.warn("Unable to find public IP address " + publicIp + "; skipping lb rule id=" + originalLbId + " from update");
+                        continue;
                     }
 
                     int ipAddressId = rs.getInt(1);
@@ -1748,5 +1752,40 @@ public class Upgrade218to22 implements DbUpgrade {
     @Override
     public boolean supportsRollingUpgrade() {
         return false;
+    }
+
+    private void deleteOrphanedTemplateRef(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id, pool_id from template_spool_ref");
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                s_logger.debug("No records in template_spool_ref, skipping this upgrade part");
+                return;
+            }
+
+            while (rs.next()) {
+                Long id = rs.getLong(1);
+                Long poolId = rs.getLong(2);
+
+                pstmt = conn.prepareStatement("SELECT * from storage_pool where id=?");
+                pstmt.setLong(1, poolId);
+                ResultSet rs1 = pstmt.executeQuery();
+
+                if (!rs1.next()) {
+                    s_logger.debug("Orphaned template_spool_ref record is found (storage pool doesn't exist any more0) id=" + id + "; so removing the record");
+                    pstmt = conn.prepareStatement("DELETE FROM template_spool_ref where id=?");
+                    pstmt.setLong(1, id);
+                    pstmt.executeUpdate();
+                }
+
+            }
+            rs.close();
+            pstmt.close();
+
+            s_logger.debug("Finished deleting orphaned template_spool_ref(s)");
+        } catch (Exception e) {
+            s_logger.error("Failed to delete orphaned template_spool_ref(s): ", e);
+            throw new CloudRuntimeException("Failed to delete orphaned template_spool_ref(s): ", e);
+        }
     }
 }
