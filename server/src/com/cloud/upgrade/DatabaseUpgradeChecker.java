@@ -73,10 +73,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
         } catch (FileNotFoundException e) {
+            s_logger.error("Unable to find upgrade script: " + file.getAbsolutePath(), e);
             throw new CloudRuntimeException("Unable to find upgrade script: " + file.getAbsolutePath(), e);
         } catch (IOException e) {
+            s_logger.error("Unable to read upgrade script: " + file.getAbsolutePath(), e);
             throw new CloudRuntimeException("Unable to read upgrade script: " + file.getAbsolutePath(), e);
         } catch (SQLException e) {
+            s_logger.error("Unable to execute upgrade script: " + file.getAbsolutePath(), e);
             throw new CloudRuntimeException("Unable to execute upgrade script: " + file.getAbsolutePath(), e);
         }
     }
@@ -89,10 +92,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         DbUpgrade[] upgrades = _upgradeMap.get(trimmedDbVersion);
         if (upgrades == null) {
+            s_logger.error("There is no upgrade path from " + dbVersion + " to " + currentVersion);
             throw new CloudRuntimeException("There is no upgrade path from " + dbVersion + " to " + currentVersion);
         }
 
         if (Version.compare(trimmedCurrentVersion, upgrades[upgrades.length - 1].getUpgradedVersion()) != 0) {
+            s_logger.error("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() + " but our management server code version is at " + currentVersion);
             throw new CloudRuntimeException("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() + " but our management server code version is at "
                     + currentVersion);
         }
@@ -106,6 +111,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
 
         if (!supportsRollingUpgrade && ClusterManagerImpl.arePeersRunning(null)) {
+            s_logger.error("Unable to run upgrade because the upgrade sequence does not support rolling update and there are other management server nodes running");
             throw new CloudRuntimeException("Unable to run upgrade because the upgrade sequence does not support rolling update and there are other management server nodes running");
         }
 
@@ -119,6 +125,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 try {
                     conn = txn.getConnection();
                 } catch (SQLException e) {
+                    s_logger.error("Unable to upgrade the database", e);
                     throw new CloudRuntimeException("Unable to upgrade the database", e);
                 }
                 File[] scripts = upgrade.getPrepareScripts();
@@ -127,6 +134,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                         runScript(script);
                     }
                 }
+
                 upgrade.performDataMigration(conn);
                 boolean upgradeVersion = true;
 
