@@ -269,9 +269,8 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `chain_info` text;
 ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `volume_type` VARCHAR(64) NOT NULL;
 
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `state` VARCHAR(32);
-UPDATE `cloud`.`volumes` SET state='Destroy' WHERE removed IS NOT NULL OR destroyed>=1 OR status='Creating' OR status='Corrupted' OR status='Failed';
+UPDATE `cloud`.`volumes` SET state='Destroy' WHERE removed IS NOT NULL OR destroyed=1 OR status='Creating' OR status='Corrupted' OR status='Failed';
 UPDATE `cloud`.`volumes` SET state='Ready' WHERE removed IS NULL AND (destroyed=0 OR destroyed is NULL) AND status='Created';
-ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `state` VARCHAR(32) NOT NULL;
 
 ALTER TABLE `cloud`.`vlan` ADD COLUMN `network_id` bigint unsigned NOT NULL;
 ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY `fk_vlan__data_center_id`(`data_center_id`) REFERENCES `data_center`(`id`);

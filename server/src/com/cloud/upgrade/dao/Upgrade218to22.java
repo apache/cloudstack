@@ -1069,21 +1069,6 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt.close();
                 }
             }
-            // Update hypervisor type for user vm to be consistent with original 2.2.4
-            pstmt = conn.prepareStatement("UPDATE vm_instance SET hypervisor_type='XenServer' WHERE hypervisor_type='xenserver'");
-            pstmt.executeUpdate();
-            pstmt.close();
-
-            // Set account=systemAccount and domain=ROOT for CPVM/SSVM
-            pstmt = conn.prepareStatement("UPDATE vm_instance SET account_id=1, domain_id=1 WHERE type='ConsoleProxy' or type='SecondaryStorageVm'");
-            pstmt.executeUpdate();
-            pstmt.close();
-
-            // Update user statistics
-            upadteUserStats(conn);
-
-            // delete orphaned (storage pool no longer exists) template_spool_ref(s)
-            deleteOrphanedTemplateRef(conn);
 
         } catch (SQLException e) {
             s_logger.error("Can't update data center ", e);
@@ -1735,6 +1720,24 @@ public class Upgrade218to22 implements DbUpgrade {
             upgradePortForwardingRules(conn);
             upgradeLoadBalancingRules(conn);
             migrateEvents(conn);
+            // Update hypervisor type for user vm to be consistent with original 2.2.4
+            pstmt = conn.prepareStatement("UPDATE vm_instance SET hypervisor_type='XenServer' WHERE hypervisor_type='xenserver'");
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // Set account=systemAccount and domain=ROOT for CPVM/SSVM
+            pstmt = conn.prepareStatement("UPDATE vm_instance SET account_id=1, domain_id=1 WHERE type='ConsoleProxy' or type='SecondaryStorageVm'");
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // Update user statistics
+            upadteUserStats(conn);
+
+            // delete orphaned (storage pool no longer exists) template_spool_ref(s)
+            deleteOrphanedTemplateRef(conn);
+
+            // Upgrade volumes with incorrect Destroyed field
+            cleanupVolumes(conn);
         } catch (SQLException e) {
             s_logger.error("Can't perform data migration ", e);
             throw new CloudRuntimeException("Can't perform data migration ", e);
@@ -1799,6 +1802,54 @@ public class Upgrade218to22 implements DbUpgrade {
         } catch (Exception e) {
             s_logger.error("Failed to delete orphaned template_spool_ref(s): ", e);
             throw new CloudRuntimeException("Failed to delete orphaned template_spool_ref(s): ", e);
+        }
+    }
+
+    private void cleanupVolumes(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id, instance_id, account_id from volumes where destroyed=127");
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Long id = rs.getLong(1);
+                s_logger.debug("Volume id is " + id);
+                Long instanceId = rs.getLong(2);
+                Long accountId = rs.getLong(3);
+
+                boolean removeVolume = false;
+
+                pstmt = conn.prepareStatement("SELECT * from account where id=? and removed is not null");
+                pstmt.setLong(1, accountId);
+                ResultSet rs1 = pstmt.executeQuery();
+
+                if (rs1.next()) {
+                    removeVolume = true;
+                }
+
+                if (instanceId != null) {
+                    pstmt = conn.prepareStatement("SELECT * from vm_instance where id=? and removed is not null");
+                    pstmt.setLong(1, instanceId);
+                    rs1 = pstmt.executeQuery();
+
+                    if (rs1.next()) {
+                        removeVolume = true;
+                    }
+                }
+
+                if (removeVolume) {
+                    pstmt = conn.prepareStatement("UPDATE volumes SET state='Destroy' WHERE id=?");
+                    pstmt.setLong(1, id);
+                    pstmt.executeUpdate();
+                    s_logger.debug("Volume with id=" + id + " is marked with Destroy state as a part of volume cleanup (it's Destroyed had 127 value)");
+                }
+            }
+            rs.close();
+            pstmt.close();
+
+            s_logger.debug("Finished cleaning up volumes with incorrect Destroyed field (127)");
+        } catch (Exception e) {
+            s_logger.error("Failed to cleanup volumes with incorrect Destroyed field (127):", e);
+            throw new CloudRuntimeException("Failed to cleanup volumes with incorrect Destroyed field (127):", e);
         }
     }
 }
