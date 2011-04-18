@@ -65,8 +65,7 @@ public class ApiDispatcher {
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
-        
-        String errorMsg = "";
+
         setupParameters(cmd, params);
 
         try {
@@ -74,109 +73,84 @@ public class ApiDispatcher {
             ctx.setAccountId(cmd.getEntityOwnerId());
             cmd.create();
         } catch (Throwable t) {
-            if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
+            if (t instanceof InvalidParameterValueException || t instanceof IllegalArgumentException) {
                 s_logger.info(t.getMessage());
-                errorMsg = "Parameter error";
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             } else if (t instanceof PermissionDeniedException) {
                 s_logger.info("PermissionDenied: " + t.getMessage());
-                errorMsg = "Permission denied";
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             } else if (t instanceof AccountLimitException) {
                 s_logger.info(t.getMessage());
-                errorMsg = "Account resource limit error";
                 throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
-            }else if (t instanceof InsufficientCapacityException) {
+            } else if (t instanceof InsufficientCapacityException) {
                 s_logger.info(t.getMessage());
-                errorMsg = "Insufficient capacity";
                 throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
             } else if (t instanceof ResourceAllocationException) {
                 s_logger.info(t.getMessage());
-                errorMsg = "Resource allocation error";
                 throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
             } else if (t instanceof ResourceUnavailableException) {
                 s_logger.warn("Exception: ", t);
-                errorMsg = "Resource unavailable error";
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             } else if (t instanceof AsyncCommandQueued) {
-                throw (AsyncCommandQueued)t;
+                throw (AsyncCommandQueued) t;
             } else if (t instanceof ServerApiException) {
                 s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
-                errorMsg = ((ServerApiException) t).getDescription();
-                if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg.length() > 0 ? errorMsg : ((ServerApiException) t).getDescription());
-                } else {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-                }      
+                throw (ServerApiException) t;
             } else {
-                errorMsg = "Internal error";
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
                 } else {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-                }                
+                }
             }
         }
     }
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) {
-        String errorMsg = "";
         setupParameters(cmd, params);
         try {
             UserContext ctx = UserContext.current();
             ctx.setAccountId(cmd.getEntityOwnerId());
-            if(cmd instanceof BaseAsyncCmd){
-                
-                BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
+            if (cmd instanceof BaseAsyncCmd) {
+
+                BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmd;
                 String startEventId = params.get("ctxStartEventId");
                 ctx.setStartEventId(Long.valueOf(startEventId));
-                
-                //Synchronise job on the object if needed
+
+                // Synchronise job on the object if needed
                 if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
                     _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue());
                 }
             }
 
             cmd.execute();
-                
+
         } catch (Throwable t) {
-            if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
+            if (t instanceof InvalidParameterValueException || t instanceof IllegalArgumentException) {
                 s_logger.info(t.getMessage());
-                errorMsg = "Parameter error";
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             } else if (t instanceof PermissionDeniedException) {
                 s_logger.info("PermissionDenied: " + t.getMessage());
-                errorMsg = "Permission denied";
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             } else if (t instanceof AccountLimitException) {
                 s_logger.info(t.getMessage());
-                errorMsg = "Account resource limit error";
                 throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
             } else if (t instanceof InsufficientCapacityException) {
                 s_logger.info(t.getMessage());
-                errorMsg = "Insufficient capacity";
                 throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
             } else if (t instanceof ResourceAllocationException) {
                 s_logger.warn("Exception: ", t);
-                errorMsg = "Resource allocation error";
                 throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
             } else if (t instanceof ResourceUnavailableException) {
                 s_logger.warn("Exception: ", t);
-                errorMsg = "Resource unavailable error";
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             } else if (t instanceof AsyncCommandQueued) {
-                throw (AsyncCommandQueued)t;
+                throw (AsyncCommandQueued) t;
             } else if (t instanceof ServerApiException) {
-                errorMsg = ((ServerApiException) t).getDescription();
-                s_logger.warn(t.getClass()  + " : " + ((ServerApiException) t).getDescription());
-                if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg);
-                } else {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-                }
+                s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
+                throw (ServerApiException) t;
             } else {
-                errorMsg = "Internal error";
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
@@ -187,17 +161,17 @@ public class ApiDispatcher {
         }
     }
 
-    public static void setupParameters(BaseCmd cmd, Map<String, String> params){
+    public static void setupParameters(BaseCmd cmd, Map<String, String> params) {
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
-        
-        if (cmd instanceof BaseListCmd) {     
+
+        if (cmd instanceof BaseListCmd) {
             if ((unpackedParams.get(ApiConstants.PAGE) == null) && (unpackedParams.get(ApiConstants.PAGE_SIZE) != null)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
             } else if ((unpackedParams.get(ApiConstants.PAGE_SIZE) == null) && (unpackedParams.get(ApiConstants.PAGE) != null)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"pagesize\" parameter is required when \"page\" is specified");
             }
         }
-        
+
         Field[] fields = cmd.getClass().getDeclaredFields();
         Class<?> superClass = cmd.getClass().getSuperclass();
         while (BaseCmd.class.isAssignableFrom(superClass)) {
@@ -232,7 +206,8 @@ public class ApiDispatcher {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter "
+                        + parameterAnnotation.name());
             } catch (ParseException parseEx) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName());
