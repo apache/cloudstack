@@ -474,7 +474,7 @@ public class Upgrade218to22 implements DbUpgrade {
             insertNic(conn, networkId, (Long) vm[0], running, (String) vm[1], (String) vm[2], (String) vm[3], "Start", gateway, vnet, "ExternalGuestNetworkGuru", true, 0, "Dhcp", null);
         }
 
-        pstmt = conn.prepareStatement("SELECT state FROm vm_instance WHERE id=?");
+        pstmt = conn.prepareStatement("SELECT state FROM vm_instance WHERE id=?");
         pstmt.setLong(1, domainRouterId);
         rs = pstmt.executeQuery();
         rs.next();
@@ -525,7 +525,10 @@ public class Upgrade218to22 implements DbUpgrade {
             boolean running = false;
             if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
                 running = true;
-                count++;
+                String type = (String) vm[5];
+                if (type.equalsIgnoreCase("User")) {
+                    count++;
+                }
             }
             insertNic(conn, networkId, (Long) vm[0], running, (String) vm[1], (String) vm[2], (String) vm[3], "Start", gateway, vnet, "DirectPodBasedNetworkGuru", true, 0, "Dhcp", null);
         }
@@ -541,8 +544,21 @@ public class Upgrade218to22 implements DbUpgrade {
         rs.close();
         pstmt.close();
 
+        Long originalNicsCount = 0L;
+        pstmt = conn.prepareStatement("SELECT nics_count from op_networks where id=?");
+        pstmt.setLong(1, networkId);
+        ResultSet originalCountRs = pstmt.executeQuery();
+
+        if (originalCountRs.next()) {
+            originalNicsCount = originalCountRs.getLong(1);
+        }
+
+        Long resultCount = originalNicsCount + count;
+        originalCountRs.close();
+        pstmt.close();
+
         pstmt = conn.prepareStatement("UPDATE op_networks SET nics_count=?, check_for_gc=? WHERE id=?");
-        pstmt.setLong(1, count);
+        pstmt.setLong(1, resultCount);
         if (count == 0) {
             pstmt.setBoolean(2, false);
         } else {
@@ -1113,7 +1129,6 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt = conn.prepareStatement("SELECT id from vm_instance where account_id=? AND data_center_id=? AND type='DomainRouter'");
                 pstmt.setLong(1, accountId);
                 pstmt.setLong(2, dataCenterId);
-                s_logger.debug("Query is " + pstmt);
                 ResultSet rs1 = pstmt.executeQuery();
 
                 if (!rs1.next()) {
@@ -1137,7 +1152,6 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt = conn.prepareStatement("UPDATE user_statistics SET device_id=? where id=?");
                 pstmt.setLong(1, deviceId);
                 pstmt.setLong(2, id);
-                s_logger.debug("Query is " + pstmt);
                 pstmt.executeUpdate();
 
                 pstmt = conn.prepareStatement("");
