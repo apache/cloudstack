@@ -65,6 +65,7 @@ public class Upgrade222to224 implements DbUpgrade {
         updateNicsWithMode(conn);
         updateUserStatsWithNetwork(conn);
         dropIndexIfExists(conn);
+        fixBasicZoneNicCount(conn);
     }
 
     @Override
@@ -245,6 +246,48 @@ public class Upgrade222to224 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to drop 'path' index for 'domain' table due to:", e);
         }
+    }
 
+    private void fixBasicZoneNicCount(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id from data_center where networktype='Basic'");
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Long zoneId = rs.getLong(1);
+                Long networkId = null;
+                Long vmCount = 0L;
+                s_logger.debug("Updating basic zone id=" + zoneId + " with correct nic count");
+
+                pstmt = conn.prepareStatement("SELECT id from networks where data_center_id=? AND guest_type='Direct'");
+                pstmt.setLong(1, zoneId);
+                rs = pstmt.executeQuery();
+
+                if (rs.next()) {
+                    networkId = rs.getLong(1);
+                } else {
+                    continue;
+                }
+
+                pstmt = conn.prepareStatement("SELECT count(*) from vm_instance where name like 'i-%' and (state='Running' or state='Starting' or state='Stopping')");
+                rs = pstmt.executeQuery();
+
+                if (rs.next()) {
+                    vmCount = rs.getLong(1);
+                }
+
+                pstmt = conn.prepareStatement("UPDATE op_networks set nics_count=? where id=?");
+                pstmt.setLong(1, vmCount);
+                pstmt.setLong(2, networkId);
+                pstmt.executeUpdate();
+
+            }
+
+            s_logger.debug("Basic zones are updated with correct nic counts successfully");
+            rs.close();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to drop 'path' index for 'domain' table due to:", e);
+        }
     }
 }
