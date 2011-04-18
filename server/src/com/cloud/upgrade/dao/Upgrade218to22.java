@@ -847,6 +847,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Management-Network'");
             rs = pstmt.executeQuery();
             if (!rs.next()) {
+                s_logger.error("Unable to find the management network offering.");
                 throw new CloudRuntimeException("Unable to find the management network offering.");
             }
             long managementNetworkOfferingId = rs.getLong(1);
@@ -856,6 +857,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Public-Network'");
             rs = pstmt.executeQuery();
             if (!rs.next()) {
+                s_logger.error("Unable to find the public network offering.");
                 throw new CloudRuntimeException("Unable to find the public network offering.");
             }
             long publicNetworkOfferingId = rs.getLong(1);
@@ -865,6 +867,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Control-Network'");
             rs = pstmt.executeQuery();
             if (!rs.next()) {
+                s_logger.error("Unable to find the control network offering.");
                 throw new CloudRuntimeException("Unable to find the control network offering.");
             }
             long controlNetworkOfferingId = rs.getLong(1);
@@ -874,6 +877,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt = conn.prepareStatement("SELECT id FROM network_offerings WHERE name='System-Storage-Network'");
             rs = pstmt.executeQuery();
             if (!rs.next()) {
+                s_logger.error("Unable to find the storage network offering.");
                 throw new CloudRuntimeException("Unable to find the storage network offering.");
             }
             long storageNetworkOfferingId = rs.getLong(1);
@@ -1082,6 +1086,7 @@ public class Upgrade218to22 implements DbUpgrade {
             deleteOrphanedTemplateRef(conn);
 
         } catch (SQLException e) {
+            s_logger.error("Can't update data center ", e);
             throw new CloudRuntimeException("Can't update data center ", e);
         }
     }
@@ -1721,12 +1726,20 @@ public class Upgrade218to22 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        upgradeDataCenter(conn);
-        upgradeStoragePools(conn);
-        upgradeInstanceGroups(conn);
-        upgradePortForwardingRules(conn);
-        upgradeLoadBalancingRules(conn);
-        migrateEvents(conn);
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("USE cloud");
+            pstmt.executeQuery();
+            upgradeDataCenter(conn);
+            upgradeStoragePools(conn);
+            upgradeInstanceGroups(conn);
+            upgradePortForwardingRules(conn);
+            upgradeLoadBalancingRules(conn);
+            migrateEvents(conn);
+        } catch (SQLException e) {
+            s_logger.error("Can't perform data migration ", e);
+            throw new CloudRuntimeException("Can't perform data migration ", e);
+        }
+
     }
 
     @Override
