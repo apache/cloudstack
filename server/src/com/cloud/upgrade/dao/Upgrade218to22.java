@@ -687,9 +687,9 @@ public class Upgrade218to22 implements DbUpgrade {
         pstmt.close();
 
         s_logger.debug("Marking " + allocatedIps.size() + " ip addresses to belong to network " + networkId);
+        s_logger.debug("Updating mac addresses for data center id=" + dcId + ". Found " + allocatedIps.size() + " ip addresses to update");
 
         for (Object[] allocatedIp : allocatedIps) {
-            s_logger.debug("Updating mac addresses for data center id=" + dcId);
             pstmt = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");
             pstmt.setLong(1, dcId);
             rs = pstmt.executeQuery();
@@ -908,9 +908,9 @@ public class Upgrade218to22 implements DbUpgrade {
                         pstmt.setLong(2, vlanId);
                         pstmt.executeUpdate();
                         pstmt.close();
-
-                        upgradeDirectUserIpAddress(conn, dcId, basicDefaultDirectNetworkId, "DirectAttached");
                     }
+
+                    upgradeDirectUserIpAddress(conn, dcId, basicDefaultDirectNetworkId, "DirectAttached");
 
                     // update Dhcp servers information in domain_router and vm_instance tables; all domRs belong to the same
                     // network
