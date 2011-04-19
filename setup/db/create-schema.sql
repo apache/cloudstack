@@ -1494,4 +1494,14 @@ CREATE TABLE `cloud`.`cmd_exec_log` (
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`keystore` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(64) NOT NULL COMMENT 'unique name for the certifiation',
+  `certificate` text NOT NULL COMMENT 'the actual certificate being stored in the db',
+  `key` text NOT NULL COMMENT 'private key associated wih the certificate',
+  `domain_suffix` varchar(256) NOT NULL COMMENT 'DNS domain suffix associated with the certificate',
+  PRIMARY KEY (`id`),
+  UNIQUE(name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks = 1;
