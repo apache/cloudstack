@@ -1819,7 +1819,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (isShared == null || isShared) {
                     List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
                     for (NetworkVO network : allNetworks) {
-                        if (!isNetworkAvailableInDomain(network.getId(), domainId)) {
+                        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                        if (!isNetworkAvailableInDomain(network.getId(), domainId) || offering.isSystemOnly()) {
                             avoidNetworks.add(network.getId());
                         } else {
                             allowedSharedNetworks.add(network.getId());
@@ -1836,6 +1837,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (domainId != null && accountName == null) {
             List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
             for (NetworkVO network : allNetworks) {
+
                 if (!isNetworkAvailableInDomain(network.getId(), domainId)) {
                     avoidNetworks.add(network.getId());
                 }
