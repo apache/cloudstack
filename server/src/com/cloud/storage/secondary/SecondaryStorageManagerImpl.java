@@ -185,8 +185,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private String _allowedInternalSites;
 
     private SystemVmLoadScanner<Long> _loadScanner;
-    private Map<Long, ZoneHostInfo> _zoneHostInfoMap;					// map <zone id, info about running host in zone>
-    
+    private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
+
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
     @Override
@@ -255,7 +255,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             String privateCidr = NetUtils.ipAndNetMaskToCidr(privateNic.getIp4Address(), privateNic.getNetmask());
             String publicCidr = NetUtils.ipAndNetMaskToCidr(secStorageVm.getPublicIpAddress(), secStorageVm.getPublicNetmask());
             if (NetUtils.isNetworkAWithinNetworkB(privateCidr, publicCidr) || NetUtils.isNetworkAWithinNetworkB(publicCidr, privateCidr)) {
-            	s_logger.info("private and public interface overlaps, add a default route through private interface. privateCidr: " + privateCidr + ", publicCidr: " + publicCidr);
+                s_logger.info("private and public interface overlaps, add a default route through private interface. privateCidr: " + privateCidr + ", publicCidr: " + publicCidr);
                 allowedCidrs.add("0.0.0.0/0");
             }
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
@@ -278,9 +278,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     }
 
     @Override
-	public Pair<HostVO, SecondaryStorageVmVO> assignSecStorageVm(long zoneId, Command cmd) {
-		return null;
-	}
+    public Pair<HostVO, SecondaryStorageVmVO> assignSecStorageVm(long zoneId, Command cmd) {
+        return null;
+    }
 
     private boolean generateFirewallConfigurationForZone(Long zoneId) {
         List<SecondaryStorageVmVO> zoneSsvms = _secStorageVmDao.listByZoneId(SecondaryStorageVm.Role.templateProcessor, zoneId);
@@ -354,15 +354,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             return secStorageVm;
         } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to allocate secondary storage vm storage, remove the secondary storage vm record from DB, secondary storage vm id: "
-                        + secStorageVmId);
+                s_logger.debug("Unable to allocate secondary storage vm storage, remove the secondary storage vm record from DB, secondary storage vm id: " + secStorageVmId);
             }
 
-            SubscriptionMgr.getInstance().notifySubscribers(
-                    ALERT_SUBJECT,
-                    this,
-                    new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_CREATE_FAILURE, dataCenterId, secStorageVmId, null,
-                            "Unable to allocate storage"));
+            SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
+                    new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_CREATE_FAILURE, dataCenterId, secStorageVmId, null, "Unable to allocate storage"));
         }
         return null;
     }
@@ -383,37 +379,34 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
         List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
-        
+
         if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
             defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemGuestNetwork);
         }
 
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork,
-                NetworkOfferingVO.SystemManagementNetwork);
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
-            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false)
-                    .get(0), defaultNic));
+            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false).get(0), defaultNic));
             for (NetworkOfferingVO offering : offerings) {
-                networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0),
-                        null));
+                networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
             }
         } catch (ConcurrentOperationException e) {
             s_logger.info("Unable to setup due to concurrent operation. " + e);
             return new HashMap<String, Object>();
         }
-        
+
         VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
         if (template == null) {
             s_logger.debug("Can't find a template to start");
             throw new CloudRuntimeException("Insufficient capacity exception");
         }
-        
-        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(),
-                template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), role);
+
+        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
+                systemAcct.getDomainId(), systemAcct.getId(), role);
         try {
             secStorageVm = _itMgr.allocate(secStorageVm, template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {
@@ -521,8 +514,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     }
                 } else {
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Unable to acquire synchronization lock to start secStorageVm for standby capacity, secStorageVm vm id : "
-                                + secStorageVm.getId());
+                        s_logger.info("Unable to acquire synchronization lock to start secStorageVm for standby capacity, secStorageVm vm id : " + secStorageVm.getId());
                     }
                     return;
                 }
@@ -532,8 +524,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
             if (secStorageVm == null) {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Unable to start secondary storage vm for standby capacity, secStorageVm vm Id : " + secStorageVmId
-                            + ", will recycle it and start a new one");
+                    s_logger.info("Unable to start secondary storage vm for standby capacity, secStorageVm vm Id : " + secStorageVmId + ", will recycle it and start a new one");
                 }
 
                 if (secStorageVmFromStoppedPool) {
@@ -554,8 +545,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
             if (secHost == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No secondary storage available in zone " + dataCenterId
-                            + ", wait until it is ready to launch secondary storage vm");
+                    s_logger.debug("No secondary storage available in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
                 }
                 return false;
             }
@@ -616,7 +606,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     @Override
     public boolean stop() {
-    	_loadScanner.stop();
+        _loadScanner.stop();
         _allocLock.releaseRef();
         return true;
     }
@@ -761,11 +751,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     s_logger.debug("Successfully reboot secondary storage vm " + secStorageVm.getName());
                 }
 
-                SubscriptionMgr.getInstance().notifySubscribers(
-                        ALERT_SUBJECT,
-                        this,
-                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterId(),
-                                secStorageVm.getId(), secStorageVm, null));
+                SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
+                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterId(), secStorageVm.getId(), secStorageVm, null));
 
                 return true;
             } else {
@@ -825,8 +812,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest,
-            ReservationContext context) {
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest, ReservationContext context) {
 
         HostVO secHost = _hostDao.findSecondaryStorageHost(dest.getDataCenter().getId());
         assert (secHost != null);
@@ -840,11 +826,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         buf.append(" zone=").append(dest.getDataCenter().getId());
         buf.append(" pod=").append(dest.getPod().getId());
 
-        if(profile.getVirtualMachine().getRole() == SecondaryStorageVm.Role.templateProcessor)
-        	buf.append(" guid=").append(secHost.getGuid());
+        if (profile.getVirtualMachine().getRole() == SecondaryStorageVm.Role.templateProcessor)
+            buf.append(" guid=").append(secHost.getGuid());
         else
-        	buf.append(" guid=").append(profile.getVirtualMachine().getName());
-        
+            buf.append(" guid=").append(profile.getVirtualMachine().getName());
+
         String nfsMountPoint = null;
         try {
             nfsMountPoint = NfsUtils.url2Mount(secHost.getStorageUrl());
@@ -852,13 +838,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         buf.append(" mount.path=").append(nfsMountPoint);
-        if(_configDao.isPremium()) {
+        if (_configDao.isPremium()) {
             if (profile.getHypervisorType() == HypervisorType.Hyperv) {
-            	buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
+                buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
             } else
-            	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
-        } else	
-        	buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+                buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
+        } else
+            buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
         buf.append(" role=").append(profile.getVirtualMachine().getRole().toString());
@@ -884,11 +870,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 buf.append(" gateway=").append(nic.getGateway());
             }
             if (nic.getTrafficType() == TrafficType.Management) {
-            	String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
-            	if (NetUtils.isValidCIDR(mgmt_cidr)) {
-            	    buf.append(" mgmtcidr=").append(mgmt_cidr);
-            	}
-            	
+                String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+                if (NetUtils.isValidCIDR(mgmt_cidr)) {
+                    buf.append(" mgmtcidr=").append(mgmt_cidr);
+                }
+
                 buf.append(" localgw=").append(dest.getPod().getGateway());
                 buf.append(" private.network.device=").append("eth").append(deviceId);
             } else if (nic.getTrafficType() == TrafficType.Public) {
@@ -916,9 +902,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest,
-            ReservationContext context) {
-        
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest, ReservationContext context) {
+
         finalizeCommandsOnStart(cmds, profile);
 
         SecondaryStorageVmVO secVm = profile.getVirtualMachine();
@@ -926,7 +911,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
             if ((nic.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced)
-                || (nic.getTrafficType() == TrafficType.Guest && (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()))) {
+                    || (nic.getTrafficType() == TrafficType.Guest && (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()))) {
                 secVm.setPublicIpAddress(nic.getIp4Address());
                 secVm.setPublicNetmask(nic.getNetmask());
                 secVm.setPublicMacAddress(nic.getMacAddress());
@@ -938,28 +923,31 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _secStorageVmDao.update(secVm.getId(), secVm);
         return true;
     }
-    
+
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile) {
-        
+
         NicProfile managementNic = null;
         NicProfile controlNic = null;
         for (NicProfile nic : profile.getNics()) {
-           if (nic.getTrafficType() == TrafficType.Management) {
-               managementNic = nic;
-           } else if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
-               controlNic = nic;
-           }
+            if (nic.getTrafficType() == TrafficType.Management) {
+                managementNic = nic;
+            } else if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
+                controlNic = nic;
+            }
         }
 
         if (controlNic == null) {
-          assert (managementNic != null);
-          controlNic = managementNic;
+            if (managementNic == null) {
+                s_logger.error("Management network doesn't exist for the secondaryStorageVm " + profile.getVirtualMachine());
+                return false;
+            }
+            controlNic = managementNic;
         }
 
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
         cmds.addCommand("checkSsh", check);
-        
+
         return true;
     }
 
@@ -977,88 +965,86 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Override
     public void finalizeStop(VirtualMachineProfile<SecondaryStorageVmVO> profile, StopAnswer answer) {
     }
-    
+
     @Override
     public void finalizeExpunge(SecondaryStorageVmVO vm) {
     }
-    
-    @Override
-	public String getScanHandlerName() {
-		return "secstorage";
-	}
-    
-    @Override
-	public boolean canScan() {
-		return true;
-	}
 
     @Override
-	public void onScanStart() {
+    public String getScanHandlerName() {
+        return "secstorage";
+    }
+
+    @Override
+    public boolean canScan() {
+        return true;
+    }
+
+    @Override
+    public void onScanStart() {
         _zoneHostInfoMap = getZoneHostInfo();
-	}
-	
-    @Override
-	public Long[] getScannablePools() {
-		List<DataCenterVO> zones = _dcDao.listEnabledZones();
+    }
 
-		Long[] dcIdList = new Long[zones.size()];
-		int i = 0;
-		for(DataCenterVO dc : zones) {
-			dcIdList[i++] = dc.getId();
-		}
-		
-		return dcIdList;
-	}
-	
     @Override
-	public boolean isPoolReadyForScan(Long pool) {
-		// pool is at zone basis
-		long dataCenterId = pool.longValue();
-		
-		if(!isZoneReady(_zoneHostInfoMap, dataCenterId)) {
-			if(s_logger.isDebugEnabled())
-				s_logger.debug("Zone " + dataCenterId + " is not ready to launch secondary storage VM yet");
-			return false;
-		}
+    public Long[] getScannablePools() {
+        List<DataCenterVO> zones = _dcDao.listEnabledZones();
 
-		if(s_logger.isDebugEnabled())
-			s_logger.debug("Zone " + dataCenterId + " is ready to launch secondary storage VM");
-		return true;
-	}
-	
+        Long[] dcIdList = new Long[zones.size()];
+        int i = 0;
+        for (DataCenterVO dc : zones) {
+            dcIdList[i++] = dc.getId();
+        }
+
+        return dcIdList;
+    }
+
     @Override
-	public Pair<AfterScanAction, Object> scanPool(Long pool) {
-		long dataCenterId = pool.longValue();
-    	
-        List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running,
-                State.Migrating, State.Starting);
-        List<SecondaryStorageVmVO> stopped = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Stopped,
-                State.Stopping);
+    public boolean isPoolReadyForScan(Long pool) {
+        // pool is at zone basis
+        long dataCenterId = pool.longValue();
+
+        if (!isZoneReady(_zoneHostInfoMap, dataCenterId)) {
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Zone " + dataCenterId + " is not ready to launch secondary storage VM yet");
+            return false;
+        }
+
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Zone " + dataCenterId + " is ready to launch secondary storage VM");
+        return true;
+    }
+
+    @Override
+    public Pair<AfterScanAction, Object> scanPool(Long pool) {
+        long dataCenterId = pool.longValue();
+
+        List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating,
+                State.Starting);
+        List<SecondaryStorageVmVO> stopped = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Stopped, State.Stopping);
         if (alreadyRunning.size() == 0) {
             if (stopped.size() == 0) {
                 s_logger.info("No secondary storage vms found in datacenter id=" + dataCenterId + ", starting a new one");
-            	return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
+                return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
             } else {
-                s_logger.warn("Stopped secondary storage vms found in datacenter id=" + dataCenterId
-                        + ", not restarting them automatically");
+                s_logger.warn("Stopped secondary storage vms found in datacenter id=" + dataCenterId + ", not restarting them automatically");
             }
         }
-        
+
         return new Pair<AfterScanAction, Object>(AfterScanAction.nop, SecondaryStorageVm.Role.templateProcessor);
-	}
-	
+    }
+
     @Override
-	public void expandPool(Long pool, Object actionArgs) {
-		long dataCenterId = pool.longValue();
-        allocCapacity(dataCenterId, (SecondaryStorageVm.Role)actionArgs);
-	}
-	
+    public void expandPool(Long pool, Object actionArgs) {
+        long dataCenterId = pool.longValue();
+        allocCapacity(dataCenterId, (SecondaryStorageVm.Role) actionArgs);
+    }
+
     @Override
-	public void shrinkPool(Long pool, Object actionArgs) {
-	}
-	
+    public void shrinkPool(Long pool, Object actionArgs) {
+    }
+
     @Override
-	public void onScanEnd() {
-	}
-    
+    public void onScanEnd() {
+    }
+
 }

@@ -96,6 +96,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.org.Cluster;
@@ -1480,6 +1481,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     vm = vmGuru.findById(vm.getId());
 
                     VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+                    List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
+                    for (NicVO nic : nics) {
+                        Network network = _networkMgr.getNetwork(nic.getNetworkId());
+                        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null);
+                        profile.addNic(nicProfile);
+                    }
 
                     Commands cmds = new Commands(OnError.Revert);
                     s_logger.debug("Finalizing commands that need to be send to complete Start process for the vm " + vm);
