@@ -405,7 +405,7 @@ public class UploadMonitorImpl implements UploadMonitor {
             try {
                 s_logger.info("Extract Monitor Garbage Collection Thread is running.");
 
-                GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
+                GlobalLock scanLock = GlobalLock.getInternLock("uploadmonitor.storageGC");
                 try {
                     if (scanLock.lock(3)) {
                         try {

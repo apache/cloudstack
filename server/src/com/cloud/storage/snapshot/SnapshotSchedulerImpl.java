@@ -108,7 +108,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         // We don't maintain the time. The timer task does.
         _currentTimestamp = currentTimestamp;
         
-        GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
+        GlobalLock scanLock = GlobalLock.getInternLock("snapshot.poll");
         try {
             if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                 try {
