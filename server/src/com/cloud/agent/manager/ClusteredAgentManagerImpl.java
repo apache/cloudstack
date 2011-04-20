@@ -91,7 +91,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 	}
 	
 	private void runDirectAgentScanTimerTask() {
-		GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
+		GlobalLock scanLock = GlobalLock.getInternLock("clustermgr.scan");
 		try {
 			if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
 				try {

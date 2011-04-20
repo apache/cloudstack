@@ -22,6 +22,7 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 
 public interface SystemVmLoadScanHandler<T> {
+	String getScanHandlerName();
 	boolean canScan();
 
 	void onScanStart();

@@ -702,17 +702,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     @Override
     public boolean stopSecStorageVm(long secStorageVmId) {
-
-//        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-//        if (asyncExecutor != null) {
-//            AsyncJobVO job = asyncExecutor.getJob();
-//
-//            if (s_logger.isInfoEnabled()) {
-//                s_logger.info("Stop secondary storage vm " + secStorageVmId + ", update async job-" + job.getId());
-//            }
-//            _asyncMgr.updateAsyncJobAttachment(job.getId(), "secStorageVm", secStorageVmId);
-//        }
-
         SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
         if (secStorageVm == null) {
             String msg = "Stopping secondary storage vm failed: secondary storage vm " + secStorageVmId + " no longer exists";
@@ -757,16 +746,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     @Override
     public boolean rebootSecStorageVm(long secStorageVmId) {
-//        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-//        if (asyncExecutor != null) {
-//            AsyncJobVO job = asyncExecutor.getJob();
-//
-//            if (s_logger.isInfoEnabled()) {
-//                s_logger.info("Reboot secondary storage vm " + secStorageVmId + ", update async job-" + job.getId());
-//            }
-//            _asyncMgr.updateAsyncJobAttachment(job.getId(), "secstorage_vm", secStorageVmId);
-//        }
-
         final SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
 
         if (secStorageVm == null || secStorageVm.getState() == State.Destroyed) {
@@ -1002,6 +981,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Override
     public void finalizeExpunge(SecondaryStorageVmVO vm) {
     }
+    
+    @Override
+	public String getScanHandlerName() {
+		return "secstorage";
+	}
     
     @Override
 	public boolean canScan() {

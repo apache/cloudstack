@@ -74,7 +74,6 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
@@ -1024,17 +1023,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean stopProxy(long proxyVmId) {
-
-//        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-//        if (asyncExecutor != null) {
-//            AsyncJobVO job = asyncExecutor.getJob();
-//
-//            if (s_logger.isInfoEnabled()) {
-//                s_logger.info("Stop console proxy " + proxyVmId + ", update async job-" + job.getId());
-//            }
-//            _asyncMgr.updateAsyncJobAttachment(job.getId(), "console_proxy", proxyVmId);
-//        }
-
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         if (proxy == null) {
             if (s_logger.isDebugEnabled()) {
@@ -1042,11 +1030,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             }
             return false;
         }
-        /*
-         * saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-         * EventTypes.EVENT_PROXY_STOP, "Stopping console proxy with Id: " +
-         * proxyVmId, startEventId);
-         */
+        
         try {
             return _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
         } catch (ResourceUnavailableException e) {
@@ -1057,16 +1041,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean rebootProxy(long proxyVmId) {
-//        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-//        if (asyncExecutor != null) {
-//            AsyncJobVO job = asyncExecutor.getJob();
-//
-//            if (s_logger.isInfoEnabled()) {
-//                s_logger.info("Reboot console proxy " + proxyVmId + ", update async job-" + job.getId());
-//            }
-//            _asyncMgr.updateAsyncJobAttachment(job.getId(), "console_proxy", proxyVmId);
-//        }
-
         final ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
 
         if (proxy == null || proxy.getState() == State.Destroyed) {
@@ -1423,6 +1397,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
     }
 
+    @Override
+	public String getScanHandlerName() {
+		return "consoleproxy";
+	}
+    
     @Override
 	public void onScanStart() {
         // to reduce possible number of DB queries for capacity scan, we run following aggregated queries in preparation stage

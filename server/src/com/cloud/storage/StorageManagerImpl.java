@@ -1822,7 +1822,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public void cleanupStorage(boolean recurring) {
-        GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
+        GlobalLock scanLock = GlobalLock.getInternLock("storagemgr.cleanup");
 
         try {
             if (scanLock.lock(3)) {

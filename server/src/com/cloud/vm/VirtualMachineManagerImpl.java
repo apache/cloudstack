@@ -1125,7 +1125,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     
     protected void cancelWorkItems(long nodeId) {
-        GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
+        GlobalLock scanLock = GlobalLock.getInternLock("vmmgr.cancel.workitem");
 
         try {
             if (scanLock.lock(3)) {
