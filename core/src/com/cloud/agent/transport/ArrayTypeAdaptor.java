@@ -40,10 +40,10 @@ import com.google.gson.JsonSerializer;
 public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerializer<T[]> {
 
 	static final GsonBuilder s_gBuilder;
+	static final GsonBuilder s_exposeAnnotationBuilder;
     static {
         s_gBuilder = Request.initBuilder();
-//        final Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
-//        s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
+        s_exposeAnnotationBuilder = Request.initBuilderWithExposeAnnotation();
     }
 	
 	
@@ -56,6 +56,12 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
         Gson gson = s_gBuilder.create();
         JsonArray array = new JsonArray();
         for (T cmd : src) {
+        	if(typeOfSrc.getClass().isInstance(Command.class)){
+        		Command innercmd = (Command)cmd;
+        		if(innercmd.doesCommandUseExposeAnnotation()){
+        			gson = s_exposeAnnotationBuilder.create();
+        		}
+        	}
             JsonObject obj = new JsonObject();
             obj.add(cmd.getClass().getName().substring(s_pkg.length()), gson.toJsonTree(cmd));
             array.add(obj);

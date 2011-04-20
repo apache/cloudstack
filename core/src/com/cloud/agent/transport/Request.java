@@ -32,6 +32,8 @@ import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -88,19 +90,32 @@ public class Request {
     protected static final short FLAG_CONTROL = 0x40;
 
     protected static final GsonBuilder s_gBuilder;
+    protected static final GsonBuilder s_exposeAnnotationBuilder;
+
     static {
         s_gBuilder = new GsonBuilder();
-        s_gBuilder.registerTypeAdapter(Command[].class, new ArrayTypeAdaptor<Command>());
-        s_gBuilder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
-//        final Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
-//        s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
-        s_gBuilder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {}.getType(), new PortConfigListTypeAdaptor());
-        s_gBuilder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {}.getType(), new NwGroupsCommandTypeAdaptor());
-        s_logger.info("Builder inited.");
+        setDefaultGsonConfig(s_gBuilder);
+        s_logger.info("Default Builder inited.");
+        
+        s_exposeAnnotationBuilder = new GsonBuilder();
+        setDefaultGsonConfig(s_exposeAnnotationBuilder);
+		s_exposeAnnotationBuilder.excludeFieldsWithoutExposeAnnotation();
+        s_logger.info("Expose annotation Builder inited.");
+    }
+    
+    public static void setDefaultGsonConfig(GsonBuilder builder){
+    	builder.registerTypeAdapter(Command[].class, new ArrayTypeAdaptor<Command>());
+    	builder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
+    	builder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {}.getType(), new PortConfigListTypeAdaptor());
+    	builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {}.getType(), new NwGroupsCommandTypeAdaptor());
     }
 
     public static GsonBuilder initBuilder() {
         return s_gBuilder;
+    }
+    
+    public static GsonBuilder initBuilderWithExposeAnnotation() {
+        return s_exposeAnnotationBuilder;
     }
 
     protected Version                 _ver;
@@ -240,7 +255,7 @@ public class Request {
     public String toString() {
         String content = _content;
         if (content == null) {
-            final Gson gson = s_gBuilder.create();
+        	final Gson gson = s_gBuilder.create();
             try {
             	content = gson.toJson(_cmds);
             } catch(Throwable e) {
@@ -330,7 +345,7 @@ public class Request {
             s_logger.trace(buf.toString());
         }
     }
-
+    
     /**
      * Factory method for Request and Response.  It expects the bytes to be
      * correctly formed so it's possible that it throws underflow exceptions

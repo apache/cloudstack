@@ -18,9 +18,11 @@
 
 package com.cloud.agent.api;
 
+import com.google.gson.annotations.Expose;
+
 public class ModifySshKeysCommand extends Command {
-	private String _pubKey;
-	private String _prvKey;
+	@Expose(serialize = false, deserialize = false) private String _pubKey;
+	@Expose(serialize = false, deserialize = false) private String _prvKey;
 	public ModifySshKeysCommand() {
 		
 	}
@@ -39,5 +41,11 @@ public class ModifySshKeysCommand extends Command {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+	@Override
+	public boolean doesCommandUseExposeAnnotation(){
+    	return true;
+    }
+
 
 }
