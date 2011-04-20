@@ -34,33 +34,32 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-
-@Implementation(description="Stops a router.", responseObject=DomainRouterResponse.class)
+@Implementation(description = "Stops a router.", responseObject = DomainRouterResponse.class)
 public class StopRouterCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
     private static final String s_name = "stoprouterresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the router")
     private Long id;
-    
-    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
+
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM. The caller knows the VM is stopped.")
     private Boolean forced;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
@@ -81,31 +80,31 @@ public class StopRouterCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_ROUTER_STOP;
     }
-    
+
     @Override
     public String getEventDescription() {
-        return  "stopping router: " + getId();
+        return "stopping router: " + getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.DomainRouter;
+        return AsyncJob.Type.DomainRouter;
     }
-    
+
     @Override
     public Long getInstanceId() {
-    	return getId();
+        return getId();
     }
-    
+
     public boolean isForced() {
         return (forced != null) ? forced : false;
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
         VirtualRouter result = _routerService.stopRouter(getId(), isForced());
-        if (result != null){
-            DomainRouterResponse response =_responseGenerator.createDomainRouterResponse(result);
+        if (result != null) {
+            DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

@@ -24,7 +24,6 @@ import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteClusterCmd;
-import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
@@ -66,12 +65,12 @@ public interface ResourceService {
     Host maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException;
     /**
      * Deletes a host
+     * @param hostId TODO
+     * @param isForced TODO
      * 
-     * @param cmd - the command specifying hostId
      * @param true if deleted, false otherwise
-     * @throws InvalidParameterValueException
      */
-    boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException; 
+    boolean deleteHost(long hostId, boolean isForced); 
     
     Host getHost(long hostId);
 

@@ -28,47 +28,51 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 
-
-@Implementation(description="Deletes a host.", responseObject=SuccessResponse.class)
+@Implementation(description = "Deletes a host.", responseObject = SuccessResponse.class)
 public class DeleteHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteHostCmd.class.getName());
 
     private static final String s_name = "deletehostresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the host ID")
     private Long id;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Force delete the host. All HA enabled vms running on the host will be put to HA; HA disabled ones will be stopped")
+    private Boolean forced;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
 
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
+    }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
-    public void execute(){
-        boolean result = _resourceService.deleteHost(this);
+    public void execute() {
+        boolean result = _resourceService.deleteHost(getId(), isForced());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
