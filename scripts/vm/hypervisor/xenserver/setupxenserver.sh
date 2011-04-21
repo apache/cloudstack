@@ -29,6 +29,8 @@ echo 1048576 >/proc/sys/fs/aio-max-nr
 
 # empty heartbeat
 cat /dev/null > /opt/xensource/bin/heartbeat
+# empty knownhost
+cat /dev/null > /root/.ssh/known_hosts
 
 rm -f /opt/xensource/packages/iso/systemvm-premium.iso
 
