@@ -121,7 +121,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             scanLock.releaseRef();
         }
         
-        scanLock = GlobalLock.getInternLock(this.getClass().getName());
+        scanLock = GlobalLock.getInternLock("snapshot.poll");
         try {
             if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                 try {

@@ -28,7 +28,7 @@ public class SystemVmLoadScanner<T> {
 	public SystemVmLoadScanner(SystemVmLoadScanHandler<T> scanHandler) {
 		_scanHandler = scanHandler;
 		_capacityScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory(scanHandler.getClass().getSimpleName()));
-		_capacityScanLock = GlobalLock.getInternLock(scanHandler.getClass().getSimpleName() + ".scan.lock");
+		_capacityScanLock = GlobalLock.getInternLock(scanHandler.getScanHandlerName() + ".scan.lock");
 	}
 	
 	public void initScan(long startupDelayMs, long scanIntervalMs) {

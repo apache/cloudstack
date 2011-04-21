@@ -3,6 +3,7 @@ package com.cloud.vm;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 
 public interface SystemVmLoadScanHandler<T> {
+	String getScanHandlerName();
 	boolean canScan();
 
 	void onScanStart();
