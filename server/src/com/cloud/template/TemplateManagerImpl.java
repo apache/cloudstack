@@ -224,9 +224,15 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (!isAdmin && zoneId == null) {
         	throw new InvalidParameterValueException("Please specify a valid zone Id.");
         }
-        
+        String urlPath = "";
+		try {
+			urlPath = (new URI(url)).getPath();
+		} catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Invalid URL " + url);			
+		}
         if((!url.toLowerCase().endsWith("iso"))&&(!url.toLowerCase().endsWith("iso.zip"))&&(!url.toLowerCase().endsWith("iso.bz2"))
-        		&&(!url.toLowerCase().endsWith("iso.gz"))){
+        		&&(!url.toLowerCase().endsWith("iso.gz"))
+        		&&(!(urlPath.endsWith("iso")))){
         	throw new InvalidParameterValueException("Please specify a valid iso");
         }
         
