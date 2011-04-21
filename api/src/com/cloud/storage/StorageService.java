@@ -28,7 +28,6 @@ import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
@@ -55,7 +54,6 @@ public interface StorageService {
      * @param cmd
      *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
      * @return the volume object
-     * @throws InvalidParameterValueException
      * @throws PermissionDeniedException
      */
     Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
@@ -77,9 +75,8 @@ public interface StorageService {
      * @param cmd
      *            - the command specifying poolId
      * @return success or failure
-     * @throws InvalidParameterValueException
      */
-    boolean deletePool(DeletePoolCmd cmd) throws InvalidParameterValueException;
+    boolean deletePool(DeletePoolCmd cmd);
 
     /**
      * Enable maintenance for primary storage

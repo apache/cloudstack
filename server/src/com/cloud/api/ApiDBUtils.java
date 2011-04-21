@@ -504,7 +504,7 @@ public class ApiDBUtils {
         return _zoneDao.listAll();
     }
 
-    public static boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException {
+    public static boolean volumeIsOnSharedStorage(long volumeId) {
         // Check that the volume is valid
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {

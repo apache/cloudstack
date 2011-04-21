@@ -503,10 +503,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
 
         if (host.getPodId() != null) {
-        	HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
-        	if(pod != null){
-        		hostResponse.setPodName(pod.getName());
-        	}
+            HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
+            if (pod != null) {
+                hostResponse.setPodName(pod.getName());
+            }
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
@@ -590,8 +590,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (podId != null) {
             HostPodVO pod = ApiDBUtils.findPodById(podId);
             vlanResponse.setPodId(podId);
-            if(pod != null){
-            	vlanResponse.setPodName(pod.getName());
+            if (pod != null) {
+                vlanResponse.setPodName(pod.getName());
             }
         }
 
@@ -891,10 +891,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (pool.getPodId() != null) {
             poolResponse.setPodId(pool.getPodId());
-        	HostPodVO pod = ApiDBUtils.findPodById(pool.getPodId());
-        	if(pod != null){
-        		poolResponse.setPodName(pod.getName());
-        	}
+            HostPodVO pod = ApiDBUtils.findPodById(pool.getPodId());
+            if (pod != null) {
+                poolResponse.setPodName(pod.getName());
+            }
         }
         if (pool.getCreated() != null) {
             poolResponse.setCreated(pool.getCreated());
@@ -934,9 +934,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
-    	if(pod != null){
-    		clusterResponse.setPodName(pod.getName());
-    	}
+        if (pod != null) {
+            clusterResponse.setPodName(pod.getName());
+        }
         DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
         clusterResponse.setZoneName(zone.getName());
         clusterResponse.setObjectName("cluster");
@@ -1511,7 +1511,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (templateSize > 0) {
                 templateResponse.setSize(templateSize);
             }
-            
+
             templateResponse.setChecksum(template.getChecksum());
 
             templateResponse.setObjectName("template");
@@ -1572,7 +1572,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setZoneId(zone.getId());
             templateResponse.setZoneName(zone.getName());
             templateResponse.setHypervisor(template.getHypervisorType().toString());
-            templateResponse.setObjectName("template");            
+            templateResponse.setObjectName("template");
             templateResponse.setChecksum(template.getChecksum());
 
             responses.add(templateResponse);
@@ -2199,10 +2199,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (summedCapacity.getPodId() != null) {
                 capacityResponse.setPodId(summedCapacity.getPodId());
                 if (summedCapacity.getPodId() > 0) {
-                	HostPodVO pod = ApiDBUtils.findPodById(summedCapacity.getPodId());
-                	if(pod != null){
-                		capacityResponse.setPodName(pod.getName());
-                	}
+                    HostPodVO pod = ApiDBUtils.findPodById(summedCapacity.getPodId());
+                    if (pod != null) {
+                        capacityResponse.setPodName(pod.getName());
+                    }
                 } else {
                     capacityResponse.setPodName("All");
                 }
@@ -2248,7 +2248,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) throws InvalidParameterValueException {
+    public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) {
         AsyncJobResult result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
         AsyncJobResponse response = new AsyncJobResponse();
         response.setId(result.getJobId());

@@ -1215,7 +1215,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     @DB
-    public boolean deletePool(DeletePoolCmd command) throws InvalidParameterValueException {
+    public boolean deletePool(DeletePoolCmd command) {
         Long id = command.getId();
         boolean deleteFlag = false;
 
@@ -2375,7 +2375,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return true;
     }
 
-    private boolean validateVolumeSizeRange(long size) throws InvalidParameterValueException {
+    private boolean validateVolumeSizeRange(long size) {
         if (size < 0 || (size > 0 && size < 1)) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
         } else if (size > _maxVolumeSizeInGb) {

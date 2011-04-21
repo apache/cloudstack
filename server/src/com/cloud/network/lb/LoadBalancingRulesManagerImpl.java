@@ -645,7 +645,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
 
     @Override
-    public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long ipId = cmd.getPublicIpId();
         Long zoneId = cmd.getZoneId();
@@ -654,7 +654,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
         String accountName = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
-      
+
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             Domain domain = _accountMgr.getDomain(caller.getDomainId());
             path = domain.getPath();

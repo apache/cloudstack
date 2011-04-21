@@ -316,7 +316,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public Configuration updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException {
+    public Configuration updateConfiguration(UpdateCfgCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
@@ -338,7 +338,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private String validateConfigurationValue(String name, String value) throws InvalidParameterValueException {
+    private String validateConfigurationValue(String name, String value) {
         if (value == null) {
             return null;
         }
@@ -506,8 +506,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private void checkPodAttributes(long podId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationStateStr, boolean checkForDuplicates)
-            throws InvalidParameterValueException {
+    private void checkPodAttributes(long podId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationStateStr, boolean checkForDuplicates) {
         if (checkForDuplicates) {
             // Check if the pod already exists
             if (validPod(podName, zoneId)) {
@@ -952,8 +951,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     }
 
-    private void checkZoneParameters(String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, boolean checkForDuplicates, Long domainId, String allocationStateStr)
-            throws InvalidParameterValueException {
+    private void checkZoneParameters(String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, boolean checkForDuplicates, Long domainId, String allocationStateStr) {
         if (checkForDuplicates) {
             // Check if a zone with the specified name already exists
             if (validZone(zoneName)) {
@@ -998,7 +996,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private void checkIpRange(String startIp, String endIp, String cidrAddress, long cidrSize) throws InvalidParameterValueException {
+    private void checkIpRange(String startIp, String endIp, String cidrAddress, long cidrSize) {
         if (!NetUtils.isValidIp(startIp)) {
             throw new InvalidParameterValueException("The start address of the IP range is not a valid IP address.");
         }
@@ -1537,7 +1535,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized) throws InvalidParameterValueException {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -1566,7 +1564,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {
+    public DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd) {
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();
         Long numGibibytes = cmd.getDiskSize();
@@ -1585,7 +1583,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_EDIT, eventDescription = "updating disk offering")
-    public DiskOffering updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException {
+    public DiskOffering updateDiskOffering(UpdateDiskOfferingCmd cmd) {
         Long diskOfferingId = cmd.getId();
         String name = cmd.getDiskOfferingName();
         String displayText = cmd.getDisplayText();
@@ -1645,7 +1643,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_DELETE, eventDescription = "deleting disk offering")
-    public boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) throws InvalidParameterValueException {
+    public boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) {
         Long diskOfferingId = cmd.getId();
 
         DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
@@ -1664,7 +1662,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_DELETE, eventDescription = "deleting service offering")
-    public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) throws InvalidParameterValueException {
+    public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) {
 
         Long offeringId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
@@ -1690,7 +1688,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException {
+    public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) {
         checkPrivateIpRangeErrors(podId, startIP, endIP);
 
         long zoneId = _podDao.findById(podId).getDataCenterId();
@@ -2086,7 +2084,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
+    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) {
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if (vlan == null) {
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
@@ -2285,7 +2283,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private void checkPublicIpRangeErrors(long zoneId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException {
+    private void checkPublicIpRangeErrors(long zoneId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) {
         // Check that the start and end IPs are valid
         if (!NetUtils.isValidIp(startIP)) {
             throw new InvalidParameterValueException("Please specify a valid start IP");
@@ -2317,7 +2315,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private void checkPrivateIpRangeErrors(Long podId, String startIP, String endIP) throws InvalidParameterValueException {
+    private void checkPrivateIpRangeErrors(Long podId, String startIP, String endIP) {
         HostPodVO pod = _podDao.findById(podId);
         if (pod == null) {
             throw new InvalidParameterValueException("Please specify a valid pod.");
@@ -2373,7 +2371,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return pod.getCidrSize();
     }
 
-    private void checkPodCidrSubnets(long dcId, HashMap<Long, List<Object>> currentPodCidrSubnets) throws InvalidParameterValueException {
+    private void checkPodCidrSubnets(long dcId, HashMap<Long, List<Object>> currentPodCidrSubnets) {
         // For each pod, return an error if any of the following is true:
         // 1. The pod's CIDR subnet conflicts with the guest network subnet
         // 2. The pod's CIDR subnet conflicts with the CIDR subnet of any other pod
@@ -2494,7 +2492,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private String[] getLinkLocalIPRange() throws InvalidParameterValueException {
+    private String[] getLinkLocalIPRange() {
         String ipNums = _configDao.getValue("linkLocalIp.nums");
         int nums = Integer.parseInt(ipNums);
         if (nums > 16 || nums <= 0) {
@@ -2529,7 +2527,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_DELETE, eventDescription = "deleting vlan ip range", async = false)
-    public boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException {
+    public boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) {
         Long vlanDbId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
 
@@ -2598,7 +2596,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) throws InvalidParameterValueException {
+    public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getNetworkOfferingName();
         String displayText = cmd.getDisplayText();
@@ -2763,7 +2761,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) throws InvalidParameterValueException {
+    public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) {
         Long offeringId = cmd.getId();
 
         // Verify network offering id
@@ -2843,7 +2841,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     // Note: This method will be used for entity name validations in the coming releases (place holder for now)
-    private void validateEntityName(String str) throws InvalidParameterValueException {
+    private void validateEntityName(String str) {
         String forbidden = "~!@#$%^&*()+=";
         char[] searchChars = forbidden.toCharArray();
         if (str == null || str.length() == 0 || searchChars == null || searchChars.length == 0) {

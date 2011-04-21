@@ -19,9 +19,7 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
@@ -60,8 +58,8 @@ public interface RulesManager extends RulesService {
      */    
     void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException;
     
-    void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
-    void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
+    void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller);
+    void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller);
     
     boolean revokeAllRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException;
     

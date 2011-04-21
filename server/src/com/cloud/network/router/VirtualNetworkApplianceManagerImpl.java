@@ -323,7 +323,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     @DB
-    public VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account account = UserContext.current().getCaller();
@@ -495,8 +495,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException,
-            ResourceUnavailableException, InsufficientCapacityException {
+    public VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Account caller = UserContext.current().getCaller();
 
         // verify parameters

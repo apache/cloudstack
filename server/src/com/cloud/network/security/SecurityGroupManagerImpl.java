@@ -454,7 +454,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 	
 	@Override @DB @SuppressWarnings("rawtypes")
-	public List<IngressRuleVO> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+	public List<IngressRuleVO> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd){
 		Long groupId = cmd.getSecurityGroupId();
 		String protocol = cmd.getProtocol();
 		Integer startPort = cmd.getStartPort();

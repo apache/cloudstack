@@ -558,7 +558,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     @Override
-    public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException {
         Long dcId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         String clusterName = cmd.getClusterName();
@@ -935,7 +935,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     @Override
     @DB
-    public boolean deleteCluster(DeleteClusterCmd cmd) throws InvalidParameterValueException {
+    public boolean deleteCluster(DeleteClusterCmd cmd) {
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
@@ -970,7 +970,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     @Override
     @DB
-    public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState) throws InvalidParameterValueException {
+    public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState) {
 
         ClusterVO cluster = (ClusterVO) clusterToUpdate;
         // Verify cluster information and update the cluster if needed
@@ -2012,7 +2012,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     @Override
-    public Host cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException {
+    public Host cancelMaintenance(CancelMaintenanceCmd cmd) {
         Long hostId = cmd.getId();
 
         // verify input parameters
@@ -2113,7 +2113,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     @Override
-    public Host maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException {
+    public Host maintain(PrepareForMaintenanceCmd cmd) {
         Long hostId = cmd.getId();
         HostVO host = _hostDao.findById(hostId);
 
@@ -2455,7 +2455,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     @Override
-    public Host updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException {
+    public Host updateHost(UpdateHostCmd cmd) {
         Long hostId = cmd.getId();
         Long guestOSCategoryId = cmd.getOsCategoryId();
 

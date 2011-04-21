@@ -26,7 +26,6 @@ import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
@@ -34,51 +33,60 @@ import com.cloud.storage.Snapshot;
 public interface SnapshotService {
     /**
      * Create a snapshot of a volume
-     * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
+     * 
+     * @param cmd
+     *            the API command wrapping the parameters for creating the snapshot (mainly volumeId)
      * @return the Snapshot that was created
      */
-    Snapshot createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException;
+    Snapshot createSnapshot(CreateSnapshotCmd cmd);
 
     /**
      * List all snapshots of a disk volume. Optionally lists snapshots created by specified interval
-     * @param cmd the command containing the search criteria (order by, limit, etc.)
+     * 
+     * @param cmd
+     *            the command containing the search criteria (order by, limit, etc.)
      * @return list of snapshots
-     * @throws InvalidParameterValueException
      * @throws PermissionDeniedException
      */
     List<? extends Snapshot> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
-     * Delete specified snapshot from the specified.
-     * If no other policies are assigned it calls destroy snapshot.
-     * This will be used for manual snapshots too.
+     * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This will be
+     * used for manual snapshots too.
      */
-    boolean deleteSnapshot(DeleteSnapshotCmd cmd);    
+    boolean deleteSnapshot(DeleteSnapshotCmd cmd);
 
     /**
      * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be retained.
-     * If the number of snapshots go beyond maxSnaps the oldest snapshot is deleted 
-     * @param cmd the command that
+     * If the number of snapshots go beyond maxSnaps the oldest snapshot is deleted
+     * 
+     * @param cmd
+     *            the command that
      * @return the newly created snapshot policy if success, null otherwise
      */
     SnapshotPolicy createPolicy(CreateSnapshotPolicyCmd cmd);
-    
+
     /**
-     * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled 
-     * @param cmd the command wrapping the volumeId (volume for which the snapshots are required) and policyId (to show snapshots for only this policy).
+     * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled
+     * 
+     * @param cmd
+     *            the command wrapping the volumeId (volume for which the snapshots are required) and policyId (to show
+     *            snapshots for only this policy).
      * @return The list of snapshot schedules.
      */
     public List<? extends SnapshotSchedule> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd);
 
     /**
      * list all snapshot policies assigned to the specified volume
-     * @param cmd the command that specifies the volume criteria
+     * 
+     * @param cmd
+     *            the command that specifies the volume criteria
      * @return list of snapshot policies
      */
     List<? extends SnapshotPolicy> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
-    
+
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
-    
+
     Snapshot allocSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException;
 
 }

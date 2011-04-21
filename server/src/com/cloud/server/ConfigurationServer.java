@@ -19,7 +19,6 @@
 package com.cloud.server;
 
 import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
 
 /**
  * ConfigurationServer is the public interface to talk to the Configuration Server.
@@ -32,5 +31,5 @@ public interface ConfigurationServer {
      * Persists default values for the configuration table, pods/zones, and VLANs
      * @return 
      */
-    public void persistDefaultValues() throws InvalidParameterValueException, InternalErrorException;
+    public void persistDefaultValues() throws InternalErrorException;
 }

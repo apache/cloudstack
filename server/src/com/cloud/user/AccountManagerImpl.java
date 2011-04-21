@@ -496,7 +496,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public List<ResourceLimitVO> searchForLimits(ListResourceLimitsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public List<ResourceLimitVO> searchForLimits(ListResourceLimitsCmd cmd) {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long accountId = null;
@@ -1230,7 +1230,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "updating User")
-    public UserAccount updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException {
+    public UserAccount updateUser(UpdateUserCmd cmd) {
         Long id = cmd.getId();
         String apiKey = cmd.getApiKey();
         String firstName = cmd.getFirstname();
@@ -1316,7 +1316,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DISABLE, eventDescription = "disabling User", async = true)
-    public UserAccount disableUser(DisableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public UserAccount disableUser(DisableUserCmd cmd) {
         Long userId = cmd.getId();
         Account adminAccount = UserContext.current().getCaller();
 
@@ -1347,7 +1347,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_ENABLE, eventDescription = "enabling User")
-    public UserAccount enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public UserAccount enableUser(EnableUserCmd cmd) {
         Long userId = cmd.getId();
         Account adminAccount = UserContext.current().getCaller();
         boolean success = false;
@@ -1469,7 +1469,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public AccountVO enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public AccountVO enableAccount(EnableAccountCmd cmd) {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         boolean success = false;
@@ -1530,7 +1530,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "disabling account", async = true)
-    public AccountVO disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException {
+    public AccountVO disableAccount(DisableAccountCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 
@@ -1551,7 +1551,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public AccountVO updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public AccountVO updateAccount(UpdateAccountCmd cmd) {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String newAccountName = cmd.getNewName();

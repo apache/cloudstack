@@ -114,7 +114,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	}
 
 	@Override @DB
-    public void persistDefaultValues() throws InvalidParameterValueException, InternalErrorException {
+    public void persistDefaultValues() throws InternalErrorException {
 		
 		// Create system user and admin user
 		saveUser();
@@ -558,7 +558,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	}
 
     @DB
-    protected HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
+    protected HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InternalErrorException {
         String[] cidrPair = cidr.split("\\/");
         String cidrAddress = cidrPair[0];
         int cidrSize = Integer.parseInt(cidrPair[1]);
@@ -618,7 +618,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         return pod;
     }
 
-    private DiskOfferingVO createDiskOffering(Long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
+    private DiskOfferingVO createDiskOffering(Long domainId, String name, String description, int numGibibytes, String tags) {
         long diskSize = numGibibytes * 1024;
         tags = cleanupTags(tags);
 

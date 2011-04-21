@@ -20,8 +20,6 @@ package com.cloud.network;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 
@@ -30,17 +28,15 @@ public interface VirtualNetworkApplianceService{
      * Starts domain router
      * @param cmd the command specifying router's id
      * @return DomainRouter object
-     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter startRouter(long routerId, boolean restartNetwork) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    VirtualRouter startRouter(long routerId, boolean restartNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Reboots domain router
      * @param cmd the command specifying router's id
      * @return router if successful
-     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd);
     
@@ -49,10 +45,9 @@ public interface VirtualNetworkApplianceService{
      * @param id of the router
      * @param forced just do it.  caller knows best.
      * @return router if successful, null otherwise
-     * @throws ConcurrentOperationException 
      * @throws ResourceUnavailableException 
-     * @throws InvalidParameterValueException, PermissionDeniedException
+     * @throws ConcurrentOperationException 
      */
-    VirtualRouter stopRouter(long routerId, boolean forced) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, ConcurrentOperationException;
+    VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException, ConcurrentOperationException;
     
 }

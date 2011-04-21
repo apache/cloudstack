@@ -39,7 +39,6 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
@@ -140,7 +139,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException {
+    public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) {
         if (ipAddress == null || ipAddress.getAllocatedTime() == null || ipAddress.getAllocatedToAccountId() == null) {
             throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid IP address specified.");
         }
@@ -169,7 +168,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException {
+    public void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller) {
         if (userVm == null || rule == null) {
             return;
         }

@@ -176,7 +176,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	}
 	
 	@Override
-    public void copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer) throws InvalidParameterValueException, StorageUnavailableException{
+    public void copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer) throws StorageUnavailableException{
 
 		boolean downloadJobExists = false;
         VMTemplateHostVO destTmpltHost = null;

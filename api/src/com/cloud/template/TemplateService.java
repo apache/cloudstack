@@ -30,48 +30,57 @@ import com.cloud.api.commands.ExtractTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 
 public interface TemplateService {
-    
+
     VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException;
-    VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;   
+
+    VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;
+
     VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
+
     VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
+
     boolean detachIso(DetachIsoCmd cmd);
+
     boolean attachIso(AttachIsoCmd cmd);
+
     /**
      * Deletes a template
-     * @param cmd - the command specifying templateId
+     * 
+     * @param cmd
+     *            - the command specifying templateId
      */
     boolean deleteTemplate(DeleteTemplateCmd cmd);
-    
+
     /**
      * Deletes a template
-     * @param cmd - the command specifying isoId
+     * 
+     * @param cmd
+     *            - the command specifying isoId
      * @return true if deletion is successful, false otherwise
-     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
      */
     boolean deleteIso(DeleteIsoCmd cmd);
 
     /**
      * Extracts an ISO
-     * @param cmd - the command specifying the mode and id of the ISO
+     * 
+     * @param cmd
+     *            - the command specifying the mode and id of the ISO
      * @return extractId.
-     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
      */
-    Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-    
+    Long extract(ExtractIsoCmd cmd) throws InternalErrorException;
+
     /**
      * Extracts a Template
-     * @param cmd - the command specifying the mode and id of the template
-     * @return extractId.
-     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
+     * 
+     * @param cmd
+     *            - the command specifying the mode and id of the template
+     * @return extractId
      */
-    Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-    
+    Long extract(ExtractTemplateCmd cmd) throws InternalErrorException;
+
     VirtualMachineTemplate getTemplate(long templateId);
 }
