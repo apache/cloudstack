@@ -2716,7 +2716,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (task.getStatus(c) == Types.TaskStatusType.SUCCESS) {
             return;
         } else {
-            String msg = "Task failed! Task record:\n" + task.getRecord(c);
+            String msg = "Task failed! Task record: " + task.getRecord(c);
             s_logger.warn(msg);
             task.cancel(c);
             throw new Types.BadAsyncResult(msg);
