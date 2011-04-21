@@ -151,7 +151,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context) {
+    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
         assert config.getTrafficType() == TrafficType.Control : "Why are you sending this configuration to me " + config;
         return config;
     }

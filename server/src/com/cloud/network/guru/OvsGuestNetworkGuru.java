@@ -22,6 +22,7 @@ import javax.ejb.Local;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -58,7 +59,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	}
 	
 	@Override
-	 public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) {
+	 public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
 		 assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
 		 if (!_ovsNetworkMgr.isOvsNetworkEnabled()&& !_ovsTunnelMgr.isOvsTunnelEnabled()) {
 			 return null;

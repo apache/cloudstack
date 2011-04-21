@@ -27,7 +27,7 @@ public class InsufficientVirtualNetworkCapcityException extends InsufficientNetw
         super(msg, scope, id);
     }
     
-    public InsufficientVirtualNetworkCapcityException(String msg, long id) {
-        this(msg, Pod.class, id);
+    public InsufficientVirtualNetworkCapcityException(String msg, long podId) {
+        this(msg, Pod.class, podId);
     }
 }

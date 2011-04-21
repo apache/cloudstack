@@ -71,8 +71,9 @@ public interface NetworkGuru extends Adapter {
      * @param offering offering that the network configuration was based on.
      * @param destination where were deploying to.
      * @return a fully implemented NetworkConfiguration.
+     * @throws InsufficientVirtualNetworkCapcityException TODO
      */
-    Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context);
+    Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException;
     
     /**
      * reserve a nic for this VM in this network.
