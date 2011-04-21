@@ -186,7 +186,13 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setBroadcastUri(network.getBroadcastUri());
             nic.setIsolationUri(network.getBroadcastUri());
             nic.setGateway(network.getGateway());
-            nic.setIp4Address(acquireGuestIpAddress(network));
+
+            String guestIp = acquireGuestIpAddress(network);
+            if (guestIp == null) {
+                throw new InsufficientVirtualNetworkCapcityException("Unable to acquire guest IP address for network " + network, DataCenter.class, dc.getId());
+            }
+
+            nic.setIp4Address(guestIp);
             nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
             nic.setFormat(AddressFormat.Ip4);
 
@@ -253,8 +259,10 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
-        _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getAccountId(), profile.getReservationId());
-        profile.setBroadcastUri(null);
+        if (profile.getBroadcastUri() != null) {
+            _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getAccountId(), profile.getReservationId());
+            profile.setBroadcastUri(null);
+        }
     }
 
     @Override
