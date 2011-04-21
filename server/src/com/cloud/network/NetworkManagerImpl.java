@@ -2001,7 +2001,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
 
-        cleanupNetworkResources(networkId, callerAccount, context.getCaller().getId());
+        if (!cleanupNetworkResources(networkId, callerAccount, context.getCaller().getId())) {
+            s_logger.warn("Unable to delete network id=" + networkId + ": failed to cleanup network resources");
+            return false;
+        }
 
         for (NetworkElement element : _networkElements) {
             try {
