@@ -1628,22 +1628,8 @@ public class ManagementServerImpl implements ManagementServer {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-            // validate domainId before proceeding
-            if ((domainId != null) && (accountName != null)) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Invalid domain id (" + domainId + ") given, unable to list events.");
-                }
-
-                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Failed to list ISOs.  Unable to find account " + accountName + " in domain " + domainId);
-                }
-            } else if (account != null) {
-                accountId = account.getId();
-            }
+        if (accountName != null && domainId != null) {
+            accountId = _accountMgr.finalizeOwner(account, accountName, domainId).getAccountId();
         } else {
             accountId = account.getId();
         }
@@ -1664,22 +1650,8 @@ public class ManagementServerImpl implements ManagementServer {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-            // validate domainId before proceeding
-            if ((domainId != null) && (accountName != null)) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Invalid domain id (" + domainId + ") given, unable to list events.");
-                }
-
-                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Failed to list ISOs.  Unable to find account " + accountName + " in domain " + domainId);
-                }
-            } else if (account != null) {
-                accountId = account.getId();
-            }
+        if (accountName != null && domainId != null) {
+            accountId = _accountMgr.finalizeOwner(account, accountName, domainId).getAccountId();
         } else {
             accountId = account.getId();
         }
