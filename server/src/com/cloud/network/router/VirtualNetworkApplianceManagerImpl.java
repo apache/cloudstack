@@ -1566,16 +1566,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private void createDhcpEntriesCommands(DomainRouterVO router, Commands cmds) {
         long networkId = router.getNetworkId();
         List<UserVmVO> vms = _userVmDao.listByNetworkId(networkId);
-        if (vms != null && !vms.isEmpty()) {
+        if (!vms.isEmpty()) {
             for (UserVmVO vm : vms) {
-                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
-                if (nic != null) {
-                    s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
+                if (vm.getState() != State.Destroyed && vm.getState() != State.Expunging) {
+                    NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+                    if (nic != null) {
+                        s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
 
-                    DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getName());
-                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                    cmds.addCommand("dhcp", dhcpCommand);
+                        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getName());
+                        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                        cmds.addCommand("dhcp", dhcpCommand);
+                    }
                 }
             }
         }
