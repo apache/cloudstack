@@ -24,3 +24,9 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value,
 
 ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `removed` datetime COMMENT 'date removed if not null';
 ALTER TABLE `cloud`.`host_pod_ref` MODIFY `name` varchar(255);
+
+ALTER TABLE `cloud`.`security_group` DROP COLUMN `account_name`;
+
+ALTER TABLE `cloud`.`security_ingress_rule` DROP COLUMN `allowed_security_group`;
+ALTER TABLE `cloud`.`security_ingress_rule` DROP COLUMN `allowed_sec_grp_acct`;
+

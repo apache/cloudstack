@@ -29,47 +29,33 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@SuppressWarnings("rawtypes")
-@Implementation(responseObject=SuccessResponse.class, description="Deletes a particular ingress rule from this security group")
+@Implementation(responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
 public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 
     private static final String s_name = "revokesecuritygroupingress";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
-    private Long domainId;
-
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the ingress rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "The ID of the ingress rule")
     private Long id;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
@@ -77,23 +63,14 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     public static String getResultObjectName() {
-    	return "revokesecuritygroupingress";
+        return "revokesecuritygroupingress";
     }
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
-        }
-
-        if (account != null) {
-            return account.getId();
+        SecurityGroup group = _entityMgr.findById(SecurityGroup.class, getId());
+        if (group != null) {
+            return group.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
@@ -106,11 +83,11 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "revoking ingress rule id: " + getId();
+        return "revoking ingress rule id: " + getId();
     }
-    
+
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _securityGroupService.revokeSecurityGroupIngress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -119,12 +96,12 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to revoke security group ingress rule");
         }
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.SecurityGroup;
     }
-    
+
     @Override
     public Long getInstanceId() {
         return getId();

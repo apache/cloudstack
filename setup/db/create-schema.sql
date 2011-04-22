@@ -1301,7 +1301,6 @@ CREATE TABLE `cloud`.`security_group` (
   `description` varchar(4096) NULL,
   `domain_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
-  `account_name` varchar(100) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1312,8 +1311,6 @@ CREATE TABLE `cloud`.`security_ingress_rule` (
   `end_port` varchar(10) default NULL,
   `protocol` varchar(16) NOT NULL default 'TCP',
   `allowed_network_id` bigint unsigned,
-  `allowed_security_group` varchar(255) COMMENT 'data duplicated from security_group table to avoid lots of joins when listing rules (the name of the group should be displayed rather than just id)',
-  `allowed_sec_grp_acct` varchar(100) COMMENT 'data duplicated from security_group table to avoid lots of joins when listing rules (the name of the group owner should be displayed)',
   `allowed_ip_cidr`  varchar(44),
   `create_status` varchar(32) COMMENT 'rule creation status',
   PRIMARY KEY  (`id`)

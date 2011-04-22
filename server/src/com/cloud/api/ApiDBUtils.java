@@ -120,7 +120,7 @@ public class ApiDBUtils {
     private static AccountManager _accountMgr;
     private static AgentManager _agentMgr;
     public static AsyncJobManager _asyncMgr;
-    private static SecurityGroupManager _networkGroupMgr;
+    private static SecurityGroupManager _securityGroupMgr;
     private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
     private static UserVmManager _userVmMgr;
@@ -138,7 +138,7 @@ public class ApiDBUtils {
     private static HostDao _hostDao;
     private static IPAddressDao _ipAddressDao;
     private static LoadBalancerDao _loadBalancerDao;
-    private static SecurityGroupDao _networkGroupDao;
+    private static SecurityGroupDao _securityGroupDao;
     private static NetworkRuleConfigDao _networkRuleConfigDao;
     private static HostPodDao _podDao;
     private static ServiceOfferingDao _serviceOfferingDao;
@@ -158,13 +158,13 @@ public class ApiDBUtils {
     private static ConfigurationService _configMgr;
 
     static {
-        _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+        _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
 
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _networkGroupMgr = locator.getManager(SecurityGroupManager.class);
+        _securityGroupMgr = locator.getManager(SecurityGroupManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
@@ -175,14 +175,14 @@ public class ApiDBUtils {
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
-        _domainDao = locator.getDao(DomainDao.class);        
-        _domainRouterDao = locator.getDao(DomainRouterDao.class);        
+        _domainDao = locator.getDao(DomainDao.class);
+        _domainRouterDao = locator.getDao(DomainRouterDao.class);
         _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _hostDao = locator.getDao(HostDao.class);
         _ipAddressDao = locator.getDao(IPAddressDao.class);
         _loadBalancerDao = locator.getDao(LoadBalancerDao.class);
-        _networkRuleConfigDao = locator.getDao(NetworkRuleConfigDao.class);        
+        _networkRuleConfigDao = locator.getDao(NetworkRuleConfigDao.class);
         _podDao = locator.getDao(HostPodDao.class);
         _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
         _snapshotDao = locator.getDao(SnapshotDao.class);
@@ -196,24 +196,24 @@ public class ApiDBUtils {
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
-        _networkGroupDao = locator.getDao(SecurityGroupDao.class);
+        _securityGroupDao = locator.getDao(SecurityGroupDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
 
-        // Note:  stats collector should already have been initialized by this time, otherwise a null instance is returned
+        // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
 
-    /////////////////////////////////////////////////////////////
-    //               ManagementServer methods                  //
-    /////////////////////////////////////////////////////////////
-    
+    // ///////////////////////////////////////////////////////////
+    // ManagementServer methods //
+    // ///////////////////////////////////////////////////////////
+
     public static VMInstanceVO findVMInstanceById(long vmId) {
         return _ms.findVMInstanceById(vmId);
     }
 
     public static long getMemoryUsagebyHost(Long hostId) {
-        // TODO:  This method is for the API only, but it has configuration values (ramSize for system vms)
+        // TODO: This method is for the API only, but it has configuration values (ramSize for system vms)
         // so if this Utils class can have some kind of config rather than a static initializer (maybe from
         // management server instantiation?) then maybe the management server method can be moved entirely
         // into this utils class.
@@ -236,9 +236,9 @@ public class ApiDBUtils {
         return _ms.searchForStoragePools(c);
     }
 
-    /////////////////////////////////////////////////////////////
-    //                   Manager methods                       //
-    /////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////
+    // Manager methods //
+    // ///////////////////////////////////////////////////////////
 
     public static long findCorrectResourceLimit(ResourceType type, long accountId) {
         AccountVO account = _accountDao.findById(accountId);
@@ -256,20 +256,20 @@ public class ApiDBUtils {
 
     public static long getResourceCount(ResourceType type, long accountId) {
         AccountVO account = _accountDao.findById(accountId);
-        
+
         if (account == null) {
             return -1;
         }
-        
+
         return _accountMgr.getResourceCount(account, type);
     }
 
-    public static String getNetworkGroupsNamesForVm(long vmId) {
-        return _networkGroupMgr.getSecurityGroupsNamesForVm(vmId);
+    public static String getSecurityGroupsNamesForVm(long vmId) {
+        return _securityGroupMgr.getSecurityGroupsNamesForVm(vmId);
     }
-    
+
     public static List<SecurityGroupVO> getSecurityGroupsForVm(long vmId) {
-        return _networkGroupMgr.getSecurityGroupsForVm(vmId);
+        return _securityGroupMgr.getSecurityGroupsForVm(vmId);
     }
 
     public static String getSnapshotIntervalTypes(long snapshotId) {
@@ -280,7 +280,7 @@ public class ApiDBUtils {
     public static String getStoragePoolTags(long poolId) {
         return _storageMgr.getStoragePoolTags(poolId);
     }
-    
+
     public static boolean isLocalStorageActiveOnHost(Host host) {
         return _storageMgr.isLocalStorageActiveOnHost(host);
     }
@@ -289,9 +289,9 @@ public class ApiDBUtils {
         return _userVmMgr.getGroupForVm(vmId);
     }
 
-    /////////////////////////////////////////////////////////////
-    //                    Misc methods                         //
-    /////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////
+    // Misc methods //
+    // ///////////////////////////////////////////////////////////
 
     public static HostStats getHostStatistics(long hostId) {
         return _statsCollector.getHostStats(hostId);
@@ -304,19 +304,19 @@ public class ApiDBUtils {
     public static VmStats getVmStatistics(long hostId) {
         return _statsCollector.getVmStats(hostId);
     }
-    
-    public static StorageStats getSecondaryStorageStatistics(long id){
-    	return _statsCollector.getStorageStats(id);
+
+    public static StorageStats getSecondaryStorageStatistics(long id) {
+        return _statsCollector.getStorageStats(id);
     }
 
-    /////////////////////////////////////////////////////////////
-    //                     Dao methods                         //
-    /////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////
+    // Dao methods //
+    // ///////////////////////////////////////////////////////////
 
     public static Account findAccountById(Long accountId) {
         return _accountDao.findByIdIncludingRemoved(accountId);
     }
-    
+
     public static Account findAccountByIdIncludingRemoved(Long accountId) {
         return _accountDao.findByIdIncludingRemoved(accountId);
     }
@@ -336,7 +336,7 @@ public class ApiDBUtils {
     public static DomainVO findDomainById(Long domainId) {
         return _domainDao.findByIdIncludingRemoved(domainId);
     }
-    
+
     public static DomainVO findDomainByIdIncludingRemoved(Long domainId) {
         return _domainDao.findByIdIncludingRemoved(domainId);
     }
@@ -359,18 +359,17 @@ public class ApiDBUtils {
 
     public static GuestOSCategoryVO getHostGuestOSCategory(long hostId) {
         Long guestOSCategoryID = _agentMgr.getGuestOSCategoryId(hostId);
-        
+
         if (guestOSCategoryID != null) {
             return _guestOSCategoryDao.findById(guestOSCategoryID);
         } else {
             return null;
         }
     }
-    
+
     public static String getHostTags(long hostId) {
-    	return _agentMgr.getHostTags(hostId);    	
+        return _agentMgr.getHostTags(hostId);
     }
-    
 
     public static LoadBalancerVO findLoadBalancerById(Long loadBalancerId) {
         return _loadBalancerDao.findById(loadBalancerId);
@@ -379,9 +378,9 @@ public class ApiDBUtils {
     public static NetworkRuleConfigVO findNetworkRuleById(Long ruleId) {
         return _networkRuleConfigDao.findById(ruleId);
     }
-    
-    public static SecurityGroup findNetworkGroupById(Long groupId) {
-        return _networkGroupDao.findById(groupId);
+
+    public static SecurityGroup findSecurityGroupById(Long groupId) {
+        return _securityGroupDao.findById(groupId);
     }
 
     public static HostPodVO findPodById(Long podId) {
@@ -405,8 +404,7 @@ public class ApiDBUtils {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot != null && snapshot.getRemoved() == null && snapshot.getStatus() == Snapshot.Status.BackedUp) {
             return snapshot;
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -420,23 +418,23 @@ public class ApiDBUtils {
     }
 
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
-    	VMTemplateVO vmTemplate = findTemplateById(templateId);
-    	if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-    		return _templateHostDao.findByHostTemplate(zoneId, templateId);
-    	} else {
-			HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-			if (secondaryStorageHost == null) {
-				return null;
-			} else {
-				return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-			}
-    	}
+        VMTemplateVO vmTemplate = findTemplateById(templateId);
+        if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
+            return _templateHostDao.findByHostTemplate(zoneId, templateId);
+        } else {
+            HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+            if (secondaryStorageHost == null) {
+                return null;
+            } else {
+                return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
+            }
+        }
     }
-    
-    public static UploadVO findUploadById(Long id){
+
+    public static UploadVO findUploadById(Long id) {
         return _uploadDao.findById(id);
     }
-    
+
     public static User findUserById(Long userId) {
         return _userDao.findById(userId);
     }
@@ -452,7 +450,7 @@ public class ApiDBUtils {
     public static VolumeVO findVolumeById(Long volumeId) {
         return _volumeDao.findByIdIncludingRemoved(volumeId);
     }
-    
+
     public static List<UserVO> listUsersByAccount(long accountId) {
         return _userDao.listByAccount(accountId);
     }
@@ -476,17 +474,17 @@ public class ApiDBUtils {
 
     public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {
         if (zoneId != null) {
-        	VMTemplateVO vmTemplate = findTemplateById(templateId);
-        	if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-        		return _templateHostDao.listByHostTemplate(zoneId, templateId);
-        	} else {
-				HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-				if (secondaryStorageHost == null) {
-					return new ArrayList<VMTemplateHostVO>();
-				} else {
-					return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
-				}
-        	}
+            VMTemplateVO vmTemplate = findTemplateById(templateId);
+            if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
+                return _templateHostDao.listByHostTemplate(zoneId, templateId);
+            } else {
+                HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+                if (secondaryStorageHost == null) {
+                    return new ArrayList<VMTemplateHostVO>();
+                } else {
+                    return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
+                }
+            }
         } else {
             return _templateHostDao.listByOnlyTemplateId(templateId);
         }
@@ -513,31 +511,31 @@ public class ApiDBUtils {
 
         return _storageMgr.volumeOnSharedStoragePool(volume);
     }
-    
+
     public static List<NicProfile> getNics(VirtualMachine vm) {
         return _networkMgr.getNicProfiles(vm);
     }
-    
+
     public static NetworkProfile getNetworkProfile(long networkId) {
         return _networkMgr.convertNetworkToNetworkProfile(networkId);
     }
-    
+
     public static NetworkOfferingVO findNetworkOfferingById(long networkOfferingId) {
         return _networkOfferingDao.findByIdIncludingRemoved(networkOfferingId);
     }
-    
+
     public static List<? extends Vlan> listVlanByNetworkId(long networkId) {
         return _vlanDao.listVlansByNetworkId(networkId);
     }
-    
+
     public static NetworkVO findNetworkById(long id) {
         return _networkDao.findById(id);
     }
-    
+
     public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {
         return _networkMgr.getNetworkCapabilities(networkId);
     }
-    
+
     public static long getPublicNetworkIdByZone(long zoneId) {
         return _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
     }
@@ -550,15 +548,15 @@ public class ApiDBUtils {
             return null;
         }
     }
-    
+
     public static Integer getNetworkRate(long networkOfferingId) {
-       return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId);
+        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId);
     }
-    
+
     public static Account getVlanAccount(long vlanId) {
-       return _configMgr.getVlanAccount(vlanId);
+        return _configMgr.getVlanAccount(vlanId);
     }
-    
+
     public static boolean isSecurityGroupEnabledInZone(long zoneId) {
         DataCenterVO dc = _zoneDao.findById(zoneId);
         if (dc == null) {
@@ -567,9 +565,9 @@ public class ApiDBUtils {
             return dc.isSecurityGroupEnabled();
         }
     }
-    
+
     public static Long getDedicatedNetworkDomain(long networkId) {
         return _networkMgr.getDedicatedNetworkDomain(networkId);
     }
-    
+
 }

@@ -17,12 +17,13 @@
  */
 package com.cloud.network.security;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
+import com.cloud.acl.ControlledEntity;
 
-public interface SecurityGroup extends PartOf, OwnedBy {
+public interface SecurityGroup extends ControlledEntity {
     long getId();
+
     String getName();
+
     String getDescription();
-    String getAccountName();
+
 }

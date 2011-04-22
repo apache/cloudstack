@@ -16,7 +16,7 @@
  * 
  */
 
-package com.cloud.async.executor;
+package com.cloud.api.response;
 
 import com.cloud.serializer.Param;
 

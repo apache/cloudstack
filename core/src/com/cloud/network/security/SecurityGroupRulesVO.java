@@ -28,126 +28,114 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("security_group"))
-@SecondaryTable(name="security_ingress_rule", join="left",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="id", referencedColumnName="security_group_id")})
+@Table(name = ("security_group"))
+@SecondaryTable(name = "security_ingress_rule", join = "left", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
 public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="description")
+    @Column(name = "description")
     private String description;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private Long domainId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private Long accountId;
 
-    @Column(name="account_name")
-    private String accountName;
-
-    @Column(name="id", table="security_ingress_rule", insertable=false, updatable=false)
+    @Column(name = "id", table = "security_ingress_rule", insertable = false, updatable = false)
     private Long ruleId;
 
-    @Column(name="start_port", table="security_ingress_rule", insertable=false, updatable=false)
+    @Column(name = "start_port", table = "security_ingress_rule", insertable = false, updatable = false)
     private int startPort;
 
-    @Column(name="end_port", table="security_ingress_rule", insertable=false, updatable=false)
+    @Column(name = "end_port", table = "security_ingress_rule", insertable = false, updatable = false)
     private int endPort;
 
-    @Column(name="protocol", table="security_ingress_rule", insertable=false, updatable=false)
+    @Column(name = "protocol", table = "security_ingress_rule", insertable = false, updatable = false)
     private String protocol;
 
-    @Column(name="allowed_network_id", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
+    @Column(name = "allowed_network_id", table = "security_ingress_rule", insertable = false, updatable = false, nullable = true)
     private Long allowedNetworkId = null;
 
-    @Column(name="allowed_security_group", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
-    private String allowedSecurityGroup = null;
-
-    @Column(name="allowed_sec_grp_acct", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
-    private String allowedSecGrpAcct = null;
-
-    @Column(name="allowed_ip_cidr", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
+    @Column(name = "allowed_ip_cidr", table = "security_ingress_rule", insertable = false, updatable = false, nullable = true)
     private String allowedSourceIpCidr = null;
 
-    public SecurityGroupRulesVO() { }
-
-    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, String accountName, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId, String allowedSecurityGroup, String allowedSecGrpAcct, String allowedSourceIpCidr) {
-    	this.id = id;
-    	this.name = name;
-    	this.description = description;
-    	this.domainId = domainId;
-    	this.accountId = accountId;
-    	this.accountName = accountName;
-    	this.ruleId = ruleId;
-    	this.startPort = startPort;
-    	this.endPort = endPort;
-    	this.protocol = protocol;
-    	this.allowedNetworkId = allowedNetworkId;
-    	this.allowedSecurityGroup = allowedSecurityGroup;
-    	this.allowedSecGrpAcct = allowedSecGrpAcct;
-    	this.allowedSourceIpCidr = allowedSourceIpCidr;
+    public SecurityGroupRulesVO() {
     }
 
-	public long getId() {
-		return id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public Long getDomainId() {
-		return domainId;
-	}
-
-	public Long getAccountId() {
-		return accountId;
-	}
-
-	public String getAccountName() {
-	    return accountName;
-	}
-
-	public Long getRuleId() {
-		return ruleId;
-	}
-
-	public int getStartPort() {
-		return startPort;
-	}
-
-	public int getEndPort() {
-		return endPort;
-	}
-
-	public String getProtocol() {
-		return protocol;
-	}
-
-	public Long getAllowedNetworkId() {
-		return allowedNetworkId;
-	}
-
-	public String getAllowedSecurityGroup() {
-	    return allowedSecurityGroup;
-	}
-
-    public String getAllowedSecGrpAcct() {
-        return allowedSecGrpAcct;
+    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId,
+            String allowedSourceIpCidr) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.domainId = domainId;
+        this.accountId = accountId;
+        this.ruleId = ruleId;
+        this.startPort = startPort;
+        this.endPort = endPort;
+        this.protocol = protocol;
+        this.allowedNetworkId = allowedNetworkId;
+        this.allowedSourceIpCidr = allowedSourceIpCidr;
     }
 
-	public String getAllowedSourceIpCidr() {
-		return allowedSourceIpCidr;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    @Override
+    public Long getRuleId() {
+        return ruleId;
+    }
+
+    @Override
+    public int getStartPort() {
+        return startPort;
+    }
+
+    @Override
+    public int getEndPort() {
+        return endPort;
+    }
+
+    @Override
+    public String getProtocol() {
+        return protocol;
+    }
+
+    @Override
+    public Long getAllowedNetworkId() {
+        return allowedNetworkId;
+    }
+
+    @Override
+    public String getAllowedSourceIpCidr() {
+        return allowedSourceIpCidr;
+    }
 }

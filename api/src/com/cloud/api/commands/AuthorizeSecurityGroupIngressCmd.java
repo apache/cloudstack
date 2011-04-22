@@ -37,65 +37,51 @@ import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.security.IngressRule;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
-@Implementation(responseObject=IngressRuleResponse.class, description="Authorizes a particular ingress rule for this security group") @SuppressWarnings("rawtypes")
+@Implementation(responseObject = IngressRuleResponse.class, description = "Authorizes a particular ingress rule for this security group")
+@SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
 
     private static final String s_name = "authorizesecuritygroupingress";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="TCP is default. UDP is the other supported protocol")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "TCP is default. UDP is the other supported protocol")
     private String protocol;
 
-    @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER, description="start port for this ingress rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "start port for this ingress rule")
     private Integer startPort;
 
-    @Parameter(name=ApiConstants.END_PORT, type=CommandType.INTEGER, description="end port for this ingress rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "end port for this ingress rule")
     private Integer endPort;
 
-    @Parameter(name=ApiConstants.ICMP_TYPE, type=CommandType.INTEGER, description="type of the icmp message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
     private Integer icmpType;
 
-    @Parameter(name=ApiConstants.ICMP_CODE, type=CommandType.INTEGER, description="error code for this icmp message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, required=true, description="The ID of the security group")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_ID, type = CommandType.LONG, required = true, description = "The ID of the security group")
     private Long securityGroupId;
 
-    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="the cidr list associated")
-    private List cidrList;
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list associated")
+    private List<String> cidrList;
 
-    @Parameter(name=ApiConstants.USER_SECURITY_GROUP_LIST, type=CommandType.MAP, description="user to security group mapping")
+    @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")
     private Map userSecurityGroupList;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
-    private String accountName;
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
-    private Long domainId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public List getCidrList() {
+    public List<String> getCidrList() {
         return cidrList;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public Integer getEndPort() {
@@ -129,10 +115,9 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
         return userSecurityGroupList;
     }
 
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
@@ -140,23 +125,14 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     public static String getResultObjectName() {
-    	return "securitygroup";
+        return "securitygroup";
     }
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
-        }
-
-        if (account != null) {
-            return account.getId();
+        SecurityGroup group = _entityMgr.findById(SecurityGroup.class, getSecurityGroupId());
+        if (group != null) {
+            return group.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
@@ -175,15 +151,15 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
             Collection userGroupCollection = getUserSecurityGroupList().values();
             Iterator iter = userGroupCollection.iterator();
 
-            HashMap userGroup = (HashMap)iter.next();
-            String group = (String)userGroup.get("group");
-            String authorizedAccountName = (String)userGroup.get("account");
+            HashMap userGroup = (HashMap) iter.next();
+            String group = (String) userGroup.get("group");
+            String authorizedAccountName = (String) userGroup.get("account");
             sb.append(group + "/" + authorizedAccountName);
 
             while (iter.hasNext()) {
-                userGroup = (HashMap)iter.next();
-                group = (String)userGroup.get("group");
-                authorizedAccountName = (String)userGroup.get("account");
+                userGroup = (HashMap) iter.next();
+                group = (String) userGroup.get("group");
+                authorizedAccountName = (String) userGroup.get("account");
                 sb.append(", " + group + "/" + authorizedAccountName);
             }
         } else if (getCidrList() != null) {
@@ -193,26 +169,26 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
             sb.append("<error:  no ingress parameters>");
         }
 
-        return  "authorizing ingress to group: " + getSecurityGroupId() + " to " + sb.toString();
+        return "authorizing ingress to group: " + getSecurityGroupId() + " to " + sb.toString();
     }
-	
+
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends IngressRule> ingressRules = _securityGroupService.authorizeSecurityGroupIngress(this);
-        if (ingressRules != null && ! ingressRules.isEmpty()) {
-        SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromIngressRule(ingressRules);
+        if (ingressRules != null && !ingressRules.isEmpty()) {
+            SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromIngressRule(ingressRules);
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize security group ingress rule(s)");
         }
-        
+
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.SecurityGroup;
     }
-    
+
     @Override
     public Long getInstanceId() {
         return getSecurityGroupId();

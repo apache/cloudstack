@@ -26,36 +26,33 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("security_group"))
+@Table(name = ("security_group"))
 public class SecurityGroupVO implements SecurityGroup {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="description")
+    @Column(name = "description")
     private String description;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
-    
-    @Column(name="account_name")
-    private String accountName = null;
 
-    public SecurityGroupVO() {}
+    public SecurityGroupVO() {
+    }
 
-    public SecurityGroupVO(String name, String description, long domainId, long accountId, String accountName) {
+    public SecurityGroupVO(String name, String description, long domainId, long accountId) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
-        this.accountName = accountName;
     }
 
     @Override
@@ -63,23 +60,23 @@ public class SecurityGroupVO implements SecurityGroup {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
-    }
-    
-    public String getAccountName() {
-        return accountName;
     }
 }

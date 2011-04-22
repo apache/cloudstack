@@ -28,8 +28,6 @@ public interface SecurityGroupRules {
 
     Long getAccountId();
 
-    String getAccountName();
-
     Long getRuleId();
 
     int getStartPort();
@@ -39,10 +37,6 @@ public interface SecurityGroupRules {
     String getProtocol();
 
     Long getAllowedNetworkId();
-
-    String getAllowedSecurityGroup();
-
-    String getAllowedSecGrpAcct();
 
     String getAllowedSourceIpCidr();
 }

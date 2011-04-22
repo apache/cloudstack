@@ -21,18 +21,23 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 
 /**
  * @author ahuang
- *
+ * 
  */
 public interface IngressRule {
     long getId();
+
     long getSecurityGroupId();
+
     int getStartPort();
+
     int getEndPort();
+
     String getProtocol();
+
     AsyncInstanceCreateStatus getCreateStatus();
+
     Long getAllowedNetworkId();
-    String getAllowedSecurityGroup();
-    String getAllowedSecGrpAcct();
+
     String getAllowedSourceIpCidr();
 
 }
