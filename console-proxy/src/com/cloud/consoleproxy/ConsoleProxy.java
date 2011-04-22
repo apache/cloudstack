@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-//
 package com.cloud.consoleproxy;
 
 import java.io.File;

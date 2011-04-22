@@ -4564,7 +4564,7 @@ public class ManagementServerImpl implements ManagementServer {
     	_ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
     	
     	_consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
-    	return "Certificate has been updated, we will stop all running console proxy VMs for certificate propagation";
+    	return "Certificate has been updated, we will stop all running console proxy VMs to propagate the new certificate, please give a few minutes for console access service to be up again";
     }
 
     @Override

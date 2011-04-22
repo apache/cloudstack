@@ -83,10 +83,10 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         String result = _mgr.uploadCertificate(this);
-        if (result != null){
+        if (result != null) {
             CustomCertificateResponse response = new CustomCertificateResponse();
             response.setResponseName(getCommandName());
-            response.setUpdatedConsoleProxyIdList(result);
+            response.setResultMessage(result);
             response.setObjectName("customcertificate");
             this.setResponseObject(response);
         } else {

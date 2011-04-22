@@ -644,9 +644,19 @@
 			<ol>
 				<li>
 					<label><fmt:message key="label.certificate"/>:</label>
-					<textarea class="text" name="update_cert" id="update_cert" style="height: 300px; width: 400px" />
+					<textarea class="text" name="update_cert" id="update_cert" style="height: 200px; width: 400px" />
 					<div id="update_cert_errormsg" class="dialog_formcontent_errormsg" style="display:none; width:300px" ></div>
 				</li>
+                <li>
+                    <label><fmt:message key="label.privatekey"/>:</label>
+                    <textarea class="text" name="update_privatekey" id="update_privatekey" style="height: 150px; width: 400px" />
+                    <div id="update_key_errormsg" class="dialog_formcontent_errormsg" style="display:none; width:300px" ></div>
+                </li>
+                <li>
+                    <label><fmt:message key="label.domain.suffix"/>:</label>
+                    <input class="text" name="update_domainsuffix" id="update_domainsuffix" style="width: 400px" />
+                    <div id="update_domainsuffix_errormsg" class="dialog_formcontent_errormsg" style="display:none; width:300px" ></div>
+                </li>
 			</ol>
 		</form>
 	</div>

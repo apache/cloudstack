@@ -1596,14 +1596,18 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 				
 				var isValid = true;					
 				isValid &= validateString("SSL Certificate", $thisDialog.find("#update_cert"), $thisDialog.find("#update_cert_errormsg"), false, 4096);
+				isValid &= validateString("Private Key for Certificate", $thisDialog.find("#update_privatekey"), $thisDialog.find("#update_key_errormsg"), false, 4096);
+				isValid &= validateString("DNS domain suffix that certificate has been signed for", $thisDialog.find("#update_domainsuffix"), $thisDialog.find("#update_domainsuffix_errormsg"), false, 4096);
 				if (!isValid) return;	
 
 				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 				
 				var cert = trim($thisDialog.find("#update_cert").val());
+				var privateKey = trim($thisDialog.find("#update_privatekey").val());
+				var domainSuffix = trim($thisDialog.find("#update_domainsuffix").val());
 				
 				$.ajax({
-			        data: createURL("command=uploadCustomCertificate&certificate="+todb(cert)),
+			        data: createURL("command=uploadCustomCertificate&certificate="+todb(cert)+"&privatekey="+todb(privateKey)+"&domainsuffix="+todb(domainSuffix)),
 				    dataType: "json",
 				    success: function(json) {
 						var jobId = json.uploadcustomcertificateresponse.jobid;

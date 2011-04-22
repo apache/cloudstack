@@ -76,7 +76,7 @@ public class KeystoreManagerImpl implements KeystoreManager {
 
 		try {
 			String ksPassword = "passwordForValidation";
-			byte[] ksBits = CertificateHelper.buildAndSaveKeystore(domainSuffix, certificate, key, ksPassword);
+			byte[] ksBits = CertificateHelper.buildAndSaveKeystore(domainSuffix, certificate, getKeyContent(key), ksPassword);
 			KeyStore ks = CertificateHelper.loadKeystore(ksBits, ksPassword);
 			if(ks != null)
 				return true;

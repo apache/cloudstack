@@ -22,15 +22,14 @@ import com.google.gson.annotations.SerializedName;
 
 public class CustomCertificateResponse extends BaseResponse {
 
-    @SerializedName("updatedconsoleproxyidlist") @Param(description="the list of the console proxy ids which were successfully updated")
-    private String updatedConsoleProxyIdList;
+    @SerializedName("message") @Param(description="message of the certificate upload operation")
+    private String message;
 
-	public String getUpdatedConsoleProxyIdList() {
-		return updatedConsoleProxyIdList;
+	public String getResultMessage() {
+		return message;
 	}
 
-	public void setUpdatedConsoleProxyIdList(String updatedConsoleProxyIdList) {
-		this.updatedConsoleProxyIdList = updatedConsoleProxyIdList;
+	public void setResultMessage(String msg) {
+		this.message = msg;
 	}
-
 }
