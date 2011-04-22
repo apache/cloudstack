@@ -31,6 +31,8 @@ public class ApiConstants {
     public static final String BOOTABLE = "bootable";
     public static final String CATEGORY = "category";
     public static final String CERTIFICATE = "certificate";    
+    public static final String PRIVATE_KEY = "privatekey";    
+    public static final String DOMAIN_SUFFIX = "domainsuffix";    
     public static final String CIDR = "cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String CLEANUP = "cleanup";

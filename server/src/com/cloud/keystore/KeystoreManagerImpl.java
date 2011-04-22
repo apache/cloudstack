@@ -18,6 +18,7 @@
 package com.cloud.keystore;
 
 import java.io.IOException;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -65,13 +66,35 @@ public class KeystoreManagerImpl implements KeystoreManager {
 	}
 	
 	@Override
+	public boolean validateCertificate(String certificate, String key, String domainSuffix) {
+		if(certificate == null || certificate.isEmpty() ||
+			key == null || key.isEmpty() ||
+			domainSuffix == null || domainSuffix.isEmpty()) {
+			s_logger.error("Invalid parameter found in (certificate, key, domainSuffix) tuple for domain: " + domainSuffix);
+			return false;
+		}
+
+		try {
+			String ksPassword = "passwordForValidation";
+			byte[] ksBits = CertificateHelper.buildAndSaveKeystore(domainSuffix, certificate, key, ksPassword);
+			KeyStore ks = CertificateHelper.loadKeystore(ksBits, ksPassword);
+			if(ks != null)
+				return true;
+
+			s_logger.error("Unabled to construct keystore for domain: " + domainSuffix);
+		} catch(Exception e) {
+			s_logger.error("Certificate validation failed due to exception for domain: " + domainSuffix, e);
+		}
+		return false;
+	}
+	
+	@Override
 	public void saveCertificate(String name, String certificate, String key, String domainSuffix) {
 		if(name == null || name.isEmpty() ||
 			certificate == null || certificate.isEmpty() ||
 			key == null || key.isEmpty() ||
 			domainSuffix == null || domainSuffix.isEmpty())
 			throw new CloudRuntimeException("invalid parameter in saveCerticate");
-		
 		
 		_ksDao.save(name, certificate, key, domainSuffix);
 	}

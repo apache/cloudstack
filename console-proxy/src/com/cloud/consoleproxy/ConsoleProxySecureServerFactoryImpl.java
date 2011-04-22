@@ -18,17 +18,10 @@
 
 package com.cloud.consoleproxy;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.security.Key;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -50,71 +43,59 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 	private SSLContext sslContext = null;
 	
 	public ConsoleProxySecureServerFactoryImpl() {
-		try {
-		    s_logger.info("Start initializing SSL");
-			
-			char[] passphrase = "vmops.com".toCharArray();
-			KeyStore ks = KeyStore.getInstance("JKS");
-			ks.load(ConsoleProxy.class.getResourceAsStream("/realhostip.keystore"), passphrase);
-			//custom cert logic begins //
+	}
+	
+	@Override
+	public void init(byte[] ksBits, String ksPassword) {
+	    s_logger.info("Start initializing SSL");
+
+	    if(ksBits == null) {
 			try {
-				//check if there is any custom cert added at /etc/cloud/consoleproxy/cert/
-				String certPath = "/etc/cloud/consoleproxy/cert/customcert";				
-				//now generate a cert
-				FileInputStream fis = new FileInputStream(certPath);
-				BufferedInputStream bis = new BufferedInputStream(fis);
-				CertificateFactory cf = CertificateFactory.getInstance("X.509");
+			    s_logger.info("Initializing SSL from built-in default certificate");
 				
-				while (bis.available() > 1) {
-				   Certificate cert = cf.generateCertificate(bis);
-				   if(s_logger.isDebugEnabled()){
-					   s_logger.debug("The custom certificate generated is:"+cert.toString());
-   				   }				
-				//get the existing cert chain
-				Certificate[] chain = ks.getCertificateChain("realhostip");
-				Certificate[] newChain = new Certificate[chain.length+1];
-				newChain[0] = cert;//make custom cert the default 
-				System.arraycopy(chain, 0, newChain, 1, chain.length);
-				Key key = ks.getKey("realhostip", passphrase);
-				ks.setKeyEntry("realhostip", key, passphrase, newChain);
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Custom SSL cert added successfully to the keystore cert chain");
-				}
-			} catch (FileNotFoundException fnf) {
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Unable to find the custom cert file at /etc/cloud/consoleproxy/cert/customcert",fnf);
-			} catch (IOException ioe){
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Unable to read the custom cert file at /etc/cloud/consoleproxy/cert/customcert",ioe);
-			}catch (KeyStoreException kse){
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Unable to add custom cert file at /etc/cloud/consoleproxy/cert/customcert to the keystore",kse);
-			}catch (CertificateException ce){
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Unable to generate certificate from the file /etc/cloud/consoleproxy/cert/customcert",ce);				
-			}catch (Exception e){
-				//catch other excpns
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Unable to add custom cert file at /etc/cloud/consoleproxy/cert/customcert to the keystore",e);
+				char[] passphrase = "vmops.com".toCharArray();
+				KeyStore ks = KeyStore.getInstance("JKS");
+				ks.load(ConsoleProxy.class.getResourceAsStream("/realhostip.keystore"), passphrase);
+				
+			    s_logger.info("SSL certificate loaded");
+				
+				KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+				kmf.init(ks, passphrase);
+			    s_logger.info("Key manager factory is initialized");
+
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+				tmf.init(ks);
+			    s_logger.info("Trust manager factory is initialized");
+
+				sslContext = SSLContext.getInstance("TLS");
+				sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+			    s_logger.info("SSL context is initialized");
+			} catch (Exception ioe) {
+				s_logger.error(ioe.toString(), ioe);
 			}
-			//custom cert logic ends //	
-			
-		    s_logger.info("SSL certificate loaded");
-			
-			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-			kmf.init(ks, passphrase);
-		    s_logger.info("Key manager factory is initialized");
-
-			TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-			tmf.init(ks);
-		    s_logger.info("Trust manager factory is initialized");
-
-			sslContext = SSLContext.getInstance("TLS");
-			sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-		    s_logger.info("SSL context is initialized");
-		} catch (Exception ioe) {
-			s_logger.error(ioe.toString(), ioe);
-		}
+	    } else {
+			char[] passphrase = ksPassword != null ? ksPassword.toCharArray() : null;
+			try {
+			    s_logger.info("Initializing SSL from passed-in certificate");
+				
+				KeyStore ks = KeyStore.getInstance("JKS");
+				ks.load(new ByteArrayInputStream(ksBits), passphrase);
+				
+				KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+				kmf.init(ks, passphrase);
+			    s_logger.info("Key manager factory is initialized");
+		
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+				tmf.init(ks);
+			    s_logger.info("Trust manager factory is initialized");
+		
+				sslContext = SSLContext.getInstance("TLS");
+				sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+			    s_logger.info("SSL context is initialized");
+			} catch(Exception e) {
+				s_logger.error("Unable to init factory due to exception ", e);
+			}
+	    }
 	}
 	
 	public HttpServer createHttpServerInstance(int port) throws IOException {

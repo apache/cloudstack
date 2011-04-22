@@ -60,10 +60,4 @@ then
   maxmem=$eightypcnt
 fi
 
-EXTRA=
-if [ -f certs/realhostip.keystore ]
-then
-  EXTRA="-Djavax.net.ssl.trustStore=$(dirname $0)/certs/realhostip.keystore -Djavax.net.ssl.trustStorePassword=vmops.com"
-fi
-
-java -mx${maxmem}m ${EXTRA} -cp $CP com.cloud.agent.AgentShell $keyvalues $@
+java -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@

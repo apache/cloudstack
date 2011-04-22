@@ -122,7 +122,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		// Get init
 		String init = _configDao.getValue("init");
 		
-		if (init.equals("false")) {
+		if (init == null || init.equals("false")) {
 			s_logger.debug("ConfigurationServer is saving default values to the database.");
 			
 			// Save default Configuration Table values

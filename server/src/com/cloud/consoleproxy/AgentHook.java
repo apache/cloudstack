@@ -35,5 +35,5 @@ public interface AgentHook {
     void onAgentConnect(HostVO host, StartupCommand cmd);
     
     public void onAgentDisconnect(long agentId, Status state);
-	boolean applyCustomCertToNewProxy(StartupProxyCommand cmd);
+	public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd);	
 }

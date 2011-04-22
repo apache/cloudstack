@@ -187,7 +187,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         }
         return null;
     }
-
+    
     @Override
     public void onLoadReport(ConsoleProxyLoadReportCommand cmd) {
     }
@@ -268,6 +268,23 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
+    public void setManagementState(ConsoleProxyManagementState state) {
+    }
+    
+    @Override
+    public ConsoleProxyManagementState getManagementState() {
+    	return null;
+    }
+    
+    @Override
+    public void resumeLastManagementState() {
+    }
+    
+    @Override
+    public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
+    }
+
+    @Override
     public String getName() {
         return _name;
     }
@@ -279,13 +296,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         }
         return VirtualMachineName.getConsoleProxyId(vmName);
     }
-
-	@Override
-    public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
+    
     @Override
     public ConsoleProxyVO findByName(String name) {
         // TODO Auto-generated method stub

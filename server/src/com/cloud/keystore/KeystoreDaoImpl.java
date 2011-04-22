@@ -31,9 +31,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={KeystoreDao.class})
 public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements KeystoreDao {
-
     protected final SearchBuilder<KeystoreVO> FindByNameSearch;
-	
+
 	public KeystoreDaoImpl() {
 		FindByNameSearch = createSearchBuilder();
 		FindByNameSearch.and("name", FindByNameSearch.entity().getName(), Op.EQ);
@@ -48,7 +47,6 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
 		sc.setParameters("name", name);
 		return findOneBy(sc);
 	}
-	
 	
 	@Override
 	@DB

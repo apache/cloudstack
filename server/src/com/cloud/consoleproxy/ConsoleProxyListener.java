@@ -69,7 +69,7 @@ public class ConsoleProxyListener implements Listener {
         _proxyMgr.onAgentConnect(host, cmd);
     	
     	if (cmd instanceof StartupProxyCommand) {
-    		_proxyMgr.applyCustomCertToNewProxy((StartupProxyCommand)cmd);
+    		_proxyMgr.startAgentHttpHandlerInVM((StartupProxyCommand)cmd);
     	}
     }
 

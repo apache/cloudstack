@@ -38,8 +38,22 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.CERTIFICATE,type=CommandType.STRING,required=true,description="the custom cert to be uploaded")
     private String certificate;
 
+    @Parameter(name=ApiConstants.PRIVATE_KEY,type=CommandType.STRING,required=true,description="the private key for the certificate")
+    private String privateKey;
+
+    @Parameter(name=ApiConstants.DOMAIN_SUFFIX,type=CommandType.STRING,required=true,description="DNS domain suffix that the certificate is granted for")
+    private String domainSuffix;
+    
     public String getCertificate() {
         return certificate;
+    }
+    
+    public String getPrivateKey() {
+    	return privateKey;
+    }
+    
+    public String getDomainSuffix() {
+    	return domainSuffix;
     }
 
     @Override

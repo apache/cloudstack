@@ -45,15 +45,17 @@ import com.sun.net.httpserver.HttpServer;
 
 public class ConsoleProxy {
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxy.class);
-/*
-	private static final int MAX_STRONG_TEMPLATE_CACHE_SIZE = 100;
-	private static final int MAX_SOFT_TEMPLATE_CACHE_SIZE = 100;
-*/
 	
 	public static final int KEYBOARD_RAW = 0;
 	public static final int KEYBOARD_COOKED = 1;
 
 	public static Object context;
+	
+	// this has become more ugly, to store keystore info passed from management server (we now use management server managed keystore to support
+	// dynamically changing to customer supplied certificate)
+	public static byte[] ksBits;
+	public static String ksPassword;
+	
 	public static Method authMethod;
 	public static Method reportMethod;
 	public static Method ensureRouteMethod;
@@ -165,8 +167,9 @@ public class ConsoleProxy {
 		try {
 			Class<?> clz = Class.forName(factoryClzName);
 			try {
-				return (ConsoleProxyServerFactory)clz.newInstance();
-				
+				ConsoleProxyServerFactory factory = (ConsoleProxyServerFactory)clz.newInstance();
+				factory.init(ConsoleProxy.ksBits, ConsoleProxy.ksPassword);
+				return factory;
 			} catch (InstantiationException e) {
 				s_logger.error(e.getMessage(), e);
 				return null;
@@ -237,7 +240,7 @@ public class ConsoleProxy {
 		}
 	}
 	
-	public static void startWithContext(Properties conf, Object context) {
+	public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword) {
 		s_logger.info("Start console proxy with context");
 		if(conf != null) {
 			for(Object key : conf.keySet()) {
@@ -250,6 +253,8 @@ public class ConsoleProxy {
 		
 		// Using reflection to setup private/secure communication channel towards management server
 		ConsoleProxy.context = context;
+		ConsoleProxy.ksBits = ksBits;
+		ConsoleProxy.ksPassword = ksPassword;
 		try {
 			Class<?> contextClazz = Class.forName("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
 			authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class, String.class, String.class, String.class);

@@ -20,7 +20,6 @@ package com.cloud.agent.resource.consoleproxy;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,7 +51,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
-import com.cloud.agent.api.proxy.UpdateCertificateCommand;
+import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.exception.AgentControlChannelException;
 import com.cloud.host.Host;
@@ -99,68 +98,17 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if(cmd instanceof CheckHealthCommand) {
         	return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
-        }  else if(cmd instanceof UpdateCertificateCommand) {
-        	return execute((UpdateCertificateCommand)cmd);
-        }  
-        else {
+        } else if(cmd instanceof StartConsoleProxyAgentHttpHandlerCommand) { 
+        	return execute((StartConsoleProxyAgentHttpHandlerCommand)cmd);
+        } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
 
-    protected Answer execute(final UpdateCertificateCommand cmd) {
-    	boolean success = false;
-    	String errorStr = null;
-    	String successStr = null;
-    	try
-    	{
-    		String certificate = cmd.getCertificate();
-    		//write the cert to /etc/cloud/consoleproxy/cert/
-			boolean dirCreated = false;
-			boolean dirExists = false;
-			boolean forNewProxy = cmd.isForNewProxy();
-			String strDirectory = "/etc/cloud/consoleproxy/cert/";
-			String filePath = "/etc/cloud/consoleproxy/cert/customcert";
-			if(forNewProxy){
-				dirCreated = (new File(strDirectory)).mkdirs();
-    	    	if(s_logger.isDebugEnabled())
-    	    		s_logger.debug("Directory: " + strDirectory + " created");    
-    	    	if(dirCreated){
-	    	    	success = copyCertToDirectory(certificate, filePath);
-		    		successStr = "Successfully created cert at /etc/cloud/consoleproxy/cert/ from the listener flow for new console proxy starting up";
-    	    	}
-			}
-			else{
-				File dir = new File(strDirectory);
-				dirExists = dir.exists();
-				if(!dirExists){
-					dirCreated = (new File(strDirectory)).mkdirs();
-	    	    	if(s_logger.isDebugEnabled())
-	    	    		s_logger.debug("Directory: " + strDirectory + " created");    
-				}
-	    	    if (dirExists || dirCreated) 
-	    	    {
-	    	    	success = copyCertToDirectory(certificate, filePath);
-		    		successStr = "Successfully created cert at /etc/cloud/consoleproxy/cert/ from the UploadCustomCert cmd flow for existing console proxy";
-	    	    }
-			}
-    	}catch (SecurityException se){
-    		errorStr = "Unable to upload cert in console proxy resource due to directory creation failure";
-    		s_logger.error(errorStr,se);
-    		success = false;    		
-    	}catch (IOException ioe){
-    		errorStr = "Unable to write cert to the location /etc/cloud/consoleproxy/cert/ ";
-    		s_logger.error(errorStr,ioe);
-    		success = false;    		    		
-    	}
-    	catch (Exception e)
-    	{
-    		errorStr = "Unable to upload cert in console proxy resource";
-    		s_logger.error(errorStr,e);
-    		success = false;
-    	}
-    	
-        return new Answer(cmd, success, errorStr!=null?errorStr:successStr);
-    }
+	private Answer execute(StartConsoleProxyAgentHttpHandlerCommand cmd) {
+		launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword());
+		return new Answer(cmd);
+	}
     
     private void disableRpFilter() {
     	try {
@@ -321,7 +269,6 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         if(s_logger.isInfoEnabled())
         	s_logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + _proxyVmId);
         
-        launchConsoleProxy();
         return true;
     }
     
@@ -369,7 +316,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         return _name;
     }
     
-    private void launchConsoleProxy() {
+    private void launchConsoleProxy(final byte[] ksBits, final String ksPassword) {
     	final Object resource = this;
     	
 		_consoleProxyMain = new Thread(new Runnable() {
@@ -377,8 +324,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 				try {
 					Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
 					try {
-						Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class);
-						method.invoke(null, _properties, resource);
+						Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class, byte[].class, String.class);
+						method.invoke(null, _properties, resource, ksBits, ksPassword);
 					} catch (SecurityException e) {
 						s_logger.error("Unable to launch console proxy due to SecurityException");
 						System.exit(ExitStatus.Error.value());

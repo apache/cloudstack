@@ -67,6 +67,8 @@ import com.cloud.host.dao.DetailsDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
+import com.cloud.keystore.KeystoreDaoImpl;
+import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
@@ -263,6 +265,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
         addDao("HostTagsDao", HostTagsDaoImpl.class);
         addDao("NetworkDomainDao", NetworkDomainDaoImpl.class);
+        addDao("KeystoreDao", KeystoreDaoImpl.class);
     }
     
     @Override
@@ -281,6 +284,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("network manager", NetworkManagerImpl.class);
         addManager("download manager", DownloadMonitorImpl.class);
         addManager("upload manager", UploadMonitorImpl.class);
+        addManager("keystore manager", KeystoreManagerImpl.class);
         addManager("console proxy manager", AgentBasedStandaloneConsoleProxyManager.class);
         addManager("secondary storage vm manager", SecondaryStorageManagerImpl.class);
         addManager("vm manager", UserVmManagerImpl.class);

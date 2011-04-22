@@ -16,12 +16,12 @@
  * 
  */
 
-package com.cloud.keystore;
+package com.cloud.consoleproxy;
 
-import com.cloud.utils.component.Manager;
-
-public interface KeystoreManager extends Manager {
-	boolean validateCertificate(String certificate, String key, String domainSuffix);
-	void saveCertificate(String name, String certificate, String key, String domainSuffix);
-	byte[] getKeystoreBits(String name, String aliasForCertificateInStore, String storePassword);
+public enum ConsoleProxyManagementState {
+	Auto,
+	Manual,
+	Suspending,
+	ResetSuspending
 }
+

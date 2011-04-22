@@ -17,12 +17,6 @@
  */
 package com.cloud.server;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -32,9 +26,6 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -62,10 +53,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.proxy.UpdateCertificateCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.alert.Alert;
@@ -135,7 +124,6 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.certificate.CertificateVO;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -143,6 +131,7 @@ import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -168,11 +157,9 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -184,6 +171,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
+import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -256,7 +244,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
@@ -339,6 +326,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final CertificateDao _certDao;
     private final SSHKeyPairDao _sshKeyPairDao;
 
+    private final KeystoreManager _ksMgr;
+
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
 
     private final StatsCollector _statsCollector;
@@ -410,7 +399,8 @@ public class ManagementServerImpl implements ManagementServer {
         _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
         _itMgr = locator.getManager(VirtualMachineManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
-
+        _ksMgr = locator.getManager(KeystoreManager.class);
+    	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
@@ -4566,141 +4556,15 @@ public class ManagementServerImpl implements ManagementServer {
         return EventUtils.saveEvent(userId, accountId, level, type, description, startEventId);
     }
 
-    @Override
-    @DB
+    @Override @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) {
-        CertificateVO cert = null;
-        Long certVOId = null;
-        try {
-            Transaction.currentTxn();
-            String certificate = cmd.getCertificate();
-            cert = _certDao.listAll().get(0); // always 1 record in db (from the deploydb time)
-            cert = _certDao.acquireInLockTable(cert.getId());
-            if (cert == null) {
-                String msg = "Unable to obtain lock on the cert from uploadCertificate()";
-                s_logger.error(msg);
-                throw new ConcurrentOperationException(msg);
-            } else {
-                if (cert.getUpdated().equalsIgnoreCase("Y")) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("A custom certificate already exists in the DB, will replace it with the new one being uploaded");
-                    }
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("No custom certificate exists in the DB, will upload a new one");
-                    }
-                }
-
-                // validate if the cert follows X509 format, if not, don't persist to db
-                InputStream is = new ByteArrayInputStream(certificate.getBytes("UTF-8"));
-                BufferedInputStream bis = new BufferedInputStream(is);
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                while (bis.available() > 1) {
-                    Certificate localCert = cf.generateCertificate(bis);// throws certexception if not valid cert format
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("The custom certificate generated for validation is:" + localCert.toString());
-                    }
-                }
-
-                certVOId = _certDao.persistCustomCertToDb(certificate, cert, this.getId());// 0 implies failure
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Custom certificate persisted to the DB");
-                }
-            }
-
-            if (certVOId != 0) {
-                // certficate uploaded to db successfully
-                // get a list of all Console proxies from the cp table
-                List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
-                if (cpList.size() == 0) {
-                    String msg = "Unable to find any console proxies in the system for certificate update";
-                    s_logger.warn(msg);
-                    throw new ExecutionException(msg);
-                }
-                // get a list of all hosts in host table for type cp
-                List<HostVO> cpHosts = _hostDao.listByType(com.cloud.host.Host.Type.ConsoleProxy);
-                if (cpHosts.size() == 0) {
-                    String msg = "Unable to find any console proxy hosts in the system for certificate update";
-                    s_logger.warn(msg);
-                    throw new ExecutionException(msg);
-                }
-                // create a hashmap for fast lookup
-                Map<String, Long> hostNameToHostIdMap = new HashMap<String, Long>();
-                // updated console proxies id list
-                List<Long> updatedCpIdList = new ArrayList<Long>();
-                for (HostVO cpHost : cpHosts) {
-                    hostNameToHostIdMap.put(cpHost.getName(), cpHost.getId());
-                }
-                for (ConsoleProxyVO cp : cpList) {
-                    Long cpHostId = hostNameToHostIdMap.get(cp.getName());
-                    // now send a command to each console proxy host
-                    UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate(), false);
-                    try {
-                        Answer updateCertAns = _agentMgr.send(cpHostId, certCmd);
-                        if (updateCertAns.getResult() == true) {
-                            // we have the cert copied over on cpvm
-                            _consoleProxyMgr.rebootProxy(cp.getId());
-                            // when cp reboots, the context will be reinit with the new cert
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Successfully updated custom certificate on console proxy vm id:" + cp.getId() + " ,console proxy host id:" + cpHostId);
-                            }
-                            updatedCpIdList.add(cp.getId());
-                        }
-                    } catch (AgentUnavailableException e) {
-                        s_logger.warn("Unable to send update certificate command to the console proxy resource as agent is unavailable for console proxy vm id:" + cp.getId()
-                                + " ,console proxy host id:" + cpHostId, e);
-                    } catch (OperationTimedoutException e) {
-                        s_logger.warn("Unable to send update certificate command to the console proxy resource as there was a timeout for console proxy vm id:" + cp.getId()
-                                + " ,console proxy host id:" + cpHostId, e);
-                    }
-                }
-
-                if (updatedCpIdList.size() == cpList.size()) {
-                    // success case, all updated
-                    return ("Updated:" + updatedCpIdList.size() + " out of:" + cpList.size() + " console proxies");
-                } else {
-                    // failure case, if even one update fails
-                    throw new ManagementServerException("Updated:" + updatedCpIdList.size() + " out of:" + cpList.size() + " console proxies with successfully updated console proxy ids being:"
-                            + (updatedCpIdList.size() > 0 ? updatedCpIdList.toString() : ""));
-                }
-            } else {
-                throw new ManagementServerException("Unable to persist custom certificate to the cloud db");
-            }
-        } catch (Exception e) {
-            s_logger.warn("Failed to successfully update the cert across console proxies on management server:" + this.getId());
-            if (e instanceof ExecutionException) {
-                throw new CloudRuntimeException(e.getMessage());
-            } else if (e instanceof ManagementServerException) {
-                throw new CloudRuntimeException(e.getMessage());
-            } else if (e instanceof IndexOutOfBoundsException) {
-                String msg = "Custom certificate record in the db deleted; this should never happen. Please create a new record in the certificate table";
-                s_logger.error(msg, e);
-                throw new CloudRuntimeException(msg);
-            } else if (e instanceof FileNotFoundException) {
-                String msg = "Invalid file path for custom cert found during cert validation";
-                s_logger.error(msg, e);
-                throw new InvalidParameterValueException(msg);
-            } else if (e instanceof CertificateException) {
-                String msg = "The file format for custom cert does not conform to the X.509 specification";
-                s_logger.error(msg, e);
-                throw new CloudRuntimeException(msg);
-            } else if (e instanceof UnsupportedEncodingException) {
-                String msg = "Unable to encode the certificate into UTF-8 input stream for validation";
-                s_logger.error(msg, e);
-                throw new CloudRuntimeException(msg);
-            } else if (e instanceof IOException) {
-                String msg = "Cannot generate input stream during custom cert validation";
-                s_logger.error(msg, e);
-                throw new CloudRuntimeException(msg);
-            } else {
-                String msg = "Cannot upload custom certificate, internal error.";
-                s_logger.error(msg, e);
-                throw new CloudRuntimeException(msg);
-            }
-
-        } finally {
-            _certDao.releaseFromLockTable(cert.getId());
-        }
+    	if(!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix()))
+    		throw new InvalidParameterValueException("Failed to pass certificate validation check");
+    	
+    	_ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
+    	
+    	_consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
+    	return "Certificate has been updated, we will stop all running console proxy VMs for certificate propagation";
     }
 
     @Override

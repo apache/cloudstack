@@ -40,6 +40,11 @@ public interface ConsoleProxyManager extends Manager {
 	public static final int DEFAULT_PROXY_SESSION_TIMEOUT = 300000;		// 5 minutes
 	
 	public static final String ALERT_SUBJECT = "proxy-alert";
+	public static final String CERTIFICATE_NAME = "CPVMCertificate";
+
+    public void setManagementState(ConsoleProxyManagementState state);
+    public ConsoleProxyManagementState getManagementState();
+    public void resumeLastManagementState();
 	
 	public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId);
 	
@@ -47,7 +52,7 @@ public interface ConsoleProxyManager extends Manager {
 	public boolean stopProxy(long proxyVmId);
 	public boolean rebootProxy(long proxyVmId);
 	public boolean destroyProxy(long proxyVmId);
-	
+
 	public void onLoadReport(ConsoleProxyLoadReportCommand cmd);
 	public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd);
 	
