@@ -179,7 +179,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     }
 
     @Override
-    public void scheduleRestartForVmsOnHost(final HostVO host) {
+    public void scheduleRestartForVmsOnHost(final HostVO host, boolean investigate) {
 
         if (host.getType() != Host.Type.Routing) {
             return;
@@ -216,9 +216,9 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
 
         for (final VMInstanceVO vm : vms) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Notifying HA Mgr of to investigate vm " + vm.getId() + "-" + vm.getName());
+                s_logger.debug("Notifying HA Mgr of to restart vm " + vm.getId() + "-" + vm.getName());
             }
-            scheduleRestart(vm, true);
+            scheduleRestart(vm, investigate);
         }
     }
 

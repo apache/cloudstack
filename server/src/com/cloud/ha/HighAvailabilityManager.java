@@ -78,8 +78,9 @@ public interface HighAvailabilityManager extends Manager {
     /**
      * Schedule restarts for all vms running on the host.
      * @param host host.
+     * @param investigate TODO
      */
-    void scheduleRestartForVmsOnHost(HostVO host);
+    void scheduleRestartForVmsOnHost(HostVO host, boolean investigate);
 
     /**
      * Schedule the vm for migration.

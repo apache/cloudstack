@@ -1588,7 +1588,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
         host = _hostDao.findById(host.getId());
         if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
-            _haMgr.scheduleRestartForVmsOnHost(host);
+            _haMgr.scheduleRestartForVmsOnHost(host, investigate);
         }
 
         for (Pair<Integer, Listener> monitor : _hostMonitors) {
