@@ -135,7 +135,6 @@ updatercd = Command("update-rc.d")
 ufw = Command("ufw")
 iptables = Command("/sbin/iptables")
 iptables_save = Command("/sbin/iptables-save")
-augtool = Command("augtool")
 kvmok = Command("kvm-ok")
 ifconfig = Command("/sbin/ifconfig")
 uuidgen = Command("uuidgen")
@@ -166,60 +165,28 @@ try:
 except CalledProcessError,e:
 	pass
 
-requiretty = augtool._print("/files/etc/sudoers/Defaults/requiretty").stdout.strip()
-sudoeruser = augtool.match("/files/etc/sudoers/spec/user","@MSUSER@").stdout.strip()
-	
-if requiretty:
-	sudoerstext = file("/etc/sudoers").read()
-	def restore():
-		try: file("/etc/sudoers","w").write(sudoerstext)
-		except OSError,e: raise
-		
-	script = """rm %s
-save"""%"/".join(requiretty.split("/")[:-1])
-	
-	stderr("Executing the following reconfiguration script:\n%s",script)
-	
-	try:
-		returned = augtool < script
-		if "Saved 1 file" not in returned.stdout:
-			print returned.stdout + returned.stderr
-			restore()
-			bail(E_SUDORECONFIGFAILED,"sudoers reconfiguration failed.")
-		else:
-			stderr("sudoers reconfiguration complete")
-	except CalledProcessError,e:
-		restore()
-		print e.stdout + e.stderr
-		bail(E_SUDORECONFIGFAILED,"sudoers reconfiguration failed")
+sudoerstext = file("/etc/sudoers").readlines()
+def restore():
+	try: file("/etc/sudoers","w").write(''.join(sudoerstext))
+	except OSError,e: raise
 
-if "@MSUSER@" not in sudoeruser:
-	sudoerstext = file("/etc/sudoers").read()
-	def restore():
-		try: file("/etc/sudoers","w").write(sudoerstext)
-		except OSError,e: raise
-		
-	script = """ins spec after /files/etc/sudoers/spec[last()]
-set /files/etc/sudoers/spec[last()]/user @MSUSER@
-set /files/etc/sudoers/spec[last()]/host_group/host ALL
-set /files/etc/sudoers/spec[last()]/host_group/command ALL
-set /files/etc/sudoers/spec[last()]/host_group/command/tag NOPASSWD
-save"""
-	
-	stderr("Executing the following reconfiguration script:\n%s",script)
-	
-	try:
-		returned = augtool < script
-		if "Saved 1 file" not in returned.stdout:
-			print returned.stdout + returned.stderr
-			restore()
-			bail(E_SUDORECONFIGFAILED,"sudoers reconfiguration failed.")
-		else:
-			stderr("sudoers reconfiguration complete")
-	except CalledProcessError,e:
-		restore()
-		print e.stdout + e.stderr
-		bail(E_SUDORECONFIGFAILED,"sudoers reconfiguration failed")
+try:
+	stderr("Configure /etc/sudoers")
+	newtext = []
+	clouder = "cloud ALL = NOPASSWD : ALL"
+	hasClouder = False
+	for line in sudoerstext:
+		if "Defaults" in line and "requiretty" in line:
+			continue
+		if clouder in line:
+			hasClouder = True
+		newtext.append(line)
+	if not hasClouder:
+		newtext.append(clouder+'\n')
+	file("/etc/sudoers", "w").write(''.join(newtext))
+except:
+	restore()
+	bail(E_SUDORECONFIGFAILED,"sudoers reconfiguration failed")
 
 ports = "80 8080 8096 8250 9090".split()
 if Fedora or CentOS:
