@@ -590,7 +590,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         String backedUpSnapshotUuid = snapshot.getBackupSnapshotId();
         snapshot = _snapshotDao.findById(snapshotId);
-        if (snapshot.getVersion() == "2.1") {
+        if (snapshot.getVersion().trim().equals("2.1")) {
             VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
             if (volume == null) {
                 throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unable to find orignal volume:" + volumeId + ", try it later ");

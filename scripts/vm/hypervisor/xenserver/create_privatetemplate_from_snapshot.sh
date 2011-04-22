@@ -78,18 +78,19 @@ copyvhd()
 {
   local desvhd=$1
   local srcvhd=$2
-  local parent=`$VHDUTIL query -p -n $srcvhd`
+  local parent=
+  parent=`$VHDUTIL query -p -n $srcvhd`
   if [ $? -ne 0 ]; then
     echo "30#failed to query $srcvhd"
     cleanup
     exit 0
   fi
-  if [ "${parent##*vhd has}" = " no parent" ]; then
+  if [[ "${parent}"  =~ " no parent" ]]; then
     dd if=$srcvhd of=$desvhd bs=2M     
     if [ $? -ne 0 ]; then
       echo "31#failed to dd $srcvhd to $desvhd"
       cleanup
-     exit 0
+      exit 0
     fi
   else
     copyvhd $desvhd $parent
