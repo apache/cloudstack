@@ -257,8 +257,12 @@ function bindAddPodButton($button, $leftmenuItem1) {
 		        isValid &= validateIp("End IP Range", $thisDialog.find("#add_pod_endip"), $thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
 		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
 		        		        
-		        if($thisDialog.find("#guestip_container").css("display") != "none")
-                    isValid &= addZoneWizardValidateGuestIPRange($thisDialog);
+		        if($thisDialog.find("#guestip_container").css("display") != "none") {
+                    isValid &= validateIp("Guest IP Range", $thisDialog.find("#startguestip"), $thisDialog.find("#startguestip_errormsg"));  //required
+					isValid &= validateIp("Guest IP Range", $thisDialog.find("#endguestip"), $thisDialog.find("#endguestip_errormsg"), true);  //optional
+					isValid &= validateIp("Guest Netmask", $thisDialog.find("#guestnetmask"), $thisDialog.find("#guestnetmask_errormsg"));  //required when creating
+					isValid &= validateIp("Guest Gateway", $thisDialog.find("#guestgateway"), $thisDialog.find("#guestgateway_errormsg")); 
+				}
 		        		        
 		        if (!isValid) 
 		            return;			
