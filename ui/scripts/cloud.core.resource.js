@@ -1421,7 +1421,9 @@ function addZoneWizardSubmit($thisWizard) {
 		    
 		    zoneId = item.id;	
 		    
-		    listZonesUpdate();		           
+		    listZonesUpdate();	
+			g_directAttachSecurityGroupsEnabled = true;
+			$("#leftmenu_security_group_container").show();
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
