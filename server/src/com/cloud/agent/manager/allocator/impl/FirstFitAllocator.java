@@ -162,7 +162,7 @@ public class FirstFitAllocator implements HostAllocator {
             boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
     		int cpu_requested = offering.getCpu() * offering.getSpeed();
     		long ram_requested = offering.getRamSize() * 1024L * 1024L;	
-    		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false);
+    		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, _factor);
 
             if (numCpusGood && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
@@ -304,10 +304,6 @@ public class FirstFitAllocator implements HostAllocator {
     		Map<String, String> configs = _configDao.getConfiguration(params);
             String opFactor = configs.get("cpu.overprovisioning.factor");
             _factor = NumbersUtil.parseFloat(opFactor, 1);
-            //Over provisioning factor cannot be < 1. Reset to 1 in such cases
-            if (_factor < 1){
-            	_factor = 1;
-            }
             
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
             if (allocationAlgorithm != null && (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("firstfit"))) {
