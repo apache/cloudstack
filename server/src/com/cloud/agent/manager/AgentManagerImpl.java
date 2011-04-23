@@ -3031,7 +3031,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
 				CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
 				long newTotalCpu = (long) (server.getCpus().longValue()
-						* server.getSpeed().longValue() * _cpuOverProvisioningFactor);
+						* server.getSpeed().longValue());
 				if ((CapacityVOCpu.getTotalCapacity() <= newTotalCpu)
 						|| ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu
 								.getReservedCapacity()) <= newTotalCpu)) {
@@ -3056,7 +3056,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 						server.getClusterId(),
 						0L,
 						(long) (server.getCpus().longValue()
-								* server.getSpeed().longValue() * _cpuOverProvisioningFactor),
+								* server.getSpeed().longValue()),
 						CapacityVO.CAPACITY_TYPE_CPU);
 				_capacityDao.persist(capacity);
 			}
