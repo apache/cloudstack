@@ -522,6 +522,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
             hostResponse.setCpuAllocated(cpuAlloc);
+            
+            String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
+            hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
         }
 
         // calculate cpu utilized
@@ -2093,6 +2096,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
+        
         // collect all the capacity types, sum allocated/used and sum total...get one capacity number for each
         for (Capacity capacity : hostCapacities) {
             if (poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
@@ -2110,11 +2115,17 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             Long totalCapacity = totalCapacityMap.get(key);
             Long usedCapacity = usedCapacityMap.get(key);
+            
+            //reset overprovisioning factor to 1
+            float overprovisioningFactor = 1;
+            if (capacityType == Capacity.CAPACITY_TYPE_CPU){
+            	overprovisioningFactor = cpuOverprovisioningFactor;
+            }
 
             if (totalCapacity == null) {
-                totalCapacity = new Long(capacity.getTotalCapacity());
+                totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor));
             } else {
-                totalCapacity = new Long(capacity.getTotalCapacity() + totalCapacity);
+                totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
             }
 
             if (usedCapacity == null) {
@@ -2140,10 +2151,15 @@ public class ApiResponseHelper implements ResponseGenerator {
                 totalCapacity = totalCapacityMap.get(keyForPodTotal);
                 usedCapacity = usedCapacityMap.get(keyForPodTotal);
 
+                overprovisioningFactor = 1;
+                if (capacityType == Capacity.CAPACITY_TYPE_CPU){
+                	overprovisioningFactor = cpuOverprovisioningFactor;
+                }
+
                 if (totalCapacity == null) {
-                    totalCapacity = new Long(capacity.getTotalCapacity());
+                    totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor));
                 } else {
-                    totalCapacity = new Long(capacity.getTotalCapacity() + totalCapacity);
+                    totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
                 }
 
                 if (usedCapacity == null) {

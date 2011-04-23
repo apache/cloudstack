@@ -1,4 +1,4 @@
-/**
+﻿/**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -1288,7 +1288,13 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Searching for hosts in cluster: " + cluster + " having required CPU: " + requiredCpu + " and RAM:" + requiredRam);
         }
 
-        List<Long> hostsWithCapacity = _capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, cluster, hostType.name());
+        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("CPUOverprovisioningFactor considered: " + cpuOverprovisioningFactor);
+        }
+        List<Long> hostsWithCapacity = _capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, cluster, hostType.name(), cpuOverprovisioningFactor);
+
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Hosts having capacity: " + hostsWithCapacity);

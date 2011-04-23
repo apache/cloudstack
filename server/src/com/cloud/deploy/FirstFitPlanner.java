@@ -66,6 +66,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
@@ -112,6 +113,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 		int cpu_requested = offering.getCpu() * offering.getSpeed();
 		long ram_requested = offering.getRamSize() * 1024L * 1024L;
+		
+        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
+
 		
 		s_logger.debug("In FirstFitPlanner:: plan");
 		
@@ -163,7 +168,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 				if (host.getStatus() == Status.Up && host.getHostAllocationState() == Host.HostAllocationState.Enabled) {
 					//check zone/pod/cluster are enabled
 					if(isEnabledForAllocation(vm.getDataCenterId(), vm.getPodId(), host.getClusterId())){
-						if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true)){
+						if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor)){
 							s_logger.debug("The last host of this VM is UP and has enough capacity"); 
 							s_logger.debug("Now checking for suitable pools under zone: "+vm.getDataCenterId() +", pod: "+ vm.getPodId()+", cluster: "+ host.getClusterId());
 							//search for storage under the zone, pod, cluster of the last host.
@@ -221,7 +226,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			HostPodVO pod = _podDao.findById(podIdSpecified);
 			if (pod != null) {
 				//list clusters under this pod by cpu and ram capacity 
-				clusterList = listClustersByCapacity(podIdSpecified, cpu_requested, ram_requested, avoid, false);
+				clusterList = listClustersByCapacity(podIdSpecified, cpu_requested, ram_requested, avoid, false, cpuOverprovisioningFactor);
 				if(!clusterList.isEmpty()){
 			    	if(avoid.getClustersToAvoid() != null){
 				    	if (s_logger.isDebugEnabled()) {
@@ -259,7 +264,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			//consider all clusters under this zone.
 			s_logger.debug("Searching all possible resources under this Zone: "+ plan.getDataCenterId());
 			//list clusters under this zone by cpu and ram capacity 
-			List<Long> prioritizedClusterIds = listClustersByCapacity(plan.getDataCenterId(), cpu_requested, ram_requested, avoid, true);
+			List<Long> prioritizedClusterIds = listClustersByCapacity(plan.getDataCenterId(), cpu_requested, ram_requested, avoid, true, cpuOverprovisioningFactor);
 			if(!prioritizedClusterIds.isEmpty()){
 				if(avoid.getClustersToAvoid() != null){
 			    	if (s_logger.isDebugEnabled()) {
@@ -438,7 +443,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		return prioritizedPods;
 	}	
 	
-	protected List<Long> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone){
+	protected List<Long> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone, float cpuOverprovisioningFactor){
 		//look at the aggregate available cpu and ram per cluster
 		//although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 		
@@ -451,8 +456,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     	if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
     		capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
     	}
-    			
-		List<Long> clusterIdswithEnoughCapacity = _capacityDao.orderClustersInZoneOrPodByHostCapacities(id, requiredCpu, requiredRam, capacityType, isZone);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("CPUOverprovisioningFactor considered: " + cpuOverprovisioningFactor);
+        }
+		List<Long> clusterIdswithEnoughCapacity = _capacityDao.orderClustersInZoneOrPodByHostCapacities(id, requiredCpu, requiredRam, capacityType, isZone, cpuOverprovisioningFactor);
     	if (s_logger.isDebugEnabled()) {
     		s_logger.debug("ClusterId List having enough aggregate capacity: "+clusterIdswithEnoughCapacity );
 		}

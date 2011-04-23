@@ -80,6 +80,9 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("cpuused") @Param(description="the amount of the host's CPU currently used")
     private String cpuUsed;
+    
+    @SerializedName("cpuwithoverprovisioning") @Param(description="the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
+    private String cpuWithOverprovisioning;
 
     @SerializedName("averageload") @Param(description="the cpu average load on the host")
     private Long averageLoad;
@@ -486,5 +489,13 @@ public class HostResponse extends BaseResponse {
     
     public void setAllocationState(String allocationState) {
     	this.allocationState = allocationState;
-    }     
+    }
+    
+    public String getCpuWithOverprovisioning() {
+        return cpuWithOverprovisioning;
+    }
+
+    public void setCpuWithOverprovisioning(String cpuWithOverprovisioning) {
+        this.cpuWithOverprovisioning = cpuWithOverprovisioning;
+    }    
 }

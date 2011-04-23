@@ -124,7 +124,13 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             long usedMem = capacityMemory.getUsedCapacity();
             long reservedCpu = capacityCpu.getReservedCapacity();
             long reservedMem = capacityMemory.getReservedCapacity();
-            long totalCpu = capacityCpu.getTotalCapacity();
+            long actualTotalCpu = capacityCpu.getTotalCapacity();
+            String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+            float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
+    		long totalCpu = (long)(actualTotalCpu * cpuOverprovisioningFactor);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Hosts's actual total CPU: " + actualTotalCpu + " and CPU after applying overprovisioning: " + totalCpu);
+            }
             long totalMem = capacityMemory.getTotalCapacity();
 
             if (!moveFromReserved) {
@@ -153,12 +159,12 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
                 }
             }
 
-            s_logger.debug("release cpu from host: " + hostId + ", old used: " + usedCpu + ",reserved: " + reservedCpu + ", total: " + totalCpu +
-                    "; new used: " + capacityCpu.getUsedCapacity() + ",reserved:" + capacityCpu.getReservedCapacity() + ",total: " + capacityCpu.getTotalCapacity() +
+            s_logger.debug("release cpu from host: " + hostId + ", old used: " + usedCpu + ",reserved: " + reservedCpu + ", actual total: " + actualTotalCpu + ", total with overprovisioning: " + totalCpu +
+                    "; new used: " + capacityCpu.getUsedCapacity() + ",reserved:" + capacityCpu.getReservedCapacity() +
                     "; movedfromreserved: " + moveFromReserved + ",moveToReservered" + moveToReservered);
 
             s_logger.debug("release mem from host: " + hostId + ", old used: " + usedMem + ",reserved: " + reservedMem + ", total: " + totalMem +
-                    "; new used: " + capacityMemory.getUsedCapacity() + ",reserved:" + capacityMemory.getReservedCapacity() + ",total: " + capacityMemory.getTotalCapacity() +
+                    "; new used: " + capacityMemory.getUsedCapacity() + ",reserved:" + capacityMemory.getReservedCapacity() +
                     "; movedfromreserved: " + moveFromReserved + ",moveToReservered" + moveToReservered);
 
             _capacityDao.update(capacityCpu.getId(), capacityCpu);
@@ -188,7 +194,10 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
         }
 
         int cpu = svo.getCpu() * svo.getSpeed();
-        long ram = svo.getRamSize() * 1024L * 1024L;    	
+        long ram = svo.getRamSize() * 1024L * 1024L;
+        
+        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
     	
         Transaction txn = Transaction.currentTxn();
 
@@ -201,7 +210,11 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             long usedMem = capacityMem.getUsedCapacity();
             long reservedCpu = capacityCpu.getReservedCapacity();
             long reservedMem = capacityMem.getReservedCapacity();
-            long totalCpu = capacityCpu.getTotalCapacity();
+            long actualTotalCpu = capacityCpu.getTotalCapacity();
+    		long totalCpu = (long)(actualTotalCpu * cpuOverprovisioningFactor);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Hosts's actual total CPU: " + actualTotalCpu + " and CPU after applying overprovisioning: " + totalCpu);
+            }
             long totalMem = capacityMem.getTotalCapacity();
             
 			long freeCpu = totalCpu - (reservedCpu + usedCpu);
@@ -236,13 +249,13 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
             }
 
             s_logger.debug("CPU STATS after allocation: for host: " + hostId + ", old used: " + usedCpu + ", old reserved: " +
-                    reservedCpu + ", old total: " + totalCpu + 
-                    "; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
+                    reservedCpu + ", actual total: " + actualTotalCpu + ", total with overprovisioning: " + totalCpu +
+                    "; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + 
                     "; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
 
             s_logger.debug("RAM STATS after allocation: for host: " + hostId + ", old used: " + usedMem + ", old reserved: " +
-                    reservedMem + ", old total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
-                    capacityMem.getReservedCapacity() + ", total: " + capacityMem.getTotalCapacity() + "; requested mem: " + ram + ",alloc_from_last:" + fromLastHost);
+                    reservedMem + ", total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
+                    capacityMem.getReservedCapacity() + "; requested mem: " + ram + ",alloc_from_last:" + fromLastHost);
 
             _capacityDao.update(capacityCpu.getId(), capacityCpu);
             _capacityDao.update(capacityMem.getId(), capacityMem);
@@ -254,11 +267,11 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
     }
     
     @Override
-    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity){
+    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor){
        	boolean hasCapacity = false;
        	
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if host: " + hostId + " has enough capacity for requested CPU: "+ cpu + " and requested RAM: "+ ram);
+            s_logger.debug("Checking if host: " + hostId + " has enough capacity for requested CPU: "+ cpu + " and requested RAM: "+ ram + " , cpuOverprovisioningFactor: "+cpuOverprovisioningFactor);
         }
        	
        	CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
@@ -268,7 +281,12 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
 		long usedMem = capacityMem.getUsedCapacity();
 		long reservedCpu = capacityCpu.getReservedCapacity();
 		long reservedMem = capacityMem.getReservedCapacity();
-		long totalCpu = capacityCpu.getTotalCapacity();
+        long actualTotalCpu = capacityCpu.getTotalCapacity();
+		long totalCpu = (long)(actualTotalCpu * cpuOverprovisioningFactor);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Hosts's actual total CPU: " + actualTotalCpu + " and CPU after applying overprovisioning: " + totalCpu);
+        }
+
 		long totalMem = capacityMem.getTotalCapacity();
 		
 		
@@ -318,7 +336,7 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
 	        }
 	        
 			s_logger.debug("STATS: Can alloc CPU from host: " + hostId + ", used: " + usedCpu + ", reserved: " +
-					reservedCpu + ", total: " + totalCpu +
+					reservedCpu + ", actual total: "+actualTotalCpu + ", total with overprovisioning: " + totalCpu +
 					"; requested cpu:" + cpu + ",alloc_from_last_host?:" + checkFromReservedCapacity);
    		
 			s_logger.debug("STATS: Can alloc MEM from host: " + hostId + ", used: " + usedMem + ", reserved: " +
@@ -330,7 +348,7 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
        					", reservedMem: " + reservedMem + ", requested mem: " + ram); 
        		} else {
        			s_logger.debug("STATS: Failed to alloc resource from host: " + hostId + " reservedCpu: " + reservedCpu + ", used cpu: " + usedCpu + ", requested cpu: " + cpu +
-       					", total cpu: " + totalCpu + 
+       					", actual total cpu: "+actualTotalCpu + ", total cpu with overprovisioning: " + totalCpu + 
        					", reservedMem: " + reservedMem + ", used Mem: " + usedMem + ", requested mem: " + ram + ", total Mem:" + totalMem); 
        		}
        		

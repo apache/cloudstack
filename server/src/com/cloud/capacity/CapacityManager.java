@@ -31,5 +31,5 @@ public interface CapacityManager extends Manager {
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
     
-    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity);
+    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor);
 }

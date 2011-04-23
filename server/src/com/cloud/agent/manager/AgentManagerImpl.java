@@ -2723,7 +2723,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
             if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
                 CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
-                long newTotalCpu = (long) (server.getCpus().longValue() * server.getSpeed().longValue() * _cpuOverProvisioningFactor);
+                long newTotalCpu = (long) (server.getCpus().longValue() * server.getSpeed().longValue());
                 if ((CapacityVOCpu.getTotalCapacity() <= newTotalCpu) || ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity()) <= newTotalCpu)) {
                     CapacityVOCpu.setTotalCapacity(newTotalCpu);
                 } else if ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity() > newTotalCpu) && (CapacityVOCpu.getUsedCapacity() < newTotalCpu)) {
@@ -2736,7 +2736,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                 _capacityDao.update(CapacityVOCpu.getId(), CapacityVOCpu);
             } else {
                 CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L, (long) (server.getCpus().longValue()
-                        * server.getSpeed().longValue() * _cpuOverProvisioningFactor), CapacityVO.CAPACITY_TYPE_CPU);
+                        * server.getSpeed().longValue()), CapacityVO.CAPACITY_TYPE_CPU);
                 _capacityDao.persist(capacity);
             }
 

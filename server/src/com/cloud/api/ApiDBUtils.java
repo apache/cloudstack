@@ -25,8 +25,10 @@ import java.util.Map;
 import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -103,6 +105,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
@@ -156,6 +159,7 @@ public class ApiDBUtils {
     private static NetworkOfferingDao _networkOfferingDao;
     private static NetworkDao _networkDao;
     private static ConfigurationService _configMgr;
+    private static ConfigurationDao _configDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -199,6 +203,7 @@ public class ApiDBUtils {
         _securityGroupDao = locator.getDao(SecurityGroupDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
+        _configDao = locator.getDao(ConfigurationDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -568,6 +573,12 @@ public class ApiDBUtils {
 
     public static Long getDedicatedNetworkDomain(long networkId) {
         return _networkMgr.getDedicatedNetworkDomain(networkId);
+    }
+    
+    public static float getCpuOverprovisioningFactor(){
+        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
+        return cpuOverprovisioningFactor;
     }
 
 }

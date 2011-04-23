@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -41,6 +43,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -54,6 +57,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 	@Inject protected HostPodDao _podDao;
 	@Inject protected ClusterDao _clusterDao;
 	@Inject protected HostDao _hostDao;
+	@Inject protected ConfigurationDao _configDao;
 	@Inject protected CapacityManager _capacityMgr;
 	String _name;
 	
@@ -62,6 +66,10 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		VirtualMachine vm = vmProfile.getVirtualMachine();
 		ServiceOffering offering = vmProfile.getServiceOffering();	
 		String hostTag = null;
+		
+        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
+
 		
 		if (vm.getLastHostId() != null) {
 			HostVO h = _hostDao.findById(vm.getLastHostId());
@@ -110,7 +118,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		
 		for (HostVO h : hosts) {
 			if (h.getStatus() == Status.Up) {
-				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false)){
+				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOverprovisioningFactor)){
 					s_logger.debug("Find host " + h.getId() + " has enough capacity");
 					DataCenter dc = _dcDao.findById(h.getDataCenterId());
 					Pod pod = _podDao.findById(h.getPodId());
