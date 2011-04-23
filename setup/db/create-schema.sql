@@ -81,7 +81,6 @@ DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
 DROP TABLE IF EXISTS `cloud`.`domain_network_ref`;
 DROP TABLE IF EXISTS `cloud`.`instance_group`;
 DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
-DROP TABLE IF EXISTS `cloud`.`certificate`;
 DROP TABLE IF EXISTS `cloud`.`op_it_work`;
 DROP TABLE IF EXISTS `cloud`.`load_balancing_ip_map`;
 DROP TABLE IF EXISTS `cloud`.`load_balancing_rules`;
@@ -202,16 +201,6 @@ CREATE TABLE `cloud`.`account_network_ref` (
   CONSTRAINT `fk_account_network_ref__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_account_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-CREATE TABLE `cloud`.`certificate` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `certificate` text COMMENT 'the actual custom certificate being stored in the db',
-  `updated` varchar(1) COMMENT 'status of the certificate',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-INSERT INTO `cloud`.`certificate` (id,certificate,updated) VALUES ('1',null,'N');
 
 CREATE TABLE `cloud`.`nics` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',

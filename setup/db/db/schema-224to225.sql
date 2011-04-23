@@ -5,6 +5,17 @@
 ALTER TABLE `cloud`.`mshost` ADD COLUMN `runid` bigint NOT NULL DEFAULT 0 COMMENT 'run id, combined with msid to form a cluster session';
 ALTER TABLE `cloud`.`mshost` ADD COLUMN `state` varchar(10) NOT NULL default 'Down';
 
+DROP TABLE IF EXISTS `cloud`.`certificate`;
+CREATE TABLE `cloud`.`keystore` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(64) NOT NULL COMMENT 'unique name for the certifiation',
+  `certificate` text NOT NULL COMMENT 'the actual certificate being stored in the db',
+  `key` text NOT NULL COMMENT 'private key associated wih the certificate',
+  `domain_suffix` varchar(256) NOT NULL COMMENT 'DNS domain suffix associated with the certificate',
+  PRIMARY KEY (`id`),
+  UNIQUE(name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`cmd_exec_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id of the system VM agent that command is sent to',
