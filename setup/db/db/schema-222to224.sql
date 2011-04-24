@@ -132,3 +132,6 @@ UPDATE `cloud`.`service_offering` s, `cloud`.`disk_offering` d SET s.ha_enabled=
 
 UPDATE `cloud`.`data_center` SET is_security_group_enabled=1 WHERE networktype='Basic';
 
+UPDATE `cloud`.`nics` SET ip_type='Ip4';
+
+
