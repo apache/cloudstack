@@ -650,7 +650,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
 
         if (diskOffering != null && diskOffering.isCustomized()) {
-            diskOffering.setDiskSize(size/(1024*1024));
+            diskOffering.setDiskSize(size / (1024 * 1024));
         }
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
@@ -1301,18 +1301,18 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     private boolean deletePoolStats(Long poolId) {
-        CapacityVO capacity1 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE);       
-        CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED); 
+        CapacityVO capacity1 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE);
+        CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
         Transaction txn = Transaction.currentTxn();
         txn.start();
         try {
-            if ( capacity1 != null ) {
+            if (capacity1 != null) {
                 _capacityDao.remove(capacity1.getId());
             }
-            if ( capacity2 != null ) {
+            if (capacity2 != null) {
                 _capacityDao.remove(capacity2.getId());
             }
-        } finally {       
+        } finally {
             txn.commit();
         }
         return true;
@@ -1341,7 +1341,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
     }
 
-    
     @Override
     public boolean delPoolFromHost(long hostId) {
         List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostId(hostId);
@@ -1351,7 +1350,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         return true;
     }
-    
+
     @Override
     public boolean addPoolToHost(long hostId, StoragePoolVO pool) {
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
@@ -2481,13 +2480,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
-    	
-    	if(dest == null){
+
+        if (dest == null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("DeployDestination cannot be null, cannot prepare Volumes for the vm: "+ vm);
+                s_logger.debug("DeployDestination cannot be null, cannot prepare Volumes for the vm: " + vm);
             }
-            throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination is null, vm:"+vm);
-    	}
+            throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination is null, vm:" + vm);
+        }
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
@@ -2496,35 +2495,35 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
 
         for (VolumeVO vol : vols) {
-    		StoragePool assignedPool = null;
-    		if(dest.getStorageForDisks() != null){
-    			assignedPool = dest.getStorageForDisks().get(vol);
-    		}
-    		if(assignedPool != null){
-    			Volume.State state = vol.getState();
-    			if(state == Volume.State.Allocated){
-    				recreateVols.add(vol);
-    			}else{
-	    			if (vol.isRecreatable()) {
-	                    if (s_logger.isDebugEnabled()) {
-	                        s_logger.debug("Volume " + vol + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
-	                    }
-	    				recreateVols.add(vol);
-	    			}else{
-	    				if (s_logger.isDebugEnabled()) {
-	                        s_logger.debug("Volume " + vol + " is not recreatable! Cannot recreate on storagepool: "+assignedPool);
-	                    }
-	                    throw new StorageUnavailableException("Volume is not recreatable, Unable to create " + vol, Volume.class, vol.getId());
-	                    //copy volume usecase - not yet developed.
-	    			}
-    			}
-    		}else{
-    			if(vol.getPoolId() == null){
-    				throw new StorageUnavailableException("Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol,  Volume.class, vol.getId());
-    			}
-    			StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
-    			vm.addDisk(new VolumeTO(vol, pool));
-    		}
+            StoragePool assignedPool = null;
+            if (dest.getStorageForDisks() != null) {
+                assignedPool = dest.getStorageForDisks().get(vol);
+            }
+            if (assignedPool != null) {
+                Volume.State state = vol.getState();
+                if (state == Volume.State.Allocated) {
+                    recreateVols.add(vol);
+                } else {
+                    if (vol.isRecreatable()) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Volume " + vol + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                        }
+                        recreateVols.add(vol);
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Volume " + vol + " is not recreatable! Cannot recreate on storagepool: " + assignedPool);
+                        }
+                        throw new StorageUnavailableException("Volume is not recreatable, Unable to create " + vol, Volume.class, vol.getId());
+                        // copy volume usecase - not yet developed.
+                    }
+                }
+            } else {
+                if (vol.getPoolId() == null) {
+                    throw new StorageUnavailableException("Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol, Volume.class, vol.getId());
+                }
+                StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+                vm.addDisk(new VolumeTO(vol, pool));
+            }
         }
 
         for (VolumeVO vol : recreateVols) {
