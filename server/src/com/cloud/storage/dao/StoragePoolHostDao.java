@@ -18,29 +18,25 @@
 
 package com.cloud.storage.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.Transaction;
 
 public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> {
-	public List<StoragePoolHostVO> listByPoolId(long id);
-	
-	public List<StoragePoolHostVO> listByHostId(long hostId);
-	
-	public StoragePoolHostVO findByPoolHost(long poolId, long hostId);
+    public List<StoragePoolHostVO> listByPoolId(long id);
 
-	List<StoragePoolHostVO> listByHostStatus(long poolId, Status hostStatus);
+    public List<StoragePoolHostVO> listByHostId(long hostId);
 
-	List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly);
+    public StoragePoolHostVO findByPoolHost(long poolId, long hostId);
 
-	public ArrayList<Long> getPoolIds(Long hostId);
-	
-	public void deletePrimaryRecordsForHost(long hostId);
-	
-	public void deleteStoragePoolHostDetails(long hostId, long poolId);
+    List<StoragePoolHostVO> listByHostStatus(long poolId, Status hostStatus);
+
+    List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly);
+
+    public void deletePrimaryRecordsForHost(long hostId);
+
+    public void deleteStoragePoolHostDetails(long hostId, long poolId);
 }

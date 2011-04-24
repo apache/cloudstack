@@ -138,11 +138,11 @@ import com.cloud.org.Grouping;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceService;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
@@ -772,7 +772,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                 bareMetalParams.put("hostTag", hostTags.get(0));
             }
         }
-
         String allocationState = cmd.getAllocationState();
         if (allocationState == null) {
             allocationState = Host.HostAllocationState.Enabled.toString();
@@ -1079,6 +1078,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
 
         AgentAttache attache = findAttache(hostId);
+        // Get storage pool host mappings here because they can be removed as a part of handleDisconnect later
+        List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostId(hostId);
 
         try {
 
@@ -1164,7 +1165,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             txn.start();
 
             _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
-
             if (attache != null) {
                 handleDisconnect(attache, Status.Event.Remove, false);
             }
@@ -1186,27 +1186,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                 }
             }
 
-            // delete the associated primary storage from db
-            ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-            _storagePoolHostDao = locator.getDao(StoragePoolHostDao.class);
-            if (_storagePoolHostDao == null) {
-                throw new ConfigurationException("Unable to get storage pool host dao: " + StoragePoolHostDao.class);
-            }
-            // 1. Get the pool_ids from the host ref table
-            ArrayList<Long> pool_ids = _storagePoolHostDao.getPoolIds(hostId);
-
-            // 2.Delete the associated entries in host ref table
+            // Delete the associated entries in host ref table
             _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
 
-            // 3.For pool ids you got, delete entries in pool table where
-            // type='FileSystem' || 'LVM'
-            for (Long poolId : pool_ids) {
+            // For pool ids you got, delete local storage host entries in pool table where
+            for (StoragePoolHostVO pool : pools) {
+                Long poolId = pool.getPoolId();
                 StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
                 if (storagePool.isLocal()) {
                     storagePool.setUuid(null);
                     storagePool.setClusterId(null);
                     _storagePoolDao.update(poolId, storagePool);
                     _storagePoolDao.remove(poolId);
+                    s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
                 }
             }
 
@@ -1216,7 +1208,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
             hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
             _capacityDao.remove(hostCapacitySC);
-
             txn.commit();
             return true;
         } catch (Throwable t) {
@@ -2723,7 +2714,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
             if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
                 CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
-                long newTotalCpu = (long) (server.getCpus().longValue() * server.getSpeed().longValue());
+                long newTotalCpu = (server.getCpus().longValue() * server.getSpeed().longValue());
                 if ((CapacityVOCpu.getTotalCapacity() <= newTotalCpu) || ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity()) <= newTotalCpu)) {
                     CapacityVOCpu.setTotalCapacity(newTotalCpu);
                 } else if ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity() > newTotalCpu) && (CapacityVOCpu.getUsedCapacity() < newTotalCpu)) {
@@ -2735,8 +2726,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                 }
                 _capacityDao.update(CapacityVOCpu.getId(), CapacityVOCpu);
             } else {
-                CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L, (long) (server.getCpus().longValue()
-                        * server.getSpeed().longValue()), CapacityVO.CAPACITY_TYPE_CPU);
+                CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L, (server.getCpus().longValue() * server.getSpeed()
+                        .longValue()), CapacityVO.CAPACITY_TYPE_CPU);
                 _capacityDao.persist(capacity);
             }
 
