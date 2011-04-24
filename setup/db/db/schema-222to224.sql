@@ -45,7 +45,6 @@ ALTER TABLE `cloud`.`cluster` ADD COLUMN  `removed` datetime COMMENT 'date remov
 ALTER TABLE `cloud`.`cluster` MODIFY `name` varchar(255) COMMENT 'name for the cluster';
 
 ALTER TABLE `cloud`.`network_offerings` MODIFY `guest_type` char(32);
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None');
 
 
 UPDATE `cloud`.`network_offerings` SET `nw_rate`=0, `mc_rate`=0 WHERE system_only=1 and guest_type IS NULL;
@@ -123,7 +122,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES
 ('Account Defaults','DEFAULT','management-server','max.account.volumes','20','The default maximum number of volumes that can be created for an account');
 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` CHANGE COLUMN `instance_id` `nic_id` bigint unsigned DEFAULT NULL;
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`op_dc_link_local_ip_address_alloc` CHANGE COLUMN `instance_id` `nic_id` bigint unsigned DEFAULT NULL;
 
 

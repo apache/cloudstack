@@ -121,3 +121,5 @@ ALTER TABLE `cloud`.`template_spool_ref` ADD CONSTRAINT `fk_template_spool_ref__
 
 ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `state` VARCHAR(32) NOT NULL;
 
+ALTER TABLE op_dc_ip_address_alloc ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+
