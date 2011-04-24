@@ -16,7 +16,6 @@
  * 
  */
 
-
 package com.cloud.network.guru;
 
 import java.net.URI;
@@ -52,20 +51,24 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=NetworkGuru.class)
-public class DirectPodBasedNetworkGuru extends DirectNetworkGuru{
-private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);
-    
-    @Inject DataCenterDao _dcDao;
-    @Inject VlanDao _vlanDao;
-    @Inject NetworkManager _networkMgr;
-    @Inject IPAddressDao _ipAddressDao;
-    @Inject NetworkOfferingDao _networkOfferingDao;
-    
+@Local(value = NetworkGuru.class)
+public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
+    private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);
+
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    VlanDao _vlanDao;
+    @Inject
+    NetworkManager _networkMgr;
+    @Inject
+    IPAddressDao _ipAddressDao;
+    @Inject
+    NetworkOfferingDao _networkOfferingDao;
 
     @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        //this guru handles system Direct pod based network
+        // this guru handles system Direct pod based network
         if (dc.getNetworkType() == NetworkType.Basic && offering.getTrafficType() == TrafficType.Guest && offering.isSystemOnly()) {
             return true;
         } else {
@@ -73,18 +76,18 @@ private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGur
             return false;
         }
     }
-    
+
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
-        
+
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-        
+
         if (!canHandle(offering, dc)) {
             return null;
         }
-       
+
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
         } else {
@@ -93,22 +96,25 @@ private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGur
 
         return nic;
     }
-    
+
     @Override
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getPod(), vm, network);
-        } 
+        }
     }
-    
-    protected void getIp(NicProfile nic, Pod pod, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+
+    protected void getIp(NicProfile nic, Pod pod, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
-        if (nic.getIp4Address() == null) {     
+        if (nic.getIp4Address() == null) {
             PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId());
             nic.setIp4Address(ip.getAddress().toString());
+            nic.setFormat(AddressFormat.Ip4);
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
-            if(ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase(Vlan.UNTAGGED)) {
+            if (ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase(Vlan.UNTAGGED)) {
                 nic.setIsolationUri(URI.create("ec2://" + Vlan.UNTAGGED));
                 nic.setBroadcastUri(URI.create("vlan://" + Vlan.UNTAGGED));
                 nic.setBroadcastType(BroadcastDomainType.Native);
