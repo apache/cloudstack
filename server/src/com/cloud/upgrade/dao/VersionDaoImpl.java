@@ -38,46 +38,47 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value=VersionDao.class) @DB(txn=false)
+@Local(value = VersionDao.class)
+@DB(txn = false)
 public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements VersionDao {
     private static final Logger s_logger = Logger.getLogger(VersionDaoImpl.class);
-    
+
     final GenericSearchBuilder<VersionVO, String> CurrentVersionSearch;
     final SearchBuilder<VersionVO> AllFieldsSearch;
-    
+
     protected VersionDaoImpl() {
         super();
-        
+
         CurrentVersionSearch = createSearchBuilder(String.class);
         CurrentVersionSearch.selectField(CurrentVersionSearch.entity().getVersion());
         CurrentVersionSearch.and("step", CurrentVersionSearch.entity().getStep(), Op.EQ);
         CurrentVersionSearch.done();
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("version", AllFieldsSearch.entity().getVersion(), Op.EQ);
         AllFieldsSearch.and("step", AllFieldsSearch.entity().getStep(), Op.EQ);
         AllFieldsSearch.and("updated", AllFieldsSearch.entity().getUpdated(), Op.EQ);
         AllFieldsSearch.done();
-        
+
     }
-    
+
     @Override
     public VersionVO findByVersion(String version, Step step) {
         SearchCriteria<VersionVO> sc = AllFieldsSearch.create();
         sc.setParameters("version", version);
         sc.setParameters("step", step);
-        
+
         return findOneBy(sc);
     }
-    
+
     @Override
     public String getCurrentVersion() {
         Connection conn = null;
         try {
             s_logger.debug("Checking to see if the database is at a version before it was the version table is created");
-            
+
             conn = Transaction.getStandaloneConnection();
-    
+
             PreparedStatement pstmt = conn.prepareStatement("SHOW TABLES LIKE 'version'");
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
@@ -88,7 +89,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                 if (!rs.next()) {
                     rs.close();
                     pstmt.close();
-                    
+
                     pstmt = conn.prepareStatement("SELECT domain_id FROM account_vlan_map LIMIT 1");
                     try {
                         pstmt.executeQuery();
@@ -104,14 +105,17 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                     rs.close();
                     pstmt.close();
                     s_logger.debug("No version table but has nics table, returning 2.2.1 or 2.2.2");
-                    
-                    pstmt = conn.prepareStatement("SHOW TABLES LIKE 'domain_network_ref'");
-                    rs = pstmt.executeQuery();
-                    if (!rs.next()) {
-                        s_logger.debug("No domain_network_ref table so returning 2.2.1");
+
+                    // Use is_static_nat field from firewall_rules table to indicate that the version is 2.2.2
+                    pstmt = conn.prepareStatement("SELECT is_static_nat FROM firewall_rules LIMIT 1");
+                    try {
+                        pstmt.executeQuery();
                         return "2.2.1";
-                    } else {
+                    } catch (SQLException e) {
+                        s_logger.debug("Assuming the exception means is_static_nat field doesn't exist in firewall_rules table; returning 2.2.2");
                         return "2.2.2";
+                    } finally {
+                        pstmt.close();
                     }
                 }
             }
@@ -123,12 +127,12 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             } catch (SQLException e) {
             }
         }
-        
+
         SearchCriteria<String> sc = CurrentVersionSearch.create();
-        
+
         sc.setParameters("step", Step.Complete);
         Filter filter = new Filter(VersionVO.class, "id", false, 0l, 1l);
-        
+
         List<String> vers = customSearch(sc, filter);
         return vers.get(0);
     }
