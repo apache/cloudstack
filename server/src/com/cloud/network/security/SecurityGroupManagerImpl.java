@@ -918,26 +918,21 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         group = _securityGroupDao.lockRow(groupId, true);
         if (group == null) {
-            s_logger.info("Not deleting group -- cannot find id " + groupId);
-            return false;
+            throw new InvalidParameterValueException("Unable to find security group by id " + groupId);
         }
 
         if (group.getName().equalsIgnoreCase(SecurityGroupManager.DEFAULT_GROUP_NAME)) {
-            txn.rollback();
             throw new InvalidParameterValueException("The network group default is reserved");
         }
 
         List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedSecurityGroupId(groupId);
-        if (allowingRules.size() != 0) {
-            txn.rollback();
+        List<SecurityGroupVMMapVO> securityGroupVmMap = _securityGroupVMMapDao.listBySecurityGroup(groupId);
+        if (!allowingRules.isEmpty()) {
             throw new ResourceInUseException("Cannot delete group when there are ingress rules that allow this group");
+        } else if (!securityGroupVmMap.isEmpty()) {
+            throw new ResourceInUseException("Cannot delete group when it's in use by virtual machines");
         }
 
-        List<IngressRuleVO> rulesInGroup = _ingressRuleDao.listBySecurityGroupId(groupId);
-        if (rulesInGroup.size() != 0) {
-            txn.rollback();
-            throw new ResourceInUseException("Cannot delete group when there are ingress rules in this group");
-        }
         _securityGroupDao.expunge(groupId);
         txn.commit();
 
