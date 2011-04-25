@@ -46,6 +46,8 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 /**
  * Request is a simple wrapper around command and answer to add sequencing,
  * versioning, and flags. Note that the version here represents the changes
@@ -90,17 +92,11 @@ public class Request {
     protected static final short FLAG_CONTROL = 0x40;
 
     protected static final GsonBuilder s_gBuilder;
-    protected static final GsonBuilder s_exposeAnnotationBuilder;
 
     static {
         s_gBuilder = new GsonBuilder();
         setDefaultGsonConfig(s_gBuilder);
         s_logger.info("Default Builder inited.");
-        
-        s_exposeAnnotationBuilder = new GsonBuilder();
-        setDefaultGsonConfig(s_exposeAnnotationBuilder);
-		s_exposeAnnotationBuilder.excludeFieldsWithoutExposeAnnotation();
-        s_logger.info("Expose annotation Builder inited.");
     }
     
     public static void setDefaultGsonConfig(GsonBuilder builder){
@@ -114,9 +110,6 @@ public class Request {
         return s_gBuilder;
     }
     
-    public static GsonBuilder initBuilderWithExposeAnnotation() {
-        return s_exposeAnnotationBuilder;
-    }
 
     protected Version                 _ver;
     protected long                    _seq;
@@ -268,6 +261,7 @@ public class Request {
         buffer.append(", ").append(content).append(" }");
         return buffer.toString();
     }
+    
 
     protected String getType() {
         return "Cmd ";
@@ -326,6 +320,16 @@ public class Request {
         StringBuilder buf = new StringBuilder("Seq ");
         buf.append(agentId).append("-").append(_seq).append(": ");
         boolean debug = false;
+
+        List<Command> cmdListTonotLog = new ArrayList<Command>();
+        if (_cmds != null) {
+            for (Command cmd : _cmds) {
+		        if(cmd.doNotLogCommandParams()){
+		        	cmdListTonotLog.add(cmd);
+		        }
+            }
+        }
+        
         if (_cmds != null) {
             for (Command cmd : _cmds) {
                 if (!cmd.logTrace()) {
@@ -339,11 +343,28 @@ public class Request {
         
         buf.append(msg).append(toString());
         
+        if(!cmdListTonotLog.isEmpty()){
+        	removeCmdContentFromLog(cmdListTonotLog, buf);
+        }
+        
         if (executeInSequence() || debug) {
             s_logger.debug(buf.toString());
         } else {
             s_logger.trace(buf.toString());
         }
+    }
+    
+    private void removeCmdContentFromLog(List<Command> cmdListTonotLog, StringBuilder buf){
+    	for (Command cmd : cmdListTonotLog){
+    		int cmdNameIndex = buf.indexOf(cmd.toString());
+    		if(cmdNameIndex != -1){
+    			int colonIndex = buf.indexOf(":", cmdNameIndex);
+    			int cmdEndIndex = buf.indexOf("]", cmdNameIndex);
+    			if(colonIndex != -1 && cmdEndIndex != -1){
+    				buf.replace(colonIndex+1, cmdEndIndex, "{}}");
+    			}
+    		}
+    	}
     }
     
     /**

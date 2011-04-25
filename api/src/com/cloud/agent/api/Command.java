@@ -57,7 +57,7 @@ public abstract class Command {
         return contextMap.get(name);
     }
     
-    public boolean doesCommandUseExposeAnnotation(){
+    public boolean doNotLogCommandParams(){
     	return false;
     }
 

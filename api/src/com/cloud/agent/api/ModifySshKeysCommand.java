@@ -43,7 +43,7 @@ public class ModifySshKeysCommand extends Command {
 	}
 	
 	@Override
-	public boolean doesCommandUseExposeAnnotation(){
+	public boolean doNotLogCommandParams(){
     	return true;
     }
 
