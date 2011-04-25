@@ -1554,15 +1554,22 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             for (int i = 0; i < cmd.length; i++) {
                 try {
                     monitor.second().processConnect(host, cmd[i]);
-                } catch (ConnectionException e) {
-                    if (e.isSetupError()) {
-                        s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                        handleDisconnect(attache, Event.AgentDisconnected, false);
-                        throw e;
+                } catch (Exception e) {
+                    if (e instanceof ConnectionException) {
+                        ConnectionException ce = (ConnectionException)e;
+                        if (ce.isSetupError()) {
+                            s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
+                            handleDisconnect(attache, Event.AgentDisconnected, false);
+                            throw ce;
+                        } else {
+                            s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
+                            handleDisconnect(attache, Event.ShutdownRequested, false);
+                            return attache;
+                        }
                     } else {
-                        s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                        handleDisconnect(attache, Event.ShutdownRequested, false);
-                        return attache;
+                        s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
+                        handleDisconnect(attache, Event.AgentDisconnected, false);
+                        throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
                 }
             }

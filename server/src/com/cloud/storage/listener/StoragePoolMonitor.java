@@ -28,6 +28,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -66,7 +67,7 @@ public class StoragePoolMonitor implements Listener {
     }
     
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd) {
+    public void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException {
     	if (cmd instanceof StartupRoutingCommand) {
     		StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
     		if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
@@ -75,8 +76,11 @@ public class StoragePoolMonitor implements Listener {
     			for (StoragePoolVO pool : pools) {
     				Long hostId = host.getId();
     				s_logger.debug("Host " + hostId + " connected, sending down storage pool information ...");
-    				if(_storageManager.addPoolToHost(hostId, pool)){
+    				try {
+    				    _storageManager.addPoolToHost(hostId, pool);
     					_storageManager.createCapacityEntry(pool);
+    				} catch (Exception e) {
+    				    throw new ConnectionException(true, "Unable to connect to pool " + pool, e);
     				}
     			}
     		}

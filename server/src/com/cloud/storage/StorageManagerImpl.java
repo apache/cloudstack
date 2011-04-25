@@ -1171,9 +1171,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         s_logger.debug("In createPool Adding the pool to each of the hosts");
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
-            success = addPoolToHost(h.getId(), pool);
-            if (success) {
+            try {
+                addPoolToHost(h.getId(), pool);
                 poolHosts.add(h);
+            } catch (Exception e) {
+                s_logger.warn("Unable to establish a connection between " + h + " and " + pool, e);
             }
         }
 
@@ -1356,45 +1358,42 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
-    public boolean addPoolToHost(long hostId, StoragePoolVO pool) {
+    public void addPoolToHost(long hostId, StoragePoolVO pool) throws StorageUnavailableException {
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
                 && pool.getPoolType() != StoragePoolType.PreSetup) {
-            s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
-            return false;
+            throw new CloudRuntimeException("Doesn't support storage pool type " + pool.getPoolType());
         }
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = _agentMgr.easySend(hostId, cmd);
 
-        if (answer != null) {
-            if (answer.getResult() == false) {
-                String msg = "Add host failed due to ModifyStoragePoolCommand failed" + answer.getDetails();
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
-                s_logger.warn(msg);
-                return false;
-            }
-            if (answer instanceof ModifyStoragePoolAnswer) {
-                ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
-
-                StoragePoolHostVO poolHost = _poolHostDao.findByPoolHost(pool.getId(), hostId);
-                if (poolHost == null) {
-                    poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
-                    _poolHostDao.persist(poolHost);
-                } else {
-                    poolHost.setLocalPath(mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
-                }
-                pool.setAvailableBytes(mspAnswer.getPoolInfo().getAvailableBytes());
-                pool.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
-                _storagePoolDao.update(pool.getId(), pool);
-                return true;
-            }
-
-        } else {
-            return false;
+        if (answer == null) {
+            throw new StorageUnavailableException("Unable to get an answer to the modify storage pool command", pool.getId());
         }
-        return false;
+        
+        if (!answer.getResult()) {
+            String msg = "Add host failed due to ModifyStoragePoolCommand failed" + answer.getDetails();
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
+            throw new StorageUnavailableException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails(), pool.getId());
+        }
+        
+        assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" + pool.getId() + "Host=" + hostId;
+        ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
+
+        StoragePoolHostVO poolHost = _poolHostDao.findByPoolHost(pool.getId(), hostId);
+        if (poolHost == null) {
+            poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
+            _poolHostDao.persist(poolHost);
+        } else {
+            poolHost.setLocalPath(mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
+        }
+        pool.setAvailableBytes(mspAnswer.getPoolInfo().getAvailableBytes());
+        pool.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        _storagePoolDao.update(pool.getId(), pool);
+        
+        s_logger.info("Connection established between " + pool + " host + " + hostId);
     }
 
     @Override
