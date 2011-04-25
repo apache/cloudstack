@@ -84,7 +84,6 @@ import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
-import com.cloud.api.commands.ListHypervisorsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
@@ -266,6 +265,8 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 public class ManagementServerImpl implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
@@ -400,7 +401,6 @@ public class ManagementServerImpl implements ManagementServer {
         _itMgr = locator.getManager(VirtualMachineManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
         _ksMgr = locator.getManager(KeystoreManager.class);
-    	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
@@ -1294,7 +1294,6 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("CPUOverprovisioningFactor considered: " + cpuOverprovisioningFactor);
         }
         List<Long> hostsWithCapacity = _capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, cluster, hostType.name(), cpuOverprovisioningFactor);
-
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Hosts having capacity: " + hostsWithCapacity);
@@ -4562,38 +4561,51 @@ public class ManagementServerImpl implements ManagementServer {
         return EventUtils.saveEvent(userId, accountId, level, type, description, startEventId);
     }
 
-    @Override @DB
+    @Override
+    @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) {
-    	if(!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix()))
-    		throw new InvalidParameterValueException("Failed to pass certificate validation check");
-    	
-    	_ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
-    	
-    	_consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
-    	return "Certificate has been updated, we will stop all running console proxy VMs to propagate the new certificate, please give a few minutes for console access service to be up again";
+        if (!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix()))
+            throw new InvalidParameterValueException("Failed to pass certificate validation check");
+
+        _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
+
+        _consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
+        return "Certificate has been updated, we will stop all running console proxy VMs to propagate the new certificate, please give a few minutes for console access service to be up again";
     }
 
     @Override
-    public String[] getHypervisors(ListHypervisorsCmd cmd) {
-        Long zoneId = cmd.getZoneId();
-        if (zoneId == null) {
-            String hypers = _configDao.getValue(Config.HypervisorList.key());
-            if (hypers == "" || hypers == null) {
-                return null;
-            }
-            return hypers.split(",");
-        } else {
-            int i = 0;
-            List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
-            if (clustersForZone != null && clustersForZone.size() > 0) {
-                String[] result = new String[clustersForZone.size()];
-                for (ClusterVO cluster : clustersForZone) {
-                    result[i++] = cluster.getHypervisorType().toString();
+    public List<String> getHypervisors(Long zoneId) {
+        List<String> result = new ArrayList<String>();
+        String hypers = _configDao.getValue(Config.HypervisorList.key());
+        String[] hypervisors = hypers.split(",");
+
+        if (zoneId != null) {
+            if (zoneId.longValue() == -1L) {
+                List<DataCenterVO> zones = _dcDao.listAll();
+
+                for (String hypervisor : hypervisors) {
+                    int hyperCount = 0;
+                    for (DataCenterVO zone : zones) {
+                        List<ClusterVO> clusters = _clusterDao.listByDcHyType(zone.getId(), hypervisor);
+                        if (!clusters.isEmpty()) {
+                            hyperCount++;
+                        }
+                    }
+                    if (hyperCount == zones.size()) {
+                        result.add(hypervisor);
+                    }
                 }
-                return result;
+            } else {
+                List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
+                for (ClusterVO cluster : clustersForZone) {
+                    result.add(cluster.getHypervisorType().toString());
+                }
             }
+
+        } else {
+            return Arrays.asList(hypervisors);
         }
-        return null;
+        return result;
     }
 
     @Override

@@ -18,6 +18,7 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -29,45 +30,45 @@ import com.cloud.api.response.HypervisorResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.user.Account;
 
-@Implementation(description="List hypervisors", responseObject=HypervisorResponse.class)
+@Implementation(description = "List hypervisors", responseObject = HypervisorResponse.class)
 public class ListHypervisorsCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
-	private static final String s_name = "listhypervisorsresponse";
+    public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
+    private static final String s_name = "listhypervisorsresponse";
 
-	@Override
-	public String getCommandName() {
-		return s_name;
-	}
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the zone id for listing hypervisors.")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "the zone id for listing hypervisors.")
     private Long zoneId;
-    
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-    
+
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
+
     public Long getZoneId() {
         return this.zoneId;
     }
-    
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
-    public void execute(){
-        String[] result = _mgr.getHypervisors(this);
+    public void execute() {
+        List<String> result = _mgr.getHypervisors(getZoneId());
         ListResponse<HypervisorResponse> response = new ListResponse<HypervisorResponse>();
         ArrayList<HypervisorResponse> responses = new ArrayList<HypervisorResponse>();
-        if(result != null) {
+        if (result != null) {
             for (String hypervisor : result) {
                 HypervisorResponse hypervisorResponse = new HypervisorResponse();
                 hypervisorResponse.setName(hypervisor);

@@ -47,7 +47,6 @@ import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
-import com.cloud.api.commands.ListHypervisorsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
@@ -392,11 +391,11 @@ public interface ManagementService {
 
     /**
      * return an array of available hypervisors
+     * @param zoneId TODO
      * 
-     * @param cmd
      * @return an array of available hypervisors in the cloud
      */
-    String[] getHypervisors(ListHypervisorsCmd cmd);
+    List<String> getHypervisors(Long zoneId);
 
     /**
      * This method uploads a custom cert to the db, and patches every cpvm with it on the current ms
