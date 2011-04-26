@@ -60,15 +60,20 @@ public class Upgrade222to224 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        updateClusterIdInOpHostCapacity(conn);
-        updateGuestOsType(conn);
-        updateNicsWithMode(conn);
-        updateUserStatsWithNetwork(conn);
-        dropIndexIfExists(conn);
-        fixBasicZoneNicCount(conn);
-        updateTotalCPUInOpHostCapacity(conn);
-        upgradeGuestOs(conn);
-        upgradeAccountVlanMap(conn);
+        try {
+            updateClusterIdInOpHostCapacity(conn);
+            updateGuestOsType(conn);
+            updateNicsWithMode(conn);
+            updateUserStatsWithNetwork(conn);
+            dropIndexIfExists(conn);
+            fixBasicZoneNicCount(conn);
+            updateTotalCPUInOpHostCapacity(conn);
+            upgradeGuestOs(conn);
+            upgradeAccountVlanMap(conn);
+            fixRecreatableVolumesProblem(conn);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to perform data migration", e);
+        }
     }
 
     @Override
@@ -99,6 +104,17 @@ public class Upgrade222to224 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update the guest os type for default template as a part of 222 to 224 upgrade", e);
         }
+    }
+    
+    // fixes bug 9597
+    private void fixRecreatableVolumesProblem(Connection conn) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id)");
+        pstmt.execute();
+        pstmt.close();
+        
+        pstmt = conn.prepareStatement("UPDATE volumes SET recreatable=0 WHERE disk_offering_id is NULL");
+        pstmt.execute();
+        pstmt.close();
     }
 
     private void updateClusterIdInOpHostCapacity(Connection conn) {

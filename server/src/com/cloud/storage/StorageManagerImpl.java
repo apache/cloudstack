@@ -335,6 +335,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         newVol.setDeviceId(oldVol.getDeviceId());
         newVol.setInstanceId(oldVol.getInstanceId());
+        newVol.setRecreatable(oldVol.isRecreatable());
         return _volsDao.persist(newVol);
     }
 
@@ -2551,11 +2552,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         for (VolumeVO vol : recreateVols) {
             VolumeVO newVol;
             if (vol.getState() == Volume.State.Allocated) {
-                vol.setRecreatable(true);
                 newVol = vol;
             } else {
             	newVol = switchVolume(vol, vm);
-                newVol.setRecreatable(true);
                 // update the volume->storagePool map since volumeId has changed
                 if (dest.getStorageForDisks() != null && dest.getStorageForDisks().containsKey(vol)) {
                     StoragePool poolWithOldVol = dest.getStorageForDisks().get(vol);
