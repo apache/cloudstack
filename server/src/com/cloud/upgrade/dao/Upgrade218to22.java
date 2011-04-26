@@ -29,16 +29,21 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -1376,6 +1381,175 @@ public class Upgrade218to22 implements DbUpgrade {
             throw new CloudRuntimeException("Can't update LB rules ", e);
         }
     }
+    
+    private void upgradeHostMemoryCapacityInfo(Connection conn) {
+        try {
+        	// count user_vm memory info (M Bytes)
+            PreparedStatement pstmt = conn.prepareStatement(
+            	"select h.id, sum(s.ram_size) from host h, vm_instance v, service_offering s where h.type='Routing' and v.state='Running' and v.`type`='User' and v.host_id=h.id  and v.service_offering_id = s.id group by h.id");
+            
+            ResultSet rs = pstmt.executeQuery();
+            Map<Long, Long> hostUsedMemoryInfo = new HashMap<Long, Long>();
+            while (rs.next()) {
+            	hostUsedMemoryInfo.put(rs.getLong(1), rs.getLong(2));
+            }
+            rs.close();
+            pstmt.close();
+
+            int proxyRamSize = NumbersUtil.parseInt(getConfigValue(conn, "consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
+            int domrRamSize = NumbersUtil.parseInt(getConfigValue(conn, "router.ram.size"), VirtualNetworkApplianceManager.DEFAULT_ROUTER_VM_RAMSIZE);
+            int ssvmRamSize = NumbersUtil.parseInt(getConfigValue(conn, "secstorage.vm.ram.size"), SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
+            
+            pstmt = conn.prepareStatement(
+        		"select h.id, count(v.id) from host h, vm_instance v where h.type='Routing' and v.state='Running' and v.`type`='ConsoleProxy' and v.host_id=h.id group by h.id");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+            	if(hostUsedMemoryInfo.get(rs.getLong(1)) != null) {
+            		Long usedMem = hostUsedMemoryInfo.get(rs.getLong(1));
+            		hostUsedMemoryInfo.put(rs.getLong(1), rs.getLong(2)*proxyRamSize + usedMem);
+            	} else {
+            		hostUsedMemoryInfo.put(rs.getLong(1), rs.getLong(2)*proxyRamSize);
+            	}
+            }
+            rs.close();
+            pstmt.close();
+
+            pstmt = conn.prepareStatement(
+    			"select h.id, count(v.id) from host h, vm_instance v where h.type='Routing' and v.state='Running' and v.`type`='DomainRouter' and v.host_id=h.id group by h.id");
+	        rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	        	if(hostUsedMemoryInfo.get(rs.getLong(1)) != null) {
+	        		Long usedMem = hostUsedMemoryInfo.get(rs.getLong(1));
+	        		hostUsedMemoryInfo.put(rs.getLong(1), rs.getLong(2)*domrRamSize + usedMem);
+	        	} else {
+	        		hostUsedMemoryInfo.put(rs.getLong(1), rs.getLong(2)*domrRamSize);
+	        	}
+	        }
+	        rs.close();
+	        pstmt.close();
+            
+            pstmt = conn.prepareStatement(
+				"select h.id, count(v.id) from host h, vm_instance v where h.type='Routing' and v.state='Running' and v.`type`='SecondaryStorageVm' and v.host_id=h.id group by h.id");
+	        rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	        	if(hostUsedMemoryInfo.get(rs.getLong(1)) != null) {
+	        		Long usedMem = hostUsedMemoryInfo.get(rs.getLong(1));
+	        		hostUsedMemoryInfo.put(rs.getLong(1), rs.getLong(2)*ssvmRamSize + usedMem);
+	        	} else {
+	        		hostUsedMemoryInfo.put(rs.getLong(1), rs.getLong(2)*ssvmRamSize);
+	        	}
+	        }
+	        rs.close();
+	        pstmt.close();
+
+	        for(Map.Entry<Long, Long> entry : hostUsedMemoryInfo.entrySet()) {
+	            pstmt = conn.prepareStatement(
+					"update op_host_capacity set used_capacity=? where host_id=? and capacity_type=0");
+	            pstmt.setLong(1, entry.getValue()*1024*1024);
+	            pstmt.setLong(2, entry.getKey());
+
+	            pstmt.executeUpdate();
+	        }
+	        
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't upgrade host capacity info ", e);
+        }
+    }
+    
+    private void upgradeHostCpuCapacityInfo(Connection conn) {
+        try {
+        	// count user_vm memory info (M Bytes)
+            PreparedStatement pstmt = conn.prepareStatement(
+            	"select h.id, sum(s.speed*s.cpu) from host h, vm_instance v, service_offering s where h.type='Routing' and v.state='Running' and v.`type`='User' and v.host_id=h.id  and v.service_offering_id = s.id group by h.id");
+            
+            ResultSet rs = pstmt.executeQuery();
+            Map<Long, Long> hostUsedCpuInfo = new HashMap<Long, Long>();
+            while (rs.next()) {
+            	hostUsedCpuInfo.put(rs.getLong(1), rs.getLong(2));
+            }
+            rs.close();
+            pstmt.close();
+            
+            int proxyCpuMhz = NumbersUtil.parseInt(getConfigValue(conn, "consoleproxy.cpu.mhz"), ConsoleProxyManager.DEFAULT_PROXY_VM_CPUMHZ);
+            int domrCpuMhz = NumbersUtil.parseInt(getConfigValue(conn, "router.cpu.mhz"), VirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ);
+            int ssvmCpuMhz = NumbersUtil.parseInt(getConfigValue(conn, "secstorage.vm.cpu.mhz"), SecondaryStorageVmManager.DEFAULT_SS_VM_CPUMHZ);
+            
+            pstmt = conn.prepareStatement(
+    			"select h.id, count(v.id) from host h, vm_instance v where h.type='Routing' and v.state='Running' and v.`type`='ConsoleProxy' and v.host_id=h.id group by h.id");
+	        
+            rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	        	if(hostUsedCpuInfo.get(rs.getLong(1)) != null) {
+	        		Long usedCpuMhz = hostUsedCpuInfo.get(rs.getLong(1));
+	        		hostUsedCpuInfo.put(rs.getLong(1), rs.getLong(2)*proxyCpuMhz + usedCpuMhz);
+	        	} else {
+	        		hostUsedCpuInfo.put(rs.getLong(1), rs.getLong(2)*proxyCpuMhz);
+	        	}
+	        }
+	        rs.close();
+	        pstmt.close();
+	
+	        pstmt = conn.prepareStatement(
+				"select h.id, count(v.id) from host h, vm_instance v where h.type='Routing' and v.state='Running' and v.`type`='DomainRouter' and v.host_id=h.id group by h.id");
+	        rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	        	if(hostUsedCpuInfo.get(rs.getLong(1)) != null) {
+	        		Long usedCpuMhz = hostUsedCpuInfo.get(rs.getLong(1));
+	        		hostUsedCpuInfo.put(rs.getLong(1), rs.getLong(2)*domrCpuMhz + usedCpuMhz);
+	        	} else {
+	        		hostUsedCpuInfo.put(rs.getLong(1), rs.getLong(2)*domrCpuMhz);
+	        	}
+	        }
+	        rs.close();
+	        pstmt.close();
+	        
+	        pstmt = conn.prepareStatement(
+				"select h.id, count(v.id) from host h, vm_instance v where h.type='Routing' and v.state='Running' and v.`type`='SecondaryStorageVm' and v.host_id=h.id group by h.id");
+	        rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	        	if(hostUsedCpuInfo.get(rs.getLong(1)) != null) {
+	        		Long usedCpuMhz = hostUsedCpuInfo.get(rs.getLong(1));
+	        		hostUsedCpuInfo.put(rs.getLong(1), rs.getLong(2)*ssvmCpuMhz + usedCpuMhz);
+	        	} else {
+	        		hostUsedCpuInfo.put(rs.getLong(1), rs.getLong(2)*ssvmCpuMhz);
+	        	}
+	        }
+	        rs.close();
+	        pstmt.close();
+	
+	        for(Map.Entry<Long, Long> entry : hostUsedCpuInfo.entrySet()) {
+	            pstmt = conn.prepareStatement(
+					"update op_host_capacity set used_capacity=? where host_id=? and capacity_type=1");
+	            pstmt.setLong(1, entry.getValue());
+	            pstmt.setLong(2, entry.getKey());
+	
+	            pstmt.executeUpdate();
+	        }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't upgrade host capacity info ", e);
+        }
+    }
+
+    private String getConfigValue(Connection conn, String name) {
+        try {
+        	// count user_vm memory info (M Bytes)
+            PreparedStatement pstmt = conn.prepareStatement(
+        		"select value from configuration where name=?");
+            pstmt.setString(1, name);
+            ResultSet rs = pstmt.executeQuery();
+            
+            String val = null;
+            if(rs.next()) {
+            	val = rs.getString(1);
+            }
+            rs.close();
+            pstmt.close();
+
+            return val;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't upgrade host capacity info ", e);
+        }
+    }
 
     private void migrateEvents(Connection conn) {
         try {
@@ -1733,6 +1907,9 @@ public class Upgrade218to22 implements DbUpgrade {
             upgradeInstanceGroups(conn);
             upgradePortForwardingRules(conn);
             upgradeLoadBalancingRules(conn);
+            upgradeHostMemoryCapacityInfo(conn);
+            upgradeHostCpuCapacityInfo(conn);
+            
             migrateEvents(conn);
             // Update hypervisor type for user vm to be consistent with original 2.2.4
             pstmt = conn.prepareStatement("UPDATE vm_instance SET hypervisor_type='XenServer' WHERE hypervisor_type='xenserver'");
