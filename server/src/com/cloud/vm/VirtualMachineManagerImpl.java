@@ -597,10 +597,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             if (volTemplateId.longValue() != template.getId()) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Root Volume " + vol + " of " + vm.getType().toString()
-                                            + " System VM is ready, but volume's templateId does not match the System VM Template, updating templateId and reassigning a new pool");
+                                            + " System VM is ready, but volume's templateId does not match the System VM Template, let the planner reassign a new pool");
                                 }
-                                vol.setTemplateId(template.getId());
-                                _volsDao.update(vol.getId(), vol);
                                 continue;
                             }
                         }

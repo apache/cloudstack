@@ -326,9 +326,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return true;
     }
 
-    VolumeVO allocateDuplicateVolume(VolumeVO oldVol) {
+    VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId) {
         VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(), oldVol.getSize());
-        newVol.setTemplateId(oldVol.getTemplateId());
+        if(templateId != null){
+        	newVol.setTemplateId(templateId);
+        }else{
+        	newVol.setTemplateId(oldVol.getTemplateId());
+        }
         newVol.setDeviceId(oldVol.getDeviceId());
         newVol.setInstanceId(oldVol.getInstanceId());
         return _volsDao.persist(newVol);
@@ -2532,7 +2536,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 vol.setRecreatable(true);
                 newVol = vol;
             } else {
-                newVol = switchVolume(vol);
+            	newVol = switchVolume(vol, vm);
                 newVol.setRecreatable(true);
                 // update the volume->storagePool map since volumeId has changed
                 if (dest.getStorageForDisks() != null && dest.getStorageForDisks().containsKey(vol)) {
@@ -2581,12 +2585,22 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @DB
-    protected VolumeVO switchVolume(VolumeVO existingVolume) throws StorageUnavailableException {
+    protected VolumeVO switchVolume(VolumeVO existingVolume, VirtualMachineProfile<? extends VirtualMachine> vm) throws StorageUnavailableException {
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
             _volsDao.update(existingVolume, Volume.Event.Destroy);
-            VolumeVO newVolume = allocateDuplicateVolume(existingVolume);
+            
+            Long templateIdToUse = null; 
+            Long volTemplateId = existingVolume.getTemplateId();
+            long vmTemplateId = vm.getTemplateId();
+            if (volTemplateId != null && volTemplateId.longValue() != vmTemplateId) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("switchVolume: Old Volume's templateId: "+volTemplateId + " does not match the VM's templateId: "+vmTemplateId+", updating templateId in the new Volume");
+                }
+                templateIdToUse = vmTemplateId;
+            }
+            VolumeVO newVolume = allocateDuplicateVolume(existingVolume, templateIdToUse);
             txn.commit();
             return newVolume;
         } catch (ConcurrentOperationException e) {
