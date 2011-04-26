@@ -1215,6 +1215,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setNetmask(profile.getNetmask());
                 nic.setGateway(profile.getGateway());
                 nic.setAddressFormat(profile.getFormat());
+                if (profile.getStrategy() != null) {
+                    nic.setReservationStrategy(profile.getStrategy());
+                }
+                
                 updateNic(nic, network.getId(), 1);
             } else {
                 profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);

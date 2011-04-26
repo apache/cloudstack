@@ -808,7 +808,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
                     + guestNetwork;
 
-            DataCenterDeployment plan = new DataCenterDeployment(dcId);
+            DataCenterDeployment plan = null;
             DataCenter dc = _dcDao.findById(dcId);
             DomainRouterVO router = null;
             Long podId = dest.getPod().getId();
@@ -816,8 +816,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             // In Basic zone and Guest network we have to start domR per pod, not per network
             if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
                 router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
+                plan = new DataCenterDeployment(dcId, podId, null, null, null);
             } else {
                 router = _routerDao.findByNetwork(guestNetwork.getId());
+                plan = new DataCenterDeployment(dcId);
             }
 
             if (router == null) {

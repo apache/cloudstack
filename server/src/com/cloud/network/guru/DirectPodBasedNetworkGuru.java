@@ -90,8 +90,10 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
 
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
-        } else {
+        } else if (nic.getIp4Address() == null) {
             nic.setStrategy(ReservationStrategy.Start);
+        } else {
+            nic.setStrategy(ReservationStrategy.Create);
         }
 
         return nic;
@@ -102,6 +104,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getPod(), vm, network);
+            nic.setStrategy(ReservationStrategy.Create);
         }
     }
 
