@@ -99,7 +99,7 @@ public class NicVO implements Nic {
     
     @Column(name="strategy")
     @Enumerated(value=EnumType.STRING)
-    ReservationStrategy strategy;
+    ReservationStrategy reservationStrategy;
     
     @Enumerated(value=EnumType.STRING)
     @Column(name="vm_type")
@@ -250,7 +250,7 @@ public class NicVO implements Nic {
     
    
     public void setReservationStrategy(ReservationStrategy strategy) {
-        this.strategy = strategy;
+        this.reservationStrategy = strategy;
     }
 
     public void setDeviceId(int deviceId) {
@@ -277,7 +277,7 @@ public class NicVO implements Nic {
     
     @Override
     public ReservationStrategy getReservationStrategy() {
-        return strategy;
+        return reservationStrategy;
     }
 
     @Override
