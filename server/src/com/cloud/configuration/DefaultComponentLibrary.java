@@ -331,7 +331,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     }
     
     protected void populateAdapters() {
-    	addAdapter(TemplateAdapter.class, TemplateAdapterType.BareMetal.getName(), HyervisorTemplateAdapter.class);
+    	addAdapter(TemplateAdapter.class, TemplateAdapterType.Hypervisor.getName(), HyervisorTemplateAdapter.class);
     }
 
     @Override

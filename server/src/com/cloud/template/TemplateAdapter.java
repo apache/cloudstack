@@ -12,8 +12,8 @@ public interface TemplateAdapter extends Adapter {
 	public static class TemplateAdapterType {
 		String _name;
 		
-		public static final TemplateAdapterType Hypervisor = new TemplateAdapterType("Hypervisor");
-		public static final TemplateAdapterType BareMetal = new TemplateAdapterType("BareMetal");
+		public static final TemplateAdapterType Hypervisor = new TemplateAdapterType("HypervisorAdapter");
+		public static final TemplateAdapterType BareMetal = new TemplateAdapterType("BareMetalAdapter");
 		
 		public TemplateAdapterType(String name) {
 			_name = name;

@@ -165,12 +165,19 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     protected Adapters<TemplateAdapter> _adapters;
     
     private TemplateAdapter getAdapter(HypervisorType type) {
+    	TemplateAdapter adapter = null;
     	if (type != HypervisorType.BareMetal) {
-    		return _adapters.get(TemplateAdapterType.BareMetal.getName());
+    		adapter = _adapters.get(TemplateAdapterType.BareMetal.getName());
     	} else {
     		// see HyervisorTemplateAdapter
-    		return _adapters.get(TemplateAdapterType.Hypervisor.getName());
+    		adapter =  _adapters.get(TemplateAdapterType.Hypervisor.getName());
     	}
+    	
+    	if (adapter == null) {
+    		throw new CloudRuntimeException("Cannot find template adapter for " + type.toString());
+    	}
+    	
+    	return adapter;
     }
     
     @Override
