@@ -4763,55 +4763,53 @@ public class ManagementServerImpl implements ManagementServer {
         return password;
     }
     
+    @Override
     @DB
     public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
-        if (cmd.getClusterId()==null && cmd.getHostId() == null){
-                throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
-        }
-        else if (cmd.getClusterId()==null){
-                HostVO h = _hostDao.findById(cmd.getHostId());
-                if (h.getHypervisorType() == HypervisorType.XenServer){
-                        throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
-                }
-                DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                if (nv.getValue().equals(cmd.getUsername())){
-                        DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                        nvp.setValue(cmd.getPassword());
-                        _detailsDao.persist(nvp);
-                }
-                else {
-                        throw new InvalidParameterValueException("The username is not under use by management server.");
-                }
-        }
-        else {
-                //get all the hosts in this cluster
-                List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
-                for (HostVO h : hosts) {
-                        if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Changing password for host name = " + h.getName());
-                        }
-                        //update password for this host
-                        DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                        if (nv.getValue().equals(cmd.getUsername())){
-                                DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                                nvp.setValue(cmd.getPassword());
-                                _detailsDao.persist(nvp);
-                        }
-                        else {                                        //if one host in the cluster has diff username then rollback to maintain consistency
-                            txn.rollback();
-                            throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
-                    }
-            }
-            txn.commit();
-            // if hypervisor is xenserver then we update it in CitrixResourceBase
-        }
-        return true;
-    }
-
-
-    
-    
+         if (cmd.getClusterId()==null && cmd.getHostId() == null){
+             throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
+         }
+         else if (cmd.getClusterId()==null){
+             HostVO h = _hostDao.findById(cmd.getHostId());
+             if (h.getHypervisorType() == HypervisorType.XenServer){
+                 throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
+             }
+             DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+             if (nv.getValue().equals(cmd.getUsername())){
+                 DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                 nvp.setValue(cmd.getPassword());
+                 _detailsDao.persist(nvp);
+              }
+              else {
+                  throw new InvalidParameterValueException("The username is not under use by management server.");
+              }
+         }
+         else {
+             //get all the hosts in this cluster
+             List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
+             Transaction txn = Transaction.currentTxn();
+             txn.start();
+             for (HostVO h : hosts) {
+                 if (s_logger.isDebugEnabled()) {
+                     s_logger.debug("Changing password for host name = " + h.getName());
+                 }
+                 //update password for this host
+                 DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                 if (nv.getValue().equals(cmd.getUsername())){
+                     DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                     nvp.setValue(cmd.getPassword());
+                     _detailsDao.persist(nvp);
+                 }
+                 else {
+                     //if one host in the cluster has diff username then rollback to maintain consistency
+                     txn.rollback();
+                     throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
+                 }
+              }
+              txn.commit();
+              // if hypervisor is xenserver then we update it in CitrixResourceBase
+           }
+           return true;
+      }
 
 }
