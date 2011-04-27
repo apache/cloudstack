@@ -2493,7 +2493,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
+            s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
 
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
@@ -2525,6 +2525,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 if (vol.getPoolId() == null) {
                     throw new StorageUnavailableException("Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol, Volume.class, vol.getId());
                 }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("No need to recreate the volume: "+vol+ ", since it already has a pool assigned: "+vol.getPoolId()+", adding disk to VM");
+                }                
                 StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                 vm.addDisk(new VolumeTO(vol, pool));
             }

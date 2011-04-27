@@ -121,7 +121,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			
 			//search for storage under the zone, pod, cluster of the host.
 			DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId());
-			Map<Volume, List<StoragePool>> suitableVolumeStoragePools = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+		
+			Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+			Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+			List<Volume> readyAndReusedVolumes = result.second();
+			
 			//choose the potential pool for this VM for this host
 			if(!suitableVolumeStoragePools.isEmpty()){
 				List<Host> suitableHosts = new ArrayList<Host>();
@@ -131,7 +135,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 				if(potentialResources != null){
 					Pod pod = _podDao.findById(vm.getPodId());
 					Cluster cluster = _clusterDao.findById(host.getClusterId());
-					DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, potentialResources.second());
+					Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+					// remove the reused vol<->pool from destination, since we don't have to prepare this volume.					
+					for(Volume vol : readyAndReusedVolumes){
+						storageVolMap.remove(vol);
+					}					
+					DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, storageVolMap);
 					s_logger.debug("Returning Deployment Destination: "+ dest);
 					return dest;
 				}
@@ -155,7 +164,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 							s_logger.debug("Now checking for suitable pools under zone: "+vm.getDataCenterId() +", pod: "+ vm.getPodId()+", cluster: "+ host.getClusterId());
 							//search for storage under the zone, pod, cluster of the last host.
 							DataCenterDeployment lastPlan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());			
-							Map<Volume, List<StoragePool>> suitableVolumeStoragePools = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+							Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+							Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+							List<Volume> readyAndReusedVolumes = result.second();							
 							//choose the potential pool for this VM for this host
 							if(!suitableVolumeStoragePools.isEmpty()){
 								List<Host> suitableHosts = new ArrayList<Host>();
@@ -165,7 +176,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 								if(potentialResources != null){
 									Pod pod = _podDao.findById(vm.getPodId());
 									Cluster cluster = _clusterDao.findById(host.getClusterId());
-									DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, potentialResources.second());
+									Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+									// remove the reused vol<->pool from destination, since we don't have to prepare this volume.
+									for(Volume vol : readyAndReusedVolumes){
+										storageVolMap.remove(vol);
+									}										
+									DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, storageVolMap);
 									s_logger.debug("Returning Deployment Destination: "+ dest);
 									return dest;
 								}
@@ -351,7 +367,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 				if (_allocationAlgorithm != null && _allocationAlgorithm.equalsIgnoreCase("random")) {
 				    Collections.shuffle(suitableHosts);
 				}
-				Map<Volume, List<StoragePool>> suitableVolumeStoragePools = findSuitablePoolsForVolumes(vmProfile, potentialPlan, avoid, RETURN_UPTO_ALL);
+				Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, potentialPlan, avoid, RETURN_UPTO_ALL);
+				Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+				List<Volume> readyAndReusedVolumes = result.second();
             	
 				//choose the potential host and pool for the VM
 				if(!suitableVolumeStoragePools.isEmpty()){
@@ -360,7 +378,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 					if(potentialResources != null){
 						Pod pod = _podDao.findById(clusterVO.getPodId());
 						Host host = _hostDao.findById(potentialResources.first().getId());
-						DeployDestination dest =  new DeployDestination(dc, pod, clusterVO, host, potentialResources.second() );
+						Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+						// remove the reused vol<->pool from destination, since we don't have to prepare this volume.						
+						for(Volume vol : readyAndReusedVolumes){
+							storageVolMap.remove(vol);
+						}
+						DeployDestination dest =  new DeployDestination(dc, pod, clusterVO, host, storageVolMap );
 						s_logger.debug("Returning Deployment Destination: "+ dest);
 						return dest;
 					}
@@ -511,32 +534,47 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		return suitableHosts;
 	}
 	
-	protected Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
+	protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
 		List<VolumeVO> volumesTobeCreated = _volsDao.findUsableVolumesForInstance(vmProfile.getId());
 		Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
-		
-		s_logger.debug("Calling StoragePoolAllocators to find suitable pools");
+		List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
 		
 		//for each volume find list of suitable storage pools by calling the allocators
 		for (VolumeVO toBeCreated : volumesTobeCreated) {
 			s_logger.debug("Checking suitable pools for volume (Id, Type): ("+toBeCreated.getId() +"," +toBeCreated.getVolumeType().name() + ")");
 			
-			//skip the volume if its already in READY state and has pool allocated
+			//If the plan specifies a poolId, it means that this VM's ROOT volume is ready and the pool should be reused.
+			//In this case, also check if rest of the volumes are ready and can be reused.
 			if(plan.getPoolId() != null){
-				if (toBeCreated.getVolumeType() == Volume.Type.ROOT && toBeCreated.getPoolId() != null && toBeCreated.getPoolId().longValue() == plan.getPoolId().longValue()) {
-					s_logger.debug("ROOT Volume is in READY state and has pool already allocated.");
+				if (toBeCreated.getState() == Volume.State.Ready && toBeCreated.getPoolId() != null) {
+					s_logger.debug("Volume is in READY state and has pool already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
 					List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 					StoragePoolVO pool = _storagePoolDao.findById(toBeCreated.getPoolId());
-					if(!avoid.shouldAvoid(pool)){
-						s_logger.debug("Planner need not allocate a pool for this volume since its READY");
-						suitablePools.add(pool);
-						suitableVolumeStoragePools.put(toBeCreated, suitablePools);
-						continue;
+					if(!pool.isInMaintenance()){
+						if(!avoid.shouldAvoid(pool)){
+							long exstPoolDcId = pool.getDataCenterId();
+                            Long exstPoolPodId = pool.getPodId();
+                            Long exstPoolClusterId = pool.getClusterId();
+                        	if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){							
+								s_logger.debug("Planner need not allocate a pool for this volume since its READY");
+								suitablePools.add(pool);
+								suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+								readyAndReusedVolumes.add(toBeCreated);
+								continue;
+                        	}else{
+                        		s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
+                        	}
+						}else{
+							s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
+						}
 					}else{
-						s_logger.debug("Pool of the ROOT volume is in avoid set, need to allocate a pool for this volume");
+						s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
 					}
 	            }
 			}
+			
+			s_logger.debug("Calling StoragePoolAllocators to find suitable pools");
+			
 			DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 	        DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
 
@@ -566,7 +604,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	        }
 	        
 	        if(!foundPotentialPools){
-	        	//No suitable storage pools found under this cluster for this volume.
+	        	s_logger.debug("No suitable pools found for volume: "+toBeCreated +" under cluster: "+plan.getClusterId());
+	        	//No suitable storage pools found under this cluster for this volume. - remove any suitable pools found for other volumes.
+	        	//All volumes should get suitable pools under this cluster; else we cant use this cluster.
+	        	suitableVolumeStoragePools.clear();
 	        	break;
 	        }
 		}
@@ -574,7 +615,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		if(suitableVolumeStoragePools.isEmpty()){
 			s_logger.debug("No suitable pools found");
 		}
-		return suitableVolumeStoragePools;
+
+		return new Pair<Map<Volume, List<StoragePool>>, List<Volume>>(suitableVolumeStoragePools, readyAndReusedVolumes);
 	}	
 
 	
