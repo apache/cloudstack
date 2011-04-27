@@ -61,6 +61,7 @@ import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
@@ -105,6 +106,7 @@ import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
@@ -165,8 +167,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
@@ -285,7 +289,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final VlanDao _vlanDao;
     private final AccountVlanMapDao _accountVlanMapDao;
     private final PodVlanMapDao _podVlanMapDao;
-    private final HostDao _hostDao;
+    private final HostDao _hostDao;    
+    private final DetailsDao _detailsDao;
     private final UserDao _userDao;
     private final UserVmDao _userVmDao;
     private final ConfigurationDao _configDao;
@@ -352,7 +357,8 @@ public class ManagementServerImpl implements ManagementServer {
         _vlanDao = locator.getDao(VlanDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
         _podVlanMapDao = locator.getDao(PodVlanMapDao.class);
-        _hostDao = locator.getDao(HostDao.class);
+        _hostDao = locator.getDao(HostDao.class);        
+        _detailsDao = locator.getDao(DetailsDao.class);
         _hostPodDao = locator.getDao(HostPodDao.class);
         _jobDao = locator.getDao(AsyncJobDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
@@ -4756,5 +4762,56 @@ public class ManagementServerImpl implements ManagementServer {
 
         return password;
     }
+    
+    @DB
+    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
+        if (cmd.getClusterId()==null && cmd.getHostId() == null){
+                throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
+        }
+        else if (cmd.getClusterId()==null){
+                HostVO h = _hostDao.findById(cmd.getHostId());
+                if (h.getHypervisorType() == HypervisorType.XenServer){
+                        throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
+                }
+                DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                if (nv.getValue().equals(cmd.getUsername())){
+                        DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        nvp.setValue(cmd.getPassword());
+                        _detailsDao.persist(nvp);
+                }
+                else {
+                        throw new InvalidParameterValueException("The username is not under use by management server.");
+                }
+        }
+        else {
+                //get all the hosts in this cluster
+                List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                for (HostVO h : hosts) {
+                        if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Changing password for host name = " + h.getName());
+                        }
+                        //update password for this host
+                        DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                        if (nv.getValue().equals(cmd.getUsername())){
+                                DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                                nvp.setValue(cmd.getPassword());
+                                _detailsDao.persist(nvp);
+                        }
+                        else {                                        //if one host in the cluster has diff username then rollback to maintain consistency
+                            txn.rollback();
+                            throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
+                    }
+            }
+            txn.commit();
+            // if hypervisor is xenserver then we update it in CitrixResourceBase
+        }
+        return true;
+    }
+
+
+    
+    
 
 }

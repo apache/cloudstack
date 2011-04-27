@@ -180,6 +180,7 @@ prepareHostForMaintenance=com.cloud.api.commands.PrepareForMaintenanceCmd;1
 cancelHostMaintenance=com.cloud.api.commands.CancelMaintenanceCmd;1
 listHosts=com.cloud.api.commands.ListHostsCmd;3
 addSecondaryStorage=com.cloud.api.commands.AddSecondaryStorageCmd;1
+updateHostPassword=com.cloud.api.commands.UpdateHostPasswordCmd;1
 
 #### volume commands
 attachVolume=com.cloud.api.commands.AttachVolumeCmd;15

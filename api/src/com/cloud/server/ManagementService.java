@@ -68,6 +68,7 @@ import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
@@ -369,6 +370,8 @@ public interface ManagementService {
     boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd);
 
     String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+
+    boolean updateHostPassword(UpdateHostPasswordCmd cmd);
 
     InstanceGroup updateVmGroup(UpdateVMGroupCmd cmd);
 
