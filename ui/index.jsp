@@ -867,7 +867,7 @@
 	            </div>
 	        </div>	      
             	            
-            <div id="network_header" class="leftmenu_content" style="display: none">
+            <div id="network_header" class="leftmenu_content">
 	            <div class="leftmenu_fourthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="network_arrow">
 	                </div>	                

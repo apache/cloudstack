@@ -334,13 +334,16 @@ function zoneJSONToTreeNode(jsonObj, $zoneNode) {
     $zoneNode.data("jsonObj", jsonObj);
     $zoneNode.find("#secondarystorage_header").data("zoneObj", jsonObj);    
     
+    $zoneNode.find("#network_header").data("jsonObj", jsonObj);	
+    /*
     if(jsonObj.networktype == "Advanced") {  //Advanced Zone
         $zoneNode.find("#network_header").show().data("jsonObj", jsonObj);		 
     }
     else { //Basic Zone
         $zoneNode.find("#network_header").hide();
     }
-        
+    */
+    
     $zoneNode.data("id", zoneid).data("name", fromdb(jsonObj.name));
     var zoneName = $zoneNode.find("#zone_name").text(fromdb(jsonObj.name));	    
     zoneName.data("jsonObj", jsonObj);	 

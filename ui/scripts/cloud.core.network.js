@@ -506,31 +506,24 @@ function doDeleteExternalLoadBalancer($actionLink, $subgridItem) {
 function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {   
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
+    //***** binding Event Handler (begin) ******  		
     var $dialogAddIpRangeToPublicNetwork = $("#dialog_add_iprange_to_publicnetwork"); 
-         
-    //***** binding Event Handler (begin) ******   
-	if (zoneObj.networktype == "Advanced") {
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change(function(event) {	
-			if ($(this).val() == "tagged") {
-				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container").show();
-				//$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").hide();
-								
-				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>').append('<option value="account-specific">account-specific</option>');
-			} 
-			else if($(this).val() == "untagged") {  
-				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container").hide();
-				//$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").hide();
-				
-				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>');				
-			}			
-			
-			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#domain_container", "#add_publicip_vlan_account_container". 
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); 	
-			
-			return false;
-		});
-	} 
-	
+    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change(function(event) {	
+		if ($(this).val() == "tagged") {
+			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container").show();				
+			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>').append('<option value="account-specific">account-specific</option>');
+		} 
+		else if($(this).val() == "untagged") {  
+			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container").hide();
+			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>');				
+		}			
+		
+		// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#domain_container", "#add_publicip_vlan_account_container". 
+		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); 	
+		
+		return false;
+	});    
+   
 	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(function(event) {	   
 	    if($(this).val() == "zone-wide") {
 	        $dialogAddIpRangeToPublicNetwork.find("#domain_container").hide();
@@ -543,6 +536,14 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 	    return false;
 	});
 	//***** binding Event Handler (end) ******   
+	
+	if (zoneObj.networktype == "Basic") {
+	    $("#add_network_button,#add_load_balancer_button,#tab_loadbalancer").hide();	
+	} 
+	else { // zoneObj.networktype == "Advanced"
+		$("#add_network_button,#add_load_balancer_button,#tab_loadbalancer").show();	
+	}		
+		
     $button.show();   
     $button.unbind("click").bind("click", function(event) {  
         if($("#public_network_page").find("#tab_content_ipallocation").css("display") == "none")         
@@ -860,8 +861,7 @@ function bindAddLoadBalancerButton($button, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
     var $dialogAddLoadBalancer = $("#dialog_add_load_balancer"); 
-          
-    $button.show();   
+              
     $button.unbind("click").bind("click", function(event) {         
         if($("#public_network_page").find("#tab_content_loadbalancer").css("display") == "none")         
             $("#public_network_page").find("#tab_loadbalancer").click();
