@@ -122,7 +122,7 @@ function primarystorageJsonToDetailsTab() {
 	if($midmenuItem1.find("#spinning_wheel").css("display") == "none") {
 	    if(jsonObj.state in primarystorageChangableStatus) {	    
 	        $("body").everyTime(
-                2000,
+                5000,
                 timerKey,
                 function() {              
                     $.ajax({
