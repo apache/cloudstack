@@ -26,7 +26,8 @@
     <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>
     <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
-            <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/>
+            <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
+            <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->
             <!--adapter name="FirstFit" class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator"/-->
         </adapters>
         <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
