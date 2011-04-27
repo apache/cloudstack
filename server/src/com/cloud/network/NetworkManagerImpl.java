@@ -1729,20 +1729,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<Long> avoidNetworks = new ArrayList<Long>();
         List<Long> allowedSharedNetworks = new ArrayList<Long>();
 
-        if (isSystem == null) {
+        if (isSystem == null && id == null) {
             isSystem = false;
         }
 
         // Account/domainId parameters and isSystem are mutually exclusive
-        if (isSystem && (accountName != null || domainId != null)) {
+        if (isSystem != null && isSystem && (accountName != null || domainId != null)) {
             throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
         }
 
         if (_accountMgr.isAdmin(account.getType())) {
             if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list networks");
+                DomainVO domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist in the system");
                 }
+
+                _accountMgr.checkAccess(account, domain);
 
                 if (accountName != null) {
                     account = _accountMgr.getActiveAccount(accountName, domainId);
@@ -1773,7 +1776,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Don't display networks created of system network offerings
         SearchBuilder<NetworkOfferingVO> networkOfferingSearch = _networkOfferingDao.createSearchBuilder();
         networkOfferingSearch.and("systemOnly", networkOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
-        if (isSystem) {
+        if (isSystem != null && isSystem) {
             networkOfferingSearch.and("trafficType", networkOfferingSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
         }
         sb.join("networkOfferingSearch", networkOfferingSearch, sb.entity().getNetworkOfferingId(), networkOfferingSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -1815,7 +1818,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
 
-        if (!isSystem) {
+        if (isSystem != null && !isSystem) {
             if (accountName != null && domainId != null) {
                 if (isShared == null) {
                     sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -1871,7 +1874,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
 
-        if (!isSystem && path != null && (isShared == null || !isShared)) {
+        if (isSystem != null && !isSystem && path != null && (isShared == null || !isShared)) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
