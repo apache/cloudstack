@@ -267,4 +267,11 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         
         return findOneBy(sc);
     }
+    
+    @Override
+    public IPAddressVO findByIpAddress(String ipAddress) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipAddress", ipAddress);
+        return findOneBy(sc);
+    }
 }
