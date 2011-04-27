@@ -1137,7 +1137,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	            }
 	 
 	            _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
-	            _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
 	        }
 	       
 	        return true;
