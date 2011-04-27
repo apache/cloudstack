@@ -39,9 +39,9 @@ import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.manager.Commands;
-import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -60,7 +60,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
@@ -278,17 +277,23 @@ public class StatsCollector {
 				for (StoragePoolVO pool: storagePools) {
 					GetStorageStatsCommand command = new GetStorageStatsCommand(pool.getUuid(), pool.getPoolType(), pool.getPath());
 					long poolId = pool.getId();
-					Answer answer = _storageManager.sendToPool(pool, command);
-					if (answer != null && answer.getResult()) {
-						storagePoolStats.put(pool.getId(), (StorageStats)answer);
-
-						// Seems like we have dynamically updated the pool size since the prev. size and the current do not match 
-						if (_storagePoolStats.get(poolId)!= null &&
-								_storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){	                        
-		                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());	                    
-		                    _storagePoolDao.update(pool.getId(), pool);                         
-	                    }
-					}
+					try {
+    					Answer answer = _storageManager.sendToPool(pool, command);
+    					if (answer != null && answer.getResult()) {
+    						storagePoolStats.put(pool.getId(), (StorageStats)answer);
+    
+    						// Seems like we have dynamically updated the pool size since the prev. size and the current do not match 
+    						if (_storagePoolStats.get(poolId)!= null &&
+    								_storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){	                        
+    		                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());	                    
+    		                    _storagePoolDao.update(pool.getId(), pool);                         
+    	                    }
+    					}
+                    } catch (StorageUnavailableException e) {
+                        s_logger.info("Unable to reach " + pool);
+                    } catch (Exception e) {
+                        s_logger.warn("Unable to get stats for " + pool);
+                    }
 				}                               
                 _storagePoolStats = storagePoolStats;
 			} catch (Throwable t) {
