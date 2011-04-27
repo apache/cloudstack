@@ -84,7 +84,12 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	public boolean getOfferHA() {
 	    return offerHA;
 	}
-	
+
+	@Override	
+	public boolean getLimitCpuUse() {
+	    return false;
+	}
+
 	public void setOfferHA(boolean offerHA) {
 		this.offerHA = offerHA;
 	}

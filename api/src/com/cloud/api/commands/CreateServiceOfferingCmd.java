@@ -56,6 +56,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.OFFER_HA, type=CommandType.BOOLEAN, description="the HA for the service offering")
     private Boolean offerHa;
 
+    @Parameter(name=ApiConstants.LIMIT_CPU_USE, type=CommandType.BOOLEAN, description="restrict the CPU usage to committed service offering")
+    private Boolean limitCpuUse;
+
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the service offering. Values are local and shared.")
     private String storageType;
 
@@ -95,6 +98,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Boolean getOfferHa() {
         return offerHa;
+    }
+
+    public Boolean GetLimitCpuUse() {
+    	return limitCpuUse;
     }
 
     public String getStorageType() {

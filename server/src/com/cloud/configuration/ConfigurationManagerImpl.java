@@ -1448,16 +1448,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             offerHA = false;
         }
 
+        Boolean limitCpuUse = cmd.GetLimitCpuUse();
+        if (limitCpuUse == null) {
+        	limitCpuUse = false;
+        }
+
         return createServiceOffering(userId, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
-                cmd.getTags(), cmd.getDomainId(), cmd.getHostTag());
+        		limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
-    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, String tags,
+    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags,
             Long domainId, String hostTag) {
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, localStorageRequired, false, tags, false, domainId, hostTag);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, false, domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());

@@ -80,12 +80,13 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     HypervisorType hypervisorType,
                     long guestOsId,
                     boolean haEnabled,
+                    boolean limitCpuUse,
                     long domainId,
                     long accountId,
                     long serviceOfferingId,
                     String userData,
                     String name) {
-        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, haEnabled);
+        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, haEnabled, limitCpuUse);
         this.userData = userData;
         this.displayName = displayName != null ? displayName : null;
     	this.details = new HashMap<String, String>();

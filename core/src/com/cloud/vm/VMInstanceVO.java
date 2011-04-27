@@ -107,7 +107,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name="ha_enabled", updatable=true, nullable=true)
     protected boolean haEnabled;
-    
+
+    @Column(name="limit_cpu_use", updatable=true, nullable=true)
+    private boolean limitCpuUse;
+
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
     
@@ -163,8 +166,25 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
+        this.limitCpuUse = false;        
     }
-	
+
+    public VMInstanceVO(long id,
+            long serviceOfferingId,
+            String name,
+            String instanceName,
+            Type type,
+            Long vmTemplateId,
+            HypervisorType hypervisorType,
+            long guestOSId,
+            long domainId,
+            long accountId,
+            boolean haEnabled,
+            boolean limitResourceUse) {
+    	this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+        this.limitCpuUse = limitResourceUse;
+    }
+    
     protected VMInstanceVO() {
     }
     
@@ -332,6 +352,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return haEnabled;
     }
 
+    @Override
+    public boolean limitCpuUse() {
+        return limitCpuUse;
+    }    
+    
     @Override
     public String getPrivateMacAddress() {
         return privateMacAddress;

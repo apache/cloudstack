@@ -803,6 +803,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `proxy_assign_time` DATETIME NULL COMMENT 'time when console proxy was assigned',
   `vnc_password` varchar(255) NOT NULL COMMENT 'vnc password',
   `ha_enabled` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Should HA be enabled for this VM',
+  `limit_cpu_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Limit the cpu usage to service offering',
   `update_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'date state was updated',
   `update_time` datetime COMMENT 'date the destroy was requested',
   `created` datetime NOT NULL COMMENT 'date created',
@@ -1108,6 +1109,7 @@ CREATE TABLE  `cloud`.`service_offering` (
   `nw_rate` smallint unsigned default 200 COMMENT 'network rate throttle mbits/s',
   `mc_rate` smallint unsigned default 10 COMMENT 'mcast rate throttle mbits/s',
   `ha_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Enable HA',
+  `limit_cpu_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Limit the CPU usage to service offering',
   `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_service_offering__id` FOREIGN KEY (`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE

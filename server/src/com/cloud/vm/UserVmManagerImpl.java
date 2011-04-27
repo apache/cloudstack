@@ -2331,7 +2331,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             hypervisorType = template.getHypervisorType();
         }
 
-        UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.getOfferHA(), owner.getDomainId(), owner.getId(),
+        UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.getOfferHA(), offering.getLimitCpuUse(), owner.getDomainId(), owner.getId(),
                 offering.getId(), userData, hostName);
 
         if (sshPublicKey != null) {

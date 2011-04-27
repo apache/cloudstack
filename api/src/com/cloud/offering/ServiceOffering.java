@@ -56,6 +56,11 @@ public interface ServiceOffering {
      * @return Does this service plan offer HA?
      */
     boolean getOfferHA();
+
+    /**
+     * @return Does this service plan offer VM to use CPU resources beyond the service offering limits?
+     */
+    boolean getLimitCpuUse();
     
     /**
      * @return the rate in megabits per sec to which a VM's network interface is throttled to

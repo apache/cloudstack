@@ -39,13 +39,14 @@ public class VirtualMachineTO {
     String[] bootupScripts;
     boolean rebootOnCrash;
     boolean enableHA;
+    boolean limitCpuUse;
     String vncPassword;
     Map<String, String> params;
 
     VolumeTO[] disks;
     NicTO[] nics;
 
-    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, String vncPassword) {
+    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
         this.id = id;
         this.name = instanceName;
         this.type = type;
@@ -56,6 +57,7 @@ public class VirtualMachineTO {
         this.bootloader = bootloader;
         this.os = os;
         this.enableHA = enableHA;
+        this.limitCpuUse = limitCpuUse;
         this.vncPassword = vncPassword;
     }
 
@@ -102,6 +104,10 @@ public class VirtualMachineTO {
         return speed;
     }
 
+    public boolean getLimitCpuUse() {
+    	return limitCpuUse;
+    }
+    
     public long getMinRam() {
         return minRam;
     }

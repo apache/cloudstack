@@ -236,7 +236,11 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
      * @return should HA be enabled for this machine?
      */
     public boolean isHaEnabled();
-    
+
+    /**
+     * @return should limit CPU usage to the service offering?
+     */    
+    public boolean limitCpuUse();    
 	/**
      * @return date when machine was created
      */
