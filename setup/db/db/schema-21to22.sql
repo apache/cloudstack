@@ -24,7 +24,7 @@ DROP TABLE `cloud`.`security_group_vm_map`;
 
 -- Easy stuff first.  All new tables.;
 
-CREATE TABLE `cloud`.`version` (
+CREATE TABLE IF NOT EXISTS `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `version` char(40) NOT NULL UNIQUE COMMENT 'version',
   `updated` datetime NOT NULL COMMENT 'Date this version table was updated',

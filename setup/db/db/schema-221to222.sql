@@ -27,3 +27,11 @@ update network_offerings set availability='Optional' where id=7;
 delete from configuration where name='router.cleanup.interval';
 INSERT INTO configuration (category, instance, component, name, value, description)
     VALUES ('Advanced', 'DEFAULT', 'management-server', 'management.network.cidr', NULL, 'The cidr of management server network');
+CREATE TABLE IF NOT EXISTS `cloud`.`version` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `version` char(40) NOT NULL UNIQUE COMMENT 'version',
+  `updated` datetime NOT NULL COMMENT 'Date this version table was updated',
+  `step` char(32) NOT NULL COMMENT 'Step in the upgrade to this version',
+  PRIMARY KEY (`id`),
+  INDEX `i_version__version`(`version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
