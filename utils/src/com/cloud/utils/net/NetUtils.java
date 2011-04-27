@@ -116,14 +116,16 @@ public class NetUtils {
         List<String> cidrList = new ArrayList<String>();
         try {
             for (NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
-                for (InterfaceAddress address : ifc.getInterfaceAddresses()) {
-                    InetAddress addr = address.getAddress();
-                    int prefixLength = address.getNetworkPrefixLength();
-                    if (prefixLength < 32 && prefixLength > 0) {
-                        String ip = ipFromInetAddress(addr);
-                        cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
-                    }
-                }
+            	if(ifc.isUp() && !ifc.isVirtual() && !ifc.isLoopback()) {
+	                for (InterfaceAddress address : ifc.getInterfaceAddresses()) {
+	                    InetAddress addr = address.getAddress();
+	                    int prefixLength = address.getNetworkPrefixLength();
+	                    if (prefixLength < 32 && prefixLength > 0) {
+	                        String ip = ipFromInetAddress(addr);
+	                        cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
+	                    }
+	                }
+            	}
             }
         } catch (SocketException e) {
             s_logger.warn("UnknownHostException in getLocalCidrs().", e);
