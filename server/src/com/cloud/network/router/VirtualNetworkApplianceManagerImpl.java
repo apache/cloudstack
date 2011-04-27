@@ -668,7 +668,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             String publicIp = st.nextToken();
                             //Find the account owning the IP
                             IPAddressVO ipaddress = _ipAddressDao.findByIpAddress(publicIp);
-                            if(ipaddress == null){
+                            if(ipaddress == null || ipaddress.getAccountId() == Account.ACCOUNT_ID_SYSTEM){
                                 continue;
                             }
                             Long bytesSent = new Long(st.nextToken());
