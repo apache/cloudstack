@@ -57,10 +57,25 @@ public class Upgrade222to224 implements DbUpgrade {
 
         return new File[] { new File(script) };
     }
+    
+    private void fixRelatedFkeyOnNetworksTable(Connection conn) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__related`");
+        try { 
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            s_logger.debug("Ignore if the key is not there.");
+        }
+        pstmt.close();
+        
+        pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
+        pstmt.executeUpdate();
+        pstmt.close();
+    }
 
     @Override
     public void performDataMigration(Connection conn) {
         try {
+            fixRelatedFkeyOnNetworksTable(conn);
             updateClusterIdInOpHostCapacity(conn);
             updateGuestOsType(conn);
             updateNicsWithMode(conn);
