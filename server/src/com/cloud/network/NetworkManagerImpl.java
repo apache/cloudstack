@@ -996,7 +996,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             vo.setDeviceId(deviceId++);
         }
 
-        vo.setReservationStrategy(profile.getReservationStrategy());
+        if (profile.getReservationStrategy() != null) {
+            vo.setReservationStrategy(profile.getReservationStrategy());
+        }
 
         vo.setDefaultNic(profile.isDefaultNic());
 
@@ -1031,7 +1033,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         vo.setIp4Address(profile.getIp4Address());
         vo.setIp6Address(profile.getIp6Address());
         vo.setMacAddress(profile.getMacAddress());
-        vo.setReservationStrategy(profile.getReservationStrategy());
+        if (profile.getReservationStrategy() != null) {
+            vo.setReservationStrategy(profile.getReservationStrategy());
+        }
         vo.setBroadcastUri(profile.getBroadCastUri());
         vo.setIsolationUri(profile.getIsolationUri());
         vo.setNetmask(profile.getNetmask());
@@ -1218,7 +1222,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (profile.getStrategy() != null) {
                     nic.setReservationStrategy(profile.getStrategy());
                 }
-                
+
                 updateNic(nic, network.getId(), 1);
             } else {
                 profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
