@@ -153,6 +153,8 @@ ALTER TABLE `cloud`.`storage_pool` MODIFY COLUMN `uuid` varchar(255) UNIQUE;
 ALTER TABLE `cloud`.`user_statistics` DROP KEY `account_id`;
 ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE KEY `account_id` (`account_id`,`data_center_id`, `public_ip_address`, `device_id`,`device_type`); 
 
+UPDATE `cloud`.`host` SET resource='com.cloud.hypervisor.xen.resource.XenServer56FP1Resource' WHERE resource='com.cloud.hypervisor.xen.resource.XenServer56FP1PremiumResource';
+
 
 UPDATE `cloud`.`vm_instance` SET ha_enabled=0 WHERE type='ConsoleProxy';
 
