@@ -2462,18 +2462,20 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Object keyword = cmd.getKeyword();
         Long accountId = null;
 
-        if ((account == null) || isAdmin(account.getType())) {
+        if (isAdmin(caller.getType())) {
             // validate domainId before proceeding
             if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list IP addresses for domain " + domainId + ", permission denied.");
+                Domain domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
                 }
+                _accountMgr.checkAccess(caller, domain);
 
                 if (accountName != null) {
                     Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
@@ -2483,11 +2485,11 @@ public class ManagementServerImpl implements ManagementServer {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
                 }
-            } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                domainId = caller.getDomainId();
             }
         } else {
-            accountId = account.getId();
+            accountId = caller.getId();
         }
 
         if (accountId == null && keyword != null) {
@@ -3280,7 +3282,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         // Input validation
         Long id = cmd.getId();
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         List<String> accountNames = cmd.getAccountNames();
         Long userId = UserContext.current().getCallerUserId();
         Boolean isFeatured = cmd.isFeatured();
@@ -3307,7 +3309,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        _accountMgr.checkAccess(account, template);
+        _accountMgr.checkAccess(caller, template);
 
         // If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null) {
@@ -3324,7 +3326,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
 
-        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
+        boolean isAdmin = isAdmin(caller.getType());
         boolean allowPublicUserTemplates = Boolean.parseBoolean(getConfigurationValue("allow.public.user.templates"));
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
@@ -3363,14 +3365,13 @@ public class ManagementServerImpl implements ManagementServer {
         _templateDao.update(template.getId(), updatedTemplate);
 
         Long domainId;
-        domainId = (null == account) ? DomainVO.ROOT_DOMAIN : account.getDomainId(); // Account == null for 8096 and so its safe
-                                                                                     // for domainid = ROOT
+        domainId = caller.getDomainId();
         if ("add".equalsIgnoreCase(operation)) {
             txn.start();
             for (String accountName : accountNames) {
                 Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
                 if (permittedAccount != null) {
-                    if (permittedAccount.getId() == account.getId()) {
+                    if (permittedAccount.getId() == caller.getId()) {
                         continue; // don't grant permission to the template owner, they implicitly have permission
                     }
                     LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId());
@@ -3408,16 +3409,16 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String acctName = cmd.getAccountName();
         Long id = cmd.getId();
         Long accountId = null;
 
-        if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             // validate domainId before proceeding
             if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                     throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list " + cmd.getMediaType() + " permissions.");
                 }
                 if (acctName != null) {
@@ -3429,8 +3430,12 @@ public class ManagementServerImpl implements ManagementServer {
                     }
                 }
             }
-        } else {
-            accountId = account.getId();
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            accountId = caller.getId();
+        }
+
+        if (id == Long.valueOf(1)) {
+            throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
         }
 
         VMTemplateVO template = _templateDao.findById(id.longValue());
@@ -3438,21 +3443,8 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with id " + id);
         }
 
-        if (accountId != null && !template.isPublicTemplate()) {
-            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL && template.getAccountId() != accountId) {
-                throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
-            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                DomainVO accountDomain = _domainDao.findById(account.getDomainId());
-                Account templateAccount = _accountDao.findById(template.getAccountId());
-                DomainVO templateDomain = _domainDao.findById(templateAccount.getDomainId());
-                if (!templateDomain.getPath().contains(accountDomain.getPath())) {
-                    throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
-                }
-            }
-        }
-
-        if (id == Long.valueOf(1)) {
-            throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+        if (!template.isPublicTemplate()) {
+            _accountMgr.checkAccess(caller, template);
         }
 
         List<String> accountNames = new ArrayList<String>();
