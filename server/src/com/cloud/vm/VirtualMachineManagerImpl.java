@@ -584,34 +584,30 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             Journal journal = start.second().getJournal();
 
             // edit plan if this vm's ROOT volume is in READY state already
-            VolumeVO readyRootVolume = null;
             List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
 
             for (VolumeVO vol : vols) {
                 Volume.State state = vol.getState();
                 if (state == Volume.State.Ready) {
-                    // make sure if this is a System VM, templateId is unchanged. If it is changed, let planner
-                    // reassign pool for the volume
-                    if (VirtualMachine.Type.isSystemVM(vm.getType())) {
-                        Long volTemplateId = vol.getTemplateId();
-                        if (volTemplateId != null && template != null) {
-                            if (volTemplateId.longValue() != template.getId()) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Root Volume " + vol + " of " + vm.getType().toString()
-                                            + " System VM is ready, but volume's templateId does not match the System VM Template, let the planner reassign a new pool");
-                                }
-                                continue;
+                    // make sure if the templateId is unchanged. If it is changed, let planner
+                    // reassign pool for the volume even if it ready. 
+                    Long volTemplateId = vol.getTemplateId();
+                    if (volTemplateId != null && template != null) {
+                        if (volTemplateId.longValue() != template.getId()) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Root Volume " + vol + " of " + vm.getType().toString()
+                                        + " VM is READY, but volume's templateId does not match the VM's Template, let the planner reassign a new pool");
                             }
+                            continue;
                         }
-
                     }
+
                     StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                     if (!pool.isInMaintenance()) {
                         long rootVolDcId = pool.getDataCenterId();
                         Long rootVolPodId = pool.getPodId();
                         Long rootVolClusterId = pool.getClusterId();
                         plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
-                        readyRootVolume = vol;
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Root Volume " + vol + " is ready, changing deployment plan to use this pool's datacenterId: " + rootVolDcId + " , podId: " + rootVolPodId
                                     + " , and clusterId: " + rootVolClusterId);
@@ -651,15 +647,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
                 try {
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        if (readyRootVolume != null) {
-                            // remove the vol<->pool from destination, since we don't have to prepare this volume.
-                            if (dest.getStorageForDisks() != null) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("No need to prepare the READY Root Volume " + readyRootVolume + ", removing it from deploydestination");
-                                }
-                                dest.getStorageForDisks().remove(readyRootVolume);
-                            }
-                        }
                         _storageMgr.prepare(vmProfile, dest);
                     }
                     _networkMgr.prepare(vmProfile, dest, ctx);
