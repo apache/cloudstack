@@ -501,8 +501,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _accountMgr.checkAccess(caller, ipOwner);
 
+        DataCenterVO zone = null;
         if (zoneId != null) {
-            DataCenterVO zone = _dcDao.findById(zoneId);
+            zone = _dcDao.findById(zoneId);
             if (zone == null) {
                 throw new InvalidParameterValueException("Can't find zone by id " + zoneId);
             }
@@ -521,8 +522,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        // Check that network belongs to IP owner
-        if (network.getAccountId() != ipOwner.getId()) {
+        // Check that network belongs to IP owner - skip this check for Basic zone as there is just one guest network, and it
+        // belongs to the system
+        if (zone.getNetworkType() != NetworkType.Basic && network.getAccountId() != ipOwner.getId()) {
             throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
 
@@ -555,10 +557,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             boolean isSourceNat = false;
 
             txn.start();
-            // First IP address should be source nat
+            // First IP address should be source nat when it's being associated with Guest Virtual network
             List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
 
-            if (addrs.isEmpty()) {
+            if (addrs.isEmpty() && network.getGuestType() == GuestIpType.Virtual) {
                 isSourceNat = true;
             }
 
