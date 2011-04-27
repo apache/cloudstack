@@ -23,13 +23,13 @@ import java.sql.Connection;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class UpgradeSnapshot217to223 implements DbUpgrade {
+public class UpgradeSnapshot217to224 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String file = Script.findScript("", "db/schema-snapshot-217to223.sql");
+        String file = Script.findScript("", "db/schema-snapshot-217to224.sql");
         if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, chema-snapshot-217to223.sql");
+            throw new CloudRuntimeException("Unable to find the upgrade script, schema-snapshot-217to224.sql");
         }
         
         return new File[] { new File(file)};
@@ -51,7 +51,7 @@ public class UpgradeSnapshot217to223 implements DbUpgrade {
 
     @Override
     public String getUpgradedVersion() {
-        return "2.2.3";
+        return "2.2.4";
     }
     
     @Override
