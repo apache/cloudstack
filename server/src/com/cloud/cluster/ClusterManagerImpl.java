@@ -689,8 +689,15 @@ public class ClusterManagerImpl implements ClusterManager {
             s_logger.info("Starting cluster manager, msid : " + _msid);
         }
     	
+        try {
+            checkConflicts();
+        } catch (ConfigurationException e1) {
+            throw new CloudRuntimeException("Conflicts in management server configurations detected", e1);
+        }
+        
         Transaction txn = Transaction.currentTxn();
         try {
+            
 	        txn.start();
 
 	        final Class<?> c = this.getClass();
@@ -846,8 +853,6 @@ public class ClusterManagerImpl implements ClusterManager {
 		if(_currentServiceAdapter == null) {
             throw new ConfigurationException("Unable to set current cluster service adapter");
         }
-		
-		checkConflicts();
 		
         if(s_logger.isInfoEnabled()) {
             s_logger.info("Cluster manager is configured.");
