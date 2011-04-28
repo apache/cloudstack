@@ -34,81 +34,81 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="nics")
+@Table(name = "nics")
 public class NicVO implements Nic {
     protected NicVO() {
     }
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="instance_id")
+
+    @Column(name = "instance_id")
     Long instanceId;
-    
-    @Column(name="ip4_address")
+
+    @Column(name = "ip4_address")
     String ip4Address;
-    
-    @Column(name="ip6_address")
+
+    @Column(name = "ip6_address")
     String ip6Address;
-    
-    @Column(name="netmask")
+
+    @Column(name = "netmask")
     String netmask;
-    
-    @Column(name="isolation_uri")
+
+    @Column(name = "isolation_uri")
     URI isolationUri;
-    
-    @Column(name="ip_type")
+
+    @Column(name = "ip_type")
     AddressFormat addressFormat;
-    
-    @Column(name="broadcast_uri")
+
+    @Column(name = "broadcast_uri")
     URI broadcastUri;
-    
-    @Column(name="gateway")
+
+    @Column(name = "gateway")
     String gateway;
-    
-    @Column(name="mac_address")
+
+    @Column(name = "mac_address")
     String macAddress;
-    
-    @Column(name="mode")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "mode")
+    @Enumerated(value = EnumType.STRING)
     Mode mode;
-    
-    @Column(name="network_id")
+
+    @Column(name = "network_id")
     long networkId;
-    
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     State state;
-    
-    @Column(name="reserver_name")
+
+    @Column(name = "reserver_name")
     String reserver;
-    
-    @Column(name="reservation_id")
+
+    @Column(name = "reservation_id")
     String reservationId;
-    
-    @Column(name="device_id")
+
+    @Column(name = "device_id")
     int deviceId;
-    
-    @Column(name="update_time")
+
+    @Column(name = "update_time")
     Date updateTime;
-    
-    @Column(name="default_nic")
+
+    @Column(name = "default_nic")
     boolean defaultNic;
-    
-    @Column(name="strategy")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "strategy")
+    @Enumerated(value = EnumType.STRING)
     ReservationStrategy reservationStrategy;
-    
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="vm_type")
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "vm_type")
     VirtualMachine.Type vmType;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
     public NicVO(String reserver, Long instanceId, long configurationId, VirtualMachine.Type vmType) {
@@ -118,12 +118,12 @@ public class NicVO implements Nic {
         this.state = State.Allocated;
         this.vmType = vmType;
     }
-    
+
     @Override
     public String getIp4Address() {
         return ip4Address;
     }
-    
+
     public void setIp4Address(String address) {
         ip4Address = address;
     }
@@ -132,7 +132,7 @@ public class NicVO implements Nic {
     public String getMacAddress() {
         return macAddress;
     }
-    
+
     public void setMacAddress(String macAddress) {
         this.macAddress = macAddress;
     }
@@ -141,16 +141,16 @@ public class NicVO implements Nic {
     public State getState() {
         return state;
     }
-    
+
     @Override
     public boolean isDefaultNic() {
         return defaultNic;
     }
-    
+
     public void setDefaultNic(boolean defaultNic) {
         this.defaultNic = defaultNic;
     }
-    
+
     public String getIp6Address() {
         return ip6Address;
     }
@@ -163,20 +163,21 @@ public class NicVO implements Nic {
     public String getNetmask() {
         return netmask;
     }
-    
+
     @Override
     public String getGateway() {
         return gateway;
     }
-    
+
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
-    
+
+    @Override
     public AddressFormat getAddressFormat() {
         return addressFormat;
     }
-    
+
     public void setAddressFormat(AddressFormat format) {
         this.addressFormat = format;
     }
@@ -233,22 +234,21 @@ public class NicVO implements Nic {
     public long getNetworkId() {
         return networkId;
     }
-    
+
     @Override
     public int getDeviceId() {
         return deviceId;
     }
-    
+
     @Override
     public String getReservationId() {
         return reservationId;
     }
-    
+
     public void setReservationId(String id) {
         this.reservationId = id;
     }
-    
-   
+
     public void setReservationStrategy(ReservationStrategy strategy) {
         this.reservationStrategy = strategy;
     }
@@ -261,7 +261,7 @@ public class NicVO implements Nic {
     public Mode getMode() {
         return mode;
     }
-    
+
     public void setMode(Mode mode) {
         this.mode = mode;
     }
@@ -270,11 +270,11 @@ public class NicVO implements Nic {
     public String getReserver() {
         return reserver;
     }
-    
+
     public void setReserver(String reserver) {
         this.reserver = reserver;
     }
-    
+
     @Override
     public ReservationStrategy getReservationStrategy() {
         return reservationStrategy;
@@ -300,7 +300,7 @@ public class NicVO implements Nic {
     public void setCreated(Date created) {
         this.created = created;
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("Nic[").append(id).append("-").append(instanceId).append("-").append(reservationId).append("-").append(ip4Address).append("]").toString();

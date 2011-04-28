@@ -22,32 +22,25 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
-
 
 /**
  * Nic represents one nic on the VM.
  */
 public interface Nic {
     enum Event {
-        ReservationRequested,
-        ReleaseRequested,
-        CancelRequested,
-        OperationCompleted,
-        OperationFailed,
+        ReservationRequested, ReleaseRequested, CancelRequested, OperationCompleted, OperationFailed,
     }
-    
+
     public enum State implements FiniteState<State, Event> {
-        Allocated("Resource is allocated but not reserved"),
-        Reserving("Resource is being reserved right now"), 
-        Reserved("Resource has been reserved."),  
-        Releasing("Resource is being released"), 
-        Deallocating("Resource is being deallocated");
+        Allocated("Resource is allocated but not reserved"), Reserving("Resource is being reserved right now"), Reserved("Resource has been reserved."), Releasing("Resource is being released"), Deallocating(
+                "Resource is being deallocated");
 
         String _description;
-        
+
         @Override
         public StateMachine<State, Event> getStateMachine() {
             return s_fsm;
@@ -67,16 +60,16 @@ public interface Nic {
         public Set<Event> getPossibleEvents() {
             return s_fsm.getPossibleEvents(this);
         }
-        
+
         private State(String description) {
             _description = description;
         }
-        
+
         @Override
         public String getDescription() {
             return _description;
         }
-        
+
         final static private StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
             s_fsm.addTransition(State.Allocated, Event.ReservationRequested, State.Reserving);
@@ -88,69 +81,69 @@ public interface Nic {
             s_fsm.addTransition(State.Releasing, Event.OperationFailed, State.Reserved);
         }
     }
-    
+
     public enum ReservationStrategy {
-        PlaceHolder,
-        Create,
-        Start;
+        PlaceHolder, Create, Start;
     }
-    
+
     /**
      * @return id in the CloudStack database
      */
     long getId();
-    
+
     /**
-     * @return reservation id returned by the allocation source.  This can be the
-     * String version of the database id if the allocation source does not need it's 
-     * own implementation of the reservation id.  This is passed back to the 
-     * allocation source to release the resource.
+     * @return reservation id returned by the allocation source. This can be the String version of the database id if the
+     *         allocation source does not need it's own implementation of the reservation id. This is passed back to the
+     *         allocation source to release the resource.
      */
     String getReservationId();
-    
+
     /**
      * @return unique name for the allocation source.
      */
     String getReserver();
-    
+
     /**
      * @return the time a reservation request was made to the allocation source.
      */
     Date getUpdateTime();
-    
+
     /**
      * @return the reservation state of the resource.
      */
     State getState();
-    
+
     ReservationStrategy getReservationStrategy();
+
     boolean isDefaultNic();
 
     String getIp4Address();
-    
+
     String getMacAddress();
-    
+
     String getNetmask();
-    
+
     String getGateway();
-    
+
     /**
-     * @return network profile id that this 
+     * @return network profile id that this
      */
     long getNetworkId();
-    
+
     /**
      * @return the vm instance id that this nic belongs to.
      */
     long getInstanceId();
-    
+
     int getDeviceId();
-    
+
     Mode getMode();
-    
+
     URI getIsolationUri();
-    
+
     URI getBroadcastUri();
 
     VirtualMachine.Type getVmType();
+
+    AddressFormat getAddressFormat();
 }
