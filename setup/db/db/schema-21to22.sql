@@ -413,7 +413,6 @@ ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `status` varchar(32);
 ALTER TABLE `cloud`.`network_group` DROP foreign key `fk_network_group__domain_id`;
 ALTER TABLE `cloud`.`network_group` DROP INDEX `fk_network_group__domain_id`;
 ALTER TABLE `cloud`.`network_group` DROP foreign key `fk_network_group___account_id`;
-ALTER TABLE `cloud`.`network_group` DROP INDEX `fk_network_group___account_id`;;
 
 ALTER TABLE `cloud`.`network_group` drop index `i_network_group_name`;
 
@@ -433,7 +432,6 @@ ALTER TABLE `cloud`.`security_ingress_rule` CHANGE COLUMN `allowed_net_grp_acct`
 ALTER TABLE `cloud`.`network_group_vm_map` RENAME TO `security_group_vm_map`;
 ALTER TABLE `cloud`.`security_group_vm_map` CHANGE COLUMN `network_group_id` `security_group_id` bigint unsigned NOT NULL;
 
-ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group___account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group__domain_id` FOREIGN KEY `fk_security_group__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
 ALTER TABLE `cloud`.`security_group` ADD INDEX `i_security_group_name`(`name`);
 

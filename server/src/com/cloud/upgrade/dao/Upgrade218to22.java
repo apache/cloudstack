@@ -1926,6 +1926,9 @@ public class Upgrade218to22 implements DbUpgrade {
 
             // Upgrade volumes with incorrect Destroyed field
             cleanupVolumes(conn);
+
+            // modify network_group indexes
+            modifyIndexes(conn);
         } catch (SQLException e) {
             s_logger.error("Can't perform data migration ", e);
             throw new CloudRuntimeException("Can't perform data migration ", e);
@@ -2038,6 +2041,50 @@ public class Upgrade218to22 implements DbUpgrade {
         } catch (Exception e) {
             s_logger.error("Failed to cleanup volumes with incorrect Destroyed field (127):", e);
             throw new CloudRuntimeException("Failed to cleanup volumes with incorrect Destroyed field (127):", e);
+        }
+    }
+
+    private void modifyIndexes(Connection conn) {
+        try {
+
+            // removed indexes
+
+            PreparedStatement pstmt = conn.prepareStatement("SHOW INDEX FROM security_group WHERE KEY_NAME = 'fk_network_group__account_id'");
+            s_logger.debug("Query is " + pstmt);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` DROP INDEX `fk_network_group__account_id`");
+                s_logger.debug("Query is " + pstmt);
+                pstmt.executeUpdate();
+                s_logger.debug("Unique key 'fk_network_group__account_id' is removed successfully");
+            }
+
+            rs.close();
+            pstmt.close();
+
+            pstmt = conn.prepareStatement("SHOW INDEX FROM security_group WHERE KEY_NAME = 'fk_network_group___account_id'");
+            s_logger.debug("Query is " + pstmt);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` DROP INDEX `fk_network_group___account_id`");
+                s_logger.debug("Query is " + pstmt);
+                pstmt.executeUpdate();
+                s_logger.debug("Unique key 'fk_network_group___account_id' is removed successfully");
+            }
+
+            rs.close();
+            pstmt.close();
+
+            // add indexes
+            pstmt = conn
+                    .prepareStatement("ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group___account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to drop indexes for 'security_group' table due to:", e);
         }
     }
 }
