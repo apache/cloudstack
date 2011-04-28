@@ -408,7 +408,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String encodedPassword = rot13(password);
 
         Commands cmds = new Commands(OnError.Continue);
-        SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), userVm.getName());
+        SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), userVm.getHostName());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("password", cmd);
@@ -710,7 +710,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             for (DomainRouterVO router : routers) {
                 String privateIP = router.getPrivateIpAddress();
                 if (privateIP != null) {
-                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getName());
+                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName());
                     final NetworkUsageAnswer answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
                     if (answer != null) {
                         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -1191,7 +1191,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         s_logger.debug("Reapplying vm data (userData and metaData) entries as a part of domR " + router + " start...");
         createVmDataCommands(router, cmds);
         // Network usage command to create iptables rules
-        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getName(), "create"));
+        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create"));
 
         return true;
     }
@@ -1329,7 +1329,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
 
-        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getName());
+        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName());
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlIpAddress);
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("dhcp", dhcpCommand);
@@ -1337,7 +1337,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         // password should be set only on default network element
         if (password != null && network.isDefault()) {
             final String encodedPassword = rot13(password);
-            SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getName());
+            SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             cmds.addCommand("password", cmd);
@@ -1348,7 +1348,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         cmds.addCommand(
                 "vmdata",
-                generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine()
+                generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), profile.getVirtualMachine()
                         .getInstanceName(), profile.getId(), sshPublicKey));
 
         try {
@@ -1359,7 +1359,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         Answer answer = cmds.getAnswer("dhcp");
         if (!answer.getResult()) {
-            s_logger.error("Unable to set dhcp entry for " + profile + " on domR: " + router.getName() + " due to " + answer.getDetails());
+            s_logger.error("Unable to set dhcp entry for " + profile + " on domR: " + router.getHostName() + " due to " + answer.getDetails());
             throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
         }
 
@@ -1628,7 +1628,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
                     String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
                     cmds.addCommand("vmdata",
-                            generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId(), null));
+                            generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(), vm.getId(), null));
                 }
             }
         }
@@ -1644,7 +1644,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     if (nic != null) {
                         s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
 
-                        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getName());
+                        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
                         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                         cmds.addCommand("dhcp", dhcpCommand);

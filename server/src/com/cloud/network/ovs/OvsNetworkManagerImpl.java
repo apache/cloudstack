@@ -272,7 +272,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 							vm.getAccountId(), vm.getHostId()).getVlan());
 
 					Commands cmds = new Commands(new OvsSetTagAndFlowCommand(
-							vm.getName(), tag, vlans, seqnum.toString(),
+							vm.getHostName(), tag, vlans, seqnum.toString(),
 							vm.getId()));
 
 					try {
@@ -504,11 +504,11 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			CheckAndUpdateDhcpFlow(instance);
 			String vlans = getVlanInPortMapping(accountId, hostId);
 			VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(),
-					instance.getName());
+					instance.getHostName());
 			StringBuffer command = new StringBuffer();
 			command.append("vlan");
 			command.append("/");
-			command.append(cmdPair("vmName", instance.getName()));
+			command.append(cmdPair("vmName", instance.getHostName()));
 			command.append("/");
 			command.append(cmdPair("tag", tag));
 			command.append("/");
@@ -550,12 +550,12 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		try {
 			long hostId = router.getHostId();
 			String tag = Long.toString(_vlanMappingDao.findByAccountIdAndHostId(accountId, hostId).getVlan());
-			VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(), instance.getName());
+			VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(), instance.getHostName());
 			String vlans = getVlanInPortMapping(accountId, hostId);
-			s_logger.debug("ask router " + router.getName() + " on host "
+			s_logger.debug("ask router " + router.getHostName() + " on host "
 					+ hostId + " update vlan map to " + vlans);
 			Commands cmds = new Commands(new OvsSetTagAndFlowCommand(
-					router.getName(), tag, vlans, Long.toString(log.getLogsequence()), instance.getId()));
+					router.getHostName(), tag, vlans, Long.toString(log.getLogsequence()), instance.getId()));
 			_agentMgr.send(router.getHostId(), cmds, _ovsListener);
 		} catch (Exception e) {
 			s_logger.warn("apply flow to router failed", e);
@@ -592,7 +592,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 						continue;
 					}
 				}
-				log = _flowLogDao.findOrNewByVmId(vmId, vm.getName());
+				log = _flowLogDao.findOrNewByVmId(vmId, vm.getHostName());
 		
 				if (log != null && updateSeqno){
 					log.incrLogsequence();
@@ -628,7 +628,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	protected Set<Long> getAffectedVms(VMInstanceVO instance, boolean tellRouter) {
 		long accountId = instance.getAccountId();
 		if (!_vlanMappingDirtyDao.isDirty(accountId)) {
-			s_logger.debug("OVSAFFECTED: no VM affected by " + instance.getName());
+			s_logger.debug("OVSAFFECTED: no VM affected by " + instance.getHostName());
 			return null;
 		}
 		
@@ -667,10 +667,10 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			vo.setAccountId(0);
 			_vlanMappingDirtyDao.markDirty(accountId);
 			String s = String.format("%1$s is the last VM(host:%2$s, accountId:%3$s), remove vlan",
-							instance.getName(), hostId, accountId);
+							instance.getHostName(), hostId, accountId);
 			s_logger.debug("OVSDIRTY:" + s);
 		} else {
-			s_logger.debug(instance.getName()
+			s_logger.debug(instance.getHostName()
 					+ " reduces reference count of (account,host) = ("
 					+ accountId + "," + hostId + ") to " + vo.getRef());
 		}
@@ -679,7 +679,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		txn.commit();
 		
 		try {
-			Commands cmds = new Commands(new OvsDeleteFlowCommand(instance.getName()));
+			Commands cmds = new Commands(new OvsDeleteFlowCommand(instance.getHostName()));
 			_agentMgr.send(hostId, cmds, _ovsListener);
 		} catch (Exception e) {
 		    s_logger.warn("remove flow failed", e);

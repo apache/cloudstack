@@ -2191,7 +2191,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object networkId = cmd.getNetworkId();
 
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
@@ -2809,12 +2809,12 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Pair<String, Integer> getVncPort(VirtualMachine vm) {
         if (vm.getHostId() == null) {
-            s_logger.warn("VM " + vm.getName() + " does not have host, return -1 for its VNC port");
+            s_logger.warn("VM " + vm.getHostName() + " does not have host, return -1 for its VNC port");
             return new Pair<String, Integer>(null, -1);
         }
 
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getName());
+            s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getHostName());
         }
 
         GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));

@@ -921,7 +921,7 @@ public class NetUtils {
         if (hostName.length() > 63 || hostName.length() < 1) {
             s_logger.warn("Domain name label must be between 1 and 63 characters long");
             return false;
-        } else if (!hostName.toLowerCase().matches("[a-zA-z0-9-]*")) {
+        } else if (!hostName.toLowerCase().matches("[a-z0-9-]*")) {
             s_logger.warn("Domain name label may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner)");
             return false;
         } else if (hostName.startsWith("-") || hostName.endsWith("-")) {

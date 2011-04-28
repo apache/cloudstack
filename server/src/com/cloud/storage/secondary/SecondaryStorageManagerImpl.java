@@ -266,12 +266,12 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         Answer answer = _agentMgr.easySend(storageHost.getId(), setupCmd);
         if (answer != null && answer.getResult()) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Successfully programmed http auth into " + secStorageVm.getName());
+                s_logger.debug("Successfully programmed http auth into " + secStorageVm.getHostName());
             }
             return true;
         } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("failed to program http auth into secondary storage vm : " + secStorageVm.getName());
+                s_logger.debug("failed to program http auth into secondary storage vm : " + secStorageVm.getHostName());
             }
             return false;
         }
@@ -316,12 +316,12 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         Answer answer = _agentMgr.easySend(storageHost.getId(), cpc);
         if (answer != null && answer.getResult()) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Successfully programmed firewall rules into " + secStorageVm.getName());
+                s_logger.debug("Successfully programmed firewall rules into " + secStorageVm.getHostName());
             }
             return true;
         } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("failed to program firewall rules into secondary storage vm : " + secStorageVm.getName());
+                s_logger.debug("failed to program firewall rules into secondary storage vm : " + secStorageVm.getHostName());
             }
             return false;
         }
@@ -447,7 +447,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Running secondary storage vm pool size : " + runningList.size());
                 for (SecondaryStorageVmVO secStorageVm : runningList) {
-                    s_logger.trace("Running secStorageVm instance : " + secStorageVm.getName());
+                    s_logger.trace("Running secStorageVm instance : " + secStorageVm.getHostName());
                 }
             }
 
@@ -532,7 +532,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 }
             } else {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Secondary storage vm " + secStorageVm.getName() + " is started");
+                    s_logger.info("Secondary storage vm " + secStorageVm.getHostName() + " is started");
                 }
             }
         }
@@ -728,7 +728,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             return true;
         } catch (ResourceUnavailableException e) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Stopping secondary storage vm " + secStorageVm.getName() + " faled : exception " + e.toString());
+                s_logger.debug("Stopping secondary storage vm " + secStorageVm.getHostName() + " faled : exception " + e.toString());
             }
             return false;
         }
@@ -748,7 +748,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
             if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Successfully reboot secondary storage vm " + secStorageVm.getName());
+                    s_logger.debug("Successfully reboot secondary storage vm " + secStorageVm.getHostName());
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
@@ -756,7 +756,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
                 return true;
             } else {
-                String msg = "Rebooting Secondary Storage VM failed - " + secStorageVm.getName();
+                String msg = "Rebooting Secondary Storage VM failed - " + secStorageVm.getHostName();
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(msg);
                 }
@@ -821,7 +821,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         buf.append(" template=domP type=secstorage");
         buf.append(" host=").append(_mgmt_host);
         buf.append(" port=").append(_mgmt_port);
-        buf.append(" name=").append(profile.getVirtualMachine().getName());
+        buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 
         buf.append(" zone=").append(dest.getDataCenter().getId());
         buf.append(" pod=").append(dest.getPod().getId());
@@ -829,7 +829,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         if (profile.getVirtualMachine().getRole() == SecondaryStorageVm.Role.templateProcessor)
             buf.append(" guid=").append(secHost.getGuid());
         else
-            buf.append(" guid=").append(profile.getVirtualMachine().getName());
+            buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
 
         String nfsMountPoint = null;
         try {

@@ -649,7 +649,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (ipAddress.getAssociatedWithVmId() != null) {
             UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
             ipResponse.setVirtualMachineId(vm.getId());
-            ipResponse.setVirtualMachineName(vm.getName());
+            ipResponse.setVirtualMachineName(vm.getHostName());
             ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
         }
 
@@ -794,7 +794,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (instanceId != null && volume.getState() != Volume.State.Destroy) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
             volResponse.setVirtualMachineId(vm.getId());
-            volResponse.setVirtualMachineName(vm.getName());
+            volResponse.setVirtualMachineName(vm.getHostName());
             UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
             volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
 
@@ -964,7 +964,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
             if (vm != null) {
                 response.setVirtualMachineId(vm.getId());
-                response.setVirtualMachineName(vm.getName());
+                response.setVirtualMachineName(vm.getHostName());
                 response.setVirtualMachineDisplayName(vm.getDisplayName());
             }
         }
@@ -992,7 +992,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             UserVm vm = ApiDBUtils.findUserVmById(ip.getAssociatedWithVmId());
             if (vm != null) {// vm might be destroyed
                 response.setVirtualMachineId(vm.getId());
-                response.setVirtualMachineName(vm.getName());
+                response.setVirtualMachineName(vm.getHostName());
                 response.setVirtualMachineDisplayName(vm.getDisplayName());
             }
         }
@@ -1031,7 +1031,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             userVmResponse.setId(userVm.getId());
-            userVmResponse.setName(userVm.getName());
+            userVmResponse.setName(userVm.getHostName());
             userVmResponse.setCreated(userVm.getCreated());
 
             if (userVm.getState() != null) {
@@ -1043,7 +1043,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (userVm.getDisplayName() != null) {
                 userVmResponse.setDisplayName(userVm.getDisplayName());
             } else {
-                userVmResponse.setDisplayName(userVm.getName());
+                userVmResponse.setDisplayName(userVm.getHostName());
             }
 
             InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
@@ -1221,7 +1221,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getId());
         routerResponse.setZoneId(router.getDataCenterId());
-        routerResponse.setName(router.getName());
+        routerResponse.setName(router.getHostName());
         routerResponse.setPodId(router.getPodId());
         routerResponse.setTemplateId(router.getTemplateId());
         routerResponse.setCreated(router.getCreated());
@@ -1284,7 +1284,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
             vmResponse.setZoneId(vm.getDataCenterId());
 
-            vmResponse.setName(vm.getName());
+            vmResponse.setName(vm.getHostName());
             vmResponse.setPodId(vm.getPodId());
             vmResponse.setTemplateId(vm.getTemplateId());
             vmResponse.setCreated(vm.getCreated());

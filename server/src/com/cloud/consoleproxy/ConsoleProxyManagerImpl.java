@@ -358,7 +358,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return null;
         } else {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Console proxy " + proxy.getName() + " is started");
+                s_logger.trace("Console proxy " + proxy.getHostName() + " is started");
             }
 
             // if it is a new assignment or a changed assignment,
@@ -557,7 +557,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Running proxy pool size : " + runningList.size());
                 for (ConsoleProxyVO proxy : runningList) {
-                    s_logger.trace("Running proxy instance : " + proxy.getName());
+                    s_logger.trace("Running proxy instance : " + proxy.getHostName());
                 }
             }
 
@@ -993,7 +993,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
             if (proxy != null) {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Console proxy " + proxy.getName() + " is started");
+                    s_logger.info("Console proxy " + proxy.getHostName() + " is started");
                 }
             }
         }
@@ -1100,7 +1100,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         try {
             return _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Stopping console proxy " + proxy.getName() + " failed : exception " + e.toString());
+            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception " + e.toString());
             return false;
         }
     }
@@ -1195,7 +1195,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
             if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Successfully reboot console proxy " + proxy.getName());
+                    s_logger.debug("Successfully reboot console proxy " + proxy.getHostName());
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
@@ -1204,7 +1204,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 return true;
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("failed to reboot console proxy : " + proxy.getName());
+                    s_logger.debug("failed to reboot console proxy : " + proxy.getHostName());
                 }
 
                 return false;
@@ -1363,7 +1363,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         buf.append(" template=domP type=consoleproxy");
         buf.append(" host=").append(_mgmt_host);
         buf.append(" port=").append(_mgmt_port);
-        buf.append(" name=").append(profile.getVirtualMachine().getName());
+        buf.append(" name=").append(profile.getVirtualMachine().getHostName());
         if (_sslEnabled) {
             buf.append(" premium=true");
         }
@@ -1516,7 +1516,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 			long proxyVmId = startupCmd.getProxyVmId();
 			ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
 			assert(consoleProxy != null);
-			HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getName(), Type.ConsoleProxy);
+			HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getHostName(), Type.ConsoleProxy);
     		
     		Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
     		if(answer == null || !answer.getResult()) {
