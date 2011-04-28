@@ -127,7 +127,7 @@ public class VirtualMachineName {
     
     public static boolean isValidRouterName(String name, String instance) {
         String[] tokens = name.split(SEPARATOR);
-        if (tokens.length != 3) {
+        if (tokens.length != 3 && tokens.length != 4 ) {
             return false;
         }
         

@@ -1357,6 +1357,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 Long id = vmGuru.convertToId(name);
                 if (id != null) {
                     map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue()));
+                    break;
                 }
             }
         }
