@@ -950,8 +950,8 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 				else if (protocol == "vmfs") {
 					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
 					if(path.substring(0,1)!="/")
-						path = "/" + path; 
-					path += "/" + trim($thisDialog.find("#add_pool_vmfs_ds").val())
+						path = "/" + todb(path); 
+					path += "/" + todb(trim($thisDialog.find("#add_pool_vmfs_ds").val()));
 					url = vmfsURL("dummy", path);
 				} 
 				else {
