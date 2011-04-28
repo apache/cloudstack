@@ -31,6 +31,8 @@ dictionary = {
             <fmt:message key="label.details"/></div>
         <div class="content_tabs off" id="tab_ipallocation">
             <fmt:message key="label.ip.allocations"/></div>
+       <div class="content_tabs off" id="tab_networkdevice">
+            <fmt:message key="label.network.device"/></div>   
     </div>
     
     <!-- Details tab (start)-->
@@ -146,6 +148,19 @@ dictionary = {
     </div> 
     <!-- Network tab (end)-->
 
+    <!-- Network Device tab (start)-->
+    <div style="display: none;" id="tab_content_networkdevice">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+            Network Device....
+        </div>
+    </div> 
+    <!-- Network Device tab (end)-->
 </div>
 
 <!--  top buttons (begin) -->
@@ -186,6 +201,15 @@ dictionary = {
             </div>
         </div>
     </div>
+    <div class="actionpanel_button_wrapper" id="add_network_device_button" style="display: none">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.network.device"/>' /></div>
+            <div class="actionpanel_button_links">
+                <fmt:message key="label.add.network.device"/>
+            </div>
+        </div>
+    </div>    
 </div>
 <!--  top buttons (end) -->
 
@@ -626,4 +650,66 @@ dictionary = {
     </div>
 </div>
 <!-- Add IP Range to pod (end) -->
+
+<!-- Add Network Device (begin) -->
+<div id="dialog_add_network_device" title='<fmt:message key="label.add.network.device"/>' style="display:none">	
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form5">
+			<ol>				    		
+				<li>
+					<label>
+                    <fmt:message key="label.type"/>:</label>
+                    <select class="select" id="network_device_type">                       
+                        <option value="ExternalDhcp">ExternalDhcp</option>
+                        <option value="PxeServer">PxeServer</option>
+                    </select>
+                    <div id="network_device_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>                
+				</li>
+				<li>
+					<label><fmt:message key="label.url"/>:</label>
+					<input class="text" type="text" id="url"/>
+					<div id="url_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>	
+				<li>
+					<label><fmt:message key="label.username"/>:</label>
+					<input class="text" type="text" id="username"/>
+					<div id="username_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>				
+				<li>
+					<label><fmt:message key="label.password"/>:</label>
+					<input class="text" type="password" id="password"/>
+					<div id="password_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label>
+                    <fmt:message key="label.DHCP.server.type"/>:</label>
+                    <select class="select" id="DHCP_server_type">                       
+                        <option value="Dhcpd">Dhcpd</option>
+                        <option value="Dnsmasq">Dnsmasq</option>
+                    </select>
+                    <div id="DHCP_server_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>                
+				</li>
+			</ol>
+		</form>
+	</div>
+	<!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            <fmt:message key="label.adding"/>....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add Network Device (end) -->
+
 <!-- ***** dialogs (begin) ***** -->

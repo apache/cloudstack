@@ -25,6 +25,7 @@
     initDialog("dialog_add_external_cluster");
     initDialog("dialog_add_host", 400);    
     initDialog("dialog_add_iprange_to_pod");
+    initDialog("dialog_add_network_device");
     
     //add pool dialog
     initDialog("dialog_add_pool", 400);	
@@ -45,9 +46,9 @@
     });   
     
     //switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_ipallocation")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_ipallocation")];
-    var afterSwitchFnArray = [podJsonToDetailsTab, podJsonToNetworkTab];
+    var tabArray = [$("#tab_details"), $("#tab_ipallocation"), $("#tab_networkdevice")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_ipallocation"), $("#tab_content_networkdevice")];
+    var afterSwitchFnArray = [podJsonToDetailsTab, podJsonToNetworkTab, podJsonToNetworkDeviceTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
    
     $readonlyFields  = $("#tab_content_details").find("#name, #netmask, #ipRange, #gateway");
@@ -127,11 +128,12 @@ function podJsonToDetailsTab() {
 		}
 	});	
     if(networkType == "Basic") { //basic-mode network (pod-wide VLAN)
-        $("#tab_ipallocation, #add_iprange_button").show();  
+        $("#tab_ipallocation, #add_iprange_button, #add_network_device_button").show();  
         bindAddIpRangeToPodButton($leftmenuItem1);  
+        bindAddNetworkDeviceButton($leftmenuItem1);
     }
     else if(networkType == "Advanced") { //advanced-mode network (zone-wide VLAN)
-        $("#tab_ipallocation, #add_iprange_button").hide();
+    	$("#tab_ipallocation, #add_iprange_button, #add_network_device_button").hide();
         $("#midmenu_add_directIpRange_button").unbind("click").hide();         
     }
     
@@ -139,17 +141,7 @@ function podJsonToDetailsTab() {
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	  
-    */
-    
+        
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
     buildActionLinkForTab("label.action.edit.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab);  
@@ -196,8 +188,54 @@ function podJsonToNetworkTab() {
 	});			
 } 
 
+
+function podJsonToNetworkDeviceTab() {    
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    if($leftmenuItem1 == null) {
+        podClearNetworkDeviceTab();
+        return;
+    }
+    
+    var jsonObj = $leftmenuItem1.data("jsonObj");    
+    if(jsonObj == null) {
+        podClearNetworkDeviceTab();
+	    return;	
+	}
+     
+    /*
+    var $thisTab = $("#right_panel_content #tab_content_network_device");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   		 
+        
+    $.ajax({
+		data: createURL("command=listVlanIpRanges&zoneid="+fromdb(jsonObj.zoneid)+"&podid="+fromdb(jsonObj.id)),
+		dataType: "json",
+		success: function(json) {			       
+			var items = json.listvlaniprangesresponse.vlaniprange;
+			var $container = $thisTab.find("#tab_container").empty();
+			var template = $("#network_tab_template");	
+			if (items != null && items.length > 0) {					    
+				for (var i = 0; i < items.length; i++) {	
+				    var newTemplate = template.clone(true);	               
+	                podNetworkJsonToTemplate(items[i], newTemplate); 
+	                $container.append(newTemplate.show());	
+				}
+			}
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    	
+		}			
+	});	
+	*/		
+} 
+
+
 function podClearNetworkTab() {    
     var $thisTab = $("#right_panel_content #tab_content_ipallocation");
+	$thisTab.find("#tab_container").empty();
+} 
+
+function podClearNetworkDeviceTab() {    
+    var $thisTab = $("#right_panel_content #tab_content_network_device");
 	$thisTab.find("#tab_container").empty();
 } 
 
@@ -846,6 +884,72 @@ function bindAddIpRangeToPodButton($leftmenuItem1) {
 					},
 				    error: function(XMLHttpResponse) {					        				        
 				        handleError(XMLHttpResponse, function() {				           
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
+				    }
+				});		        
+	        },
+	        "Cancel": function() {
+	            $(this).dialog("close");
+	        }		    
+	    }).dialog("open");
+        
+        return false;
+    });             
+}
+
+
+function bindAddNetworkDeviceButton($leftmenuItem1) {       
+    $("#add_network_device_button").unbind("click").bind("click", function(event) {  
+        if($("#tab_content_networkdevice").css("display") == "none")
+            $("#tab_networkdevice").click();    
+            
+        var podObj = $leftmenuItem1.data("jsonObj");               
+        var zoneId = podObj.zoneid;        
+        var podId = podObj.id;
+                             
+        $("#dialog_add_network_device") 
+	    .dialog('option', 'buttons', {
+	        "Add": function() {             
+	            var $thisDialog = $(this);		
+			   				
+				// validate values
+				var isValid = true;	
+				isValid &= validateString("URL", $thisDialog.find("#url"), $thisDialog.find("#url_errormsg"));				
+				isValid &= validateString("Username", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"));				
+				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"));				
+				if (!isValid) 
+				    return;							
+				
+				$thisDialog.find("#spinning_wheel").show(); 									
+				
+				var array1 = [];
+				array1.push("&networkdevicetype="+$thisDialog.find("#network_device_type").val());
+				array1.push("&networkdeviceparameterlist[0].zoneid=" + zoneId);
+				array1.push("&networkdeviceparameterlist[0].podId=" + podId);	
+				array1.push("&networkdeviceparameterlist[0].url="+$thisDialog.find("#url").val());	
+				array1.push("&networkdeviceparameterlist[0].username="+$thisDialog.find("#username").val());	
+				array1.push("&networkdeviceparameterlist[0].password="+$thisDialog.find("#password").val());	
+				array1.push("&networkdeviceparameterlist[0].dhcpservertype=" + $thisDialog.find("#DHCP_server_type").val());
+							
+				$.ajax({
+				    data: createURL("command=addNetworkdevice" + array1.join("")),
+					dataType: "json",
+					success: function(json) {						    				    
+					    $thisDialog.find("#spinning_wheel").hide();				        
+				        $thisDialog.dialog("close");
+					    
+					    /*
+					    var item = json.createvlaniprangeresponse.vlan;
+					    var $subgridItem = $("#network_tab_template").clone(true);
+					    podNetworkJsonToTemplate(item, $subgridItem); 	
+					    $subgridItem.find("#after_action_info").text(g_dictionary["label.adding.succeeded"]);
+                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  				                        
+	                    $("#tab_content_ipallocation").find("#tab_container").append($subgridItem.fadeIn("slow"));	
+	                    */
+					},
+				    error: function(XMLHttpResponse) {						        	        				        
+				        handleError(XMLHttpResponse, function() {					            		           
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);
 						});
 				    }
