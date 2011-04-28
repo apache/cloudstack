@@ -410,8 +410,12 @@ CREATE TABLE `cloud`.`vpn_users` (
 ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `status` varchar(32);
 
 --drop network group related constraints/indexes;
-ALTER TABLE `cloud`.`network_group` drop foreign key `fk_network_group__domain_id`;
-alter table `cloud`.`network_group` drop index `i_network_group_name`;
+ALTER TABLE `cloud`.`network_group` DROP foreign key `fk_network_group__domain_id`;
+ALTER TABLE `cloud`.`network_group` DROP INDEX `fk_network_group__domain_id`;
+ALTER TABLE `cloud`.`network_group` DROP foreign key `fk_network_group___account_id`;
+ALTER TABLE `cloud`.`network_group` DROP INDEX `fk_network_group___account_id`;;
+
+ALTER TABLE `cloud`.`network_group` drop index `i_network_group_name`;
 
 ALTER TABLE `cloud`.`network_ingress_rule` drop foreign key `fk_network_ingress_rule___network_group_id`;
 ALTER TABLE `cloud`.`network_ingress_rule` drop foreign key `fk_network_ingress_rule___allowed_network_id`;
