@@ -57,16 +57,16 @@ public class Upgrade222to224 implements DbUpgrade {
 
         return new File[] { new File(script) };
     }
-    
+
     private void fixRelatedFkeyOnNetworksTable(Connection conn) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__related`");
-        try { 
+        try {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             s_logger.debug("Ignore if the key is not there.");
         }
         pstmt.close();
-        
+
         pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
         pstmt.executeUpdate();
         pstmt.close();
@@ -120,13 +120,13 @@ public class Upgrade222to224 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to update the guest os type for default template as a part of 222 to 224 upgrade", e);
         }
     }
-    
+
     // fixes bug 9597
     private void fixRecreatableVolumesProblem(Connection conn) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id)");
         pstmt.execute();
         pstmt.close();
-        
+
         pstmt = conn.prepareStatement("UPDATE volumes SET recreatable=0 WHERE disk_offering_id is NULL");
         pstmt.execute();
         pstmt.close();
@@ -192,7 +192,7 @@ public class Upgrade222to224 implements DbUpgrade {
             HashMap<Long, Long> nicNetworkMaps = new HashMap<Long, Long>();
             PreparedStatement pstmt = conn.prepareStatement("SELECT id, network_id FROM nics WHERE mode IS NULL");
             ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
+            while (rs.next()) {
                 nicNetworkMaps.put(rs.getLong(1), rs.getLong(2));
             }
 
