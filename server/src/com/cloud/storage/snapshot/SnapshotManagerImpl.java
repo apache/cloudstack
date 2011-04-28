@@ -216,6 +216,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 if (result.second().getResult()) {
                     return result.second();
                 }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("The result for " + cmd.getClass().getName() + " is " + result.second().getDetails() + " through " + result.first());
+                }
+                hostIdsToAvoid.add(result.first());
             } catch (StorageUnavailableException e1) {
                 s_logger.warn("Storage unavailable ", e1);
                 return null;
@@ -225,7 +229,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 Thread.sleep(_pauseInterval * 1000);
             } catch (InterruptedException e) {
             }
+            
+            s_logger.debug("Retrying...");
         }
+        
+        s_logger.warn("After " + _totalRetries + " retries, the command " + cmd.getClass().getName() + " did not succeed.");
 
         return null;
     }

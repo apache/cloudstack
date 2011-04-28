@@ -1789,9 +1789,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
                 return new Pair<Long, Answer[]>(hostId, answers.toArray(new Answer[answers.size()]));
             } catch (AgentUnavailableException e) {
-                s_logger.debug("Unable to send storage pool command to " + pool, e);
+                s_logger.debug("Unable to send storage pool command to " + pool + " via " + hostId, e);
             } catch (OperationTimedoutException e) {
-                s_logger.debug("Unable to send storage pool command to " + pool, e);
+                s_logger.debug("Unable to send storage pool command to " + pool + " via " + hostId, e);
             }
         }
 
