@@ -137,4 +137,5 @@ UPDATE `cloud`.`host` SET resource='com.cloud.hypervisor.xen.resource.XenServer5
 UPDATE `cloud`.`nics` SET ip_type='Ip4';
 UPDATE `cloud`.`nics` SET broadcast_uri='vlan://untagged', isolation_uri='ec2://untagged', strategy='Create' where reserver_name='DirectPodBasedNetworkGuru';
 
-
+DELETE FROM `cloud`.`configuration` where name='schema.level';
+DELETE FROM `cloud`.`configuration` where name='direct.attach.security.groups.enabled';
