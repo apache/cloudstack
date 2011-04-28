@@ -899,8 +899,23 @@ function bindAddIpRangeToPodButton($leftmenuItem1) {
 }
 
 
-function bindAddNetworkDeviceButton($leftmenuItem1) {       
+function bindAddNetworkDeviceButton($leftmenuItem1) {  
+	var $dialog = $("#dialog_add_network_device");
+	$dialog.find("#network_device_type").bind("change", function(event){		
+		if($(this).val() == "ExternalDhcp") {
+			$dialog.find('li[input_group="ExternalDhcp"]').show();
+			$dialog.find('li[input_group="PxeServer"]').hide();
+		}
+		else if($(this).val() == "PxeServer"){
+			$dialog.find('li[input_group="ExternalDhcp"]').hide();
+			$dialog.find('li[input_group="PxeServer"]').show();
+		}		
+		return false;
+	});
+		
     $("#add_network_device_button").unbind("click").bind("click", function(event) {  
+    	$dialog.find("#network_device_type").change();
+    	
         if($("#tab_content_networkdevice").css("display") == "none")
             $("#tab_networkdevice").click();    
             
@@ -917,7 +932,17 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 				var isValid = true;	
 				isValid &= validateString("URL", $thisDialog.find("#url"), $thisDialog.find("#url_errormsg"));				
 				isValid &= validateString("Username", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"));				
-				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"));				
+				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"));
+				if($("#PING_storage_IP_container").css("display") != "none")
+					isValid &= validateString("PING storage IP", $thisDialog.find("#PING_storage_IP"), $thisDialog.find("#PING_storage_IP_errormsg"));	
+				if($("#PING_dir_container").css("display") != "none")
+				    isValid &= validateString("PING directory", $thisDialog.find("#PING_dir"), $thisDialog.find("#PING_dir_errormsg"));	
+				if($("#TFT_dir_container").css("display") != "none")
+				    isValid &= validateString("TFT directory", $thisDialog.find("#TFT_dir"), $thisDialog.find("#TFT_dir_errormsg"));	
+				if($("#PING_CIFS_username_container").css("display") != "none")
+				    isValid &= validateString("PING CIFS username", $thisDialog.find("#PING_CIFS_username"), $thisDialog.find("#PING_CIFS_username_errormsg"), true);	
+				if($("#PING_CIFS_password_container").css("display") != "none")
+					isValid &= validateString("PING CIFS password", $thisDialog.find("#PING_CIFS_password"), $thisDialog.find("#PING_CIFS_password_errormsg"), true);					
 				if (!isValid) 
 				    return;							
 				
@@ -930,8 +955,21 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 				array1.push("&networkdeviceparameterlist[0].url="+$thisDialog.find("#url").val());	
 				array1.push("&networkdeviceparameterlist[0].username="+$thisDialog.find("#username").val());	
 				array1.push("&networkdeviceparameterlist[0].password="+$thisDialog.find("#password").val());	
-				array1.push("&networkdeviceparameterlist[0].dhcpservertype=" + $thisDialog.find("#DHCP_server_type").val());
-							
+				if($("#DHCP_server_type_container").css("display") != "none")
+				    array1.push("&networkdeviceparameterlist[0].dhcpservertype=" + $thisDialog.find("#DHCP_server_type").val());
+				if($("#Pxe_server_type_container").css("display") != "none")
+				    array1.push("&networkdeviceparameterlist[0].pxeservertype=" + $thisDialog.find("#Pxe_server_type").val());
+				if($("#PING_storage_IP_container").css("display") != "none")
+					array1.push("&networkdeviceparameterlist[0].pingstorageserverip=" + $thisDialog.find("#PING_storage_IP").val());					
+				if($("#PING_dir_container").css("display") != "none")
+					array1.push("&networkdeviceparameterlist[0].pingdir=" + $thisDialog.find("#PING_dir").val());				    
+				if($("#TFT_dir_container").css("display") != "none")
+					array1.push("&networkdeviceparameterlist[0].tftpdir=" + $thisDialog.find("#TFT_dir").val());				    
+				if($("#PING_CIFS_username_container").css("display") != "none")
+					array1.push("&networkdeviceparameterlist[0].pingcifsusername=" + $thisDialog.find("#PING_CIFS_username").val());				   
+				if($("#PING_CIFS_password_container").css("display") != "none")
+					array1.push("&networkdeviceparameterlist[0].pingcifspassword=" + $thisDialog.find("#PING_CIFS_password").val());				
+				
 				$.ajax({
 				    data: createURL("command=addNetworkdevice" + array1.join("")),
 					dataType: "json",

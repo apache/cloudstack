@@ -656,7 +656,7 @@ dictionary = {
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>				    		
-				<li>
+				<li input_group="general">
 					<label>
                     <fmt:message key="label.type"/>:</label>
                     <select class="select" id="network_device_type">                       
@@ -666,22 +666,22 @@ dictionary = {
                     <div id="network_device_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>                
 				</li>
-				<li>
+				<li input_group="general">
 					<label><fmt:message key="label.url"/>:</label>
 					<input class="text" type="text" id="url"/>
 					<div id="url_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>	
-				<li>
+				<li input_group="general">
 					<label><fmt:message key="label.username"/>:</label>
 					<input class="text" type="text" id="username"/>
 					<div id="username_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>				
-				<li>
+				<li input_group="general">
 					<label><fmt:message key="label.password"/>:</label>
 					<input class="text" type="password" id="password"/>
 					<div id="password_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
-				<li>
+				<li input_group="ExternalDhcp" style="display:none;" id="DHCP_server_type_container">
 					<label>
                     <fmt:message key="label.DHCP.server.type"/>:</label>
                     <select class="select" id="DHCP_server_type">                       
@@ -690,7 +690,42 @@ dictionary = {
                     </select>
                     <div id="DHCP_server_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>                
+				</li>	
+				<li input_group="PxeServer" style="display:none;" id="Pxe_server_type_container">
+					<label>
+                    <fmt:message key="label.Pxe.server.type"/>:</label>
+                    <select class="select" id="Pxe_server_type">                       
+                        <option value="PING">PING</option>
+                        <option value="DMCD">DMCD</option>
+                    </select>
+                    <div id="Pxe_server_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>                
 				</li>
+				<li input_group="PxeServer" style="display:none;" id="PING_storage_IP_container">
+					<label><fmt:message key="label.PING.storage.IP"/>:</label>
+					<input class="text" type="text" id="PING_storage_IP"/>
+					<div id="PING_storage_IP_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>	
+				<li input_group="PxeServer" style="display:none;" id="PING_dir_container">
+					<label><fmt:message key="label.PING.dir"/>:</label>
+					<input class="text" type="text" id="PING_dir"/>
+					<div id="PING_dir_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>		
+				<li input_group="PxeServer" style="display:none;" id="TFT_dir_container">
+					<label><fmt:message key="label.TFT.dir"/>:</label>
+					<input class="text" type="text" id="TFT_dir"/>
+					<div id="TFT_dir_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>		
+				<li input_group="PxeServer" style="display:none;" id="PING_CIFS_username_container">
+					<label><fmt:message key="label.PING.CIFS.username"/>:</label>
+					<input class="text" type="text" id="PING_CIFS_username"/>
+					<div id="PING_CIFS_username_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>		
+				<li input_group="PxeServer" style="display:none;" id="PING_CIFS_password_container">
+					<label><fmt:message key="label.PING.CIFS.password"/>:</label>
+					<input class="text" type="password" id="PING_CIFS_password"/>
+					<div id="PING_CIFS_password_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>	
 			</ol>
 		</form>
 	</div>
