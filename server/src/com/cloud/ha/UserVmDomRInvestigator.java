@@ -18,6 +18,7 @@
 
 package com.cloud.ha;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,10 +32,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -44,16 +44,13 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={Investigator.class})
-public class InvestigatorImpl implements Investigator {
-    private static final Logger s_logger = Logger.getLogger(InvestigatorImpl.class);
+public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
+    private static final Logger s_logger = Logger.getLogger(UserVmDomRInvestigator.class);
 
     private String _name = null;
-    @Inject private HostDao _hostDao = null;
-    @Inject private DomainRouterDao _routerDao = null;;
     @Inject private UserVmDao _userVmDao = null;
     @Inject private AgentManager _agentMgr = null;
     @Inject private NetworkManager _networkMgr = null;
@@ -85,35 +82,11 @@ public class InvestigatorImpl implements Investigator {
             }
             
             return testUserVM(vm, nic, router);
-        } else if ((vm.getType() == VirtualMachine.Type.DomainRouter) || (vm.getType() == VirtualMachine.Type.ConsoleProxy)) {
-            // get the data center IP address, find a host on the pod, use that host to ping the data center IP address
-            HostVO vmHost = _hostDao.findById(vm.getHostId());
-            List<Long> otherHosts = findHostByPod(vm.getPodId(), vm.getHostId());
-            for (Long otherHost : otherHosts) {
-
-                Status vmState = testIpAddress(otherHost, vm.getPrivateIpAddress());
-                if (vmState == null) {
-                    // can't get information from that host, try the next one
-                    continue;
-                }
-                if (vmState == Status.Up) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("successfully pinged vm's private IP (" + vm.getPrivateIpAddress() + "), returning that the VM is up");
-                    }
-                    return Boolean.TRUE;
-                } else if (vmState == Status.Down) {
-                    // We can't ping the VM directly...if we can ping the host, then report the VM down.
-                    // If we can't ping the host, then we don't have enough information.
-                    Status vmHostState = testIpAddress(otherHost, vmHost.getPrivateIpAddress());
-                    if ((vmHostState != null) && (vmHostState == Status.Up)) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() + "), but could not ping VM, returning that the VM is down");
-                        }
-                        return Boolean.FALSE;
-                    }
-                }
+        }else{
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Not a User Vm, unable to determine state of vm (" + vm.getId() + "), returning null");
             }
-        }
+        } 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("unable to determine state of vm (" + vm.getId() + "), returning null");
         }
@@ -183,21 +156,17 @@ public class InvestigatorImpl implements Investigator {
         return true;
     }
     
-    // Host.status is up and Host.type is routing
-    private List<Long> findHostByPod(long podId, Long excludeHostId) {
-        List<Long> hostIds = _hostDao.listBy(null, podId, null, Type.Routing, Status.Up);
-        if (excludeHostId != null){
-            hostIds.remove(excludeHostId);
-        }
-        
-        return hostIds;
-    }
-
     private Boolean testUserVM(VMInstanceVO vm, Nic nic, VirtualRouter router) {
         String privateIp = nic.getIp4Address();
         String routerPrivateIp = router.getPrivateIpAddress();
 
-        List<Long> otherHosts = findHostByPod(router.getPodId(), null);
+        List<Long> otherHosts = new ArrayList<Long>();
+        if(vm.getHypervisorType() == HypervisorType.XenServer
+        		|| vm.getHypervisorType() == HypervisorType.KVM){
+        	otherHosts.add(router.getHostId());
+        }else{
+        	otherHosts = findHostByPod(router.getPodId(), null);
+        }        
         for (Long hostId : otherHosts) {
             try {
                 Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(routerPrivateIp, privateIp), 30 * 1000);
@@ -224,40 +193,5 @@ public class InvestigatorImpl implements Investigator {
         }
         return null;
         
-    }
-
-    private Status testIpAddress(Long hostId, String testHostIp) {
-        try {
-            Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(testHostIp), 30 * 1000);
-            if(pingTestAnswer == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("host (" + testHostIp + ") returns null answer");
-                }
-            	return null;
-            }
-            
-            if (pingTestAnswer.getResult()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("host (" + testHostIp + ") has been successfully pinged, returning that host is up");
-                }
-                // computing host is available, but could not reach agent, return false
-                return Status.Up;
-            } else {
-                if (pingTestAnswer.getDetails().startsWith("Unable to ping default route")) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("host (" + hostId + ") cannot ping default route, returning 'I don't know'");
-                    }
-                    return null;
-                }
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("host (" + testHostIp + ") cannot be pinged, returning that host is down");
-                }
-                return Status.Down;
-            }
-        } catch (AgentUnavailableException e) {
-            return null;
-        } catch (OperationTimedoutException e) {
-            return null;
-        }
     }
 }
