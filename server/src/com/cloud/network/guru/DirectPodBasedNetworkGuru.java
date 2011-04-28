@@ -122,7 +122,6 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                 nic.setBroadcastUri(URI.create("vlan://" + Vlan.UNTAGGED));
                 nic.setBroadcastType(BroadcastDomainType.Native);
             }
-            nic.setFormat(AddressFormat.Ip4);
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
         }
