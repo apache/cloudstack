@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
 public class Upgrade218to224DomainVlans implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade218to224DomainVlans.class);
 
@@ -36,11 +35,11 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
     public File[] getPrepareScripts() {
         return null;
     }
-        
+
     @Override
     public void performDataMigration(Connection conn) {
         HashMap<Long, Long> networkDomainMap = new HashMap<Long, Long>();
-        //populate domain_network_ref table
+        // populate domain_network_ref table
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM networks WHERE shared=1 AND traffic_type='Guest' AND guest_type='Direct'");
             ResultSet rs = pstmt.executeQuery();
@@ -49,26 +48,26 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
                 Long networkId = rs.getLong(1);
                 Long vlanId = null;
                 Long domainId = null;
-                
+
                 pstmt = conn.prepareStatement("SELECT id FROM vlan WHERE network_id=? LIMIT 0,1");
                 pstmt.setLong(1, networkId);
                 s_logger.debug("query is " + pstmt);
                 rs = pstmt.executeQuery();
-                
+
                 while (rs.next()) {
                     vlanId = rs.getLong(1);
                 }
-                
+
                 if (vlanId != null) {
                     pstmt = conn.prepareStatement("SELECT domain_id FROM account_vlan_map WHERE domain_id IS NOT NULL AND vlan_db_id=? LIMIT 0,1");
                     pstmt.setLong(1, vlanId);
                     s_logger.debug("query is " + pstmt);
                     rs = pstmt.executeQuery();
-                    
+
                     while (rs.next()) {
                         domainId = rs.getLong(1);
                     }
-                    
+
                     if (domainId != null) {
                         if (!networkDomainMap.containsKey(networkId)) {
                             networkDomainMap.put(networkId, domainId);
@@ -76,18 +75,20 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
                     }
                 }
             }
-            
-            //populate domain level networks
+
+            // populate domain level networks
             for (Long networkId : networkDomainMap.keySet()) {
                 pstmt = conn.prepareStatement("INSERT INTO domain_network_ref (network_id, domain_id) VALUES (?,    ?)");
                 pstmt.setLong(1, networkId);
                 pstmt.setLong(2, networkDomainMap.get(networkId));
                 pstmt.executeUpdate();
             }
-            
+
             rs.close();
             pstmt.close();
-        }  catch (SQLException e) {
+
+            performDbCleanup(conn);
+        } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to convert 2.1.x domain level vlans to 2.2.x domain level networks", e);
         }
     }
@@ -106,9 +107,35 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
     public String getUpgradedVersion() {
         return "2.2.4";
     }
-    
+
     @Override
     public boolean supportsRollingUpgrade() {
         return false;
+    }
+
+    private void performDbCleanup(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT domain_id FROM account_vlan_map");
+            try {
+                pstmt.executeQuery();
+            } catch (SQLException e) {
+                s_logger.debug("Assuming that domain_id field doesn't exist in account_vlan_map table, no need to upgrade");
+                return;
+            }
+
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`account_vlan_map` DROP FOREIGN KEY `fk_account_vlan_map__domain_id`");
+            pstmt.executeUpdate();
+
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`account_vlan_map` DROP COLUMN `domain_id`");
+            pstmt.executeUpdate();
+
+            pstmt = conn.prepareStatement("DELETE FROM `cloud`.`account_vlan_map` WHERE account_id IS NULL");
+            pstmt.executeUpdate();
+
+            pstmt.close();
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to delete domain_id field from account_vlan_map table due to:", e);
+        }
     }
 }
