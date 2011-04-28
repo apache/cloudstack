@@ -177,7 +177,8 @@ public enum Config {
 	ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
 	UseUserConcentratedPodAllocation("Advanced", ManagementServer.class, Boolean.class, "use.user.concentrated.pod.allocation", "true", "If true, deployment planner applies the user concentration heuristic during VM resource allocation", "true,false"),	
 	HostCapacityTypeToOrderClusters("Advanced", ManagementServer.class, String.class, "host.capacityType.to.order.clusters", "CPU", "The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation", "CPU,RAM"),
-
+	EndpointeUrl("Advanced", ManagementServer.class, String.class, "endpointe.url", "http://localhost:8080/client/api", "Endpointe Url", "The endpoint callback URL"),
+	
 	// XenServer
     VmAllocationAlgorithm("Advanced", ManagementServer.class, String.class, "vm.allocation.algorithm", "random", "If 'random', hosts within a pod will be randomly considered for VM/volume allocation. If 'firstfit', they will be considered on a first-fit basis.", null),
     XenPublicNetwork("Network", ManagementServer.class, String.class, "xen.public.network.device", null, "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host", null),

@@ -60,6 +60,6 @@
 	
 	<servlet-mapping>   
          <servlet-name>registerCompleteServlet</servlet-name>   
-         <url-pattern>/cloudkit/complete</url-pattern> 
+         <url-pattern>/mycloud/complete</url-pattern> 
     </servlet-mapping>
 </web-app>
