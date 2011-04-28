@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -1144,6 +1145,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             user.setAccountId(accountId.longValue());
             user.setEmail(email);
             user.setTimezone(timezone);
+            
+            if(userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
+            	//set registration token
+            	byte[] bytes = (domainId + accountName + username + System.currentTimeMillis()).getBytes();
+                String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+                user.setRegistrationToken(registrationToken);
+            }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating user: " + username + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timezone);
             }
@@ -1767,4 +1775,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         return new Pair<String, Long>(accountName, domainId);
     }
+
+	@Override
+	public User getActiveUserByRegistrationToken(String registrationToken) {
+		return _userDao.findUserByRegistrationToken(registrationToken);
+	}
+
+	@Override
+	public void markUserRegistered(long userId) {
+        UserVO userForUpdate = _userDao.createForUpdate();
+        userForUpdate.setRegistered(true);
+        _userDao.update(Long.valueOf(userId), userForUpdate);		
+	}
 }

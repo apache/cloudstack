@@ -42,6 +42,7 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
     protected SearchBuilder<UserVO> UserIdSearch;
     protected SearchBuilder<UserVO> AccountIdSearch;
     protected SearchBuilder<UserVO> SecretKeySearch;
+    protected SearchBuilder<UserVO> RegistrationTokenSearch;
     
     protected UserDaoImpl () {
     	UsernameSearch = createSearchBuilder();
@@ -68,6 +69,10 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         SecretKeySearch = createSearchBuilder();
         SecretKeySearch.and("secretKey", SecretKeySearch.entity().getSecretKey(), SearchCriteria.Op.EQ);
         SecretKeySearch.done();
+        
+        RegistrationTokenSearch = createSearchBuilder();
+        RegistrationTokenSearch.and("registrationToken", RegistrationTokenSearch.entity().getRegistrationToken(), SearchCriteria.Op.EQ);
+        RegistrationTokenSearch.done();
     }
 
 	@Override
@@ -135,4 +140,11 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
             throw new CloudRuntimeException("unable to update user -- a user with that name exists");
         }
     }
+
+	@Override
+	public UserVO findUserByRegistrationToken(String registrationToken) {
+        SearchCriteria<UserVO> sc = RegistrationTokenSearch.create();
+        sc.setParameters("registrationToken", registrationToken);
+        return findOneBy(sc);
+	}
 }

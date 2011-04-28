@@ -154,25 +154,28 @@ public interface AccountService {
     User getSystemUser();
 
     User createUser(CreateUserCmd cmd);
-
-    boolean deleteUser(DeleteUserCmd deleteUserCmd);
-
-    boolean isAdmin(short accountType);
-
-    Account finalizeOwner(Account caller, String accountName, Long domainId);
-
-    Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId);
-
-    Account getActiveAccount(String accountName, Long domainId);
-
-    Account getActiveAccount(Long accountId);
-
-    Account getAccount(Long accountId);
-
-    User getActiveUser(long userId);
-
-    Domain getDomain(long id);
-
-    boolean isRootAdmin(short accountType);
+	boolean deleteUser(DeleteUserCmd deleteUserCmd);
+	
+	boolean isAdmin(short accountType);
+	
+	Account finalizeOwner(Account caller, String accountName, Long domainId);
+	
+	Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId);
+	
+	Account getActiveAccount(String accountName, Long domainId);
+	
+	Account getActiveAccount(Long accountId);
+	
+	Account getAccount(Long accountId);
+	
+	User getActiveUser(long userId);
+	
+	Domain getDomain(long id);
+	
+	boolean isRootAdmin(short accountType);
+	
+	User getActiveUserByRegistrationToken(String registrationToken);
+	
+	void markUserRegistered(long userId);
 
 }

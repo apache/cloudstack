@@ -66,5 +66,9 @@ public interface User extends OwnedBy {
     public String getTimezone();
     
     public void setTimezone(String timezone);
+
+	String getRegistrationToken();
+
+	boolean isRegistered();
     
 }

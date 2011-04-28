@@ -56,4 +56,12 @@ public interface UserDao extends GenericDao<UserVO, Long>{
 	 * @return
 	 */
 	UserVO findUserBySecretKey(String secretKey);
+	
+	/**
+	 * Finds a user based on the registration token provided.
+	 * @param registrationToken
+	 * @return
+	 */
+	UserVO findUserByRegistrationToken(String registrationToken);
+	
 }

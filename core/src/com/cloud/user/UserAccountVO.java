@@ -76,6 +76,12 @@ public class UserAccountVO implements UserAccount {
     
     @Column(name="timezone")
     private String timezone;
+    
+    @Column(name="registration_token")
+    private String registrationToken = null;
+    
+    @Column(name="is_registered")
+    boolean registered;
 
     @Column(name="account_name", table="account", insertable=false, updatable=false)
     private String accountName = null;
@@ -243,5 +249,24 @@ public class UserAccountVO implements UserAccount {
     public void setTimezone(String timezone)
     {
     	this.timezone = timezone; 
+    }
+    
+    @Override
+	public String getRegistrationToken(){
+    	return registrationToken;
+    }
+    
+    public void setRegistrationToken(String registrationToken)
+    {
+    	this.registrationToken = registrationToken; 
+    }
+    
+    @Override 
+    public boolean isRegistered() {
+        return registered;
+    }
+    
+    public void setRegistered(boolean registered) {
+        this.registered = registered;
     }
 }

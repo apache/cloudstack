@@ -698,6 +698,8 @@ CREATE TABLE  `cloud`.`user` (
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed',
   `timezone` varchar(30) default NULL,
+  `registration_token` varchar(255) default NULL,
+  `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 

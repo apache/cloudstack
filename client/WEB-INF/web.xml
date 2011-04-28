@@ -42,6 +42,11 @@
         <servlet-name>consoleServlet</servlet-name>
         <servlet-class>com.cloud.servlet.ConsoleProxyServlet</servlet-class>
     </servlet>
+	
+	<servlet>
+        <servlet-name>registerCompleteServlet</servlet-name>
+        <servlet-class>com.cloud.servlet.RegisterCompleteServlet</servlet-class>
+    </servlet>
     
     <servlet-mapping>   
          <servlet-name>apiServlet</servlet-name>   
@@ -51,5 +56,10 @@
     <servlet-mapping>   
          <servlet-name>consoleServlet</servlet-name>   
          <url-pattern>/console</url-pattern> 
+    </servlet-mapping>
+	
+	<servlet-mapping>   
+         <servlet-name>registerCompleteServlet</servlet-name>   
+         <url-pattern>/cloudkit/complete</url-pattern> 
     </servlet-mapping>
 </web-app>

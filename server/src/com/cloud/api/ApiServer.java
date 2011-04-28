@@ -677,6 +677,8 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("account", account.getAccountName());
             session.setAttribute("domainid", account.getDomainId());
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
+            session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
+            session.setAttribute("registered", new Boolean(userAcct.isRegistered()).toString());
 
             if (timezone != null) {
                 session.setAttribute("timezone", timezone);
