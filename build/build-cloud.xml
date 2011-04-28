@@ -174,7 +174,13 @@
     <path refid="deps.classpath" />
   </path>
   <target name="compile-utils" depends="-init" description="Compile the utilities jar that is shared.">
-    <compile-java jar.name="${utils.jar}" top.dir="${utils.dir}" classpath="utils.classpath" />
+    <compile-java jar.name="${utils.jar}" top.dir="${utils.dir}" classpath="utils.classpath" >
+      <include-files>
+        <fileset dir="${utils.dir}/certs">
+          <include name="*.keystore" />
+        </fileset>
+      </include-files>
+    </compile-java>
   </target>
 
   <property name="api.dir" location="${base.dir}/api" />

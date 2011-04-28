@@ -366,28 +366,30 @@ public class Agent implements HandlerFactory, IAgentControl {
         
         _resource.disconnected();
 
-        while (true) {
+        int inProgress = 0;
+        do {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
             
             s_logger.info("Lost connection to the server.  Reconnecting....");
 
-            int inProgress = 0;
-            if ((inProgress = _inProgress.get()) > 0) {
+            inProgress = _inProgress.get();
+            if (inProgress > 0) {
             	s_logger.info("Cannot connect because we still have " + inProgress + " commands in progress.");
-            	continue;
             }
+        } while (inProgress > 0);
 
-            try {
-                final SocketChannel sch = SocketChannel.open();
-                sch.configureBlocking(false);
-                sch.connect(link.getSocketAddress());
-
-                link.connect(sch);
-                return;
-            } catch(final IOException e) {
-                s_logger.error("Unable to establish connection with the server", e);
-            }
-        }
+        _connection.stop();
+        _connection = new NioClient(
+        		"Agent",
+        		_shell.getHost(),
+        		_shell.getPort(),
+        		_shell.getWorkers(),
+        		this);
+        do {
+        	s_logger.info("Reconnecting...");
+        	_connection.start();
+            _shell.getBackoffAlgorithm().waitBeforeRetry();
+        } while (!_connection.isStartup());
     }
     
     public void processStartupAnswer(Answer answer, Response response, Link link) {

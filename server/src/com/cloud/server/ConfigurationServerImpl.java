@@ -25,9 +25,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
@@ -36,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -82,6 +87,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.encoding.Base64.OutputStream;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -221,6 +227,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	            }
  	        }
 		}
+		
+		// keystore for SSL/TLS connection
+		updateSSLKeystore();
 
 		// store the public and private keys in the database
 		updateKeyPairs();
@@ -368,6 +377,131 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			_configDao.update("cloud.identifier", uuid);
 		}
 	}
+
+    private String getBase64Keystore(String keystorePath) throws IOException {
+        byte[] storeBytes = new byte[4094];
+        int len = 0;
+        try {
+            len = new FileInputStream(keystorePath).read(storeBytes);
+        } catch (EOFException e) {
+        } catch (Exception e) {
+            throw new IOException("Cannot read the generated keystore file");
+        }
+        if (len > 3000) { // Base64 codec would enlarge data by 1/3, and we have 4094 bytes in database entry at most
+            throw new IOException("KeyStore is too big for database! Length " + len);
+        }
+
+        byte[] encodeBytes = new byte[len];
+        System.arraycopy(storeBytes, 0, encodeBytes, 0, len);
+
+        return new String(Base64.encodeBase64(encodeBytes));
+    }
+
+    @DB
+    private void createSSLKeystoreDBEntry(String encodedKeystore) throws IOException {
+        String insertSQL = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
+            "VALUES ('Hidden','DEFAULT', 'management-server','ssl.keystore', '" + encodedKeystore +"','SSL Keystore for the management servers')";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSQL);
+            stmt.executeUpdate();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("SSL Keystore inserted into database");
+            }
+        } catch (SQLException ex) {
+            s_logger.error("SQL of the SSL Keystore failed", ex);
+            throw new IOException("SQL of the SSL Keystore failed");
+        }
+    }
+
+    private void generateDefaultKeystore(String keystorePath) throws IOException {
+        String cn = "Cloudstack User";
+        String ou;
+
+        try {
+            ou = InetAddress.getLocalHost().getCanonicalHostName();
+            String[] group = ou.split("\\."); 
+
+            // Simple check to see if we got IP Address...
+            boolean isIPAddress =  Pattern.matches("[0-9]$", group[group.length - 1]);
+            if (isIPAddress) {
+                ou = "cloud.com";
+            } else {
+                ou = group[group.length - 1];
+                for (int i = group.length - 2; i >= 0 && i >= group.length - 3; i--)
+                    ou = group[i] + "." + ou;
+            }
+        } catch (UnknownHostException ex) {
+            s_logger.info("Fail to get user's domain name. Would use cloud.com. ", ex);
+            ou = "cloud.com";
+        }
+
+        String o = ou;
+        String c = "Unknown";
+        String dname = "cn=" + cn + ", ou=" + ou +", o=" + o + ", c=" + c;
+        Script script = new Script(true, "keytool", 5000, null);
+        script.add("-genkey");
+        script.add("-keystore", keystorePath);
+        script.add("-storepass", "vmops.com");
+        script.add("-keypass", "vmops.com");
+        script.add("-validity", "3650");
+        script.add("-dname", dname);
+        String result = script.execute();
+        if (result != null) {
+        	throw new IOException("Fail to generate certificate!");
+        }
+    }
+
+    protected void updateSSLKeystore() {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Processing updateSSLKeyStore");
+        }
+
+        String dbString = _configDao.getValue("ssl.keystore");
+        String keystorePath = "/etc/cloud/management/cloud.keystore";
+        File keystoreFile = new File(keystorePath);
+        boolean dbExisted = (dbString != null && !dbString.isEmpty());
+
+        try {
+            if (!dbExisted) {
+                if  (!keystoreFile.exists()) {
+                    generateDefaultKeystore(keystorePath);
+                    s_logger.info("Generated SSL keystore.");
+                }
+                String base64Keystore = getBase64Keystore(keystorePath);
+                createSSLKeystoreDBEntry(base64Keystore);
+                s_logger.info("Stored SSL keystore to database.");
+            } else if (keystoreFile.exists()) { // and dbExisted
+                // Check if they are the same one, otherwise override with local keystore
+                String base64Keystore = getBase64Keystore(keystorePath);
+                if (base64Keystore.compareTo(dbString) != 0) {
+                    _configDao.update("ssl.keystore", base64Keystore);
+                    s_logger.info("Updated database keystore with local one.");
+                }
+            } else { // !keystoreFile.exists() and dbExisted
+                // Export keystore to local file
+                byte[] storeBytes = Base64.decodeBase64(dbString);
+                try {
+                    String tmpKeystorePath = "/tmp/tmpkey";
+                    FileOutputStream fo = new FileOutputStream(tmpKeystorePath);
+                    fo.write(storeBytes);
+                    fo.close();
+                    Script script = new Script(true, "cp", 5000, null);
+                    script.add(tmpKeystorePath);
+                    script.add(keystorePath);
+                    String result = script.execute();
+                    if (result != null) {
+                    	throw new IOException();
+                    }
+                } catch (Exception e) {
+                    throw new IOException("Fail to create keystore file!", e);
+                }
+                s_logger.info("Stored database keystore to local.");
+            }
+        } catch (Exception ex) {
+            s_logger.warn("Would use fail-safe keystore to continue.", ex);
+        }
+    }
 
     @DB
     protected void updateKeyPairs() {

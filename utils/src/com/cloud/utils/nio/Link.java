@@ -28,6 +28,11 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -44,6 +49,8 @@ public class Link {
     private Object _attach;
     private boolean _readSize;
     
+    private SSLEngine _sslEngine;
+
     public Link(InetSocketAddress addr, NioConnection connection) {
         _addr = addr;
         _connection = connection;
@@ -70,6 +77,10 @@ public class Link {
         _key = key;
     }
     
+    public void setSSLEngine(SSLEngine sslEngine) {
+        _sslEngine = sslEngine;
+    }
+
     /**
      * Static methods for reading from a channel in case
      * you need to add a client that doesn't require nio.
@@ -190,8 +201,24 @@ public class Link {
         }
         
         _readBuffer.flip();
-        byte[] result = new byte[_readBuffer.limit()];
-        _readBuffer.get(result);
+
+        ByteBuffer appBuf;
+
+        SSLSession sslSession = _sslEngine.getSession();
+        SSLEngineResult engResult;
+
+        //TODO may need to adjust the buffer size
+        appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
+        engResult = _sslEngine.unwrap(_readBuffer, appBuf);
+        if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
+                engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
+                engResult.getStatus() != SSLEngineResult.Status.OK) {
+            throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+        }
+
+        byte[] result = new byte[appBuf.position()];
+        appBuf.flip();
+        appBuf.get(result);
         _readBuffer.clear();
         _readSize = true;
         
@@ -258,27 +285,44 @@ public class Link {
                 return true;
             }
 
-            data[0].mark();
-            int remaining = data[0].getInt() + 4;
-            data[0].reset();
-            
-            if (remaining > 65535) {
-            	throw new IOException("Fail to send a too big packet! Size: " + remaining);
+            ByteBuffer pkgBuf;
+            SSLSession sslSession = _sslEngine.getSession();
+            SSLEngineResult engResult;
+
+            ByteBuffer headBuf = ByteBuffer.allocate(4);
+            ByteBuffer[] raw_data = new ByteBuffer[data.length - 1];
+            System.arraycopy(data, 1, raw_data, 0, data.length - 1);
+
+            pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+            engResult = _sslEngine.wrap(raw_data, pkgBuf);
+            if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
+                    engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
+                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
-            
-            while (remaining > 0) {
+
+            int dataRemaining = pkgBuf.position();
+            int headRemaining = 4;
+            pkgBuf.flip();
+            headBuf.putInt(dataRemaining);
+            headBuf.flip();
+
+            while (headRemaining > 0) {
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Writing " + remaining);
+                    s_logger.trace("Writing Header " + headRemaining);
                 }
-                long count = ch.write(data);
-                remaining -= count;
+                long count = ch.write(headBuf);
+                headRemaining -= count;
+            }
+            while (dataRemaining > 0) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Writing Data " + dataRemaining);
+                }
+                long count = ch.write(pkgBuf);
+                dataRemaining -= count;
             }
         }
         return false;
-    }
-    
-    public synchronized void connect(SocketChannel ch) {
-        _connection.register(SelectionKey.OP_CONNECT, ch, this);
     }
     
     public InetSocketAddress getSocketAddress() {

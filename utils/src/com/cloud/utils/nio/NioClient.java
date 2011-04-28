@@ -23,6 +23,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLContext;
+
 import org.apache.log4j.Logger;
 
 public class NioClient extends NioConnection {
@@ -45,23 +48,49 @@ public class NioClient extends NioConnection {
         _selector = Selector.open();
         
         SocketChannel sch = SocketChannel.open();
-        sch.configureBlocking(false);
+        sch.configureBlocking(true);
         s_logger.info("Connecting to " + _host + ":" + _port);
 
         if(_bindAddress != null) {
             s_logger.info("Binding outbound interface at " + _bindAddress);
             
             InetSocketAddress addr = new InetSocketAddress(_bindAddress, 0);
-        	sch.socket().bind(addr);
+            sch.socket().bind(addr);
         }
 
         InetSocketAddress addr = new InetSocketAddress(_host, _port);
-        sch.connect(addr);
+        try {
+        	sch.connect(addr);
+        } catch (IOException e) {
+        	_selector.close();
+        	throw e;
+        }
+
+        SSLEngine sslEngine = null;
+        try {
+        	// Begin SSL handshake in BLOCKING mode
+        	sch.configureBlocking(true);
+
+        	SSLContext sslContext = initSSLContext(true);
+        	sslEngine = sslContext.createSSLEngine(_host, _port);
+        	sslEngine.setUseClientMode(true);
+
+        	doHandshake(sch, sslEngine, true);
+        	s_logger.info("SSL: Handshake done");
+        } catch (Exception e) {
+        	throw new IOException("SSL: Fail to init SSL! " + e);
+        }
         
+        sch.configureBlocking(false);
         Link link = new Link(addr, this);
-        SelectionKey key = sch.register(_selector, SelectionKey.OP_CONNECT);
+        link.setSSLEngine(sslEngine);
+        SelectionKey key = sch.register(_selector, SelectionKey.OP_READ);
         link.setKey(key);
         key.attach(link);
+        // Notice we've already connected due to the handshake, so let's get the
+        // remaining task done
+        Task task = _factory.create(Task.Type.CONNECT, link, null);
+        _executor.execute(task);
     }
     
     @Override
