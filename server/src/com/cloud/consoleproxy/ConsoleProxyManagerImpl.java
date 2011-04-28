@@ -468,6 +468,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             // as sooner or later, Starting/Migrating state will be transited to Running and Stopping will be transited to
             // Stopped to allow
             // Starting of it
+            s_logger.warn("Console proxy is not in correct state to be started: " + proxy.getState());
             return null;
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
