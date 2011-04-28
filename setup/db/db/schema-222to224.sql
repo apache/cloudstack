@@ -130,8 +130,11 @@ UPDATE `cloud`.`service_offering` s, `cloud`.`disk_offering` d SET s.ha_enabled=
 
 UPDATE `cloud`.`data_center` SET is_security_group_enabled=1 WHERE networktype='Basic';
 
-UPDATE `cloud`.`nics` SET ip_type='Ip4';
+
 
 UPDATE `cloud`.`host` SET resource='com.cloud.hypervisor.xen.resource.XenServer56FP1Resource' WHERE resource='com.cloud.hypervisor.xen.resource.XenServer56FP1PremiumResource';
+
+UPDATE `cloud`.`nics` SET ip_type='Ip4';
+UPDATE `cloud`.`nics` SET broadcast_uri='vlan://untagged', isolation_uri='ec2://untagged', strategy='Create' where reserver_name='DirectPodBasedNetworkGuru';
 
 

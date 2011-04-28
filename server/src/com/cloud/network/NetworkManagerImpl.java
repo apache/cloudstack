@@ -1208,6 +1208,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 profile = new NicProfile(nic, network, broadcastUri, isolationUri, networkRate);
                 guru.reserve(profile, network, vmProfile, dest, context);
                 nic.setIp4Address(profile.getIp4Address());
+                nic.setAddressFormat(profile.getFormat());
                 nic.setIp6Address(profile.getIp6Address());
                 nic.setMacAddress(profile.getMacAddress());
                 nic.setIsolationUri(profile.getIsolationUri());
@@ -1216,7 +1217,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setState(Nic.State.Reserved);
                 nic.setNetmask(profile.getNetmask());
                 nic.setGateway(profile.getGateway());
-                nic.setAddressFormat(profile.getFormat());
+
                 if (profile.getStrategy() != null) {
                     nic.setReservationStrategy(profile.getStrategy());
                 }
