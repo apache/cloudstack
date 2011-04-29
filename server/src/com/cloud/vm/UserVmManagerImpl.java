@@ -487,7 +487,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VolumeVO rootVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
         if (rootVolumesOfVm.size() != 1) {
-        	throw new CloudRuntimeException("The VM " + vm.getName() + " has more than one ROOT volume and is in an invalid state. Please contact Cloud Support.");
+        	throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state. Please contact Cloud Support.");
         } else {
         	rootVolumeOfVm = rootVolumesOfVm.get(0);
         }
@@ -506,7 +506,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
         	
         	if (volume == null) {
-        		throw new CloudRuntimeException("Failed to create volume when attaching it to VM: " + vm.getName());
+        		throw new CloudRuntimeException("Failed to create volume when attaching it to VM: " + vm.getHostName());
         	}       	
     	}
         
@@ -522,7 +522,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             for (VolumeVO vol : vols) {
                 if (vol.getDeviceId().equals(deviceId)) {
-                    throw new RuntimeException("deviceId " + deviceId + " is used by VM " + vm.getName());
+                    throw new RuntimeException("deviceId " + deviceId + " is used by VM " + vm.getHostName());
                 }
             }           
         } else {
@@ -588,7 +588,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	_asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
         }
     	
-    	String errorMsg = "Failed to attach volume: " + volume.getName() + " to VM: " + vm.getName();
+    	String errorMsg = "Failed to attach volume: " + volume.getName() + " to VM: " + vm.getHostName();
     	boolean sendCommand = (vm.getState() == State.Running);
     	AttachVolumeAnswer answer = null;
     	Long hostId = vm.getHostId();
@@ -715,7 +715,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	_asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
         }
     	
-    	String errorMsg = "Failed to detach volume: " + volume.getName() + " from VM: " + vm.getName();
+    	String errorMsg = "Failed to detach volume: " + volume.getName() + " from VM: " + vm.getHostName();
     	boolean sendCommand = (vm.getState() == State.Running);
     	Answer answer = null;
     	
@@ -1040,7 +1040,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
         
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString());
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString());
         _usageEventDao.persist(usageEvent);
         txn.commit();
         
@@ -1545,7 +1545,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         s_logger.warn("Unable to delete volume:"+volume.getId()+" for vm:"+vmId+" whilst transitioning to error state");
                     }
 				}
-				UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName());
+				UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName());
 	            _usageEventDao.persist(usageEvent);
 			}
 		}
@@ -2316,7 +2316,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug("Successfully allocated DB entry for " + vm);
         }
         UserContext.current().setEventDetails("Vm Id: "+vm.getId());
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getName(), offering.getId(), template.getId(), hypervisorType.toString());
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString());
         _usageEventDao.persist(usageEvent);
         
         _accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
@@ -2470,14 +2470,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
     	UserVmVO vm = profile.getVirtualMachine();
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString());
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString());
         _usageEventDao.persist(usageEvent);
         
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), network.getNetworkOfferingId(), null, isDefault);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(), null, isDefault);
             _usageEventDao.persist(usageEvent);   
         }
         
@@ -2540,7 +2540,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
 		VMInstanceVO vm = profile.getVirtualMachine();
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName());
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName());
         _usageEventDao.persist(usageEvent);
         
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
@@ -2609,7 +2609,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     _usageEventDao.persist(usageEvent);
                 }
             }
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName());
             _usageEventDao.persist(usageEvent);
             if (vmState != State.Error) {
             	_accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
@@ -2741,7 +2741,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);

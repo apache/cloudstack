@@ -79,7 +79,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ZoneTemplateNonExpungedSearch.done();
 
         NameLikeSearch = createSearchBuilder();
-        NameLikeSearch.and("name", NameLikeSearch.entity().getName(), Op.LIKE);
+        NameLikeSearch.and("name", NameLikeSearch.entity().getHostName(), Op.LIKE);
         NameLikeSearch.done();
 
         StateChangeSearch = createSearchBuilder();

@@ -103,7 +103,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         HostRunningSearch.done();
         
         NameSearch = createSearchBuilder();
-        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameSearch.and("name", NameSearch.entity().getHostName(), SearchCriteria.Op.EQ);
         NameSearch.done();
         
         AccountPodSearch = createSearchBuilder();
@@ -130,7 +130,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         ZoneNameSearch = createSearchBuilder();
         ZoneNameSearch.and("dataCenterId", ZoneNameSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        ZoneNameSearch.and("name", ZoneNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ZoneNameSearch.and("name", ZoneNameSearch.entity().getHostName(), SearchCriteria.Op.EQ);
         ZoneNameSearch.done();
         
         AccountHostSearch = createSearchBuilder();

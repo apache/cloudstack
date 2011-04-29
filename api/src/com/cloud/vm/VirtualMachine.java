@@ -173,7 +173,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
     /**
      * @return the name of the virtual machine.
      */
-    public String getName();
+    public String getHostName();
     
     /**
      * @return the ip address of the virtual machine.

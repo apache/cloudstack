@@ -1111,7 +1111,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
 
-                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHost.getName() + " in zone "
+                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getHostName() + " from host " + fromHost.getName() + " in zone "
                         + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
                 try {
                     _agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);
@@ -1278,7 +1278,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         try {
 
             Commands cmds = new Commands(OnError.Revert);
-            cmds.addCommand(new RebootCommand(vm.getName()));
+            cmds.addCommand(new RebootCommand(vm.getHostName()));
             _agentMgr.send(host.getId(), cmds);
 
             Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
@@ -1374,7 +1374,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         State agentState = info.state;
         final String agentName = info.name;
         final State serverState = vm.getState();
-        final String serverName = vm.getName();
+        final String serverName = vm.getHostName();
 
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vm);
 
@@ -1399,8 +1399,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             HostVO hostVO = _hostDao.findById(vm.getHostId());
 
             String hostDesc = "name: " + hostVO.getName() + " (id:" + hostVO.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: " + vm.getName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure",
-                    "Virtual Machine " + vm.getName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure",
+                    "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
 
         // if (serverState == State.Migrating) {
@@ -1452,7 +1452,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.ForceStop);
                 s_logger.debug("Scheduling a check stop for VM in stopping mode: " + vm);
             } else if (serverState == State.Starting) {
-                s_logger.debug("Ignoring VM in starting mode: " + vm.getName());
+                s_logger.debug("Ignoring VM in starting mode: " + vm.getHostName());
                 _haMgr.scheduleRestart(vm, false);
             }
             command = cleanup(agentName);

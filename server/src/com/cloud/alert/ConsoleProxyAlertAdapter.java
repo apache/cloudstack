@@ -42,21 +42,21 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
     	case ConsoleProxyAlertEventArgs.PROXY_CREATED :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("New console proxy created, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			proxy.getPrivateIpAddress());
 			break;
     		
     	case ConsoleProxyAlertEventArgs.PROXY_UP :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Console proxy is up, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			proxy.getPrivateIpAddress());
     		
 			_alertMgr.sendAlert(
 				AlertManager.ALERT_TYPE_CONSOLE_PROXY,
 				args.getZoneId(),
 				proxy.getPodId(),
-				"Console proxy up in zone: " + dc.getName() + ", proxy: " + proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() 
+				"Console proxy up in zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
 				 	+ ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()),
 			 	"Console proxy up (zone " + dc.getName() + ")" 	
 			);
@@ -65,14 +65,14 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
     	case ConsoleProxyAlertEventArgs.PROXY_DOWN :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Console proxy is down, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			(proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
 				AlertManager.ALERT_TYPE_CONSOLE_PROXY,
 				args.getZoneId(),
 				proxy.getPodId(),
-				"Console proxy down in zone: " + dc.getName() + ", proxy: " + proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() 
+				"Console proxy down in zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
 				 	+ ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()),
 			 	"Console proxy down (zone " + dc.getName() + ")" 	
 			);
@@ -81,14 +81,14 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
     	case ConsoleProxyAlertEventArgs.PROXY_REBOOTED :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Console proxy is rebooted, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			(proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
 				AlertManager.ALERT_TYPE_CONSOLE_PROXY,
 				args.getZoneId(),
 				proxy.getPodId(),
-				"Console proxy rebooted in zone: " + dc.getName() + ", proxy: " + proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() 
+				"Console proxy rebooted in zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
 				 	+ ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()),
 			 	"Console proxy rebooted (zone " + dc.getName() + ")" 	
 			);
@@ -97,14 +97,14 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
     	case ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Console proxy creation failure, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			(proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
 				AlertManager.ALERT_TYPE_CONSOLE_PROXY,
 				args.getZoneId(),
 				proxy.getPodId(),
-				"Console proxy creation failure. zone: " + dc.getName() + ", proxy: " + proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() 
+				"Console proxy creation failure. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
 				 	+ ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()) 
 				 	+ ", error details: " + args.getMessage(),
 			 	"Console proxy creation failure (zone " + dc.getName() + ")"
@@ -114,14 +114,14 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
     	case ConsoleProxyAlertEventArgs.PROXY_START_FAILURE :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Console proxy startup failure, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			(proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
 				AlertManager.ALERT_TYPE_CONSOLE_PROXY,
 				args.getZoneId(),
 				proxy.getPodId(),
-				"Console proxy startup failure. zone: " + dc.getName() + ", proxy: " + proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() 
+				"Console proxy startup failure. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
 				 	+ ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()) 
 				 	+ ", error details: " + args.getMessage(),
 			 	"Console proxy startup failure (zone " + dc.getName() + ")" 	
@@ -131,14 +131,14 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
     	case ConsoleProxyAlertEventArgs.PROXY_FIREWALL_ALERT :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Console proxy firewall alert, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			(proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
 				AlertManager.ALERT_TYPE_CONSOLE_PROXY,
 				args.getZoneId(),
 				proxy.getPodId(),
-				"Failed to open console proxy firewall port. zone: " + dc.getName() + ", proxy: " + proxy.getName() 
+				"Failed to open console proxy firewall port. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() 
 					+ ", public IP: " + proxy.getPublicIpAddress() 
 					+ ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()),
 				"Console proxy alert (zone " + dc.getName() + ")"	
@@ -148,7 +148,7 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
     	case ConsoleProxyAlertEventArgs.PROXY_STORAGE_ALERT :
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Console proxy storage alert, zone: " + dc.getName() + ", proxy: " + 
-        			proxy.getName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
+        			proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " + 
         			proxy.getPrivateIpAddress() + ", message: " + args.getMessage());
     		
 			_alertMgr.sendAlert(

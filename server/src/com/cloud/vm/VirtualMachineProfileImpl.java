@@ -212,7 +212,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     
     @Override
     public String getHostName() {
-        return _vm.getName();
+        return _vm.getHostName();
     }
     
     @Override

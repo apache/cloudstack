@@ -898,7 +898,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(),
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
                         vm.getTemplateId(), vm.getHypervisorType().toString());
                 _usageEventDao.persist(usageEvent);
             }
@@ -1010,11 +1010,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 try {
                     success = (success && _itMgr.advanceStop(vm, true, getSystemUser(), getSystemAccount()));
                 } catch (OperationTimedoutException ote) {
-                    s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getName(), ote);
+                    s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                     success = false;
                 }
             } catch (AgentUnavailableException aue) {
-                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getName(), aue);
+                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getHostName(), aue);
                 success = false;
             }
         }

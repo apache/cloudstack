@@ -809,7 +809,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         s_logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
-        _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _hostDao, _storagePoolDao), true, false, true);
+        _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _storagePoolDao), true, false, true);
 
         String storageCleanupEnabled = configs.get("storage.cleanup.enabled");
         _storageCleanupEnabled = (storageCleanupEnabled == null) ? true : Boolean.parseBoolean(storageCleanupEnabled);
@@ -1173,7 +1173,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
             try {
-                addPoolToHost(h.getId(), pool);
+                connectHostToSharedPool(h.getId(), pool);
                 poolHosts.add(h);
             } catch (Exception e) {
                 s_logger.warn("Unable to establish a connection between " + h + " and " + pool, e);
@@ -1358,14 +1358,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return true;
     }
 
-    @Override
-    public void addPoolToHost(long hostId, StoragePoolVO pool) throws StorageUnavailableException {
+    public void connectHostToSharedPool(long hostId, StoragePoolVO pool) throws StorageUnavailableException {
+        assert (pool.getPoolType().isShared()) : "Now, did you actually read the name of this method?";
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
-        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
-                && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
-                && pool.getPoolType() != StoragePoolType.PreSetup) {
-            throw new CloudRuntimeException("Doesn't support storage pool type " + pool.getPoolType());
-        }
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = _agentMgr.easySend(hostId, cmd);

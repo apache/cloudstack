@@ -564,13 +564,13 @@ public class Db20to21MigrationUtil {
 			String guestMacAddress = macAddresses[0];
 			
 			if(proxy.getState() == State.Running || proxy.getState() == State.Starting) {
-				System.out.println("System VM " + proxy.getName() + " is in active state, mark it to Stopping state for migration");
+				System.out.println("System VM " + proxy.getHostName() + " is in active state, mark it to Stopping state for migration");
 				proxy.setState(State.Stopping);
 			}
 			
 			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(proxy.getDataCenterId(), proxy.getPodId(), proxy.getId(), null);
 			
-			System.out.println("Assign link loal address to proxy " + proxy.getName() + ", link local address: " + guestIpAddress);
+			System.out.println("Assign link loal address to proxy " + proxy.getHostName() + ", link local address: " + guestIpAddress);
 			_consoleProxyDao.update(proxy.getId(), proxy);
 		}
 		
@@ -588,13 +588,13 @@ public class Db20to21MigrationUtil {
 			String guestMacAddress = macAddresses[0];
 			
 			if(secStorageVm.getState() == State.Running || secStorageVm.getState() == State.Starting) {
-				System.out.println("System VM " + secStorageVm.getName() + " is in active state, mark it to Stopping state for migration");
+				System.out.println("System VM " + secStorageVm.getHostName() + " is in active state, mark it to Stopping state for migration");
 				secStorageVm.setState(State.Stopping);
 			}
 			
 			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(secStorageVm.getDataCenterId(), secStorageVm.getPodId(), secStorageVm.getId(), null);
 			
-			System.out.println("Assign link loal address to secondary storage VM " + secStorageVm.getName() + ", link local address: " + guestIpAddress);
+			System.out.println("Assign link loal address to secondary storage VM " + secStorageVm.getHostName() + ", link local address: " + guestIpAddress);
 			_secStorageVmDao.update(secStorageVm.getId(), secStorageVm);
 		}
 		
@@ -611,7 +611,7 @@ public class Db20to21MigrationUtil {
 			if(router.getState() == State.Running || router.getState() == State.Starting) {
 				router.setState(State.Stopping);
 				
-				System.out.println("System VM " + router.getName() + " is in active state, mark it to Stopping state for migration");
+				System.out.println("System VM " + router.getHostName() + " is in active state, mark it to Stopping state for migration");
 				_routerDao.update(router.getId(), router);
 			}
 		}
@@ -675,11 +675,11 @@ public class Db20to21MigrationUtil {
 			deviceId = 1;	// reset for each VM iteration
 			for(VolumeVO vol : volumes) {
 				if(vol.getVolumeType() == Volume.Type.ROOT) {
-					System.out.println("Setting root volume device id to zero, vol: " + vol.getName() + ", instance: " + vm.getName());
+					System.out.println("Setting root volume device id to zero, vol: " + vol.getName() + ", instance: " + vm.getHostName());
 					
 					vol.setDeviceId(0L);
 				} else if(vol.getVolumeType() == Volume.Type.DATADISK) {
-					System.out.println("Setting data volume device id, vol: " + vol.getName() + ", instance: " + vm.getName() + ", device id: " + deviceId);
+					System.out.println("Setting data volume device id, vol: " + vol.getName() + ", instance: " + vm.getHostName() + ", device id: " + deviceId);
 					
 					vol.setDeviceId(deviceId);
 					

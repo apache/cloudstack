@@ -203,7 +203,7 @@ public class InvestigatorImpl implements Investigator {
                 Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(routerPrivateIp, privateIp), 30 * 1000);
                 if (pingTestAnswer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("user vm " + vm.getName() + " has been successfully pinged, returning that it is alive");
+                        s_logger.debug("user vm " + vm.getHostName() + " has been successfully pinged, returning that it is alive");
                     }
                     return Boolean.TRUE;
                 } 
