@@ -1519,7 +1519,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             templateResponse.setChecksum(template.getChecksum());
-
+            templateResponse.setSourceTemplateId(template.getSourceTemplateId());
+            
             templateResponse.setObjectName("template");
             responses.add(templateResponse);
         }
@@ -1580,7 +1581,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setHypervisor(template.getHypervisorType().toString());
             templateResponse.setObjectName("template");
             templateResponse.setChecksum(template.getChecksum());
-
+            templateResponse.setSourceTemplateId(template.getSourceTemplateId());
+            
             responses.add(templateResponse);
         }
         response.setResponses(responses);
@@ -1741,6 +1743,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setPasswordEnabled(template.getEnablePassword());
             templateResponse.setZoneId(destZoneId);
             templateResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
+            templateResponse.setSourceTemplateId(template.getSourceTemplateId());
 
             GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
             if (os != null) {
@@ -1942,6 +1945,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setZoneName(zone.getName());
         }
 
+        response.setSourceTemplateId(template.getSourceTemplateId());
+        
         response.setObjectName("template");
         return response;
 

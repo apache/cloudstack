@@ -83,4 +83,6 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     String getUrl();
 
     String getChecksum();
+
+	Long getSourceTemplateId();
 }

@@ -110,6 +110,9 @@ public class TemplateResponse extends BaseResponse {
     @SerializedName("checksum") @Param(description="checksum of the template")
     private String checksum;
     
+    @SerializedName("sourcetemplateid") @Param(description="the template ID of the parent template if present")
+    private Long sourcetemplateId;    
+    
     public Long getObjectId() {
     	return getId();
     }
@@ -336,5 +339,13 @@ public class TemplateResponse extends BaseResponse {
 
     public void setChecksum(String checksum) {
         this.checksum = checksum;
-    }	
+    }
+    
+    public Long getSourceTemplateId() {
+        return sourcetemplateId;
+    }
+
+    public void setSourceTemplateId(Long sourcetemplateId) {
+        this.sourcetemplateId = sourcetemplateId;
+    }    
 }

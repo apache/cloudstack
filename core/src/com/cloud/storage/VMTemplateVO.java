@@ -112,7 +112,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name="extractable")
     private boolean extractable = true;
     
-	@Override
+    @Column(name="source_template_id")
+	private Long sourceTemplateId;
+    
+    @Override
     public String getUniqueName() {
 		return uniqueName;
 	}
@@ -355,6 +358,15 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	public void setExtractable(boolean extractable) {
 		this.extractable = extractable;
 	}
+	
+	@Override
+	public Long getSourceTemplateId() {
+		return sourceTemplateId;
+	}
+	
+	public void setSourceTemplateId(Long sourceTemplateId) {
+		this.sourceTemplateId = sourceTemplateId;
+	}	
 
 	@Override
     public long getDomainId() {

@@ -1374,12 +1374,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
         String description = cmd.getDisplayText();
         boolean isExtractable = false;
+        Long sourceTemplateId = null;        
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+            sourceTemplateId = template.getId();            
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue, bitsValue, accountId,
                 null, description, passwordEnabledValue, guestOS.getId(), true, hyperType);
+        if(sourceTemplateId != null){
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("This template is getting created from other template, setting source template Id to: "+sourceTemplateId);
+            }
+        }
+        privateTemplate.setSourceTemplateId(sourceTemplateId);
 
         VMTemplateVO template = _templateDao.persist(privateTemplate);
         // Increment the number of templates
@@ -1954,7 +1962,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
             String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -2052,7 +2060,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
             String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -2397,7 +2405,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     protected UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams) throws ResourceUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException {
+    ConcurrentOperationException {
         long vmId = cmd.getEntityId();
         UserVmVO vm = _vmDao.findById(vmId);
         _vmDao.loadDetails(vm);
@@ -2955,7 +2963,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException,
-            ResourceAllocationException {
+    ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
