@@ -174,7 +174,7 @@ function routerJsonToDetailsTab() {
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#publicip").text(fromdb(jsonObj.publicip));
-    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip));
+    $thisTab.find("#privateip").text(fromdb(jsonObj.linklocalip));
     $thisTab.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
     $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
     $thisTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
