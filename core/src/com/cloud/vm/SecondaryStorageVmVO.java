@@ -36,101 +36,101 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
  */
 
 @Entity
-@Table(name="secondary_storage_vm")
-@PrimaryKeyJoinColumn(name="id")
-@DiscriminatorValue(value="SecondaryStorageVm")
+@Table(name = "secondary_storage_vm")
+@PrimaryKeyJoinColumn(name = "id")
+@DiscriminatorValue(value = "SecondaryStorageVm")
 public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStorageVm {
 
-    @Column(name="public_ip_address", nullable=false)
+    @Column(name = "public_ip_address", nullable = false)
     private String publicIpAddress;
-    
-    @Column(name="public_mac_address", nullable=false)
+
+    @Column(name = "public_mac_address", nullable = false)
     private String publicMacAddress;
-    
-    @Column(name="public_netmask", nullable=false)
+
+    @Column(name = "public_netmask", nullable = false)
     private String publicNetmask;
-    
-    @Column(name="guid", nullable=false)
+
+    @Column(name = "guid", nullable = false)
     private String guid;
-    
-    @Column(name="nfs_share", nullable=false)
+
+    @Column(name = "nfs_share", nullable = false)
     private String nfsShare;
-    
-    @Column(name="role", nullable=false)
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "role", nullable = false)
+    @Enumerated(value = EnumType.STRING)
     private Role role;
-    
+
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="last_update", updatable=true, nullable=true)
+    @Column(name = "last_update", updatable = true, nullable = true)
     private Date lastUpdateTime;
-    
-    public SecondaryStorageVmVO(long id, long serviceOfferingId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long dataCenterId, 
-    							long domainId, long accountId, Role role) {
-	    super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, hypervisorType, guestOSId, domainId, accountId, true);
-	    this.role = role;
-	}
-    
+
+    public SecondaryStorageVmVO(long id, long serviceOfferingId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long dataCenterId, long domainId, long accountId,
+            Role role, boolean haEnabled) {
+        super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+        this.role = role;
+    }
+
     protected SecondaryStorageVmVO() {
         super();
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
-    	this.publicIpAddress = publicIpAddress;
+        this.publicIpAddress = publicIpAddress;
     }
-    
+
     public void setPublicNetmask(String publicNetmask) {
-    	this.publicNetmask = publicNetmask;
+        this.publicNetmask = publicNetmask;
     }
-    
+
     public void setPublicMacAddress(String publicMacAddress) {
-    	this.publicMacAddress = publicMacAddress;
+        this.publicMacAddress = publicMacAddress;
     }
-    
+
     public void setLastUpdateTime(Date time) {
-    	this.lastUpdateTime = time;
+        this.lastUpdateTime = time;
     }
-  
+
     @Override
-	public String getPublicIpAddress() {
-    	return this.publicIpAddress;
-	}
-	
+    public String getPublicIpAddress() {
+        return this.publicIpAddress;
+    }
+
     @Override
-	public String getPublicNetmask() {
-    	return this.publicNetmask;
-	}
-	
+    public String getPublicNetmask() {
+        return this.publicNetmask;
+    }
+
     @Override
-	public String getPublicMacAddress() {
-		return this.publicMacAddress;
-	}
-    
-   @Override
+    public String getPublicMacAddress() {
+        return this.publicMacAddress;
+    }
+
+    @Override
     public Date getLastUpdateTime() {
-    	return this.lastUpdateTime;
+        return this.lastUpdateTime;
     }
 
-	public void setGuid(String guid) {
-		this.guid = guid;
-	}
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
 
-	public String getGuid() {
-		return guid;
-	}
+    public String getGuid() {
+        return guid;
+    }
 
-	public void setNfsShare(String nfsShare) {
-		this.nfsShare = nfsShare;
-	}
+    public void setNfsShare(String nfsShare) {
+        this.nfsShare = nfsShare;
+    }
 
-	public String getNfsShare() {
-		return nfsShare;
-	}
-	
-	public Role getRole() {
-		return this.role;
-	}
-	
-	public void setRole(Role role) {
-		this.role = role;
-	}
+    public String getNfsShare() {
+        return nfsShare;
+    }
+
+    public Role getRole() {
+        return this.role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }

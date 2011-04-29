@@ -229,55 +229,34 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
 
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
-    
-	private String keyContent = 
-		"MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBALV5vGlkiWwoZX4hTRplPXP8qtST\n" + 
-		"hwZhko8noeY5vf8ECwmd+vrCTw/JvnOtkx/8oYNbg/SeUt1EfOsk6gqJdBblGFBZRMcUJlIpqE9z\n" + 
-		"uv68U9G8Gfi/qvRSY336hibw0J5bZ4vn1QqmyHDB+Czea9AjFUV7AEVG15+vED7why+/AgMBAAEC\n" +
-		"gYBmFBPnNKYYMKDmUdUNA+WNWJK/ADzzWe8WlzR6TACTcbLDthl289WFC/YVG42mcHRpbxDKiEQU\n" +
-		"MnIR0rHTO34Qb/2HcuyweStU2gqR6omxBvMnFpJr90nD1HcOMJzeLHsphau0/EmKKey+gk4PyieD\n" +
-		"KqTM7LTjjHv8xPM4n+WAAQJBAOMNCeFKlJ4kMokWhU74B5/w/NGyT1BHUN0VmilHSiJC8JqS4BiI\n" +
-		"ZpAeET3VmilO6QTGh2XVhEDGteu3uZR6ipUCQQDMnRzMgQ/50LFeIQo4IBtwlEouczMlPQF4c21R\n" +
-		"1d720moxILVPT0NJZTQUDDmmgbL+B7CgtcCR2NlP5sKPZVADAkEAh4Xq1cy8dMBKYcVNgNtPQcqI\n" +
-		"PWpfKR3ISI5yXB0vRNAL6Vet5zbTcUZhKDVtNSbis3UEsGYH8NorEC2z2cpjGQJANhJi9Ow6c5Mh\n" +
-		"/DURBUn+1l5pyCKrZnDbvaALSLATLvjmFTuGjoHszy2OeKnOZmEqExWnKKE/VYuPyhy6V7i3TwJA\n" +
-		"f8skDgtPK0OsBCa6IljPaHoWBjPc4kFkSTSS1d56hUcWSikTmiuKdLyBb85AADSZYsvHWrte4opN\n" +
-		"dhNukMJuRA==\n";
-	
-	private String certContent = 
-		"-----BEGIN CERTIFICATE-----\n" +
-		"MIIE3jCCA8agAwIBAgIFAqv56tIwDQYJKoZIhvcNAQEFBQAwgcoxCzAJBgNVBAYT\n" +
-		"AlVTMRAwDgYDVQQIEwdBcml6b25hMRMwEQYDVQQHEwpTY290dHNkYWxlMRowGAYD\n" +
-		"VQQKExFHb0RhZGR5LmNvbSwgSW5jLjEzMDEGA1UECxMqaHR0cDovL2NlcnRpZmlj\n" +
-		"YXRlcy5nb2RhZGR5LmNvbS9yZXBvc2l0b3J5MTAwLgYDVQQDEydHbyBEYWRkeSBT\n" +
-		"ZWN1cmUgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxETAPBgNVBAUTCDA3OTY5Mjg3\n" +
-		"MB4XDTA5MDIxMTA0NTc1NloXDTEyMDIwNzA1MTEyM1owWTEZMBcGA1UECgwQKi5y\n" +
-		"ZWFsaG9zdGlwLmNvbTEhMB8GA1UECwwYRG9tYWluIENvbnRyb2wgVmFsaWRhdGVk\n" +
-		"MRkwFwYDVQQDDBAqLnJlYWxob3N0aXAuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GN\n" +
-		"ADCBiQKBgQC1ebxpZIlsKGV+IU0aZT1z/KrUk4cGYZKPJ6HmOb3/BAsJnfr6wk8P\n" +
-		"yb5zrZMf/KGDW4P0nlLdRHzrJOoKiXQW5RhQWUTHFCZSKahPc7r+vFPRvBn4v6r0\n" +
-		"UmN9+oYm8NCeW2eL59UKpshwwfgs3mvQIxVFewBFRtefrxA+8IcvvwIDAQABo4IB\n" +
-		"vTCCAbkwDwYDVR0TAQH/BAUwAwEBADAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\n" +
-		"BQUHAwIwDgYDVR0PAQH/BAQDAgWgMDIGA1UdHwQrMCkwJ6AloCOGIWh0dHA6Ly9j\n" +
-		"cmwuZ29kYWRkeS5jb20vZ2RzMS0yLmNybDBTBgNVHSAETDBKMEgGC2CGSAGG/W0B\n" +
-		"BxcBMDkwNwYIKwYBBQUHAgEWK2h0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5j\n" +
-		"b20vcmVwb3NpdG9yeS8wgYAGCCsGAQUFBwEBBHQwcjAkBggrBgEFBQcwAYYYaHR0\n" +
-		"cDovL29jc3AuZ29kYWRkeS5jb20vMEoGCCsGAQUFBzAChj5odHRwOi8vY2VydGlm\n" +
-		"aWNhdGVzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkvZ2RfaW50ZXJtZWRpYXRlLmNy\n" +
-		"dDAfBgNVHSMEGDAWgBT9rGEyk2xF1uLuhV+auud2mWjM5zArBgNVHREEJDAighAq\n" +
-		"LnJlYWxob3N0aXAuY29tgg5yZWFsaG9zdGlwLmNvbTAdBgNVHQ4EFgQUHxwmdK5w\n" +
-		"9/YVeZ/3fHyi6nQfzoYwDQYJKoZIhvcNAQEFBQADggEBABv/XinvId6oWXJtmku+\n" +
-		"7m90JhSVH0ycoIGjgdaIkcExQGP08MCilbUsPcbhLheSFdgn/cR4e1MP083lacoj\n" +
-		"OGauY7b8f/cuquGkT49Ns14awPlEzRjjycQEjjLxFEuL5CFWa2t2gKRE1dSfhDQ+\n" +
-		"fJ6GBCs1XgZLuhkKS8fPf+YmG2ZjHzYDjYoSx7paDXgEm+kbYIZdCK51lA0BUAjP\n" +
-		"9ZMGhsu/PpAbh5U/DtcIqxY0xeqD4TeGsBzXg6uLhv+jKHDtXg5fYPe+z0n5DCEL\n" +
-		"k0fLF4+i/pt9hVCz0QrZ28RUhXf825+EOL0Gw+Uzt+7RV2cCaJrlu4cDrDom2FRy\n" +
-		"E8I=\n" +
-		"-----END CERTIFICATE-----\n";
-	
-    @Inject private KeystoreDao _ksDao;
-	@Inject private KeystoreManager _ksMgr;
-	private Random _random = new Random(System.currentTimeMillis());
+
+    private final String keyContent = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBALV5vGlkiWwoZX4hTRplPXP8qtST\n"
+            + "hwZhko8noeY5vf8ECwmd+vrCTw/JvnOtkx/8oYNbg/SeUt1EfOsk6gqJdBblGFBZRMcUJlIpqE9z\n" + "uv68U9G8Gfi/qvRSY336hibw0J5bZ4vn1QqmyHDB+Czea9AjFUV7AEVG15+vED7why+/AgMBAAEC\n"
+            + "gYBmFBPnNKYYMKDmUdUNA+WNWJK/ADzzWe8WlzR6TACTcbLDthl289WFC/YVG42mcHRpbxDKiEQU\n" + "MnIR0rHTO34Qb/2HcuyweStU2gqR6omxBvMnFpJr90nD1HcOMJzeLHsphau0/EmKKey+gk4PyieD\n"
+            + "KqTM7LTjjHv8xPM4n+WAAQJBAOMNCeFKlJ4kMokWhU74B5/w/NGyT1BHUN0VmilHSiJC8JqS4BiI\n" + "ZpAeET3VmilO6QTGh2XVhEDGteu3uZR6ipUCQQDMnRzMgQ/50LFeIQo4IBtwlEouczMlPQF4c21R\n"
+            + "1d720moxILVPT0NJZTQUDDmmgbL+B7CgtcCR2NlP5sKPZVADAkEAh4Xq1cy8dMBKYcVNgNtPQcqI\n" + "PWpfKR3ISI5yXB0vRNAL6Vet5zbTcUZhKDVtNSbis3UEsGYH8NorEC2z2cpjGQJANhJi9Ow6c5Mh\n"
+            + "/DURBUn+1l5pyCKrZnDbvaALSLATLvjmFTuGjoHszy2OeKnOZmEqExWnKKE/VYuPyhy6V7i3TwJA\n" + "f8skDgtPK0OsBCa6IljPaHoWBjPc4kFkSTSS1d56hUcWSikTmiuKdLyBb85AADSZYsvHWrte4opN\n" + "dhNukMJuRA==\n";
+
+    private final String certContent = "-----BEGIN CERTIFICATE-----\n" + "MIIE3jCCA8agAwIBAgIFAqv56tIwDQYJKoZIhvcNAQEFBQAwgcoxCzAJBgNVBAYT\n"
+            + "AlVTMRAwDgYDVQQIEwdBcml6b25hMRMwEQYDVQQHEwpTY290dHNkYWxlMRowGAYD\n" + "VQQKExFHb0RhZGR5LmNvbSwgSW5jLjEzMDEGA1UECxMqaHR0cDovL2NlcnRpZmlj\n"
+            + "YXRlcy5nb2RhZGR5LmNvbS9yZXBvc2l0b3J5MTAwLgYDVQQDEydHbyBEYWRkeSBT\n" + "ZWN1cmUgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxETAPBgNVBAUTCDA3OTY5Mjg3\n"
+            + "MB4XDTA5MDIxMTA0NTc1NloXDTEyMDIwNzA1MTEyM1owWTEZMBcGA1UECgwQKi5y\n" + "ZWFsaG9zdGlwLmNvbTEhMB8GA1UECwwYRG9tYWluIENvbnRyb2wgVmFsaWRhdGVk\n"
+            + "MRkwFwYDVQQDDBAqLnJlYWxob3N0aXAuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GN\n" + "ADCBiQKBgQC1ebxpZIlsKGV+IU0aZT1z/KrUk4cGYZKPJ6HmOb3/BAsJnfr6wk8P\n"
+            + "yb5zrZMf/KGDW4P0nlLdRHzrJOoKiXQW5RhQWUTHFCZSKahPc7r+vFPRvBn4v6r0\n" + "UmN9+oYm8NCeW2eL59UKpshwwfgs3mvQIxVFewBFRtefrxA+8IcvvwIDAQABo4IB\n"
+            + "vTCCAbkwDwYDVR0TAQH/BAUwAwEBADAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\n" + "BQUHAwIwDgYDVR0PAQH/BAQDAgWgMDIGA1UdHwQrMCkwJ6AloCOGIWh0dHA6Ly9j\n"
+            + "cmwuZ29kYWRkeS5jb20vZ2RzMS0yLmNybDBTBgNVHSAETDBKMEgGC2CGSAGG/W0B\n" + "BxcBMDkwNwYIKwYBBQUHAgEWK2h0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5j\n"
+            + "b20vcmVwb3NpdG9yeS8wgYAGCCsGAQUFBwEBBHQwcjAkBggrBgEFBQcwAYYYaHR0\n" + "cDovL29jc3AuZ29kYWRkeS5jb20vMEoGCCsGAQUFBzAChj5odHRwOi8vY2VydGlm\n"
+            + "aWNhdGVzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkvZ2RfaW50ZXJtZWRpYXRlLmNy\n" + "dDAfBgNVHSMEGDAWgBT9rGEyk2xF1uLuhV+auud2mWjM5zArBgNVHREEJDAighAq\n"
+            + "LnJlYWxob3N0aXAuY29tgg5yZWFsaG9zdGlwLmNvbTAdBgNVHQ4EFgQUHxwmdK5w\n" + "9/YVeZ/3fHyi6nQfzoYwDQYJKoZIhvcNAQEFBQADggEBABv/XinvId6oWXJtmku+\n"
+            + "7m90JhSVH0ycoIGjgdaIkcExQGP08MCilbUsPcbhLheSFdgn/cR4e1MP083lacoj\n" + "OGauY7b8f/cuquGkT49Ns14awPlEzRjjycQEjjLxFEuL5CFWa2t2gKRE1dSfhDQ+\n"
+            + "fJ6GBCs1XgZLuhkKS8fPf+YmG2ZjHzYDjYoSx7paDXgEm+kbYIZdCK51lA0BUAjP\n" + "9ZMGhsu/PpAbh5U/DtcIqxY0xeqD4TeGsBzXg6uLhv+jKHDtXg5fYPe+z0n5DCEL\n"
+            + "k0fLF4+i/pt9hVCz0QrZ28RUhXf825+EOL0Gw+Uzt+7RV2cCaJrlu4cDrDom2FRy\n" + "E8I=\n" + "-----END CERTIFICATE-----\n";
+
+    @Inject
+    private KeystoreDao _ksDao;
+    @Inject
+    private KeystoreManager _ksMgr;
+    private final Random _random = new Random(System.currentTimeMillis());
 
     @Override
     public ConsoleProxyInfo assignProxy(final long dataCenterId, final long vmId) {
@@ -320,12 +299,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.warn("Assigned console proxy does not have a valid public IP address");
             return null;
         }
-        
-        KeystoreVO ksVo = _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME);
-        assert(ksVo != null);
 
-        return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), 
-        		ksVo.getDomainSuffix());
+        KeystoreVO ksVo = _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME);
+        assert (ksVo != null);
+
+        return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
     }
 
     public ConsoleProxyVO doAssignProxy(long dataCenterId, long vmId) {
@@ -663,7 +641,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
 
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(),
-                systemAcct.getId(), 0);
+                systemAcct.getId(), 0, _serviceOffering.getOfferHA());
         try {
             proxy = _itMgr.allocate(proxy, template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {
@@ -923,9 +901,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     private boolean reserveStandbyCapacity() {
         ConsoleProxyManagementState state = getManagementState();
-        if(state == null || state != ConsoleProxyManagementState.Auto)
-        	return false;
-        
+        if (state == null || state != ConsoleProxyManagementState.Auto)
+            return false;
+
         return true;
     }
 
@@ -1104,83 +1082,85 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return false;
         }
     }
-    
-    @Override @DB
+
+    @Override
+    @DB
     public void setManagementState(ConsoleProxyManagementState state) {
-    	Transaction txn = Transaction.currentTxn();
-    	try {
-    		txn.start();
-    		
-    		ConsoleProxyManagementState lastState = getManagementState();
-    		if(lastState == null) {
-    			txn.commit();
-    			return;
-    		}
-    		
-    		if(lastState != state) {
-    			_configDao.update(Config.ConsoleProxyManagementLastState.key(), lastState.toString());
-    			_configDao.update(Config.ConsoleProxyManagementState.key(), state.toString());
-    		}
-    		
-    		txn.commit();
-    	} catch (Throwable e) {
-    		txn.rollback();
-    	}
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+
+            ConsoleProxyManagementState lastState = getManagementState();
+            if (lastState == null) {
+                txn.commit();
+                return;
+            }
+
+            if (lastState != state) {
+                _configDao.update(Config.ConsoleProxyManagementLastState.key(), lastState.toString());
+                _configDao.update(Config.ConsoleProxyManagementState.key(), state.toString());
+            }
+
+            txn.commit();
+        } catch (Throwable e) {
+            txn.rollback();
+        }
     }
-    
+
     @Override
     public ConsoleProxyManagementState getManagementState() {
-    	String value = _configDao.getValue(Config.ConsoleProxyManagementState.key());
-    	if(value != null) {
-    		ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
-    		
-    		if(state == null) {
-    			s_logger.error("Invalid console proxy management state: " + value);
-    		}
-    		return state;
-    	}
-    	
-		s_logger.error("Invalid console proxy management state: " + value);
-    	return null;
+        String value = _configDao.getValue(Config.ConsoleProxyManagementState.key());
+        if (value != null) {
+            ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
+
+            if (state == null) {
+                s_logger.error("Invalid console proxy management state: " + value);
+            }
+            return state;
+        }
+
+        s_logger.error("Invalid console proxy management state: " + value);
+        return null;
     }
-    
-    @Override @DB
+
+    @Override
+    @DB
     public void resumeLastManagementState() {
-    	Transaction txn = Transaction.currentTxn();
-    	try {
-    		txn.start();
-    		ConsoleProxyManagementState state = getManagementState();
-    		ConsoleProxyManagementState lastState = getLastManagementState();
-    		if(lastState == null) {
-    			txn.commit();
-    			return;
-    		}
-    		
-    		if(lastState != state) {
-    			_configDao.update(Config.ConsoleProxyManagementState.key(), lastState.toString());
-    		}
-    		
-    		txn.commit();
-    	} catch (Throwable e) {
-    		txn.rollback();
-    	}
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            ConsoleProxyManagementState state = getManagementState();
+            ConsoleProxyManagementState lastState = getLastManagementState();
+            if (lastState == null) {
+                txn.commit();
+                return;
+            }
+
+            if (lastState != state) {
+                _configDao.update(Config.ConsoleProxyManagementState.key(), lastState.toString());
+            }
+
+            txn.commit();
+        } catch (Throwable e) {
+            txn.rollback();
+        }
     }
 
     private ConsoleProxyManagementState getLastManagementState() {
-    	String value = _configDao.getValue(Config.ConsoleProxyManagementLastState.key());
-    	if(value != null) {
-    		ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
-    		
-    		if(state == null) {
-    			s_logger.error("Invalid console proxy management state: " + value);
-    		}
-    		return state;
-    	}
-    	
-		s_logger.error("Invalid console proxy management state: " + value);
-    	return null;
+        String value = _configDao.getValue(Config.ConsoleProxyManagementLastState.key());
+        if (value != null) {
+            ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
+
+            if (state == null) {
+                s_logger.error("Invalid console proxy management state: " + value);
+            }
+            return state;
+        }
+
+        s_logger.error("Invalid console proxy management state: " + value);
+        return null;
     }
-    
+
     @Override
     public boolean rebootProxy(long proxyVmId) {
         final ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
@@ -1228,22 +1208,22 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private String getAllocProxyLockName() {
         return "consoleproxy.alloc";
     }
-    
+
     private void prepareDefaultCertificate() {
-    	GlobalLock lock = GlobalLock.getInternLock("consoleproxy.cert.setup");
-    	try {
-    		if(lock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-    			KeystoreVO ksVo = _ksDao.findByName(CERTIFICATE_NAME);
-    			if(ksVo == null) {
-    				_ksDao.save(CERTIFICATE_NAME, certContent, keyContent, "realhostip.com");
-    			}
-    			lock.unlock();
-    		}
-    	} finally {
-    		lock.releaseRef();
-    	}
+        GlobalLock lock = GlobalLock.getInternLock("consoleproxy.cert.setup");
+        try {
+            if (lock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                KeystoreVO ksVo = _ksDao.findByName(CERTIFICATE_NAME);
+                if (ksVo == null) {
+                    _ksDao.save(CERTIFICATE_NAME, certContent, keyContent, "realhostip.com");
+                }
+                lock.unlock();
+            }
+        } finally {
+            lock.releaseRef();
+        }
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (s_logger.isInfoEnabled()) {
@@ -1305,7 +1285,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (_instance == null) {
             _instance = "DEFAULT";
         }
-        
+
         prepareDefaultCertificate();
 
         Map<String, String> agentMgrConfigs = configDao.getConfiguration("AgentManager", params);
@@ -1328,7 +1308,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, null, null, false, null, useLocalStorage, true, null, true);
+        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, 0, 0, false, null, useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 
@@ -1496,41 +1476,41 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _consoleProxyDao.update(proxy.getId(), proxy);
     }
 
+    @Override
     public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
-		StartConsoleProxyAgentHttpHandlerCommand cmd = null;
-    	if(_configDao.isPremium()) {
-    		String storePassword = String.valueOf(_random.nextLong());
-    		byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, 
-    			storePassword);
-    		
-    		assert(ksBits != null);
-    		if(ksBits == null) {
-    			s_logger.error("Could not find and construct a valid SSL certificate");
-    		}
-    		cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
-    	} else {
-    		cmd = new StartConsoleProxyAgentHttpHandlerCommand();
-    	}
-    	
-    	try {
-			long proxyVmId = startupCmd.getProxyVmId();
-			ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
-			assert(consoleProxy != null);
-			HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getHostName(), Type.ConsoleProxy);
-    		
-    		Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
-    		if(answer == null || !answer.getResult()) {
-    			s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
-    		} else {
-    			s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
-    		}
-    	} catch(AgentUnavailableException e) {
-			s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
-    	} catch(OperationTimedoutException e) {
-			s_logger.error("Unable to send http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
-    	} catch(Exception e) {
-			s_logger.error("Unexpected exception when sending http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
-    	}
+        StartConsoleProxyAgentHttpHandlerCommand cmd = null;
+        if (_configDao.isPremium()) {
+            String storePassword = String.valueOf(_random.nextLong());
+            byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
+
+            assert (ksBits != null);
+            if (ksBits == null) {
+                s_logger.error("Could not find and construct a valid SSL certificate");
+            }
+            cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
+        } else {
+            cmd = new StartConsoleProxyAgentHttpHandlerCommand();
+        }
+
+        try {
+            long proxyVmId = startupCmd.getProxyVmId();
+            ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
+            assert (consoleProxy != null);
+            HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getHostName(), Type.ConsoleProxy);
+
+            Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
+            if (answer == null || !answer.getResult()) {
+                s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
+            } else {
+                s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
+            }
+        } catch (AgentUnavailableException e) {
+            s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
+        } catch (OperationTimedoutException e) {
+            s_logger.error("Unable to send http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception when sending http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
+        }
     }
 
     @Override
@@ -1577,48 +1557,48 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             _zoneVmCountMap.put(info.getId(), info);
         }
     }
-    
+
     private void scanManagementState() {
-    	ConsoleProxyManagementState state = getManagementState();
-    	if(state != null) {
-    		switch(state) {
-    		case Auto:
-    		case Manual:
-    		case Suspending:
-    			break;
-    			
-    		case ResetSuspending:
-    			handleResetSuspending();
-    			break;
-    			
-    		default:
-    			assert(false);
-    		}
-    	}
+        ConsoleProxyManagementState state = getManagementState();
+        if (state != null) {
+            switch (state) {
+            case Auto:
+            case Manual:
+            case Suspending:
+                break;
+
+            case ResetSuspending:
+                handleResetSuspending();
+                break;
+
+            default:
+                assert (false);
+            }
+        }
     }
-    
+
     private void handleResetSuspending() {
-    	List<ConsoleProxyVO> runningProxies = _consoleProxyDao.getProxyListInStates(State.Running);
-    	for(ConsoleProxyVO proxy : runningProxies) {
-    		s_logger.info("Stop console proxy " + proxy.getId() + " because of we are currently in ResetSuspending management mode");
-    		this.stopProxy(proxy.getId());
-    	}
-    	
-    	// check if it is time to resume
-    	List<ConsoleProxyVO> proxiesInTransition = _consoleProxyDao.getProxyListInStates(State.Running, State.Starting, State.Stopping);
-    	if(proxiesInTransition.size() == 0) {
-    		s_logger.info("All previous console proxy VMs in transition mode ceased the mode, we will now resume to last management state");		
-    		this.resumeLastManagementState();
-    	}
+        List<ConsoleProxyVO> runningProxies = _consoleProxyDao.getProxyListInStates(State.Running);
+        for (ConsoleProxyVO proxy : runningProxies) {
+            s_logger.info("Stop console proxy " + proxy.getId() + " because of we are currently in ResetSuspending management mode");
+            this.stopProxy(proxy.getId());
+        }
+
+        // check if it is time to resume
+        List<ConsoleProxyVO> proxiesInTransition = _consoleProxyDao.getProxyListInStates(State.Running, State.Starting, State.Stopping);
+        if (proxiesInTransition.size() == 0) {
+            s_logger.info("All previous console proxy VMs in transition mode ceased the mode, we will now resume to last management state");
+            this.resumeLastManagementState();
+        }
     }
-    
+
     @Override
-	public boolean canScan() {
-    	// take the chance to do management-state management
-    	scanManagementState();
-    	
-        if(!reserveStandbyCapacity()) {
-            if(s_logger.isDebugEnabled()) {
+    public boolean canScan() {
+        // take the chance to do management-state management
+        scanManagementState();
+
+        if (!reserveStandbyCapacity()) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Reserving standby capacity is disable, skip capacity scan");
             }
             return false;

@@ -406,7 +406,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), role);
+                systemAcct.getDomainId(), systemAcct.getId(), role, _serviceOffering.getOfferHA());
         try {
             secStorageVm = _itMgr.allocate(secStorageVm, template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {

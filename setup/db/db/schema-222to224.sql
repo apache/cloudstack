@@ -154,3 +154,7 @@ ALTER TABLE `cloud`.`user_statistics` DROP KEY `account_id`;
 ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE KEY `account_id` (`account_id`,`data_center_id`, `public_ip_address`, `device_id`,`device_type`); 
 
 
+UPDATE `cloud`.`vm_instance` SET ha_enabled=0 WHERE type='ConsoleProxy';
+
+UPDATE service_offering SET ha_enabled=0 WHERE id=(SELECT id FROM disk_offering WHERE name LIKE '%console proxy%' AND system_use=1);
+
