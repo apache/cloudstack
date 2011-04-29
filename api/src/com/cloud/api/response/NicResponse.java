@@ -52,6 +52,9 @@ public class NicResponse extends BaseResponse {
     @SerializedName("isdefault") @Param(description="true if nic is default, false otherwise")
     private Boolean isDefault;
 
+    @SerializedName("macaddress") @Param(description="true if nic is default, false otherwise")
+    private String macAddress;
+    
     public Long getId() {
         return id;
     }
@@ -131,4 +134,12 @@ public class NicResponse extends BaseResponse {
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
+
+	public String getMacAddress() {
+		return macAddress;
+	}
+
+	public void setMacAddress(String macAddress) {
+		this.macAddress = macAddress;
+	}
 }

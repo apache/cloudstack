@@ -1185,6 +1185,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 nicResponse.setGateway(singleNicProfile.getGateway());
                 nicResponse.setNetmask(singleNicProfile.getNetmask());
                 nicResponse.setNetworkid(singleNicProfile.getNetworkId());
+                nicResponse.setMacAddress(singleNicProfile.getMacAddress());
                 if (acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                     if (singleNicProfile.getBroadCastUri() != null) {
                         nicResponse.setBroadcastUri(singleNicProfile.getBroadCastUri().toString());
