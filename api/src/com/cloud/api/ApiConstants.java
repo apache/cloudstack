@@ -227,4 +227,5 @@ public class ApiConstants {
     public static final String NETWORK_DEVICE_TYPE = "networkdevicetype";
     public static final String NETWORK_DEVICE_PARAMETER_LIST = "networkdeviceparameterlist";
     public static final String ZONE_TOKEN = "zonetoken";
+    public static final String DHCP_PROVIDER = "dhcpprovider";    
 }

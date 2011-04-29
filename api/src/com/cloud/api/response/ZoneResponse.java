@@ -73,6 +73,9 @@ public class ZoneResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.ZONE_TOKEN) @Param(description="Zone Token")
     private String zoneToken;    
+    
+    @SerializedName(ApiConstants.DHCP_PROVIDER) @Param(description="the dhcp Provider for the Zone")
+    private String dhcpProvider;     
 
     public Long getId() {
         return id;
@@ -208,5 +211,13 @@ public class ZoneResponse extends BaseResponse {
 	
 	public void setZoneToken(String zoneToken) {
 		this.zoneToken = zoneToken;
-	}    
+	}
+	
+    public String getDhcpProvider() {
+        return dhcpProvider;
+    } 
+ 	
+ 	public void setDhcpProvider(String dhcpProvider) {
+ 		this.dhcpProvider = dhcpProvider;
+ 	}	
 }
