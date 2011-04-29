@@ -951,7 +951,7 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 				var array1 = [];
 				array1.push("&networkdevicetype="+$thisDialog.find("#network_device_type").val());
 				array1.push("&networkdeviceparameterlist[0].zoneid=" + zoneId);
-				array1.push("&networkdeviceparameterlist[0].podId=" + podId);	
+				array1.push("&networkdeviceparameterlist[0].podid=" + podId);	
 				array1.push("&networkdeviceparameterlist[0].url="+$thisDialog.find("#url").val());	
 				array1.push("&networkdeviceparameterlist[0].username="+$thisDialog.find("#username").val());	
 				array1.push("&networkdeviceparameterlist[0].password="+$thisDialog.find("#password").val());	
