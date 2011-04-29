@@ -152,12 +152,11 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.SystemVm;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VmStats;
 
 public class ApiResponseHelper implements ResponseGenerator {
@@ -522,7 +521,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
             hostResponse.setCpuAllocated(cpuAlloc);
-            
+
             String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
             hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
         }
@@ -768,7 +767,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         zoneResponse.setType(dataCenter.getNetworkType().toString());
         zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
         zoneResponse.setZoneToken(dataCenter.getZoneToken());
-        zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());        
+        zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
         zoneResponse.setObjectName("zone");
         return zoneResponse;
     }
@@ -1275,10 +1274,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public SystemVmResponse createSystemVmResponse(VirtualMachine systemVM) {
+    public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
         SystemVmResponse vmResponse = new SystemVmResponse();
-        if (systemVM instanceof SystemVm) {
-            SystemVm vm = (SystemVm) systemVM;
+        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
+            // SystemVm vm = (SystemVm) systemVM;
 
             vmResponse.setId(vm.getId());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
@@ -1298,20 +1297,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setState(vm.getState().toString());
             }
 
-            String instanceType = "console_proxy";
-            if (systemVM instanceof SecondaryStorageVmVO) {
-                instanceType = "sec_storage_vm"; // FIXME: this should be a
-                                                 // constant so that the async
-                                                 // jobs get updated with the
-                                                 // correct instance type, they
-                                                 // are using
-                                                 // different instance types at
-                                                 // the moment
-            }
-
             // for console proxies, add the active sessions
-            if (systemVM instanceof ConsoleProxyVO) {
-                ConsoleProxyVO proxy = (ConsoleProxyVO) systemVM;
+            if (vm.getType() == Type.ConsoleProxy) {
+                ConsoleProxyVO proxy = ApiDBUtils.findConsoleProxy(vm.getId());
                 vmResponse.setActiveViewerSessions(proxy.getActiveSession());
             }
 
@@ -1322,7 +1310,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setDns2(zone.getDns2());
             }
 
-            List<NicProfile> nicProfiles = ApiDBUtils.getNics(systemVM);
+            List<NicProfile> nicProfiles = ApiDBUtils.getNics(vm);
             for (NicProfile singleNicProfile : nicProfiles) {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
                 if (network != null) {
@@ -2105,7 +2093,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
-        
+
         // collect all the capacity types, sum allocated/used and sum total...get one capacity number for each
         for (Capacity capacity : hostCapacities) {
             if (poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
@@ -2123,17 +2111,17 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             Long totalCapacity = totalCapacityMap.get(key);
             Long usedCapacity = usedCapacityMap.get(key);
-            
-            //reset overprovisioning factor to 1
+
+            // reset overprovisioning factor to 1
             float overprovisioningFactor = 1;
-            if (capacityType == Capacity.CAPACITY_TYPE_CPU){
-            	overprovisioningFactor = cpuOverprovisioningFactor;
+            if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
+                overprovisioningFactor = cpuOverprovisioningFactor;
             }
 
             if (totalCapacity == null) {
-                totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor));
+                totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor));
             } else {
-                totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
+                totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
             }
 
             if (usedCapacity == null) {
@@ -2160,14 +2148,14 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usedCapacity = usedCapacityMap.get(keyForPodTotal);
 
                 overprovisioningFactor = 1;
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU){
-                	overprovisioningFactor = cpuOverprovisioningFactor;
+                if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
+                    overprovisioningFactor = cpuOverprovisioningFactor;
                 }
 
                 if (totalCapacity == null) {
-                    totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor));
+                    totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor));
                 } else {
-                    totalCapacity = new Long((long)(capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
+                    totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
                 }
 
                 if (usedCapacity == null) {
@@ -2236,7 +2224,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponse.setZoneId(summedCapacity.getDataCenterId());
             capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
             if (summedCapacity.getTotalCapacity() != 0) {
-                // float computed = ((float)summedCapacity.getUsedCapacity() / (float)summedCapacity.getTotalCapacity() * 100f);
                 capacityResponse.setPercentUsed(format.format((float) summedCapacity.getUsedCapacity() / (float) summedCapacity.getTotalCapacity() * 100f));
             } else {
                 capacityResponse.setPercentUsed(format.format(0L));

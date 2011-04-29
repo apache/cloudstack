@@ -52,7 +52,6 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -341,8 +340,6 @@ public interface ManagementServer extends ManagementService {
      */
     List<DomainRouterVO> listAllActiveRouters();
 
-    List<ConsoleProxyVO> searchForConsoleProxy(Criteria c);
-
     /**
      * Finds a pod by the specified ID.
      * 
@@ -549,8 +546,6 @@ public interface ManagementServer extends ManagementService {
      * @return True if the domainIds are equal, or if the second domain is a child of the first domain. False otherwise.
      */
     boolean isChildDomain(Long parentId, Long childId);
-
-    List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
 
     SecurityGroupVO findNetworkGroupByName(Long accountId, String groupName);
 

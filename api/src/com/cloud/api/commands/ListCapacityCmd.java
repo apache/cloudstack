@@ -94,8 +94,6 @@ public class ListCapacityCmd extends BaseListCmd {
         }
         return pageSizeVal;
     }
-
-
     
     @Override
     public void execute(){

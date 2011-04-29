@@ -94,7 +94,6 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -107,6 +106,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
@@ -115,6 +115,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -124,7 +125,6 @@ public class ApiDBUtils {
     private static AgentManager _agentMgr;
     public static AsyncJobManager _asyncMgr;
     private static SecurityGroupManager _securityGroupMgr;
-    private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
     private static UserVmManager _userVmMgr;
     private static NetworkManager _networkMgr;
@@ -160,6 +160,7 @@ public class ApiDBUtils {
     private static NetworkDao _networkDao;
     private static ConfigurationService _configMgr;
     private static ConfigurationDao _configDao;
+    private static ConsoleProxyDao _consoleProxyDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -169,7 +170,6 @@ public class ApiDBUtils {
         _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _securityGroupMgr = locator.getManager(SecurityGroupManager.class);
-        _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
@@ -204,6 +204,7 @@ public class ApiDBUtils {
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _configDao = locator.getDao(ConfigurationDao.class);
+        _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -574,11 +575,15 @@ public class ApiDBUtils {
     public static Long getDedicatedNetworkDomain(long networkId) {
         return _networkMgr.getDedicatedNetworkDomain(networkId);
     }
-    
-    public static float getCpuOverprovisioningFactor(){
+
+    public static float getCpuOverprovisioningFactor() {
         String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
         return cpuOverprovisioningFactor;
+    }
+
+    public static ConsoleProxyVO findConsoleProxy(long id) {
+        return _consoleProxyDao.findById(id);
     }
 
 }

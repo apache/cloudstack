@@ -58,7 +58,6 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.alert.Alert;
-import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiConstants;
@@ -125,7 +124,6 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
@@ -153,7 +151,6 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
-import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -165,9 +162,9 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
@@ -176,11 +173,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.server.auth.UserAuthenticator;
@@ -214,7 +209,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
-import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -289,7 +283,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final VlanDao _vlanDao;
     private final AccountVlanMapDao _accountVlanMapDao;
     private final PodVlanMapDao _podVlanMapDao;
-    private final HostDao _hostDao;    
+    private final HostDao _hostDao;
     private final DetailsDao _detailsDao;
     private final UserDao _userDao;
     private final UserVmDao _userVmDao;
@@ -315,21 +309,17 @@ public class ManagementServerImpl implements ManagementServer {
     private final NetworkDao _networkDao;
     private final StorageManager _storageMgr;
     private final VirtualMachineManager _itMgr;
-    private final NetworkManager _networkMgr;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
     private final HostPodDao _hostPodDao;
     private final VMInstanceDao _vmInstanceDao;
     private final VolumeDao _volumeDao;
-    private final AlertManager _alertMgr;
     private final AsyncJobDao _jobDao;
     private final AsyncJobManager _asyncMgr;
-    private final TemplateManager _tmpltMgr;
     private final int _purgeDelay;
     private final InstanceGroupDao _vmGroupDao;
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
-    private final CertificateDao _certDao;
     private final SSHKeyPairDao _sshKeyPairDao;
 
     private final KeystoreManager _ksMgr;
@@ -339,10 +329,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final StatsCollector _statsCollector;
 
     private final Map<String, String> _configs;
-
-    private final int _routerRamSize;
-    private final int _proxyRamSize;
-    private final int _ssRamSize;
 
     private final Map<String, Boolean> _availableIdsMap;
 
@@ -357,7 +343,7 @@ public class ManagementServerImpl implements ManagementServer {
         _vlanDao = locator.getDao(VlanDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
         _podVlanMapDao = locator.getDao(PodVlanMapDao.class);
-        _hostDao = locator.getDao(HostDao.class);        
+        _hostDao = locator.getDao(HostDao.class);
         _detailsDao = locator.getDao(DetailsDao.class);
         _hostPodDao = locator.getDao(HostPodDao.class);
         _jobDao = locator.getDao(AsyncJobDao.class);
@@ -395,17 +381,13 @@ public class ManagementServerImpl implements ManagementServer {
         _poolHostDao = locator.getDao(StoragePoolHostDao.class);
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
-        _certDao = locator.getDao(CertificateDao.class);
         _configs = _configDao.getConfiguration();
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
-        _alertMgr = locator.getManager(AlertManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _tmpltMgr = locator.getManager(TemplateManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);
         _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
         _itMgr = locator.getManager(VirtualMachineManager.class);
-        _networkMgr = locator.getManager(NetworkManager.class);
         _ksMgr = locator.getManager(KeystoreManager.class);
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -414,12 +396,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         String value = _configs.get("account.cleanup.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
-
-        // Parse the max number of UserVMs and public IPs from server-setup.xml,
-        // and set them in the right places
-        _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"), VirtualNetworkApplianceManager.DEFAULT_ROUTER_VM_RAMSIZE);
-        _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
-        _ssRamSize = NumbersUtil.parseInt(_configs.get("secstorage.ram.size"), SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
 
         _statsCollector = StatsCollector.getInstance(_configs);
 
@@ -2263,50 +2239,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<ConsoleProxyVO> searchForConsoleProxy(Criteria c) {
-        Filter searchFilter = new Filter(ConsoleProxyVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        SearchCriteria<ConsoleProxyVO> sc = _consoleProxyDao.createSearchCriteria();
-
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-
-        if (keyword != null) {
-            SearchCriteria<ConsoleProxyVO> ssc = _consoleProxyDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
-        }
-        if (state != null) {
-            sc.addAnd("state", SearchCriteria.Op.EQ, state);
-        }
-        if (zone != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zone);
-        }
-        if (pod != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, pod);
-        }
-        if (hostId != null) {
-            sc.addAnd("hostId", SearchCriteria.Op.EQ, hostId);
-        }
-
-        return _consoleProxyDao.search(sc, searchFilter);
-    }
-
-    @Override
     public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
@@ -3419,25 +3351,24 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         String acctName = cmd.getAccountName();
         Long id = cmd.getId();
-        Long accountId = null;
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             // validate domainId before proceeding
             if (domainId != null) {
-                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list " + cmd.getMediaType() + " permissions.");
+                DomainVO domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
                 }
+
+                _accountMgr.checkAccess(caller, domain);
+
                 if (acctName != null) {
                     Account userAccount = _accountDao.findActiveAccount(acctName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
+                    if (userAccount == null) {
                         throw new PermissionDeniedException("Unable to find account " + acctName + " in domain " + domainId);
                     }
                 }
             }
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            accountId = caller.getId();
         }
 
         if (id == Long.valueOf(1)) {
@@ -3921,20 +3852,31 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c) {
-        Filter searchFilter = new Filter(SecondaryStorageVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        SearchCriteria<SecondaryStorageVmVO> sc = _secStorageVmDao.createSearchCriteria();
+    public List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd) {
+        String type = cmd.getSystemVmType();
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Long id = cmd.getId();
+        String name = cmd.getSystemVmName();
+        String state = cmd.getState();
+        String keyword = cmd.getKeyword();
+        Long podId = cmd.getPodId();
+        Long hostId = cmd.getHostId();
 
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Filter searchFilter = new Filter(VMInstanceVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<VMInstanceVO> sc = sb.create();
 
         if (keyword != null) {
-            SearchCriteria<SecondaryStorageVmVO> ssc = _secStorageVmDao.createSearchCriteria();
+            SearchCriteria<VMInstanceVO> ssc = _vmInstanceDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
@@ -3942,55 +3884,30 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", name);
         }
         if (state != null) {
-            sc.addAnd("state", SearchCriteria.Op.EQ, state);
+            sc.setParameters("state", state);
         }
-        if (zone != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zone);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
         }
-        if (pod != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, pod);
+        if (podId != null) {
+            sc.setParameters("podId", podId);
         }
         if (hostId != null) {
-            sc.addAnd("hostId", SearchCriteria.Op.EQ, hostId);
+            sc.setParameters("hostId", hostId);
         }
 
-        return _secStorageVmDao.search(sc, searchFilter);
-    }
-
-    @Override
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd) {
-        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
-
-        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
-        c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.DATACENTERID, zoneId);
-        c.addCriteria(Criteria.PODID, cmd.getPodId());
-        c.addCriteria(Criteria.HOSTID, cmd.getHostId());
-        c.addCriteria(Criteria.NAME, cmd.getSystemVmName());
-        c.addCriteria(Criteria.STATE, cmd.getState());
-
-        String type = cmd.getSystemVmType();
-        List systemVMs = new ArrayList();
-
-        if (type == null) { // search for all vm types
-            systemVMs.addAll(searchForConsoleProxy(c));
-            systemVMs.addAll(searchForSecondaryStorageVm(c));
-        } else if ((type != null) && (type.equalsIgnoreCase("secondarystoragevm"))) { // search for ssvm
-            systemVMs.addAll(searchForSecondaryStorageVm(c));
-        } else if ((type != null) && (type.equalsIgnoreCase("consoleproxy"))) { // search for consoleproxy
-            systemVMs.addAll(searchForConsoleProxy(c));
+        if (type != null) {
+            sc.setParameters("type", type);
         }
 
-        return systemVMs;
+        return _vmInstanceDao.search(sc, searchFilter);
     }
 
     @Override
@@ -4337,7 +4254,6 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        long userId = UserContext.current().getCallerUserId();
         long accountId = volume.getAccountId();
 
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
@@ -4538,17 +4454,6 @@ public class ManagementServerImpl implements ManagementServer {
         return "unknown";
     }
 
-    private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setState(Event.State.Scheduled);
-        event.setDescription("Scheduled async job for " + description);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-
     @Override
     public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
         return EventUtils.saveStartedEvent(userId, accountId, type, description, startEventId);
@@ -4644,8 +4549,7 @@ public class ManagementServerImpl implements ManagementServer {
         Account caller = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
-        Account owner = null;
-        _accountMgr.finalizeOwner(caller, accountName, domainId);
+        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {
@@ -4762,54 +4666,50 @@ public class ManagementServerImpl implements ManagementServer {
 
         return password;
     }
-    
+
     @Override
     @DB
     public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
-         if (cmd.getClusterId()==null && cmd.getHostId() == null){
-             throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
-         }
-         else if (cmd.getClusterId()==null){
-             HostVO h = _hostDao.findById(cmd.getHostId());
-             if (h.getHypervisorType() == HypervisorType.XenServer){
-                 throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
-             }
-             DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-             if (nv.getValue().equals(cmd.getUsername())){
-                 DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                 nvp.setValue(cmd.getPassword());
-                 _detailsDao.persist(nvp);
-              }
-              else {
-                  throw new InvalidParameterValueException("The username is not under use by management server.");
-              }
-         }
-         else {
-             //get all the hosts in this cluster
-             List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
-             Transaction txn = Transaction.currentTxn();
-             txn.start();
-             for (HostVO h : hosts) {
-                 if (s_logger.isDebugEnabled()) {
-                     s_logger.debug("Changing password for host name = " + h.getName());
-                 }
-                 //update password for this host
-                 DetailVO nv= _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                 if (nv.getValue().equals(cmd.getUsername())){
-                     DetailVO nvp= _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                     nvp.setValue(cmd.getPassword());
-                     _detailsDao.persist(nvp);
-                 }
-                 else {
-                     //if one host in the cluster has diff username then rollback to maintain consistency
-                     txn.rollback();
-                     throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
-                 }
-              }
-              txn.commit();
-              // if hypervisor is xenserver then we update it in CitrixResourceBase
-           }
-           return true;
-      }
+        if (cmd.getClusterId() == null && cmd.getHostId() == null) {
+            throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
+        } else if (cmd.getClusterId() == null) {
+            HostVO h = _hostDao.findById(cmd.getHostId());
+            if (h.getHypervisorType() == HypervisorType.XenServer) {
+                throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
+            }
+            DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+            if (nv.getValue().equals(cmd.getUsername())) {
+                DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                nvp.setValue(cmd.getPassword());
+                _detailsDao.persist(nvp);
+            } else {
+                throw new InvalidParameterValueException("The username is not under use by management server.");
+            }
+        } else {
+            // get all the hosts in this cluster
+            List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            for (HostVO h : hosts) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Changing password for host name = " + h.getName());
+                }
+                // update password for this host
+                DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                if (nv.getValue().equals(cmd.getUsername())) {
+                    DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                    nvp.setValue(cmd.getPassword());
+                    _detailsDao.persist(nvp);
+                } else {
+                    // if one host in the cluster has diff username then rollback to maintain consistency
+                    txn.rollback();
+                    throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
+                }
+            }
+            txn.commit();
+            // if hypervisor is xenserver then we update it in CitrixResourceBase
+        }
+        return true;
+    }
 
 }
