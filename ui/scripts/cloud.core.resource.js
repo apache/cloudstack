@@ -1906,7 +1906,7 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");    		
+    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", true).val("127.0.0.1");    		
     		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
     	} 
     	else if($(this).val() == "iscsi") {
