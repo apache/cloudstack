@@ -927,7 +927,8 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 	    .dialog('option', 'buttons', {
 	        "Add": function() {             
 	            var $thisDialog = $(this);		
-			   				
+	            $thisDialog.find("#info_container").hide();
+	            
 				// validate values
 				var isValid = true;	
 				isValid &= validateString("URL", $thisDialog.find("#url"), $thisDialog.find("#url_errormsg"));				
@@ -978,12 +979,12 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 				        $thisDialog.dialog("close");
 					    
 					    /*
-					    var item = json.createvlaniprangeresponse.vlan;
-					    var $subgridItem = $("#network_tab_template").clone(true);
-					    podNetworkJsonToTemplate(item, $subgridItem); 	
+					    var item = json.addnetworkdeviceresponse.networkdevice;
+					    var $subgridItem = $("#network_device_tab_template").clone(true);
+					    podNetworkDeviceJsonToTemplate(item, $subgridItem); 	
 					    $subgridItem.find("#after_action_info").text(g_dictionary["label.adding.succeeded"]);
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  				                        
-	                    $("#tab_content_ipallocation").find("#tab_container").append($subgridItem.fadeIn("slow"));	
+	                    $("#tab_content_network_device").find("#tab_container").append($subgridItem.fadeIn("slow"));	
 	                    */
 					},
 				    error: function(XMLHttpResponse) {						        	        				        
