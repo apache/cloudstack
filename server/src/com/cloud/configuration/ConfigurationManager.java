@@ -94,10 +94,10 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param startIp
 	 * @param endIp
 	 * @param allocationState
+	 * @param skipGatewayOverlapCheck (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
 	 * @return Pod
 	 */
-	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState);
-
+	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState, boolean skipGatewayOverlapCheck);
 
     /**
      * Creates a new zone

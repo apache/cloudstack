@@ -109,6 +109,9 @@ public class DataCenterVO implements DataCenter {
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
     
+	@Column(name="zone_token")
+	private String zoneToken;    
+    
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call the dao to load it.
@@ -164,13 +167,13 @@ public class DataCenterVO implements DataCenter {
         this.firewallProvider = firewallProvider;
     }
 
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType) {
-        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false);
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken) {
+        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false, zoneToken);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled, String zoneToken) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -198,6 +201,8 @@ public class DataCenterVO implements DataCenter {
             dnsProvider = Provider.DhcpServer.getName();
             userDataProvider = Provider.DhcpServer.getName();
         }
+
+        this.zoneToken = zoneToken;
         
     }
     
@@ -384,4 +389,13 @@ public class DataCenterVO implements DataCenter {
         DataCenterVO that = (DataCenterVO)obj;
         return this.id == that.id;
     }
+
+    @Override
+    public String getZoneToken() {
+ 	    return zoneToken;
+ 	}
+ 	
+ 	public void setZoneToken(String zoneToken) {
+ 		this.zoneToken = zoneToken;
+ 	}
 }

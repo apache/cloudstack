@@ -73,4 +73,5 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     
     List<DataCenterVO> listDisabledZones();
     List<DataCenterVO> listEnabledZones();
+    DataCenterVO findByToken(String zoneToken);    
 }

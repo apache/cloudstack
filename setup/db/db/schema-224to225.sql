@@ -41,3 +41,5 @@ ALTER TABLE `cloud`.`security_group` DROP COLUMN `account_name`;
 ALTER TABLE `cloud`.`security_ingress_rule` DROP COLUMN `allowed_security_group`;
 ALTER TABLE `cloud`.`security_ingress_rule` DROP COLUMN `allowed_sec_grp_acct`;
 
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `zone_token` varchar(255);
+ALTER TABLE `cloud`.`data_center` ADD INDEX `i_data_center__zone_token`(`zone_token`);

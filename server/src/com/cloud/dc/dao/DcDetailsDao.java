@@ -23,11 +23,11 @@ import com.cloud.dc.DcDetailVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface DcDetailsDao extends GenericDao<DcDetailVO, Long> {
-    Map<String, String> findDetails(long hostId);
+    Map<String, String> findDetails(long dcId);
     
-    void persist(long hostId, Map<String, String> details);
+    void persist(long dcId, Map<String, String> details);
     
-    DcDetailVO findDetail(long hostId, String name);
+    DcDetailVO findDetail(long dcId, String name);
 
-	void deleteDetails(long hostId);
+	void deleteDetails(long dcId);
 }

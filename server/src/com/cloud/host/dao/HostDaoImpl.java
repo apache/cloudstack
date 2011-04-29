@@ -49,6 +49,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
@@ -87,6 +88,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> AvailHypevisorInZone;
     
     protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
+    protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
     
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -233,6 +235,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostsInStatusSearch.and("type", HostsInStatusSearch.entity().getType(), Op.EQ);
         HostsInStatusSearch.and("statuses", HostsInStatusSearch.entity().getStatus(), Op.IN);
         HostsInStatusSearch.done();
+        
+        CountRoutingByDc = createSearchBuilder(Long.class);
+        CountRoutingByDc.select(null, Func.COUNT, null);
+        CountRoutingByDc.and("dc", CountRoutingByDc.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        CountRoutingByDc.and("type", CountRoutingByDc.entity().getType(), SearchCriteria.Op.EQ);
+        CountRoutingByDc.and("status", CountRoutingByDc.entity().getStatus(), SearchCriteria.Op.EQ);
+        CountRoutingByDc.done();         
                 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -747,6 +756,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         
         return customSearch(sc, null);
     }
+    
+    @Override
+    public long countRoutingHostsByDataCenter(long dcId){
+        SearchCriteria<Long> sc = CountRoutingByDc.create();
+        sc.setParameters("dc", dcId);
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("status", Status.Up.toString());
+        return customSearch(sc, null).get(0);
+    }    
 }
 
 

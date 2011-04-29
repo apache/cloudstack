@@ -37,10 +37,12 @@ import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SequenceFetcher;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -60,7 +62,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
     protected SearchBuilder<DataCenterVO> securityGroupSearch;
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
-
+    protected SearchBuilder<DataCenterVO> TokenSearch;
+    
     protected final DataCenterIpAddressDaoImpl _ipAllocDao = ComponentLocator.inject(DataCenterIpAddressDaoImpl.class);
     protected final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
     protected final DataCenterVnetDaoImpl _vnetAllocDao = ComponentLocator.inject(DataCenterVnetDaoImpl.class);
@@ -76,6 +79,13 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     public DataCenterVO findByName(String name) {
     	SearchCriteria<DataCenterVO> sc = NameSearch.create();
     	sc.setParameters("name", name);
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public DataCenterVO findByToken(String zoneToken){
+    	SearchCriteria<DataCenterVO> sc = TokenSearch.create();
+    	sc.setParameters("zoneToken", zoneToken);
         return findOneBy(sc);
     }
     
@@ -273,10 +283,27 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
         DisabledZonesSearch.done();
         
+        TokenSearch = createSearchBuilder();
+        TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
+        TokenSearch.done();                
+        
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
 
+    @Override @DB
+    public boolean update(Long zoneId, DataCenterVO zone) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        boolean persisted = super.update(zoneId, zone);
+        if (!persisted) {
+            return persisted;
+        }
+        saveDetails(zone);
+        txn.commit();
+        return persisted;
+    }
+    
     @Override
     public void loadDetails(DataCenterVO zone) {
         Map<String, String> details =_detailsDao.findDetails(zone.getId());

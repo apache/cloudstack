@@ -43,6 +43,7 @@ public class StartupCommand extends Command {
     String storageNetmaskDeux;
     String agentTag;
     String resourceName;
+    String gatewayIpAddress;
     
     public StartupCommand(Host.Type type) {
         this.type = type;
@@ -58,6 +59,11 @@ public class StartupCommand extends Command {
         this.version = version;
         this.type = type;
     }
+    
+    public StartupCommand(Long id, Host.Type type, String name, String dataCenter, String pod, String guid, String version, String gatewayIpAddress) {
+		this(id, type, name, dataCenter, pod, guid, version);
+		this.gatewayIpAddress = gatewayIpAddress;
+   }    
     
     public Host.Type getHostType() {
         return type;
@@ -265,7 +271,13 @@ public class StartupCommand extends Command {
     	return resourceName;
     }
     
-  
+    public String getGatewayIpAddress() {
+        return gatewayIpAddress;
+    }
+
+    public void setGatewayIpAddress(String gatewayIpAddress) {
+        this.gatewayIpAddress = gatewayIpAddress;
+    }
     
     @Override
     public boolean executeInSequence() {

@@ -475,10 +475,12 @@ CREATE TABLE  `cloud`.`data_center` (
   `userdata_provider` char(64) DEFAULT 'VirtualRouter',
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this data center enabled for allocation for new resources',
+  `zone_token` varchar(255),
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
   INDEX `i_data_center__domain_id`(`domain_id`),
-  INDEX `i_data_center__allocation_state`(`allocation_state`)
+  INDEX `i_data_center__allocation_state`(`allocation_state`),
+  INDEX `i_data_center__zone_token`(`zone_token`)  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (

@@ -57,5 +57,6 @@ public interface DataCenter extends Grouping {
     Map<String, String> getDetails();
     void setDetails(Map<String, String> details);
     AllocationState getAllocationState();
+    String getZoneToken();    
 
 }
