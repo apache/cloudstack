@@ -62,7 +62,6 @@ public class StoragePoolMonitor implements Listener {
     
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
-        _storageManager.delPoolFromHost(agentId);
         return true;
     }
     
