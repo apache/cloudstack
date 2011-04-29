@@ -19,7 +19,6 @@ ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `iso_id`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `display_name`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `storage_ip`;
-ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `mirrored_vols`;
 
 DROP TABLE `cloud`.`pricing`;
 
@@ -50,10 +49,8 @@ ALTER TABLE `cloud`.`domain_router` DROP INDEX `i_domain_router__account_id`;
 ALTER TABLE `cloud`.`domain_router` DROP INDEX `i_domain_router__public_ip_address`;
 ALTER TABLE `cloud`.`domain_router` DROP INDEX `i_domain_router__vlan_id`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `gateway`;
-ALTER TABLE `cloud`.`domain_router` DROP COLUMN `ram_size`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `dns1`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `dns2`;
-ALTER TABLE `cloud`.`domain_router` DROP COLUMN `guest_mac_address`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `guest_dc_mac_address`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `vnet`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `dc_vlan`;
@@ -62,7 +59,6 @@ ALTER TABLE `cloud`.`domain_router` DROP COLUMN `vlan_id`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `domain_id`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `account_id`;
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN `dhcp_ip_address`;
-ALTER TABLE `cloud`.`domain_router` DROP COLUMN `domain`;
 
 ALTER TABLE `cloud`.`console_proxy` DROP FOREIGN KEY `fk_console_proxy__vlan_id`;
 ALTER TABLE `cloud`.`console_proxy` DROP INDEX `i_console_proxy__vlan_id`;
@@ -75,7 +71,6 @@ ALTER TABLE `cloud`.`console_proxy` DROP COLUMN `guest_ip_address`;
 ALTER TABLE `cloud`.`console_proxy` DROP COLUMN `guest_netmask`;
 ALTER TABLE `cloud`.`console_proxy` DROP COLUMN `vlan_db_id`;
 ALTER TABLE `cloud`.`console_proxy` DROP COLUMN `vlan_id`;
-ALTER TABLE `cloud`.`console_proxy` DROP COLUMN `ram_size`;
 
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `gateway`;
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `dns1`;
@@ -86,7 +81,6 @@ ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `guest_ip_address`;
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `guest_netmask`;
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `vlan_db_id`;
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `vlan_id`;
-ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `ram_size`;
 #ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `guid`;
 
 #ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__network_id` FOREIGN KEY `fk_vlan__network_id`(`network_id`) REFERENCES `networks`(`id`);
@@ -94,8 +88,6 @@ ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `ram_size`;
 DROP TABLE `cloud`.`vm_disk`;
 
 ALTER TABLE `cloud`.`disk_offering` DROP COLUMN `mirrored`;
-
-ALTER TABLE `cloud`.`service_offering` DROP COLUMN `guest_ip_type`;
 
 ALTER TABLE `cloud`.`load_balancer_vm_map` DROP COLUMN `pending`;
 
@@ -121,5 +113,5 @@ ALTER TABLE `cloud`.`template_spool_ref` ADD CONSTRAINT `fk_template_spool_ref__
 
 ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `state` VARCHAR(32) NOT NULL;
 
-ALTER TABLE op_dc_ip_address_alloc ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`snapshot_policy` ADD KEY  `volume_id` (`volume_id`);
 

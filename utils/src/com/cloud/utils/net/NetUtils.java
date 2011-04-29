@@ -48,143 +48,142 @@ public class NetUtils {
     public final static int VPN_NATT_PORT = 4500;
     public final static int VPN_L2TP_PORT = 1701;
 
-    
     public final static String UDP_PROTO = "udp";
     public final static String TCP_PROTO = "tcp";
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
-    
+
     private final static Random _rand = new Random(System.currentTimeMillis());
 
     public static long createSequenceBasedMacAddress(long macAddress) {
-        return macAddress | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l);
+        return macAddress | 0x060000000000l | (((long) _rand.nextInt(32768) << 25) & 0x00fffe000000l);
     }
-    
-	public static String getHostName() {
+
+    public static String getHostName() {
         try {
             InetAddress localAddr = InetAddress.getLocalHost();
-            if(localAddr != null) {
-        		return localAddr.getHostName();
+            if (localAddr != null) {
+                return localAddr.getHostName();
             }
-        } catch(UnknownHostException e) {
-        	s_logger.warn("UnknownHostException when trying to get host name. ", e);
+        } catch (UnknownHostException e) {
+            s_logger.warn("UnknownHostException when trying to get host name. ", e);
         }
         return "localhost";
-	}
-	
+    }
+
     public static InetAddress getLocalInetAddress() {
         try {
             return InetAddress.getLocalHost();
-        } catch(UnknownHostException e) {
-        	s_logger.warn("UnknownHostException in getLocalInetAddress().", e);
+        } catch (UnknownHostException e) {
+            s_logger.warn("UnknownHostException in getLocalInetAddress().", e);
             return null;
         }
     }
-    
+
     public static String resolveToIp(String host) {
-		try {
-			InetAddress addr = InetAddress.getByName(host);
-			return ipFromInetAddress(addr);
-		} catch (UnknownHostException e) {
-			s_logger.warn("Unable to resolve " + host + " to IP due to UnknownHostException");
-			return null;
-		}
+        try {
+            InetAddress addr = InetAddress.getByName(host);
+            return ipFromInetAddress(addr);
+        } catch (UnknownHostException e) {
+            s_logger.warn("Unable to resolve " + host + " to IP due to UnknownHostException");
+            return null;
+        }
     }
-    
+
     public static InetAddress[] getAllLocalInetAddresses() {
-    	List<InetAddress> addrList = new ArrayList<InetAddress>();
-    	try {
-	    	for(NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
-	    		if(ifc.isUp() && !ifc.isVirtual()) {
-		    		for(InetAddress addr : IteratorUtil.enumerationAsIterable(ifc.getInetAddresses())) {
-		    			addrList.add(addr);
-		    		}
-	    		}
-	    	}
-    	} catch (SocketException e) {
-        	s_logger.warn("SocketException in getAllLocalInetAddresses().", e);
-    	}
-    	
-    	InetAddress[] addrs = new InetAddress[addrList.size()];
-    	if(addrList.size() > 0) {
+        List<InetAddress> addrList = new ArrayList<InetAddress>();
+        try {
+            for (NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
+                if (ifc.isUp() && !ifc.isVirtual()) {
+                    for (InetAddress addr : IteratorUtil.enumerationAsIterable(ifc.getInetAddresses())) {
+                        addrList.add(addr);
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            s_logger.warn("SocketException in getAllLocalInetAddresses().", e);
+        }
+
+        InetAddress[] addrs = new InetAddress[addrList.size()];
+        if (addrList.size() > 0) {
             System.arraycopy(addrList.toArray(), 0, addrs, 0, addrList.size());
         }
-    	return addrs;
+        return addrs;
     }
-    
-    public static String[] getLocalCidrs()  {
-    	List<String> cidrList = new ArrayList<String>();
-    	try {
-	    	for(NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
-	    		if(ifc.isUp() && !ifc.isVirtual() && !ifc.isLoopback()) {
-			    	for (InterfaceAddress address : ifc.getInterfaceAddresses()) {
-			    		InetAddress addr = address.getAddress();
-			    		int prefixLength = address.getNetworkPrefixLength();
-			    		if(prefixLength < 32 && prefixLength > 0) {
-			    			String ip = ipFromInetAddress(addr);
-		    				cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
-			    		}
-			    	}
-	    		}
-	    	}
-    	} catch(SocketException e) {
-        	s_logger.warn("UnknownHostException in getLocalCidrs().", e);
-    	}
-    	
-    	return cidrList.toArray(new String[0]);
+
+    public static String[] getLocalCidrs() {
+        List<String> cidrList = new ArrayList<String>();
+        try {
+            for (NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
+                if (ifc.isUp() && !ifc.isVirtual() && !ifc.isLoopback()) {
+                    for (InterfaceAddress address : ifc.getInterfaceAddresses()) {
+                        InetAddress addr = address.getAddress();
+                        int prefixLength = address.getNetworkPrefixLength();
+                        if (prefixLength < 32 && prefixLength > 0) {
+                            String ip = ipFromInetAddress(addr);
+                            cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
+                        }
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            s_logger.warn("UnknownHostException in getLocalCidrs().", e);
+        }
+
+        return cidrList.toArray(new String[0]);
     }
-    
+
     public static InetAddress getFirstNonLoopbackLocalInetAddress() {
-    	InetAddress[] addrs = getAllLocalInetAddresses();
-    	if(addrs != null) {
-    		for(InetAddress addr : addrs) {
-    			if(s_logger.isInfoEnabled()) {
+        InetAddress[] addrs = getAllLocalInetAddresses();
+        if (addrs != null) {
+            for (InetAddress addr : addrs) {
+                if (s_logger.isInfoEnabled()) {
                     s_logger.info("Check local InetAddress : " + addr.toString() + ", total count :" + addrs.length);
                 }
-    			
-    			if(!addr.isLoopbackAddress()) {
+
+                if (!addr.isLoopbackAddress()) {
                     return addr;
                 }
-    		}
-    	}
-    	
-		s_logger.warn("Unable to determine a non-loopback address, local inet address count :" + addrs.length);
-    	return null;
+            }
+        }
+
+        s_logger.warn("Unable to determine a non-loopback address, local inet address count :" + addrs.length);
+        return null;
     }
-    
+
     public static InetAddress[] getInterfaceInetAddresses(String ifName) {
-    	List<InetAddress> addrList = new ArrayList<InetAddress>();
-    	try {
-	    	for(NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
-	    		if(ifc.isUp() && !ifc.isVirtual() && ifc.getName().equals(ifName)) {
-		    		for(InetAddress addr : IteratorUtil.enumerationAsIterable(ifc.getInetAddresses())) {
-		    			addrList.add(addr);
-		    		}
-	    		}
-	    	}
-    	} catch (SocketException e) {
-        	s_logger.warn("SocketException in getAllLocalInetAddresses().", e);
-    	}
-    	
-    	InetAddress[] addrs = new InetAddress[addrList.size()];
-    	if(addrList.size() > 0) {
+        List<InetAddress> addrList = new ArrayList<InetAddress>();
+        try {
+            for (NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
+                if (ifc.isUp() && !ifc.isVirtual() && ifc.getName().equals(ifName)) {
+                    for (InetAddress addr : IteratorUtil.enumerationAsIterable(ifc.getInetAddresses())) {
+                        addrList.add(addr);
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            s_logger.warn("SocketException in getAllLocalInetAddresses().", e);
+        }
+
+        InetAddress[] addrs = new InetAddress[addrList.size()];
+        if (addrList.size() > 0) {
             System.arraycopy(addrList.toArray(), 0, addrs, 0, addrList.size());
         }
-    	return addrs;
+        return addrs;
     }
-    
+
     public static String getLocalIPString() {
         InetAddress addr = getLocalInetAddress();
-        if(addr != null) {
-        	return ipFromInetAddress(addr);
+        if (addr != null) {
+            return ipFromInetAddress(addr);
         }
 
         return new String("127.0.0.1");
     }
-    
+
     public static String ipFromInetAddress(InetAddress addr) {
-    	assert(addr != null);
-    	
+        assert (addr != null);
+
         byte[] ipBytes = addr.getAddress();
         StringBuffer sb = new StringBuffer();
         sb.append(ipBytes[0] & 0xff).append(".");
@@ -196,92 +195,92 @@ public class NetUtils {
     }
 
     public static boolean isLocalAddress(InetAddress addr) {
-		InetAddress[] addrs = getAllLocalInetAddresses();
-		
-		if(addrs != null) {
-			for(InetAddress self : addrs) {
-				if(self.equals(addr)) {
+        InetAddress[] addrs = getAllLocalInetAddresses();
+
+        if (addrs != null) {
+            for (InetAddress self : addrs) {
+                if (self.equals(addr)) {
                     return true;
                 }
-			}
-		}
-		return false;
-    }
-    
-    public static boolean isLocalAddress(String strAddress) {
-    	
-		InetAddress addr;
-		try {
-			addr = InetAddress.getByName(strAddress);
-    		return isLocalAddress(addr);
-		} catch (UnknownHostException e) {
-		}
-		return false;
-    }
-    
-    public static String getMacAddress(InetAddress address) {
-    	StringBuffer sb = new StringBuffer();
-    	Formatter formatter = new Formatter(sb);
-    	try {
-    		NetworkInterface ni = NetworkInterface.getByInetAddress(address);
-    		byte[] mac = ni.getHardwareAddress();
-	
-			for (int i = 0; i < mac.length; i++) {
-				formatter.format("%02X%s", mac[i], (i < mac.length - 1) ? ":" : "");
-			}
-		} catch (SocketException e) {
-			s_logger.error("SocketException when trying to retrieve MAC address", e);
-		}
-		return sb.toString();
-    }
-    
-    public static long getMacAddressAsLong(InetAddress address) {
-    	long macAddressAsLong = 0;
-    	try {
-    		NetworkInterface ni = NetworkInterface.getByInetAddress(address);
-    		byte[] mac = ni.getHardwareAddress();
-	
-			for (int i = 0; i < mac.length; i++) {
-                macAddressAsLong |= ((long)(mac[i] & 0xff) << (mac.length - i - 1)*8);
             }
-			 
-		} catch (SocketException e) {
-			s_logger.error("SocketException when trying to retrieve MAC address", e);
-		}
-		
-		return macAddressAsLong;
+        }
+        return false;
     }
-    
+
+    public static boolean isLocalAddress(String strAddress) {
+
+        InetAddress addr;
+        try {
+            addr = InetAddress.getByName(strAddress);
+            return isLocalAddress(addr);
+        } catch (UnknownHostException e) {
+        }
+        return false;
+    }
+
+    public static String getMacAddress(InetAddress address) {
+        StringBuffer sb = new StringBuffer();
+        Formatter formatter = new Formatter(sb);
+        try {
+            NetworkInterface ni = NetworkInterface.getByInetAddress(address);
+            byte[] mac = ni.getHardwareAddress();
+
+            for (int i = 0; i < mac.length; i++) {
+                formatter.format("%02X%s", mac[i], (i < mac.length - 1) ? ":" : "");
+            }
+        } catch (SocketException e) {
+            s_logger.error("SocketException when trying to retrieve MAC address", e);
+        }
+        return sb.toString();
+    }
+
+    public static long getMacAddressAsLong(InetAddress address) {
+        long macAddressAsLong = 0;
+        try {
+            NetworkInterface ni = NetworkInterface.getByInetAddress(address);
+            byte[] mac = ni.getHardwareAddress();
+
+            for (int i = 0; i < mac.length; i++) {
+                macAddressAsLong |= ((long) (mac[i] & 0xff) << (mac.length - i - 1) * 8);
+            }
+
+        } catch (SocketException e) {
+            s_logger.error("SocketException when trying to retrieve MAC address", e);
+        }
+
+        return macAddressAsLong;
+    }
+
     public static boolean ipRangesOverlap(String startIp1, String endIp1, String startIp2, String endIp2) {
-    	long startIp1Long = ip2Long(startIp1);
-    	long endIp1Long = startIp1Long;
-    	if (endIp1 != null) {
-    		endIp1Long = ip2Long(endIp1);
-    	}
-    	long startIp2Long = ip2Long(startIp2);
-    	long endIp2Long = startIp2Long;
-    	if (endIp2 != null) {
-    		endIp2Long = ip2Long(endIp2);
-    	}
-    	
-    	if (startIp1Long == startIp2Long || startIp1Long == endIp2Long || endIp1Long == startIp2Long || endIp1Long == endIp2Long) {
-    		return true;
-    	} else if (startIp1Long > startIp2Long && startIp1Long < endIp2Long) {
-    		return true;
-    	} else if (endIp1Long > startIp2Long && endIp1Long < endIp2Long) {
-    		return true;
-    	} else if (startIp2Long > startIp1Long && startIp2Long < endIp1Long) {
-    		return true;
-    	} else if (endIp2Long > startIp1Long && endIp2Long < endIp1Long) {
-    		return true;
-    	} else {
-    		return false;
-    	}    	    	
+        long startIp1Long = ip2Long(startIp1);
+        long endIp1Long = startIp1Long;
+        if (endIp1 != null) {
+            endIp1Long = ip2Long(endIp1);
+        }
+        long startIp2Long = ip2Long(startIp2);
+        long endIp2Long = startIp2Long;
+        if (endIp2 != null) {
+            endIp2Long = ip2Long(endIp2);
+        }
+
+        if (startIp1Long == startIp2Long || startIp1Long == endIp2Long || endIp1Long == startIp2Long || endIp1Long == endIp2Long) {
+            return true;
+        } else if (startIp1Long > startIp2Long && startIp1Long < endIp2Long) {
+            return true;
+        } else if (endIp1Long > startIp2Long && endIp1Long < endIp2Long) {
+            return true;
+        } else if (startIp2Long > startIp1Long && startIp2Long < endIp1Long) {
+            return true;
+        } else if (endIp2Long > startIp1Long && endIp2Long < endIp1Long) {
+            return true;
+        } else {
+            return false;
+        }
     }
-	
+
     public static long ip2Long(String ip) {
         String[] tokens = ip.split("[.]");
-        assert(tokens.length == 4);
+        assert (tokens.length == 4);
         long result = 0;
         for (int i = 0; i < tokens.length; i++) {
             try {
@@ -290,23 +289,23 @@ public class NetUtils {
                 throw new RuntimeException("Incorrect number", e);
             }
         }
-        
+
         return result;
     }
-    
+
     public static String long2Ip(long ip) {
         StringBuilder result = new StringBuilder(15);
         result.append((ip >> 24 & 0xff)).append(".");
         result.append((ip >> 16 & 0xff)).append(".");
         result.append((ip >> 8 & 0xff)).append(".");
         result.append(ip & 0xff);
-        
+
         return result.toString();
     }
-    
+
     public static long mac2Long(String macAddress) {
         String[] tokens = macAddress.split(":");
-        assert(tokens.length == 6);
+        assert (tokens.length == 6);
         long result = 0;
         for (int i = 0; i < tokens.length; i++) {
             result = result << 8;
@@ -314,7 +313,7 @@ public class NetUtils {
         }
         return result;
     }
-    
+
     public static String[] getNicParams(String nicName) {
         try {
             NetworkInterface nic = NetworkInterface.getByName(nicName);
@@ -323,7 +322,7 @@ public class NetUtils {
             return null;
         }
     }
-    
+
     public static String[] getNetworkParams(NetworkInterface nic) {
         List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
         if (addrs == null || addrs.size() == 0) {
@@ -332,10 +331,7 @@ public class NetUtils {
         InterfaceAddress addr = null;
         for (InterfaceAddress iaddr : addrs) {
             InetAddress inet = iaddr.getAddress();
-            if (!inet.isLinkLocalAddress() &&
-                !inet.isLoopbackAddress() &&
-                !inet.isMulticastAddress() &&
-                 inet.getAddress().length == 4) {
+            if (!inet.isLinkLocalAddress() && !inet.isLoopbackAddress() && !inet.isMulticastAddress() && inet.getAddress().length == 4) {
                 addr = iaddr;
                 break;
             }
@@ -350,20 +346,20 @@ public class NetUtils {
             result[1] = byte2Mac(mac);
         } catch (Exception e) {
         }
-        
+
         result[2] = prefix2Netmask(addr.getNetworkPrefixLength());
         return result;
     }
-    
+
     public static String prefix2Netmask(short prefix) {
         long addr = 0;
         for (int i = 0; i < prefix; i++) {
             addr = addr | (1 << (31 - i));
         }
-        
+
         return long2Ip(addr);
     }
-    
+
     public static String byte2Mac(byte[] m) {
         StringBuilder result = new StringBuilder(17);
         Formatter formatter = new Formatter(result);
@@ -374,95 +370,90 @@ public class NetUtils {
     public static String long2Mac(long macAddress) {
         StringBuilder result = new StringBuilder(17);
         Formatter formatter = new Formatter(result);
-        formatter.format("%02x:%02x:%02x:%02x:%02x:%02x",
-                         (macAddress >> 40) & 0xff,
-                         (macAddress >> 32) & 0xff,
-                         (macAddress >> 24) & 0xff,
-                         (macAddress >> 16) & 0xff,
-                         (macAddress >> 8) & 0xff,
-                         (macAddress & 0xff));
-        
+        formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", (macAddress >> 40) & 0xff, (macAddress >> 32) & 0xff, (macAddress >> 24) & 0xff, (macAddress >> 16) & 0xff, (macAddress >> 8) & 0xff,
+                (macAddress & 0xff));
+
         return result.toString();
     }
-    
+
     public static boolean isValidPrivateIp(String ipAddress, String guestIPAddress) {
-    	
-    	InetAddress privIp = parseIpAddress(ipAddress);
-    	if (privIp == null) {
+
+        InetAddress privIp = parseIpAddress(ipAddress);
+        if (privIp == null) {
             return false;
         }
-    	if (!privIp.isSiteLocalAddress()) {
-    		return false;
-    	}
-    	
-    	String firstGuestOctet = "10";
-    	if (guestIPAddress != null && !guestIPAddress.isEmpty()) {
-    		String[] guestIPList = guestIPAddress.split("\\.");
-    		firstGuestOctet = guestIPList[0];
-    	}
-    	
-    	String[] ipList = ipAddress.split("\\.");
-    	if (!ipList[0].equals(firstGuestOctet)) {
+        if (!privIp.isSiteLocalAddress()) {
             return false;
         }
-    	
-    	return true;
+
+        String firstGuestOctet = "10";
+        if (guestIPAddress != null && !guestIPAddress.isEmpty()) {
+            String[] guestIPList = guestIPAddress.split("\\.");
+            firstGuestOctet = guestIPList[0];
+        }
+
+        String[] ipList = ipAddress.split("\\.");
+        if (!ipList[0].equals(firstGuestOctet)) {
+            return false;
+        }
+
+        return true;
     }
-    
+
     public static boolean isSiteLocalAddress(String ipAddress) {
-    	if (ipAddress == null) {
-    		return false;
-    	} else {
-    		InetAddress ip = parseIpAddress(ipAddress);
-    		return ip.isSiteLocalAddress();
-    	}
+        if (ipAddress == null) {
+            return false;
+        } else {
+            InetAddress ip = parseIpAddress(ipAddress);
+            return ip.isSiteLocalAddress();
+        }
     }
-    
+
     public static boolean validIpRange(String startIP, String endIP) {
-    	if (endIP == null || endIP.isEmpty()) {
+        if (endIP == null || endIP.isEmpty()) {
             return true;
         }
-    	
-    	long startIPLong = NetUtils.ip2Long(startIP);
-    	long endIPLong =  NetUtils.ip2Long(endIP);
-	   	return (startIPLong <= endIPLong);
+
+        long startIPLong = NetUtils.ip2Long(startIP);
+        long endIPLong = NetUtils.ip2Long(endIP);
+        return (startIPLong <= endIPLong);
     }
-    
-	public static boolean isValidIp(final String ip) {
-		final String[] ipAsList = ip.split("\\.");
-		
-	    // The IP address must have four octets
-	    if (Array.getLength(ipAsList) != 4) {
-	    	return false;
-	    }
-	    
-	    for (int i = 0; i < 4; i++) {
-	    	// Each octet must be an integer
-	    	final String octetString = ipAsList[i];
-	    	int octet;
-	    	try {
-	    		octet = Integer.parseInt(octetString);
-	    	} catch(final Exception e) {
-	    		return false;
-	   		}
-	    	// Each octet must be between 0 and 255, inclusive
-	    	if (octet < 0 || octet > 255) {
+
+    public static boolean isValidIp(final String ip) {
+        final String[] ipAsList = ip.split("\\.");
+
+        // The IP address must have four octets
+        if (Array.getLength(ipAsList) != 4) {
+            return false;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            // Each octet must be an integer
+            final String octetString = ipAsList[i];
+            int octet;
+            try {
+                octet = Integer.parseInt(octetString);
+            } catch (final Exception e) {
+                return false;
+            }
+            // Each octet must be between 0 and 255, inclusive
+            if (octet < 0 || octet > 255) {
                 return false;
             }
 
-	    	// Each octetString must have between 1 and 3 characters
-	    	if (octetString.length() < 1 || octetString.length() > 3) {
+            // Each octetString must have between 1 and 3 characters
+            if (octetString.length() < 1 || octetString.length() > 3) {
                 return false;
             }
-	   		
-	   	}
-	    
-	   	// IP is good, return true
-		return true;
-	}
-	
-	public static boolean isValidCIDR(final String cidr) {
-		if (cidr == null || cidr.isEmpty()) {
+
+        }
+
+        // IP is good, return true
+        return true;
+    }
+
+    public static boolean isValidCIDR(final String cidr) {
+        if (cidr == null || cidr.isEmpty()) {
             return false;
         }
         String[] cidrPair = cidr.split("\\/");
@@ -475,65 +466,65 @@ public class NetUtils {
             return false;
         }
         int cidrSizeNum = -1;
-        
+
         try {
-        	cidrSizeNum = Integer.parseInt(cidrSize);
+            cidrSizeNum = Integer.parseInt(cidrSize);
         } catch (Exception e) {
-        	return false;
+            return false;
         }
-        
+
         if (cidrSizeNum < 0 || cidrSizeNum > 32) {
             return false;
         }
-        
+
         return true;
-	}
-	
-	public static boolean isValidNetmask(String netmask) {
-		if (!isValidIp(netmask)) {
+    }
+
+    public static boolean isValidNetmask(String netmask) {
+        if (!isValidIp(netmask)) {
             return false;
         }
-		
-		long ip = ip2Long(netmask);
-		int count = 0;
-    	boolean finished = false;
-    	for (int i = 31; i >= 0; i--) {
-    		if (((ip >> i) & 0x1) == 0) {
-    			finished = true;
-    		} else {
-    			if (finished) {
+
+        long ip = ip2Long(netmask);
+        int count = 0;
+        boolean finished = false;
+        for (int i = 31; i >= 0; i--) {
+            if (((ip >> i) & 0x1) == 0) {
+                finished = true;
+            } else {
+                if (finished) {
                     return false;
                 }
-    			count += 1;
-    		}
-    	}
-    	
-    	if (count == 0) {
+                count += 1;
+            }
+        }
+
+        if (count == 0) {
             return false;
         }
-		
-		return true;
-	}
-    
-    private static InetAddress parseIpAddress(String address) {
-    	StringTokenizer st = new StringTokenizer(address, ".");
-		byte[] bytes = new byte[4];
 
-		if (st.countTokens() == 4) {
-			try {
-				for (int i = 0; i < 4; i++){
-					bytes[i] = (byte)Integer.parseInt(st.nextToken());
-				}
-				return InetAddress.getByAddress(address, bytes);
-			} catch (NumberFormatException nfe) {
-				return null;
-			} catch (UnknownHostException uhe){
-				return null;
-			}
-		}
-		return null;
+        return true;
     }
-    
+
+    private static InetAddress parseIpAddress(String address) {
+        StringTokenizer st = new StringTokenizer(address, ".");
+        byte[] bytes = new byte[4];
+
+        if (st.countTokens() == 4) {
+            try {
+                for (int i = 0; i < 4; i++) {
+                    bytes[i] = (byte) Integer.parseInt(st.nextToken());
+                }
+                return InetAddress.getByAddress(address, bytes);
+            } catch (NumberFormatException nfe) {
+                return null;
+            } catch (UnknownHostException uhe) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     public static String getCidrFromGatewayAndNetmask(String gatewayStr, String netmaskStr) {
         long netmask = ip2Long(netmaskStr);
         long gateway = ip2Long(gatewayStr);
@@ -541,7 +532,7 @@ public class NetUtils {
         long size = getCidrSize(netmaskStr);
         return long2Ip(firstPart) + "/" + size;
     }
-    
+
     public static String[] getIpRangeFromCidr(String cidr, long size) {
         assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         String[] result = new String[2];
@@ -549,18 +540,18 @@ public class NetUtils {
         long startNetMask = ip2Long(getCidrNetmask(size));
         long start = (ip & startNetMask) + 1;
         long end = start;
-        
+
         end = end >> (32 - size);
-        
+
         end++;
         end = (end << (32 - size)) - 2;
-        
+
         result[0] = long2Ip(start);
         result[1] = long2Ip(end);
-        
+
         return result;
     }
-    
+
     public static Set<Long> getAllIpsFromCidr(String cidr, long size) {
         assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         Set<Long> result = new TreeSet<Long>();
@@ -568,120 +559,119 @@ public class NetUtils {
         long startNetMask = ip2Long(getCidrNetmask(size));
         long start = (ip & startNetMask) + 2;
         long end = start;
-        
+
         end = end >> (32 - size);
-        
+
         end++;
         end = (end << (32 - size)) - 2;
         while (start <= end) {
-        	result.add(start);
-        	start++;
+            result.add(start);
+            start++;
         }
-        
-        
+
         return result;
     }
-    
+
     public static String getIpRangeStartIpFromCidr(String cidr, long size) {
         long ip = ip2Long(cidr);
         long startNetMask = ip2Long(getCidrNetmask(size));
         long start = (ip & startNetMask) + 1;
         return long2Ip(start);
     }
-    
+
     public static String getIpRangeEndIpFromCidr(String cidr, long size) {
         long ip = ip2Long(cidr);
         long startNetMask = ip2Long(getCidrNetmask(size));
         long start = (ip & startNetMask) + 1;
         long end = start;
         end = end >> (32 - size);
-        
+
         end++;
         end = (end << (32 - size)) - 2;
-    	return long2Ip(end);
+        return long2Ip(end);
     }
-    
+
     public static boolean sameSubnet(final String ip1, final String ip2, final String netmask) {
-    	if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) {
+        if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) {
             return true;
         }
-    	String subnet1 = NetUtils.getSubNet(ip1, netmask);
-    	String subnet2 = NetUtils.getSubNet(ip2, netmask);
-    	
-    	return (subnet1.equals(subnet2));
+        String subnet1 = NetUtils.getSubNet(ip1, netmask);
+        String subnet2 = NetUtils.getSubNet(ip2, netmask);
+
+        return (subnet1.equals(subnet2));
     }
-    
+
     public static boolean sameSubnetCIDR(final String ip1, final String ip2, final long cidrSize) {
-    	if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) {
+        if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) {
             return true;
         }
-    	String subnet1 = NetUtils.getCidrSubNet(ip1, cidrSize);
-    	String subnet2 = NetUtils.getCidrSubNet(ip2, cidrSize);
-    	
-    	return (subnet1.equals(subnet2));
+        String subnet1 = NetUtils.getCidrSubNet(ip1, cidrSize);
+        String subnet2 = NetUtils.getCidrSubNet(ip2, cidrSize);
+
+        return (subnet1.equals(subnet2));
     }
-    
+
     public static String getSubNet(String ip, String netmask) {
         long ipAddr = ip2Long(ip);
         long subnet = ip2Long(netmask);
         long result = ipAddr & subnet;
         return long2Ip(result);
     }
-    
+
     public static String getCidrSubNet(String ip, long cidrSize) {
-    	long numericNetmask = (0xffffffff >> (32 - cidrSize)) << (32 - cidrSize);
-    	String netmask = NetUtils.long2Ip(numericNetmask);
-    	return getSubNet(ip, netmask);
+        long numericNetmask = (0xffffffff >> (32 - cidrSize)) << (32 - cidrSize);
+        String netmask = NetUtils.long2Ip(numericNetmask);
+        return getSubNet(ip, netmask);
     }
-    
+
     public static String ipAndNetMaskToCidr(String ip, String netmask) {
-    	long ipAddr = ip2Long(ip);
-    	long subnet = ip2Long(netmask);
-    	long result = ipAddr & subnet;
-    	int bits = (subnet == 0)?0:1;
-    	long subnet2 = subnet;
-    	while ((subnet2 = (subnet2 >> 1) & subnet) != 0 ) {
+        long ipAddr = ip2Long(ip);
+        long subnet = ip2Long(netmask);
+        long result = ipAddr & subnet;
+        int bits = (subnet == 0) ? 0 : 1;
+        long subnet2 = subnet;
+        while ((subnet2 = (subnet2 >> 1) & subnet) != 0) {
             bits++;
         }
 
-    	return long2Ip(result) + "/" + Integer.toString(bits);
+        return long2Ip(result) + "/" + Integer.toString(bits);
     }
-    
-    public static String [] ipAndNetMaskToRange(String ip, String netmask) {
-    	long ipAddr = ip2Long(ip);
-    	long subnet = ip2Long(netmask);
-    	long start = (ipAddr & subnet) + 1;
+
+    public static String[] ipAndNetMaskToRange(String ip, String netmask) {
+        long ipAddr = ip2Long(ip);
+        long subnet = ip2Long(netmask);
+        long start = (ipAddr & subnet) + 1;
         long end = start;
-        int bits = (subnet == 0)?0:1;
-    	while ((subnet = (subnet >> 1) & subnet) != 0 ) {
+        int bits = (subnet == 0) ? 0 : 1;
+        while ((subnet = (subnet >> 1) & subnet) != 0) {
             bits++;
         }
         end = end >> (32 - bits);
-        
+
         end++;
         end = (end << (32 - bits)) - 2;
-        
-        return new String[] {long2Ip(start), long2Ip(end)};
-    	
+
+        return new String[] { long2Ip(start), long2Ip(end) };
+
     }
-    
+
     public static Pair<String, Integer> getCidr(String cidr) {
         String[] tokens = cidr.split("/");
         return new Pair<String, Integer>(tokens[0], Integer.parseInt(tokens[1]));
     }
-    
+
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {
-    	Long[] cidrALong = cidrToLong(cidrA);
-    	Long[] cidrBLong = cidrToLong(cidrB);
-    	if (cidrALong == null || cidrBLong == null) {
-    		return false;
-    	}
-    	long shift = 32 - cidrBLong[1];
-    	return ((cidrALong[0]>>shift) == (cidrBLong[0]>>shift));
+        Long[] cidrALong = cidrToLong(cidrA);
+        Long[] cidrBLong = cidrToLong(cidrB);
+        if (cidrALong == null || cidrBLong == null) {
+            return false;
+        }
+        long shift = 32 - cidrBLong[1];
+        return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
     }
-    
+
     public static Long[] cidrToLong(String cidr) {
-    	if (cidr == null || cidr.isEmpty()) {
+        if (cidr == null || cidr.isEmpty()) {
             return null;
         }
         String[] cidrPair = cidr.split("\\/");
@@ -694,21 +684,21 @@ public class NetUtils {
             return null;
         }
         int cidrSizeNum = -1;
-        
+
         try {
-        	cidrSizeNum = Integer.parseInt(cidrSize);
+            cidrSizeNum = Integer.parseInt(cidrSize);
         } catch (Exception e) {
-        	return null;
+            return null;
         }
-    	long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
-    	long ipAddr = ip2Long(cidrAddress);
-    	Long[] cidrlong = {ipAddr & numericNetmask, (long)cidrSizeNum};
-    	return cidrlong;
+        long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
+        long ipAddr = ip2Long(cidrAddress);
+        Long[] cidrlong = { ipAddr & numericNetmask, (long) cidrSizeNum };
+        return cidrlong;
 
     }
-    
+
     public static String getCidrSubNet(String cidr) {
-    	if (cidr == null || cidr.isEmpty()) {
+        if (cidr == null || cidr.isEmpty()) {
             return null;
         }
         String[] cidrPair = cidr.split("\\/");
@@ -721,149 +711,149 @@ public class NetUtils {
             return null;
         }
         int cidrSizeNum = -1;
-        
+
         try {
-        	cidrSizeNum = Integer.parseInt(cidrSize);
+            cidrSizeNum = Integer.parseInt(cidrSize);
         } catch (Exception e) {
-        	return null;
+            return null;
         }
-    	long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
-    	String netmask = NetUtils.long2Ip(numericNetmask);
-    	return getSubNet(cidrAddress, netmask);
+        long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
+        String netmask = NetUtils.long2Ip(numericNetmask);
+        return getSubNet(cidrAddress, netmask);
     }
-    
+
     public static String getCidrNetmask(long cidrSize) {
-    	long numericNetmask = (0xffffffff >> (32 - cidrSize)) << (32 - cidrSize);
-    	return long2Ip(numericNetmask);
+        long numericNetmask = (0xffffffff >> (32 - cidrSize)) << (32 - cidrSize);
+        return long2Ip(numericNetmask);
     }
-    
+
     public static String getCidrNetmask(String cidr) {
         String[] cidrPair = cidr.split("\\/");
         long guestCidrSize = Long.parseLong(cidrPair[1]);
         return getCidrNetmask(guestCidrSize);
     }
-    
+
     public static String cidr2Netmask(String cidr) {
         String[] tokens = cidr.split("\\/");
         return getCidrNetmask(Integer.parseInt(tokens[1]));
     }
-    
+
     public static long getCidrSize(String netmask) {
-    	long ip = ip2Long(netmask);
-    	int count = 0;
-    	for (int i = 0; i < 32; i++) {
-    		if (((ip >> i) & 0x1) == 0) {
-    			count++;
-    		} else {
-    			break;
-    		}
-    	}
-    	
-    	return 32 - count;
+        long ip = ip2Long(netmask);
+        int count = 0;
+        for (int i = 0; i < 32; i++) {
+            if (((ip >> i) & 0x1) == 0) {
+                count++;
+            } else {
+                break;
+            }
+        }
+
+        return 32 - count;
     }
-    
+
     public static boolean isValidPort(String p) {
-    	try {
-			int port = Integer.parseInt(p);
-			return !(port > 65535 || port < 1);
-		} catch (NumberFormatException e) {
-			return false;
-		}
+        try {
+            int port = Integer.parseInt(p);
+            return !(port > 65535 || port < 1);
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
-    
+
     public static boolean isValidPort(int p) {
         return !(p > 65535 || p < 1);
     }
-    
+
     public static boolean isValidLBPort(String p) {
-    	try {
-			int port = Integer.parseInt(p);
-			return !(port > 65535 || port < 1);
-		} catch (NumberFormatException e) {
-			return false;
-		}
+        try {
+            int port = Integer.parseInt(p);
+            return !(port > 65535 || port < 1);
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
-    
+
     public static boolean isValidProto(String p) {
-    	String proto = p.toLowerCase();
-    	return (proto.equals("tcp") || proto.equals("udp") || proto.equals("icmp"));
+        String proto = p.toLowerCase();
+        return (proto.equals("tcp") || proto.equals("udp") || proto.equals("icmp"));
     }
-    
+
     public static boolean isValidSecurityGroupProto(String p) {
-    	String proto = p.toLowerCase();
-    	return (proto.equals("tcp") || proto.equals("udp") || proto.equals("icmp") || proto.equals("all"));
+        String proto = p.toLowerCase();
+        return (proto.equals("tcp") || proto.equals("udp") || proto.equals("icmp") || proto.equals("all"));
     }
-    
+
     public static boolean isValidAlgorithm(String p) {
-    	String algo = p.toLowerCase();
-    	return (algo.equals("roundrobin") || algo.equals("leastconn") || algo.equals("source"));
+        String algo = p.toLowerCase();
+        return (algo.equals("roundrobin") || algo.equals("leastconn") || algo.equals("source"));
     }
-    
+
     public static String getLinkLocalNetMask() {
-    	return "255.255.0.0";
+        return "255.255.0.0";
     }
-    
+
     public static String getLinkLocalGateway() {
-    	return "169.254.0.1";
+        return "169.254.0.1";
     }
-    
+
     public static String getLinkLocalCIDR() {
-    	return "169.254.0.0/16";
+        return "169.254.0.0/16";
     }
-    
+
     public static String[] getLinkLocalIPRange(int size) {
-    	if (size > 16 || size <= 0) {
-    		return null;
-    	}
-    	/*reserve gateway*/
-    	String[] range = getIpRangeFromCidr(getLinkLocalGateway(), 32 - size);
-    	 
-    	if (range[0].equalsIgnoreCase(getLinkLocalGateway())) {
-    		/*remove the gateway*/
-    		long ip = ip2Long(range[0]);
-    		ip += 1;
-    		range[0] = long2Ip(ip);
-    	}
-    	return range;
+        if (size > 16 || size <= 0) {
+            return null;
+        }
+        /* reserve gateway */
+        String[] range = getIpRangeFromCidr(getLinkLocalGateway(), 32 - size);
+
+        if (range[0].equalsIgnoreCase(getLinkLocalGateway())) {
+            /* remove the gateway */
+            long ip = ip2Long(range[0]);
+            ip += 1;
+            range[0] = long2Ip(ip);
+        }
+        return range;
     }
-    
+
     public static String getLinkLocalIpEnd() {
-    	String[] cidrPair = getLinkLocalCIDR().split("\\/");
-		String cidr =  cidrPair[0];
-		
-    	return getIpRangeEndIpFromCidr(cidr, 32 - Long.parseLong(cidrPair[1]));
+        String[] cidrPair = getLinkLocalCIDR().split("\\/");
+        String cidr = cidrPair[0];
+
+        return getIpRangeEndIpFromCidr(cidr, 32 - Long.parseLong(cidrPair[1]));
     }
-    
-    public static String portRangeToString(int portRange[]){
+
+    public static String portRangeToString(int portRange[]) {
         return Integer.toString(portRange[0]) + ":" + Integer.toString(portRange[1]);
     }
 
     // test only
-	private static void configLog4j() {
-		URL configUrl = System.class.getResource("/conf/log4j-cloud.xml");
-		if(configUrl != null) {
-			System.out.println("Configure log4j using log4j-cloud.xml");
+    private static void configLog4j() {
+        URL configUrl = System.class.getResource("/conf/log4j-cloud.xml");
+        if (configUrl != null) {
+            System.out.println("Configure log4j using log4j-cloud.xml");
 
-			try {
-				File file = new File(configUrl.toURI());
-				
-				System.out.println("Log4j configuration from : " + file.getAbsolutePath());
-				DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
-			} catch (URISyntaxException e) {
-				System.out.println("Unable to convert log4j configuration Url to URI");
-			}
-			// DOMConfigurator.configure(configUrl);
-		} else {
-			System.out.println("Configure log4j with default properties");
-		}
-	}
-    
+            try {
+                File file = new File(configUrl.toURI());
+
+                System.out.println("Log4j configuration from : " + file.getAbsolutePath());
+                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+            } catch (URISyntaxException e) {
+                System.out.println("Unable to convert log4j configuration Url to URI");
+            }
+            // DOMConfigurator.configure(configUrl);
+        } else {
+            System.out.println("Configure log4j with default properties");
+        }
+    }
+
     public static void main(String[] args) {
-    	configLog4j();
-    	
-    	if (args.length == 0) {
-    		System.out.println("Must specify at least one parameter");
-    	}
+        configLog4j();
+
+        if (args.length == 0) {
+            System.out.println("Must specify at least one parameter");
+        }
         if (args[0].equals("m2l")) {
             System.out.println(mac2Long(args[1]));
         } else if (args[0].equals("l2m")) {
@@ -889,7 +879,7 @@ public class NetUtils {
                     System.out.println("Netmask: " + result[2]);
                 }
             }
-        } else if (args[0].equals("range")){
+        } else if (args[0].equals("range")) {
             if (args.length < 4) {
                 String[] result = getIpRangeFromCidr(args[1], Long.parseLong(args[2]));
                 System.out.println("Range is " + result[0] + "-" + result[1]);
@@ -897,35 +887,36 @@ public class NetUtils {
                 System.err.println("Needs 3 parameters: " + args.length);
             }
         } else if (args[0].equals("ip2")) {
-        	Set<Long> result = getAllIpsFromCidr("10.1.1.192", 24);
-        	System.out.println("Number of ips: " + result.size());
-        	
+            Set<Long> result = getAllIpsFromCidr("10.1.1.192", 24);
+            System.out.println("Number of ips: " + result.size());
+
         } else if (args[0].equals("within")) {
-        	String cidrA = args[1];
-        	String cidrB = args[2];
-        	System.out.println(NetUtils.isNetworkAWithinNetworkB(cidrA, cidrB));
-        	
-        }  else if (args[0].equals("tocidr")) {
-        	String ip = args[1];
-        	String mask = args[2];
-        	System.out.println(NetUtils.ipAndNetMaskToCidr(ip, mask));
-        } else if (args[0].equals("ipmasktorange")){
-        	String ip = args[1];
-        	String mask = args[2];
-        	String [] range = NetUtils.ipAndNetMaskToRange(ip, mask);
-        	
-        	System.out.println(range[0] + " : " + range[1]);
+            String cidrA = args[1];
+            String cidrB = args[2];
+            System.out.println(NetUtils.isNetworkAWithinNetworkB(cidrA, cidrB));
+
+        } else if (args[0].equals("tocidr")) {
+            String ip = args[1];
+            String mask = args[2];
+            System.out.println(NetUtils.ipAndNetMaskToCidr(ip, mask));
+        } else if (args[0].equals("ipmasktorange")) {
+            String ip = args[1];
+            String mask = args[2];
+            String[] range = NetUtils.ipAndNetMaskToRange(ip, mask);
+
+            System.out.println(range[0] + " : " + range[1]);
         } else {
             System.out.println(long2Ip(NumbersUtil.parseLong(args[1], 0)));
         }
     }
-    
+
     public static boolean verifyDomainNameLabel(String hostName, boolean isHostName) {
-        //must be between 1 and 63 characters long and may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner), 
-        //the digits '0' through '9', and the hyphen ('-').
-        //Can not start  with a hyphen and digit, and must not end with a hyphen
-        //If it's a host name, don't allow to start with digit
-        
+        // must be between 1 and 63 characters long and may contain only the ASCII letters 'a' through 'z' (in a
+        // case-insensitive manner),
+        // the digits '0' through '9', and the hyphen ('-').
+        // Can not start with a hyphen and digit, and must not end with a hyphen
+        // If it's a host name, don't allow to start with digit
+
         if (hostName.length() > 63 || hostName.length() < 1) {
             s_logger.warn("Domain name label must be between 1 and 63 characters long");
             return false;
@@ -942,53 +933,53 @@ public class NetUtils {
 
         return true;
     }
-    
+
     public static boolean verifyDomainName(String domainName) {
-        //don't allow domain name length to exceed 190 chars (190 + 63 (max host name length) = 253 = max domainName length
+        // don't allow domain name length to exceed 190 chars (190 + 63 (max host name length) = 253 = max domainName length
         if (domainName.length() < 1 || domainName.length() > 190) {
             s_logger.trace("Domain name must be between 1 and 190 characters long");
             return false;
         }
-        
+
         if (domainName.startsWith(".") || domainName.endsWith(".")) {
             s_logger.trace("Domain name can't start or end with .");
             return false;
         }
-        
+
         String[] domainNameLabels = domainName.split("\\.");
-        
+
         for (int i = 0; i < domainNameLabels.length; i++) {
             if (!verifyDomainNameLabel(domainNameLabels[i], false)) {
                 s_logger.warn("Domain name label " + domainNameLabels[i] + " is incorrect");
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     public static String getDhcpRange(String cidr) {
         String[] splitResult = cidr.split("\\/");
         long size = Long.valueOf(splitResult[1]);
         return NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
     }
-    
+
     public static boolean validateGuestCidr(String cidr) {
-        //RFC 1918 - The Internet Assigned Numbers Authority (IANA) has reserved the
-        //following three blocks of the IP address space for private internets:
-        //10.0.0.0        -   10.255.255.255  (10/8 prefix)
-        //172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
-        //192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
+        // RFC 1918 - The Internet Assigned Numbers Authority (IANA) has reserved the
+        // following three blocks of the IP address space for private internets:
+        // 10.0.0.0 - 10.255.255.255 (10/8 prefix)
+        // 172.16.0.0 - 172.31.255.255 (172.16/12 prefix)
+        // 192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
 
         String cidr1 = "10.0.0.0/8";
         String cidr2 = "172.16.0.0/12";
         String cidr3 = "192.168.0.0/16";
-        
+
         if (!isValidCIDR(cidr)) {
             s_logger.warn("Cidr " + cidr + " is not valid");
             return false;
         }
-        
+
         if (isNetworkAWithinNetworkB(cidr, cidr1) || isNetworkAWithinNetworkB(cidr, cidr2) || isNetworkAWithinNetworkB(cidr, cidr3)) {
             return true;
         } else {
@@ -996,6 +987,5 @@ public class NetUtils {
             return false;
         }
     }
-    	
-}
 
+}

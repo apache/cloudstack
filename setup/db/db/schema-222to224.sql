@@ -137,5 +137,22 @@ UPDATE `cloud`.`host` SET resource='com.cloud.hypervisor.xen.resource.XenServer5
 UPDATE `cloud`.`nics` SET ip_type='Ip4';
 UPDATE `cloud`.`nics` SET broadcast_uri='vlan://untagged', isolation_uri='ec2://untagged', strategy='Create' where reserver_name='DirectPodBasedNetworkGuru';
 
+
 DELETE FROM `cloud`.`configuration` where name='schema.level';
 DELETE FROM `cloud`.`configuration` where name='direct.attach.security.groups.enabled';
+
+ALTER TABLE `cloud`.`domain` MODIFY COLUMN `path` varchar(255) NOT NULL;
+
+ALTER TABLE `cloud`.`network_offerings` ADD INDEX `i_network_offerings__removed`(`removed`);
+
+ALTER TABLE `cloud`.`nics` ADD INDEX `i_nics__removed`(`removed`);
+
+ALTER TABLE `cloud`.`snapshot_schedule` DROP KEY `volume_id`;
+ALTER TABLE `cloud`.`snapshot_schedule` ADD UNIQUE KEY  `volume_id` (`volume_id`,`policy_id`);
+
+ALTER TABLE `cloud`.`storage_pool` MODIFY COLUMN `uuid` varchar(255) UNIQUE;
+
+ALTER TABLE `cloud`.`user_statistics` DROP KEY `account_id`;
+ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE KEY `account_id` (`account_id`,`data_center_id`, `public_ip_address`, `device_id`,`device_type`); 
+
+

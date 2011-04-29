@@ -95,7 +95,6 @@ DROP TABLE IF EXISTS `cloud`.`account_vlan_map`;
 DROP TABLE IF EXISTS `cloud`.`cluster_details`;
 DROP TABLE IF EXISTS `cloud`.`guest_os_category`;
 DROP TABLE IF EXISTS `cloud`.`guest_os_hypervisor`;
-DROP TABLE IF EXISTS `cloud`.`host_master`;
 DROP TABLE IF EXISTS `cloud`.`op_dc_link_local_ip_address_alloc`;
 DROP TABLE IF EXISTS `cloud`.`op_host`;
 DROP TABLE IF EXISTS `cloud`.`op_nwgrp_work`;

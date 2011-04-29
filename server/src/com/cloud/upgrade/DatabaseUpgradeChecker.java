@@ -25,8 +25,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
@@ -63,7 +66,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224() });
         _upgradeMap.put("2.1.8", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans() });
         _upgradeMap.put("2.1.9", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans() });
-        _upgradeMap.put("2.2.1", new DbUpgrade[] { new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224()});
+        _upgradeMap.put("2.2.1", new DbUpgrade[] { new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224() });
         _upgradeMap.put("2.2.2", new DbUpgrade[] { new UpgradeSnapshot223to224(), new Upgrade222to224() });
         _upgradeMap.put("2.2.3", new DbUpgrade[] { new UpgradeSnapshot223to224(), new Upgrade222to224() });
     }
@@ -169,31 +172,55 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         if (!ClusterManagerImpl.arePeersRunning(trimmedCurrentVersion)) {
             s_logger.info("Cleaning upgrades because all management server are now at the same version");
-            for (DbUpgrade upgrade : upgrades) {
-                s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1]
-                        + " to " + upgrade.getUpgradedVersion());
-                VersionVO version = _dao.findByVersion(upgrade.getUpgradedVersion(), Step.Upgrade);
+            TreeMap<String, List<DbUpgrade>> upgradedVersions = new TreeMap<String, List<DbUpgrade>>();
 
-                if (version != null) {
-                    Transaction txn = Transaction.open("Cleanup");
-                    txn.start();
-                    try {
-                        File[] scripts = upgrade.getCleanupScripts();
-                        if (scripts != null) {
-                            for (File script : scripts) {
-                                runScript(script);
+            for (DbUpgrade upgrade : upgrades) {
+                String upgradedVerson = upgrade.getUpgradedVersion();
+                List<DbUpgrade> upgradeList = upgradedVersions.get(upgradedVerson);
+                if (upgradeList == null) {
+                    upgradeList = new ArrayList<DbUpgrade>();
+                }
+                upgradeList.add(upgrade);
+                upgradedVersions.put(upgradedVerson, upgradeList);
+            }
+
+            for (String upgradedVersion : upgradedVersions.keySet()) {
+                List<DbUpgrade> versionUpgrades = upgradedVersions.get(upgradedVersion);
+                VersionVO version = _dao.findByVersion(upgradedVersion, Step.Upgrade);
+                s_logger.debug("Upgrading to version " + upgradedVersion + "...");
+
+                Transaction txn = Transaction.open("Cleanup");
+                try {
+                    if (version != null) {
+                        for (DbUpgrade upgrade : versionUpgrades) {
+                            s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-"
+                                    + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
+
+                            txn.start();
+
+                            File[] scripts = upgrade.getCleanupScripts();
+                            if (scripts != null) {
+                                for (File script : scripts) {
+                                    runScript(script);
+                                    s_logger.debug("Cleanup script " + script.getAbsolutePath() + " is executed successfully");
+                                }
                             }
+                            txn.commit();
                         }
+
+                        txn.start();
                         version.setStep(Step.Complete);
+                        s_logger.debug("Upgrade completed for version " + upgradedVersion);
                         version.setUpdated(new Date());
                         _dao.update(version.getId(), version);
                         txn.commit();
-                    } finally {
-                        txn.close();
                     }
+                } finally {
+                    txn.close();
                 }
             }
         }
+
     }
 
     @Override

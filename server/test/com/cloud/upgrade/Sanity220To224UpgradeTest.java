@@ -49,7 +49,7 @@ public class Sanity220To224UpgradeTest extends TestCase {
 
     public void test217to22Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.2.1");
-        DbTestUtils.executeScript("/home/alena/Downloads/before/cloud_report_dump_220_April_26th_1521hrs.sql", false, true);
+        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.0/2.2.0.sample.sql", false, true);
 
         Connection conn;
         PreparedStatement pstmt;
