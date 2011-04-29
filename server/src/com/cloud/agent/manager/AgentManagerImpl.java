@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -566,6 +567,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         String url = cmd.getUrl();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
+        
+        url = URLDecoder.decode(url);
 
         URI uri = null;
 
