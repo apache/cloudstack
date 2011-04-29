@@ -73,6 +73,7 @@ import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -748,6 +749,20 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         // this is for standalone option
         if (clusterName == null && clusterId == null) {
             clusterName = "Standalone-" + url;
+        }
+
+        if ( clusterId != null ) {
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            if ( cluster == null ) {
+                throw new InvalidParameterValueException("can not fine cluster for clusterId " + clusterId);
+            } else {
+                if ( cluster.getGuid() == null ) {
+                    List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+                    if ( ! hosts.isEmpty() ) {
+                        throw new CloudRuntimeException("Guid is not updated for cluster " + clusterId + " need to wait hosts in this cluster up");
+                    }
+                }
+            }
         }
 
         if (cmd.getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.BareMetal.toString())) {
