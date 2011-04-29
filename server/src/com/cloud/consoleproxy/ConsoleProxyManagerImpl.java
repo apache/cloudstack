@@ -1328,7 +1328,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, null, null, true, null, useLocalStorage, true, null, true);
+        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, null, null, false, null, useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 

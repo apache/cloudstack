@@ -665,7 +665,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
 
         _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, null, null, true, null, _useLocalStorage, true, null, true);
+        _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, null, null, false, null, _useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 
