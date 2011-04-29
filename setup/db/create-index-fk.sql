@@ -112,3 +112,5 @@ ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm
 
 ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypair__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cloud`.`usage_event` ADD INDEX `i_usage_event__created`(`created`);

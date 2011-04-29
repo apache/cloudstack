@@ -155,4 +155,5 @@ ALTER TABLE `cloud`.`storage_pool` MODIFY COLUMN `uuid` varchar(255) UNIQUE;
 ALTER TABLE `cloud`.`user_statistics` DROP KEY `account_id`;
 ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE KEY `account_id` (`account_id`,`data_center_id`, `public_ip_address`, `device_id`,`device_type`); 
 
+ALTER TABLE `cloud`.`usage_event` ADD INDEX `i_usage_event__created`(`created`);
 
