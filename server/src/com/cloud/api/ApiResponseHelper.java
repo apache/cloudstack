@@ -796,7 +796,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             volResponse.setVirtualMachineName(vm.getHostName());
             UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
             volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
-
             volResponse.setVirtualMachineState(vm.getState().toString());
         }
 

@@ -376,7 +376,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
                         break;
                     }
                 }
-
                 boolean fenced = false;
                 if (alive == null) {
                     s_logger.debug("Fencing off VM that we don't know the state of");

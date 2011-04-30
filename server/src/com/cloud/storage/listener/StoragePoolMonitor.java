@@ -31,21 +31,18 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.StorageManager;
+import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
 
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
-	private final HostDao _hostDao;
-	private final StorageManager _storageManager;
+	private final StorageManagerImpl _storageManager;
 	private final StoragePoolDao _poolDao;
 	
-    public StoragePoolMonitor(StorageManager mgr, HostDao hostDao, StoragePoolDao poolDao) {
+    public StoragePoolMonitor(StorageManagerImpl mgr, StoragePoolDao poolDao) {
     	this._storageManager = mgr;
-    	this._hostDao = hostDao;
     	this._poolDao = poolDao;
     }
     
@@ -74,10 +71,13 @@ public class StoragePoolMonitor implements Listener {
 				scCmd.getHypervisorType() == HypervisorType.VMware) {
     			List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
     			for (StoragePoolVO pool : pools) {
+    			    if (!pool.getPoolType().isShared()) {
+    			        continue;
+    			    }
     				Long hostId = host.getId();
     				s_logger.debug("Host " + hostId + " connected, sending down storage pool information ...");
     				try {
-    				    _storageManager.addPoolToHost(hostId, pool);
+    				    _storageManager.connectHostToSharedPool(hostId, pool);
     					_storageManager.createCapacityEntry(pool);
     				} catch (Exception e) {
     				    throw new ConnectionException(true, "Unable to connect to pool " + pool, e);

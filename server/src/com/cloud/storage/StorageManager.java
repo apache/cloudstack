@@ -74,14 +74,6 @@ public interface StorageManager extends Manager {
 	public HostVO getSecondaryStorageHost(long zoneId);
 
 	/**
-	 * Add a pool to a host
-	 * @param hostId
-	 * @param pool
-	 * @throws StorageUnavailableException 
-	 */
-	void addPoolToHost(long hostId, StoragePoolVO pool) throws StorageUnavailableException;
-	
-	/**
 	 * Moves a volume from its current storage pool to a storage pool with enough capacity in the specified zone, pod, or cluster
 	 * @param volume
 	 * @param destPoolDcId

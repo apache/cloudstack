@@ -901,8 +901,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     private boolean reserveStandbyCapacity() {
         ConsoleProxyManagementState state = getManagementState();
-        if (state == null || state != ConsoleProxyManagementState.Auto)
+        if (state == null || state != ConsoleProxyManagementState.Auto) {
             return false;
+        }
 
         return true;
     }
@@ -1633,13 +1634,15 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         long dataCenterId = pool.longValue();
 
         if (!isZoneReady(_zoneHostInfoMap, dataCenterId)) {
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Zone " + dataCenterId + " is not ready to launch console proxy yet");
+            }
             return false;
         }
 
-        if (s_logger.isDebugEnabled())
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Zone " + dataCenterId + " is ready to launch console proxy");
+        }
         return true;
     }
 
@@ -1648,16 +1651,19 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         long dataCenterId = pool.longValue();
 
         ConsoleProxyLoadInfo proxyInfo = this._zoneProxyCountMap.get(dataCenterId);
-        if (proxyInfo == null)
+        if (proxyInfo == null) {
             return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+        }
 
         ConsoleProxyLoadInfo vmInfo = this._zoneVmCountMap.get(dataCenterId);
-        if (vmInfo == null)
+        if (vmInfo == null) {
             vmInfo = new ConsoleProxyLoadInfo();
+        }
 
         if (!checkCapacity(proxyInfo, vmInfo)) {
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Expand console proxy standby capacity for zone " + proxyInfo.getName());
+            }
 
             return new Pair<AfterScanAction, Object>(AfterScanAction.expand, null);
         }

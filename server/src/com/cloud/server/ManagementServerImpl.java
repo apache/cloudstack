@@ -4467,8 +4467,9 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) {
-        if (!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix()))
+        if (!_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix())) {
             throw new InvalidParameterValueException("Failed to pass certificate validation check");
+        }
 
         _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
 
