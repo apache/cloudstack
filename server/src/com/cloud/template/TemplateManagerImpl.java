@@ -166,7 +166,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     private TemplateAdapter getAdapter(HypervisorType type) {
     	TemplateAdapter adapter = null;
-    	if (type != HypervisorType.BareMetal) {
+    	if (type == HypervisorType.BareMetal) {
     		adapter = _adapters.get(TemplateAdapterType.BareMetal.getName());
     	} else {
     		// see HyervisorTemplateAdapter
