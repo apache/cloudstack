@@ -129,6 +129,7 @@ DELETE FROM `cloud`.`sequence` WHERE name='snapshots_seq';
 UPDATE `cloud`.`service_offering` s, `cloud`.`disk_offering` d SET s.ha_enabled=1 where s.id=d.id and d.system_use=1;
 
 UPDATE `cloud`.`data_center` SET is_security_group_enabled=1 WHERE networktype='Basic';
+UPDATE `cloud`.`networks` SET is_security_group_enabled=1 WHERE guru_name='DirectPodBasedNetworkGuru';
 
 UPDATE `cloud`.`host` SET resource='com.cloud.hypervisor.xen.resource.XenServer56FP1Resource' WHERE resource='com.cloud.hypervisor.xen.resource.XenServer56FP1PremiumResource';
 
