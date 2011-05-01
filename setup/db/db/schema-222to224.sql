@@ -161,3 +161,6 @@ UPDATE `cloud`.`vm_instance` SET ha_enabled=0 WHERE type='ConsoleProxy';
 
 UPDATE service_offering SET ha_enabled=0 WHERE id=(SELECT id FROM disk_offering WHERE name LIKE '%console proxy%' AND system_use=1);
 
+ALTER TABLE `cloud`.`storage_pool_details` DROP KEY `i_storage_pool_details__name__value`;
+ALTER TABLE `cloud`.`storage_pool_details` ADD INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128));
+

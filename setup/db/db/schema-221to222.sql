@@ -37,20 +37,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`version` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-ALTER TABLE `cloud`.`data_center` ADD CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`);
-ALTER TABLE `cloud`.`data_center` ADD  INDEX `i_data_center__domain_id`(`domain_id`);
-
-ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`);
-ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY (`related`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`);
-ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`);
-
-ALTER TABLE `cloud`.`networks` ADD INDEX `fk_networks__network_offering_id` (`network_offering_id`);
-ALTER TABLE `cloud`.`networks` ADD INDEX `fk_networks__data_center_id` (`data_center_id`);
-ALTER TABLE `cloud`.`networks` ADD INDEX `fk_networks__account_id` (`account_id`);
-ALTER TABLE `cloud`.`networks` ADD INDEX `fk_networks__domain_id` (`domain_id`);
-ALTER TABLE `cloud`.`networks` ADD INDEX `i_networks__removed` (`removed`);
-
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
-
-ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY `fk_vlan__data_center_id`(`data_center_id`) REFERENCES `data_center`(`id`);

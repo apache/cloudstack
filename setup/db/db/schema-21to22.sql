@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`version` (
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`mshost` DROP KEY `msid`;
 ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `msid` bigint unsigned NOT NULL UNiQUE;
 
 CREATE TABLE `cloud`.`op_it_work` (
@@ -430,6 +431,8 @@ ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `fk_security_ingress_
 ALTER TABLE `cloud`.`security_ingress_rule` ADD INDEX `i_security_ingress_rule_network_id`(`security_group_id`);
 ALTER TABLE `cloud`.`security_ingress_rule` ADD INDEX `i_security_ingress_rule_allowed_network`(`allowed_network_id`);
 
+ALTER TABLE `cloud`.`security_group_vm_map` DROP KEY `fk_network_group_vm_map___network_group_id`;
+ALTER TABLE `cloud`.`security_group_vm_map` DROP KEY `fk_network_group_vm_map___instance_id`;
 ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___security_group_id` FOREIGN KEY `fk_security_group_vm_map___security_group_id` (`security_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___instance_id` FOREIGN KEY `fk_security_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
 --n/w to sec grps ends --;
@@ -974,3 +977,23 @@ UPDATE vm_instance SET instance_name=concat("r-", concat(cast(id as CHAR), conca
 UPDATE vm_instance SET instance_name=concat("s-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='SecondaryStorageVm';
 UPDATE vm_instance SET instance_name=concat("v-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='ConsoleProxy';
 UPDATE vm_instance SET instance_name=concat("i-", concat(cast(account_id as CHAR), concat("-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))))) WHERE type='User';
+
+ALTER TABLE `cloud`.`data_center` MODIFY COLUMN `guest_network_cidr` varchar(18);
+
+ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__instance_id` FOREIGN KEY `fk_op_ha_work__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__host_id` FOREIGN KEY `fk_op_ha_work__host_id` (`host_id`) REFERENCES `host` (`id`);
+ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__mgmt_server_id` FOREIGN KEY `fk_op_ha_work__mgmt_server_id`(`mgmt_server_id`) REFERENCES `mshost`(`msid`);
+
+ALTER TABLE `cloud`.`secondary_storage_vm` ADD CONSTRAINT `fk_secondary_storage_vm__id` FOREIGN KEY `fk_secondary_storage_vm__id`(`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cloud`.`snapshots` MODIFY COLUMN `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'Primary Key';
+
+ALTER TABLE `cloud`.`storage_pool` DROP KEY `uuid`;
+
+ALTER TABLE `cloud`.`template_host_ref` DROP FOREIGN KEY `fk_template_host_ref__template_id`;
+ALTER TABLE `cloud`.`template_host_ref` ADD CONSTRAINT `fk_template_host_ref__template_id` FOREIGN KEY `fk_template_host_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`);
+
+ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY `fk_vm_instance__last_host_id` (`last_host_id`) REFERENCES `host`(`id`);
+

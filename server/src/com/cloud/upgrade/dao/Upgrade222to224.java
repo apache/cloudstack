@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -76,7 +77,7 @@ public class Upgrade222to224 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         try {
-        	checkForDuplicatePublicNetworks(conn);
+            checkForDuplicatePublicNetworks(conn);
             fixRelatedFkeyOnNetworksTable(conn);
             updateClusterIdInOpHostCapacity(conn);
             updateGuestOsType(conn);
@@ -87,10 +88,11 @@ public class Upgrade222to224 implements DbUpgrade {
             updateTotalCPUInOpHostCapacity(conn);
             upgradeGuestOs(conn);
             fixRecreatableVolumesProblem(conn);
+            updateFkeysAndIndexes(conn);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to perform data migration", e);
         }
-    }    
+    }
 
     @Override
     public File[] getCleanupScripts() {
@@ -101,38 +103,38 @@ public class Upgrade222to224 implements DbUpgrade {
 
         return new File[] { new File(file) };
     }
-    
+
     private void checkForDuplicatePublicNetworks(Connection conn) {
-    	try {
-    		// There should be one public network per zone    		
-    		PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`data_center`");
-    		ResultSet zones = pstmt.executeQuery();    		
-    		ArrayList<Long> zonesWithDuplicateNetworks = new ArrayList<Long>();
-    		String errorMsg = "Found zones with duplicate public networks during 222 to 224 upgrade. Zone IDs: ";
-    		long zoneId;
-    		
-    		while (zones.next()) {    			
-    			zoneId = zones.getLong(1);
-    			pstmt = conn.prepareStatement("SELECT count(*) FROM `cloud`.`networks` WHERE `networks`.`traffic_type`='Public' AND `data_center_id`=?");
-    			pstmt.setLong(1, zoneId);
-    			ResultSet rs = pstmt.executeQuery();
-    			
-    			if (rs.next()) {
-    				long numNetworks = rs.getLong(1);
-    				if (numNetworks > 1) {
-    					zonesWithDuplicateNetworks.add(zoneId);
-    				}    		
-    			}
-    		}
-    		
-    		if (zonesWithDuplicateNetworks.size() > 0) {
-    			s_logger.warn(errorMsg + zonesWithDuplicateNetworks);
-    		}
-    		
-    	} catch (SQLException e) {
-    		s_logger.warn(e);
-    		throw new CloudRuntimeException("Unable to check for duplicate public networks as part of 222 to 224 upgrade.");
-    	}
+        try {
+            // There should be one public network per zone
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`data_center`");
+            ResultSet zones = pstmt.executeQuery();
+            ArrayList<Long> zonesWithDuplicateNetworks = new ArrayList<Long>();
+            String errorMsg = "Found zones with duplicate public networks during 222 to 224 upgrade. Zone IDs: ";
+            long zoneId;
+
+            while (zones.next()) {
+                zoneId = zones.getLong(1);
+                pstmt = conn.prepareStatement("SELECT count(*) FROM `cloud`.`networks` WHERE `networks`.`traffic_type`='Public' AND `data_center_id`=?");
+                pstmt.setLong(1, zoneId);
+                ResultSet rs = pstmt.executeQuery();
+
+                if (rs.next()) {
+                    long numNetworks = rs.getLong(1);
+                    if (numNetworks > 1) {
+                        zonesWithDuplicateNetworks.add(zoneId);
+                    }
+                }
+            }
+
+            if (zonesWithDuplicateNetworks.size() > 0) {
+                s_logger.warn(errorMsg + zonesWithDuplicateNetworks);
+            }
+
+        } catch (SQLException e) {
+            s_logger.warn(e);
+            throw new CloudRuntimeException("Unable to check for duplicate public networks as part of 222 to 224 upgrade.");
+        }
     }
 
     private void updateGuestOsType(Connection conn) {
@@ -425,4 +427,77 @@ public class Upgrade222to224 implements DbUpgrade {
         }
     }
 
+    private void updateFkeysAndIndexes(Connection conn) throws SQLException {
+        List<String> keysToAdd = new ArrayList<String>();
+        List<String> indexesToAdd = new ArrayList<String>();
+        List<String> keysToDrop = new ArrayList<String>();
+        List<String> indexesToDrop = new ArrayList<String>();
+
+        // populate indexes/keys to drop
+        keysToDrop.add("ALTER TABLE `cloud`.`data_center` DROP FOREIGN KEY `fk_data_center__domain_id`");
+        indexesToDrop.add("ALTER TABLE `cloud`.`data_center` DROP KEY `i_data_center__domain_id`");
+
+        keysToDrop.add("ALTER TABLE `cloud`.`vlan` DROP FOREIGN KEY `fk_vlan__data_center_id`");
+        keysToDrop.add("ALTER TABLE `cloud`.`op_dc_ip_address_alloc` DROP FOREIGN KEY `fk_op_dc_ip_address_alloc__data_center_id`");
+
+        indexesToDrop.add("ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__network_offering_id`");
+        indexesToDrop.add("ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__data_center_id`");
+        indexesToDrop.add("ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__account_id`");
+        indexesToDrop.add("ALTER TABLE `cloud`.`networks` DROP FOREIGN KEY `fk_networks__domain_id`");
+        keysToDrop.add("ALTER TABLE `cloud`.`networks` DROP KEY `i_networks__removed`");
+
+        // populate indexes/keys to add
+        keysToAdd.add("ALTER TABLE `cloud`.`data_center` ADD CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`)");
+        indexesToAdd.add("ALTER TABLE `cloud`.`data_center` ADD  INDEX `i_data_center__domain_id`(`domain_id`)");
+
+        keysToAdd.add("ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY `fk_vlan__data_center_id`(`data_center_id`) REFERENCES `data_center`(`id`)");
+        keysToAdd
+                .add("ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
+
+        keysToAdd.add("ALTER TABLE `cloud`.`networks` ADD INDEX `i_networks__removed` (`removed`)");
+
+        indexesToAdd.add("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`)");
+        indexesToAdd.add("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`)");
+        indexesToAdd.add("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)");
+        indexesToAdd.add("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`)");
+
+        // drop keys
+        for (String key : keysToDrop) {
+            PreparedStatement pstmt = conn.prepareStatement(key);
+            try {
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                s_logger.debug("Ignore if the key is not there.");
+            }
+            pstmt.close();
+        }
+
+        // drop indexes
+        for (String index : indexesToDrop) {
+            PreparedStatement pstmt = conn.prepareStatement(index);
+            try {
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                s_logger.debug("Ignore if the index is not there.");
+            }
+            pstmt.close();
+        }
+
+        // update indexes
+        for (String index : indexesToAdd) {
+            PreparedStatement pstmt = conn.prepareStatement(index);
+            s_logger.debug("Query is " + pstmt);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
+
+        // update keys
+        for (String key : keysToAdd) {
+            PreparedStatement pstmt = conn.prepareStatement(key);
+            s_logger.debug("Query is " + pstmt);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
+
+    }
 }
