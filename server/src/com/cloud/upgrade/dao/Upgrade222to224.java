@@ -486,7 +486,6 @@ public class Upgrade222to224 implements DbUpgrade {
         // update indexes
         for (String index : indexesToAdd) {
             PreparedStatement pstmt = conn.prepareStatement(index);
-            s_logger.debug("Query is " + pstmt);
             pstmt.executeUpdate();
             pstmt.close();
         }
@@ -494,7 +493,6 @@ public class Upgrade222to224 implements DbUpgrade {
         // update keys
         for (String key : keysToAdd) {
             PreparedStatement pstmt = conn.prepareStatement(key);
-            s_logger.debug("Query is " + pstmt);
             pstmt.executeUpdate();
             pstmt.close();
         }

@@ -1626,7 +1626,7 @@ public class Upgrade218to22 implements DbUpgrade {
         } else if (isISOEvent(eventType)) {
             usageEvent = convertISOEvent(event);
         } else if (isSnapshotEvent(eventType)) {
-            usageEvent = convertSnapshotEvent(event);
+            usageEvent = convertSnapshotEvent(event, conn);
         } /*
            * else if (isSecurityGrpEvent(eventType)) { usageEvent = convertSecurityGrpEvent(event); } else if
            * (isLoadBalancerEvent(eventType)) { usageEvent = convertLoadBalancerEvent(event); }
@@ -1899,23 +1899,48 @@ public class Upgrade218to22 implements DbUpgrade {
         return usageEvent;
     }
 
-    private UsageEventVO convertSnapshotEvent(EventVO event) throws IOException {
+    private UsageEventVO convertSnapshotEvent(EventVO event, Connection conn) throws IOException, SQLException {
         Properties snapEventParams = new Properties();
         long snapId = -1L;
         long snapSize = -1L;
-        long zoneId = -1L;
+        Long zoneId = null;
         UsageEventVO usageEvent = null;
 
         snapEventParams.load(new StringReader(event.getParameters()));
         snapId = Long.parseLong(snapEventParams.getProperty("id"));
+        String snapshotName = snapEventParams.getProperty("ssName");
+
+        String size = snapEventParams.getProperty("size");
+        if (size != null) {
+            snapSize = Long.parseLong(size);
+        }
+
+        String zoneString = snapEventParams.getProperty("dcId");
+        if (zoneString != null) {
+            zoneId = Long.parseLong(zoneString);
+        }
+
+        Long accountId = event.getAccountId();
+
+        // Get snapshot info (there was a bug in 2.1.x - accountId is 0, and data_center info is not present in events table
+        if (accountId.longValue() == 0L || zoneId == null) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT zone_id, account_id from usage_event where resource_id=? and type like '%SNAPSHOT%'");
+            pstmt.setLong(1, snapId);
+            s_logger.debug("query is " + pstmt);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                zoneId = rs.getLong(1);
+                accountId = rs.getLong(2);
+            }
+
+            rs.close();
+            pstmt.close();
+        }
 
         if (EventTypes.EVENT_SNAPSHOT_CREATE.equals(event.getType())) {
-            snapSize = Long.parseLong(snapEventParams.getProperty("size"));
-            zoneId = Long.parseLong(snapEventParams.getProperty("dcId"));
-
-            usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, event.getAccountId(), zoneId, snapId, "", null, null, snapSize);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, accountId, zoneId, snapId, snapshotName, null, null, snapSize);
         } else if (EventTypes.EVENT_SNAPSHOT_DELETE.equals(event.getType())) {
-            usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, event.getAccountId(), zoneId, snapId, "", null, null, 0L);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, accountId, zoneId, snapId, snapshotName, null, null, 0L);
         }
         return usageEvent;
     }
@@ -2074,14 +2099,11 @@ public class Upgrade218to22 implements DbUpgrade {
         try {
 
             // removed indexes
-
             PreparedStatement pstmt = conn.prepareStatement("SHOW INDEX FROM security_group WHERE KEY_NAME = 'fk_network_group__account_id'");
-            s_logger.debug("Query is " + pstmt);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` DROP INDEX `fk_network_group__account_id`");
-                s_logger.debug("Query is " + pstmt);
                 pstmt.executeUpdate();
                 s_logger.debug("Unique key 'fk_network_group__account_id' is removed successfully");
             }
@@ -2090,12 +2112,10 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.close();
 
             pstmt = conn.prepareStatement("SHOW INDEX FROM security_group WHERE KEY_NAME = 'fk_network_group___account_id'");
-            s_logger.debug("Query is " + pstmt);
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` DROP INDEX `fk_network_group___account_id`");
-                s_logger.debug("Query is " + pstmt);
                 pstmt.executeUpdate();
                 s_logger.debug("Unique key 'fk_network_group___account_id' is removed successfully");
             }
