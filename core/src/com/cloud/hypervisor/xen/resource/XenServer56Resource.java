@@ -20,11 +20,11 @@ package com.cloud.hypervisor.xen.resource;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
@@ -43,7 +43,6 @@ import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -55,7 +54,6 @@ import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.IpConfigurationMode;
@@ -131,7 +129,7 @@ public class XenServer56Resource extends CitrixResourceBase {
                             host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
                             host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
                         } catch (XenAPIException e) {
-                            s_logger.debug("Catch Exception: " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid
+                            s_logger.debug("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid
                                     + " due to "  + e.toString());
                         }
                     }

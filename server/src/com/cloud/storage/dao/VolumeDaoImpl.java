@@ -139,7 +139,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", instanceId);
 		sc.setParameters("state", Volume.State.Ready);
-		sc.setParameters("vType", Volume.Type.ROOT.toString());		
+		sc.setParameters("vType", Volume.Type.ROOT);		
 		return listBy(sc);
 	}
 	
