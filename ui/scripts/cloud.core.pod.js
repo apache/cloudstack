@@ -972,7 +972,7 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 					array1.push("&networkdeviceparameterlist[0].pingcifspassword=" + $thisDialog.find("#PING_CIFS_password").val());				
 				
 				$.ajax({
-				    data: createURL("command=addNetworkdevice" + array1.join("")),
+				    data: createURL("command=addNetworkDevice" + array1.join("")),
 					dataType: "json",
 					success: function(json) {						    				    
 					    $thisDialog.find("#spinning_wheel").hide();				        
