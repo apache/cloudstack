@@ -210,13 +210,14 @@ function podJsonToNetworkDeviceTab() {
     
     var array1 = [];   
     array1.push("&networkdeviceparameterlist[0].zoneid=" + fromdb(jsonObj.zoneid));
-	array1.push("&networkdeviceparameterlist[0].podid=" + fromdb(jsonObj.id));	    
+	array1.push("&networkdeviceparameterlist[0].podid=" + fromdb(jsonObj.id));	   
+	
     $.ajax({
 		data: createURL("command=listNetworkDevice&networkdevicetype=ExternalDhcp"+array1.join("")),
 		dataType: "json",
 		async: false,
 		success: function(json) {	
-			var items = json.listnetworkdevice.NetworkDevice;			
+			var items = json.listnetworkdevice.networkdevice;			
 			var template = $("#network_device_tab_template");	
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {	
@@ -226,17 +227,13 @@ function podJsonToNetworkDeviceTab() {
 				}
 			}			
 		}	       
-	});	
-    
-    var array1 = [];   
-    array1.push("&networkdeviceparameterlist[0].zoneid=" + fromdb(jsonObj.zoneid));
-	array1.push("&networkdeviceparameterlist[0].podid=" + fromdb(jsonObj.id));	    
+	});	           
     $.ajax({
 		data: createURL("command=listNetworkDevice&networkdevicetype=PxeServer"+array1.join("")),
 		dataType: "json",
 		async: false,
 		success: function(json) {	
-			var items = json.listnetworkdevice.NetworkDevice;			
+			var items = json.listnetworkdevice.networkdevice;			
 			var template = $("#network_device_tab_template");	
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {	
