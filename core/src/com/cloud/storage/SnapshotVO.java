@@ -187,7 +187,7 @@ public class SnapshotVO implements Snapshot {
     
     @Override
     public boolean isRecursive(){
-        if ( snapshotType >= Type.DAILY.ordinal() && snapshotType <= Type.MONTHLY.ordinal() ) {
+        if ( snapshotType >= Type.HOURLY.ordinal() && snapshotType <= Type.MONTHLY.ordinal() ) {
             return true;
         }
         return false;
