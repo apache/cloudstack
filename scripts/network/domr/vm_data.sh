@@ -46,9 +46,8 @@ copy_vm_data_file() {
   local file=$4
   local dataFile=$5        
   
-  umask 022
-  chmod +r $dataFile
   scp -P $PORT -o StrictHostKeyChecking=no -i $cert $dataFile root@$domrIp:/var/www/html/$folder/$vmIp/$file >/dev/null
+  ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "chmod 644 /var/www/html/$folder/$vmIp/$file" > /dev/null
   return $?
 }
 
