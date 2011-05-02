@@ -958,8 +958,8 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 					isValid &= validateString("PING storage IP", $thisDialog.find("#PING_storage_IP"), $thisDialog.find("#PING_storage_IP_errormsg"));	
 				if($("#PING_dir_container").css("display") != "none")
 				    isValid &= validateString("PING directory", $thisDialog.find("#PING_dir"), $thisDialog.find("#PING_dir_errormsg"));	
-				if($("#TFT_dir_container").css("display") != "none")
-				    isValid &= validateString("TFT directory", $thisDialog.find("#TFT_dir"), $thisDialog.find("#TFT_dir_errormsg"));	
+				if($("#TFTP_dir_container").css("display") != "none")
+				    isValid &= validateString("TFT directory", $thisDialog.find("#TFTP_dir"), $thisDialog.find("#TFTP_dir_errormsg"));	
 				if($("#PING_CIFS_username_container").css("display") != "none")
 				    isValid &= validateString("PING CIFS username", $thisDialog.find("#PING_CIFS_username"), $thisDialog.find("#PING_CIFS_username_errormsg"), true);	
 				if($("#PING_CIFS_password_container").css("display") != "none")
@@ -984,8 +984,8 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 					array1.push("&networkdeviceparameterlist[0].pingstorageserverip=" + $thisDialog.find("#PING_storage_IP").val());					
 				if($("#PING_dir_container").css("display") != "none")
 					array1.push("&networkdeviceparameterlist[0].pingdir=" + $thisDialog.find("#PING_dir").val());				    
-				if($("#TFT_dir_container").css("display") != "none")
-					array1.push("&networkdeviceparameterlist[0].tftpdir=" + $thisDialog.find("#TFT_dir").val());				    
+				if($("#TFTP_dir_container").css("display") != "none")
+					array1.push("&networkdeviceparameterlist[0].tftpdir=" + $thisDialog.find("#TFTP_dir").val());				    
 				if($("#PING_CIFS_username_container").css("display") != "none")
 					array1.push("&networkdeviceparameterlist[0].pingcifsusername=" + $thisDialog.find("#PING_CIFS_username").val());				   
 				if($("#PING_CIFS_password_container").css("display") != "none")

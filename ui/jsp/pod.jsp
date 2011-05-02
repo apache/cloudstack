@@ -374,7 +374,7 @@ dictionary = {
     <div class="grid_rows odd" id="tftpdir_container" style="display:none">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <fmt:message key="label.TFT.dir"/>:</div>
+                <fmt:message key="label.TFTP.dir"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="tftpdir">
@@ -803,10 +803,10 @@ dictionary = {
 					<input class="text" type="text" id="PING_dir"/>
 					<div id="PING_dir_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>		
-				<li input_group="PxeServer" style="display:none;" id="TFT_dir_container">
-					<label><fmt:message key="label.TFT.dir"/>:</label>
-					<input class="text" type="text" id="TFT_dir"/>
-					<div id="TFT_dir_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				<li input_group="PxeServer" style="display:none;" id="TFTP_dir_container">
+					<label><fmt:message key="label.TFTP.dir"/>:</label>
+					<input class="text" type="text" id="TFTP_dir"/>
+					<div id="TFTP_dir_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>		
 				<li input_group="PxeServer" style="display:none;" id="PING_CIFS_username_container">
 					<label><fmt:message key="label.PING.CIFS.username"/>:</label>
