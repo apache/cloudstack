@@ -176,12 +176,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			}else{
 				if (host.getStatus() == Status.Up && host.getHostAllocationState() == Host.HostAllocationState.Enabled) {
 					//check zone/pod/cluster are enabled
-					if(isEnabledForAllocation(vm.getDataCenterId(), vm.getPodId(), host.getClusterId())){
+					if(isEnabledForAllocation(host.getDataCenterId(), host.getPodId(), host.getClusterId())){
 						if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor)){
 							s_logger.debug("The last host of this VM is UP and has enough capacity"); 
-							s_logger.debug("Now checking for suitable pools under zone: "+vm.getDataCenterId() +", pod: "+ vm.getPodId()+", cluster: "+ host.getClusterId());
+							s_logger.debug("Now checking for suitable pools under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
 							//search for storage under the zone, pod, cluster of the last host.
-							DataCenterDeployment lastPlan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());			
+							DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());			
 							Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
 							Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
 							List<Volume> readyAndReusedVolumes = result.second();							

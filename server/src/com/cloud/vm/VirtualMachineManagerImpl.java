@@ -132,6 +132,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
@@ -550,7 +551,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
-        Long hostIdSpecified = vm.getHostId();
         VirtualMachineGuru<T> vmGuru;
         if (vm.getHypervisorType() == HypervisorType.BareMetal) {
             vmGuru = getBareMetalVmGuru(vm);
@@ -572,14 +572,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
-        Long clusterSpecified = null;
-        if (hostIdSpecified != null) {
-            Host destinationHost = _hostDao.findById(hostIdSpecified);
-            clusterSpecified = destinationHost.getClusterId();
-        }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), clusterSpecified, hostIdSpecified, null);
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null, null);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
+        boolean canRetry = true;
         try {
             Journal journal = start.second().getJournal();
 
@@ -587,31 +583,24 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
 
             for (VolumeVO vol : vols) {
-                Volume.State state = vol.getState();
-                if (state == Volume.State.Ready) {
-                    // make sure if the templateId is unchanged. If it is changed, let planner
-                    // reassign pool for the volume even if it ready. 
-                    Long volTemplateId = vol.getTemplateId();
-                    if (volTemplateId != null && template != null) {
-                        if (volTemplateId.longValue() != template.getId()) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Root Volume " + vol + " of " + vm.getType().toString()
-                                        + " VM is READY, but volume's templateId does not match the VM's Template, let the planner reassign a new pool");
-                            }
-                            continue;
-                        }
+                // make sure if the templateId is unchanged. If it is changed, let planner
+                // reassign pool for the volume even if it ready. 
+                Long volTemplateId = vol.getTemplateId();
+                if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
                     }
+                    continue;
+                }
 
-                    StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
-                    if (!pool.isInMaintenance()) {
-                        long rootVolDcId = pool.getDataCenterId();
-                        Long rootVolPodId = pool.getPodId();
-                        Long rootVolClusterId = pool.getClusterId();
-                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Root Volume " + vol + " is ready, changing deployment plan to use this pool's datacenterId: " + rootVolDcId + " , podId: " + rootVolPodId
-                                    + " , and clusterId: " + rootVolClusterId);
-                        }
+                StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+                if (!pool.isInMaintenance()) {
+                    long rootVolDcId = pool.getDataCenterId();
+                    Long rootVolPodId = pool.getPodId();
+                    Long rootVolClusterId = pool.getClusterId();
+                    plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(vol + " is ready, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
                     }
                 }
             }
@@ -659,7 +648,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     cmds.addCommand(new StartCommand(vmTO));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
-                    vm.setPodId(dest.getPod().getId());
+//                    vm.setPodId(dest.getPod().getId());
 
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
@@ -677,19 +666,31 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             }
                             startedVm = vm;
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Creation complete for VM " + vm);
+                                s_logger.debug("Start completed for VM " + vm);
                             }
                             return startedVm;
+                        } else {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.info("The guru did not like the answers so stopping " + vm);
+                            }
+                            StopCommand cmd = new StopCommand(vm.getInstanceName());
+                            StopAnswer answer = (StopAnswer)_agentMgr.easySend(destHostId, cmd);
+                            if (answer == null || !answer.getResult()) {
+                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
+                                canRetry = false;
+                                _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
+                                throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
+                            }
                         }
-                    }
+                    } 
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
                 } catch (OperationTimedoutException e) {
                     s_logger.debug("Unable to send the start command to host " + dest.getHost());
                     if (e.isActive()) {
-                        // TODO: This one is different as we're not sure if the VM is actually started.
+                        _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
                     }
-                    avoids.addHost(destHostId);
-                    continue;
+                    canRetry = false;
+                    throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
                 } catch (ResourceUnavailableException e) {
                     s_logger.info("Unable to contact resource.", e);
                     if (!avoids.add(e)) {
@@ -700,7 +701,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             throw e;
                         }
                     }
-                    continue;
                 } catch (InsufficientCapacityException e) {
                     s_logger.info("Insufficient capacity ", e);
                     if (!avoids.add(e)) {
@@ -710,19 +710,18 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             s_logger.warn("unexpected InsufficientCapacityException : " + e.getScope().getName(), e);
                         }
                     }
-                    continue;
-                } catch (RuntimeException e) {
-                    s_logger.warn("Failed to start instance " + vm, e);
-                    throw e;
+                } catch (Exception e) {
+                    s_logger.error("Failed to start instance " + vm, e);
+                    throw new AgentUnavailableException("Unable to start instance", destHostId, e); 
                 } finally {
-                    if (startedVm == null) {
+                    if (startedVm == null && canRetry) {
                         _workDao.updateStep(work, Step.Release);
                         cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false, caller, account);
                     }
                 }
             }
         } finally {
-            if (startedVm == null) {
+            if (startedVm == null && canRetry) {
             	// decrement only for user VM's and newly created VM
                 if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
                     _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
