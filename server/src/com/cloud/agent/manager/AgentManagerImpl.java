@@ -567,7 +567,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         String username = cmd.getUsername();
         String password = cmd.getPassword();
 
-        url = URLDecoder.decode(url);
+        if(url != null)
+        	url = URLDecoder.decode(url);
 
         URI uri = null;
 
