@@ -74,7 +74,6 @@ import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -541,7 +540,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags, String allocationState)
-            throws ConnectionException {
+    throws ConnectionException {
         if (startup == null) {
             return null;
         }
@@ -567,7 +566,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         String url = cmd.getUrl();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
-        
+
         url = URLDecoder.decode(url);
 
         URI uri = null;
@@ -807,7 +806,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     @Override
     public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags)
-            throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, null, null);
     }
 
@@ -1162,7 +1161,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                         }
                         if (!success) {
                             String msg = "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid=" + host.getGuid()
-                                    + "in this host " + host.getPrivateIpAddress();
+                            + "in this host " + host.getPrivateIpAddress();
                             s_logger.warn(msg);
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
                         }
@@ -2271,7 +2270,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     public HostVO createHost(final StartupCommand startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags, String allocationState)
-            throws IllegalArgumentException {
+    throws IllegalArgumentException {
         Host.Type type = null;
 
         if (startup instanceof StartupStorageCommand) {
@@ -2394,7 +2393,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     public HostVO createHost(final StartupCommand[] startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags, String allocationState)
-            throws IllegalArgumentException {
+    throws IllegalArgumentException {
         StartupCommand firstCmd = startup[0];
         HostVO result = createHost(firstCmd, resource, details, directFirst, hostTags, allocationState);
         if (result == null) {
@@ -2735,7 +2734,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             capacityCPU.addAnd("dataCenterId", SearchCriteria.Op.EQ, server.getDataCenterId());
             capacityCPU.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
             capacityCPU.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_CPU);
-            List<CapacityVO> capacityVOCpus = _capacityDao.search(capacitySC, null);
+            List<CapacityVO> capacityVOCpus = _capacityDao.search(capacityCPU, null);
 
             if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
                 CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
