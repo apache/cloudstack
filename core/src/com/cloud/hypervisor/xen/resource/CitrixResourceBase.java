@@ -245,8 +245,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _instance; //instance name (default is usually "VM")
 
     protected IAgentControl _agentControl;
-    
-    int _userVMCap = 0;
+
     final int _maxWeight = 256;
 
     protected final XenServerHost _host = new XenServerHost();
@@ -791,15 +790,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         Integer speed = vmSpec.getSpeed();
         if (speed != null) {
-            int utilization = _userVMCap; //cpu_cap
-            //Configuration cpu.uservm.cap is not available in default installation. Using this parameter is not encouraged
-            
+         
             int cpuWeight = _maxWeight; //cpu_weight
-            
+            int utilization = 0; // max CPU cap, default is unlimited
+
             // weight based allocation
             cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
             if (cpuWeight > _maxWeight) {
                 cpuWeight = _maxWeight;
+            }
+
+            if (vmSpec.getLimitCpuUse()) {
+            	utilization = (int)((speed*0.99) / _host.speed * 100);
             }
             
             vcpuParams.put("weight", Integer.toString(cpuWeight));
