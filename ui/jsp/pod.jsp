@@ -156,8 +156,7 @@ dictionary = {
                    <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
-        <div id="tab_container">
-            Network Device....
+        <div id="tab_container">           
         </div>
     </div> 
     <!-- Network Device tab (end)-->
@@ -292,6 +291,68 @@ dictionary = {
     </div>   
 </div>
 <!--  Network tab template (end) -->
+
+
+<!--  Network Device tab template (begin) -->
+<div class="grid_container" id="network_device_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="grid_header_title">
+        </div>
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                <fmt:message key="label.waiting"/> &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.id"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.url"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="url">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.type"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="type">
+            </div>
+        </div>
+    </div>
+   
+</div>
+<!--  Network Device tab template (end) -->
 
 
 <!-- ***** dialogs (begin) ***** -->

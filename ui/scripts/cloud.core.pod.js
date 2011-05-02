@@ -251,22 +251,30 @@ function podNetworkJsonToTemplate(jsonObj, template) {
    
     var $actionLink = template.find("#action_link");	
     bindActionLink($actionLink);
-    /*	
-	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {
-        $(this).find("#action_menu").hide();    
-        return false;
-    });		
-	*/
-	
+   	
 	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
     
     buildActionLinkForSubgridItem("Delete IP Range", podNetworkActionMap, $actionMenu, template);	
 }
+
+function podNetworkDeviceJsonToTemplate(jsonObj, template) {
+    template.data("jsonObj", jsonObj);     
+    template.attr("id", "networkdevice_"+fromdb(jsonObj.id)).data("networkdeviceId", fromdb(jsonObj.id));    
+    template.find("#grid_header_title").text(fromdb(jsonObj.url));			   
+    template.find("#id").text(fromdb(jsonObj.id));        
+    template.find("#url").text(fromdb(jsonObj.url));
+    template.find("#type").text(fromdb(jsonObj.type));
+       
+    var $actionLink = template.find("#action_link");	
+    bindActionLink($actionLink);
+   	
+	var $actionMenu = $actionLink.find("#action_menu");
+    $actionMenu.find("#action_list").empty();	
+    
+    //buildActionLinkForSubgridItem("Delete Network Device", podNetworkDeviceActionMap, $actionMenu, template);	
+}
+
 
 var podNetworkActionMap = {  
     "Delete IP Range": {              
@@ -976,16 +984,13 @@ function bindAddNetworkDeviceButton($leftmenuItem1) {
 					dataType: "json",
 					success: function(json) {						    				    
 					    $thisDialog.find("#spinning_wheel").hide();				        
-				        $thisDialog.dialog("close");
-					    
-					    /*
+				        $thisDialog.dialog("close");					    
 					    var item = json.addnetworkdeviceresponse.networkdevice;
 					    var $subgridItem = $("#network_device_tab_template").clone(true);
 					    podNetworkDeviceJsonToTemplate(item, $subgridItem); 	
 					    $subgridItem.find("#after_action_info").text(g_dictionary["label.adding.succeeded"]);
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  				                        
-	                    $("#tab_content_network_device").find("#tab_container").append($subgridItem.fadeIn("slow"));	
-	                    */
+	                    $("#tab_content_networkdevice").find("#tab_container").append($subgridItem.fadeIn("slow"));		                    
 					},
 				    error: function(XMLHttpResponse) {						        	        				        
 				        handleError(XMLHttpResponse, function() {					            		           
