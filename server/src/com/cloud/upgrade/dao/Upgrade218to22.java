@@ -1759,11 +1759,9 @@ public class Upgrade218to22 implements DbUpgrade {
     private UsageEventVO convertIPEvent(EventVO event, Connection conn) throws IOException, SQLException {
 
         Properties ipEventParams = new Properties();
-        String ipAddress = null;
-        boolean isSourceNat = false;
         UsageEventVO usageEvent = null;
         ipEventParams.load(new StringReader(event.getParameters()));
-        ipAddress = ipEventParams.getProperty("address");
+        String ipAddress = ipEventParams.getProperty("address");
         if (ipAddress == null) {
             ipAddress = ipEventParams.getProperty("guestIPaddress");
             if (ipAddress == null) {
@@ -1785,20 +1783,14 @@ public class Upgrade218to22 implements DbUpgrade {
         rs.close();
         pstmt.close();
 
-        isSourceNat = Boolean.parseBoolean(ipEventParams.getProperty("sourceNat"));
-        if (isSourceNat) {
-            return null; // skip source nat IP addresses as we don't charge for them
-        }
+        boolean isSourceNat = Boolean.parseBoolean(ipEventParams.getProperty("sourceNat"));
+        long isSourceNatLong = isSourceNat ? 1 : 0;
 
         if (EventTypes.EVENT_NET_IP_ASSIGN.equals(event.getType())) {
             zoneId = Long.parseLong(ipEventParams.getProperty("dcId"));
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, event.getAccountId(), zoneId, ipId, ipAddress, 0L);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, event.getAccountId(), zoneId, ipId, ipAddress, isSourceNatLong);
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
-            if (!isSourceNat) {
-                // at this point it's not a sourceNat IP, so find the usage record with this IP and a null released date, update
-                // the released date
-                usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, event.getAccountId(), zoneId, ipId, ipAddress, 0L);
-            }
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, event.getAccountId(), zoneId, ipId, ipAddress, isSourceNatLong);
         }
         return usageEvent;
     }
