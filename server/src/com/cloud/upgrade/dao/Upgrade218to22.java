@@ -1620,7 +1620,7 @@ public class Upgrade218to22 implements DbUpgrade {
         } else if (isIPEvent(eventType)) {
             usageEvent = convertIPEvent(event, conn);
         } else if (isVolumeEvent(eventType)) {
-            usageEvent = convertVolumeEvent(event);
+            usageEvent = convertVolumeEvent(event, conn);
         } else if (isTemplateEvent(eventType)) {
             usageEvent = convertTemplateEvent(event);
         } else if (isISOEvent(eventType)) {
@@ -1782,6 +1782,8 @@ public class Upgrade218to22 implements DbUpgrade {
             ipId = rs.getLong(1);
             zoneId = rs.getLong(2);
         }
+        rs.close();
+        pstmt.close();
 
         isSourceNat = Boolean.parseBoolean(ipEventParams.getProperty("sourceNat"));
         if (isSourceNat) {
@@ -1801,7 +1803,7 @@ public class Upgrade218to22 implements DbUpgrade {
         return usageEvent;
     }
 
-    private UsageEventVO convertVolumeEvent(EventVO event) throws IOException {
+    private UsageEventVO convertVolumeEvent(EventVO event, Connection conn) throws IOException, SQLException {
 
         Properties volEventParams = new Properties();
         long volId = -1L;
@@ -1826,10 +1828,22 @@ public class Upgrade218to22 implements DbUpgrade {
             }
         }
 
+        // Get volume name information
+        String volumeName = "";
+        PreparedStatement pstmt = conn.prepareStatement("SELECT name, data_center_id from volumes where id=?");
+        pstmt.setLong(1, volId);
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            volumeName = rs.getString(1);
+            zoneId = rs.getLong(2);
+        }
+        rs.close();
+        pstmt.close();
+
         if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
-            usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, event.getAccountId(), zoneId, volId, "", doId, templateId, size);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, event.getAccountId(), zoneId, volId, volumeName, doId, templateId, size);
         } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
-            usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, event.getAccountId(), 0, volId, "");
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, event.getAccountId(), zoneId, volId, volumeName);
 
         }
         return usageEvent;
