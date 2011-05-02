@@ -1751,7 +1751,7 @@ public class Upgrade218to22 implements DbUpgrade {
 
             usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, event.getAccountId(), zoneId, vmId, vmEventParams.getProperty("vmName"), soId, templateId, "");
         } else if (EventTypes.EVENT_VM_DESTROY.equals(event.getType())) {
-
+            usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, event.getAccountId(), zoneId, vmId, vmEventParams.getProperty("vmName"));
         }
         return usageEvent;
     }
