@@ -201,33 +201,61 @@ function podJsonToNetworkDeviceTab() {
         podClearNetworkDeviceTab();
 	    return;	
 	}
-     
-    /*
-    var $thisTab = $("#right_panel_content #tab_content_network_device");
+         
+    var $thisTab = $("#right_panel_content #tab_content_networkdevice");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   		 
-        
+     
+    var $container = $thisTab.find("#tab_container").empty();
+    
+    var array1 = [];   
+    array1.push("&networkdeviceparameterlist[0].zoneid=" + fromdb(jsonObj.zoneid));
+	array1.push("&networkdeviceparameterlist[0].podid=" + fromdb(jsonObj.id));	    
     $.ajax({
-		data: createURL("command=listVlanIpRanges&zoneid="+fromdb(jsonObj.zoneid)+"&podid="+fromdb(jsonObj.id)),
+		data: createURL("command=listNetworkDevice&networkdevicetype=ExternalDhcp"+array1.join("")),
 		dataType: "json",
-		success: function(json) {			       
-			var items = json.listvlaniprangesresponse.vlaniprange;
-			var $container = $thisTab.find("#tab_container").empty();
-			var template = $("#network_tab_template");	
+		async: false,
+		success: function(json) {	
+			var items = json.listnetworkdevice.NetworkDevice;			
+			var template = $("#network_device_tab_template");	
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {	
 				    var newTemplate = template.clone(true);	               
-	                podNetworkJsonToTemplate(items[i], newTemplate); 
+	                podNetworkDeviceJsonToTemplate(items[i], newTemplate); 
 	                $container.append(newTemplate.show());	
 				}
-			}
-			$thisTab.find("#tab_spinning_wheel").hide();    
-            $thisTab.find("#tab_container").show();    	
-		}			
+			}			
+		}	       
 	});	
-	*/		
+    
+    var array1 = [];   
+    array1.push("&networkdeviceparameterlist[0].zoneid=" + fromdb(jsonObj.zoneid));
+	array1.push("&networkdeviceparameterlist[0].podid=" + fromdb(jsonObj.id));	    
+    $.ajax({
+		data: createURL("command=listNetworkDevice&networkdevicetype=PxeServer"+array1.join("")),
+		dataType: "json",
+		async: false,
+		success: function(json) {	
+			var items = json.listnetworkdevice.NetworkDevice;			
+			var template = $("#network_device_tab_template");	
+			if (items != null && items.length > 0) {					    
+				for (var i = 0; i < items.length; i++) {	
+				    var newTemplate = template.clone(true);	               
+	                podNetworkDeviceJsonToTemplate(items[i], newTemplate); 
+	                $container.append(newTemplate.show());	
+				}
+			}			
+		}	       
+	});	
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();    	
 } 
 
+function listNetworkDeviceByType() {
+	
+	
+}
 
 function podClearNetworkTab() {    
     var $thisTab = $("#right_panel_content #tab_content_ipallocation");
