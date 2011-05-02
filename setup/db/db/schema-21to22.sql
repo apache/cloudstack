@@ -973,10 +973,10 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_id` bigint unsigned  COMMENT 'i
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_type` varchar(32) COMMENT 'source from which the volume is created -- snapshot, diskoffering, template, blank';
 
 ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE KEY `account_id` (`account_id`,`data_center_id`);
-UPDATE vm_instance SET instance_name=concat("r-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='DomainRouter';
-UPDATE vm_instance SET instance_name=concat("s-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='SecondaryStorageVm';
-UPDATE vm_instance SET instance_name=concat("v-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='ConsoleProxy';
-UPDATE vm_instance SET instance_name=concat("i-", concat(cast(account_id as CHAR), concat("-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))))) WHERE type='User';
+#UPDATE vm_instance SET instance_name=concat("r-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='DomainRouter';
+#UPDATE vm_instance SET instance_name=concat("s-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='SecondaryStorageVm';
+#UPDATE vm_instance SET instance_name=concat("v-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))) WHERE type='ConsoleProxy';
+#UPDATE vm_instance SET instance_name=concat("i-", concat(cast(account_id as CHAR), concat("-", concat(cast(id as CHAR), concat("-", (SELECT value FROM configuration WHERE name='instance.name')))))) WHERE type='User';
 
 ALTER TABLE `cloud`.`data_center` MODIFY COLUMN `guest_network_cidr` varchar(18);
 
