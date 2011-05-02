@@ -1618,7 +1618,7 @@ public class Upgrade218to22 implements DbUpgrade {
         if (isVMEvent(eventType)) {
             usageEvent = convertVMEvent(event);
         } else if (isIPEvent(eventType)) {
-            usageEvent = convertIPEvent(event);
+            usageEvent = convertIPEvent(event, conn);
         } else if (isVolumeEvent(eventType)) {
             usageEvent = convertVolumeEvent(event);
         } else if (isTemplateEvent(eventType)) {
@@ -1756,7 +1756,7 @@ public class Upgrade218to22 implements DbUpgrade {
         return usageEvent;
     }
 
-    private UsageEventVO convertIPEvent(EventVO event) throws IOException {
+    private UsageEventVO convertIPEvent(EventVO event, Connection conn) throws IOException, SQLException {
 
         Properties ipEventParams = new Properties();
         String ipAddress = null;
@@ -1771,19 +1771,31 @@ public class Upgrade218to22 implements DbUpgrade {
                 return null;
             }
         }
+
+        // Get ip address information
+        Long ipId = 0L;
+        Long zoneId = 0L;
+        PreparedStatement pstmt = conn.prepareStatement("SELECT id, data_center_id from user_ip_address where public_ip_address=?");
+        pstmt.setString(1, ipAddress);
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            ipId = rs.getLong(1);
+            zoneId = rs.getLong(2);
+        }
+
         isSourceNat = Boolean.parseBoolean(ipEventParams.getProperty("sourceNat"));
         if (isSourceNat) {
             return null; // skip source nat IP addresses as we don't charge for them
         }
 
         if (EventTypes.EVENT_NET_IP_ASSIGN.equals(event.getType())) {
-            long zoneId = Long.parseLong(ipEventParams.getProperty("dcId"));
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, event.getAccountId(), zoneId, 0L, ipAddress, 0L);
+            zoneId = Long.parseLong(ipEventParams.getProperty("dcId"));
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, event.getAccountId(), zoneId, ipId, ipAddress, 0L);
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
             if (!isSourceNat) {
                 // at this point it's not a sourceNat IP, so find the usage record with this IP and a null released date, update
                 // the released date
-                usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, event.getAccountId(), 0L, 0L, ipAddress, 0L);
+                usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, event.getAccountId(), zoneId, ipId, ipAddress, 0L);
             }
         }
         return usageEvent;
