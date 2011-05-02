@@ -350,6 +350,37 @@ dictionary = {
             </div>
         </div>
     </div>
+       
+    <div class="grid_rows odd" id="pingstorageserverip_container" style="display:none">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.PING.storage.IP"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="pingstorageserverip">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even" id="pingdir_container" style="display:none">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.PING.dir"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="pingdir">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd" id="tftpdir_container" style="display:none">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.TFT.dir"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="tftpdir">
+            </div>
+        </div>
+    </div>
    
 </div>
 <!--  Network Device tab template (end) -->

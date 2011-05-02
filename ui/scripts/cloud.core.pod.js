@@ -264,8 +264,20 @@ function podNetworkDeviceJsonToTemplate(jsonObj, template) {
     template.find("#grid_header_title").text(fromdb(jsonObj.url));			   
     template.find("#id").text(fromdb(jsonObj.id));        
     template.find("#url").text(fromdb(jsonObj.url));
-    template.find("#type").text(fromdb(jsonObj.type));
-       
+    template.find("#type").text(fromdb(jsonObj.type));     
+    if(jsonObj.pingstorageserverip != null) {
+        template.find("#pingstorageserverip").text(fromdb(jsonObj.pingstorageserverip));  
+        template.find("#pingstorageserverip_container").show();
+    }
+    if(jsonObj.pingdir != null) {
+        template.find("#pingdir").text(fromdb(jsonObj.pingdir));  
+        template.find("#pingdir_container").show();
+    }
+    if(jsonObj.tftpdir != null) {
+        template.find("#tftpdir").text(fromdb(jsonObj.tftpdir));  
+        template.find("#tftpdir_container").show();
+    }
+    
     var $actionLink = template.find("#action_link");	
     bindActionLink($actionLink);
    	
