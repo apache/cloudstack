@@ -15,8 +15,6 @@ ALTER TABLE `cloud`.`user_vm` DROP COLUMN guest_mac_address;
 ALTER TABLE `cloud`.`user_vm` DROP COLUMN guest_netmask;
 
 ALTER TABLE `cloud`.`secondary_storage_vm` DROP KEY `public_ip_address_2`;
+ALTER TABLE `cloud`.`console_proxy` DROP KEY `public_ip_address_2`;
 
 ALTER TABLE `cloud`.`snapshot_policy` DROP KEY `volume_id`;
-ALTER TABLE `cloud`.`snapshot_policy` DROP KEY `i_snapshot_policy__volume_id`;
-
-
