@@ -307,10 +307,6 @@ public class Link {
             headBuf.putInt(dataRemaining);
             headBuf.flip();
 
-            if (headRemaining + dataRemaining > 65535) {
-                throw new IOException("Fail to send a too big packet! Size: " + (headRemaining + dataRemaining));
-            }
-
             while (headRemaining > 0) {
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("Writing Header " + headRemaining);
