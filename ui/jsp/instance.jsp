@@ -71,10 +71,12 @@ dictionary = {
             <fmt:message key="label.details" /></div>
 		<div class="content_tabs off" id="tab_nic">
             <fmt:message key="label.nics"/></div>
+        <div class="content_tabs off" id="tab_securitygroup" style="display:none;">
+            <fmt:message key="label.security.group"/></div>
         <div class="content_tabs off" id="tab_volume">
             <fmt:message key="label.volumes"/></div>
         <div class="content_tabs off" id="tab_statistics">
-            <fmt:message key="label.statistics"/></div>		
+            <fmt:message key="label.statistics"/></div>	       
     </div>
     <!--Details tab (start)-->
     <div  id="tab_content_details">
@@ -287,6 +289,20 @@ dictionary = {
         </div>
     </div>
     <!--Nic tab (end)-->
+        
+    <!--Security Group tab (start)-->
+    <div style="display: none;" id="tab_content_securitygroup">    
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
+              </div>               
+        </div> 
+        <div id="tab_container">        
+        </div>
+    </div>
+    <!--Security Group tab (end)-->       
+    
     <!--Volume tab (start)-->
     <div style="display: none;" id="tab_content_volume">    
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
@@ -392,7 +408,8 @@ dictionary = {
             </div>
         </div>   
     </div>
-    <!--Statistics tab (end)-->    
+    <!--Statistics tab (end)-->       
+    
 </div>
 <!-- VM detail panel (end) -->
 
@@ -1041,6 +1058,35 @@ dictionary = {
     </div>
 </div>
 <!--  nic tab template (end) -->
+
+<!--  Security Group tab template (begin) -->
+<div class="grid_container" id="securitygroup_tab_template" style="display: none">	
+    <div class="grid_header">
+        <div class="grid_header_title" id="title">
+        </div>		
+    </div>        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.name"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>  
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.description"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="description">
+            </div>
+        </div>
+    </div>     
+</div>
+<!--  Security Group tab template (end) -->
 
 <!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">	
