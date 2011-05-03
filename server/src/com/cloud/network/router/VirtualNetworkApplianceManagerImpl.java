@@ -687,7 +687,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             } 
             
             
-            final List<DomainRouterVO> routers = _routerDao.listUpByHostId(null);
+            final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
             s_logger.debug("Found " + routers.size() + " running routers. ");
 
             for (DomainRouterVO router : routers) {
