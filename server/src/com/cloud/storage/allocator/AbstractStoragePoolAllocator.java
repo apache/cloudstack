@@ -75,7 +75,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject ConfigurationDao _configDao;
     @Inject ClusterDao _clusterDao;
-    int _storageOverprovisioningFactor;
+    float _storageOverprovisioningFactor;
     long _extraBytesPerVolume = 0;
     Random _rand;
     boolean _dontMatter;
@@ -88,7 +88,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Map<String, String> configs = _configDao.getConfiguration(null, params);
         
         String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
-        _storageOverprovisioningFactor = NumbersUtil.parseInt(globalStorageOverprovisioningFactor, 2);
+        _storageOverprovisioningFactor = NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f);
         
         _extraBytesPerVolume = 0;
         
@@ -244,7 +244,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		long askingSize = dskCh.getSize();
 		
-		int storageOverprovisioningFactor = 1;
+		float storageOverprovisioningFactor = 1.0f;
 		if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
 			storageOverprovisioningFactor = _storageOverprovisioningFactor;
 		}
