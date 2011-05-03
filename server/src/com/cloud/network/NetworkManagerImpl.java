@@ -1795,7 +1795,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
-        if (!isSystem) {
+        if (isSystem != null && !isSystem) {
             if (zoneId != null) {
                 DataCenterVO dc = _dcDao.findById(zoneId);
                 if (dc != null && !dc.isSecurityGroupEnabled()) {
