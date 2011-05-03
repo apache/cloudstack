@@ -38,7 +38,6 @@ import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
@@ -229,10 +228,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 Thread.sleep(_pauseInterval * 1000);
             } catch (InterruptedException e) {
             }
-            
+
             s_logger.debug("Retrying...");
         }
-        
+
         s_logger.warn("After " + _totalRetries + " retries, the command " + cmd.getClass().getName() + " did not succeed.");
 
         return null;
@@ -327,7 +326,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override
     @DB
-    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId) {
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "creating snapshot", async = true)
+    public SnapshotVO createSnapshot(Long volumeId, Long policyId, Long snapshotId) {
         VolumeVO v = _volsDao.findById(volumeId);
         Account owner = _accountMgr.getAccount(v.getAccountId());
         SnapshotVO snapshot = null;
@@ -417,15 +417,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
 
         return snapshot;
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "creating snapshot", async = true)
-    public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) {
-        Long volumeId = cmd.getVolumeId();
-        Long policyId = cmd.getPolicyId();
-        Long snapshotId = cmd.getEntityId();
-        return createSnapshotImpl(volumeId, policyId, snapshotId);
     }
 
     private SnapshotVO updateDBOnCreate(Long id, String snapshotPath, long preSnapshotId) {
@@ -1169,20 +1160,22 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override
-    public SnapshotVO allocSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException {
-        Long volumeId = cmd.getVolumeId();
-        Long policyId = cmd.getPolicyId();
+    public SnapshotVO allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
+        Account caller = UserContext.current().getCaller();
         VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
-            throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
         if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getState() + ". Cannot take snapshot.");
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
         if (storagePoolVO == null) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
+
+        // Verify permissions
+        _accountMgr.checkAccess(caller, volume);
 
         Account owner = _accountMgr.getAccount(volume.getAccountId());
         if (_accountMgr.resourceLimitExceeded(owner, ResourceType.snapshot)) {

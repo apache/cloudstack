@@ -34,30 +34,30 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates an instant snapshot of a volume.", responseObject=SnapshotResponse.class)
+@Implementation(description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
-	public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
-	private static final String s_name = "createsnapshotresponse";
+    public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
+    private static final String s_name = "createsnapshotresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="The account of the snapshot. The account parameter must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account of the snapshot. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="The ID of the disk volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, required = true, description = "The ID of the disk volume")
     private Long volumeId;
 
-    @Parameter(name=ApiConstants.POLICY_ID, type=CommandType.LONG, description="policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
+    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.LONG, description = "policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
-    
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public String getAccountName() {
         return accountName;
@@ -70,26 +70,26 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     public Long getVolumeId() {
         return volumeId;
     }
-    
+
     public Long getPolicyId() {
-    	if( policyId != null) {
-    		return policyId;
-    	} else {
-    		return Snapshot.MANUAL_POLICY_ID;
-    	}
+        if (policyId != null) {
+            return policyId;
+        } else {
+            return Snapshot.MANUAL_POLICY_ID;
+        }
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
-    	return "snapshot";
+        return "snapshot";
     }
 
     @Override
@@ -110,27 +110,27 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return  "creating snapshot for volume: " + getVolumeId();
+        return "creating snapshot for volume: " + getVolumeId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Snapshot;
+        return AsyncJob.Type.Snapshot;
     }
-    
+
     @Override
-    public void create() throws ResourceAllocationException{
-        Snapshot snapshot = _snapshotService.allocSnapshot(this);
+    public void create() throws ResourceAllocationException {
+        Snapshot snapshot = _snapshotService.allocSnapshot(getVolumeId(), getPolicyId());
         if (snapshot != null) {
             this.setEntityId(snapshot.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot");
         }
     }
-    
+
     @Override
-    public void execute() { 	
-        Snapshot snapshot = _snapshotService.createSnapshot(this);
+    public void execute() {
+        Snapshot snapshot = _snapshotService.createSnapshot(getVolumeId(), getPolicyId(), getEntityId());
         if (snapshot != null) {
             SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
             response.setResponseName(getCommandName());

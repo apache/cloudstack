@@ -19,7 +19,6 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
@@ -31,14 +30,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 
 public interface SnapshotService {
-    /**
-     * Create a snapshot of a volume
-     * 
-     * @param cmd
-     *            the API command wrapping the parameters for creating the snapshot (mainly volumeId)
-     * @return the Snapshot that was created
-     */
-    Snapshot createSnapshot(CreateSnapshotCmd cmd);
 
     /**
      * List all snapshots of a disk volume. Optionally lists snapshots created by specified interval
@@ -87,6 +78,14 @@ public interface SnapshotService {
 
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
 
-    Snapshot allocSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException;
+    Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException;
 
+    /**
+     * Create a snapshot of a volume
+     * 
+     * @param cmd
+     *            the API command wrapping the parameters for creating the snapshot (mainly volumeId)
+     * @return the Snapshot that was created
+     */
+    Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId);
 }
