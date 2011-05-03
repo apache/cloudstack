@@ -168,22 +168,6 @@
   -->
   
   <configurationEntries>
-	<!--
-    The guest.ip.network and guest.netmask parameters control the guest virtual network.
-    The guest virtual network is an overlay network on top of the management network and
-    is managed by VMOps multitenant hypervisor.  By default, as you can see from the
-    netmask, the guest network is limited to 254 guests, so you may want to change the
-    netmask if you plan to run larger-than-254-guest clusters of VMs in a single guest
-    network.
-    -->
-    <configuration>
-      <name>guest.ip.network</name>
-      <value>10.1.1.1</value>
-    </configuration>
-     <configuration>
-      <name>guest.netmask</name>
-      <value>255.255.255.0</value>
-    </configuration>
     <!--
     The default.zone parameter controls in which zone machines are created by default,
     if you do not specify a zone.

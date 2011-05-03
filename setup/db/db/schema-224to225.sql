@@ -35,6 +35,9 @@ ALTER TABLE `cloud`.`secondary_storage_vm` ADD COLUMN `role` varchar(64) NOT NUL
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) VALUES ('Network', 'DEFAULT', 'management-server', 'vm.network.throttling.rate', 200, 'Default data transfer rate in megabits per second allowed in user vm\'s default network.');
 
+DELETE FROM `cloud`.`configuration` where name='guest.ip.network';
+DELETE FROM `cloud`.`configuration` where name='guest.netmask';
+
 ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `removed` datetime COMMENT 'date removed if not null';
 ALTER TABLE `cloud`.`host_pod_ref` MODIFY `name` varchar(255);
 
