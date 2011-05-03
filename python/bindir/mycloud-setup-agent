@@ -10,6 +10,7 @@ import re
 import traceback
 import socket
 import uuid
+from optparse import OptionParser
 
 class CloudRuntimeException(Exception):
     def __init__(self, errMsg):
@@ -839,13 +840,33 @@ class globalEnv():
 if __name__ == '__main__':
     #todo: check executing permission 
     initLoging("/var/log/cloud/setupAgent.log")
-   
-    userInputs = getUserInputs()
     glbEnv = globalEnv()
     
-    glbEnv.mgtSvr = userInputs[0]
-    glbEnv.zoneToken = userInputs[1]
-    glbEnv.defaultNic = userInputs[2]
+    parser = OptionParser()
+    parser.add_option("-a", action="store_true", dest="auto", help="auto mode")
+    parser.add_option("-m", "--mgtSvr", dest="mgt", help="myCloud management server name or IP")
+    parser.add_option("-z", "--zone-token", dest="zone", help="zone token")
+    
+    (options, args) = parser.parse_args()
+    if options.auto is None:
+        userInputs = getUserInputs()
+        glbEnv.mgtSvr = userInputs[0]
+        glbEnv.zoneToken = userInputs[1]
+        glbEnv.defaultNic = userInputs[2]
+    else:
+        if options.mgt is None or options.zone is None:
+            print "myCloud mgt server or zone token can not be NULL"
+            sys.exit(1)
+        
+        glbEnv.mgtSvr = options.mgt
+        glbEnv.zoneToken = options.zone
+        try:
+            defaultNic = networkConfig.getDefaultNetwork()
+            glbEnv.defaultNic = defaultNic.name
+        except:
+            print "Failed to get default route. Please configure your network to have a default route" 
+            sys.exit(2)
+   
     glbEnv.nics = []
     #generate UUID
     glbEnv.uuid = configFileOps("/etc/cloud/agent/agent.properties").getEntry("guid")
