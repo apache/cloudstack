@@ -33,7 +33,7 @@ public interface CleanupMaid {
      * indicates the cleanup was unsuccessful but don't retry.  Positive number
      * indicates the cleanup was unsuccessful and retry in this many seconds.
      */
-    int cleanup();
+    int cleanup(CheckPointManager checkPointMgr);
     
     
     /**

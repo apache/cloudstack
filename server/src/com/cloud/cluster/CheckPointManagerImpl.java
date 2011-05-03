@@ -164,12 +164,14 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
     }
     
     @Override
+    @DB
     public long pushCheckPoint(CleanupMaid context) {
         long seq =  _maidDao.pushCleanupDelegate(_msId, 0, context.getClass().getName(), context);
         return seq;
     }
 
     @Override
+    @DB
     public void updateCheckPointState(long taskId, CleanupMaid updatedContext) {
         CheckPointVO task = _maidDao.createForUpdate();
         task.setDelegate(updatedContext.getClass().getName());
@@ -178,6 +180,7 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
     }
 
     @Override
+    @DB
     public void popCheckPoint(long taskId) {
         _maidDao.remove(taskId);
     }
@@ -187,7 +190,7 @@ public class CheckPointManagerImpl implements CheckPointManager, Manager, Cluste
         CleanupMaid delegate = (CleanupMaid)SerializerHelper.fromSerializedString(task.getContext());
         assert delegate.getClass().getName().equals(task.getDelegate()) : "Deserializer says " + delegate.getClass().getName() + " but it's suppose to be " + task.getDelegate();
         
-        int result = delegate.cleanup();
+        int result = delegate.cleanup(this);
         if (result <= 0) {
             if (result == 0) {
                 s_logger.info("Successfully cleaned up " + task.getId());

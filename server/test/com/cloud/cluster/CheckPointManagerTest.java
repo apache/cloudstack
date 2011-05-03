@@ -216,7 +216,7 @@ public class CheckPointManagerTest extends TestCase {
         }
 
         @Override
-        public int cleanup() {
+        public int cleanup(CheckPointManager checkPointMgr) {
             s_logger.debug("Cleanup called for " + seq);
             map.remove(seq);
             return canBeCleanup ? 0 : -1;
