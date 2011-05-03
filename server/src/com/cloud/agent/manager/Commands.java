@@ -101,7 +101,6 @@ public class Commands implements Iterable<Command> {
     }
     
     public void setAnswers(Answer[] answers) {
-        assert answers.length == _cmds.size() : "We didn't get back the same number of answers as commands sent";
         _answers = answers;
     }
     

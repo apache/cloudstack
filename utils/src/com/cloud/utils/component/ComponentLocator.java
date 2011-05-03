@@ -736,10 +736,13 @@ public class ComponentLocator implements ComponentLocatorMBean {
         Map<String, String> env = System.getenv();
         String configFile = env.get("cloud-stack-components-specification");
         if (configFile == null || PropertiesUtil.findConfigFile(configFile) == null) {
-        	configFile = "components-premium.xml";
-        	if (PropertiesUtil.findConfigFile(configFile) == null){
-        		configFile = "components.xml";
-        	}
+            configFile = env.get("cloud_stack_components_specification");
+            if (configFile == null || PropertiesUtil.findConfigFile(configFile) == null) {
+            	configFile = "components-premium.xml";
+            	if (PropertiesUtil.findConfigFile(configFile) == null){
+            		configFile = "components.xml";
+            	}
+            }
         }
         return getLocatorInternal(server, true, configFile, "log4j-cloud");
     }
