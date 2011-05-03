@@ -292,7 +292,7 @@ function podNetworkDeviceJsonToTemplate(jsonObj, template) {
 	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
     
-    //buildActionLinkForSubgridItem("Delete Network Device", podNetworkDeviceActionMap, $actionMenu, template);	
+    buildActionLinkForSubgridItem("Delete Network Device", podNetworkDeviceActionMap, $actionMenu, template);	
 }
 
 
@@ -301,6 +301,19 @@ var podNetworkActionMap = {
         api: "deleteVlanIpRange",     
         isAsyncJob: false,   
         inProcessText: "Deleting IP Range....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    } 
+}  
+
+var podNetworkDeviceActionMap = {  
+    "Delete Network Device": {              
+        api: "deleteNetworkDevice",     
+        isAsyncJob: false,   
+        inProcessText: "Deleting Network Device....",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
