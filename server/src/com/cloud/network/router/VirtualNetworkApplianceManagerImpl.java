@@ -1382,7 +1382,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         // Check if all networks are implemented for the domR; if not - implement them
         DataCenter dc = _dcDao.findById(router.getDataCenterId());
-        HostPodVO pod = _podDao.findById(router.getPodId());
+        HostPodVO pod = null;
+        if (router.getPodId() != null) {
+            pod = _podDao.findById(router.getPodId());
+        }
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
 
         ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
