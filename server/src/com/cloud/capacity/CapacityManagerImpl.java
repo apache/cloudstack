@@ -46,6 +46,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VMInstanceVO;
