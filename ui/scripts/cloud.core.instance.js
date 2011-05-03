@@ -122,11 +122,18 @@ function afterLoadInstanceJSP() {
 	bindDestroyVMButton();
 			
 	// switch between different tabs 
-	var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_volume"), $("#tab_statistics")];
-	var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics")];
-	var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab];
+	var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_securitygroup"), $("#tab_volume"), $("#tab_statistics")];
+	var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_securitygroup"), $("#tab_content_volume"), $("#tab_content_statistics")];
+	var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToSecurityGroupTab, vmJsonToVolumeTab, vmJsonToStatisticsTab];
 	switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);   
-	   			   
+	
+	if(getDirectAttachSecurityGroupsEnabled() == "true") {
+		$("#tab_securitygroup").show();
+	}		
+	else {
+		$("#tab_securitygroup").hide();		
+	}	
+	
     // dialogs
     initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
@@ -2067,6 +2074,38 @@ function vmJsonClearNicTab() {
     $thisTab.find("#tab_container").empty();		
 }
 
+function vmJsonToSecurityGroupTab() {  
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	if ($midmenuItem1 == null)  {
+		vmJsonClearSecurityGroupTab();
+	    return;
+	}
+		
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+    if(jsonObj == null) {
+  	    vmJsonClearSecurityGroupTab();
+        return;	
+    }
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_securitygroup");  		
+	
+	var items = jsonObj.securitygroup;
+	var template = $("#securitygroup_tab_template");
+	var $container = $thisTab.find("#tab_container").empty();
+	if(items != null && items.length > 0) {
+	    for (var i = 0; i < items.length; i++) {
+		    var newTemplate = template.clone(true);
+		    vmSecurityGroupJSONToTemplate(items[i], newTemplate); 
+		    $container.append(newTemplate.show());
+	    }
+	}
+}
+
+function vmJsonClearSecurityGroupTab() { 
+  var $thisTab = $("#right_panel_content").find("#tab_content_securitygroup");  
+  $thisTab.find("#tab_container").empty();		
+}
+
 function vmJsonToVolumeTab() {  
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	if ($midmenuItem1 == null) {
@@ -2169,6 +2208,7 @@ function vmJsonClearStatisticsTab() {
 function vmClearRightPanel(jsonObj) {      
     vmJsonClearDetailsTab();   
     vmJsonClearNicTab();
+    vmJsonClearSecurityGroupTab();
     vmJsonClearVolumeTab();
     vmJsonClearStatisticsTab();     
     $("#tab_details").click();  
@@ -2241,6 +2281,13 @@ function vmNicJSONToTemplate(json, $template, index) {
 	$template.find("#type").text(fromdb(json.type)); 
 	$template.find("#gateway").text(fromdb(json.gateway)); 
 	$template.find("#netmask").text(fromdb(json.netmask)); 
+}
+
+function vmSecurityGroupJSONToTemplate(json, $template) {
+	$template.attr("id","vm_securitygroup_"+fromdb(json.id));
+	$template.find("#title").text(fromdb(json.name));	
+	$template.find("#name").text(fromdb(json.name)); 	
+	$template.find("#description").text(fromdb(json.description));
 }
 
 function vmVolumeJSONToTemplate(json, $template) {
