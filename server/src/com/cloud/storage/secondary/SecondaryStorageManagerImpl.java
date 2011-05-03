@@ -42,6 +42,7 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -327,9 +328,25 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
     }
+    
+    private boolean isSecondaryStorageVmRequired(long dcId) {
+        DataCenterVO dc = _dcDao.findById(dcId);
+        _dcDao.loadDetails(dc);
+        String ssvmReq = dc.getDetail(ZoneConfig.EnableSecStorageVm.key());
+        if (ssvmReq != null) {
+            return Boolean.parseBoolean(ssvmReq);
+        }
+        return true;
+    }
 
     public SecondaryStorageVmVO startNew(long dataCenterId, SecondaryStorageVm.Role role) {
 
+        if (!isSecondaryStorageVmRequired(dataCenterId)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Secondary storage vm not required in zone " + dataCenterId + " acc. to zone config");
+            }
+            return null;
+        }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Assign secondary storage vm from a newly started instance for request from data center : " + dataCenterId);
         }
@@ -474,6 +491,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private void allocCapacity(long dataCenterId, SecondaryStorageVm.Role role) {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Allocate secondary storage vm standby capacity for data center : " + dataCenterId);
+        }
+        
+        if (!isSecondaryStorageVmRequired(dataCenterId)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Secondary storage vm not required in zone " + dataCenterId + " acc. to zone config");
+            }
+            return;
         }
 
         boolean secStorageVmFromStoppedPool = false;

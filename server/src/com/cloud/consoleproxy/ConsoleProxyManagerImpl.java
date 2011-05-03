@@ -55,6 +55,7 @@ import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -906,8 +907,24 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         return true;
     }
+    
+    private boolean isConsoleProxyVmRequired(long dcId) {
+        DataCenterVO dc = _dcDao.findById(dcId);
+        _dcDao.loadDetails(dc);
+        String cpvmReq = dc.getDetail(ZoneConfig.EnableConsoleProxyVm.key());
+        if (cpvmReq != null) {
+            return Boolean.parseBoolean(cpvmReq);
+        }
+        return true;
+    }
 
     private boolean allowToLaunchNew(long dcId) {
+        if (!isConsoleProxyVmRequired(dcId)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Console proxy vm not required in zone " + dcId + " not launching");
+            }
+            return false;
+        }
         List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Stopped,
                 VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
 
