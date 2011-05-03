@@ -221,7 +221,7 @@ public class ApiConstants {
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
     public static final String PING_DIR = "pingdir";
     public static final String TFTP_DIR = "tftpdir";
-    public static final String PZING_CIFS_USERNAME = "pingcifsusername";
+    public static final String PING_CIFS_USERNAME = "pingcifsusername";
     public static final String PING_CIFS_PASSWORD = "pingcifspassword";
     public static final String CHECKSUM="checksum";
     public static final String NETWORK_DEVICE_TYPE = "networkdevicetype";

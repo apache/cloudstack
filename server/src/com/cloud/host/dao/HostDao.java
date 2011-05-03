@@ -19,7 +19,6 @@ package com.cloud.host.dao;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -98,6 +97,8 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	 */
 	public HostVO findByGuid(String macAddress);
 	
+	public HostVO findByName(String name);
+	
 
 	/**
 	 * find all hosts of a certain type in a data center
@@ -138,6 +139,8 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     long getNextSequence(long hostId);
     
     void loadDetails(HostVO host);
+    
+    void saveDetails(HostVO host);
 
 	HostVO findConsoleProxyHost(String name, Type type);
 
@@ -159,9 +162,8 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     void loadHostTags(HostVO host);
     
     List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
-
+    
     long countRoutingHostsByDataCenter(long dcId);
 
-    List<HostVO> listSecondaryStorageHosts(long dataCenterId);
-    
+    List<HostVO> listSecondaryStorageHosts(long dataCenterId);    
 }

@@ -78,6 +78,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> TypeSearch;
     protected final SearchBuilder<HostVO> StatusSearch;
     protected final SearchBuilder<HostVO> NameLikeSearch;
+    protected final SearchBuilder<HostVO> NameSearch;
     protected final SearchBuilder<HostVO> SequenceSearch;
     protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
@@ -182,6 +183,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         StatusSearch =createSearchBuilder();
         StatusSearch.and("status", StatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
         StatusSearch.done();
+        
+        NameSearch = createSearchBuilder();
+        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameSearch.done();
         
         NameLikeSearch = createSearchBuilder();
         NameLikeSearch.and("name", NameLikeSearch.entity().getName(), SearchCriteria.Op.LIKE);
@@ -525,6 +530,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return findOneBy(sc);
     }
 
+    @Override 
+    public HostVO findByName(String name) {
+        SearchCriteria<HostVO> sc = NameSearch.create("name", name);
+        return findOneBy(sc);
+    }
+    
     @Override
     public List<HostVO> findLostHosts(long timeout) {
         SearchCriteria<HostVO> sc = LastPingedSearch.create();
@@ -598,7 +609,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
-    protected void saveDetails(HostVO host) {
+    public void saveDetails(HostVO host) {
         Map<String, String> details = host.getDetails();
         if (details == null) {
             return;

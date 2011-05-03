@@ -556,7 +556,6 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
 
             VolumeTO vol = new VolumeTO(cmd.getVolumeId(),
                     Volume.Type.ROOT,
-                    Storage.StorageResourceType.STORAGE_POOL,
                     com.cloud.storage.Storage.StoragePoolType.LVM, cmd
                             .getPool().getUuid(), "dummy", "/mountpoint",
                     "dummyPath", 1000L, null);

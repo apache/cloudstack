@@ -150,15 +150,6 @@ public interface AgentManager extends Manager {
      */
     int registerForInitialConnects(StartupCommandProcessor creator,  boolean priority);
     
-    
-    /**
-     * Register to listen for initial agent connections. 
-     * @param creator
-     * @param priority in listening for events.
-     * @return id to unregister if needed.
-     */
-    int registerForInitialConnects(StartupCommandProcessor creator,  boolean priority);
-    
     /**
      * Unregister for listening to host events.
      * 
