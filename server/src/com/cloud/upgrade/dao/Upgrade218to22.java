@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1097,7 +1098,7 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    private void upadteUserStats(Connection conn) {
+    private void updateUserStats(Connection conn) {
         try {
 
             // update device_type information
@@ -1951,6 +1952,10 @@ public class Upgrade218to22 implements DbUpgrade {
             upgradeHostCpuCapacityInfo(conn);
 
             migrateEvents(conn);
+            createPortForwardingEvents(conn);
+            createLoadBalancerEvents(conn);
+            createNetworkOfferingEvents(conn);
+
             // Update hypervisor type for user vm to be consistent with original 2.2.4
             pstmt = conn.prepareStatement("UPDATE vm_instance SET hypervisor_type='XenServer' WHERE hypervisor_type='xenserver'");
             pstmt.executeUpdate();
@@ -1962,7 +1967,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.close();
 
             // Update user statistics
-            upadteUserStats(conn);
+            updateUserStats(conn);
 
             // delete orphaned (storage pool no longer exists) template_spool_ref(s)
             deleteOrphanedTemplateRef(conn);
@@ -2165,5 +2170,123 @@ public class Upgrade218to22 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to cleanup orpahned lb-vm mappings due to:", e);
         }
+    }
+    
+    /*
+     * Create usage events for existing port forwarding rules
+     */
+    private void createPortForwardingEvents(Connection conn){
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'PortForwarding' and " +
+            		"fw.state = 'Active' and ip.id = fw.ip_address_id");
+            s_logger.debug("Creating Port Forwarding usage events");
+            ResultSet rs = pstmt.executeQuery();
+            Date now = new Date();
+            while (rs.next()) {
+                long accountId = rs.getLong(1);
+                long zoneId = rs.getLong(2);
+                long ruleId = rs.getLong(3);
+                PreparedStatement pstmt1 = null;
+                pstmt1 = conn
+                        .prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id)"
+                                + " VALUES (?, ?, ?, ?, ?)");
+                pstmt1.setString(1, EventTypes.EVENT_NET_RULE_ADD);
+                pstmt1.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
+                pstmt1.setLong(3, accountId);
+                pstmt1.setLong(4, zoneId);
+                pstmt1.setLong(5, ruleId);
+
+                pstmt1.executeUpdate();
+                pstmt1.close();
+            }
+
+            rs.close();
+            pstmt.close();
+            s_logger.debug("Completed creating Port Forwarding usage events");
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to add port forwarding usage events due to:", e);
+        }        
+    }
+    
+    /*
+     * Create usage events for existing load balancer rules
+     */
+    private void createLoadBalancerEvents(Connection conn){
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'LoadBalancing' and " +
+            		"fw.state = 'Active' and ip.id = fw.ip_address_id");
+            s_logger.debug("Creating load balancer usage events");
+            ResultSet rs = pstmt.executeQuery();
+            Date now = new Date();
+            while (rs.next()) {
+                long accountId = rs.getLong(1);
+                long zoneId = rs.getLong(2);
+                long ruleId = rs.getLong(3);
+                PreparedStatement pstmt1 = null;
+                pstmt1 = conn
+                        .prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id)"
+                                + " VALUES (?, ?, ?, ?, ?)");
+                pstmt1.setString(1, EventTypes.EVENT_LOAD_BALANCER_CREATE);
+                pstmt1.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
+                pstmt1.setLong(3, accountId);
+                pstmt1.setLong(4, zoneId);
+                pstmt1.setLong(5, ruleId);
+
+                pstmt1.executeUpdate();
+                pstmt1.close();
+            }
+
+            rs.close();
+            pstmt.close();
+            s_logger.debug("Completed creating load balancer usage events");
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to add Load Balancer usage events due to:", e);
+        }        
+    }
+    
+    /*
+     * Create usage events for network offerings
+     */
+    private void createNetworkOfferingEvents(Connection conn){
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT vm.account_id, vm.data_center_id, ni.instance_id, vm.name, nw.network_offering_id, nw.is_default FROM nics ni, " +
+                    "networks nw, vm_instance vm where vm.type = 'User' and ni.removed is null and ni.instance_id = vm.id and ni.network_id = nw.id;");
+            s_logger.debug("Creating network offering usage events");
+            ResultSet rs = pstmt.executeQuery();
+            Date now = new Date();
+            while (rs.next()) {
+                long accountId = rs.getLong(1);
+                long zoneId = rs.getLong(2);
+                long vmId = rs.getLong(3);
+                String vmName = rs.getString(4);
+                long nw_offering_id = rs.getLong(5);
+                long isDefault = rs.getLong(6);
+                PreparedStatement pstmt1 = null;
+                pstmt1 = conn
+                        .prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id, usage_event.resource_name, " +
+                                "usage_event.offering_id, usage_event.size)"
+                                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                pstmt1.setString(1, EventTypes.EVENT_NETWORK_OFFERING_ASSIGN);
+                pstmt1.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
+                pstmt1.setLong(3, accountId);
+                pstmt1.setLong(4, zoneId);
+                pstmt1.setLong(5, vmId);
+                pstmt1.setString(6, vmName);
+                pstmt1.setLong(7, nw_offering_id);
+                pstmt1.setLong(8, isDefault);
+
+                pstmt1.executeUpdate();
+                pstmt1.close();
+            }
+
+            rs.close();
+            pstmt.close();
+            s_logger.debug("Completed creating network offering usage events");
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to add network offering usage events due to:", e);
+        }        
     }
 }
