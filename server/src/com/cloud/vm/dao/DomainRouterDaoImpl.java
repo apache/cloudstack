@@ -23,10 +23,15 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
@@ -40,6 +45,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> AllFieldsSearch;
     protected final SearchBuilder<DomainRouterVO> IdStatesSearch;
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
+    NetworkDaoImpl _networksDao = ComponentLocator.inject(NetworkDaoImpl.class);
 
     protected DomainRouterDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -62,6 +68,9 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), Op.EQ);
         HostUpSearch.and("states", HostUpSearch.entity().getState(), Op.NIN);
+        SearchBuilder<NetworkVO> joinNetwork = _networksDao.createSearchBuilder();
+        joinNetwork.and("guestType", joinNetwork.entity().getGuestType(), Op.EQ);
+        HostUpSearch.join("network", joinNetwork, joinNetwork.entity().getId(), HostUpSearch.entity().getNetworkId(), JoinType.INNER);
         HostUpSearch.done();
         
     }
@@ -121,12 +130,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
     
     @Override
-    public List<DomainRouterVO> listUpByHostId(Long hostId) {
+    public List<DomainRouterVO> listVirtualUpByHostId(Long hostId) {
         SearchCriteria<DomainRouterVO> sc = HostUpSearch.create();
         if(hostId != null){
             sc.setParameters("host", hostId);
         }
         sc.setParameters("states", State.Destroyed, State.Stopped, State.Expunging);
+        sc.setJoinParameters("network", "guestType", GuestIpType.Virtual);
         return listBy(sc);
     }
 
