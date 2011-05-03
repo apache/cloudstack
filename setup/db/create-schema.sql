@@ -508,7 +508,10 @@ CREATE TABLE `cloud`.`op_dc_link_local_ip_address_alloc` (
   `nic_id` bigint unsigned NULL COMMENT 'instance id',
   `reservation_id` char(40) NULL COMMENT 'reservation id used to reserve this network',
   `taken` datetime COMMENT 'Date taken',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  INDEX `i_op_dc_link_local_ip_address_alloc__pod_id`(`pod_id`),
+  INDEX `i_op_dc_link_local_ip_address_alloc__data_center_id`(`data_center_id`),
+  INDEX `i_op_dc_link_local_ip_address_alloc__nic_id_reservation_id`(`nic_id`,`reservation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`host_pod_ref` (
