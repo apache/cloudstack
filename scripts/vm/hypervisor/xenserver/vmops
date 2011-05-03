@@ -356,14 +356,18 @@ def get_private_nic(session, args):
     return mgmtnic
 
 def chain_name(vm_name):
-	if vm_name.startswith('i-') or vm_name.startswith('r-'):
-		return '-'.join(vm_name.split('-'))
-	return vm_name
+    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+        if vm_name.endswith('untagged'):
+            return '-'.join(vm_name.split('-')[:-1])
+        return '-'.join(vm_name.split('-'))
+    return vm_name
 
 def chain_name_def(vm_name):
-	if vm_name.startswith('i-') or vm_name.startswith('r-'):
-		return '-'.join(vm_name.split('-')[:-1]) + "-def"
-	return vm_name
+    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+        if vm_name.endswith('untagged'):
+            return '-'.join(vm_name.split('-')[:-2]) + "-def"
+        return '-'.join(vm_name.split('-')[:-1]) + "-def"
+    return vm_name
     
 @echo
 def can_bridge_firewall(session, args):
