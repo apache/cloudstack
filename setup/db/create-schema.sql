@@ -62,7 +62,6 @@ DROP TABLE IF EXISTS `cloud`.`sync_queue`;
 DROP TABLE IF EXISTS `cloud`.`sync_queue_item`;
 DROP TABLE IF EXISTS `cloud`.`security_group_vm_map`;
 DROP TABLE IF EXISTS `cloud`.`load_balancer_vm_map`;
-DROP TABLE IF EXISTS `cloud`.`load_balancer`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_host_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_spool_ref`;
@@ -1124,18 +1123,6 @@ CREATE TABLE `cloud`.`network_rule_config` (
   `private_port` varchar(10) default NULL,
   `protocol` varchar(16) NOT NULL default 'TCP',
   `create_status` varchar(32) COMMENT 'rule creation status',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`load_balancer` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `name` varchar(255) NOT NULL,
-  `description` varchar(4096) NULL,
-  `account_id` bigint unsigned NOT NULL,
-  `ip_address` char(40) NOT NULL,
-  `public_port` varchar(10) NOT NULL,
-  `private_port` varchar(10) NOT NULL,
-  `algorithm` varchar(255) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

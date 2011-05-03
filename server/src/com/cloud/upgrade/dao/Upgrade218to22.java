@@ -1972,6 +1972,10 @@ public class Upgrade218to22 implements DbUpgrade {
 
             // modify network_group indexes
             modifyIndexes(conn);
+
+            // cleanup lb - vm maps for load balancers that are already removed (there was a bug in 2.1.x when the mappings were
+            // left around)
+            cleanupLbVmMaps(conn);
         } catch (SQLException e) {
             s_logger.error("Can't perform data migration ", e);
             throw new CloudRuntimeException("Can't perform data migration ", e);
@@ -2123,6 +2127,43 @@ public class Upgrade218to22 implements DbUpgrade {
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to drop indexes for 'security_group' table due to:", e);
+        }
+    }
+
+    // There was a bug in 2.1.x when LB rule mapping wasn't removed along with lb rule removal
+    // Do cleanup after making sure that the rule was removed
+    private void cleanupLbVmMaps(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT DISTINCT load_balancer_id FROM load_balancer_vm_map");
+            s_logger.debug("query is " + pstmt);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                long lbId = rs.getLong(1);
+                PreparedStatement pstmt1 = conn.prepareStatement("SELECT * FROM load_balancer where id=?");
+                pstmt1.setLong(1, lbId);
+                ResultSet rs1 = pstmt1.executeQuery();
+
+                PreparedStatement pstmt2 = conn.prepareStatement("SELECT * from event where type like '%lb.delete%' and parameters like '%id=" + lbId + "%'");
+                ResultSet rs2 = pstmt2.executeQuery();
+
+                if (!rs1.next() && rs2.next()) {
+                    s_logger.debug("Removing load balancer vm mappings for lb id=" + lbId + " as a part of cleanup");
+                    pstmt = conn.prepareStatement("DELETE FROM load_balancer_vm_map where load_balancer_id=?");
+                    pstmt.setLong(1, lbId);
+                    pstmt.executeUpdate();
+                }
+                rs1.close();
+                rs2.close();
+                pstmt1.close();
+                pstmt2.close();
+            }
+
+            rs.close();
+            pstmt.close();
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to cleanup orpahned lb-vm mappings due to:", e);
         }
     }
 }

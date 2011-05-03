@@ -32,7 +32,6 @@ ALTER TABLE `cloud`.`domain_router` MODIFY `public_ip_address` char(40);
 ALTER TABLE `cloud`.`domain_router` MODIFY `guest_ip_address` char(40);
 ALTER TABLE `cloud`.`console_proxy` MODIFY `public_ip_address` char(40) UNIQUE;
 ALTER TABLE `cloud`.`secondary_storage_vm` MODIFY `public_ip_address` char(40) UNIQUE;
-ALTER TABLE `cloud`.`load_balancer` MODIFY `ip_address` char(40) NOT NULL;
 ALTER TABLE `cloud`.`remote_access_vpn` MODIFY `local_ip` char(40) NOT NULL;
 ALTER TABLE `cloud`.`storage_pool` MODIFY `host_address` char(40) NOT NULL;
 ALTER TABLE `cloud`.`user_ip_address` MODIFY `public_ip_address` char(40) NOT NULL;
@@ -163,3 +162,4 @@ UPDATE service_offering SET ha_enabled=0 WHERE id=(SELECT id FROM disk_offering 
 ALTER TABLE `cloud`.`storage_pool_details` DROP KEY `i_storage_pool_details__name__value`;
 ALTER TABLE `cloud`.`storage_pool_details` ADD INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128));
 
+DROP TABLE `cloud`.`load_balancer`;
