@@ -964,7 +964,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (username != null) {
-            sc.setParameters("username", "%" + username + "%");
+            sc.setParameters("username",  username);
         }
 
         if (id != null) {
