@@ -27,6 +27,7 @@ import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
+import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -79,6 +80,8 @@ public interface ResourceService {
      * @param true if deleted, false otherwise
      */
     boolean deleteHost(long hostId, boolean isForced);
+    
+    boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
 
     Host getHost(long hostId);
 

@@ -89,7 +89,13 @@ public class UpdateHostPasswordCmd extends BaseCmd {
 
     @Override
     public void execute() {
-    	_mgr.updateHostPassword(this);
-    	this.setResponseObject(new SuccessResponse());
+        boolean result = _resourceService.updateHostPassword(this);
+        if (result){
+            _mgr.updateHostPassword(this);
+            this.setResponseObject(new SuccessResponse(getCommandName()));
+        }
+        else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host(s) password. Please, check the username and password.");
+        }
     }
 }
