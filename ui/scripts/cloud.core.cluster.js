@@ -72,6 +72,7 @@ function clusterJsonToDetailsTab() {
     $thisTab.find("#podname").text(fromdb(jsonObj.podname));    
     $thisTab.find("#hypervisortype").text(fromdb(jsonObj.hypervisortype));
     $thisTab.find("#clustertype").text(fromdb(jsonObj.clustertype));
+    $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
     
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 

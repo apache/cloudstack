@@ -126,6 +126,16 @@ dictionary = {
 		                <div id="gateway_edit_errormsg" style="display:none"></div>
 	                </div>
 	            </div>
+	             <div class="grid_rows even">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <fmt:message key="label.state"/>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="allocationstate">
+		                </div>
+		            </div>
+		        </div>			
 	        </div>                
 	        <div class="grid_botactionpanel">
 		        <div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>

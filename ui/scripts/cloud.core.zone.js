@@ -175,7 +175,9 @@ function zoneJsonToDetailsTab() {
         $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress, #ispublic");
         $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit, #ispublic_edit");    
     }
-        
+     
+    $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+    
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);

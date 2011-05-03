@@ -113,6 +113,7 @@ function podJsonToDetailsTab() {
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));  
     $thisTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
     
+    $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
     
     // hide network tab upon zone vlan
     var networkType;  
