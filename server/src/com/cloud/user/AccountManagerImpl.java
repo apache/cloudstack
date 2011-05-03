@@ -1163,7 +1163,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (!user.getPassword().equals(dbUser.getPassword())) {
                 throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
             }
-            System.out.println("user: " + dbUser.getId());
             return _userAccountDao.findById(dbUser.getId());
         } catch (Exception e) {
             if (e instanceof CloudRuntimeException) {
