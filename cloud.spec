@@ -161,7 +161,7 @@ Requires: /usr/bin/ssh-keygen
 Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
-Requires: augeas >= 0.7.1
+Requires: augeas <= 0.7.4
 Group:     System Environment/Libraries
 %description client
 The Cloud.com management server is the central point of coordination,
@@ -253,7 +253,7 @@ Requires: cloud-qemu-img
 
 Requires: libcgroup
 Requires: /usr/bin/uuidgen
-Requires: augeas >= 0.7.1
+Requires: augeas <= 0.7.4
 Requires: rsync
 Requires: /bin/egrep
 Requires: /sbin/ip
@@ -281,7 +281,7 @@ Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/uuidgen
-Requires: augeas >= 0.7.1
+Requires: augeas <= 0.7.4
 Requires: /bin/egrep
 Requires: /sbin/ip
 Group:     System Environment/Libraries
