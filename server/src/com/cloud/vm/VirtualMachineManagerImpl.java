@@ -251,10 +251,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (plan.getPodId() != null) {
             vm.setPodId(plan.getPodId());
         }
-        if (plan.getHostId() != null) {
-            vm.setHostId(plan.getHostId());
-        }
-        assert (plan.getPoolId() == null) : "We currently don't support pool preset yet";
+        assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
 
         @SuppressWarnings("unchecked")
         VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>) _vmGurus.get(vm.getType());
@@ -435,8 +432,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+        return start(vm, params, caller, account, null);
+    }    
+    @Override
+    public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
-            return advanceStart(vm, params, caller, account);
+            return advanceStart(vm, params, caller, account, planToDeploy);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e);
         }
@@ -477,7 +478,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @DB
     protected <T extends VMInstanceVO> Ternary<T, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru<T> vmGuru, T vm, User caller, Account account)
-            throws ConcurrentOperationException {
+    throws ConcurrentOperationException {
         long vmId = vm.getId();
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Starting, vm.getType(), vm.getId());
@@ -549,7 +550,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
+        return advanceStart(vm, params, caller, account, null);
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+    ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
         VirtualMachineGuru<T> vmGuru;
         if (vm.getHypervisorType() == HypervisorType.BareMetal) {
@@ -573,6 +580,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null, null);
+        if(planToDeploy != null){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("advanceStart: DeploymentPlan is provided, using that plan to deploy");
+            }
+            plan = (DataCenterDeployment)planToDeploy;
+        }
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
         boolean canRetry = true;
@@ -600,7 +613,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     Long rootVolClusterId = pool.getClusterId();
                     plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(vol + " is ready, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
+                        s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
                     }
                 }
             }
@@ -722,7 +735,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         } finally {
             if (startedVm == null && canRetry) {
-            	// decrement only for user VM's and newly created VM
+                // decrement only for user VM's and newly created VM
                 if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
                     _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
                 }
@@ -995,7 +1008,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-            VirtualMachineMigrationException {
+    VirtualMachineMigrationException {
         s_logger.info("Migrating " + vm + " to " + dest);
 
         long dstHostId = dest.getHost().getId();
@@ -1264,7 +1277,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
         T rebootedVm = null;
 
         DataCenter dc = _configMgr.getZone(vm.getDataCenterId());

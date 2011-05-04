@@ -1964,7 +1964,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
-            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost)
+            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
@@ -1983,13 +1983,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor,
-                caller, destinationHost);
+                caller);
     }
 
     @Override
     public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
             List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData,
-            String sshKeyPair, Host destinationHost) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
+            String sshKeyPair) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
             ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
@@ -2057,12 +2057,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor,
-                caller, destinationHost);
+                caller);
     }
 
     @Override
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
@@ -2176,22 +2176,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller,
-                destinationHost);
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller);
     }
 
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
-            Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller,
-            Host destinationHost) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
+            Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, owner);
         long accountId = owner.getId();
-
-        if (destinationHost != null && !_accountMgr.isRootAdmin(caller.getType())) {
-            throw new PermissionDeniedException("Destination Host can only be specified by a Root Admin, permission denied");
-        }
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
@@ -2292,13 +2286,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _accountMgr.checkAccess(caller, template);
 
-        DataCenterDeployment plan = null;
-        if (destinationHost != null) {
-            s_logger.debug("Destination Host to deploy the VM is specified, adding it to the deployment plan");
-            plan = new DataCenterDeployment(zone.getId(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null);
-        } else {
-            plan = new DataCenterDeployment(zone.getId());
-        }
+        DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
         s_logger.debug("Allocating in the DB for vm");
 
@@ -2409,6 +2397,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     protected UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additonalParams) throws ResourceUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException {
+
+        Host destinationHost = null;
+        if(cmd.getHostId() != null){
+            Account account = UserContext.current().getCaller();
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter hostid can only be specified by a Root Admin, permission denied");
+            }
+            destinationHost = _hostDao.findById(cmd.getHostId());
+            if (destinationHost == null) {
+                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + cmd.getHostId());
+            }
+        }
         long vmId = cmd.getEntityId();
         UserVmVO vm = _vmDao.findById(vmId);
         _vmDao.loadDetails(vm);
@@ -2448,7 +2448,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 params.putAll(additonalParams);
             }
             params.put(VirtualMachineProfile.Param.VmPassword, password);
-            vm = _itMgr.start(vm, params, caller, owner);
+
+            DataCenterDeployment plan = null;
+            if (destinationHost != null) {
+                s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+                plan = new DataCenterDeployment(vm.getDataCenterId(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null);
+            }
+
+            vm = _itMgr.start(vm, params, caller, owner, plan);
         } finally {
             updateVmStateForFailedVmCreation(vm.getId());
         }

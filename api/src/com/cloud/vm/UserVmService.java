@@ -105,7 +105,7 @@ public interface UserVmService {
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
 
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException,
-            ResourceAllocationException;
+    ResourceAllocationException;
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
@@ -170,8 +170,6 @@ public interface UserVmService {
      *            GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
-     * @param Host
-     *            destinationHost to deploy the VM
      * 
      * @return UserVm object if successful.
      * 
@@ -184,8 +182,8 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
+    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is enabled) in the database and returns the VM to the caller.
@@ -226,8 +224,6 @@ public interface UserVmService {
      *            GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
-     * @param Host
-     *            destinationHost to deploy the VM
      * 
      * @return UserVm object if successful.
      * 
@@ -240,8 +236,8 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList,
-            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
+    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled) in the database and returns the VM to the caller.
@@ -280,8 +276,6 @@ public interface UserVmService {
      *            GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
-     * @param Host
-     *            destinationHost to deploy the VM
      * 
      * @return UserVm object if successful.
      * 
@@ -294,8 +288,8 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Host destinationHost)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
+    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Starts the virtual machine created from createVirtualMachine.
@@ -352,7 +346,7 @@ public interface UserVmService {
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 
     UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException,
-            ResourceAllocationException;
+    ResourceAllocationException;
 
     UserVm getUserVm(long vmId);
 

@@ -44,7 +44,7 @@ import com.cloud.utils.component.Manager;
  * Manages allocating resources to vms.
  */
 public interface VirtualMachineManager extends Manager {
-    
+
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
@@ -55,7 +55,7 @@ public interface VirtualMachineManager extends Manager {
             DeploymentPlan plan,
             HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException;
-    
+
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
@@ -65,7 +65,7 @@ public interface VirtualMachineManager extends Manager {
             DeploymentPlan plan,
             HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException;
-    
+
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
@@ -73,34 +73,38 @@ public interface VirtualMachineManager extends Manager {
             DeploymentPlan plan,
             HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException;
-    
+
     <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
-    
+
+    <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException;    
+
     <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws ResourceUnavailableException;
-    
+
     <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
-    
+
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
 
-	boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId);
-	
+    boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId);
+
     <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
-    
-	<T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
-	
-	<T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
-	
-	<T extends VMInstanceVO> boolean remove(T vm, User caller, Account account);
-	
-	<T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
-	
-	boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException;
-	
-	<T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException; 
-	
-	<T extends VMInstanceVO> T reboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
-	
-	<T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
-	
-	VMInstanceVO findById(VirtualMachine.Type type, long vmId);
+
+    <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+
+    <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+
+    <T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+
+    <T extends VMInstanceVO> boolean remove(T vm, User caller, Account account);
+
+    <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+
+    boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException;
+
+    <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException; 
+
+    <T extends VMInstanceVO> T reboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
+
+    <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+
+    VMInstanceVO findById(VirtualMachine.Type type, long vmId);
 }
