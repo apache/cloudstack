@@ -242,8 +242,16 @@ dictionary = {
                     <input class="text" type="text" id="add_service_tags" />
                     <div id="add_service_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
-                </li>	
-                <li>
+                </li>	               
+ 				<li>
+				    <label>
+				        <fmt:message key="label.CPU.cap"/>?:</label>
+				    <select class="select" id="cpu_cap_dropdown">				        
+				        <option value="false"><fmt:message key="label.no"/></option>
+				        <option value="true"><fmt:message key="label.yes"/></option>
+				    </select>
+				</li>
+				<li>
 				    <label>
 				        <fmt:message key="label.public"/>?:</label>
 				    <select class="select" id="public_dropdown">

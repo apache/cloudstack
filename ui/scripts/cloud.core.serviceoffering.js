@@ -150,6 +150,10 @@ function initAddServiceOfferingDialog() {
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));	
 				
+				if($thisDialog.find("#cpu_cap_dropdown_container").css("display") != "none") {                
+	                array1.push("&limitcpuuse="+$thisDialog.find("#cpu_cap_dropdown").val());		
+	            }   
+							
 				if($thisDialog.find("#domain_container").css("display") != "none") {                
 	                array1.push("&domainid="+domainId);		
 	            }            
