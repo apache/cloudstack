@@ -2089,6 +2089,9 @@ public class Upgrade218to22 implements DbUpgrade {
             // cleanup lb - vm maps for load balancers that are already removed (there was a bug in 2.1.x when the mappings were
             // left around)
             cleanupLbVmMaps(conn);
+            
+            //cleanup all records from op_ha_work table
+            cleanupOpHaWork(conn);
         } catch (SQLException e) {
             s_logger.error("Can't perform data migration ", e);
             throw new CloudRuntimeException("Can't perform data migration ", e);
@@ -2395,6 +2398,43 @@ public class Upgrade218to22 implements DbUpgrade {
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to add network offering usage events due to:", e);
+        }        
+    }
+    
+    // Delete records from op_ha_work table
+    private void cleanupOpHaWork(Connection conn){
+        try {
+            
+            //delete taken ha records
+            PreparedStatement pstmt = conn.prepareStatement("DELETE from op_ha_work WHERE taken IS NOT NULL");
+            pstmt.executeUpdate();
+            pstmt.close();
+            
+            //delete records associated with removed hosts
+            pstmt = conn.prepareStatement("SELECT DISTINCT host_id from op_ha_work");
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                Long hostId = rs.getLong(1);
+                pstmt = conn.prepareStatement("SELECT * from host where id=?");
+                pstmt.setLong(1, hostId);
+                
+                ResultSet hostSet = pstmt.executeQuery();
+                if (!hostSet.next()) {
+                    pstmt = conn.prepareStatement("DELETE from op_ha_work where host_id=?");
+                    pstmt.setLong(1, hostId);
+                    pstmt.executeUpdate();
+                    s_logger.debug("Removed records from op_ha_work having hostId=" + hostId + " as the host no longer exists");
+                }
+                hostSet.close();
+            }
+            rs.close();
+            pstmt.close();
+            
+            s_logger.debug("Completed cleaning up op_ha_work table");
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to cleanup op_ha_work table due to:", e);
         }        
     }
 }
