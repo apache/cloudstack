@@ -89,6 +89,7 @@ public class Upgrade222to224 implements DbUpgrade {
             upgradeGuestOs(conn);
             fixRecreatableVolumesProblem(conn);
             updateFkeysAndIndexes(conn);
+            fixIPResouceCount(conn);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to perform data migration", e);
         }
@@ -496,6 +497,78 @@ public class Upgrade222to224 implements DbUpgrade {
             pstmt.executeUpdate();
             pstmt.close();
         }
+    }
+
+    // In 2.2.x there was a bug when resource_count was incremented when Direct ip was allocated. Have to fix it during the
+    // upgrade
+    private void fixIPResouceCount(Connection conn) throws SQLException {
+        // First set all public_ip fields to be 0
+        PreparedStatement pstmt = conn.prepareStatement("UPDATE resource_count set count=0 where type='public_ip'");
+        pstmt.executeUpdate();
+
+        pstmt = conn.prepareStatement("SELECT id, account_id from resource_count where type='public_ip' and domain_id is NULL");
+        ResultSet rs = pstmt.executeQuery();
+
+        while (rs.next()) {
+            // upgrade resource count for account
+            Long countId = rs.getLong(1);
+            Long accountId = rs.getLong(2);
+            pstmt = conn.prepareStatement("SELECT count(*) from user_ip_address where network_id is not null and account_id=?");
+            pstmt.setLong(1, accountId);
+            ResultSet rs1 = pstmt.executeQuery();
+            if (rs1.next()) {
+                Long ipCount = rs1.getLong(1);
+                if (ipCount.longValue() > 0) {
+                    pstmt = conn.prepareStatement("UPDATE resource_count set count=? where id=?");
+                    pstmt.setLong(1, ipCount);
+                    pstmt.setLong(2, countId);
+                    s_logger.debug("Query is " + pstmt);
+                    pstmt.executeUpdate();
+                }
+                rs1.close();
+            }
+        }
+        rs.close();
+        pstmt.close();
+
+        // upgrade resource count for domain
+        HashMap<Long, Long> domainIpsCount = new HashMap<Long, Long>();
+        pstmt = conn.prepareStatement("SELECT account_id, count from resource_count where type='public_ip' and domain_id is NULL");
+        rs = pstmt.executeQuery();
+        while (rs.next()) {
+            Long accountId = rs.getLong(1);
+            Long count = rs.getLong(2);
+            pstmt = conn.prepareStatement("SELECT domain_id from account where id=?");
+            pstmt.setLong(1, accountId);
+            ResultSet rs1 = pstmt.executeQuery();
+
+            if (!rs1.next()) {
+                throw new CloudRuntimeException("Unable to get domain information from account table as a part of resource_count table cleanup");
+            }
+
+            Long domainId = rs1.getLong(1);
+            if (!domainIpsCount.containsKey(domainId)) {
+                domainIpsCount.put(domainId, count);
+            } else {
+                long oldCount = domainIpsCount.get(domainId);
+                long newCount = oldCount + count;
+                domainIpsCount.put(domainId, newCount);
+            }
+            rs1.close();
+        }
+
+        rs.close();
+
+        for (Long domainId : domainIpsCount.keySet()) {
+            pstmt = conn.prepareStatement("UPDATE resource_count set count=? where domain_id=? and type='public_ip'");
+            pstmt.setLong(1, domainIpsCount.get(domainId));
+            pstmt.setLong(2, domainId);
+            pstmt.executeUpdate();
+        }
+
+        pstmt.close();
+
+        s_logger.debug("Resource limit is cleaned up successfully as a part of db upgrade");
 
     }
 }

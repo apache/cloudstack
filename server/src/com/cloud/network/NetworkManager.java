@@ -50,14 +50,15 @@ import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkManager manages the network for the different end users.
- *
+ * 
  */
 public interface NetworkManager extends NetworkService {
     /**
      * Assigns a new public ip address.
      * 
      * @param dcId
-     * @param podId TODO
+     * @param podId
+     *            TODO
      * @param owner
      * @param type
      * @param networkId
@@ -65,7 +66,7 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      */
     PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException;
-    
+
     /**
      * assigns a source nat ip address to an account within a network.
      * 
@@ -77,113 +78,131 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      */
     PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException;
-    
+
     /**
-     * Do all of the work of releasing public ip addresses.  Note that
-     * if this method fails, there can be side effects.
+     * Do all of the work of releasing public ip addresses. Note that if this method fails, there can be side effects.
+     * 
      * @param userId
-     * @param caller TODO
+     * @param caller
+     *            TODO
      * @param ipAddress
      * @return true if it did; false if it didn't
      */
     public boolean releasePublicIpAddress(long id, long userId, Account caller);
-    
+
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
-     * @param accountId - account that the IP address should belong to
-     * @param dcId - zone that the IP address should belong to
-     * @param sourceNat - (optional) true if the IP address should be a source NAT address
-     * @param associatedNetworkId TODO
+     * 
+     * @param accountId
+     *            - account that the IP address should belong to
+     * @param dcId
+     *            - zone that the IP address should belong to
+     * @param sourceNat
+     *            - (optional) true if the IP address should be a source NAT address
+     * @param associatedNetworkId
+     *            TODO
      * @return - list of IP addresses
      */
-    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);	
-    
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault) throws ConcurrentOperationException;
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault, boolean errorIfAlreadySetup, Long domainId) throws ConcurrentOperationException;
-    
+    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);
+
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
+            throws ConcurrentOperationException;
+
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault,
+            boolean errorIfAlreadySetup, Long domainId) throws ConcurrentOperationException;
+
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
-    
+
     void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException;
 
-    void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
+            ResourceUnavailableException;
+
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced);
-    
+
     void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
-    
+
     void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
-    
+
     List<? extends Nic> getNics(long vmId);
-    
+
     List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm);
-    
+
     List<NicProfile> getNicProfiles(VirtualMachine vm);
-	
-    List<AccountVO> getAccountsUsingNetwork(long configurationId);    
+
+    List<AccountVO> getAccountsUsingNetwork(long configurationId);
+
     AccountVO getNetworkOwner(long configurationId);
-    
+
     List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId);
-    
-	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
-	boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
-	
-	NetworkVO getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
-	
-	List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
-	
-	PublicIpAddress getPublicIpAddress(long ipAddressId);
-	
-	List<? extends Vlan> listPodVlans(long podId);
+    String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
-	Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
-	List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem);
+    boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
+
+    NetworkVO getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+
+    List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
+
+    PublicIpAddress getPublicIpAddress(long ipAddressId);
+
+    List<? extends Vlan> listPodVlans(long podId);
+
+    Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException;
+
+    List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem);
 
     <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest);
-    
+
     void shutdownNetwork(long networkId, ReservationContext context);
-    
+
     boolean destroyNetwork(long networkId, ReservationContext context);
-   
-    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId) throws ConcurrentOperationException, InsufficientCapacityException;
-    
+
+    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain,
+            Account owner, boolean isSecurityGroupEnabled, Long domainId) throws ConcurrentOperationException, InsufficientCapacityException;
+
     /**
-     * @throws InsufficientCapacityException 
-     * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.
+     * @throws InsufficientCapacityException
+     *             Associates an ip address list to an account. The list of ip addresses are all addresses associated with the
+     *             given vlan id.
      * @param userId
      * @param accountId
      * @param zoneId
      * @param vlanId
      * @throws InsufficientAddressCapacityException
-     * @throws 
+     * @throws
      */
-    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException;
+    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException, ConcurrentOperationException,
+            ResourceUnavailableException;
 
     Nic getNicInNetwork(long vmId, long networkId);
-    
+
     Nic getNicInNetworkIncludingRemoved(long vmId, long networkId);
-    
+
     Nic getNicForTraffic(long vmId, TrafficType type);
-    
+
     Network getDefaultNetworkForVm(long vmId);
-    
+
     Nic getDefaultNic(long vmId);
-    
+
     List<? extends PasswordResetElement> getPasswordResetElements();
 
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);
-    
+
     Map<Capability, String> getServiceCapability(long zoneId, Service service);
-    
+
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
-    
+
     boolean isServiceSupported(long networkId, Network.Service service);
 
     NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId);
-    
+
     boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
-    
+
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
-    
+
     List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault);
+
+    IPAddressVO markIpAsUnavailable(long addrId);
 }
