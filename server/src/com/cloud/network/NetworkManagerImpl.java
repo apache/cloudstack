@@ -309,7 +309,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat);
             _usageEventDao.persist(usageEvent);
-            _accountMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+            // don't increment resource count for direct ip addresses
+            if (addr.getAssociatedWithNetworkId() != null) {
+                _accountMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+            }
         }
 
         txn.commit();
@@ -2725,7 +2728,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @DB
-    private IPAddressVO markIpAsUnavailable(long addrId) {
+    @Override
+    public IPAddressVO markIpAsUnavailable(long addrId) {
         Transaction txn = Transaction.currentTxn();
 
         IPAddressVO ip = _ipAddressDao.findById(addrId);
@@ -2733,16 +2737,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ip.getState() != State.Releasing) {
             txn.start();
 
-            ip = _ipAddressDao.markAsUnavailable(addrId);
+            Account owner = _accountMgr.getAccount(ip.getAccountId());
 
-            _accountMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
+            // Save usage event
+            if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+                // don't decrement resource count for direct ips
+                if (ip.getAssociatedWithNetworkId() != null) {
+                    _accountMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
+                }
 
-            long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
+                long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
 
-            if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat);
-                _usageEventDao.persist(usageEvent);
+                if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat);
+                    _usageEventDao.persist(usageEvent);
+                }
+
             }
+
+            ip = _ipAddressDao.markAsUnavailable(addrId);
 
             txn.commit();
         }
