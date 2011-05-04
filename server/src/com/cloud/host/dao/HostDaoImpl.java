@@ -268,7 +268,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     	sc.setParameters("dc", dcId);
     	List<HostVO> storageHosts = listBy(sc);
     	
-    	if (storageHosts == null || storageHosts.size() != 1) {
+    	if (storageHosts == null) {
     		return null;
     	} else {
     		return storageHosts.get(0);
