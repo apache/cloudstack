@@ -3,28 +3,27 @@ package com.cloud.api;
 import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 
-
 public abstract class BaseListCmd extends BaseCmd {
 
     private static Long MAX_PAGESIZE = 500L;
 
-	/////////////////////////////////////////////////////
-    /////////// BaseList API parameters /////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////// BaseList API parameters /////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name="keyword", type=CommandType.STRING, description="List by keyword")
+    @Parameter(name = "keyword", type = CommandType.STRING, description = "List by keyword")
     private String keyword;
 
-    // FIXME:  Need to be able to specify next/prev/first/last, so Integer might not be right
-    @Parameter(name=ApiConstants.PAGE, type=CommandType.INTEGER)
+    // FIXME: Need to be able to specify next/prev/first/last, so Integer might not be right
+    @Parameter(name = ApiConstants.PAGE, type = CommandType.INTEGER)
     private Integer page;
 
-    @Parameter(name=ApiConstants.PAGE_SIZE, type=CommandType.INTEGER)
+    @Parameter(name = ApiConstants.PAGE_SIZE, type = CommandType.INTEGER)
     private Integer pageSize;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public String getKeyword() {
         return keyword;
@@ -35,51 +34,46 @@ public abstract class BaseListCmd extends BaseCmd {
     }
 
     public Integer getPageSize() {
+        if (pageSize != null && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
+            throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + MAX_PAGESIZE.longValue());
+        }
+        
         return pageSize;
     }
-    
-    
+
     static void configure() {
         MAX_PAGESIZE = _configService.getDefaultPageSize();
     }
-    
+
     @Override
     public long getEntityOwnerId() {
-        //no owner is needed for list command
+        // no owner is needed for list command
         return 0;
     }
 
     public Long getPageSizeVal() {
-        Long pageSize = null;
+        Long pageSize = MAX_PAGESIZE;
         Integer pageSizeInt = getPageSize();
-        if (pageSizeInt != null) {
-        	pageSize = pageSizeInt.longValue();
-            if (pageSize == -1) {
-                pageSize = null;
-            } else if (pageSize > MAX_PAGESIZE){//FIX ME - have a validator and do this.                
-                throw new InvalidParameterValueException("The parameter " + ApiConstants.PAGE_SIZE + " exceeded its max value - " + MAX_PAGESIZE);
-            }
-        } 
+        if (pageSizeInt != null && pageSizeInt.intValue() != -1) {
+            pageSize = pageSizeInt.longValue();
+        }
         return pageSize;
     }
 
     public Long getStartIndex() {
         Long startIndex = Long.valueOf(0);
         Long pageSizeVal = getPageSizeVal();
-        if (pageSizeVal == null) {
-            return null; // there's no limit, so start index is irrelevant
-        }
 
         if (page != null) {
             int pageNum = page.intValue();
             if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeVal * (pageNum-1));
+                startIndex = Long.valueOf(pageSizeVal * (pageNum - 1));
             }
         }
         return startIndex;
     }
-    
+
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.None;
+        return AsyncJob.Type.None;
     }
 }

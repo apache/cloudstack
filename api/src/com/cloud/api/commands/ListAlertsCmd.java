@@ -27,50 +27,49 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AlertResponse;
 import com.cloud.api.response.ListResponse;
 
-@Implementation(description="Lists all alerts.", responseObject=AlertResponse.class)
+@Implementation(description = "Lists all alerts.", responseObject = AlertResponse.class)
 public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());
 
     private static final String s_name = "listalertsresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the alert")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the ID of the alert")
     private Long id;
-    
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="list by alert type")
+
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "list by alert type")
     private String type;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
-    
+
     public String getType() {
         return type;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends Alert> result = _mgr.searchForAlerts(this);
         ListResponse<AlertResponse> response = new ListResponse<AlertResponse>();
         List<AlertResponse> alertResponseList = new ArrayList<AlertResponse>();
