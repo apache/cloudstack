@@ -64,6 +64,12 @@ function clusterJsonToDetailsTab() {
         }
     });     
      
+    clusterJsonToDetailsTab2(jsonObj);        
+}
+
+function clusterJsonToDetailsTab2(jsonObj) {	
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+	
     var $thisTab = $("#right_panel_content").find("#tab_content_details");   
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#id").text(fromdb(jsonObj.id));
@@ -77,20 +83,16 @@ function clusterJsonToDetailsTab() {
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	  
-    */
-    
+       
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();       
-    buildActionLinkForTab("label.action.delete.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab);        
+    
+    if(jsonObj.allocationstate == "Disabled")
+        buildActionLinkForTab("label.action.enable.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+    else if(jsonObj.allocationstate == "Enabled")  
+        buildActionLinkForTab("label.action.disable.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+    
+    buildActionLinkForTab("label.action.delete.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
 }
 
 function clusterClearDetailsTab() {	   
@@ -109,8 +111,28 @@ function clusterClearDetailsTab() {
 	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	       
 }
 
-var clusterActionMap = {   
-    "label.action.delete.cluster": {  
+var clusterActionMap = {   		
+	"label.action.enable.cluster": {  	              
+	    isAsyncJob: false,      
+	    dialogBeforeActionFn : doEnableCluster,   
+	    inProcessText: "label.action.enable.cluster.processing",
+	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  	        
+			var jsonObj = json.updateclusterresponse.cluster;
+			clusterJsonToDetailsTab2(jsonObj);					
+	    }
+	}	
+	,
+	"label.action.disable.cluster": {  	              
+	    isAsyncJob: false,      
+	    dialogBeforeActionFn : doDisableCluster,   
+	    inProcessText: "label.action.disable.cluster.processing",
+	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+			var jsonObj = json.updateclusterresponse.cluster;
+			clusterJsonToDetailsTab2(jsonObj);				
+	    }
+	}	
+	,		
+	"label.action.delete.cluster": {  
         api: "deleteCluster",            
         isAsyncJob: false,      
         dialogBeforeActionFn : doDeleteCluster,   
@@ -125,6 +147,42 @@ var clusterActionMap = {
             });            
         }
     }
+}
+
+function doEnableCluster($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.enable.cluster"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updateCluster&id="+id+"&allocationstate=Enabled";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
+function doDisableCluster($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.disable.cluster"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updateCluster&id="+id+"&allocationstate=Disabled";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
 }
 
 function doDeleteCluster($actionLink, $detailsTab, $midmenuItem1) {       

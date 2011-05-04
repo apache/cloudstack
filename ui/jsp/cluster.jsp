@@ -9,7 +9,13 @@
 dictionary = { 	
 	'label.action.delete.cluster' : '<fmt:message key="label.action.delete.cluster"/>',
 	'label.action.delete.cluster.processing' : '<fmt:message key="label.action.delete.cluster.processing"/>',
-	'message.action.delete.cluster' : '<fmt:message key="message.action.delete.cluster"/>'
+	'message.action.delete.cluster' : '<fmt:message key="message.action.delete.cluster"/>',
+	'label.action.enable.cluster' : '<fmt:message key="label.action.enable.cluster"/>',
+	'label.action.enable.cluster.processing' : '<fmt:message key="label.action.enable.cluster.processing"/>',
+	'message.action.enable.cluster' : '<fmt:message key="message.action.enable.cluster"/>',
+	'label.action.disable.cluster' : '<fmt:message key="label.action.disable.cluster"/>',
+	'label.action.disable.cluster.processing' : '<fmt:message key="label.action.disable.cluster.processing"/>',
+	'message.action.disable.cluster' : '<fmt:message key="message.action.disable.cluster"/>'	
 };	
 </script>
 
