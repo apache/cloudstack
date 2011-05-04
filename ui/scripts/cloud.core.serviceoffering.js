@@ -326,6 +326,8 @@ function serviceOfferingJsonToDetailsTab() {
     setBooleanReadField(jsonObj.offerha, $thisTab.find("#offerha"));	
     setBooleanEditField(jsonObj.offerha, $thisTab.find("#offerha_edit"));
     
+    setBooleanReadField(jsonObj.limitcpuuse, $thisTab.find("#limitcpuuse"));
+    
     $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
     
