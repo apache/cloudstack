@@ -115,3 +115,7 @@ ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `state` VARCHAR(32) NOT NULL;
 
 ALTER TABLE `cloud`.`snapshot_policy` ADD KEY  `volume_id` (`volume_id`);
 
+DELETE FROM op_ha_work WHERE taken IS NOT NULL;
+DELETE FROM op_ha_work WHERE host_id NOT IN (SELECT DISTINCT id FROM host);
+ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__host_id` FOREIGN KEY `fk_op_ha_work__host_id` (`host_id`) REFERENCES `host` (`id`);
+
