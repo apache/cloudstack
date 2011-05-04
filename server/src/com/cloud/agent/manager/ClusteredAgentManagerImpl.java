@@ -124,7 +124,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
     	    }
-        }	
+        }
 		if(hosts != null && hosts.size() > 0) {
 			for(HostVO host: hosts) {
 				AgentAttache agentattache = findAttache(host.getId());

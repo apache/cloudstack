@@ -538,6 +538,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         long id = server.getId();
 
         AgentAttache attache = createAttache(id, server, resource);
+        if (attache.isReady()) {
+            StartupAnswer[] answers = new StartupAnswer[startup.length];
+            for (int i = 0; i < answers.length; i++) {
+                answers[i] = new StartupAnswer(startup[i], attache.getId(), _pingInterval);
+            }
+
+            attache.process(answers);
+        }
 
         attache = notifyMonitorsOfConnection(attache, startup);
 
@@ -1712,14 +1720,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if (attache == null) {
             resource.disconnected();
             return null;
-        }
-        if (attache.isReady()) {
-            StartupAnswer[] answers = new StartupAnswer[cmds.length];
-            for (int i = 0; i < answers.length; i++) {
-                answers[i] = new StartupAnswer(cmds[i], attache.getId(), _pingInterval);
-            }
-
-            attache.process(answers);
         }
         return attache;
     }
