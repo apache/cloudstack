@@ -50,7 +50,10 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName("offerha") @Param(description="the ha support in the service offering")
     private Boolean offerHa;
-
+  
+    @SerializedName("limitcpuuse") @Param(description="restrict the CPU usage to committed service offering")
+    private Boolean limitCpuUse;
+        
     @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
@@ -135,6 +138,14 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.offerHa = offerHa;
     }
 
+    public Boolean getLimitCpuUse() {
+    	return limitCpuUse;
+    }
+    
+    public void setLimitCpuUse(Boolean limitCpuUse) {
+    	this.limitCpuUse = limitCpuUse;
+    }
+        
     public String getTags() {
         return tags;
     }
