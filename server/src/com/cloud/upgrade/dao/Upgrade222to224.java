@@ -255,7 +255,7 @@ public class Upgrade222to224 implements DbUpgrade {
 
     private void updateUserStatsWithNetwork(Connection conn) {
         try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT id, device_id FROM user_statistics WHERE network_id=0 or network_id is NULL");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id, device_id FROM user_statistics WHERE network_id=0 or network_id is NULL and public_ip_address is NULL");
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -284,7 +284,7 @@ public class Upgrade222to224 implements DbUpgrade {
                     Long networkId = rs2.getLong(1);
 
                     if (networkId != null) {
-                        pstmt = conn.prepareStatement("UPDATE user_statistics SET network_id=? where id=?");
+                        pstmt = conn.prepareStatement("UPDATE user_statistics SET network_id=?, device_type='DomainRouter' where id=?");
                         pstmt.setLong(1, networkId);
                         pstmt.setLong(2, id);
                         pstmt.executeUpdate();
