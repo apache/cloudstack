@@ -522,7 +522,6 @@ public class Upgrade222to224 implements DbUpgrade {
                     pstmt = conn.prepareStatement("UPDATE resource_count set count=? where id=?");
                     pstmt.setLong(1, ipCount);
                     pstmt.setLong(2, countId);
-                    s_logger.debug("Query is " + pstmt);
                     pstmt.executeUpdate();
                 }
                 rs1.close();
@@ -547,6 +546,8 @@ public class Upgrade222to224 implements DbUpgrade {
             }
 
             Long domainId = rs1.getLong(1);
+           
+            
             if (!domainIpsCount.containsKey(domainId)) {
                 domainIpsCount.put(domainId, count);
             } else {
@@ -555,6 +556,31 @@ public class Upgrade222to224 implements DbUpgrade {
                 domainIpsCount.put(domainId, newCount);
             }
             rs1.close();
+            
+            Long parentId = 0L;
+            while (parentId != null) {
+                pstmt = conn.prepareStatement("SELECT parent from domain where id=?");
+                pstmt.setLong(1, domainId);
+                ResultSet parentSet = pstmt.executeQuery();
+                
+                if (parentSet.next()) {
+                    parentId = parentSet.getLong(1);
+                    if (parentId == null || parentId.longValue() == 0) {
+                        parentId = null;
+                        continue;
+                    }
+                    
+                    if (!domainIpsCount.containsKey(parentId)) {
+                        domainIpsCount.put(parentId, count);
+                    } else {
+                        long oldCount = domainIpsCount.get(parentId);
+                        long newCount = oldCount + count;
+                        domainIpsCount.put(parentId, newCount);
+                    }
+                    parentSet.close();
+                    domainId = parentId;
+                }
+            }
         }
 
         rs.close();
