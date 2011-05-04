@@ -23,10 +23,18 @@ DAEMONIZE=@BINDIR@/@PACKAGE@-daemonize
 PROG=@LIBEXECDIR@/agent-runner
 
 start() {
-    echo -n $"Starting $PROGNAME: "
-	daemon --check=$SHORTNAME --pidfile=${PIDFILE} "$DAEMONIZE" \
+        echo -n $"Starting $PROGNAME: "
+	if hostname --fqdn >/dev/null 2>&1 ; then
+		daemon --check=$SHORTNAME --pidfile=${PIDFILE} "$DAEMONIZE" \
 			-n "$SHORTNAME" -p "$PIDFILE" -l "$LOGFILE" "$PROG" $OPTIONS
-	RETVAL=$?
+		RETVAL=$?
+		echo
+	else
+		failure
+		echo
+		echo The host name does not resolve properly to an IP address.  Cannot start "$PROGNAME". > /dev/stderr
+		RETVAL=9
+	fi
 	[ $RETVAL = 0 ] && touch ${LOCKFILE}
 	return $RETVAL
 }
