@@ -37,6 +37,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -1456,6 +1457,112 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
+    
+    // per domain resource counts is introduced from 2.2 so we need to evaluate the domain limits
+    // from the resource counts of account, and account-domain relation for all resource types
+    private void upgradeDomainResourceCounts(Connection conn) {
+        upgradeDomainResourceCounts(conn, ResourceType.volume);
+        upgradeDomainResourceCounts(conn, ResourceType.user_vm);
+        upgradeDomainResourceCounts(conn, ResourceType.snapshot);
+        upgradeDomainResourceCounts(conn, ResourceType.template);
+        upgradeDomainResourceCounts(conn, ResourceType.public_ip);
+    }
+
+    private void upgradeDomainResourceCounts(Connection conn, ResourceType type) {
+        try {
+
+            String resourceType;
+            switch (type) {
+            case user_vm:
+                resourceType = "user_vm";
+                break;
+            case volume:
+                resourceType = "volume";
+                break;
+            case snapshot:
+                resourceType =  "snapshot";
+                break;
+            case template:
+                resourceType =  "template";
+                break;
+            case public_ip:
+                resourceType = "public_ip";
+                break;
+            default:
+                resourceType = "user_vm";
+            }
+
+            PreparedStatement account_count_pstmt = conn.prepareStatement("SELECT account_id, count from resource_count where type='" + resourceType + "'");
+            ResultSet rs_account_count = account_count_pstmt.executeQuery();
+
+            while (rs_account_count.next()) {
+                Long accountId = rs_account_count.getLong(1);
+                Long accountCount = rs_account_count.getLong(2);
+
+                PreparedStatement account_pstmt = conn.prepareStatement("SELECT domain_id from account where id=?");
+                account_pstmt.setLong(1, accountId);
+                ResultSet rs_domain = account_pstmt.executeQuery();
+
+                if (!rs_domain.next()) {
+                    throw new CloudRuntimeException("Unable to get the domain for the account Id: " + accountId);
+                }
+                Long domainId = rs_domain.getLong(1);
+
+                rs_domain.close();
+                account_pstmt.close();
+
+                // resource count on a domain is aggregate of resource count of all the accounts that belong to the domain and its sub-domains.
+                // so propagate the count across the domain hierarchy all the way up to the root domain.
+                while (domainId != 0) {
+
+                    PreparedStatement domain_count_pstmt = conn.prepareStatement("SELECT count from resource_count where type='" + resourceType + "' and domain_id=?");
+                    domain_count_pstmt.setLong(1, domainId);
+                    ResultSet rs_domain_count = domain_count_pstmt.executeQuery();
+
+                    // if a row has been created for the domain in the resource_count table, add the count to the existing domain count
+                    if (rs_domain_count.next()) {
+                        Long domainCount = rs_domain_count.getLong(1);
+                        domainCount = domainCount + accountCount;
+                        PreparedStatement update_domain_count_pstmt = conn.prepareStatement("UPDATE resource_count set count=? where domain_id=? and type ='" + resourceType + "'");
+                        update_domain_count_pstmt.setLong(1, domainCount);
+                        update_domain_count_pstmt.setLong(2, domainId);
+                        update_domain_count_pstmt.executeUpdate();
+                        update_domain_count_pstmt.close();
+                    } else {
+                        PreparedStatement update_domain_count_pstmt = conn.prepareStatement("INSERT INTO resource_count (type, count, domain_id) VALUES (?,?,?)");
+                        update_domain_count_pstmt.setString(1, resourceType);
+                        update_domain_count_pstmt.setLong(2, accountCount);
+                        update_domain_count_pstmt.setLong(3, domainId);
+                        update_domain_count_pstmt.executeUpdate();
+                        update_domain_count_pstmt.close();
+                    }
+
+                    rs_domain_count.close();
+                    domain_count_pstmt.close();
+
+                    PreparedStatement parentDomain_pstmt = conn.prepareStatement("SELECT parent from domain where id=?");
+                    parentDomain_pstmt.setLong(1, domainId);
+                    ResultSet rs_domain_parent = parentDomain_pstmt.executeQuery();
+
+                    if (rs_domain_parent.next()) {
+                        domainId = rs_domain_parent.getLong(1);
+                    } else {
+                        throw new CloudRuntimeException("Unable to get the parent domain for the domain Id: " + domainId);
+                    }
+                    
+                    rs_domain_parent.close();
+                    parentDomain_pstmt.close();
+                }
+            }
+            
+            rs_account_count.close();
+            account_count_pstmt.close();
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't upgrade domain resource counts ", e);
+        }
+    }
+    
     private void upgradeHostCpuCapacityInfo(Connection conn) {
         try {
             // count user_vm memory info (M Bytes)
@@ -1950,6 +2057,7 @@ public class Upgrade218to22 implements DbUpgrade {
             upgradeLoadBalancingRules(conn);
             upgradeHostMemoryCapacityInfo(conn);
             upgradeHostCpuCapacityInfo(conn);
+            upgradeDomainResourceCounts(conn);
 
             migrateEvents(conn);
             createPortForwardingEvents(conn);
