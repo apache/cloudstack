@@ -1314,7 +1314,15 @@ public class Upgrade218to22 implements DbUpgrade {
                     rs = pstmt.executeQuery();
 
                     if (!rs.next()) {
-                        s_logger.warn("Unable to find public IP address " + publicIp + "; skipping lb rule id=" + originalLbId + " from update");
+                        s_logger.warn("Unable to find public IP address " + publicIp + "; skipping lb rule id=" + originalLbId + " from update. Cleaning it up from load_balancer_vm_map and load_balancer table");
+                        pstmt = conn.prepareStatement("DELETE from load_balancer_vm_map where load_balancer_id=?");
+                        pstmt.setLong(1, originalLbId);
+                        pstmt.executeUpdate();
+                        
+                        pstmt = conn.prepareStatement("DELETE from load_balancer where id=?");
+                        pstmt.setLong(1, originalLbId);
+                        pstmt.executeUpdate();
+                        
                         continue;
                     }
 
