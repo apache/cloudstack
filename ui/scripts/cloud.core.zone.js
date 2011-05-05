@@ -110,9 +110,35 @@ function zoneJsonToDetailsTab() {
                 $leftmenuItem1.data("jsonObj", jsonObj);                  
             }
         }
-    });    
+    });     
     
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
+    if(jsonObj.domain == null) {
+        $thisTab.find("#ispublic").text(g_dictionary["label.yes"]); 
+        $thisTab.find("#ispublic_edit").val("true");             
+        $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
+        $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");    
+    }
+    else {
+        $thisTab.find("#ispublic").text(g_dictionary["label.no"]);
+        $thisTab.find("#ispublic_edit").val("false");
+        $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress, #ispublic");
+        $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit, #ispublic_edit");    
+    }
+    
+    if(jsonObj.networktype == "Basic") 
+        $("#tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").hide();
+    
+    else if(jsonObj.networktype == "Advanced") 
+        $("#tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").show();            
+  
+    zoneJsonToDetailsTab2(jsonObj);    
+}	  
+
+function zoneJsonToDetailsTab2(jsonObj) {
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
                  
@@ -135,12 +161,7 @@ function zoneJsonToDetailsTab() {
     $thisTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));
     
     $thisTab.find("#networktype").text(fromdb(jsonObj.networktype));
-    if(jsonObj.networktype == "Basic") {
-        $("#tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").hide();
-    }
-    else if(jsonObj.networktype == "Advanced") {
-        $("#tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").show();           
-        
+    if(jsonObj.networktype == "Advanced") {        
         var vlan = jsonObj.vlan; 
         $thisTab.find("#vlan").text(fromdb(vlan));      
         if(vlan != null) {           
@@ -163,19 +184,6 @@ function zoneJsonToDetailsTab() {
         
     $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
     
-    if(jsonObj.domain == null) {
-        $thisTab.find("#ispublic").text(g_dictionary["label.yes"]); 
-        $thisTab.find("#ispublic_edit").val("true");             
-        $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
-        $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");    
-    }
-    else {
-        $thisTab.find("#ispublic").text(g_dictionary["label.no"]);
-        $thisTab.find("#ispublic_edit").val("false");
-        $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress, #ispublic");
-        $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit, #ispublic_edit");    
-    }
-     
     $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
     
     //actions ***   
@@ -184,12 +192,18 @@ function zoneJsonToDetailsTab() {
        
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForTab("label.action.edit.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
+    buildActionLinkForTab("label.action.edit.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
+    
+    if(jsonObj.allocationstate == "Disabled")
+        buildActionLinkForTab("label.action.enable.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
+    else if(jsonObj.allocationstate == "Enabled")  
+        buildActionLinkForTab("label.action.disable.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
+    
     buildActionLinkForTab("label.action.delete.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
-}	  
+}
 
 function zoneClearDetailsTab() {	    
     var $thisTab = $("#right_panel_content").find("#tab_content_details");    
@@ -368,7 +382,25 @@ function bindAddPodButton($button, $leftmenuItem1) {
 var zoneActionMap = {
     "label.action.edit.zone": {
         dialogBeforeActionFn: doEditZone  
+    },  
+    "label.action.enable.zone": {                  
+        isAsyncJob: false,       
+        dialogBeforeActionFn : doEnableZone,  
+        inProcessText: "label.action.enable.zone.processing",
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
+    		var jsonObj = json.updatezoneresponse.zone;
+    		zoneJsonToDetailsTab2(jsonObj);		        
+        }
     },
+    "label.action.disable.zone": {                  
+        isAsyncJob: false,       
+        dialogBeforeActionFn : doDisableZone,  
+        inProcessText: "label.action.disable.zone.processing",
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
+	    	var jsonObj = json.updatezoneresponse.zone;
+			zoneJsonToDetailsTab2(jsonObj);	    
+        }
+    },   
     "label.action.delete.zone": {                  
         isAsyncJob: false,       
         dialogBeforeActionFn : doDeleteZone,  
@@ -498,6 +530,42 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
         $readonlyFields.show();       
         $("#save_button, #cancel_button").hide();  
 	}
+}
+
+function doEnableZone($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.enable.zone"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updateZone&id="+id+"&allocationstate=Enabled";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
+function doDisableZone($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.disable.zone"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updateZone&id="+id+"&allocationstate=Enabled";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
 }
 
 function doDeleteZone($actionLink, $detailsTab, $midmenuItem1) {       

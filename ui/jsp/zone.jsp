@@ -10,7 +10,13 @@ dictionary = {
 	'label.action.edit.zone' : '<fmt:message key="label.action.edit.zone"/>',
 	'label.action.delete.zone' : '<fmt:message key="label.action.delete.zone"/>',
 	'label.action.delete.zone.processing' : '<fmt:message key="label.action.delete.zone.processing"/>',
-	'message.action.delete.zone' : '<fmt:message key="message.action.delete.zone"/>'
+	'message.action.delete.zone' : '<fmt:message key="message.action.delete.zone"/>',
+	'label.action.enable.zone' : '<fmt:message key="label.action.enable.zone"/>',
+	'label.action.enable.zone.processing' : '<fmt:message key="label.action.enable.zone.processing"/>',
+	'message.action.enable.zone' : '<fmt:message key="message.action.enable.zone"/>',
+	'label.action.disable.zone' : '<fmt:message key="label.action.disable.zone"/>',
+	'label.action.disable.zone.processing' : '<fmt:message key="label.action.disable.zone.processing"/>',
+	'message.action.disable.zone' : '<fmt:message key="message.action.disable.zone"/>'	
 };	
 </script>
 
