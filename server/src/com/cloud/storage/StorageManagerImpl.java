@@ -625,6 +625,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 return new Pair<String, String>(null, "Unable to upgrade snapshot from 2.1 to 2.2 for " + snapshot.getId());
             }
         }
+        
+        if( snapshot.getSwiftName() != null ) {
+            _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
+        }
         CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
                 backedUpSnapshotUuid, snapshot.getName());
 

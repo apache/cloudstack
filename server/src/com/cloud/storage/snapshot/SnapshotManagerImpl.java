@@ -38,6 +38,7 @@ import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
@@ -74,6 +75,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.SwiftVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -81,6 +83,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -154,6 +157,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     protected ClusterDao _clusterDao;
     @Inject
     private UsageEventDao _usageEventDao;
+    @Inject
+    private SwiftDao _swiftDao;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -262,7 +267,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // Update the snapshot in the database
         if ((answer != null) && answer.getResult()) {
             // The snapshot was successfully created
-            if (preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath()) {
+            if (preSnapshotPath != null && preSnapshotPath.equals(answer.getSnapshotPath())) {
                 // empty snapshot
                 s_logger.debug("CreateSnapshot: this is empty snapshot ");
                 snapshot.setPath(preSnapshotPath);
@@ -455,6 +460,44 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             // No need to do anything as snapshot has already been backed up.
         }
     }
+    
+    
+    void setupSnapshotChain(SnapshotVO ss, List<String> snapshots){
+        
+    }
+    
+    
+    void downloadSnapshotFromSwift(SnapshotVO ss) {
+    }
+    @Override
+    public void downloadSnapshotsFromSwift(SnapshotVO ss) {
+        
+        List<String> snapshots = new ArrayList<String>(20);
+        SnapshotVO tss = ss;
+        try {
+            while(true) {
+                assert tss.getSwiftName() != null : " SwiftName is null";
+                downloadSnapshotFromSwift(tss);
+                snapshots.add(tss.getSwiftName().split("_")[0]);
+                if( tss.getPrevSnapshotId() == 0) 
+                    break;
+                Long id = tss.getPrevSnapshotId();
+                tss = _snapshotDao.findById(id);
+                assert tss != null : " can not find snapshot " + id;
+            }
+            
+            setupSnapshotChain(ss, snapshots);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("downloadSnapshotsFromSwift failed due to " + e.toString());
+        }
+        
+        
+        
+    }
+    
+    private SwiftTO toSwiftTO(SwiftVO swift) {
+        return new SwiftTO(swift.getHostName(), swift.getAccount(), swift.getUserName(), swift.getToken());
+    }
 
     @Override
     @DB
@@ -485,22 +528,31 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             String prevSnapshotUuid = null;
             String prevBackupUuid = null;
 
+
+            SwiftVO swift= _swiftDao.findById(1L);
+            
             long prevSnapshotId = snapshot.getPrevSnapshotId();
             if (prevSnapshotId > 0) {
                 prevSnapshot = _snapshotDao.findByIdIncludingRemoved(prevSnapshotId);
-                if (prevSnapshot.getVersion() != null && prevSnapshot.getVersion().equals("2.2")) {
-                    prevBackupUuid = prevSnapshot.getBackupSnapshotId();
-                    if (prevBackupUuid != null) {
+                if ( prevSnapshot.getBackupSnapshotId() != null && swift == null) {
+                    if (prevSnapshot.getVersion() != null && prevSnapshot.getVersion().equals("2.2")) {                   
+                        prevBackupUuid = prevSnapshot.getBackupSnapshotId();
                         prevSnapshotUuid = prevSnapshot.getPath();
                     }
+                } else if ( prevSnapshot.getSwiftName() != null && swift != null ) {
+                    prevBackupUuid = prevSnapshot.getSwiftName();
+                    prevSnapshotUuid = prevSnapshot.getPath();
                 }
             }
-
             boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
             String vmName = _storageMgr.getVmNameOnVolume(volume);
-            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, volume.getPath(), snapshotUuid,
+            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), snapshotUuid,
                     snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName);
 
+            if ( swift != null ) {
+                backupSnapshotCommand.setSwift(toSwiftTO(swift));
+            }
+            
             String backedUpSnapshotUuid = null;
             // By default, assume failed.
             boolean backedUp = false;
@@ -518,7 +570,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             txn.start();
 
             if (backedUp) {
-                snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
+                if (backupSnapshotCommand.getSwift() != null ) {
+                    snapshot.setSwiftId(1L);
+                    snapshot.setSwiftName(backedUpSnapshotUuid);
+                } else {
+                    snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
+                }
                 if (answer.isFull()) {
                     snapshot.setPrevSnapshotId(0);
                 }

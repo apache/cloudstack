@@ -17,6 +17,8 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.SwiftTO;
+
 /**
  * When a snapshot of a VDI is taken, it creates two new files,
  * a 'base copy' which contains all the new data since the time of the last snapshot and an 'empty snapshot' file.
@@ -29,6 +31,8 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     private String prevBackupUuid;
     private boolean isVolumeInactive;
     private String vmName;
+    private Long snapshotId;
+    private SwiftTO swift;
     
     protected BackupSnapshotCommand() {
         
@@ -49,6 +53,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
                                  Long   dcId,
                                  Long   accountId,
                                  Long   volumeId,
+                                 Long   snapshotId,
                                  String volumePath,
                                  String snapshotUuid,
                                  String snapshotName,
@@ -58,6 +63,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
                                  String vmName) 
     {
         super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, snapshotUuid, snapshotName, dcId, accountId, volumeId);
+        this.snapshotId = snapshotId;
         this.prevSnapshotUuid = prevSnapshotUuid;
         this.prevBackupUuid = prevBackupUuid;
         this.isVolumeInactive = isVolumeInactive;
@@ -79,5 +85,17 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     
     public String getVmName() {
     	return vmName;
+    }
+
+    public SwiftTO getSwift() {
+        return swift;
+    }
+
+    public void setSwift(SwiftTO swift) {
+        this.swift = swift;
+    }
+
+    public Long getSnapshotId() {
+        return snapshotId;
     }
 }

@@ -1483,6 +1483,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new CloudRuntimeException("Unable to upgrade snapshot");
                     }
                 }
+                if( snapshot.getSwiftName() != null ) {
+                    _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
+                }
                 cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(), secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
                         origTemplateInstallPath, templateId, name);
             } else if (volumeId != null) {
