@@ -929,7 +929,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (username != null) {
-            sc.setParameters("username",  username);
+            sc.setParameters("username", username);
         }
 
         if (id != null) {
@@ -1730,36 +1730,45 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
-        String accountName = null;
+        String accountName = cmd.getSearchName();
         Boolean isRecursive = cmd.isRecursive();
 
         if (isRecursive == null) {
             isRecursive = false;
         }
 
-        if (accountId != null && accountId == 1) {
+        if (accountId != null && accountId.longValue() == 1L) {
             // system account should NOT be searchable
             List<AccountVO> emptyList = new ArrayList<AccountVO>();
             return emptyList;
         }
 
-        if ((account == null) || isAdmin(account.getType())) {
-            accountName = cmd.getSearchName(); // admin's can specify a name to search for
+        if (isAdmin(caller.getType())) {
             if (domainId == null) {
-                // default domainId to the admin's domain
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                domainId = caller.getDomainId();
                 isRecursive = true;
-            } else if (account != null) {
-                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list accounts");
+            } else {
+                Domain domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+                }
+                _accountMgr.checkAccess(caller, domain);
+
+                if (accountName != null) {
+                    Account account = _accountDao.findActiveAccount(accountName, domainId);
+                    if (account == null) {
+                        throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
+                    }
+
+                    _accountMgr.checkAccess(caller, account);
                 }
             }
         } else {
-            accountId = account.getId();
-            accountName = account.getAccountName(); // regular users must be constrained to their own account
+            // regular user is constraint to only his account
+            accountId = caller.getId();
         }
 
         Filter searchFilter = new Filter(AccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1770,20 +1779,20 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = cmd.getKeyword();
 
         SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
+        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
 
-        if ((accountId == null) && (domainId != null) && isRecursive) {
-            // if accountId isn't specified, we can do a domain LIKE match for the admin case if isRecursive is true
+        if ((domainId != null) && isRecursive) {
+            // do a domain LIKE match for the admin case if isRecursive is true
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        } else if ((accountId == null) && (domainId != null) && !isRecursive) {
-            // if accountId isn't specified, we can do a domain EXACT match for the admin case if isRecursive is true
+        } else if ((domainId != null) && !isRecursive) {
+            // do a domain EXACT match for the admin case if isRecursive is true
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -1794,17 +1803,18 @@ public class ManagementServerImpl implements ManagementServer {
             SearchCriteria<AccountVO> ssc = _accountDao.createSearchCriteria();
             ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
             sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
         }
 
         if (accountName != null) {
-            sc.setParameters("accountName", "%" + accountName + "%");
+            sc.setParameters("accountName", accountName);
         }
 
         if (accountId != null) {
             sc.setParameters("id", accountId);
-        } else if (domainId != null) {
+        }
+
+        if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
