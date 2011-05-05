@@ -539,7 +539,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<HostVO> findLostHosts(long timeout) {
         SearchCriteria<HostVO> sc = LastPingedSearch.create();
         sc.setParameters("ping", timeout);
-        sc.setParameters("state", Status.Up, Status.Updating, Status.Disconnected, Status.Down, Status.Connecting);
+        sc.setParameters("state", Status.Up, Status.Updating, Status.Disconnected, Status.Connecting);
         return listBy(sc);
     }
     
