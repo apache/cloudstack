@@ -266,7 +266,7 @@ public class Upgrade218to22 implements DbUpgrade {
             }
 
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Create", gateway, vnet, "DirectPodBasedNetworkGuru", true, 0, "Dhcp", null);
-        } else if (publicIp != null){
+        } else {
             insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
             long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static",
                     privateIp != null ? (domrId + privateIp) : null);
@@ -279,7 +279,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt.close();
             }
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "ExternalGuestNetworkGuru", false, 0, "Dhcp", null);
-        }
+        } 
 
     }
 
