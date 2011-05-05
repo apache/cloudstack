@@ -10,7 +10,13 @@ dictionary = {
 	'label.action.edit.pod' : '<fmt:message key="label.action.edit.pod"/>',
 	'label.action.delete.pod' : '<fmt:message key="label.action.delete.pod"/>',
 	'label.action.delete.pod.processing' : '<fmt:message key="label.action.delete.pod.processing"/>',
-	'message.action.delete.pod' : '<fmt:message key="message.action.delete.pod"/>'
+	'message.action.delete.pod' : '<fmt:message key="message.action.delete.pod"/>',
+	'label.action.enable.pod' : '<fmt:message key="label.action.enable.pod"/>',
+	'label.action.enable.pod.processing' : '<fmt:message key="label.action.enable.pod.processing"/>',
+	'message.action.enable.pod' : '<fmt:message key="message.action.enable.pod"/>',
+	'label.action.disable.pod' : '<fmt:message key="label.action.disable.pod"/>',
+	'label.action.disable.pod.processing' : '<fmt:message key="label.action.disable.pod.processing"/>',
+	'message.action.disable.pod' : '<fmt:message key="message.action.disable.pod"/>'		
 };	
 </script>
 

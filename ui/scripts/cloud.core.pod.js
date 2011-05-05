@@ -80,41 +80,6 @@ function podJsonToDetailsTab() {
 	    return;	
 	}
     
-    $.ajax({
-        data: createURL("command=listPods&id="+jsonObj.id),
-        dataType: "json",
-        async: false,
-        success: function(json) {            
-            var items = json.listpodsresponse.pod;			
-			if(items != null && items.length > 0) {
-                jsonObj = items[0];
-                $leftmenuItem1.data("jsonObj", jsonObj);                  
-            }
-        }
-    });    
-    
-    var $thisTab = $("#right_panel_content #tab_content_details");  
-    $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();       
-        
-    $thisTab.find("#id").text(fromdb(jsonObj.id));
-    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    
-    $thisTab.find("#name").text(fromdb(jsonObj.name));
-    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
-        
-    $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));   
-    $thisTab.find("#netmask_edit").val(fromdb(jsonObj.netmask));   
-         
-    $thisTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
-    $thisTab.find("#startIpRange_edit").val(fromdb(jsonObj.startip));
-    $thisTab.find("#endIpRange_edit").val(fromdb(jsonObj.endip));
-    
-    $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));  
-    $thisTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
-    
-    $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
-    
     // hide network tab upon zone vlan
     var networkType;  
     $.ajax({	    
@@ -137,8 +102,48 @@ function podJsonToDetailsTab() {
     	$("#tab_ipallocation, #add_iprange_button, #add_network_device_button").hide();
         $("#midmenu_add_directIpRange_button").unbind("click").hide();         
     }
+        
+    $.ajax({
+        data: createURL("command=listPods&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listpodsresponse.pod;			
+			if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $leftmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }
+    });    
     
+    podJsonToDetailsTab2(jsonObj);   
+}	
+
+function podJsonToDetailsTab2(jsonObj) {
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+	
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();       
+        
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
+        
+    $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));   
+    $thisTab.find("#netmask_edit").val(fromdb(jsonObj.netmask));   
+         
+    $thisTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
+    $thisTab.find("#startIpRange_edit").val(fromdb(jsonObj.startip));
+    $thisTab.find("#endIpRange_edit").val(fromdb(jsonObj.endip));
+    
+    $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));  
+    $thisTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
+    
+    $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+        
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
@@ -146,11 +151,17 @@ function podJsonToDetailsTab() {
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
     buildActionLinkForTab("label.action.edit.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab);  
+      
+    if(jsonObj.allocationstate == "Disabled")
+        buildActionLinkForTab("label.action.enable.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
+    else if(jsonObj.allocationstate == "Enabled")  
+        buildActionLinkForTab("label.action.disable.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
+      
     buildActionLinkForTab("label.action.delete.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
     
     $thisTab.find("#tab_spinning_wheel").hide();    
-    $thisTab.find("#tab_container").show();      
-}	
+    $thisTab.find("#tab_container").show();   	
+}
 
 function podJsonToNetworkTab() {       
 	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
@@ -1089,7 +1100,27 @@ function iscsiURL(server, iqn, lun) {
 var podActionMap = {
     "label.action.edit.pod": {
         dialogBeforeActionFn: doEditPod  
-    },
+    },    
+    "label.action.enable.pod": {  	              
+	    isAsyncJob: false,      
+	    dialogBeforeActionFn : doEnablePod,   
+	    inProcessText: "label.action.enable.pod.processing",
+	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  	        
+			var jsonObj = json.updatepodresponse.pod;
+			podJsonToDetailsTab2(jsonObj);					
+	    }
+	}	
+	,
+	"label.action.disable.pod": {  	              
+	    isAsyncJob: false,      
+	    dialogBeforeActionFn : doDisablePod,   
+	    inProcessText: "label.action.disable.pod.processing",
+	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+			var jsonObj = json.updatepodresponse.pod;
+			podJsonToDetailsTab2(jsonObj);				
+	    }
+	}	
+	,	 
     "label.action.delete.pod": {                   
         isAsyncJob: false, 
         dialogBeforeActionFn : doDeletePod,        
@@ -1185,6 +1216,42 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
         $readonlyFields.show();       
         $("#save_button, #cancel_button").hide();   
 	}
+}
+
+function doEnablePod($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.enable.pod"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updatePod&id="+id+"&allocationstate=Enabled";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
+function doDisablePod($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.disable.pod"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updatePod&id="+id+"&allocationstate=Disabled";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
 }
 
 function doDeletePod($actionLink, $detailsTab, $midmenuItem1) {       
