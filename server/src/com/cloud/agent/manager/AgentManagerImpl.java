@@ -1707,6 +1707,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             HostVO host = _hostDao.findById(id);
             if (!_hostDao.directConnect(host, _nodeId)) {
                 s_logger.info("Someone else is loading " + host);
+                resource.disconnected();
                 return null;
             }
         }

@@ -686,7 +686,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 } catch (OperationTimedoutException e) {
                     s_logger.debug("Unable to send the start command to host " + dest.getHost());
                     if (e.isActive()) {
-                        _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
+                        _haMgr.scheduleStop(vm, destHostId, WorkType.CheckStop);
                     }
                     canRetry = false;
                     throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
@@ -720,12 +720,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
             }
         } finally {
-            if (startedVm == null && canRetry) {
+            if (startedVm == null) {
             	// decrement only for user VM's and newly created VM
             	if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
                     _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
                 }
-                changeState(vm, Event.OperationFailed, null, work, Step.Done);
+            	if (canRetry) {
+            	    changeState(vm, Event.OperationFailed, null, work, Step.Done);
+            	}
             }
         }
 
