@@ -63,4 +63,5 @@ public interface SerialVersionUID {
     public static final long HttpCallException = Base | 0x23;
     public static final long VirtualMachineMigrationException = Base | 0x24;
     public static final long DiscoveredWithErrorException = Base | 0x25;
+    public static final long CallFailedException = Base | 0x26;
 }
