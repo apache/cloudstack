@@ -212,6 +212,12 @@
       <arg value="${DBROOTPW}" />
       <env key="CATALINA_HOME" value="${tomcat.home}"/>
     </exec>
+    
+    <chmod perm="666">
+      <fileset dir="${db.scripts.dir}">
+        <include name="**/*"/>
+      </fileset>
+    </chmod>
   </target>
   
   <path id="test.classpath">

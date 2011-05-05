@@ -1806,9 +1806,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             s_logger.warn("Unable to start the resource");
             return;
         }
-        host.setLastPinged(System.currentTimeMillis() >> 10);
-        host.setManagementServerId(_nodeId);
-        _hostDao.update(host.getId(), host);
         _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
     }
 
