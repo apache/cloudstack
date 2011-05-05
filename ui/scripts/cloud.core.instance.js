@@ -2090,11 +2090,15 @@ function vmJsonToSecurityGroupTab() {
 	var $thisTab = $("#right_panel_content").find("#tab_content_securitygroup");  		
 	
 	var items = jsonObj.securitygroup;
-	var template = $("#securitygroup_tab_template");
-	var $container = $thisTab.find("#tab_container").empty();
+	var template = $("#securitygroup_tab_template");	
+	var $container = $thisTab.find("#tab_container").find("#grid_content").empty();
 	if(items != null && items.length > 0) {
 	    for (var i = 0; i < items.length; i++) {
 		    var newTemplate = template.clone(true);
+		    if(i % 2 == 0)
+		    	newTemplate.addClass("even");
+		    else
+		    	newTemplate.addClass("odd");
 		    vmSecurityGroupJSONToTemplate(items[i], newTemplate); 
 		    $container.append(newTemplate.show());
 	    }
@@ -2285,10 +2289,68 @@ function vmNicJSONToTemplate(json, $template, index) {
 
 function vmSecurityGroupJSONToTemplate(json, $template) {
 	$template.attr("id","vm_securitygroup_"+fromdb(json.id));
-	$template.find("#title").text(fromdb(json.name));	
+	$template.find("#id").text(fromdb(json.id));	
 	$template.find("#name").text(fromdb(json.name)); 	
 	$template.find("#description").text(fromdb(json.description));
+		
+	$template.find("#show_ingressrule_link").unbind("click").bind("click", function(event){	        
+		var $managementArea = $template.find("#management_area");
+        var $ingressruleSubgrid = $managementArea.find("#subgrid_content").empty();           
+              
+        $.ajax({
+    		cache: false,		
+    		data: createURL("command=listSecurityGroups&id="+json.id),
+    		dataType: "json",
+    		async: false,
+    		success: function(json) {	
+    		    var securityGroupObj = json.listsecuritygroupsresponse.securitygroup[0];		    				    
+    			var items = securityGroupObj.ingressrule;        																					
+    			if (items != null && items.length > 0) {			    
+    				var template = $("#ingressrule_template");				
+    				for (var i = 0; i < items.length; i++) {
+    					var newTemplate = template.clone(true);	               
+    	                securityGroupIngressRuleJSONToTemplate(items[i], newTemplate); 
+    	                $ingressruleSubgrid.append(newTemplate.show());	
+    				}			
+    			}	    					
+    		}
+    	});     
+        
+        $managementArea.show();		           
+        $template.find("#show_ingressrule_link").hide();
+        $template.find("#hide_ingressrule_link").show();        
+        return false;
+    });
+	
+	$template.find("#hide_ingressrule_link").unbind("click").bind("click", function(event){	            
+        $template.find("#management_area").hide();   
+        $template.find("#hide_ingressrule_link").hide();
+        $template.find("#show_ingressrule_link").show();
+        return false;
+    });	
 }
+
+function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
+    $template.data("jsonObj", jsonObj);     
+    $template.attr("id", "securitygroup_ingressRule_"+fromdb(jsonObj.ruleid));   
+       		   
+    $template.find("#id").text(fromdb(jsonObj.ruleid));       
+    $template.find("#protocol").text(jsonObj.protocol);
+    			    		    
+    var endpoint;		    
+    if(jsonObj.protocol == "icmp")
+        endpoint = "ICMP Type=" + ((jsonObj.icmptype!=null)?jsonObj.icmptype:"") + ", code=" + ((jsonObj.icmpcode!=null)?jsonObj.icmpcode:"");		        
+    else //tcp, udp
+        endpoint = "Port Range " + ((jsonObj.startport!=null)?jsonObj.startport:"") + "-" + ((jsonObj.endport!=null)?jsonObj.endport:"");		    
+    $template.find("#endpoint").text(endpoint);	
+    
+    var cidrOrGroup;
+    if(jsonObj.cidr != null && jsonObj.cidr.length > 0)
+        cidrOrGroup = jsonObj.cidr;
+    else if (jsonObj.account != null && jsonObj.account.length > 0 &&  jsonObj.securitygroupname != null && jsonObj.securitygroupname.length > 0)
+        cidrOrGroup = jsonObj.account + "/" + jsonObj.securitygroupname;		    
+    $template.find("#cidr").text(cidrOrGroup);	 
+} 
 
 function vmVolumeJSONToTemplate(json, $template) {
     $template.attr("id","vm_volume_"+fromdb(json.id));	        
