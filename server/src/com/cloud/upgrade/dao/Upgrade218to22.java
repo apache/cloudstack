@@ -266,7 +266,7 @@ public class Upgrade218to22 implements DbUpgrade {
             }
 
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Create", gateway, vnet, "DirectPodBasedNetworkGuru", true, 0, "Dhcp", null);
-        } else {
+        } else if (publicIp != null){
             insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
             long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static",
                     privateIp != null ? (domrId + privateIp) : null);
@@ -2011,7 +2011,7 @@ public class Upgrade218to22 implements DbUpgrade {
         Properties snapEventParams = new Properties();
         long snapId = -1L;
         long snapSize = -1L;
-        Long zoneId = null;
+        Long zoneId = 0L;
         UsageEventVO usageEvent = null;
 
         snapEventParams.load(new StringReader(event.getParameters()));
@@ -2031,7 +2031,7 @@ public class Upgrade218to22 implements DbUpgrade {
         Long accountId = event.getAccountId();
 
         // Get snapshot info (there was a bug in 2.1.x - accountId is 0, and data_center info is not present in events table
-        if (accountId.longValue() == 0L || zoneId == null) {
+        if (accountId.longValue() == 0L || zoneId.longValue() == 0L) {
             PreparedStatement pstmt = conn.prepareStatement("SELECT zone_id, account_id from usage_event where resource_id=? and type like '%SNAPSHOT%'");
             pstmt.setLong(1, snapId);
             s_logger.debug("query is " + pstmt);
