@@ -74,9 +74,9 @@ tcp_or_udp_entry() {
            --destination-port $port -j DNAT  \
            --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables $op FORWARD -p $proto -s 0/0 -d $instIp -m state \
-           --state ESTABLISHED,RELATED -j ACCEPT &>>  $OUTFILE || [ "$op" == "-D" ]) &&
+           --state ESTABLISHED,RELATED -m comment --comment "$publicIp:$port" -j ACCEPT &>>  $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables $op FORWARD -p $proto -s 0/0 -d $instIp  \
-           --destination-port $dport0 -m state --state NEW  -j ACCEPT &>>  $OUTFILE)
+           --destination-port $dport0 -m state --state NEW -m comment --comment "$publicIp:$port" -j ACCEPT &>>  $OUTFILE)
   	
 
   local result=$?
