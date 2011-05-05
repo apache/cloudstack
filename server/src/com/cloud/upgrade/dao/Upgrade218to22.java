@@ -2034,7 +2034,6 @@ public class Upgrade218to22 implements DbUpgrade {
         if (accountId.longValue() == 0L || zoneId.longValue() == 0L) {
             PreparedStatement pstmt = conn.prepareStatement("SELECT zone_id, account_id from usage_event where resource_id=? and type like '%SNAPSHOT%'");
             pstmt.setLong(1, snapId);
-            s_logger.debug("query is " + pstmt);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 zoneId = rs.getLong(1);
@@ -2257,7 +2256,6 @@ public class Upgrade218to22 implements DbUpgrade {
     private void cleanupLbVmMaps(Connection conn) {
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT DISTINCT load_balancer_id FROM load_balancer_vm_map");
-            s_logger.debug("query is " + pstmt);
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
