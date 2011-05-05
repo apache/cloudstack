@@ -203,6 +203,7 @@ Summary:   Cloud.com agent
 Obsoletes: vmops-agent < %{version}-%{release}
 Obsoletes: vmops-console < %{version}-%{release}
 Obsoletes: cloud-console < %{version}-%{release}
+Obsoletes: cloud-vnet < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
 Requires: %{name}-agent-libs = %{version}
