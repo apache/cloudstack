@@ -244,7 +244,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     @Inject
     protected StoragePoolDao _storagePoolDao = null;
     @Inject
-    protected StoragePoolHostDao _storagePoolHostDao = null;
+     protected StoragePoolHostDao _storagePoolHostDao = null;
     @Inject
     protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject
