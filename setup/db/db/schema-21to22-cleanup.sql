@@ -106,7 +106,6 @@ ALTER TABLE `cloud`.`user_ip_address` ADD UNIQUE (`public_ip_address`, `source_n
 ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`);
 ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`);
 
-ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`);
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`);
 
 ALTER TABLE `cloud`.`template_spool_ref` ADD CONSTRAINT `fk_template_spool_ref__pool_id` FOREIGN KEY (`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE;
@@ -118,4 +117,11 @@ ALTER TABLE `cloud`.`snapshot_policy` ADD KEY  `volume_id` (`volume_id`);
 DELETE FROM op_ha_work WHERE taken IS NOT NULL;
 DELETE FROM op_ha_work WHERE host_id NOT IN (SELECT DISTINCT id FROM host);
 ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__host_id` FOREIGN KEY `fk_op_ha_work__host_id` (`host_id`) REFERENCES `host` (`id`);
+
+UPDATE `cloud`.`vm_instance` SET last_host_id=NULL WHERE last_host_id NOT IN (SELECT DISTINCT id FROM host);
+ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY `fk_vm_instance__last_host_id` (`last_host_id`) REFERENCES `host`(`id`);
+
+UPDATE `cloud`.`vm_instance` SET domain_id=1, account_id=1 where account_id not in (select distinct id from account) or domain_id not in (select distinct id from domain);
+ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`);
+
 
