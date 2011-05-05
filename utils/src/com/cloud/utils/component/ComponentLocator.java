@@ -18,6 +18,7 @@
 package com.cloud.utils.component;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -32,6 +33,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -733,15 +735,26 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     public static ComponentLocator getLocator(String server) {
-        Map<String, String> env = System.getenv();
-        String configFile = env.get("cloud-stack-components-specification");
+        String configFile = null;
+        try {
+            final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
+            if (propsFile == null) {
+                s_logger.debug("environment.properties could not be opened");
+            } else {
+                final FileInputStream finputstream = new FileInputStream(propsFile);
+                final Properties props = new Properties();
+                props.load(finputstream);
+                finputstream.close();
+                configFile = props.getProperty("cloud-stack-components-specification");
+            }
+        } catch (IOException e) {
+            s_logger.debug("environment.properties could not be loaded:" + e.toString());
+        }
+        
         if (configFile == null || PropertiesUtil.findConfigFile(configFile) == null) {
-            configFile = env.get("cloud_stack_components_specification");
-            if (configFile == null || PropertiesUtil.findConfigFile(configFile) == null) {
-            	configFile = "components-premium.xml";
-            	if (PropertiesUtil.findConfigFile(configFile) == null){
-            		configFile = "components.xml";
-            	}
+            configFile = "components-premium.xml";
+            if (PropertiesUtil.findConfigFile(configFile) == null){
+                configFile = "components.xml";
             }
         }
         return getLocatorInternal(server, true, configFile, "log4j-cloud");
