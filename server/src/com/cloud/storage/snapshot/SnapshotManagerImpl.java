@@ -262,7 +262,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // Update the snapshot in the database
         if ((answer != null) && answer.getResult()) {
             // The snapshot was successfully created
-            if (preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath()) {
+            if (preSnapshotPath != null && preSnapshotPath.equals(answer.getSnapshotPath())) {
                 // empty snapshot
                 s_logger.debug("CreateSnapshot: this is empty snapshot ");
                 snapshot.setPath(preSnapshotPath);
