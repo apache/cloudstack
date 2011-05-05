@@ -164,3 +164,6 @@ ALTER TABLE `cloud`.`storage_pool_details` DROP KEY `i_storage_pool_details__nam
 ALTER TABLE `cloud`.`storage_pool_details` ADD INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128));
 
 DROP TABLE `cloud`.`load_balancer`;
+
+
+UPDATE `cloud`.`nics` SET strategy='Create' where reserver_name='DirectNetworkGuru';

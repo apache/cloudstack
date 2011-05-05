@@ -215,10 +215,10 @@ public class Upgrade218to22 implements DbUpgrade {
         return nicId;
     }
 
-    protected void upgradeDomR(Connection conn, long dcId, long domrId, Long publicNetworkId, long guestNetworkId, long controlNetworkId, String zoneType) throws SQLException {
+    protected void upgradeDomR(Connection conn, long dcId, long domrId, Long publicNetworkId, long guestNetworkId, long controlNetworkId, String zoneType, String vnet) throws SQLException {
         s_logger.debug("Upgrading domR" + domrId);
         PreparedStatement pstmt = conn
-                .prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, domain_router.public_mac_address, domain_router.public_ip_address, domain_router.public_netmask, domain_router.guest_mac_address, domain_router.guest_ip_address, domain_router.guest_netmask, domain_router.vnet, domain_router.gateway, vm_instance.type FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
+                .prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, domain_router.public_mac_address, domain_router.public_ip_address, domain_router.public_netmask, domain_router.guest_mac_address, domain_router.guest_ip_address, domain_router.guest_netmask, domain_router.vnet, domain_router.gateway FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
         pstmt.setLong(1, domrId);
         ResultSet rs = pstmt.executeQuery();
 
@@ -226,7 +226,7 @@ public class Upgrade218to22 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find router " + domrId);
         }
 
-        long id = rs.getLong(1);
+        // long id = rs.getLong(1);
         String state = rs.getString(2);
         boolean running = state.equals("Running") | state.equals("Starting") | state.equals("Stopping");
         String privateMac = rs.getString(3);
@@ -238,9 +238,7 @@ public class Upgrade218to22 implements DbUpgrade {
         String guestMac = rs.getString(9);
         String guestIp = rs.getString(10);
         String guestNetmask = rs.getString(11);
-        String vnet = rs.getString(12);
         String gateway = rs.getString(13);
-        String type = rs.getString(14);
         rs.close();
         pstmt.close();
 
@@ -253,33 +251,28 @@ public class Upgrade218to22 implements DbUpgrade {
             publicVlan = rs.getString(1);
         }
 
-        if (zoneType.equalsIgnoreCase("Basic")) {
-            long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static",
-                    privateIp != null ? (domrId + privateIp) : null);
-            if (privateIp != null) {
-                pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
-                pstmt.setLong(1, controlNicId);
-                pstmt.setString(2, privateIp);
-                pstmt.setLong(3, dcId);
-                pstmt.executeUpdate();
-                pstmt.close();
-            }
+        // Control nic is the same for all types of networks
+        long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static",
+                privateIp != null ? (domrId + privateIp) : null);
+        if (privateIp != null) {
+            pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
+            pstmt.setLong(1, controlNicId);
+            pstmt.setString(2, privateIp);
+            pstmt.setLong(3, dcId);
+            pstmt.executeUpdate();
+            pstmt.close();
+        }
 
+        if (zoneType.equalsIgnoreCase("Basic")) {
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Create", gateway, vnet, "DirectPodBasedNetworkGuru", true, 0, "Dhcp", null);
-        } else {
+        } else if (publicIp != null) {
+            // update virtual domR
             insertNic(conn, publicNetworkId, domrId, running, publicMac, publicIp, publicNetmask, "Create", gateway, publicVlan, "PublicNetworkGuru", true, 2, "Static", null);
-            long controlNicId = insertNic(conn, controlNetworkId, domrId, running, privateMac, privateIp, privateNetmask, "Start", "169.254.0.1", null, "ControlNetworkGuru", false, 1, "Static",
-                    privateIp != null ? (domrId + privateIp) : null);
-            if (privateIp != null) {
-                pstmt = conn.prepareStatement("UPDATE op_dc_link_local_ip_address_alloc SET instance_id=? WHERE ip_address=? AND data_center_id=?");
-                pstmt.setLong(1, controlNicId);
-                pstmt.setString(2, privateIp);
-                pstmt.setLong(3, dcId);
-                pstmt.executeUpdate();
-                pstmt.close();
-            }
             insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Start", null, vnet, "ExternalGuestNetworkGuru", false, 0, "Dhcp", null);
-        } 
+        } else {
+            // update direct domR - dhcp case
+            insertNic(conn, guestNetworkId, domrId, running, guestMac, guestIp, guestNetmask, "Create", gateway, vnet, "DirectNetworkGuru", true, 0, "Dhcp", null);
+        }
 
     }
 
@@ -447,7 +440,7 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    protected void upgradeVirtualUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet) throws SQLException {
+    protected void upgradeUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet, String guruName, String strategy) throws SQLException {
         PreparedStatement pstmt = conn
                 .prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state, vm_instance.type FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
         pstmt.setLong(1, domainRouterId);
@@ -460,64 +453,6 @@ public class Upgrade218to22 implements DbUpgrade {
             vm[2] = rs.getString(3); // ip address
             vm[3] = rs.getString(4); // netmask
             vm[4] = rs.getString(5); // vm state
-            vms.add(vm);
-        }
-        rs.close();
-        pstmt.close();
-
-        s_logger.debug("Upgrading " + vms.size() + " vms for router " + domainRouterId);
-
-        int count = 0;
-
-        for (Object[] vm : vms) {
-            String state = (String) vm[4];
-
-            boolean running = false;
-            if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
-                running = true;
-                count++;
-            }
-
-            insertNic(conn, networkId, (Long) vm[0], running, (String) vm[1], (String) vm[2], (String) vm[3], "Start", gateway, vnet, "ExternalGuestNetworkGuru", true, 0, "Dhcp", null);
-        }
-
-        pstmt = conn.prepareStatement("SELECT state FROM vm_instance WHERE id=?");
-        pstmt.setLong(1, domainRouterId);
-        rs = pstmt.executeQuery();
-        rs.next();
-        String state = rs.getString(1);
-        if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
-            count++;
-        }
-        rs.close();
-        pstmt.close();
-
-        pstmt = conn.prepareStatement("UPDATE op_networks SET nics_count=?, check_for_gc=? WHERE id=?");
-        pstmt.setLong(1, count);
-        if (count == 0) {
-            pstmt.setBoolean(2, false);
-        } else {
-            pstmt.setBoolean(2, true);
-        }
-        pstmt.setLong(3, networkId);
-        pstmt.executeUpdate();
-        pstmt.close();
-    }
-
-    protected void upgradeBasicUserVms(Connection conn, long domainRouterId, long networkId, String gateway, String vnet) throws SQLException {
-        PreparedStatement pstmt = conn
-                .prepareStatement("SELECT vm_instance.id, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, vm_instance.state, vm_instance.type FROM vm_instance INNER JOIN user_vm ON vm_instance.id=user_vm.id WHERE user_vm.domain_router_id=? and vm_instance.removed IS NULL");
-        pstmt.setLong(1, domainRouterId);
-        ResultSet rs = pstmt.executeQuery();
-        List<Object[]> vms = new ArrayList<Object[]>();
-        while (rs.next()) {
-            Object[] vm = new Object[10];
-            vm[0] = rs.getLong(1); // vm id
-            vm[1] = rs.getString(2); // mac address
-            vm[2] = rs.getString(3); // ip address
-            vm[3] = rs.getString(4); // netmask
-            vm[4] = rs.getString(5); // vm state
-            vm[5] = rs.getString(6); // vm type
             vms.add(vm);
         }
         rs.close();
@@ -532,12 +467,10 @@ public class Upgrade218to22 implements DbUpgrade {
             boolean running = false;
             if (state.equals("Running") || state.equals("Starting") || state.equals("Stopping")) {
                 running = true;
-                String type = (String) vm[5];
-                if (type.equalsIgnoreCase("User")) {
-                    count++;
-                }
+                count++;
             }
-            insertNic(conn, networkId, (Long) vm[0], running, (String) vm[1], (String) vm[2], (String) vm[3], "Create", gateway, vnet, "DirectPodBasedNetworkGuru", true, 0, "Dhcp", null);
+
+            insertNic(conn, networkId, (Long) vm[0], running, (String) vm[1], (String) vm[2], (String) vm[3], strategy, gateway, vnet, guruName, true, 0, "Dhcp", null);
         }
 
         pstmt = conn.prepareStatement("SELECT state FROM vm_instance WHERE id=?");
@@ -959,8 +892,8 @@ public class Upgrade218to22 implements DbUpgrade {
                         pstmt.executeUpdate();
                         pstmt.close();
 
-                        upgradeBasicUserVms(conn, (Long) router[0], basicDefaultDirectNetworkId, (String) router[1], "untagged");
-                        upgradeDomR(conn, dcId, (Long) router[0], null, basicDefaultDirectNetworkId, controlNetworkId, "Basic");
+                        upgradeUserVms(conn, (Long) router[0], basicDefaultDirectNetworkId, (String) router[1], "untagged", "DirectPodBasedNetworkGuru", "Create");
+                        upgradeDomR(conn, dcId, (Long) router[0], null, basicDefaultDirectNetworkId, controlNetworkId, "Basic", "untagged");
                     }
 
                     upgradeSsvm(conn, dcId, basicDefaultDirectNetworkId, mgmtNetworkId, controlNetworkId, "Basic");
@@ -978,8 +911,8 @@ public class Upgrade218to22 implements DbUpgrade {
                     Long dcId = (Long) dc[0];
                     long mgmtNetworkId = insertNetwork(conn, "ManagementNetwork" + dcId, "Management Network created for Zone " + dcId, "Management", "Native", null, null, null, "Static",
                             managementNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
-                    long storageNetworkId = insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static",
-                            storageNetworkOfferingId, dcId, "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
+                    insertNetwork(conn, "StorageNetwork" + dcId, "Storage Network created for Zone " + dcId, "Storage", "Native", null, null, null, "Static", storageNetworkOfferingId, dcId,
+                            "PodBasedNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     long controlNetworkId = insertNetwork(conn, "ControlNetwork" + dcId, "Control Network created for Zone " + dcId, "Control", "Native", null, null, null, "Static",
                             controlNetworkOfferingId, dcId, "ControlNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
                     upgradeManagementIpAddress(conn, dcId);
@@ -987,7 +920,7 @@ public class Upgrade218to22 implements DbUpgrade {
                             publicNetworkOfferingId, dcId, "PublicNetworkGuru", "Setup", 1, 1, null, null, null, true, null, false, null);
 
                     pstmt = conn
-                            .prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");
+                            .prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=? and domain_router.role='DHCP_FIREWALL_LB_PASSWD_USERDATA'");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
                     ArrayList<Object[]> routers = new ArrayList<Object[]>();
@@ -1030,12 +963,13 @@ public class Upgrade218to22 implements DbUpgrade {
                         pstmt.close();
                         s_logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
 
-                        upgradeVirtualUserVms(conn, (Long) router[0], virtualNetworkId, (String) router[3], vnet);
-                        upgradeDomR(conn, dcId, (Long) router[0], publicNetworkId, virtualNetworkId, controlNetworkId, "Advanced");
+                        upgradeUserVms(conn, (Long) router[0], virtualNetworkId, (String) router[3], vnet, "ExternalGuestNetworkGuru", "Start");
+                        upgradeDomR(conn, dcId, (Long) router[0], publicNetworkId, virtualNetworkId, controlNetworkId, "Advanced", vnet);
                     }
 
                     upgradePublicUserIpAddress(conn, dcId, publicNetworkId, "VirtualNetwork");
 
+                    // Create direct networks
                     pstmt = conn.prepareStatement("SELECT id, vlan_id, vlan_gateway, vlan_netmask FROM vlan WHERE vlan_type='DirectAttached' AND data_center_id=?");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
@@ -1079,10 +1013,66 @@ public class Upgrade218to22 implements DbUpgrade {
                         pstmt.close();
 
                         upgradeDirectUserIpAddress(conn, dcId, vlanNetworkMap.get(tag), "DirectAttached");
+                        s_logger.debug("Created Direct networks and upgraded Direct ip addresses");
                     }
 
+                    // Create DHCP domRs - Direct networks
+                    pstmt = conn
+                            .prepareStatement("SELECT vm_instance.id, domain_router.guest_ip_address FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=? and domain_router.role='DHCP_USERDATA'");
+                    pstmt.setLong(1, dcId);
+                    rs = pstmt.executeQuery();
+                    ArrayList<Object[]> dhcpServers = new ArrayList<Object[]>();
+                    while (rs.next()) {
+                        Object[] dhcpServer = new Object[40];
+                        dhcpServer[0] = rs.getLong(1); // router id
+                        dhcpServer[1] = rs.getString(2); // guest IP address - direct ip address of the domR
+                        dhcpServers.add(dhcpServer);
+                    }
+                    rs.close();
+                    pstmt.close();
+
+                    for (Object[] dhcpServer : dhcpServers) {
+                        Long routerId = (Long) dhcpServer[0];
+                        String directIp = (String) dhcpServer[1];
+
+                        pstmt = conn.prepareStatement("SELECT u.source_network_id, v.vlan_id from user_ip_address u, vlan v where u.public_ip_address=? and v.id=u.vlan_db_id");
+                        pstmt.setString(1, directIp);
+                        rs = pstmt.executeQuery();
+                        if (!rs.next()) {
+                            throw new CloudRuntimeException("Unable to find Direct ip address " + directIp + " in user_ip_address table");
+                        }
+
+                        Long directNetworkId = rs.getLong(1);
+                        String vnet = rs.getString(2);
+                        rs.close();
+
+                        pstmt = conn.prepareStatement("SELECT gateway from networks where id=?");
+                        pstmt.setLong(1, directNetworkId);
+                        rs = pstmt.executeQuery();
+                        if (!rs.next()) {
+                            throw new CloudRuntimeException("Unable to find gateway for network id=" + directNetworkId);
+                        }
+
+                        String gateway = rs.getString(1);
+                        rs.close();
+
+                        pstmt = conn.prepareStatement("UPDATE domain_router SET network_id = ? wHERE id = ? ");
+                        pstmt.setLong(1, directNetworkId);
+                        pstmt.setLong(2, routerId);
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                        s_logger.debug("NetworkId updated for router id=" + routerId + "with network id = " + directNetworkId);
+
+                        upgradeUserVms(conn, routerId, directNetworkId, gateway, vnet, "DirectNetworkGuru", "Create");
+                        s_logger.debug("Upgraded Direct vms in Advance zone id=" + dcId);
+                        upgradeDomR(conn, dcId, routerId, null, directNetworkId, controlNetworkId, "Advanced", vnet);
+                        s_logger.debug("Upgraded Direct domRs in Advance zone id=" + dcId);
+                    }
+
+                    // Upgrade SSVM
                     upgradeSsvm(conn, dcId, publicNetworkId, mgmtNetworkId, controlNetworkId, "Advanced");
 
+                    // Upgrade ConsoleProxy
                     pstmt = conn.prepareStatement("SELECT vm_instance.id FROM vm_instance WHERE removed IS NULL AND type='ConsoleProxy' AND data_center_id=?");
                     pstmt.setLong(1, dcId);
                     rs = pstmt.executeQuery();
@@ -1314,15 +1304,16 @@ public class Upgrade218to22 implements DbUpgrade {
                     rs = pstmt.executeQuery();
 
                     if (!rs.next()) {
-                        s_logger.warn("Unable to find public IP address " + publicIp + "; skipping lb rule id=" + originalLbId + " from update. Cleaning it up from load_balancer_vm_map and load_balancer table");
+                        s_logger.warn("Unable to find public IP address " + publicIp + "; skipping lb rule id=" + originalLbId
+                                + " from update. Cleaning it up from load_balancer_vm_map and load_balancer table");
                         pstmt = conn.prepareStatement("DELETE from load_balancer_vm_map where load_balancer_id=?");
                         pstmt.setLong(1, originalLbId);
                         pstmt.executeUpdate();
-                        
+
                         pstmt = conn.prepareStatement("DELETE from load_balancer where id=?");
                         pstmt.setLong(1, originalLbId);
                         pstmt.executeUpdate();
-                        
+
                         continue;
                     }
 
@@ -1465,7 +1456,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    
     // per domain resource counts is introduced from 2.2 so we need to evaluate the domain limits
     // from the resource counts of account, and account-domain relation for all resource types
     private void upgradeDomainResourceCounts(Connection conn) {
@@ -1488,10 +1478,10 @@ public class Upgrade218to22 implements DbUpgrade {
                 resourceType = "volume";
                 break;
             case snapshot:
-                resourceType =  "snapshot";
+                resourceType = "snapshot";
                 break;
             case template:
-                resourceType =  "template";
+                resourceType = "template";
                 break;
             case public_ip:
                 resourceType = "public_ip";
@@ -1519,7 +1509,8 @@ public class Upgrade218to22 implements DbUpgrade {
                 rs_domain.close();
                 account_pstmt.close();
 
-                // resource count on a domain is aggregate of resource count of all the accounts that belong to the domain and its sub-domains.
+                // resource count on a domain is aggregate of resource count of all the accounts that belong to the domain and
+                // its sub-domains.
                 // so propagate the count across the domain hierarchy all the way up to the root domain.
                 while (domainId != 0) {
 
@@ -1527,7 +1518,8 @@ public class Upgrade218to22 implements DbUpgrade {
                     domain_count_pstmt.setLong(1, domainId);
                     ResultSet rs_domain_count = domain_count_pstmt.executeQuery();
 
-                    // if a row has been created for the domain in the resource_count table, add the count to the existing domain count
+                    // if a row has been created for the domain in the resource_count table, add the count to the existing
+                    // domain count
                     if (rs_domain_count.next()) {
                         Long domainCount = rs_domain_count.getLong(1);
                         domainCount = domainCount + accountCount;
@@ -1557,12 +1549,12 @@ public class Upgrade218to22 implements DbUpgrade {
                     } else {
                         throw new CloudRuntimeException("Unable to get the parent domain for the domain Id: " + domainId);
                     }
-                    
+
                     rs_domain_parent.close();
                     parentDomain_pstmt.close();
                 }
             }
-            
+
             rs_account_count.close();
             account_count_pstmt.close();
 
@@ -1570,7 +1562,7 @@ public class Upgrade218to22 implements DbUpgrade {
             throw new CloudRuntimeException("Can't upgrade domain resource counts ", e);
         }
     }
-    
+
     private void upgradeHostCpuCapacityInfo(Connection conn) {
         try {
             // count user_vm memory info (M Bytes)
@@ -2096,7 +2088,7 @@ public class Upgrade218to22 implements DbUpgrade {
             // cleanup lb - vm maps for load balancers that are already removed (there was a bug in 2.1.x when the mappings were
             // left around)
             cleanupLbVmMaps(conn);
-            
+
         } catch (SQLException e) {
             s_logger.error("Can't perform data migration ", e);
             throw new CloudRuntimeException("Can't perform data migration ", e);
@@ -2286,14 +2278,14 @@ public class Upgrade218to22 implements DbUpgrade {
             throw new CloudRuntimeException("Failed to cleanup orpahned lb-vm mappings due to:", e);
         }
     }
-    
+
     /*
      * Create usage events for existing port forwarding rules
      */
-    private void createPortForwardingEvents(Connection conn){
+    private void createPortForwardingEvents(Connection conn) {
         try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'PortForwarding' and " +
-            		"fw.state = 'Active' and ip.id = fw.ip_address_id");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'PortForwarding' and "
+                    + "fw.state = 'Active' and ip.id = fw.ip_address_id");
             s_logger.debug("Creating Port Forwarding usage events");
             ResultSet rs = pstmt.executeQuery();
             Date now = new Date();
@@ -2302,9 +2294,8 @@ public class Upgrade218to22 implements DbUpgrade {
                 long zoneId = rs.getLong(2);
                 long ruleId = rs.getLong(3);
                 PreparedStatement pstmt1 = null;
-                pstmt1 = conn
-                        .prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id)"
-                                + " VALUES (?, ?, ?, ?, ?)");
+                pstmt1 = conn.prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id)"
+                        + " VALUES (?, ?, ?, ?, ?)");
                 pstmt1.setString(1, EventTypes.EVENT_NET_RULE_ADD);
                 pstmt1.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
                 pstmt1.setLong(3, accountId);
@@ -2321,16 +2312,16 @@ public class Upgrade218to22 implements DbUpgrade {
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to add port forwarding usage events due to:", e);
-        }        
+        }
     }
-    
+
     /*
      * Create usage events for existing load balancer rules
      */
-    private void createLoadBalancerEvents(Connection conn){
+    private void createLoadBalancerEvents(Connection conn) {
         try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'LoadBalancing' and " +
-            		"fw.state = 'Active' and ip.id = fw.ip_address_id");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'LoadBalancing' and "
+                    + "fw.state = 'Active' and ip.id = fw.ip_address_id");
             s_logger.debug("Creating load balancer usage events");
             ResultSet rs = pstmt.executeQuery();
             Date now = new Date();
@@ -2339,9 +2330,8 @@ public class Upgrade218to22 implements DbUpgrade {
                 long zoneId = rs.getLong(2);
                 long ruleId = rs.getLong(3);
                 PreparedStatement pstmt1 = null;
-                pstmt1 = conn
-                        .prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id)"
-                                + " VALUES (?, ?, ?, ?, ?)");
+                pstmt1 = conn.prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id)"
+                        + " VALUES (?, ?, ?, ?, ?)");
                 pstmt1.setString(1, EventTypes.EVENT_LOAD_BALANCER_CREATE);
                 pstmt1.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
                 pstmt1.setLong(3, accountId);
@@ -2358,16 +2348,16 @@ public class Upgrade218to22 implements DbUpgrade {
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to add Load Balancer usage events due to:", e);
-        }        
+        }
     }
-    
+
     /*
      * Create usage events for network offerings
      */
-    private void createNetworkOfferingEvents(Connection conn){
+    private void createNetworkOfferingEvents(Connection conn) {
         try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT vm.account_id, vm.data_center_id, ni.instance_id, vm.name, nw.network_offering_id, nw.is_default FROM nics ni, " +
-                    "networks nw, vm_instance vm where vm.type = 'User' and ni.removed is null and ni.instance_id = vm.id and ni.network_id = nw.id;");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT vm.account_id, vm.data_center_id, ni.instance_id, vm.name, nw.network_offering_id, nw.is_default FROM nics ni, "
+                    + "networks nw, vm_instance vm where vm.type = 'User' and ni.removed is null and ni.instance_id = vm.id and ni.network_id = nw.id;");
             s_logger.debug("Creating network offering usage events");
             ResultSet rs = pstmt.executeQuery();
             Date now = new Date();
@@ -2380,9 +2370,8 @@ public class Upgrade218to22 implements DbUpgrade {
                 long isDefault = rs.getLong(6);
                 PreparedStatement pstmt1 = null;
                 pstmt1 = conn
-                        .prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id, usage_event.resource_name, " +
-                                "usage_event.offering_id, usage_event.size)"
-                                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        .prepareStatement("INSERT INTO usage_event (usage_event.type, usage_event.created, usage_event.account_id, usage_event.zone_id, usage_event.resource_id, usage_event.resource_name, "
+                                + "usage_event.offering_id, usage_event.size)" + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                 pstmt1.setString(1, EventTypes.EVENT_NETWORK_OFFERING_ASSIGN);
                 pstmt1.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
                 pstmt1.setLong(3, accountId);
@@ -2402,7 +2391,7 @@ public class Upgrade218to22 implements DbUpgrade {
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to add network offering usage events due to:", e);
-        }        
+        }
     }
-    
+
 }
