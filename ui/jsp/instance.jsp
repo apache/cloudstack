@@ -297,9 +297,31 @@ dictionary = {
                    <div class="rightpanel_mainloader_animatedicon"></div>
                    <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
-        </div> 
-        <div id="tab_container">        
-        </div>
+        </div>         
+		<div id="tab_container">
+	        <div class="grid_container">
+	            <div class="grid_header">
+	                <div class="grid_header_cell" style="width: 5%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.id"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 20%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.name"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 40%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.description"/></div>
+	                </div>	                
+	                <div class="grid_header_cell" style="width: 30%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.actions"/></div>
+	                </div>
+	            </div>	            
+	            <div id="grid_content">
+	            </div>
+	        </div>
+        </div>     
     </div>
     <!--Security Group tab (end)-->       
     
@@ -1059,34 +1081,118 @@ dictionary = {
 </div>
 <!--  nic tab template (end) -->
 
-<!--  Security Group tab template (begin) -->
-<div class="grid_container" id="securitygroup_tab_template" style="display: none">	
-    <div class="grid_header">
-        <div class="grid_header_title" id="title">
-        </div>		
-    </div>        
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <fmt:message key="label.name"/>:</div>
+
+<!-- security group tab template (begin) -->
+<div class="grid_rows" id="securitygroup_tab_template" style="display:none"> <!-- add class "odd", "even" in JS file-->
+    <div id="row_container">
+        <div class="grid_row_cell" style="width: 5%; ">
+            <div class="row_celltitles" id="id">
+                </div>
         </div>
-        <div class="grid_row_cell" style="width: 79%;">
+        <div class="grid_row_cell" style="width: 20%; ">
             <div class="row_celltitles" id="name">
+                </div>
+        </div>
+        <div class="grid_row_cell" style="width: 40%; ">
+            <div class="row_celltitles" id="description">
+                </div>
+        </div>      
+        <div class="grid_row_cell" style="width: 30%; ">
+            <div class="row_celltitles">                
+                <a id="show_ingressrule_link" href="#" style="float:left;"><fmt:message key="label.show.ingress.rule"/></a>
+                <a id="hide_ingressrule_link" href="#" style="float:left;display:none" ><fmt:message key="label.hide.ingress.rule"/></a>
             </div>
+        </div>       
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p id="description">
+                <fmt:message key="label.waiting"/> &hellip;
+            </p>
+        </div>
+    </div> 
+    <div class="grid_rows odd" id="row_container_edit" style="display:none; border-bottom:none;">
+        <div class="grid_row_cell" style="width: 20%; ">
+            <input id="name" class="text" style="width: 70%;" type="text" />
+            <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+        </div>
+        <div class="grid_row_cell" style="width: 14%; ">
+            <div class="row_celltitles" id="public_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 14%; ">
+            <div class="row_celltitles" id="private_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%; ">
+            <select id="algorithm_select" class="select" style="width: 70%;">                 
+            </select>
+        </div>        
+        <div class="grid_row_cell" style="width: 10%; ">
+            <div class="row_celltitles" id="state"></div>
+        </div>        
+        <div class="grid_row_cell" style="width: 25%; ">
+            <div class="row_celltitles">
+                <a id="save_link" href="#" style="float:left;"><fmt:message key="label.save"/></a>
+                <a id="cancel_link" href="#" style="float:left; margin-left:15px; display:inline;"><fmt:message key="label.cancel"/></a>
+            </div>
+        </div>
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p id="description">
+                <fmt:message key="label.waiting"/> &hellip;
+            </p>
         </div>
     </div>  
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <fmt:message key="label.description"/>:</div>
+    <div class="grid_detailspanel" id="management_area" style="display: none;">
+        <div class="grid_details_pointer">
         </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="description">
+        <div class="grid_detailsbox">
+            <div class="grid_details_row odd" id="add_vm_to_lb_row">
+                <div class="grid_header_cell" style="width: 5%; ">
+	                <div class="grid_header_title">
+                        <fmt:message key="label.id"/>
+                    </div>
+                </div>
+                <div class="grid_header_cell" style="width: 10%; ">
+	                <div class="grid_header_title">
+                        <fmt:message key="label.protocol"/>
+                    </div>
+                </div>
+                <div class="grid_header_cell" style="width: 40%; ">
+	                <div class="grid_header_title">
+                        <fmt:message key="label.endpoint.or.operation"/>
+                    </div>
+                </div>
+                <div class="grid_header_cell" style="width: 40%; ">
+	                <div class="grid_header_title">
+                        <fmt:message key="label.cidr.account"/>
+                    </div>
+                </div>               
+            </div>
+            <div id="subgrid_content" class="ip_description_managearea">
             </div>
         </div>
-    </div>     
+    </div>
 </div>
-<!--  Security Group tab template (end) -->
+<!-- security group tab template (end) -->
+
+<!-- security group tab - ingress rule - template (begin) -->
+<div id="ingressrule_template" class="grid_details_row odd" style="display:none">
+   
+    <div class="grid_row_cell" style="width: 5%;">
+        <div class="row_celltitles" id="id"></div>
+    </div>
+    <div class="grid_row_cell" style="width: 10%;">
+        <div class="row_celltitles" id="protocol"></div>
+    </div>
+    <div class="grid_row_cell" style="width: 40%;">
+        <div class="row_celltitles" id="endpoint"></div>
+    </div>
+    <div class="grid_row_cell" style="width: 40%;">
+        <div class="row_celltitles" id="cidr"></div>
+    </div>
+</div>
+<!-- security group tab - ingress rule - template (end) -->
 
 <!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">	
