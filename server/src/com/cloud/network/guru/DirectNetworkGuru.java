@@ -183,11 +183,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         getIp(nic, dc, vm, network);
-
-        /* It's public ip, don't release it */
-        if (network.isSecurityGroupEnabled() && nic.getIp4Address() != null) {
-            nic.setStrategy(ReservationStrategy.Create);
-        }
+        nic.setStrategy(ReservationStrategy.Create);
 
         return nic;
     }
@@ -197,6 +193,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
+            nic.setStrategy(ReservationStrategy.Create);
         }
     }
 
