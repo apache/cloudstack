@@ -62,19 +62,19 @@ public class SwiftVO implements Swift {
         this.userName = userName;
         this.token = token;
     }
-    
+    @Override
     public String getHostName() {
         return hostName;
     }
-
+    @Override
     public String getAccount() {
         return account;
     }
-
+    @Override
     public String getUserName() {
         return userName;
     }
-
+    @Override
     public String getToken() {
         return token;
     }

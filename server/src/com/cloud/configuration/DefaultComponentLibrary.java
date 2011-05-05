@@ -127,6 +127,7 @@ import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
+import com.cloud.storage.dao.SwiftDaoImpl;
 import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateManagerImpl;
@@ -270,7 +271,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("HostTagsDao", HostTagsDaoImpl.class);
         addDao("NetworkDomainDao", NetworkDomainDaoImpl.class);
         addDao("KeystoreDao", KeystoreDaoImpl.class);
-        addDao("DcDetailsDao", DcDetailsDaoImpl.class);        
+        addDao("DcDetailsDao", DcDetailsDaoImpl.class);
+        addDao("SwiftDao", SwiftDaoImpl.class);
     }
     
     @Override

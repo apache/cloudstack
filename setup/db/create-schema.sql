@@ -406,7 +406,7 @@ CREATE TABLE `cloud`.`snapshots` (
   `created` datetime COMMENT 'Date Created',
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
-  `swift_id` unsigned COMMENT 'which swift',
+  `swift_id` bigint unsigned COMMENT 'which swift',
   `swift_name` varchar(255) COMMENT 'Back up name in swift',
   `prev_snap_id` bigint unsigned COMMENT 'Id of the most recent snapshot',
   `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',
@@ -1489,11 +1489,12 @@ CREATE TABLE `cloud`.`keystore` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`swift` (
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `hostname` varchar(255),
   `account` varchar(255) COMMENT ' account in swift',
   `username` varchar(255) COMMENT ' username in swift',
   `token` varchar(255) COMMENT 'token for this user',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

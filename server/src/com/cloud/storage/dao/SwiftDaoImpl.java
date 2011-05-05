@@ -17,11 +17,13 @@
  */
 
 package com.cloud.storage.dao;
-
-import java.util.List;
-
+import javax.ejb.Local;
 import com.cloud.storage.SwiftVO;
-import com.cloud.utils.db.GenericDao;
+import org.apache.log4j.Logger;
+import com.cloud.utils.db.GenericDaoBase;
 
-public interface SwiftDao extends GenericDao<SwiftVO, Long> {
+@Local (value={SwiftDao.class})
+public class SwiftDaoImpl extends GenericDaoBase<SwiftVO, Long> implements SwiftDao {
+    public static final Logger s_logger = Logger.getLogger(SwiftDaoImpl.class.getName());
 }
+
