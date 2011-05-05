@@ -43,8 +43,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.Listener;
+import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
@@ -481,7 +481,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     public AgentAttache findAttache(long hostId) {
-        return _agents.get(hostId);
+        AgentAttache attache = null;
+        synchronized (_agents) {
+            attache = _agents.get(hostId);
+        }
+        return attache;
     }
 
     @Override
@@ -587,8 +591,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         String username = cmd.getUsername();
         String password = cmd.getPassword();
 
-        if(url != null)
-        	url = URLDecoder.decode(url);
+        if(url != null) {
+            url = URLDecoder.decode(url);
+        }
 
         URI uri = null;
 
@@ -716,7 +721,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                         break;
                     }
 
-                    AgentAttache attache = simulateStart(resource, entry.getValue(), true, null, null);
+                    AgentAttache attache = simulateStart(null, resource, entry.getValue(), true, null, null);
                     if (attache != null) {
                         hosts.add(_hostDao.findById(attache.getId()));
                     }
@@ -950,7 +955,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                         }
                         return null;
                     }
-                    AgentAttache attache = simulateStart(resource, entry.getValue(), true, hostTags, allocationState);
+                    AgentAttache attache = simulateStart(null, resource, entry.getValue(), true, hostTags, allocationState);
                     if (attache != null) {
                         hosts.add(_hostDao.findById(attache.getId()));
                     }
@@ -1694,11 +1699,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deregistering link for " + hostId + " with state " + nextState);
         }
-
-        _hostDao.disconnect(host, event, _nodeId);
-
         removeAgent(attache, nextState);
-
+        _hostDao.disconnect(host, event, _nodeId);
+        
         host = _hostDao.findById(host.getId());
         if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host, investigate);
@@ -1873,10 +1876,18 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
     }
 
-    protected AgentAttache simulateStart(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState) throws IllegalArgumentException {
+    protected AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState) throws IllegalArgumentException {
         StartupCommand[] cmds = resource.initialize();
         if (cmds == null) {
             return null;
+        }
+        
+        if (id != null) {
+            HostVO host = _hostDao.findById(id);
+            if (!_hostDao.directConnect(host, _nodeId)) {
+                s_logger.info("Someone else is loading " + host);
+                return null;
+            }
         }
 
         AgentAttache attache = null;
@@ -2386,7 +2397,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             }
         }
 
-        AgentAttache attache = simulateStart(resource, hostDetails, true, null, null);
+        AgentAttache attache = simulateStart(null, resource, hostDetails, true, null, null);
         return _hostDao.findById(attache.getId());
     }
 
@@ -2559,8 +2570,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         link.attach(attache);
         AgentAttache old = null;
         synchronized (_agents) {
-            old = _agents.get(id);
-            _agents.put(id, attache);
+            old = _agents.put(id, attache);
         }
         if (old != null) {
             old.disconnect(Status.Removed);
@@ -2577,8 +2587,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                 || server.getStatus() == Status.PrepareForMaintenance, this);
         AgentAttache old = null;
         synchronized (_agents) {
-            old = _agents.get(id);
-            _agents.put(id, attache);
+            old = _agents.put(id, attache);
         }
         if (old != null) {
             old.disconnect(Status.Removed);
@@ -2959,22 +2968,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
         @Override
         public void run() {
-            AgentAttache at = null;
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
-                simulateStart(resource, details, false, null, null);
+                simulateStart(id, resource, details, false, null, null);
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
                 if (actionDelegate != null) {
                     actionDelegate.action(new Long(id));
-                }
-                if (at == null) {
-                    HostVO host = _hostDao.findById(id);
-                    host.setManagementServerId(null);
-                    _hostDao.update(id, host);
                 }
                 StackMaid.current().exitCleanup();
             }

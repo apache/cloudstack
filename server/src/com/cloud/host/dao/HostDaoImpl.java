@@ -87,6 +87,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
     protected final SearchBuilder<HostVO> AvailHypevisorInZone;
     
+    protected final SearchBuilder<HostVO> DirectConnectSearch;
+    
     protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
     protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
     
@@ -204,7 +206,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.and("resource", UnmanagedDirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
-        
         /*
         UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
@@ -213,6 +214,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         */
         UnmanagedDirectConnectSearch.done();
 
+        DirectConnectSearch = createSearchBuilder();
+        DirectConnectSearch.and("server", DirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
+        DirectConnectSearch.and("resource", DirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        DirectConnectSearch.and("id", DirectConnectSearch.entity().getId(), SearchCriteria.Op.EQ);
+        DirectConnectSearch.done();
+        
         UnmanagedExternalNetworkApplianceSearch = createSearchBuilder();
         UnmanagedExternalNetworkApplianceSearch.and("resource", UnmanagedExternalNetworkApplianceSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         UnmanagedExternalNetworkApplianceSearch.and("server", UnmanagedExternalNetworkApplianceSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);        
@@ -433,7 +440,20 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public void loadHostTags(HostVO host){
     	List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
     	host.setHostTags(hostTags);
-     }    
+    }
+    
+    @Override
+    public boolean directConnect(HostVO host, long msId) {
+        SearchCriteria<HostVO> sc = DirectConnectSearch.create();
+        sc.setParameters("id", host.getId());
+        
+        host.setManagementServerId(msId);
+        host.setLastPinged(System.currentTimeMillis() >> 10);
+        UpdateBuilder ub = getUpdateBuilder(host);
+        ub.set(host, _statusAttr, Status.Connecting);
+        
+        return update(host, sc) > 0;
+    }
 
     @Override
     public boolean updateStatus(HostVO host, Event event, long msId) {
@@ -539,8 +559,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<HostVO> findLostHosts(long timeout) {
         SearchCriteria<HostVO> sc = LastPingedSearch.create();
         sc.setParameters("ping", timeout);
-        sc.setParameters("state", Status.Up.toString(), Status.Updating.toString(),
-                Status.Disconnected.toString(), Status.Down.toString());
+        sc.setParameters("state", Status.Up, Status.Updating, Status.Disconnected, Status.Down, Status.Connecting);
         return listBy(sc);
     }
     
