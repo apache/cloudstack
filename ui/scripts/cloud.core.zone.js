@@ -559,7 +559,7 @@ function doDisableZone($actionLink, $detailsTab, $midmenuItem1) {
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
-			var apiCommand = "command=updateZone&id="+id+"&allocationstate=Enabled";
+			var apiCommand = "command=updateZone&id="+id+"&allocationstate=Disabled";
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
