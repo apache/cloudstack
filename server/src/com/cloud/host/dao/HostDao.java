@@ -158,5 +158,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     void loadHostTags(HostVO host);
     
     List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
+
+    boolean directConnect(HostVO host, long msId);
     
 }
