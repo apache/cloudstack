@@ -292,6 +292,14 @@ AjaxViewer.prototype = {
 		} else if(cmd == "keyboard_en") {
 			$("#toolbar").find(".pulldown").find("ul").hide();
 			this.currentKeyboard = 0;
+		} else if(cmd == "sendCtrlAltDel") {
+			this.sendKeyboardEvent(ajaxViewer.KEY_DOWN, 45, ajaxViewer.CTRL_KEY | ajaxViewer.ALT_KEY);
+			this.sendKeyboardEvent(ajaxViewer.KEY_UP, 45, ajaxViewer.CTRL_KEY | ajaxViewer.ALT_KEY);
+		} else if(cmd == "sendCtrlEsc") {
+			this.sendKeyboardEvent(ajaxViewer.KEY_DOWN, 17, 0);
+			this.sendKeyboardEvent(ajaxViewer.KEY_DOWN, 27, ajaxViewer.CTRL_KEY);
+			this.sendKeyboardEvent(ajaxViewer.KEY_UP, 27, ajaxViewer.CTRL_KEY);
+			this.sendKeyboardEvent(ajaxViewer.KEY_UP, 17, 0);
 		}
 	},
 	

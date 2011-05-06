@@ -71,7 +71,8 @@ body {
 #toolbar ul li ul {
     position: absolute;
     top:32;
-    display: block none;
+    display: block;
+    display: none;
     border-top: 1px solid black;
     background-image:url(/resource/images/back.gif); 
     background-repeat:repeat-x repeat-y; 
