@@ -4777,7 +4777,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long zoneId = cmd.getZoneId();
         if (zoneId == null) {
             String hypers = _configDao.getValue(Config.HypervisorList.key());
-            if (hypers == "" || hypers == null) {
+            if ( hypers == null || hypers.isEmpty() ) {
                 return null;
             }
             return hypers.split(",");
