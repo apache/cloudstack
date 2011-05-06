@@ -843,7 +843,7 @@ if __name__ == '__main__':
     glbEnv = globalEnv()
     
     parser = OptionParser()
-    parser.add_option("-a", action="store_true", dest="auto", help="auto mode")
+    parser.add_option("-y", "--yes", action="store_true", dest="auto", help="answer yes for all questions")
     parser.add_option("-m", "--mgtSvr", dest="mgt", help="myCloud management server name or IP")
     parser.add_option("-z", "--zone-token", dest="zone", help="zone token")
     
