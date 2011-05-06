@@ -1785,10 +1785,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             } else {
                 guid = cluster.getGuid();
             }
-            if (guid == null || guid.isEmpty()) {
-                throw new CloudRuntimeException("Can not find guid for cluster " + cluster.getId() + " name " + cluster.getName());
+            if (guid != null && !guid.isEmpty()) {
+                params.put("pool", guid);
             }
-            params.put("pool", guid);
         }
 
         params.put("ipaddress", host.getPrivateIpAddress());
