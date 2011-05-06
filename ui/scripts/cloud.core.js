@@ -27,7 +27,8 @@ function periodicallyCheckNonCompleteAsyncJob() {
 	        for(var jobId in g_nonCompleteAsyncJob) {  
 	            $.ajax({
 	                data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-	                dataType: "json",									                    					                    
+	                dataType: "json",	
+	                async: false,
 	                success: function(json) {		                                                     							                       
 	                    var result = json.queryasyncjobresultresponse;										                   
 	                    if (result.jobstatus == 0) {
