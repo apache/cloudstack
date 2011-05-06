@@ -343,6 +343,7 @@ def build_xml_api_description ():
 		)
 	
 	bld.install_files("${PYTHONDIR}/cloudtool", 'cloud-cli/cloudtool/*')
+	bld.install_files("${PYTHONDIR}/cloudutils", 'python/lib/cloudutils/*')
 	bld.install_as("${PYTHONDIR}/cloudapis.py", 'cloud-cli/cloudapis/cloud.py')
 
 
