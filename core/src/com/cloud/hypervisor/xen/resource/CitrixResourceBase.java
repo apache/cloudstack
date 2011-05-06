@@ -4377,7 +4377,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 					"remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey(), "from",
 					Long.toString(cmd.getFrom()), "to", Long.toString(cmd.getTo()));
 			String[] res = result.split(":");
-			if (res.length != 2 || (res.length == 2 && res[1] == "[]")) {
+			if (res.length != 2 || (res.length == 2 && res[1].equalsIgnoreCase("[]"))) {
 				return new OvsCreateGreTunnelAnswer(cmd, false, result,
 						_host.ip, bridge);
 			} else {
