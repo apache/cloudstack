@@ -50,6 +50,7 @@ import com.cloud.api.commands.DeleteSecurityGroupCmd;
 import com.cloud.api.commands.ListSecurityGroupsCmd;
 import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -70,6 +71,7 @@ import com.cloud.network.security.dao.SecurityGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -119,6 +121,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Inject UserVmManager _userVmMgr;
 	@Inject VMInstanceDao _vmDao;
 	@Inject NetworkManager _networkMgr;
+	@Inject AccountManager _accountMgr;
 	ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -1088,119 +1091,97 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         return true;
 	}
 
-    @Override
-    public List<SecurityGroupRulesVO> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        Account account = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long accountId = null;
-        Long instanceId = cmd.getVirtualMachineId();
-        String securityGroup = cmd.getSecurityGroupName();
-        Boolean recursive = Boolean.FALSE;
-        Long id = cmd.getId();
+	 @Override
+	    public List<SecurityGroupRulesVO> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+	        Account caller = UserContext.current().getCaller();
+	        Long domainId = cmd.getDomainId();
+	        String accountName = cmd.getAccountName();
+	        Long instanceId = cmd.getVirtualMachineId();
+	        String securityGroup = cmd.getSecurityGroupName();
+	        Long id = cmd.getId();
+	        Long accountId = null;
 
-        // permissions check
-        if ((account == null) || isAdmin(account.getType())) {
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list network groups for account " + accountName + " in domain " + domainId + "; permission denied.");
-                }
-                if (accountName != null) {
-                    Account acct = _accountDao.findActiveAccount(accountName, domainId);
-                    if (acct != null) {
-                        accountId = acct.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            } else if (instanceId != null) {
-                UserVmVO userVM = _userVMDao.findById(instanceId);
-                if (userVM == null) {
-                    throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
-                }
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), userVM.getDomainId())) {
-                    throw new PermissionDeniedException("Unable to list network groups for virtual machine instance " + instanceId + "; permission denied.");
-                }
-            } else if (account != null) {
-                // either an admin is searching for their own group, or admin is listing all groups and the search needs to be restricted to domain admin's domain
-                if (securityGroup != null) {
-                    accountId = account.getId();
-                } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    domainId = account.getDomainId();
-                    recursive = Boolean.TRUE;
-                }
-            }
-        } else {
-            if (instanceId != null) {
-                UserVmVO userVM = _userVMDao.findById(instanceId);
-                if (userVM == null) {
-                    throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
-                }
+	        if (instanceId != null) {
+	            UserVmVO userVM = _userVMDao.findById(instanceId);
+	            if (userVM == null) {
+	                throw new InvalidParameterValueException("Unable to list security groups for virtual machine instance " + instanceId + "; instance not found.");
+	            }
+	            _accountMgr.checkAccess(caller, userVM);
+	            return listSecurityGroupRulesByVM(instanceId.longValue());
+	        }
 
-                if (account != null) {
-                    // check that the user is the owner of the VM (admin case was already verified
-                    if (account.getId() != userVM.getAccountId()) {
-                        throw new PermissionDeniedException("Unable to list network groups for virtual machine instance " + instanceId + "; permission denied.");
-                    }
-                }
-            } else {
-                accountId = ((account != null) ? account.getId() : null);
-            }
-        }
+	        if (_accountMgr.isAdmin(caller.getType())) {
+	            if (domainId != null) {
+	                Domain domain = _accountMgr.getDomain(domainId);
+	                if (domain == null) {
+	                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+	                }
+	                _accountMgr.checkAccess(caller, domain);
+	                if (accountName != null) {
+	                    Account account = _accountMgr.getActiveAccount(accountName, domainId);
+	                    if (account == null) {
+	                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+	                    }
+	                    _accountMgr.checkAccess(caller, account);
+	                    accountId = account.getId();
+	                }
+	            }
+	        } else {
+	            // regular user can see only his own security groups
+	            accountId = caller.getId();
+	        }
 
-        List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
-        Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Object keyword = cmd.getKeyword();
+	        List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
+	        Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+	        Object keyword = cmd.getKeyword();
 
-        SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+	        SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
+	        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+	        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+	        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+	        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
 
-        // only do a recursive domain search if the search is not limited by account or instance
-        if ((accountId == null) && (instanceId == null) && (domainId != null) && Boolean.TRUE.equals(recursive)) {
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+	        // only do a recursive domain search if the search is not limited by account or instance
+	        if ((accountId == null) && (instanceId == null) && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+	            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+	            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+	            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+	        }
 
-        SearchCriteria<SecurityGroupVO> sc = sb.create();
-        
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-        
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-            if (securityGroup != null) {
-                sc.setParameters("name", securityGroup);
-            } else if (keyword != null) {
-                SearchCriteria<SecurityGroupRulesVO> ssc = _securityGroupRulesDao.createSearchCriteria();
-                ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-                ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-                sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-            }
-        } else if (domainId != null) {
-            if (Boolean.TRUE.equals(recursive)) {
-                DomainVO domain = _domainDao.findById(domainId);
-                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
+	        SearchCriteria<SecurityGroupVO> sc = sb.create();
 
-        List<SecurityGroupVO> securityGroups = _securityGroupDao.search(sc, searchFilter);
-        for (SecurityGroupVO group : securityGroups) {
-           securityRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
-        }
-        
-       if (instanceId != null) {
-            return listSecurityGroupRulesByVM(instanceId.longValue());
-       } 
-       
-        return securityRulesList;
-    }
+	        if (id != null) {
+	            sc.setParameters("id", id);
+	        }
+
+	        if (securityGroup != null) {
+	            sc.setParameters("name", securityGroup);
+	        }
+
+	        if (accountId != null) {
+	            sc.setParameters("accountId", accountId);
+	        }
+
+	        // only do a recursive domain search if the search is not limited by account or instance
+	        if ((accountId == null) && (instanceId == null) && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+	            DomainVO domain = _domainDao.findById(caller.getDomainId());
+	            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+	        }
+
+	        if (keyword != null) {
+	            SearchCriteria<SecurityGroupRulesVO> ssc = _securityGroupRulesDao.createSearchCriteria();
+	            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+	            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+	            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+	        }
+
+	        List<SecurityGroupVO> securityGroups = _securityGroupDao.search(sc, searchFilter);
+	        for (SecurityGroupVO group : securityGroups) {
+	            securityRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
+	        }
+
+	        return securityRulesList;
+	    }
 
 	private List<SecurityGroupRulesVO> listSecurityGroupRulesByVM(long vmId) {
 	    List<SecurityGroupRulesVO> results = new ArrayList<SecurityGroupRulesVO>();
