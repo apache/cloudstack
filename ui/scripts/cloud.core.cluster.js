@@ -64,12 +64,6 @@ function clusterJsonToDetailsTab() {
         }
     });     
      
-    clusterJsonToDetailsTab2(jsonObj);        
-}
-
-function clusterJsonToDetailsTab2(jsonObj) {	
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-	
     var $thisTab = $("#right_panel_content").find("#tab_content_details");   
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#id").text(fromdb(jsonObj.id));
@@ -81,6 +75,13 @@ function clusterJsonToDetailsTab2(jsonObj) {
     $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
     
     //actions ***   
+    clusterBuildActionMenu(jsonObj);        
+}
+
+function clusterBuildActionMenu(jsonObj) { 
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+	var $thisTab = $("#right_panel_content").find("#tab_content_details");   
+	
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
        
@@ -118,7 +119,8 @@ var clusterActionMap = {
 	    inProcessText: "label.action.enable.cluster.processing",
 	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  	        
 			var jsonObj = json.updateclusterresponse.cluster;
-			clusterJsonToDetailsTab2(jsonObj);					
+			$("#right_panel_content").find("#tab_content_details").find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+			clusterBuildActionMenu(jsonObj);			
 	    }
 	}	
 	,
@@ -128,7 +130,8 @@ var clusterActionMap = {
 	    inProcessText: "label.action.disable.cluster.processing",
 	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
 			var jsonObj = json.updateclusterresponse.cluster;
-			clusterJsonToDetailsTab2(jsonObj);				
+			$("#right_panel_content").find("#tab_content_details").find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+			clusterBuildActionMenu(jsonObj);				
 	    }
 	}	
 	,		

@@ -116,35 +116,33 @@ function podJsonToDetailsTab() {
         }
     });    
     
-    podJsonToDetailsTab2(jsonObj);   
-}	
-
-function podJsonToDetailsTab2(jsonObj) {
-	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-	
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();       
-        
+    $thisTab.find("#tab_spinning_wheel").show();          
     $thisTab.find("#id").text(fromdb(jsonObj.id));
-    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));    
     $thisTab.find("#name").text(fromdb(jsonObj.name));
-    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
-        
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));        
     $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));   
-    $thisTab.find("#netmask_edit").val(fromdb(jsonObj.netmask));   
-         
+    $thisTab.find("#netmask_edit").val(fromdb(jsonObj.netmask));         
     $thisTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
     $thisTab.find("#startIpRange_edit").val(fromdb(jsonObj.startip));
-    $thisTab.find("#endIpRange_edit").val(fromdb(jsonObj.endip));
-    
+    $thisTab.find("#endIpRange_edit").val(fromdb(jsonObj.endip));    
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));  
-    $thisTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
-    
+    $thisTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));     
     $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
-        
-    //actions ***   
+    
+    //actions ***
+    podBuildActionMenu(jsonObj);   
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();   	
+}	
+
+function podBuildActionMenu(jsonObj) {
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
+    var $thisTab = $("#right_panel_content #tab_content_details");         
+       
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
         
@@ -157,10 +155,7 @@ function podJsonToDetailsTab2(jsonObj) {
     else if(jsonObj.allocationstate == "Enabled")  
         buildActionLinkForTab("label.action.disable.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
       
-    buildActionLinkForTab("label.action.delete.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
-    
-    $thisTab.find("#tab_spinning_wheel").hide();    
-    $thisTab.find("#tab_container").show();   	
+    buildActionLinkForTab("label.action.delete.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
 }
 
 function podJsonToNetworkTab() {       
@@ -1107,7 +1102,8 @@ var podActionMap = {
 	    inProcessText: "label.action.enable.pod.processing",
 	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  	        
 			var jsonObj = json.updatepodresponse.pod;
-			podJsonToDetailsTab2(jsonObj);					
+			$("#right_panel_content").find("#tab_content_details").find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+			podBuildActionMenu(jsonObj);   				
 	    }
 	}	
 	,
@@ -1117,7 +1113,8 @@ var podActionMap = {
 	    inProcessText: "label.action.disable.pod.processing",
 	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
 			var jsonObj = json.updatepodresponse.pod;
-			podJsonToDetailsTab2(jsonObj);				
+			$("#right_panel_content").find("#tab_content_details").find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+			podBuildActionMenu(jsonObj);   			
 	    }
 	}	
 	,	 

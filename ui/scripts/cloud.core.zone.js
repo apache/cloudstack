@@ -127,40 +127,30 @@ function zoneJsonToDetailsTab() {
     }
     
     if(jsonObj.networktype == "Basic") 
-        $("#tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").hide();
-    
+        $("#tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").hide();    
     else if(jsonObj.networktype == "Advanced") 
         $("#tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").show();            
   
-    zoneJsonToDetailsTab2(jsonObj);    
-}	  
-
-function zoneJsonToDetailsTab2(jsonObj) {
-	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-	
-	var $thisTab = $("#right_panel_content").find("#tab_content_details");  
-    $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();        
-                 
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();                  
     $thisTab.find("#id").text(fromdb(jsonObj.id));
-    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));    
     $thisTab.find("#name").text(fromdb(jsonObj.name));
-    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
-    
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));    
     $thisTab.find("#dns1").text(fromdb(jsonObj.dns1));
-    $thisTab.find("#dns1_edit").val(fromdb(jsonObj.dns1));
-    
+    $thisTab.find("#dns1_edit").val(fromdb(jsonObj.dns1));    
     $thisTab.find("#dns2").text(fromdb(jsonObj.dns2));
-    $thisTab.find("#dns2_edit").val(fromdb(jsonObj.dns2));
-    
+    $thisTab.find("#dns2_edit").val(fromdb(jsonObj.dns2));    
     $thisTab.find("#internaldns1").text(fromdb(jsonObj.internaldns1));
-    $thisTab.find("#internaldns1_edit").val(fromdb(jsonObj.internaldns1));
-    
+    $thisTab.find("#internaldns1_edit").val(fromdb(jsonObj.internaldns1));    
     $thisTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));
-    $thisTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));
-    
-    $thisTab.find("#networktype").text(fromdb(jsonObj.networktype));
+    $thisTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));    
+    $thisTab.find("#networktype").text(fromdb(jsonObj.networktype));  
+    setBooleanReadField(jsonObj.securitygroupsenabled, $thisTab.find("#securitygroupsenabled"));	            
+    $thisTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
+    $thisTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));           
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain));     
+    $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
     if(jsonObj.networktype == "Advanced") {        
         var vlan = jsonObj.vlan; 
         $thisTab.find("#vlan").text(fromdb(vlan));      
@@ -176,17 +166,18 @@ function zoneJsonToDetailsTab2(jsonObj) {
 		    }
 	    } 
     }	
-    
-    setBooleanReadField(jsonObj.securitygroupsenabled, $thisTab.find("#securitygroupsenabled"));	
-            
-    $thisTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
-    $thisTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
         
-    $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
+    //actions ***     
+    zoneBuildActionMenu(jsonObj);  
     
-    $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
-    
-    //actions ***   
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();   
+}	  
+
+function zoneBuildActionMenu(jsonObj) {
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
+	var $thisTab = $("#right_panel_content").find("#tab_content_details");      
+
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
        
@@ -199,10 +190,7 @@ function zoneJsonToDetailsTab2(jsonObj) {
     else if(jsonObj.allocationstate == "Enabled")  
         buildActionLinkForTab("label.action.disable.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
     
-    buildActionLinkForTab("label.action.delete.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
-    
-    $thisTab.find("#tab_spinning_wheel").hide();    
-    $thisTab.find("#tab_container").show();      
+    buildActionLinkForTab("label.action.delete.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);          
 }
 
 function zoneClearDetailsTab() {	    
@@ -389,7 +377,8 @@ var zoneActionMap = {
         inProcessText: "label.action.enable.zone.processing",
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
     		var jsonObj = json.updatezoneresponse.zone;
-    		zoneJsonToDetailsTab2(jsonObj);		        
+    		$("#right_panel_content").find("#tab_content_details").find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+    		zoneBuildActionMenu(jsonObj);        
         }
     },
     "label.action.disable.zone": {                  
@@ -398,7 +387,8 @@ var zoneActionMap = {
         inProcessText: "label.action.disable.zone.processing",
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
 	    	var jsonObj = json.updatezoneresponse.zone;
-			zoneJsonToDetailsTab2(jsonObj);	    
+	    	$("#right_panel_content").find("#tab_content_details").find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+	    	zoneBuildActionMenu(jsonObj);    
         }
     },   
     "label.action.delete.zone": {                  
