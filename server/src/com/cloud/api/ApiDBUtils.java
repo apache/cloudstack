@@ -426,7 +426,7 @@ public class ApiDBUtils {
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
         VMTemplateVO vmTemplate = findTemplateById(templateId);
         if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-            return _templateHostDao.findByHostTemplate(zoneId, templateId);
+            return _templateHostDao.listByTemplateId(templateId).get(0);
         } else {
             HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
             if (secondaryStorageHost == null) {
@@ -482,7 +482,7 @@ public class ApiDBUtils {
         if (zoneId != null) {
             VMTemplateVO vmTemplate = findTemplateById(templateId);
             if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-                return _templateHostDao.listByHostTemplate(zoneId, templateId);
+                return _templateHostDao.listByTemplateId(templateId);
             } else {
                 HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
                 if (secondaryStorageHost == null) {
