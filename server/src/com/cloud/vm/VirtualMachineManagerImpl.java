@@ -608,13 +608,30 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
                 StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                 if (!pool.isInMaintenance()) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Root volume is ready, need to place VM in volume's cluster");
+                    }
                     long rootVolDcId = pool.getDataCenterId();
                     Long rootVolPodId = pool.getPodId();
                     Long rootVolClusterId = pool.getClusterId();
-                    plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
-                    }
+                    if(planToDeploy != null){
+                        Long clusterIdSpecified = planToDeploy.getClusterId();
+                        if(clusterIdSpecified != null && rootVolClusterId != null){
+                            if(rootVolClusterId.longValue() != clusterIdSpecified.longValue()){
+                                //cannot satisfy the plan passed in to the planner
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Cannot satisfy the deployment plan passed in since the ready Root volume is in different cluster. volume's cluster: "+rootVolClusterId + ", cluster specified: "+clusterIdSpecified);
+                                }
+                                throw new ResourceUnavailableException("Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for " + vm, Cluster.class, clusterIdSpecified);
+                            }
+                        }
+                        plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId());
+                    }else{
+                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
+                        }
+                    }                    
                 }
             }
 
