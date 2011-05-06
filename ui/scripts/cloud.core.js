@@ -21,7 +21,7 @@ var g_nonCompleteAsyncJob = {};
 function periodicallyCheckNonCompleteAsyncJob() {    
 	var timerKey = "checkNonCompleteAsyncJob";		
 	$("#dialog_action_complete").everyTime(
-	    20000,
+	    30000,
 	    timerKey,
 	    function() {   
 	        for(var jobId in g_nonCompleteAsyncJob) {  
@@ -351,7 +351,8 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
             dataType: "json",           
             success: function(json) {	                    	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
-                var timerKey = "asyncJob_" + jobId;					                       
+                var timerKey = "asyncJob_" + jobId;	
+                g_nonCompleteAsyncJob[jobId] = label2;   
                 $("body").everyTime(
                     10000,
                     timerKey,
@@ -364,7 +365,8 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 		                        if (result.jobstatus == 0) {
 			                        return; //Job has not completed
 		                        } else {											                    
-			                        $("body").stopTime(timerKey);				                        
+			                        $("body").stopTime(timerKey);	
+			                        delete g_nonCompleteAsyncJob[jobId];
 			                        $spinningWheel.hide();      		                       
 			                        if (result.jobstatus == 1) { // Succeeded 	
 			                            $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
@@ -485,7 +487,8 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
             dataType: "json",           
             success: function(json) {	                	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
-                var timerKey = "asyncJob_" + jobId;					                       
+                var timerKey = "asyncJob_" + jobId;	
+                g_nonCompleteAsyncJob[jobId] = label2;   
                 $("body").everyTime(
                     10000,
                     timerKey,
@@ -499,6 +502,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                        return; //Job has not completed
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);	
+			                        delete g_nonCompleteAsyncJob[jobId];
 			                        $midmenuItem1.find("#content").removeClass("inaction");
 			                        $midmenuItem1.find("#spinning_wheel").hide();			                        
 			                        	                        			                       
