@@ -368,7 +368,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             // Update the snapshot in the database
             if ((answer != null) && answer.getResult()) {
                 // The snapshot was successfully created
-                if (preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath()) {
+                if (preSnapshotPath != null && preSnapshotPath.equals(answer.getSnapshotPath())) {
 
                     if( preSnapshotVO.getRemoved() != null ) {
                         String backupPath = preSnapshotVO.getBackupSnapshotId();
@@ -376,11 +376,10 @@ public class SnapshotManagerImpl implements SnapshotManager {
                         createdSnapshot = updateDBOnCreateDuplicate(id, answer.getSnapshotPath(), backupPath);  
                     } else {
                         // empty snapshot
-                        s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
+                        s_logger.debug("CreateSnapshot: this is empty snapshot, use the last one ");
                         // delete from the snapshots table
                         _snapshotDao.delete(id);
-                        throw new CloudRuntimeException(
-                            " There is no change since last snapshot, please use last snapshot " + preSnapshotPath);
+                        createdSnapshot = preSnapshotVO;
                     }
 
                 } else {

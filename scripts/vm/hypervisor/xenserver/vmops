@@ -1095,7 +1095,7 @@ def backupSnapshot(session, args):
         # There has been no change since the last snapshot so no need to backup 
         util.SMlog("There has been no change since the last snapshot with backup: " + prevBaseCopyUuid) 
         # Set the uuid of the current backup to that of last backup
-        txt = "1#" + prevBaseCopyUuid
+        txt = "1#" + prevBackupUuid
         return txt
 
     # Check existence of snapshot on primary storage 
