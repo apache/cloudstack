@@ -19,51 +19,71 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
+import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
 
 public class SnapshotResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="ID of the snapshot")
+    @SerializedName("id")
+    @Param(description = "ID of the snapshot")
     private Long id;
 
-    @SerializedName("account") @Param(description="the account associated with the snapshot")
+    @SerializedName("account")
+    @Param(description = "the account associated with the snapshot")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the snapshot's account")
+    @SerializedName("domainid")
+    @Param(description = "the domain ID of the snapshot's account")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name of the snapshot's account")
+    @SerializedName("domain")
+    @Param(description = "the domain name of the snapshot's account")
     private String domainName;
 
-    @SerializedName("snapshottype") @Param(description="the type of the snapshot")
+    @SerializedName("snapshottype")
+    @Param(description = "the type of the snapshot")
     private String snapshotType;
 
-    @SerializedName("volumeid") @Param(description="ID of the disk volume")
+    @SerializedName("volumeid")
+    @Param(description = "ID of the disk volume")
     private Long volumeId;
 
-    @SerializedName("volumename") @Param(description="name of the disk volume")
+    @SerializedName("volumename")
+    @Param(description = "name of the disk volume")
     private String volumeName;
 
-    @SerializedName("volumetype") @Param(description="type of the disk volume")
+    @SerializedName("volumetype")
+    @Param(description = "type of the disk volume")
     private String volumeType;
 
-    @SerializedName("created") @Param(description="	the date the snapshot was created")
+    @SerializedName("created")
+    @Param(description = "	the date the snapshot was created")
     private Date created;
 
-    @SerializedName("name") @Param(description="name of the snapshot")
+    @SerializedName("name")
+    @Param(description = "name of the snapshot")
     private String name;
 
-    @SerializedName("jobid") @Param(description="the job ID associated with the snapshot. This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
+    @SerializedName("jobid")
+    @Param(description = "the job ID associated with the snapshot. This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
     private Long jobId;
 
-    @SerializedName("jobstatus") @Param(description="the job status associated with the snapshot.  This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
+    @SerializedName("jobstatus")
+    @Param(description = "the job status associated with the snapshot.  This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
-    @SerializedName("intervaltype") @Param(description="valid types are hourly, daily, weekly, monthy, template, and none.")
+    @SerializedName("intervaltype")
+    @Param(description = "valid types are hourly, daily, weekly, monthy, template, and none.")
     private String intervalType;
-    
+
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
+    private Snapshot.Status state;
+
+    @Override
     public Long getObjectId() {
-    	return getId();
+        return getId();
     }
 
     public Long getId() {
@@ -146,18 +166,22 @@ public class SnapshotResponse extends BaseResponse {
         this.name = name;
     }
 
+    @Override
     public Long getJobId() {
         return jobId;
     }
 
+    @Override
     public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 
+    @Override
     public Integer getJobStatus() {
         return jobStatus;
     }
 
+    @Override
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }
@@ -168,5 +192,13 @@ public class SnapshotResponse extends BaseResponse {
 
     public void setIntervalType(String intervalType) {
         this.intervalType = intervalType;
+    }
+
+    public Snapshot.Status getState() {
+        return state;
+    }
+
+    public void setState(Snapshot.Status state) {
+        this.state = state;
     }
 }
