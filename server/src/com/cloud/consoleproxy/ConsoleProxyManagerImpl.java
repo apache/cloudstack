@@ -314,11 +314,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                             }
                         }
                     }
-            		
-                    if (proxy == null) {
-                        proxy = assignProxyFromRunningPool(dataCenterId);
-                    }
             	}
+            	
+                if (proxy == null) {
+                    proxy = assignProxyFromRunningPool(dataCenterId);
+                }
             } finally {
                 _allocProxyLock.unlock();
             }
