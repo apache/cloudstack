@@ -359,7 +359,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         _monitor = new AgentMonitor(_nodeId, _hostDao, _volDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);
 
-        _executor = new ThreadPoolExecutor(10, 100, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
+        _executor = new ThreadPoolExecutor(16, 100, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
         String overProvisioningFactorStr = configs.get("storage.overprovisioning.factor");
         _overProvisioningFactor = NumbersUtil.parseInt(overProvisioningFactorStr, 1);
