@@ -1399,7 +1399,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new CloudRuntimeException("Unable to find storage pools in zone " + zoneId);
                 }
                 pool = storagePools.get(0);
-                if ( snapshot.getVersion() == "2.1" ) {
+                if (snapshot.getVersion() != null && snapshot.getVersion().equalsIgnoreCase("2.1")) {
                     VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
                     if ( volume == null ) {
                         throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unable to find orignal volume:" + volumeId + ", try it later ");
