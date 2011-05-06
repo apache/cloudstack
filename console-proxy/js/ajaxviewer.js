@@ -71,6 +71,9 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 	this.height = height;
 	this.tileWidth = tileWidth;
 	this.tileHeight = tileHeight;
+	this.maxTileZIndex = 1;
+	
+	this.currentKeyboard = 0;
 	
 	this.timer = 0;
 	this.eventQueue = [];
@@ -84,6 +87,7 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 	this.panel = this.generateCanvas(panelId, width, height, tileWidth, tileHeight);
 	
 	this.setupKeyCodeTranslationTable();
+	this.setupUIController();
 }
 
 AjaxViewer.prototype = {
@@ -248,6 +252,47 @@ AjaxViewer.prototype = {
 		this.keyCodeMap['>'.charCodeAt()] = { code : 190, shift : true };
 		this.keyCodeMap['/'.charCodeAt()] = { code : 191, shift : false };
 		this.keyCodeMap['?'.charCodeAt()] = { code : 191, shift : true };
+	},
+	
+	setupUIController : function() {
+		var ajaxViewer = this;
+		var pullDownElement = $("#toolbar").find(".pulldown");
+		pullDownElement.hover(
+			function(e) {
+				var subMenu = pullDownElement.find("ul");
+			
+				$("li.current").removeClass("current");
+				$("li:eq(" + ajaxViewer.currentKeyboard + ")", subMenu).addClass("current");
+				subMenu.css("z-index", "" + ajaxViewer.maxTileZIndex + 1).show();
+				return false;
+			},
+			
+			function(e) {
+				pullDownElement.find("ul").hide();
+				return false;
+			}
+		);
+
+		$("#toolbar").find("a").each(function(i, val) {
+			$(val).click(function(e) {
+				var cmdLink = $(e.target).closest("a");
+				
+				if(cmdLink.attr("cmd")) {
+					var cmd = cmdLink.attr("cmd");
+					ajaxViewer.onCommand(cmd);
+				}
+			});
+		});
+	},
+	
+	onCommand : function(cmd) {
+		if(cmd == "keyboard_jp") {
+			$("#toolbar").find(".pulldown").find("ul").hide();
+			this.currentKeyboard = 1;
+		} else if(cmd == "keyboard_en") {
+			$("#toolbar").find(".pulldown").find("ul").hide();
+			this.currentKeyboard = 0;
+		}
 	},
 	
 	// Firefox on Mac OS X does not generate key-code for following keys 
@@ -615,7 +660,9 @@ AjaxViewer.prototype = {
 			div = this.getTile(cell, "tile");
 		}
 		
-		div.css("z-index", parseInt(divPrev.css("z-index")) + 1);
+		var zIndex = parseInt(divPrev.css("z-index")) + 1;
+		this.maxTileZIndex = Math.max(this.maxTileZIndex, zIndex);
+		div.css("z-index", zIndex);
 		div.css("background", bg);
 	},
 	

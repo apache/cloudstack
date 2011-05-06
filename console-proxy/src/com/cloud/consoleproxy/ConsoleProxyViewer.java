@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
@@ -1032,6 +1031,16 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 					"<a href=\"#\" onclick=\"javascript:sendCtrlEsc();\">", 
 						"<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Ctrl-Esc\" style=\"width:16px;height:16px\"/>Ctrl-Esc</span>",
 					"</a>", 
+				"</li>",
+				
+				"<li class=\"pulldown\">", 
+					"<a href=\"#\">", 
+						"<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Keyboard\" style=\"width:16px;height:16px\"/>Keyboard</span>",
+					"</a>", 
+					"<ul>",
+		    			"<li class=\"current\"><a href=\"#\" cmd=\"keyboard_en\"><span>English (US)</span></a></li>",
+			    		"<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese&nbsp;&nbsp;&nbsp;</span></a></li>",
+					"</ul>",
 				"</li>",
 			"</ul>",
 			"<span id=\"light\" class=\"dark\"></span>", 
