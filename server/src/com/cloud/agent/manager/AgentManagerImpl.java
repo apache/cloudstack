@@ -1809,13 +1809,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     protected AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState) throws IllegalArgumentException {
+        HostVO host = null;
+        if (id != null) {
+            host = _hostDao.findById(id);
+            if (host.getManagementServerId() != null) {
+                s_logger.info("MS " + host.getManagementServerId() + " is loading " + host);
+                return null;
+            }
+        }
+        
         StartupCommand[] cmds = resource.initialize();
         if (cmds == null) {
             return null;
         }
         
-        if (id != null) {
-            HostVO host = _hostDao.findById(id);
+        if (host != null) {
             if (!_hostDao.directConnect(host, _nodeId)) {
                 s_logger.info("Someone else is loading " + host);
                 resource.disconnected();
