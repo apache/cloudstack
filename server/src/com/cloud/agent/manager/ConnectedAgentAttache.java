@@ -75,8 +75,18 @@ public class ConnectedAgentAttache extends AgentAttache {
             ConnectedAgentAttache that = (ConnectedAgentAttache) obj;
             return super.equals(obj) && this._link == that._link && this._link != null;
         } catch (ClassCastException e) {
-            assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to AgentAttache.equals()? ";
+            assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to " + this.getClass().getSimpleName() + ".equals()? ";
             return false;
+        }
+    }
+    
+    @Override
+    public void finalize() {
+        assert _link == null : "Duh...Says you....Forgot to call disconnect()!";
+        synchronized(this) {
+            if (_link != null) {
+                disconnect(Status.Alert);
+            }
         }
     }
 }

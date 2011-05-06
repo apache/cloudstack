@@ -44,7 +44,7 @@ public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
     
     ServerResource _resource;
-    static ScheduledExecutorService _executor = new ScheduledThreadPoolExecutor(100, new NamedThreadFactory("DirectAgent"));
+    static ScheduledExecutorService s_executor = new ScheduledThreadPoolExecutor(100, new NamedThreadFactory("DirectAgent"));
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     AgentManagerImpl _mgr;
     long _seq = 0;
@@ -98,15 +98,15 @@ public class DirectAgentAttache extends AgentAttache {
 	        if (answers != null && answers[0] instanceof StartupAnswer) {
 	            StartupAnswer startup = (StartupAnswer)answers[0];
 	            int interval = startup.getPingInterval();
-	            _futures.add(_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
+	            _futures.add(s_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
 	        }
 	    } else {
     	    Command[] cmds = req.getCommands();
     	    if (cmds.length > 0 && !(cmds[0] instanceof CronCommand)) {
-    	        _executor.execute(new Task(req));
+    	        s_executor.execute(new Task(req));
     	    } else {
     	        CronCommand cmd = (CronCommand)cmds[0];
-    	        _futures.add(_executor.scheduleAtFixedRate(new Task(req), cmd.getInterval(), cmd.getInterval(), TimeUnit.SECONDS));
+    	        _futures.add(s_executor.scheduleAtFixedRate(new Task(req), cmd.getInterval(), cmd.getInterval(), TimeUnit.SECONDS));
     	    }
 	    }
 	}
@@ -117,9 +117,19 @@ public class DirectAgentAttache extends AgentAttache {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
             s_logger.info("StartupAnswer received " + startup.getHostId() + " Interval = " + interval );
-            _futures.add(_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
+            _futures.add(s_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
 	}
+	
+    @Override
+    protected void finalize() {
+        assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources.  Ever considered why there's a method called disconnect()?";
+        synchronized(this) {
+            if (_resource != null) {
+                disconnect(Status.Alert);
+            }
+        }
+    }
 	
 	protected class PingTask implements Runnable {
 	    @Override

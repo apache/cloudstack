@@ -58,7 +58,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 public abstract class AgentAttache {
     private static final Logger s_logger = Logger.getLogger(AgentAttache.class);
     
-    private static final ScheduledExecutorService s_executor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("ListenerTimer"));
+    private static final ScheduledExecutorService s_listenerExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("ListenerTimer"));
     
     protected static final Comparator<Request> s_reqComparator =
         new Comparator<Request>() {
@@ -206,7 +206,7 @@ public abstract class AgentAttache {
             s_logger.trace(log(seq, "Registering listener"));
         }
         if (listener.getTimeout() != -1) {
-        	s_executor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
+        	s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
         }
         _waitForList.put(seq, listener);
     }
