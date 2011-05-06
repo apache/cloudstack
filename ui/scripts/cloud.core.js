@@ -16,6 +16,66 @@
  * 
  */
  
+// ***** periodically check non-complete async job (begin)***************************************************************
+var g_nonCompleteAsyncJob = {};
+function periodicallyCheckNonCompleteAsyncJob() {    
+	var timerKey = "checkNonCompleteAsyncJob";		
+	$("#dialog_action_complete").everyTime(
+	    20000,
+	    timerKey,
+	    function() {   
+	        for(var jobId in g_nonCompleteAsyncJob) {  
+	            $.ajax({
+	                data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                dataType: "json",									                    					                    
+	                success: function(json) {		                                                     							                       
+	                    var result = json.queryasyncjobresultresponse;										                   
+	                    if (result.jobstatus == 0) {
+	                        return; //Job has not completed
+	                    } 
+	                    else {		                    
+	                        var label2 = g_nonCompleteAsyncJob[jobId];
+	                        delete g_nonCompleteAsyncJob[jobId];                        
+	                        var afterActionInfo;			                          			                                             
+	                        if (result.jobstatus == 1) { // Succeeded 	
+	                            afterActionInfo = (label2 + " - " + g_dictionary["label.succeeded"]);	                             
+	                        } 
+	                        else if (result.jobstatus == 2) { // Failed	
+	                            afterActionInfo = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);                                                     
+	                        }	                                            
+	                        
+	                        $("#dialog_action_complete")
+	                        .text(afterActionInfo)
+	                        .dialog("open");
+	                    }
+	                },
+	                error: function(XMLHttpResponse) { 
+	                    var label2 = g_nonCompleteAsyncJob[jobId];
+	                    delete g_nonCompleteAsyncJob[jobId];   
+	                        
+	                    var errorMsg = "";
+	                    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {        
+	                        errorMsg = parseXMLHttpResponse(XMLHttpResponse);	
+	                    }        
+	                   
+	                    var afterActionInfo;
+	                    if(errorMsg.length > 0) 
+	                        afterActionInfo = label2 + " - " + g_dictionary["label.failed"] + " - " + errorMsg;	        
+	                    else
+	                        afterActionInfo = label2 + " - " + g_dictionary["label.failed"];
+	                    
+	                    $("#dialog_action_complete")
+	                    .text(afterActionInfo)
+	                    .dialog("open");				    
+	                }
+	            });	           
+	        }
+	    },
+	    0
+	);		
+}
+//***** periodically check non-complete async job (end)*****************************************************************
+
 //***** actions for a tab in right panel (begin) ************************************************************************
 function buildActionLinkForTab(label, actionMap, $actionMenu, $midmenuItem1, $thisTab) { 
     var apiInfo = actionMap[label];
@@ -90,7 +150,8 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
             dataType: "json",           
             success: function(json) {	                       	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
-                var timerKey = "asyncJob_" + jobId;					                       
+                var timerKey = "asyncJob_" + jobId;		               
+                g_nonCompleteAsyncJob[jobId] = label2;   
                 $("body").everyTime(
                     10000,
                     timerKey,
@@ -103,7 +164,8 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 		                        if (result.jobstatus == 0) {
 			                        return; //Job has not completed
 		                        } else {											                    
-			                        $("body").stopTime(timerKey);				                        
+			                        $("body").stopTime(timerKey);				                       
+			                        delete g_nonCompleteAsyncJob[jobId];
 			                        $spinningWheel.hide(); 
 			                        			                          			                                             
 			                        if (result.jobstatus == 1) { // Succeeded 				                            	                            

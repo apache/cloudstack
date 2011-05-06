@@ -766,6 +766,8 @@
     </div>
     <div id="dialog_info" title='<fmt:message key="label.info"/>' style="display: none">
     </div>
+    <div id="dialog_action_complete" title='<fmt:message key="label.info"/>' style="display: none">
+    </div>
     <div id="dialog_alert" title='<fmt:message key="label.alert"/>' style="display: none">
     </div>
     <div id="dialog_error" title='<fmt:message key="label.error"/>' style="display: none; color: red">

@@ -708,6 +708,7 @@ $(document).ready(function() {
 						$("#login_wrapper").hide();	
 						showLeftNavigationBasedOnRole();
 						initUI();
+						periodicallyCheckNonCompleteAsyncJob();
 						$("#main").show();
 					},
 					error: function(xmlHTTP) {
@@ -732,6 +733,7 @@ $(document).ready(function() {
 	// Dialogs
 	initDialog("dialog_confirmation", 350, false);	
 	initDialogWithOK("dialog_info", 350, false);
+	initDialogWithOK("dialog_action_complete", 350, false);
 	
 	initDialogWithOK("dialog_alert", 350, false);
 	$("#dialog_alert").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
