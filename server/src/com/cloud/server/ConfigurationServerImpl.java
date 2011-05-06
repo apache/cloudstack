@@ -513,7 +513,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String already = _configDao.getValue("ssh.privatekey");
         String homeDir = Script.runSimpleBashScript("echo ~");
         String userid = System.getProperty("user.name");
-        if (homeDir == "~") {
+        if (homeDir != null && homeDir.equalsIgnoreCase("~")) {
             s_logger.error("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
             throw new CloudRuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
         }
