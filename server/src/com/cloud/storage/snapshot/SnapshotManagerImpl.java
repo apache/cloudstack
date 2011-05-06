@@ -826,8 +826,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         SearchCriteria<SnapshotVO> sc = sb.create();
 
-        sc.setParameters("status", Snapshot.Status.BackedUp);
-
         if (volumeId != null) {
             sc.setParameters("volumeId", volumeId);
         }
