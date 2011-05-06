@@ -41,21 +41,18 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VMInstanceVO;
 
 /**
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
 public interface AgentManager extends Manager {
     public enum OnError {
-        Revert, Continue, Stop
+        Continue, Stop
     }
 
     /**
@@ -185,13 +182,6 @@ public interface AgentManager extends Manager {
     Long getGuestOSCategoryId(long hostId);
 
     String getHostTags(long hostId);
-
-    /**
-     * Find a host based on the type needed, data center to deploy in, pod to deploy in, service offering, template, and list of
-     * host to avoid.
-     */
-
-    Host findHost(Host.Type type, DataCenterVO dc, HostPodVO pod, StoragePoolVO sp, ServiceOfferingVO offering, VMTemplateVO template, VMInstanceVO vm, Host currentHost, Set<Host> avoid);
 
     List<PodCluster> listByDataCenter(long dcId);
 

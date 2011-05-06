@@ -19,9 +19,9 @@ package com.cloud.agent.manager;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
@@ -44,7 +44,7 @@ public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
     
     ServerResource _resource;
-    static ScheduledExecutorService _executor = Executors.newScheduledThreadPool(100, new NamedThreadFactory("DirectAgent"));
+    static ScheduledExecutorService _executor = new ScheduledThreadPoolExecutor(100, new NamedThreadFactory("DirectAgent"));
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     AgentManagerImpl _mgr;
     long _seq = 0;
@@ -78,7 +78,7 @@ public class DirectAgentAttache extends AgentAttache {
 	    if (!(obj instanceof DirectAgentAttache)) {
 	        return false;
 	    }
-	    return super.equals(obj) && _executor == ((DirectAgentAttache)obj)._executor;
+	    return super.equals(obj);
 	}
 
 	@Override

@@ -37,7 +37,7 @@ public class Commands implements Iterable<Command> {
     }
     
     public Commands(Command cmd) {
-        this(OnError.Revert);
+        this(OnError.Stop);
         addCommand(cmd);
     }
     
@@ -109,11 +109,7 @@ public class Commands implements Iterable<Command> {
     }
     
     public boolean stopOnError() {
-        return _handler == OnError.Revert || _handler == OnError.Stop;
-    }
-    
-    public boolean revertOnError() {
-        return _handler == OnError.Revert;
+        return _handler == OnError.Stop;
     }
     
     public Answer[] getAnswers() {

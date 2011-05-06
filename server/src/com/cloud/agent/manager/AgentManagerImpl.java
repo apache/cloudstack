@@ -87,6 +87,7 @@ import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -100,17 +101,11 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -131,9 +126,7 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
-import com.cloud.maint.UpgradeManager;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -148,20 +141,16 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
-import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
@@ -178,7 +167,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
@@ -187,7 +175,6 @@ import com.cloud.utils.nio.Task;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -218,11 +205,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     @Inject
     protected HostDao _hostDao = null;
     @Inject
-    protected UserStatisticsDao _userStatsDao = null;
-    @Inject
     protected DataCenterDao _dcDao = null;
-    @Inject
-    protected VlanDao _vlanDao = null;
     @Inject
     protected DataCenterIpAddressDao _privateIPAddressDao = null;
     @Inject
@@ -235,8 +218,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     protected EventDao _eventDao = null;
     @Inject
     protected VMInstanceDao _vmDao = null;
-    @Inject
-    protected VolumeDao _volDao = null;
     @Inject
     protected CapacityDao _capacityDao = null;
     @Inject
@@ -256,9 +237,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     @Inject
     protected HostTagsDao _hostTagsDao = null;
 
-    @Inject(adapter = DeploymentPlanner.class)
-    private Adapters<DeploymentPlanner> _planners;
-
     protected Adapters<Discoverer> _discoverers = null;
     protected int _port;
 
@@ -266,12 +244,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     protected HighAvailabilityManager _haMgr = null;
     @Inject
     protected AlertManager _alertMgr = null;
-
-    @Inject
-    protected NetworkManager _networkMgr = null;
-
-    @Inject
-    protected UpgradeManager _upgradeMgr = null;
 
     @Inject
     protected StorageManager _storageMgr = null;
@@ -291,8 +263,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     protected int _updateWait;
     protected int _alertWait;
     protected long _nodeId = -1;
-    protected float _overProvisioningFactor = 1;
-    protected float _cpuOverProvisioningFactor = 1;
 
     protected Random _rand = new Random(System.currentTimeMillis());
 
@@ -302,8 +272,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     protected ExecutorService _executor;
 
-    @Inject
-    protected VMTemplateDao _tmpltDao;
     @Inject
     protected VMTemplateHostDao _vmTemplateHostDao;
 
@@ -358,27 +326,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
         _discoverers = locator.getAdapters(Discoverer.class);
 
-        if (_nodeId == -1) {
-            // FIXME: We really should not do this like this. It should be done
-            // at config time and is stored as a config variable.
-            _nodeId = MacAddress.getMacAddress().toLong();
-        }
+        _nodeId = ManagementServerNode.getManagementServerId();
 
         _hostDao.markHostsAsDisconnected(_nodeId, Status.Up, Status.Connecting, Status.Updating, Status.Disconnected, Status.Down);
 
-        _monitor = new AgentMonitor(_nodeId, _hostDao, _volDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
+        _monitor = new AgentMonitor(_nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);
 
         _executor = new ThreadPoolExecutor(10, 100, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
-
-        String overProvisioningFactorStr = configs.get("storage.overprovisioning.factor");
-        _overProvisioningFactor = NumbersUtil.parseFloat(overProvisioningFactorStr, 1);
-
-        String cpuOverProvisioningFactorStr = configs.get("cpu.overprovisioning.factor");
-        _cpuOverProvisioningFactor = NumbersUtil.parseFloat(cpuOverProvisioningFactorStr, 1);
-        if (_cpuOverProvisioningFactor < 1) {
-            _cpuOverProvisioningFactor = 1;
-        }
 
         _connection = new NioServer("AgentManager", _port, workers + 10, this);
 
@@ -500,32 +455,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             }
         }
         return result;
-    }
-
-    @Override
-    public Host findHost(final Host.Type type, final DataCenterVO dc, final HostPodVO pod, final StoragePoolVO sp, final ServiceOfferingVO offering, final VMTemplateVO template, VMInstanceVO vm,
-            Host currentHost, final Set<Host> avoid) {
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, offering, null, null);
-        DeployDestination dest = null;
-        DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), sp.getClusterId(), null, null);
-        ExcludeList avoids = new ExcludeList();
-        for (Host h : avoid) {
-            avoids.addHost(h.getId());
-        }
-
-        for (DeploymentPlanner planner : _planners) {
-            try {
-                dest = planner.plan(vmProfile, plan, avoids);
-                if (dest != null) {
-                    return dest.getHost();
-                }
-            } catch (InsufficientServerCapacityException e) {
-
-            }
-        }
-
-        s_logger.warn("findHost() could not find a non-null host.");
-        return null;
     }
 
     @Override
@@ -1431,7 +1360,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     @Override
     public Answer send(Long hostId, Command cmd, int timeout) throws AgentUnavailableException, OperationTimedoutException {
-        Commands cmds = new Commands(OnError.Revert);
+        Commands cmds = new Commands(OnError.Stop);
         cmds.addCommand(cmd);
         send(hostId, cmds, timeout);
         Answer[] answers = cmds.getAnswers();
@@ -1460,8 +1389,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             throw new AgentUnavailableException(-1);
         }
 
-        // assert noDbTxn() :
-        // "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
+        assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
 
         Command[] cmds = commands.toCommands();
 
@@ -1477,7 +1405,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
 
         long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, commands.revertOnError());
+        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, false);
         Answer[] answers = agent.send(req, timeout);
         notifyAnswersToMonitors(hostId, seq, answers);
         commands.setAnswers(answers);
@@ -1538,7 +1466,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             return -1;
         }
         long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, commands.revertOnError());
+        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, false);
         agent.send(req, listener);
         return seq;
     }
@@ -2519,7 +2447,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             }
             s_logger.info("Old " + server.getType().toString() + " host reconnected w/ id =" + id);
         }
-        createCapacityEntry(startup, server);
 
         return server;
     }
@@ -2841,85 +2768,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     @Override
     public Host getHost(long hostId) {
         return _hostDao.findById(hostId);
-    }
-
-    // create capacity entries if none exist for this server
-    private void createCapacityEntry(final StartupCommand startup, HostVO server) {
-        SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
-        capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, server.getId());
-        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, server.getDataCenterId());
-        capacitySC.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
-        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-
-        // remove old entries, we'll recalculate them anyway
-        if (startup instanceof StartupStorageCommand) {
-            if ((capacities != null) && !capacities.isEmpty()) {
-                for (CapacityVO capacity : capacities) {
-                    _capacityDao.remove(capacity.getId());
-                }
-            }
-        }
-
-        if (startup instanceof StartupStorageCommand) {
-            StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
-            if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
-                CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L, (long) (server.getTotalSize() * _overProvisioningFactor),
-                        CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
-                _capacityDao.persist(capacity);
-            }
-        } else if (startup instanceof StartupRoutingCommand) {
-            SearchCriteria<CapacityVO> capacityCPU = _capacityDao.createSearchCriteria();
-            capacityCPU.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, server.getId());
-            capacityCPU.addAnd("dataCenterId", SearchCriteria.Op.EQ, server.getDataCenterId());
-            capacityCPU.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
-            capacityCPU.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_CPU);
-            List<CapacityVO> capacityVOCpus = _capacityDao.search(capacityCPU, null);
-
-            if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
-                CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
-                long newTotalCpu = (server.getCpus().longValue() * server.getSpeed().longValue());
-                if ((CapacityVOCpu.getTotalCapacity() <= newTotalCpu) || ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity()) <= newTotalCpu)) {
-                    CapacityVOCpu.setTotalCapacity(newTotalCpu);
-                } else if ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity() > newTotalCpu) && (CapacityVOCpu.getUsedCapacity() < newTotalCpu)) {
-                    CapacityVOCpu.setReservedCapacity(0);
-                    CapacityVOCpu.setTotalCapacity(newTotalCpu);
-                } else {
-                    s_logger.debug("What? new cpu is :" + newTotalCpu + ", old one is " + CapacityVOCpu.getUsedCapacity() + "," + CapacityVOCpu.getReservedCapacity() + ","
-                            + CapacityVOCpu.getTotalCapacity());
-                }
-                _capacityDao.update(CapacityVOCpu.getId(), CapacityVOCpu);
-            } else {
-                CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L, (server.getCpus().longValue() * server.getSpeed()
-                        .longValue()), CapacityVO.CAPACITY_TYPE_CPU);
-                _capacityDao.persist(capacity);
-            }
-
-            SearchCriteria<CapacityVO> capacityMem = _capacityDao.createSearchCriteria();
-            capacityMem.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, server.getId());
-            capacityMem.addAnd("dataCenterId", SearchCriteria.Op.EQ, server.getDataCenterId());
-            capacityMem.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
-            capacityMem.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_MEMORY);
-            List<CapacityVO> capacityVOMems = _capacityDao.search(capacityMem, null);
-
-            if (capacityVOMems != null && !capacityVOMems.isEmpty()) {
-                CapacityVO CapacityVOMem = capacityVOMems.get(0);
-                long newTotalMem = server.getTotalMemory();
-                if (CapacityVOMem.getTotalCapacity() <= newTotalMem || (CapacityVOMem.getUsedCapacity() + CapacityVOMem.getReservedCapacity() <= newTotalMem)) {
-                    CapacityVOMem.setTotalCapacity(newTotalMem);
-                } else if (CapacityVOMem.getUsedCapacity() + CapacityVOMem.getReservedCapacity() > newTotalMem && CapacityVOMem.getUsedCapacity() < newTotalMem) {
-                    CapacityVOMem.setReservedCapacity(0);
-                    CapacityVOMem.setTotalCapacity(newTotalMem);
-                } else {
-                    s_logger.debug("What? new cpu is :" + newTotalMem + ", old one is " + CapacityVOMem.getUsedCapacity() + "," + CapacityVOMem.getReservedCapacity() + ","
-                            + CapacityVOMem.getTotalCapacity());
-                }
-                _capacityDao.update(CapacityVOMem.getId(), CapacityVOMem);
-            } else {
-                CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L, server.getTotalMemory(), CapacityVO.CAPACITY_TYPE_MEMORY);
-                _capacityDao.persist(capacity);
-            }
-        }
-
     }
 
     // protected void upgradeAgent(final Link link, final byte[] request, final

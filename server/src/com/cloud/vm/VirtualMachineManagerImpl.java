@@ -657,7 +657,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
-                    Commands cmds = new Commands(OnError.Revert);
+                    Commands cmds = new Commands(OnError.Stop);
                     cmds.addCommand(new StartCommand(vmTO));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
@@ -1291,7 +1291,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         try {
 
-            Commands cmds = new Commands(OnError.Revert);
+            Commands cmds = new Commands(OnError.Stop);
             cmds.addCommand(new RebootCommand(vm.getInstanceName()));
             _agentMgr.send(host.getId(), cmds);
 
@@ -1487,7 +1487,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         profile.addNic(nicProfile);
                     }
 
-                    Commands cmds = new Commands(OnError.Revert);
+                    Commands cmds = new Commands(OnError.Stop);
                     s_logger.debug("Finalizing commands that need to be send to complete Start process for the vm " + vm);
 
                     if (vmGuru.finalizeCommandsOnStart(cmds, profile)) {

@@ -38,7 +38,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -50,13 +49,12 @@ public class AgentMonitor extends Thread implements Listener {
     private boolean _stop;
     private final AgentManagerImpl _agentMgr;
     private final VMInstanceDao _vmDao;
-    private final VolumeDao _volDao;
     private DataCenterDao _dcDao = null;
     private HostPodDao _podDao = null;
     private final AlertManager _alertMgr;
     private final long _msId;
     
-    public AgentMonitor(long msId, HostDao hostDao, VolumeDao volDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {
+    public AgentMonitor(long msId, HostDao hostDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {
     	super("AgentMonitor");
     	_msId = msId;
         _pingTimeout = pingTimeout;
@@ -64,7 +62,6 @@ public class AgentMonitor extends Thread implements Listener {
         _agentMgr = agentMgr;
         _stop = false;
         _vmDao = vmDao;
-        _volDao = volDao;
         _dcDao = dcDao;
         _podDao = podDao;
         _alertMgr = alertMgr;
