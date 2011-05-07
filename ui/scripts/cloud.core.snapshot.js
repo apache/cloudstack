@@ -169,6 +169,7 @@ function snapshotJsonToDetailsTab() {
      
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#state").text(fromdb(jsonObj.state));    
     $thisTab.find("#volume_name").text(fromdb(jsonObj.volumename));
     $thisTab.find("#interval_type").text(fromdb(jsonObj.intervaltype));
     $thisTab.find("#account").text(fromdb(jsonObj.account));
@@ -178,9 +179,12 @@ function snapshotJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();  
-    buildActionLinkForTab("label.action.create.volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);		
+    
+    if(jsonObj.state == "BackedUp") {
+	    buildActionLinkForTab("label.action.create.volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	    
+	    buildActionLinkForTab("label.action.create.template", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    }
     buildActionLinkForTab("label.action.delete.snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    buildActionLinkForTab("label.action.create.template", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();     				
