@@ -802,7 +802,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
-        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.NNULL);
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
