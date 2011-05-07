@@ -29,7 +29,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
@@ -66,7 +65,7 @@ public class ComputeCapacityListener implements Listener {
     @Override
     public AgentControlAnswer processControlCommand(long agentId,
             AgentControlCommand cmd) {
-        
+
         return null;
     }
 
@@ -93,8 +92,8 @@ public class ComputeCapacityListener implements Listener {
 
         if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
             CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
-            long newTotalCpu = (long) (server.getCpus().longValue()
-                    * server.getSpeed().longValue() * _cpuOverProvisioningFactor);
+            long newTotalCpu = (server.getCpus().longValue()
+                    * server.getSpeed().longValue());
             if ((CapacityVOCpu.getTotalCapacity() <= newTotalCpu)
                     || ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu
                             .getReservedCapacity()) <= newTotalCpu)) {
@@ -118,8 +117,8 @@ public class ComputeCapacityListener implements Listener {
                     server.getPodId(), 
                     server.getClusterId(),
                     0L,
-                    (long) (server.getCpus().longValue()
-                            * server.getSpeed().longValue() * _cpuOverProvisioningFactor),
+                    (server.getCpus().longValue()
+                            * server.getSpeed().longValue()),
                             CapacityVO.CAPACITY_TYPE_CPU);
             _capacityDao.persist(capacity);
         }
@@ -180,7 +179,7 @@ public class ComputeCapacityListener implements Listener {
         return false;
     }
 
- 
+
     @Override
     public int getTimeout() {
         return 0;
