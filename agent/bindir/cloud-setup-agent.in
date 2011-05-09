@@ -3,12 +3,12 @@ import os
 import logging
 import sys
 import socket
-from cloud.cloudException import CloudRuntimeException, CloudInternalException
-from cloud.utilities import initLoging
-from cloud.configFileOps import  configFileOps
-from cloud.globalEnv import globalEnv
-from cloud.networkConfig import networkConfig
-from cloud.syscfg import sysConfigFactory
+from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
+from cloudutils.utilities import initLoging
+from cloudutils.configFileOps import  configFileOps
+from cloudutils.globalEnv import globalEnv
+from cloudutils.networkConfig import networkConfig
+from cloudutils.syscfg import sysConfigFactory
 
 from optparse import OptionParser
     

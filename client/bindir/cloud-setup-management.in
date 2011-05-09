@@ -1,7 +1,7 @@
-from cloud.syscfg import sysConfigFactory
-from cloud.utilities import initLoging
-from cloud.cloudException import CloudRuntimeException, CloudInternalException
-from cloud.globalEnv import globalEnv
+from cloudutils.syscfg import sysConfigFactory
+from cloudutils.utilities import initLoging
+from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
+from cloudutils.globalEnv import globalEnv
 if __name__ == '__main__':
     initLoging("/var/log/cloud/setupManagement.log")
     glbEnv = globalEnv()
