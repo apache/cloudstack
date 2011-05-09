@@ -97,29 +97,53 @@ function networkPopulateMiddleMenu($leftmenuItem1) {
          
     //populate items into middle menu  
     var $midmenuContainer = $("#midmenu_container").empty();   
-
-    //direct network
-    listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
-    		    
-    //public network   
-    $midmenuContainer.find("#midmenu_container_no_items_available").remove();  //There is always at least one item (i.e. public network) in middle menu. So, "no items available" shouldn't be in middle menu even there is zero direct network item in middle menu.   
-    $.ajax({
-        data: createURL("command=listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
-        dataType: "json",
-        async: false,
-        success: function(json) {       
-            var items = json.listnetworksresponse.network;       
-            if(items != null && items.length > 0) {
-                var item = items[0];
-                var $midmenuItem1 = $("#midmenu_item").clone();                      
-                $midmenuItem1.data("toRightPanelFn", publicNetworkToRightPanel);                             
-                publicNetworkToMidmenu(item, $midmenuItem1);    
-                bindClickToMidMenu($midmenuItem1, publicNetworkToRightPanel, publicNetworkGetMidmenuId);   
-                $midmenuContainer.prepend($midmenuItem1.show());    //prepend public network on the top of middle menu
-                $midmenuItem1.click();  
+    var showPublicNetwork = true;
+    
+    if(zoneObj.networktype == "Basic") {   
+    	$("#add_network_button").hide();	
+    	$.ajax({
+            data: createURL("command=listExternalFirewalls&zoneid="+zoneObj.id),
+            dataType: "json",
+            async: false,
+            success: function(json) {            
+                var items = json.listexternalfirewallsresponse.externalfirewall;    		   
+    		    if(items != null && items.length > 0) {
+    		    	showPublicNetwork = true;
+    		    	$("#add_iprange_button,#tab_ipallocation").show();
+    		    }
+    		    else {
+    		    	showPublicNetwork = false;  
+    		    	$("#add_iprange_button,#tab_ipallocation").hide();	    		    	  
+    		    }
             }
-        }
-    });           
+        });       	
+    }
+    else { // "Advanced"  
+    	showPublicNetwork = true;
+    	$("#add_network_button,#add_iprange_button,#tab_ipallocation").show();	
+        listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
+    }
+    
+	if(showPublicNetwork == true) { //public network           
+	    $midmenuContainer.find("#midmenu_container_no_items_available").remove();  //There is always at least one item (i.e. public network) in middle menu. So, "no items available" shouldn't be in middle menu even there is zero direct network item in middle menu.   
+	    $.ajax({
+	        data: createURL("command=listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {       
+	            var items = json.listnetworksresponse.network;       
+	            if(items != null && items.length > 0) {
+	                var item = items[0];
+	                var $midmenuItem1 = $("#midmenu_item").clone();                      
+	                $midmenuItem1.data("toRightPanelFn", publicNetworkToRightPanel);                             
+	                publicNetworkToMidmenu(item, $midmenuItem1);    
+	                bindClickToMidMenu($midmenuItem1, publicNetworkToRightPanel, publicNetworkGetMidmenuId);   
+	                $midmenuContainer.prepend($midmenuItem1.show());    //prepend public network on the top of middle menu
+	                $midmenuItem1.click();  
+	            }
+	        }
+	    });  
+	}
 }
 
 //***** Public Network (begin) ******************************************************************************************************
@@ -537,14 +561,6 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 	});
 	//***** binding Event Handler (end) ******   
 	
-	if (zoneObj.networktype == "Basic") {
-	    $("#add_network_button,#add_load_balancer_button,#tab_loadbalancer").hide();	
-	} 
-	else { // zoneObj.networktype == "Advanced"
-		$("#add_network_button,#add_load_balancer_button,#tab_loadbalancer").show();	
-	}		
-		
-    $button.show();   
     $button.unbind("click").bind("click", function(event) {  
         if($("#public_network_page").find("#tab_content_ipallocation").css("display") == "none")         
             $("#public_network_page").find("#tab_ipallocation").click();
@@ -676,8 +692,7 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
     var $dialogAddExternalFirewall = $("#dialog_add_external_firewall"); 
-          
-    $button.show();   
+         
     $button.unbind("click").bind("click", function(event) {         
         if($("#public_network_page").find("#tab_content_firewall").css("display") == "none")         
             $("#public_network_page").find("#tab_firewall").click();

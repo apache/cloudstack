@@ -39,7 +39,7 @@ dictionary = {
         <div class="tabbox" style="margin-top: 15px;">
             <div class="content_tabs on" id="tab_details">
                 <fmt:message key="label.details"/></div>
-            <div class="content_tabs off" id="tab_ipallocation">
+            <div class="content_tabs off" id="tab_ipallocation" style="display:none">
                 <fmt:message key="label.ip.allocations"/></div>
             <div class="content_tabs off" id="tab_firewall">
                 <fmt:message key="label.firewall"/></div>
@@ -422,7 +422,7 @@ dictionary = {
 
 <!--  top buttons (begin) -->
 <div id="top_buttons"> 
-    <div class="actionpanel_button_wrapper" id="add_network_button">
+    <div class="actionpanel_button_wrapper" id="add_network_button" style="display:none">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.network"/>' /></div>
@@ -431,7 +431,7 @@ dictionary = {
             </div>
         </div>
     </div>
-    <div class="actionpanel_button_wrapper" id="add_iprange_button">
+    <div class="actionpanel_button_wrapper" id="add_iprange_button" style="display:none">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.ip.range"/>' /></div>
@@ -440,8 +440,7 @@ dictionary = {
             </div>
         </div>
     </div>
-    <div class="actionpanel_button_wrapper" id="add_external_firewall_button"
-       >
+    <div class="actionpanel_button_wrapper" id="add_external_firewall_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.firewall"/>' /></div>
