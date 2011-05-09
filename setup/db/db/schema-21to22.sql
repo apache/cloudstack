@@ -993,3 +993,7 @@ ALTER TABLE `cloud`.`template_host_ref` DROP FOREIGN KEY `fk_template_host_ref__
 ALTER TABLE `cloud`.`template_host_ref` ADD CONSTRAINT `fk_template_host_ref__template_id` FOREIGN KEY `fk_template_host_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`);
 
 ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+
+INSERT INTO configuration (category, instance, component, name, value, description)
+    VALUES ('Advanced', 'DEFAULT', 'management-server', 'hypervisor.list', 'KVM,XenServer,VMware', 'The list of hypervisors that this deployment will use.');
+
