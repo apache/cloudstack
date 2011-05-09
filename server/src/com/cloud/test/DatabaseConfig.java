@@ -88,13 +88,12 @@ public class DatabaseConfig {
     private String _networkThrottlingRate = null;
     private String _multicastThrottlingRate = null;
     
-    private int _poolId = 2;
-
     static {
     	// initialize the objectNames ArrayList
     	objectNames.add("zone");
     	objectNames.add("vlan");
     	objectNames.add("pod");
+        objectNames.add("cluster");	
     	objectNames.add("storagePool");
     	objectNames.add("secondaryStorage");
     	objectNames.add("serviceOffering");
@@ -154,6 +153,7 @@ public class DatabaseConfig {
     	fieldNames.add("category");
     	fieldNames.add("tags");
     	fieldNames.add("networktype");
+        fieldNames.add("clusterId");
     	
 
     	
@@ -447,7 +447,9 @@ public class DatabaseConfig {
         	saveStoragePool();
         } else if ("secondaryStorage".equals(_currentObjectName)) {
         	saveSecondaryStorage();
-        }
+        } else if ("cluster".equals(_currentObjectName)) {
+            saveCluster();
+        } 
         _currentObjectParams = null;
     }
     
@@ -461,8 +463,9 @@ public class DatabaseConfig {
     	} catch (URISyntaxException e1) {
     		return;
     	}
-    	String insertSql1 = "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `sequence`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    	String insertSql1 = "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     	String insertSqlHostDetails = "INSERT INTO `host_details` (`id`, `host_id`, `name`, `value`) VALUES(?,?,?,?)";
+        String insertSql2 = "INSERT INTO `op_host` (`id`, `sequence`) VALUES(?, ?)";
     	Transaction txn = Transaction.currentTxn();
     	try {
     		PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
@@ -477,22 +480,21 @@ public class DatabaseConfig {
     		stmt.setString(9, "255.255.255.0");
     		stmt.setString(10, "92:ff:f5:ad:23:e1");
     		stmt.setLong(11, dataCenterId);
-    		stmt.setString(12, "1.9.7");
-    		stmt.setLong(13, 1);
-    		stmt.setLong(14, 0);
-    		stmt.setLong(15, 1238425896);
+    		stmt.setString(12, "2.2.4");
+    		stmt.setLong(13, 0);
+    		stmt.setLong(14, 1238425896);
     		
     		boolean nfs = false;
     		if (url.startsWith("nfs")) {
     			nfs = true;
     		}
     		if (nfs) {
-    		stmt.setString(16, "com.cloud.storage.resource.NfsSecondaryStorageResource");
+    		    stmt.setString(15, "com.cloud.storage.resource.NfsSecondaryStorageResource");
     		} else {
-    			stmt.setString(16, "com.cloud.storage.secondary.LocalSecondaryStorageResource");
+    			stmt.setString(15, "com.cloud.storage.secondary.LocalSecondaryStorageResource");
     		}
-    		stmt.setString(17, url);
-    		stmt.setString(18, "None");
+    		stmt.setString(16, url);
+    		stmt.setString(17, "None");
     		stmt.executeUpdate();
 
     		stmt = txn.prepareAutoCloseStatement(insertSqlHostDetails);
@@ -521,7 +523,11 @@ public class DatabaseConfig {
     		stmt.setString(3, "orig.url");
     		stmt.setString(4, url);
     		stmt.executeUpdate();
-
+    		
+            stmt = txn.prepareAutoCloseStatement(insertSql2);
+            stmt.setLong(1, 1);
+            stmt.setLong(2, 1);
+            stmt.executeUpdate();
     	} catch (SQLException ex) {
     		System.out.println("Error creating secondary storage: " + ex.getMessage());
     		return;
@@ -529,22 +535,54 @@ public class DatabaseConfig {
     }
     
     @DB
+    public void saveCluster() {
+        String name = _currentObjectParams.get("name");
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        long dataCenterId = Long.parseLong(_currentObjectParams.get("zoneId"));
+        long podId = Long.parseLong(_currentObjectParams.get("podId"));
+        String hypervisor = _currentObjectParams.get("hypervisorType");
+        String insertSql1 = "INSERT INTO `cluster` (`id`, `name`, `data_center_id` , `pod_id`, `hypervisor_type` , `cluster_type`, `allocation_state`) VALUES (?,?,?,?,?,?,?)";
+         
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
+            stmt.setLong(1, id);
+            stmt.setString(2, name);
+            stmt.setLong(3, dataCenterId);
+            stmt.setLong(4, podId);
+            stmt.setString(5, hypervisor);
+            stmt.setString(6, "CloudManaged");
+            stmt.setString(7, "Enabled");
+            stmt.executeUpdate();
+
+        } catch (SQLException ex) {
+            System.out.println("Error creating cluster: " + ex.getMessage());
+            s_logger.error("error creating cluster", ex);
+            return;
+        }
+
+    }
+
+    
+    @DB
     public void saveStoragePool() {
          String name = _currentObjectParams.get("name");
+         long id = Long.parseLong(_currentObjectParams.get("id"));
          long dataCenterId = Long.parseLong(_currentObjectParams.get("zoneId"));
          long podId = Long.parseLong(_currentObjectParams.get("podId"));
+         long clusterId = Long.parseLong(_currentObjectParams.get("clusterId"));
          String hostAddress = _currentObjectParams.get("hostAddress");
          String hostPath = _currentObjectParams.get("hostPath");
-         String storageType = _currentObjectParams.get("storageType");
+         String storageType = _currentObjectParams.get("storageType");         
          String uuid = UUID.nameUUIDFromBytes(new String(hostAddress+hostPath).getBytes()).toString();
  
-         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
          // String insertSql2 = "INSERT INTO `netfs_storage_pool` VALUES (?,?,?)";
          
          Transaction txn = Transaction.currentTxn();
          try {
              PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
-             stmt.setLong(1, _poolId++);
+             stmt.setLong(1, id);
              stmt.setString(2, name);
              stmt.setString(3, uuid);
              if (storageType == null) {
@@ -561,16 +599,12 @@ public class DatabaseConfig {
              stmt.setDate(11, new Date(new java.util.Date().getTime()));
              stmt.setLong(12, podId);
              stmt.setString(13, Status.Up.toString());
+             stmt.setLong(14, clusterId);
              stmt.executeUpdate();
-             // stmt = txn.prepareAutoCloseStatement(insertSql2);
-             // stmt.setLong(1, 2);
-             // stmt.setString(2, hostAddress);
-             // stmt.setString(3, hostPath);
-             // stmt.executeUpdate();
 
          } catch (SQLException ex) {
         	 System.out.println("Error creating storage pool: " + ex.getMessage());
-             s_logger.error("error creating service offering", ex);
+             s_logger.error("error creating storage pool ", ex);
              return;
          }
 
