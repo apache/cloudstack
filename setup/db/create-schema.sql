@@ -573,7 +573,7 @@ CREATE TABLE  `cloud`.`firewall_rules_cidrs` (
   PRIMARY KEY (`id`),
   KEY `fk_firewall_cidrs_firewall_rules` (`firewall_rule_id`),
   CONSTRAINT `fk_firewall_cidrs_firewall_rules` FOREIGN KEY (`firewall_rule_id`) REFERENCES `firewall_rules` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`load_balancing_rules` (
   `id` bigint unsigned NOT NULL,
