@@ -410,6 +410,7 @@ var publicNetworkFirewallActionMap = {
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
             });
+            networkPopulateMiddleMenu($selectedSubMenu); //refresh middle menu (check if public network should be removed) and top buttons(check if Add IP Range button should be hidden)
         }
     }     
 }  
@@ -841,7 +842,9 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 					    var item = json.addexternalfirewallresponse.externalfirewall;
 					    var $newTemplate = $("#externalfirewall_template").clone();
 		                publicNetworkFirewallJsonToTemplate(item, $newTemplate);
-		                $("#right_panel_content #public_network_page #tab_content_firewall").find("#tab_container").append($newTemplate.show());					    	               				   
+		                $("#right_panel_content #public_network_page #tab_content_firewall").find("#tab_container").append($newTemplate.show());
+		                
+		                networkPopulateMiddleMenu($selectedSubMenu); //refresh middle menu (add public network) and top buttons(show Add IP Range button)
 					},
 					error: function(XMLHttpResponse) {
 						handleError(XMLHttpResponse, function() {
