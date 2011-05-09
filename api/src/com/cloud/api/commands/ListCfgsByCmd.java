@@ -31,26 +31,25 @@ import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.configuration.Configuration;
 
-@Implementation(description="Lists all configurations.", responseObject=ConfigurationResponse.class)
+@Implementation(description = "Lists all configurations.", responseObject = ConfigurationResponse.class)
 public class ListCfgsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 
     private static final String s_name = "listconfigurationsresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.CATEGORY, type=CommandType.STRING, description="lists configurations by category")
+    @Parameter(name = ApiConstants.CATEGORY, type = CommandType.STRING, description = "lists configurations by category")
     private String category;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="lists configuration by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists configuration by name")
     private String configName;
 
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public String getCategory() {
         return category;
@@ -60,18 +59,27 @@ public class ListCfgsByCmd extends BaseListCmd {
         return configName;
     }
 
+    @Override
+    public Long getPageSizeVal() {
+        Long pageSizeVal = 500L;
+        Integer pageSize = getPageSize();
+        if (pageSize != null) {
+            pageSizeVal = pageSize.longValue();
+        }
+        return pageSizeVal;
+    }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends Configuration> result = _mgr.searchForConfigurations(this);
         ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
