@@ -28,7 +28,7 @@ public class StringUtils {
     public static String join(Iterable<? extends Object> iterable, String delim) {
         StringBuilder sb = new StringBuilder();
         if (iterable != null) {
-            Iterator iter = iterable.iterator();
+            Iterator<? extends Object> iter = iterable.iterator();
             if (iter.hasNext()) {
                 Object next = iter.next();
                 sb.append(next.toString());
