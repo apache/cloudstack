@@ -135,6 +135,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -1279,6 +1280,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
+            
+            if (snapshot.getStatus() != Snapshot.Status.BackedUp) {
+                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for template creation");
+            }
+            
             domainId = snapshot.getDomainId();
             accountId = snapshot.getAccountId();
             hyperType = snapshot.getHypervisorType();
