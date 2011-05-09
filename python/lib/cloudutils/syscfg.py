@@ -49,7 +49,7 @@ class sysConfig(object):
         self.services = []
     
     def registerService(self, service):
-        self.services.append(service)
+        self.services.append(service(self))
         
     def config(self):
         if not self.check():
@@ -124,6 +124,9 @@ class sysConfigServer(sysConfig):
     def check(self):
         if os.geteuid() != 0:
             raise CloudInternalException("Need to execute with root permission")
+        hostname = bash("hostname -f")
+        if not hostname.isSuccess():
+            raise CloudInternalException("Checking hostname ... [Failed]\nNeed to have a Fully Qualified Domain Name as your hostname")
         return True
         
 class sysConfigServerRedhat(sysConfigServer):

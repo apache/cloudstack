@@ -1,7 +1,9 @@
+#!/usr/bin/python
 from cloudutils.syscfg import sysConfigFactory
 from cloudutils.utilities import initLoging
 from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
 from cloudutils.globalEnv import globalEnv
+from cloudutils.serviceConfigServer import cloudManagementConfig
 if __name__ == '__main__':
     initLoging("/var/log/cloud/setupManagement.log")
     glbEnv = globalEnv()
@@ -11,6 +13,7 @@ if __name__ == '__main__':
     print "Starting to configure CloudStack Management Server:"
     syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
     try:
+    	syscfg.registerService(cloudManagementConfig)
         syscfg.config()
         print "CloudStack Management Server setup is Done!"
     except (CloudRuntimeException, CloudInternalException), e:

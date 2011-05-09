@@ -67,6 +67,7 @@ class cloudManagementConfig(serviceCfgBase):
         except:
             pass
             
+        self.syscfg.svo.stopService("cloud-management")
         if self.syscfg.svo.enableService("cloud-management"):
             return True
         else:

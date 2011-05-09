@@ -110,7 +110,7 @@ class serviceOpsRedhat(serviceOps):
     def isServiceRunning(self, servicename):
         try:
             o = bash("service " + servicename + " status")
-            if "start/running" in o.getStdout():
+            if "running" in o.getStdout() or "start" in o.getStdout():
                 return True
             else:
                 return False
@@ -146,7 +146,7 @@ class serviceOpsUbuntu(serviceOps):
     def isServiceRunning(self, servicename):
         try:
             o = bash("service " + servicename + " status")
-            if "start/running" in o.getStdout():
+            if "running" in o.getStdout() or "start" in o.getStdout():
                 return True
             else:
                 return False

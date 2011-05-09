@@ -621,7 +621,8 @@ class sudoersConfig(serviceCfgBase):
 class firewallConfigServer(firewallConfigBase):
     def __init__(self, syscfg):
         super(firewallConfigServer, self).__init__(syscfg)
+        #9090 is used for cluster management server
         if self.syscfg.env.svrMode == "myCloud":
-            self.ports = "443 8080 8096 8250 8443".split()
+            self.ports = "443 8080 8096 8250 8443 9090".split()
         else:
-            self.ports = "8080 8096 8250".split()
+            self.ports = "8080 8096 8250 9090".split()
