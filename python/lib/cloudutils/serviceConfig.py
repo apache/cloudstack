@@ -416,8 +416,8 @@ class libvirtConfigUbuntu(serviceCfgBase):
     def setupLiveMigration(self):
         cfo = configFileOps("/etc/libvirt/libvirtd.conf", self)
         cfo.addEntry("listen_tcp", "1")
-        cfo.addEntry("tcp_port", "16509")
-        cfo.addEntry("auth_tcp", "none")
+        cfo.addEntry("tcp_port", "\"16509\"");
+        cfo.addEntry("auth_tcp", "\"none\"");
         cfo.addEntry("listen_tls", "0")
         cfo.save()
         
