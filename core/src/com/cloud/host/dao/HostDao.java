@@ -68,7 +68,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	List<HostVO> findDirectlyConnectedHosts();
 	
     List<HostVO> findDirectAgentToLoad(long msid, long lastPingSecondsAfter, Long limit);
-	
+    boolean directConnect(HostVO host, long msId);
 
 	/**
 	 * Mark the host as disconnected if it is in one of these states.

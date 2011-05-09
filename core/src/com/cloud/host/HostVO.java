@@ -636,7 +636,7 @@ public class HostVO implements Host {
 
     @Override
     public String toString() {
-    	return new StringBuilder(type.toString()).append("-").append(Long.toString(id)).append("-").append(name).append("-").append(privateIpAddress).toString();
+    	return new StringBuilder("Host[").append("-").append(id).append("-").append(type).append("]").toString(); 
     }
 
 	public void setHypervisorType(Hypervisor.Type hypervisorType) {
