@@ -85,6 +85,7 @@ DROP TABLE IF EXISTS `cloud`.`load_balancing_ip_map`;
 DROP TABLE IF EXISTS `cloud`.`load_balancing_rules`;
 DROP TABLE IF EXISTS `cloud`.`port_forwarding_rules`;
 DROP TABLE IF EXISTS `cloud`.`firewall_rules`;
+DROP TABLE IF EXISTS `cloud`.`firewall_rules_cidrs`;
 DROP TABLE IF EXISTS `cloud`.`ssh_keypairs`;
 DROP TABLE IF EXISTS `cloud`.`usage_event`;
 DROP TABLE IF EXISTS `cloud`.`host_tags`;
@@ -564,6 +565,15 @@ CREATE TABLE `cloud`.`firewall_rules` (
   CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`firewall_rules_cidrs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `firewall_rule_id` bigint(20) unsigned NOT NULL COMMENT 'firewall rule id',
+  `source_cidr` varchar(18) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_firewall_cidrs_firewall_rules` (`firewall_rule_id`),
+  CONSTRAINT `fk_firewall_cidrs_firewall_rules` FOREIGN KEY (`firewall_rule_id`) REFERENCES `firewall_rules` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
 CREATE TABLE `cloud`.`load_balancing_rules` (
   `id` bigint unsigned NOT NULL,

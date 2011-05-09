@@ -255,7 +255,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
-                rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
+                rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), rule.getSourceCidrList(), networkId, accountId, domainId, vmId);
         newRule = _forwardingDao.persist(newRule);
 
         try {
@@ -332,8 +332,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Start port can't be bigger than end port");
         }
 
-        FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), networkId,
-                accountId, domainId, rule.getPurpose());
+        FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
+                networkId, accountId, domainId, rule.getPurpose());
         newRule = _firewallDao.persist(newRule);
 
         try {

@@ -15,40 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.rules;
+
+package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.utils.net.Ip;
+import com.cloud.network.FirewallRulesCidrsVO;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * Specifies the port forwarding for firewall rule.
- */
-public interface PortForwardingRule extends FirewallRule {
-    /**
-     * @return destination ip address.
-     */
-    Ip getDestinationIpAddress();
+public interface FirewallRulesCidrsDao extends GenericDao<FirewallRulesCidrsVO, Long> {
     
-    /**
-     * @return start of destination port.
-     */
-    int getDestinationPortStart();
+    void persist(long firewallRuleId, List<String> sourceCidrs);
     
-    /**
-     * @return end of destination port range
-     */
-    int getDestinationPortEnd();
+    List<String> getSourceCidrs(long firewallRuleId);
     
-    /**
-     * @return destination ip address.
-     */
-    long getVirtualMachineId();  
-    
-    /**
-     * @return source cidr to forward
-     */
-    List<String> getSourceCidrList();
-    
-  
 }
