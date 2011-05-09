@@ -1885,6 +1885,10 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
 			$protocolSelector.append('<option value="nfs">' + g_dictionary["label.nfs"] + '</option>');
 			$protocolSelector.append('<option value="vmfs">' + g_dictionary["label.VMFS.datastore"] + '</option>');
     	} 
+    	else if(clusterObj.hypervisortype == "Ovm") {
+    		$protocolSelector.empty();
+			$protocolSelector.append('<option value="nfs">' + g_dictionary["label.nfs"] + '</option>');
+    	} 
     	else {
     	    $protocolSelector.empty();
     	}
