@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.FirewallRulesCidrsVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -42,7 +43,7 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
         CidrsSearch.done();        
     }
 
-    @Override
+    @Override @DB
     public List<String> getSourceCidrs(long firewallRuleId) {
         SearchCriteria sc = CidrsSearch.create();
         sc.setParameters("firewallRuleId", firewallRuleId);
@@ -56,7 +57,7 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
         return hostTags;
     }
     
-    @Override
+    @Override @DB
     public void persist(long firewallRuleId, List<String> sourceCidrs) {
         Transaction txn = Transaction.currentTxn();
 

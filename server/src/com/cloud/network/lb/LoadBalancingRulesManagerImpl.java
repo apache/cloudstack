@@ -288,7 +288,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
 
     @DB
-    private boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply, Account caller, long callerUserId) {
+    public boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply, Account caller, long callerUserId) {
         LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
         Transaction txn = Transaction.currentTxn();
         boolean generateUsageEvent = false;
