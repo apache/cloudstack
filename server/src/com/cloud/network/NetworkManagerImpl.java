@@ -1798,19 +1798,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
-        if (isSystem != null && !isSystem) {
-            if (zoneId != null) {
-                DataCenterVO dc = _dcDao.findById(zoneId);
-                if (dc != null && !dc.isSecurityGroupEnabled()) {
+        if (isSystem != null) {
+            if (isSystem) {
+                sc.setJoinParameters("networkOfferingSearch", "systemOnly", true);
+                sc.setJoinParameters("zoneSearch", "networkType", NetworkType.Advanced.toString());
+            } else {
+                if (zoneId != null) {
+                    DataCenterVO dc = _dcDao.findById(zoneId);
+                    if (dc != null && !dc.isSecurityGroupEnabled()) {
+                        sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
+                    }
+                } else {
                     sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
                 }
-            } else {
-                sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
             }
-        } else {
-            sc.setJoinParameters("networkOfferingSearch", "systemOnly", true);
-            sc.setJoinParameters("zoneSearch", "networkType", NetworkType.Advanced.toString());
-        }
+        } 
 
         if (keyword != null) {
             SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
