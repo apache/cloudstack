@@ -1821,6 +1821,9 @@ function vmJsonToDetailsTab(){
 	$thisTab.find("#tab_spinning_wheel").show();    
 		
 	var id = jsonObj.id;		  
+	
+	//comment out the following AJAX call because it caused problem of multiple-selection middle menu
+	/*
 	$.ajax({
 		data: createURL("command=listVirtualMachines&id="+id),
 		dataType: "json",
@@ -1834,7 +1837,8 @@ function vmJsonToDetailsTab(){
 	        }   
 		}
 	});  	  
-          
+    */
+	
 	resetViewConsoleAction(jsonObj, $thisTab);      
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
 	
