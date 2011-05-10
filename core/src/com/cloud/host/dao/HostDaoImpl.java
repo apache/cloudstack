@@ -47,6 +47,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 
@@ -193,9 +194,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.done();
 
         DirectConnectSearch = createSearchBuilder();
-        DirectConnectSearch.and("server", DirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
         DirectConnectSearch.and("resource", DirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         DirectConnectSearch.and("id", DirectConnectSearch.entity().getId(), SearchCriteria.Op.EQ);
+        DirectConnectSearch.op(Op.AND, "nullserver", DirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
+        DirectConnectSearch.or("server", DirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        DirectConnectSearch.cp();
         DirectConnectSearch.done();
 
         _statusAttr = _allAttributes.get("status");
@@ -218,9 +221,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public boolean directConnect(HostVO host, long msId) {
+    public boolean directConnect(HostVO host, long msId, boolean secondConnect) {
         SearchCriteria sc = DirectConnectSearch.create();
         sc.setParameters("id", host.getId());
+        if (secondConnect) {
+            sc.setParameters("server", msId);
+        }
         host.setManagementServerId(msId);
         host.setLastPinged(System.currentTimeMillis() >> 10);
         UpdateBuilder ub = getUpdateBuilder(host);
