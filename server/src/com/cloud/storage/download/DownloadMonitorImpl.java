@@ -92,8 +92,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
 	VMTemplatePoolDao _vmTemplatePoolDao;
     @Inject
-    VMTemplateZoneDao _vmTemplateZoneDao;
-    @Inject
     StoragePoolHostDao _poolHostDao;
     @Inject
     SecondaryStorageVmDao _secStorageVmDao;
