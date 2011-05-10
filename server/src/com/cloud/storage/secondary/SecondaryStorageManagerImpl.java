@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.storage.secondary;
 
@@ -254,7 +254,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     allowedCidrs.add(cidr);
                 }
             }
-            Nic privateNic = _networkMgr.getNicForTraffic(secStorageVm.getId(), TrafficType.Management);
+            List<? extends Nic> nics = _networkMgr.getNicsForTraffic(secStorageVm.getId(), TrafficType.Management);
+            Nic privateNic = nics.get(0);
             String privateCidr = NetUtils.ipAndNetMaskToCidr(privateNic.getIp4Address(), privateNic.getNetmask());
             String publicCidr = NetUtils.ipAndNetMaskToCidr(secStorageVm.getPublicIpAddress(), secStorageVm.getPublicNetmask());
             if (NetUtils.isNetworkAWithinNetworkB(privateCidr, publicCidr) || NetUtils.isNetworkAWithinNetworkB(publicCidr, privateCidr)) {
@@ -962,10 +963,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         buf.append(" mount.path=").append(nfsMountPoint);
-        if (_configDao.isPremium())
+        if (_configDao.isPremium()) {
             buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
-        else
+        } else {
             buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+        }
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
 

@@ -180,7 +180,7 @@ public interface NetworkManager extends NetworkService {
 
     Nic getNicInNetworkIncludingRemoved(long vmId, long networkId);
 
-    Nic getNicForTraffic(long vmId, TrafficType type);
+    List<? extends Nic> getNicsForTraffic(long vmId, TrafficType type);
 
     Network getDefaultNetworkForVm(long vmId);
 

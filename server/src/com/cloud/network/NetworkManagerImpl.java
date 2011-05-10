@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.network;
 
@@ -392,7 +392,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     /**
      * Returns the target account for an api command
-     * 
+     *
      * @param accountName
      *            - non-null if the account name was passed in in the command
      * @param domainId
@@ -1812,7 +1812,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
                 }
             }
-        } 
+        }
 
         if (keyword != null) {
             SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
@@ -2548,14 +2548,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public Nic getNicForTraffic(long vmId, TrafficType type) {
+    public List<NicVO> getNicsForTraffic(long vmId, TrafficType type) {
         SearchCriteria<NicVO> sc = NicForTrafficTypeSearch.create();
         sc.setParameters("instance", vmId);
         sc.setJoinParameters("network", "traffictype", type);
 
-        List<NicVO> vos = _nicDao.search(sc, null);
-        assert vos.size() <= 1 : "If we have multiple networks of the same type, then this method should no longer be used.";
-        return vos.size() == 1 ? vos.get(0) : null;
+        return _nicDao.search(sc, null);
     }
 
     @Override
