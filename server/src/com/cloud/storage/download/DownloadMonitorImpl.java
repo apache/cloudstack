@@ -92,6 +92,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
 	VMTemplatePoolDao _vmTemplatePoolDao;
     @Inject
+    VMTemplateZoneDao _vmTemplateZoneDao;
+    @Inject
     StoragePoolHostDao _poolHostDao;
     @Inject
     SecondaryStorageVmDao _secStorageVmDao;
@@ -430,6 +432,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	    for (VMTemplateVO template: toBeDownloaded) {
 	        VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sshost.getId(), template.getId());
 	        if (tmpltHost == null || tmpltHost.getDownloadState() != Status.DOWNLOADED) {
+	            if (_vmTemplateZoneDao.findByZoneTemplate(sshost.getDataCenterId(), template.getId()) == null) {
+	                _templateDao.addTemplateToZone(template, sshost.getDataCenterId());
+	            }
 	            downloadTemplateToStorage(template, sshost);
 	        }
 	    }
