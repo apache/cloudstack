@@ -237,8 +237,9 @@ public enum Config {
 	DefaultMaxAccountPublicIPs("Account Defaults", ManagementServer.class, Long.class, "max.account.public.ips", "20", "The default maximum number of public IPs that can be consumed by an account", null),
 	DefaultMaxAccountTemplates("Account Defaults", ManagementServer.class, Long.class, "max.account.templates", "20", "The default maximum number of templates that can be deployed for an account", null),
 	DefaultMaxAccountSnapshots("Account Defaults", ManagementServer.class, Long.class, "max.account.snapshots", "20", "The default maximum number of snapshots that can be created for an account", null),
-	DefaultMaxAccountVolumes("Account Defaults", ManagementServer.class, Long.class, "max.account.volumes", "20", "The default maximum number of volumes that can be created for an account", null);
-
+	DefaultMaxAccountVolumes("Account Defaults", ManagementServer.class, Long.class, "max.account.volumes", "20", "The default maximum number of volumes that can be created for an account", null),
+	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null);
+	
 	private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;

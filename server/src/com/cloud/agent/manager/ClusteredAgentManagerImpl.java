@@ -33,6 +33,8 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -41,6 +43,8 @@ import com.cloud.resource.ResourceService;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.user.User;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -51,16 +55,15 @@ import com.cloud.utils.nio.Task;
 
 @Local(value = { AgentManager.class, ResourceService.class })
 public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener {
-    final static Logger s_logger = Logger.getLogger(ClusteredAgentManagerImpl.class);
-
-    public final static long STARTUP_DELAY = 5000;
-    public final static long SCAN_INTERVAL = 90000; // 90 seconds, it takes 60 sec for xenserver to fail login
-    public final static int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
-    public final static long LOAD_SIZE = 100;
-
-    @Inject
-    protected ClusterManager _clusterMgr = null;
-
+	final static Logger s_logger = Logger.getLogger(ClusteredAgentManagerImpl.class);
+	
+	public final static long STARTUP_DELAY = 5000;
+	public final static long SCAN_INTERVAL = 90000;  // 90 seconds, it takes 60 sec for xenserver to fail login
+	public final static int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; 	// 5 seconds
+	public long _loadSize = 100;
+	
+    @Inject protected ClusterManager _clusterMgr = null;
+    
     protected HashMap<String, SocketChannel> _peers;
     private final Timer _timer = new Timer("ClusteredAgentManager Timer");
 
@@ -71,23 +74,28 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         super();
     }
 
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _peers = new HashMap<String, SocketChannel>(7);
+	@Override
+	public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
+		_peers = new HashMap<String, SocketChannel>(7);
         _nodeId = _clusterMgr.getManagementNodeId();
-
+        
+        ConfigurationDao configDao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
+        Map<String, String> params = configDao.getConfiguration(xmlParams);
+        String value = params.get(Config.DirectAgentLoadSize.key());
+        _loadSize = NumbersUtil.parseInt(value, 16);
+		
         ClusteredAgentAttache.initialize(this);
 
         _clusterMgr.registerListener(this);
-
-        return super.configure(name, params);
-    }
-
-    @Override
-    public boolean start() {
-        if (!super.start()) {
-            return false;
-        }
+        
+        return super.configure(name, xmlParams);
+	}
+	
+	@Override
+	public boolean start() {
+	    if (!super.start()) {
+	        return false;
+	    }
         _timer.schedule(new DirectAgentScanTimerTask(), STARTUP_DELAY, SCAN_INTERVAL);
         return true;
     }
@@ -112,14 +120,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             s_logger.trace("Begin scanning directly connected hosts");
         }
 
-        // for agents that are self-managed, threshold to be considered as disconnected is 3 ping intervals
-        long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingInterval * 3);
-        List<HostVO> hosts = _hostDao.findDirectAgentToLoad(_clusterMgr.getManagementNodeId(), cutSeconds, LOAD_SIZE);
-        if (hosts != null && hosts.size() == LOAD_SIZE) {
-            Long clusterId = hosts.get((int) (LOAD_SIZE - 1)).getClusterId();
-            if (clusterId != null) {
-                for (int i = (int) (LOAD_SIZE - 1); i > 0; i--) {
-                    if (hosts.get(i).getClusterId() == clusterId) {
+		// for agents that are self-managed, threshold to be considered as disconnected is 3 ping intervals
+		long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingInterval*3);
+    	List<HostVO> hosts =  _hostDao.findDirectAgentToLoad(_clusterMgr.getManagementNodeId(), cutSeconds, _loadSize);
+    	if ( hosts != null && hosts.size() == _loadSize ) {
+    	    Long clusterId = hosts.get((int)(_loadSize-1)).getClusterId();
+    	    if ( clusterId != null) {
+                for ( int i = (int)(_loadSize-1); i > 0; i-- ) {
+                    if ( hosts.get(i).getClusterId() == clusterId ) {
                         hosts.remove(i);
                     } else {
                         break;
