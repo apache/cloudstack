@@ -2184,6 +2184,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
         }
         
+        // Check templates permissions
+        if (!template.isPublicTemplate()) {
+            Account templateOwner = _accountMgr.getAccount(template.getAccountId());
+            _accountMgr.checkAccess(owner, templateOwner);
+        }
+        
         // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
         // Else, a disk offering is optional, and if present will be used to create the data disk
         Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
