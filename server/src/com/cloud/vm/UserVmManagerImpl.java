@@ -2937,7 +2937,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (keyword != null) {
             SearchCriteria<UserVmVO> ssc = _vmDao.createSearchCriteria();
             ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
 
