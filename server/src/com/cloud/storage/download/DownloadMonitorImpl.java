@@ -63,6 +63,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
@@ -87,6 +88,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     VMTemplateHostDao _vmTemplateHostDao;
     @Inject
 	VMTemplatePoolDao _vmTemplatePoolDao;
+    @Inject
+    VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
     StoragePoolHostDao _poolHostDao;
     @Inject
@@ -426,6 +429,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	    for (VMTemplateVO template: toBeDownloaded) {
 	        VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sshost.getId(), template.getId());
 	        if (tmpltHost == null || tmpltHost.getDownloadState() != Status.DOWNLOADED) {
+	            if (_vmTemplateZoneDao.findByZoneTemplate(sshost.getDataCenterId(), template.getId()) == null) {
+	                _templateDao.addTemplateToZone(template, sshost.getDataCenterId());
+	            }
 	            downloadTemplateToStorage(template, sshost);
 	        }
 	    }
