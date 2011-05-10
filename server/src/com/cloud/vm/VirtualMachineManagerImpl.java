@@ -780,13 +780,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VMInstanceVO vm = profile.getVirtualMachine();
         StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
         try {
-            StopAnswer answer = (StopAnswer) _agentMgr.send(vm.getHostId(), stop);
+            Answer answer =  _agentMgr.send(vm.getHostId(), stop);
             if (!answer.getResult()) {
                 s_logger.debug("Unable to stop VM due to " + answer.getDetails());
                 return false;
             }
 
-            guru.finalizeStop(profile, answer);
+            guru.finalizeStop(profile, (StopAnswer)answer);
         } catch (AgentUnavailableException e) {
             if (!force) {
                 return false;
