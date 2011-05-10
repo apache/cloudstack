@@ -206,6 +206,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         return listBy(sc);
     }
     
+    @Override 
+    public List<IPAddressVO> listStaticNatPublicIps(long networkId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("oneToOneNat", true);
+        return listBy(sc);        
+    }
+    
     @Override
     public IPAddressVO findByAssociatedVmId(long vmId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();

@@ -38,6 +38,8 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	
 	List<IPAddressVO> listByAssociatedNetwork(long networkId, Boolean isSourceNat);
 	
+	List<IPAddressVO> listStaticNatPublicIps(long networkId);
+	
 	int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
 	
 	int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
