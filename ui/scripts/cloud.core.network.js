@@ -176,11 +176,16 @@ function publicNetworkToRightPanel($midmenuItem1) {
 	$("#public_network_page").show(); 
 	$("#direct_network_page").hide();
 	
-	if($midmenuItem1 != null) {
+	if($midmenuItem1 == null) {
+		$("#public_network_page").find("#tab_details").hide();
+		$("#public_network_page").find("#tab_firewall").click();  
+    }          
+	else {
+		$("#public_network_page").find("#tab_details").show();
 		copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
 	    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
 	    $("#public_network_page").find("#tab_details").click();   
-    }           
+	}
        
     bindAddIpRangeToPublicNetworkButton();
     bindAddExternalFirewallButton();
