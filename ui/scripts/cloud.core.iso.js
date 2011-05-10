@@ -109,7 +109,8 @@ function initAddIsoDialog() {
     $.ajax({
         data: createURL("command=listZones&available=true"),
 	    dataType: "json",
-	    success: function(json) {		        
+	    success: function(json) {	
+    	    g_zoneIds = [];
 		    var zones = json.listzonesresponse.zone;	 			     			    	
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
