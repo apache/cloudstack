@@ -56,35 +56,53 @@ StringBuilder.prototype = {
 /////////////////////////////////////////////////////////////////////////////
 // class KeyboardMapper
 //
-function KeyboardMapper(nativeKeypress, keyCodeMap, charCodeMap, shiftedCharCodeMap) {
+function KeyboardMapper(nativeKeypress, keyCodeMap, shiftedKeyCodeMap, charCodeMap, shiftedCharCodeMap) {
 	this.nativeKeypress = nativeKeypress;
 	this.keyCodeMap = keyCodeMap;
+	this.shiftedKeyCodeMap = shiftedKeyCodeMap;
 	this.charCodeMap = charCodeMap;
 	this.shiftedCharCodeMap = shiftedCharCodeMap;
 }
 
 KeyboardMapper.prototype = {
-	nativeKeypress : function() {
+	supportNativeKeypress : function() {
 		return this.nativeKeypress;
 	},
 
-	mapKeyCode : function(code, modifier) {
-		if(this.keyCodeMap && this.keyCodeMap[code])
-			return this.keyCodeMap[code];
+	mapKeyCode : function(code, modifiers) {
+		if((modifiers & AjaxViewer.SHIFT_KEY) != 0) {
+			if(this.shiftedKeyCodeMap && this.shiftedKeyCodeMap[code]) {
+				g_logger.log(Logger.LEVEL_INFO, "map SHIFTED keycode " + code + " to " +  this.shiftedKeyCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+				return this.shiftedKeyCodeMap[code];
+			} else {
+				g_logger.log(Logger.LEVEL_INFO, "map SHIFTED keycode " + code + " to " +  code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+			}
+		} else {
+			if(this.keyCodeMap && this.keyCodeMap[code]) {
+				g_logger.log(Logger.LEVEL_INFO, "map keycode " + code + " to " +  this.keyCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+				return this.keyCodeMap[code];
+			} else {
+				g_logger.log(Logger.LEVEL_INFO, "map keycode " + code + " to " +  code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+			}
+		}
 		
 		return code;
 	},
 	
-	mapCharCode : function(code, modifier) {
-		if((modifier & AjaxViewer.SHIFT_KEY) != 0) {
-			if(this.shiftedCharCodeMap && this.shiftedCharCodeMap[code])
+	mapCharCode : function(code, modifiers) {
+		if((modifiers & AjaxViewer.SHIFT_KEY) != 0) {
+			if(this.shiftedCharCodeMap && this.shiftedCharCodeMap[code]) {
+				g_logger.log(Logger.LEVEL_INFO, "map SHIFTED keycode " + code + " to charcode " +  this.shiftedCharCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
 				return this.shiftedCharCodeMap[code];
+			}
 		} else {
-			if(this.charCodeMap && this.charCodeMap[code])
+			if(this.charCodeMap && this.charCodeMap[code]) {
+				g_logger.log(Logger.LEVEL_INFO, "map keycode " + code + " to charcode " +  this.shiftedCharCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
 				return this.charCodeMap[code];
+			}
 		}
 			
-		return code;
+		return undefined;
 	}
 };
 
@@ -303,10 +321,27 @@ AjaxViewer.prototype = {
 	},
 	
 	setupKeyboardTranslationTable : function() {
-		this.keyboardTables = [];
+		this.keyboardMappers = [];
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = new KeyboardMapper(true, null, null, null, null);
+
+		var keyCodeMap = [];
+		var shiftedKeyCodeMap = [];
+		var charCodeMap = [];
+		var shiftedCharCodeMap = [];
 		
-		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(true, null, null, null);
-		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(true, null, null, null);
+		shiftedKeyCodeMap[50] = 222;		// EN 2/@ -> JP 2/"
+		shiftedCharCodeMap[50] = 34;
+		
+		shiftedKeyCodeMap[54] = 55;			// EN 6/^ -> JP 6/&
+		shiftedCharCodeMap[94] = 38;
+
+		
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(false, keyCodeMap, shiftedKeyCodeMap, 
+			charCodeMap, shiftedCharCodeMap);
+	},
+	
+	getCurrentKeyboardMapper : function() {
+		return this.keyboardMappers[this.currentKeyboard];
 	},
 	
 	setupUIController : function() {
@@ -328,13 +363,18 @@ AjaxViewer.prototype = {
 			}
 		);
 
-		$("#toolbar").find("a").each(function(i, val) {
+		$("[cmd]", "#toolbar").each(function(i, val) {
 			$(val).click(function(e) {
-				var cmdLink = $(e.target).closest("a");
-				
-				if(cmdLink.attr("cmd")) {
-					var cmd = cmdLink.attr("cmd");
-					ajaxViewer.onCommand(cmd);
+				var cmd = $(e.target).attr("cmd");
+				if(cmd)
+					ajaxViewer.onCommand(cmd); 
+				else {
+					var cmdLink = $(e.target).closest("a");
+					
+					if(cmdLink.attr("cmd")) {
+						var cmd = cmdLink.attr("cmd");
+						ajaxViewer.onCommand(cmd);
+					}
 				}
 			});
 		});
@@ -355,6 +395,13 @@ AjaxViewer.prototype = {
 			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 27, AjaxViewer.CTRL_KEY);
 			this.sendKeyboardEvent(AjaxViewer.KEY_UP, 27, AjaxViewer.CTRL_KEY);
 			this.sendKeyboardEvent(AjaxViewer.KEY_UP, 17, 0);
+		} else if(cmd == "toggle_logwin") {
+			if(!g_logger.isOpen()) {
+				g_logger.enable(true);
+				g_logger.open();
+			} else {
+				g_logger.close();
+			}
 		}
 	},
 	
@@ -924,6 +971,10 @@ AjaxViewer.prototype = {
 		var target = $(document);
 
 		target.keypress(function(e) {
+			var keyboardMapper = ajaxViewer.getCurrentKeyboardMapper();
+			if(!keyboardMapper.supportNativeKeypress())
+				return true;
+			
 			ajaxViewer.onKeyPress(e.which, ajaxViewer.getKeyModifiers(e));
 
 			e.stopPropagation();
@@ -935,7 +986,15 @@ AjaxViewer.prototype = {
 		});
 		
 		target.keydown(function(e) {
-			ajaxViewer.onKeyDown(e.which, ajaxViewer.getKeyModifiers(e));
+			var keyboardMapper = ajaxViewer.getCurrentKeyboardMapper();
+
+			ajaxViewer.onKeyDown(keyboardMapper.mapKeyCode(e.which, ajaxViewer.getKeyModifiers(e)), ajaxViewer.getKeyModifiers(e));
+			
+			if(!keyboardMapper.supportNativeKeypress()) {
+				var charCode = keyboardMapper.mapCharCode(e.which, ajaxViewer.getKeyModifiers(e));
+				if(charCode)
+					ajaxViewer.onKeyPress(charCode, ajaxViewer.getKeyModifiers(e));
+			}
 			
 			e.stopPropagation();
 			if(ajaxViewer.requiresDefaultKeyProcess(e))

@@ -1043,7 +1043,7 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 					"</ul>",
 				"</li>",
 			"</ul>",
-			"<span id=\"light\" class=\"dark\"></span>", 
+			"<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", 
 			"</div>",
 			"<div id=\"main_panel\" tabindex=\"1\"></div>",
 			"<script language=\"javascript\">",
