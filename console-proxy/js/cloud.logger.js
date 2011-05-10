@@ -52,6 +52,11 @@ Logger.LEVEL_SYS = 100;
 Logger.prototype = {
 	
 	open: function() {
+		if(this.logWin) {
+			this.logWin.show();
+			return;
+		}
+		
 		var logger = this;
 		var logWinMarkup = [ 
 				'<div class="logwin">',
@@ -161,6 +166,17 @@ Logger.prototype = {
 		this.dockIn();
 		
 		this.log(Logger.LEVEL_SYS, "Logger started");
+	},
+	
+	close: function() {
+		if(this.logWin)
+			this.logWin.hide();
+	},
+	
+	isOpen: function() {
+		if(this.logWin)
+			return this.logWin.is(":visible");
+		return false;
 	},
 	
 	dockIn: function() {

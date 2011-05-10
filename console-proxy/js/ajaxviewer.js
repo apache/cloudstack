@@ -20,10 +20,16 @@
 // AJAX console viewer
 // Author
 //		Kelven Yang
-//		11/18/2009
+//
+//		11/18/2009						Created
+//
+//		05/09/2011						Add keyboard type support
 //
 var g_logger;
 
+/////////////////////////////////////////////////////////////////////////////
+// class StringBuilder
+//
 function StringBuilder(initStr) {
     this.strings = new Array("");
     this.append(initStr);
@@ -47,6 +53,44 @@ StringBuilder.prototype = {
 	}
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// class KeyboardMapper
+//
+function KeyboardMapper(nativeKeypress, keyCodeMap, charCodeMap, shiftedCharCodeMap) {
+	this.nativeKeypress = nativeKeypress;
+	this.keyCodeMap = keyCodeMap;
+	this.charCodeMap = charCodeMap;
+	this.shiftedCharCodeMap = shiftedCharCodeMap;
+}
+
+KeyboardMapper.prototype = {
+	nativeKeypress : function() {
+		return this.nativeKeypress;
+	},
+
+	mapKeyCode : function(code, modifier) {
+		if(this.keyCodeMap && this.keyCodeMap[code])
+			return this.keyCodeMap[code];
+		
+		return code;
+	},
+	
+	mapCharCode : function(code, modifier) {
+		if((modifier & AjaxViewer.SHIFT_KEY) != 0) {
+			if(this.shiftedCharCodeMap && this.shiftedCharCodeMap[code])
+				return this.shiftedCharCodeMap[code];
+		} else {
+			if(this.charCodeMap && this.charCodeMap[code])
+				return this.charCodeMap[code];
+		}
+			
+		return code;
+	}
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// class AjaxViewer
+//
 function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWidth, tileHeight, rawKeyboard) {
 	// logging is disabled by default so that it won't have negative impact on performance
 	// however, a back door key-sequence can trigger to open the logger window, it is designed to help
@@ -74,6 +118,7 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 	this.maxTileZIndex = 1;
 	
 	this.currentKeyboard = 0;
+	this.keyboardMappers = [];
 	
 	this.timer = 0;
 	this.eventQueue = [];
@@ -87,46 +132,50 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 	this.panel = this.generateCanvas(panelId, width, height, tileWidth, tileHeight);
 	
 	this.setupKeyCodeTranslationTable();
+	this.setupKeyboardTranslationTable();
 	this.setupUIController();
 }
 
+// client event types
+AjaxViewer.MOUSE_MOVE = 1;
+AjaxViewer.MOUSE_DOWN = 2;
+AjaxViewer.MOUSE_UP = 3;
+AjaxViewer.KEY_PRESS = 4;
+AjaxViewer.KEY_DOWN = 5;
+AjaxViewer.KEY_UP = 6;
+AjaxViewer.EVENT_BAG = 7;
+AjaxViewer.MOUSE_DBLCLK = 8;
+
+// use java AWT key modifier masks 
+AjaxViewer.SHIFT_KEY = 64;
+AjaxViewer.CTRL_KEY = 128;
+AjaxViewer.META_KEY = 256;
+AjaxViewer.ALT_KEY = 512;
+AjaxViewer.SHIFT_LEFT = 1024;
+AjaxViewer.CTRL_LEFT = 2048;
+AjaxViewer.ALT_LEFT = 4096;
+
+// keycode
+AjaxViewer.KEYCODE_SHIFT = 16;
+AjaxViewer.KEYCODE_MULTIPLY = 106;
+AjaxViewer.KEYCODE_ADD = 107;
+AjaxViewer.KEYCODE_8 = 56;
+
+AjaxViewer.CHARCODE_NUMPAD_MULTIPLY = 42;
+AjaxViewer.CHARCODE_NUMPAD_ADD = 43;
+
+AjaxViewer.EVENT_QUEUE_MOUSE_EVENT = 1;
+AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT = 2;
+
+AjaxViewer.STATUS_RECEIVING = 1;
+AjaxViewer.STATUS_RECEIVED = 2;
+AjaxViewer.STATUS_SENDING = 3;
+AjaxViewer.STATUS_SENT = 4;
+
+AjaxViewer.KEYBOARD_TYPE_ENGLISH = 0;
+AjaxViewer.KEYBOARD_TYPE_JAPANESE = 1;
+
 AjaxViewer.prototype = {
-	// client event types
-	MOUSE_MOVE: 1,
-	MOUSE_DOWN: 2,
-	MOUSE_UP: 3,
-	KEY_PRESS: 4,
-	KEY_DOWN: 5,
-	KEY_UP: 6,
-	EVENT_BAG: 7,
-	MOUSE_DBLCLK: 8,
-	
-	// use java AWT key modifier masks 
-	SHIFT_KEY: 64,
-	CTRL_KEY: 128,
-	META_KEY: 256,
-	ALT_KEY: 512,
-	SHIFT_LEFT: 1024,
-	CTRL_LEFT: 2048,
-	ALT_LEFT: 4096,
-	
-	// keycode
-	KEYCODE_SHIFT: 16,
-	KEYCODE_MULTIPLY: 106,
-	KEYCODE_ADD: 107,
-	KEYCODE_8: 56,
-	
-	CHARCODE_NUMPAD_MULTIPLY: 42,
-	CHARCODE_NUMPAD_ADD: 43,
-	
-	EVENT_QUEUE_MOUSE_EVENT: 1,
-	EVENT_QUEUE_KEYBOARD_EVENT: 2,
-	
-	STATUS_RECEIVING: 1,
-	STATUS_RECEIVED: 2,
-	STATUS_SENDING: 3,
-	STATUS_SENT: 4,
-	
 	setDirty: function(value) {
 		this.dirty = value;
 	},
@@ -177,7 +226,6 @@ AjaxViewer.prototype = {
 		ajaxViewer.installMouseHook();
 		ajaxViewer.installKeyboardHook();
 
-		
 		$(window).bind("resize", function() {
 			ajaxViewer.onWindowResize();
 		});
@@ -198,7 +246,7 @@ AjaxViewer.prototype = {
 	
 	sendMouseEvent: function(event, x, y, whichButton, modifiers) {
 		this.eventQueue.push({
-			type: this.EVENT_QUEUE_MOUSE_EVENT,
+			type: AjaxViewer.EVENT_QUEUE_MOUSE_EVENT,
 			event: event,
 			x: x,
 			y: y,
@@ -254,6 +302,13 @@ AjaxViewer.prototype = {
 		this.keyCodeMap['?'.charCodeAt()] = { code : 191, shift : true };
 	},
 	
+	setupKeyboardTranslationTable : function() {
+		this.keyboardTables = [];
+		
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(true, null, null, null);
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(true, null, null, null);
+	},
+	
 	setupUIController : function() {
 		var ajaxViewer = this;
 		var pullDownElement = $("#toolbar").find(".pulldown");
@@ -288,25 +343,25 @@ AjaxViewer.prototype = {
 	onCommand : function(cmd) {
 		if(cmd == "keyboard_jp") {
 			$("#toolbar").find(".pulldown").find("ul").hide();
-			this.currentKeyboard = 1;
+			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_JAPANESE;
 		} else if(cmd == "keyboard_en") {
 			$("#toolbar").find(".pulldown").find("ul").hide();
-			this.currentKeyboard = 0;
+			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_ENGLISH;
 		} else if(cmd == "sendCtrlAltDel") {
-			this.sendKeyboardEvent(ajaxViewer.KEY_DOWN, 45, ajaxViewer.CTRL_KEY | ajaxViewer.ALT_KEY);
-			this.sendKeyboardEvent(ajaxViewer.KEY_UP, 45, ajaxViewer.CTRL_KEY | ajaxViewer.ALT_KEY);
+			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 45, AjaxViewer.CTRL_KEY | AjaxViewer.ALT_KEY);
+			this.sendKeyboardEvent(AjaxViewer.KEY_UP, 45, AjaxViewer.CTRL_KEY | AjaxViewer.ALT_KEY);
 		} else if(cmd == "sendCtrlEsc") {
-			this.sendKeyboardEvent(ajaxViewer.KEY_DOWN, 17, 0);
-			this.sendKeyboardEvent(ajaxViewer.KEY_DOWN, 27, ajaxViewer.CTRL_KEY);
-			this.sendKeyboardEvent(ajaxViewer.KEY_UP, 27, ajaxViewer.CTRL_KEY);
-			this.sendKeyboardEvent(ajaxViewer.KEY_UP, 17, 0);
+			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 17, 0);
+			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 27, AjaxViewer.CTRL_KEY);
+			this.sendKeyboardEvent(AjaxViewer.KEY_UP, 27, AjaxViewer.CTRL_KEY);
+			this.sendKeyboardEvent(AjaxViewer.KEY_UP, 17, 0);
 		}
 	},
 	
 	// Firefox on Mac OS X does not generate key-code for following keys 
 	translateZeroKeycode: function() {
 		var len = this.eventQueue.length;
-		if(len > 1 && this.eventQueue[len - 2].type == this.EVENT_QUEUE_KEYBOARD_EVENT && this.eventQueue[len - 2].code == 0) {
+		if(len > 1 && this.eventQueue[len - 2].type == AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT && this.eventQueue[len - 2].code == 0) {
 			switch(this.eventQueue[len - 1].code) {
 			case 95 :	// underscore _
 				this.eventQueue[len - 2].code = 109;
@@ -349,21 +404,21 @@ AjaxViewer.prototype = {
 	//
 	translateImcompletedKeypress : function() {
 		var len = this.eventQueue.length;
-		if(len == 1 || !(this.eventQueue[len - 2].type == this.EVENT_QUEUE_KEYBOARD_EVENT && this.eventQueue[len - 2].event == this.KEY_DOWN)) {
+		if(len == 1 || !(this.eventQueue[len - 2].type == AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT && this.eventQueue[len - 2].event == AjaxViewer.KEY_DOWN)) {
 			var nSplicePos = Math.max(0, len - 2);
 			var keyPressEvent = this.eventQueue[len - 1];
 			if(!!this.keyCodeMap[keyPressEvent.code]) {
 				if(this.keyCodeMap[keyPressEvent.code].shift) {
 					this.eventQueue.splice(nSplicePos, 0, {
-						type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-						event: this.KEY_DOWN,
+						type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
+						event: AjaxViewer.KEY_DOWN,
 						code: this.keyCodeMap[keyPressEvent.code].code,
-						modifiers: this.SHIFT_KEY
+						modifiers: AjaxViewer.SHIFT_KEY
 					});
 				} else {
 					this.eventQueue.splice(nSplicePos, 0, {
-						type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-						event: this.KEY_DOWN,
+						type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
+						event: AjaxViewer.KEY_DOWN,
 						code: this.keyCodeMap[keyPressEvent.code].code,
 						modifiers: 0
 					});
@@ -371,8 +426,8 @@ AjaxViewer.prototype = {
 			} else {
 				g_logger.log(Logger.LEVEL_WARN, "Keycode mapping is not defined to translate KEY-PRESS event for char code : " + keyPressEvent.code);
 				this.eventQueue.splice(nSplicePos, 0, {
-					type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-					event: this.KEY_DOWN,
+					type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
+					event: AjaxViewer.KEY_DOWN,
 					code: keyPressEvent.code,
 					modifiers: keyPressEvent.modifiers
 				});
@@ -383,57 +438,62 @@ AjaxViewer.prototype = {
 	sendKeyboardEvent: function(event, code, modifiers) {
 		// back door to open logger window - CTRL-ATL-SHIFT+SPACE
 		if(code == 32 && 
-			(modifiers & this.SHIFT_KEY | this.CTRL_KEY | this.ALT_KEY) == (this.SHIFT_KEY | this.CTRL_KEY | this.ALT_KEY)) {
-			g_logger.enable(true);
-			g_logger.open();
+			(modifiers & AjaxViewer.SHIFT_KEY | AjaxViewer.CTRL_KEY | AjaxViewer.ALT_KEY) == (AjaxViewer.SHIFT_KEY | AjaxViewer.CTRL_KEY | AjaxViewer.ALT_KEY)) {
+			
+			if(!g_logger.isOpen()) {
+				g_logger.enable(true);
+				g_logger.open();
+			} else {
+				g_logger.close();
+			}
 		}
 			
 		var len;
 		g_logger.log(Logger.LEVEL_INFO, "Keyboard event: " + event + ", code: " + code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
 		this.eventQueue.push({
-			type: this.EVENT_QUEUE_KEYBOARD_EVENT,
+			type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
 			event: event,
 			code: code,
 			modifiers: modifiers
 		});
 
-		if(event == this.KEY_PRESS) {
+		if(event == AjaxViewer.KEY_PRESS) {
 			this.translateZeroKeycode();
 			this.translateImcompletedKeypress();
 		}
 		
 		if(this.rawKeyboard) {
-			if(event == this.KEY_PRESS) {
+			if(event == AjaxViewer.KEY_PRESS) {
 				// special handling for key * in numeric pad area
-				if(code == this.CHARCODE_NUMPAD_MULTIPLY) {
+				if(code == AjaxViewer.CHARCODE_NUMPAD_MULTIPLY) {
 					len = this.eventQueue.length;
 					if(len >= 2) {
 						var origKeyDown = this.eventQueue[len - 2];
-						if(origKeyDown.type == this.EVENT_QUEUE_KEYBOARD_EVENT && 
-							origKeyDown.code == this.KEYCODE_MULTIPLY) {
+						if(origKeyDown.type == AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT && 
+							origKeyDown.code == AjaxViewer.KEYCODE_MULTIPLY) {
 							
 							this.eventQueue.splice(len - 2, 2, {
-								type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-								event: this.KEY_DOWN,
-								code: this.KEYCODE_SHIFT,
+								type: AjaxViewerEVENT_QUEUE_KEYBOARD_EVENT,
+								event: AjaxViewer.KEY_DOWN,
+								code: AjaxViewer.KEYCODE_SHIFT,
 								modifiers: 0
 							},
 							{
-								type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-								event: this.KEY_DOWN,
-								code: this.KEYCODE_8,
-								modifiers: this.SHIFT_KEY
+								type: AjaxViewerEVENT_QUEUE_KEYBOARD_EVENT,
+								event: AjaxViewer.KEY_DOWN,
+								code: AjaxViewer.KEYCODE_8,
+								modifiers: AjaxViewer.SHIFT_KEY
 							},
 							{
-								type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-								event: this.KEY_UP,
-								code: this.KEYCODE_8,
-								modifiers: this.SHIFT_KEY
+								type: AjaxViewerEVENT_QUEUE_KEYBOARD_EVENT,
+								event: AjaxViewer.KEY_UP,
+								code: AjaxViewer.KEYCODE_8,
+								modifiers: AjaxViewer.SHIFT_KEY
 							},
 							{
-								type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-								event: this.KEY_UP,
-								code: this.KEYCODE_SHIFT,
+								type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
+								event: AjaxViewer.KEY_UP,
+								code: AjaxViewer.KEYCODE_SHIFT,
 								modifiers: 0
 							}
 							);
@@ -443,34 +503,34 @@ AjaxViewer.prototype = {
 				}
 				
 				// special handling for key + in numeric pad area
-				if(code == this.CHARCODE_NUMPAD_ADD) {
+				if(code == AjaxViewer.CHARCODE_NUMPAD_ADD) {
 					len = this.eventQueue.length;
 					if(len >= 2) {
 						var origKeyDown = this.eventQueue[len - 2];
-						if(origKeyDown.type == this.EVENT_QUEUE_KEYBOARD_EVENT && 
-							origKeyDown.code == this.KEYCODE_ADD) {
+						if(origKeyDown.type == AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT && 
+							origKeyDown.code == AjaxViewer.KEYCODE_ADD) {
 
 							g_logger.log(Logger.LEVEL_INFO, "Detected + on numeric pad area, fake it");
-							this.eventQueue[len - 2].modifiers = this.SHIFT_KEY;	
-							this.eventQueue[len - 1].modifiers = this.SHIFT_KEY;	
+							this.eventQueue[len - 2].modifiers = AjaxViewer.SHIFT_KEY;	
+							this.eventQueue[len - 1].modifiers = AjaxViewer.SHIFT_KEY;	
 							this.eventQueue.splice(len - 2, 0, {
-								type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-								event: this.KEY_DOWN,
-								code: this.KEYCODE_SHIFT,
-								modifiers: this.SHIFT_KEY
+								type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
+								event: AjaxViewer.KEY_DOWN,
+								code: AjaxViewer.KEYCODE_SHIFT,
+								modifiers: AjaxViewer.SHIFT_KEY
 							});
 							this.eventQueue.push({
-								type: this.EVENT_QUEUE_KEYBOARD_EVENT,
-								event: this.KEY_UP,
-								code: this.KEYCODE_SHIFT,
-								modifiers: this.SHIFT_KEY
+								type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
+								event: AjaxViewer.KEY_UP,
+								code: AjaxViewer.KEYCODE_SHIFT,
+								modifiers: AjaxViewer.SHIFT_KEY
 							});
 						}
 					}
 				}
 			} 
 			
-			if(event != this.KEY_DOWN)
+			if(event != AjaxViewer.KEY_DOWN)
 				this.checkEventQueue();
 		} else {
 			this.checkEventQueue();
@@ -485,11 +545,11 @@ AjaxViewer.prototype = {
 		var mouseX;
 		var mouseY;
 		$.each(ajaxViewer.eventQueue, function(index, item) {
-			if(item.type != ajaxViewer.EVENT_QUEUE_MOUSE_EVENT) {
+			if(item.type != AjaxViewer.EVENT_QUEUE_MOUSE_EVENT) {
 				aggratedQueue.push(item);
 			} else {
 				if(!aggregating) {
-					if(item.event == ajaxViewer.MOUSE_MOVE) {
+					if(item.event == AjaxViewer.MOUSE_MOVE) {
 						aggregating = true;
 						mouseX = item.x;
 						mouseY = item.y;
@@ -497,14 +557,14 @@ AjaxViewer.prototype = {
 						aggratedQueue.push(item);
 					}
 				} else {
-					if(item.event == ajaxViewer.MOUSE_MOVE) {
+					if(item.event == AjaxViewer.MOUSE_MOVE) {
 						// continue to aggregate mouse move event
 						mouseX = item.x;
 						mouseY = item.y;
 					} else {
 						aggratedQueue.push({
-							type: ajaxViewer.EVENT_QUEUE_MOUSE_EVENT,
-							event: ajaxViewer.MOUSE_MOVE,
+							type: AjaxViewer.EVENT_QUEUE_MOUSE_EVENT,
+							event: AjaxViewer.MOUSE_MOVE,
 							x: mouseX,
 							y: mouseY,
 							code: 0,
@@ -520,8 +580,8 @@ AjaxViewer.prototype = {
 		
 		if(aggregating) {
 			aggratedQueue.push({
-				type: ajaxViewer.EVENT_QUEUE_MOUSE_EVENT,
-				event: ajaxViewer.MOUSE_MOVE,
+				type: AjaxViewer.EVENT_QUEUE_MOUSE_EVENT,
+				event: AjaxViewer.MOUSE_MOVE,
 				x: mouseX,
 				y: mouseY,
 				code: 0,
@@ -540,7 +600,7 @@ AjaxViewer.prototype = {
 			sb.append(""+this.eventQueue.length).append("|");
 			$.each(this.eventQueue, function() {
 				var item = this;
-				if(item.type == ajaxViewer.EVENT_QUEUE_MOUSE_EVENT) {
+				if(item.type == AjaxViewer.EVENT_QUEUE_MOUSE_EVENT) {
 					sb.append(""+item.type).append("|");
 					sb.append(""+item.event).append("|");
 					sb.append(""+item.x).append("|");
@@ -556,17 +616,17 @@ AjaxViewer.prototype = {
 			});
 			this.eventQueue.length = 0;
 			
-			var url = ajaxViewer.updateUrl + "&event=" + ajaxViewer.EVENT_BAG;
+			var url = ajaxViewer.updateUrl + "&event=" + AjaxViewer.EVENT_BAG;
 			
 			g_logger.log(Logger.LEVEL_TRACE, "Posting client event " + sb.toString() + "...");
 			
 			ajaxViewer.sendingEventInProgress = true;
-			window.onStatusNotify(ajaxViewer.STATUS_SENDING);
+			window.onStatusNotify(AjaxViewer.STATUS_SENDING);
 			$.post(url, {data: sb.toString()}, function(data, textStatus) {
 				g_logger.log(Logger.LEVEL_TRACE, "Client event " + sb.toString() + " is posted");
 				
 				ajaxViewer.sendingEventInProgress = false;
-				window.onStatusNotify(ajaxViewer.STATUS_SENT);
+				window.onStatusNotify(AjaxViewer.STATUS_SENT);
 				
 				ajaxViewer.checkUpdate();
 			}, 'html');
@@ -725,7 +785,7 @@ AjaxViewer.prototype = {
 			var url = this.updateUrl;
 			var ajaxViewer = this;
 
-			window.onStatusNotify(ajaxViewer.STATUS_RECEIVING);
+			window.onStatusNotify(AjaxViewer.STATUS_RECEIVING);
 			$.getScript(url, function(data, textStatus) {
 				if(/^<html>/.test(data)) {
 					ajaxViewer.stop();
@@ -733,7 +793,7 @@ AjaxViewer.prototype = {
 				} else {
 					eval(data);
 					ajaxViewer.setDirty(true);
-					window.onStatusNotify(ajaxViewer.STATUS_RECEIVED);
+					window.onStatusNotify(AjaxViewer.STATUS_RECEIVED);
 					
 					ajaxViewer.checkUpdate();
 				}
@@ -850,7 +910,7 @@ AjaxViewer.prototype = {
 			return false;
 		}
 		
-		if(this.getKeyModifiers(e) == this.SHIFT_KEY)
+		if(this.getKeyModifiers(e) == AjaxViewer.SHIFT_KEY)
 			return true;
 		
 		if(this.getKeyModifiers(e) != 0)
@@ -905,15 +965,15 @@ AjaxViewer.prototype = {
 	},
 	
 	onMouseMove: function(x, y) {
-		this.sendMouseEvent(this.MOUSE_MOVE, x, y, 0, 0);
+		this.sendMouseEvent(AjaxViewer.MOUSE_MOVE, x, y, 0, 0);
 	},
 	
 	onMouseDown: function(x, y, whichButton, modifiers) {
-		this.sendMouseEvent(this.MOUSE_DOWN, x, y, whichButton, modifiers);
+		this.sendMouseEvent(AjaxViewer.MOUSE_DOWN, x, y, whichButton, modifiers);
 	},
 	
 	onMouseUp: function(x, y, whichButton, modifiers) {
-		this.sendMouseEvent(this.MOUSE_UP, x, y, whichButton, modifiers);
+		this.sendMouseEvent(AjaxViewer.MOUSE_UP, x, y, whichButton, modifiers);
 		
 		var curTick = new Date().getTime();
 		if(this.lastClickEvent.time && (curTick - this.lastClickEvent.time < 300)) {
@@ -929,43 +989,43 @@ AjaxViewer.prototype = {
 	},
 	
 	onMouseDblClick: function(x, y, whichButton, modifiers) {
-		this.sendMouseEvent(this.MOUSE_DBLCLK, x, y, whichButton, modifiers);
+		this.sendMouseEvent(AjaxViewer.MOUSE_DBLCLK, x, y, whichButton, modifiers);
 	},
 	
 	onKeyPress: function(code, modifiers) {
-		this.sendKeyboardEvent(this.KEY_PRESS, code, modifiers);
+		this.sendKeyboardEvent(AjaxViewer.KEY_PRESS, code, modifiers);
 	},
 	
 	onKeyDown: function(code, modifiers) {
-		this.sendKeyboardEvent(this.KEY_DOWN, code, modifiers);
+		this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, code, modifiers);
 	},
 	
 	onKeyUp: function(code, modifiers) {
-		this.sendKeyboardEvent(this.KEY_UP, code, modifiers);
+		this.sendKeyboardEvent(AjaxViewer.KEY_UP, code, modifiers);
 	},
 	
 	getKeyModifiers: function(e) {
 		var modifiers = 0;
 		if(e.altKey)
-			modifiers |= this.ALT_KEY;
+			modifiers |= AjaxViewer.ALT_KEY;
 		
 		if(e.altLeft)
-			modifiers |= this.ALT_LEFT;
+			modifiers |= AjaxViewer.ALT_LEFT;
 		
 		if(e.ctrlKey)
-			modifiers |= this.CTRL_KEY;
+			modifiers |= AjaxViewer.CTRL_KEY;
 		
 		if(e.ctrlLeft)
-			modifiers |=  this.CTRL_LEFT;
+			modifiers |=  AjaxViewer.CTRL_LEFT;
 		
 		if(e.shiftKey)
-			modifiers |=  this.SHIFT_KEY;
+			modifiers |=  AjaxViewer.SHIFT_KEY;
 		
 		if(e.shiftLeft)
-			modifiers |= this.SHIFT_LEFT;
+			modifiers |= AjaxViewer.SHIFT_LEFT;
 		
 		if(e.metaKey)
-			modifiers |= this.META_KEY;
+			modifiers |= AjaxViewer.META_KEY;
 		
 		return modifiers;
 	}
