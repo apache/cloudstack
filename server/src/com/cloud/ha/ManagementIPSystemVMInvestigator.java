@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.ha;
@@ -47,25 +47,41 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
 
     @Override
     public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("testing if vm (" + vm.getId() + ") is alive");
+        if (!VirtualMachine.Type.isSystemVM(vm.getType())) {
+            s_logger.debug("Not a System Vm, unable to determine state of " + vm + " returning null");
         }
-        if (VirtualMachine.Type.isSystemVM(vm.getType())) {
-        	
-            Nic nic = _networkMgr.getNicForTraffic(vm.getId(), TrafficType.Management);
-            if (nic == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find a management nic, cannot ping this system VM, unable to determine state of vm (" + vm.getId() + "), returning null");
-                }
-                return null;
-            }
-            
-            // get the data center IP address, find a host on the pod, use that host to ping the data center IP address
-            HostVO vmHost = _hostDao.findById(vm.getHostId());
-            List<Long> otherHosts = findHostByPod(vm.getPodId(), vm.getHostId());
-            for (Long otherHost : otherHosts) {
 
-                Status vmState = testIpAddress(otherHost, vm.getPrivateIpAddress());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Testing if " + vm + " is alive");
+        }
+
+        if (vm.getHostId() == null) {
+            s_logger.debug("There's no host id for " + vm);
+            return null;
+        }
+
+        HostVO vmHost = _hostDao.findById(vm.getHostId());
+        if (vmHost == null) {
+            s_logger.debug("Unable to retrieve the host by using id " + vm.getHostId());
+            return null;
+        }
+
+        List<? extends Nic> nics = _networkMgr.getNicsForTraffic(vm.getId(), TrafficType.Management);
+        if (nics.size() == 0) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to find a management nic, cannot ping this system VM, unable to determine state of " + vm + " returning null");
+            }
+            return null;
+        }
+
+        for (Nic nic : nics) {
+            if (nic.getIp4Address() == null) {
+                continue;
+            }
+            // get the data center IP address, find a host on the pod, use that host to ping the data center IP address
+            List<Long> otherHosts = findHostByPod(vmHost.getPodId(), vm.getHostId());
+            for (Long otherHost : otherHosts) {
+                Status vmState = testIpAddress(otherHost, nic.getIp4Address());
                 if (vmState == null) {
                     // can't get information from that host, try the next one
                     continue;
@@ -87,14 +103,10 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                     }
                 }
             }
-        }else{
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Not a System Vm, unable to determine state of vm (" + vm.getId() + "), returning null");
-            }
         }
-        
+
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("unable to determine state of vm (" + vm.getId() + "), returning null");
+            s_logger.debug("unable to determine state of " + vm + " returning null");
         }
         return null;
     }
@@ -124,6 +136,6 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     @Override
     public boolean stop() {
         return true;
-    }  
+    }
 
 }

@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.ha;
@@ -58,37 +58,44 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
 
     @Override
     public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("testing if vm (" + vm.getId() + ") is alive");
-        }
-        if (vm.getType() == VirtualMachine.Type.User) {
-            // to verify that the VM is alive, we ask the domR (router) to ping the VM (private IP)
-            UserVmVO userVm = _userVmDao.findById(vm.getId());
-            
-            Nic nic = _networkMgr.getNicForTraffic(userVm.getId(), TrafficType.Guest);
-            if (nic == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find a guest nic for " + vm);
-                }
-                return null;
+        if (vm.getType() != VirtualMachine.Type.User) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Not a User Vm, unable to determine state of " + vm + " returning null");
             }
-            
+            return null;
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("testing if " + vm + " is alive");
+        }
+        // to verify that the VM is alive, we ask the domR (router) to ping the VM (private IP)
+        UserVmVO userVm = _userVmDao.findById(vm.getId());
+
+        List<? extends Nic> nics = _networkMgr.getNicsForTraffic(userVm.getId(), TrafficType.Guest);
+
+        for (Nic nic : nics) {
+            if (nic.getIp4Address() == null) {
+                continue;
+            }
+
             VirtualRouter router = _vnaMgr.getRouterForNetwork(nic.getNetworkId());
             if (router == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find a router in network " + nic.getNetworkId() + " to ping " + vm);
                 }
-            	return null;
+                continue;
             }
-            
-            return testUserVM(vm, nic, router);
-        }else{
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Not a User Vm, unable to determine state of vm (" + vm.getId() + "), returning null");
+
+            Boolean result = testUserVM(vm, nic, router);
+            if (result == null) {
+                continue;
             }
-        } 
+
+            return result;
+        }
+
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("unable to determine state of vm (" + vm.getId() + "), returning null");
+            s_logger.debug("Returning null since we're unable to determine state of " + vm);
         }
         return null;
     }
@@ -98,13 +105,13 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("checking if agent (" + agent.getId() + ") is alive");
         }
-        
+
         if (agent.getPodId() == null) {
             return null;
         }
-        
+
         List<Long> otherHosts = findHostByPod(agent.getPodId(), agent.getId());
-        
+
         for (Long hostId : otherHosts) {
 
             if (s_logger.isDebugEnabled()) {
@@ -155,7 +162,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     public boolean stop() {
         return true;
     }
-    
+
     private Boolean testUserVM(VMInstanceVO vm, Nic nic, VirtualRouter router) {
         String privateIp = nic.getIp4Address();
         String routerPrivateIp = router.getPrivateIpAddress();
@@ -166,7 +173,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         	otherHosts.add(router.getHostId());
         }else{
         	otherHosts = findHostByPod(router.getPodId(), null);
-        }        
+        }
         for (Long hostId : otherHosts) {
             try {
                 Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(routerPrivateIp, privateIp), 30 * 1000);
@@ -175,7 +182,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
                         s_logger.debug("user vm " + vm.getHostName() + " has been successfully pinged, returning that it is alive");
                     }
                     return Boolean.TRUE;
-                } 
+                }
             } catch (AgentUnavailableException e) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Couldn't reach " + e.getResourceId());
@@ -192,6 +199,6 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
             s_logger.debug(vm + " could not be pinged, returning that it is unknown");
         }
         return null;
-        
+
     }
 }
