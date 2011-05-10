@@ -1735,6 +1735,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setZoneId(destZoneId);
             templateResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
             templateResponse.setSourceTemplateId(template.getSourceTemplateId());
+            templateResponse.setChecksum(template.getChecksum());
 
             GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
             if (os != null) {
@@ -1901,6 +1902,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublic(template.isPublicTemplate());
         response.setPasswordEnabled(template.getEnablePassword());
         response.setCrossZones(template.isCrossZones());
+        response.setChecksum(template.getChecksum());
 
         VolumeVO volume = null;
         if (snapshotId != null) {

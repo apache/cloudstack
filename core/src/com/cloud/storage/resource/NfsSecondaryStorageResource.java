@@ -18,8 +18,14 @@
 package com.cloud.storage.resource;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +40,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.PingCommand;
@@ -138,11 +145,71 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         	return execute((SecStorageFirewallCfgCommand)cmd);
         } else if (cmd instanceof SecStorageSetupCommand){
         	return execute((SecStorageSetupCommand)cmd);
+        } else if (cmd instanceof ComputeChecksumCommand){
+            return execute((ComputeChecksumCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
     
+    private Answer execute(ComputeChecksumCommand cmd) {
+        
+        String relativeTemplatePath = cmd.getTemplatePath();
+        String parent = _parent;
+
+        if (relativeTemplatePath.startsWith(File.separator)) {
+            relativeTemplatePath = relativeTemplatePath.substring(1);
+        }
+
+        if (!parent.endsWith(File.separator)) {
+            parent += File.separator;
+        }
+        String absoluteTemplatePath = parent + relativeTemplatePath;
+        MessageDigest digest;
+        String checksum = null;
+        File f = new File(absoluteTemplatePath);   
+        InputStream is = null;
+        byte[] buffer = new byte[8192];
+        int read = 0;
+        if(s_logger.isDebugEnabled()){
+            s_logger.debug("parent path " +parent+ " relative template path " +relativeTemplatePath );   
+        }
+        
+        
+        try {
+            digest = MessageDigest.getInstance("MD5");           
+            is = new FileInputStream(f);     
+            while( (read = is.read(buffer)) > 0) {
+                digest.update(buffer, 0, read);
+            }       
+            byte[] md5sum = digest.digest();
+            BigInteger bigInt = new BigInteger(1, md5sum);
+            checksum = bigInt.toString(16);
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Successfully calculated checksum for file " +absoluteTemplatePath+ " - " +checksum );   
+            }
+        
+        }catch(IOException e) {
+            String logMsg = "Unable to process file for MD5 - " + absoluteTemplatePath;
+            s_logger.error(logMsg);
+            return new Answer(cmd, false, checksum); 
+        }catch (NoSuchAlgorithmException e) {         
+            return new Answer(cmd, false, checksum);
+        }
+        finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                if(s_logger.isDebugEnabled()){
+                  s_logger.debug("Could not close the file " +absoluteTemplatePath);   
+                }
+                return new Answer(cmd, false, checksum);   
+            }                        
+    }       
+
+        return new Answer(cmd, true, checksum);
+    }
+
     private Answer execute(SecStorageSetupCommand cmd) {
     	if (!_inSystemVM){
 			return new Answer(cmd, true, null);

@@ -37,6 +37,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
@@ -94,6 +95,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -1547,7 +1549,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     // Specify RAW format makes it unusable for snapshots.
                     privateTemplate.setFormat(ImageFormat.RAW);
                 }
-
+                String checkSum = getChecksum(secondaryStorageHost.getId(), answer.getPath());
+                privateTemplate.setChecksum(checkSum);
                 _templateDao.update(templateId, privateTemplate);
 
                 // add template zone ref for this template
@@ -1581,7 +1584,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         return privateTemplate;
     }
-
+    private String getChecksum(Long hostId, String templatePath){
+        Answer answer;
+        try {
+            answer = _agentMgr.send(hostId, new ComputeChecksumCommand(templatePath));
+            return answer.getDetails();
+        } catch (AgentUnavailableException e) {
+            s_logger.error("Unable to send ComputeChecksumCommand to " + hostId, e);
+        } catch (OperationTimedoutException e) {
+            s_logger.error("Unable to send ComputeChecksumCommand to " + hostId, e);
+        }
+        return null;
+    }
     // used for vm transitioning to error state
     private void updateVmStateForFailedVmCreation(Long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);

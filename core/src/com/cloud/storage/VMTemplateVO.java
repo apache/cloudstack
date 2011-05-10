@@ -297,6 +297,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		return checksum;
 	}
     
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }
+
     @Override
     public String getDisplayText() {
 		return displayText;
