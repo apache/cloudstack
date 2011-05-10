@@ -144,6 +144,9 @@ function networkPopulateMiddleMenu($leftmenuItem1) {
 	        }
 	    });  
 	}
+	else {
+		publicNetworkToRightPanel(null);	
+	}
 }
 
 //***** Public Network (begin) ******************************************************************************************************
@@ -169,18 +172,19 @@ function publicNetworkToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
-function publicNetworkToRightPanel($midmenuItem1) {      
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
-    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
-            
-    $("#public_network_page").show();    
-    bindAddIpRangeToPublicNetworkButton($("#add_iprange_button"), $midmenuItem1);
-    bindAddExternalFirewallButton($("#add_external_firewall_button"), $midmenuItem1);
-    bindAddLoadBalancerButton($("#add_load_balancer_button"), $midmenuItem1);
-    
-    $("#direct_network_page").hide();
-    
-    $("#public_network_page").find("#tab_details").click();     
+function publicNetworkToRightPanel($midmenuItem1) {     
+	$("#public_network_page").show(); 
+	$("#direct_network_page").hide();
+	
+	if($midmenuItem1 != null) {
+		copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
+	    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
+	    $("#public_network_page").find("#tab_details").click();   
+    }           
+       
+    bindAddIpRangeToPublicNetworkButton();
+    bindAddExternalFirewallButton();
+    bindAddLoadBalancerButton();
 }
 	
 function publicNetworkJsonToDetailsTab() {	 
@@ -528,9 +532,7 @@ function doDeleteExternalLoadBalancer($actionLink, $subgridItem) {
 	}).dialog("open");
 }
 
-function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {   
-    var jsonObj = $midmenuItem1.data("jsonObj");      
-    
+function bindAddIpRangeToPublicNetworkButton() {   
     //***** binding Event Handler (begin) ******  		
     var $dialogAddIpRangeToPublicNetwork = $("#dialog_add_iprange_to_publicnetwork"); 
     $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change(function(event) {	
@@ -562,7 +564,7 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 	});
 	//***** binding Event Handler (end) ******   
 	
-    $button.unbind("click").bind("click", function(event) {  
+	$("#add_iprange_button").unbind("click").bind("click", function(event) {  
         if($("#public_network_page").find("#tab_content_ipallocation").css("display") == "none")         
             $("#public_network_page").find("#tab_ipallocation").click();
        
@@ -689,12 +691,10 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
     });
 }
 
-function bindAddExternalFirewallButton($button, $midmenuItem1) {         
-    var jsonObj = $midmenuItem1.data("jsonObj");      
-    
+function bindAddExternalFirewallButton() {         
     var $dialogAddExternalFirewall = $("#dialog_add_external_firewall"); 
          
-    $button.unbind("click").bind("click", function(event) {         
+    $("#add_external_firewall_button").unbind("click").bind("click", function(event) {         
         if($("#public_network_page").find("#tab_content_firewall").css("display") == "none")         
             $("#public_network_page").find("#tab_firewall").click();
                           
@@ -875,12 +875,10 @@ var publicNetworkIpRangeActionMap = {
 }  
 
 
-function bindAddLoadBalancerButton($button, $midmenuItem1) {         
-    var jsonObj = $midmenuItem1.data("jsonObj");      
-    
+function bindAddLoadBalancerButton() {         
     var $dialogAddLoadBalancer = $("#dialog_add_load_balancer"); 
               
-    $button.unbind("click").bind("click", function(event) {         
+    $("#add_load_balancer_button").unbind("click").bind("click", function(event) {         
         if($("#public_network_page").find("#tab_content_loadbalancer").css("display") == "none")         
             $("#public_network_page").find("#tab_loadbalancer").click();
                           
