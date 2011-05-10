@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent.manager;
 
@@ -179,7 +179,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
- * 
+ *
  * @config {@table || Param Name | Description | Values | Default || || port | port to listen on for agent connection. | Integer
  *         | 8250 || || workers | # of worker threads | Integer | 5 || || router.template.id | default id for template | Integer
  *         | 1 || || router.ram.size | default ram for router vm in mb | Integer | 128 || || router.ip.address | ip address for
@@ -1635,7 +1635,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         removeAgent(attache, nextState);
         _hostDao.disconnect(host, event, _nodeId);
-        
+
         host = _hostDao.findById(host.getId());
         if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host, investigate);
@@ -1810,20 +1810,25 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         HostVO host = null;
         if (id != null) {
             host = _hostDao.findById(id);
-            if (host.getManagementServerId() != null) {
+            if (!_hostDao.directConnect(host, _nodeId, false)) {
                 s_logger.info("MS " + host.getManagementServerId() + " is loading " + host);
                 return null;
             }
         }
-        
+
         StartupCommand[] cmds = resource.initialize();
         if (cmds == null) {
+            s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
+            if (id != null) {
+                _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
+            }
             return null;
         }
-        
+
         if (host != null) {
-            if (!_hostDao.directConnect(host, _nodeId)) {
-                s_logger.info("Someone else is loading " + host);
+            if (!_hostDao.directConnect(host, _nodeId, true)) {
+                host = _hostDao.findById(id);
+                s_logger.info("MS " + host.getManagementServerId() + " is loading " + host + " after it has been initialized.");
                 resource.disconnected();
                 return null;
             }
@@ -2430,7 +2435,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
              * !"0.0.0.0".equals(startup.getStorageIpAddress())) { if (_hostDao.findByPrivateIpAddressInDataCenter
              * (server.getDataCenterId(), startup.getPrivateIpAddress()) != null) { throw newIllegalArgumentException(
              * "The private ip address is already in used: " + startup.getPrivateIpAddress()); }
-             * 
+             *
              * if (_hostDao.findByPrivateIpAddressInDataCenter(server.getDataCenterId (), startup.getStorageIpAddress()) !=
              * null) { throw new IllegalArgumentException ("The private ip address is already in used: " +
              * startup.getStorageIpAddress()); } }

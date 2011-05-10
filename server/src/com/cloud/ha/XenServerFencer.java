@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.ha;
 
@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.exception.AgentUnavailableException;
@@ -41,20 +42,20 @@ import com.cloud.vm.VMInstanceVO;
 public class XenServerFencer implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(XenServerFencer.class);
     String _name;
-    
+
     @Inject HostDao _hostDao;
     @Inject AgentManager _agentMgr;
-    
+
     @Override
     public Boolean fenceOff(VMInstanceVO vm, HostVO host) {
         if (host.getHypervisorType() != HypervisorType.XenServer) {
             s_logger.debug("Don't know how to fence non XenServer hosts " + host.getHypervisorType());
             return null;
         }
-        
+
         List<HostVO> hosts = _hostDao.listByCluster(host.getClusterId());
         FenceCommand fence = new FenceCommand(vm, host);
-        
+
         for (HostVO h : hosts) {
             if (h.getHypervisorType() == HypervisorType.XenServer) {
             	if( h.getStatus() != Status.Up ) {
@@ -65,7 +66,12 @@ public class XenServerFencer implements FenceBuilder {
             	}
                 FenceAnswer answer;
                 try {
-                    answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
+                    Answer ans = _agentMgr.send(h.getId(), fence);
+                    if (!(ans instanceof FenceAnswer)) {
+                        s_logger.debug("Answer is not fenceanswer.  Result = " + ans.getResult() + "; Details = " + ans.getDetails());
+                        continue;
+                    }
+                    answer = (FenceAnswer) ans;
                 } catch (AgentUnavailableException e) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
@@ -82,14 +88,14 @@ public class XenServerFencer implements FenceBuilder {
                 }
             }
         }
-        
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Unable to fence off " + vm.toString() + " on " + host.toString());
         }
-        
+
         return false;
     }
-    
+
     public XenServerFencer() {
         super();
     }
