@@ -4186,6 +4186,16 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId) throws InvalidParameterValueException {
+        Account account = null;
+        DomainVO domain = null;
+        if (accountId != null) {
+            account = _accountDao.findById(accountId);
+            domain = _domainDao.findById(account.getDomainId());
+        } else {
+            domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
+        }
+        
+        
         VMTemplateVO template = null;
     	if (templateId != null) {
     		template = _templateDao.findById(templateId);
@@ -4193,16 +4203,12 @@ public class ManagementServerImpl implements ManagementServer {
     			throw new InvalidParameterValueException("Please specify a valid template ID.");
     		}
     		//Check permissions here
-    		
-        }
-    	
-    	Account account = null;
-    	DomainVO domain = null;
-        if (accountId != null) {
-        	account = _accountDao.findById(accountId);
-        	domain = _domainDao.findById(account.getDomainId());
-        } else {
-        	domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
+    		if (!template.isPublicTemplate()) {
+    		    Account templateOwner = getAccount(template.getAccountId());
+    		    if (!isChildDomain(domain.getId(), templateOwner.getDomainId())) {
+                    throw new InvalidParameterValueException("User is not authorized to see template id=" + template.getId());
+                }
+    		}
         }
         
         List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
