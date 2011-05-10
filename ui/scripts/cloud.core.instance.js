@@ -1556,7 +1556,7 @@ function doEditVM2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $ed
          
 function doAttachISO($actionLink, $detailsTab, $midmenuItem1) {   
     $.ajax({
-	    data: createURL("command=listIsos&isReady=true"),
+	    data: createURL("command=listIsos&isReady=true&isofilter=executable"),
 		dataType: "json",
 		async: false,
 		success: function(json) {
