@@ -175,6 +175,9 @@ public abstract class NioConnection implements Runnable {
                 s_logger.warn("Caught an exception but continuing on.", e);
             }
         }
+    	synchronized(_thread) {
+    	    _isStartup = false;
+    	}
     }
 
     abstract void init() throws IOException;
@@ -548,6 +551,13 @@ public abstract class NioConnection implements Runnable {
             _todos.add(todo);
         }
         _selector.wakeup();
+    }
+
+    /* Release the resource used by the instance */
+    public void cleanUp() throws IOException {
+       if (_selector != null && _selector.isOpen()) {
+           _selector.close();
+       }
     }
 
     public class ChangeRequest {

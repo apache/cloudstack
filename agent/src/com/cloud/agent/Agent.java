@@ -370,7 +370,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         do {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
             
-            s_logger.info("Lost connection to the server.  Reconnecting....");
+            s_logger.info("Lost connection to the server. Dealing with the remaining commands...");
 
             inProgress = _inProgress.get();
             if (inProgress > 0) {
@@ -379,6 +379,15 @@ public class Agent implements HandlerFactory, IAgentControl {
         } while (inProgress > 0);
 
         _connection.stop();
+        while (_connection.isStartup()){
+            _shell.getBackoffAlgorithm().waitBeforeRetry();
+        }
+
+        try {
+            _connection.cleanUp();
+        } catch (IOException e) {
+           s_logger.warn("Fail to clean up old connection. " + e);
+        }
         _connection = new NioClient(
         		"Agent",
         		_shell.getHost(),
