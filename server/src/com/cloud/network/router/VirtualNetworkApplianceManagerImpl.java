@@ -152,6 +152,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -598,10 +599,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
         cmd.addVmData("userdata", "user-data", userData);
-        cmd.addVmData("metadata", "service-offering", serviceOffering);
-        cmd.addVmData("metadata", "availability-zone", zoneName);
+        cmd.addVmData("metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering));
+        cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
         cmd.addVmData("metadata", "local-ipv4", guestIpAddress);
-        cmd.addVmData("metadata", "local-hostname", vmName);
+        cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vmName));
         cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
         cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
