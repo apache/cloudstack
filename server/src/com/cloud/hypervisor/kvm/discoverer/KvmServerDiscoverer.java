@@ -179,6 +179,12 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return null;
 			
 			details.put("guid", guidWithTail);
+			
+			 // place a place holder guid derived from cluster ID
+			if (cluster.getGuid() == null) {
+			    cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+			    _clusterDao.update(clusterId, cluster);
+			}
 			return resources;
 		} catch (Exception e) {
 			String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
