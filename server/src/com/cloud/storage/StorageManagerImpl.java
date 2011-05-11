@@ -1686,6 +1686,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     @DB
     public void destroyVolume(VolumeVO volume) throws ConcurrentOperationException {
+        assert (volume.getState() != Volume.State.Destroy) : "Why destroy method is called for the volume that is already destroyed?";
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
