@@ -1294,7 +1294,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     public boolean deleteTemplate(DeleteTemplateCmd cmd) {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
@@ -1302,12 +1302,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
         
-        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete template " );
-        
-    	UserVO user = _userDao.findById(userId);
-    	if (user == null) {
-    		throw new InvalidParameterValueException("Please specify a valid user.");
-    	}
+        if (template != null) {
+            Account templateOwner = _accountDao.findById(template.getAccountId());
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                if (caller.getId() != templateOwner.getId()) {
+                    throw new PermissionDeniedException("Account " + caller + " can't operate with template id=" + template.getId());
+                }
+            } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                _accountMgr.checkAccess(caller, templateOwner);
+            }
+        }   
     	
     	if (template.getFormat() == ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
@@ -1327,7 +1331,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     public boolean deleteIso(DeleteIsoCmd cmd) {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
@@ -1335,12 +1339,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
         
-        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete iso " );
-        
-    	UserVO user = _userDao.findById(userId);
-    	if (user == null) {
-    		throw new InvalidParameterValueException("Please specify a valid user.");
-    	}
+        if (template != null) {
+            Account templateOwner = _accountDao.findById(template.getAccountId());
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                if (caller.getId() != templateOwner.getId()) {
+                    throw new PermissionDeniedException("Account " + caller + " can't operate with iso id=" + template.getId());
+                }
+            } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                _accountMgr.checkAccess(caller, templateOwner);
+            }
+        }   
     	
     	if (template.getFormat() != ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid iso.");
