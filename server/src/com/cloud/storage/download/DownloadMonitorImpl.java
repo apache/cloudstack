@@ -549,6 +549,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(sserver.getDataCenterId());
 			/* Baremetal need not to download any template */
 			availHypers.remove(HypervisorType.BareMetal);
+			availHypers.add(HypervisorType.None); //bug 9809: resume ISO download.
 			for (VMTemplateVO tmplt: toBeDownloaded) {
 				
 				if (tmplt.getUrl() == null){ // If url is null we cant initiate the download so mark it as an error.
