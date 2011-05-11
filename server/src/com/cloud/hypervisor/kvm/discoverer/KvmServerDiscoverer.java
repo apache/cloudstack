@@ -70,6 +70,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 private int _waitTime = 5; /*wait for 5 minutes*/
 	 private String _kvmPrivateNic;
 	 private String _kvmPublicNic;
+	 private String _kvmGuestNic;
 	 @Inject HostDao _hostDao = null;
 	 @Inject ClusterDao _clusterDao;
 	 
@@ -166,14 +167,18 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return null;
 			}
 			
-			String parameters = " --host=" + _hostIp + " --zone=" + dcId + " --pod=" + podId + " --cluster=" + clusterId + " --guid=" + guid + " -a";
+			String parameters = " -m=" + _hostIp + " -z=" + dcId + " -p=" + podId + " -c=" + clusterId + " -g=" + guid + " -a";
 			
 			if (_kvmPublicNic != null) {
-				parameters += " -P " + _kvmPublicNic;
+				parameters += " --pubNic= " + _kvmPublicNic;
 			}
 			
 			if (_kvmPrivateNic != null) {
-				parameters += " -N " + _kvmPrivateNic;
+				parameters += " --prvNic= " + _kvmPrivateNic;
+			}
+			
+			if (_kvmGuestNic != null) {
+			    parameters += " --guestNic=" + _kvmGuestNic;
 			}
 		
 			SSHCmdHelper.sshExecuteCmd(sshConnection, "cloud-setup-agent " + parameters + " >& /dev/null", 3);
@@ -232,7 +237,19 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
         _configDao = locator.getDao(ConfigurationDao.class);
 		_setupAgentPath = Script.findScript(getPatchPath(), "setup_agent.sh");
 		_kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
+		if (_kvmPrivateNic == null) {
+		    _kvmPrivateNic = "cloudbr0";
+		}
+		
 		_kvmPublicNic = _configDao.getValue(Config.KvmPublicNetwork.key());
+		if (_kvmPublicNic == null) {
+		    _kvmPublicNic = _kvmPrivateNic;
+		}
+		
+		_kvmGuestNic = _configDao.getValue(Config.KvmGuestNetwork.key());
+		if (_kvmGuestNic == null) {
+		    _kvmGuestNic = _kvmPrivateNic;
+		}
 		
 		if (_setupAgentPath == null) {
 			throw new ConfigurationException("Can't find setup_agent.sh");
