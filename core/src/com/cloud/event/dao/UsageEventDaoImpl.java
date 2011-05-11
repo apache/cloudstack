@@ -19,6 +19,7 @@
 package com.cloud.event.dao;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -43,9 +44,10 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
     private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type) " +
-    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.created <= ? ";
+    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.id <= ? ";
     private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type) " +
-    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type FROM cloud.usage_event where id <= ? ";
+    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type FROM cloud.usage_event vmevt WHERE vmevt.id <= ?";
+    private static final String MAX_EVENT = "select max(id) from cloud.usage_event where created <= ?";
 
 
     public UsageEventDaoImpl () {
@@ -69,12 +71,13 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         Filter filter = new Filter(UsageEventVO.class, "id", Boolean.FALSE, Long.valueOf(0), Long.valueOf(1));
         return listAll(filter);
     }
-
+    
     @Override
     @DB
     public synchronized List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
         long recentEventId = getMostRecentEventId();
+        long maxEventId = getMaxEventId(endDate);
+        Transaction txn = Transaction.open(Transaction.USAGE_DB);
         String sql = COPY_EVENTS;
         if (recentEventId == 0) {
             if (s_logger.isDebugEnabled()) {
@@ -91,7 +94,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             if (recentEventId != 0) {
                 pstmt.setLong(i++, recentEventId);
             }
-            pstmt.setString(i, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), endDate));
+            pstmt.setLong(i++, maxEventId);
             pstmt.executeUpdate();
             txn.commit();
             return findRecentEvents(endDate);
@@ -136,5 +139,24 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             txn.close();
         }
     }
-
+    
+    private long getMaxEventId(Date endDate) throws UsageServerException {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            String sql = MAX_EVENT;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), endDate));
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return Long.valueOf(rs.getLong(1));
+            }
+            return 0;
+        } catch (Exception ex) {
+            s_logger.error("error getting max event id", ex);
+            throw new UsageServerException(ex.getMessage());
+        } finally {
+            txn.close();
+        }
+    }
 }
