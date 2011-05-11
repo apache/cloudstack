@@ -560,11 +560,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             boolean isSourceNat = false;
 
             txn.start();
-            // First IP address should be source nat when it's being associated with Guest Virtual network
-            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
+            
+            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            if (!offering.isSharedSourceNatService()) {
+                // First IP address should be source nat when it's being associated with Guest Virtual network
+                List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
 
-            if (addrs.isEmpty() && network.getGuestType() == GuestIpType.Virtual) {
-                isSourceNat = true;
+                if (addrs.isEmpty() && network.getGuestType() == GuestIpType.Virtual) {
+                    isSourceNat = true;
+                }
             }
 
             ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), isSourceNat, false);
@@ -1119,8 +1123,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
 
-            // If network if guest virtual and there is no source nat ip, associate a new one
-            if (network.getGuestType() == GuestIpType.Virtual) {
+            // If this is a guest virtual network and the network offering does not support a shared source NAT rule, 
+            // associate a source NAT IP (if one isn't already associated with the network)
+            if (network.getGuestType() == GuestIpType.Virtual && !offering.isSharedSourceNatService()) {
                 List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(networkId, true);
 
                 if (ips.isEmpty()) {
@@ -2618,11 +2623,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         DataCenterVO zone = _dcDao.findById(zoneId);
 
         if (zone.getNetworkType() == NetworkType.Advanced) {
-            return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getFirewallProvider() != null
-                    && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(
-                    Network.Provider.F5BigIp.getName()));
+            return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) &&
+                    zone.getFirewallProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()));
         } else {
-            return (zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));
+            return (zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));            
         }
 
     }

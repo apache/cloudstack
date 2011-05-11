@@ -95,6 +95,8 @@ public interface NetworkOffering {
     boolean isVpnService();
     
     boolean isDhcpService();
+    
+    boolean isSharedSourceNatService();
 
     GuestIpType getGuestType();
 }

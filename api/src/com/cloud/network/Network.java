@@ -93,6 +93,7 @@ public interface Network extends ControlledEntity {
         public static final Provider F5BigIp = new Provider("F5BigIp");
         public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer");
         public static final Provider ExternalGateWay = new Provider("ExternalGateWay");
+        public static final Provider None = new Provider("None");
         
         private String name;
         

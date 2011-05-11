@@ -107,6 +107,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="dhcp_service")
     boolean dhcpService;
     
+    @Column(name="shared_source_nat_service")
+    boolean sharedSourceNatService;
+    
     @Column(name="guest_type")
     GuestIpType guestType;
 
@@ -294,6 +297,15 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setDhcpService(boolean dhcpService) {
         this.dhcpService = dhcpService;
+    }
+    
+    @Override
+    public boolean isSharedSourceNatService() {
+        return sharedSourceNatService;
+    }
+    
+    public void setSharedSourceNatService(boolean sharedSourceNatService) {
+        this.sharedSourceNatService = sharedSourceNatService;
     }
     
     @Override
