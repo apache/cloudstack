@@ -242,7 +242,7 @@ dictionary = {
 					<div id="add_service_memory_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>				
 				<li id="add_service_offerha_container">
-					<label><fmt:message key="label.offer.ha"/>?</label>
+					<label><fmt:message key="label.offer.ha"/>:</label>
 					<select class="select" id="add_service_offerha">						
 						<option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>
@@ -257,7 +257,7 @@ dictionary = {
                 </li>	               
  				<li>
 				    <label>
-				        <fmt:message key="label.CPU.cap"/>?:</label>
+				        <fmt:message key="label.CPU.cap"/>:</label>
 				    <select class="select" id="cpu_cap_dropdown">				        
 				        <option value="false"><fmt:message key="label.no"/></option>
 				        <option value="true"><fmt:message key="label.yes"/></option>
@@ -265,7 +265,7 @@ dictionary = {
 				</li>
 				<li>
 				    <label>
-				        <fmt:message key="label.public"/>?:</label>
+				        <fmt:message key="label.public"/>:</label>
 				    <select class="select" id="public_dropdown">
 				        <option value="true"><fmt:message key="label.yes"/></option>
 				        <option value="false"><fmt:message key="label.no"/></option>

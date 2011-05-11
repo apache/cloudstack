@@ -395,21 +395,21 @@ dictionary = {
 					</select>
 				</li>	
 				<li>
-					<label><fmt:message key="label.password.enabled"/>?:</label>
+					<label><fmt:message key="label.password.enabled"/>:</label>
 					<select class="select" id="add_template_password">						
 						<option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>
 					</select>
 				</li>
 				<li id="add_template_public_container" style="display:none">
-					<label><fmt:message key="label.public"/>?:</label>
+					<label><fmt:message key="label.public"/>:</label>
 					<select class="select" id="add_template_public">
 						<option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>						
 					</select>
 				</li>				
 				<li id="add_template_featured_container" style="display:none">
-					<label><fmt:message key="label.featured"/>?:</label>
+					<label><fmt:message key="label.featured"/>:</label>
 					<select class="select" id="add_template_featured">
 					    <option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>						

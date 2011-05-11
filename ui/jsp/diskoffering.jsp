@@ -166,7 +166,7 @@ dictionary = {
 					<div id="add_disk_description_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>	
 				<li>
-					<label><fmt:message key="label.custom.disk.size"/>?:</label>
+					<label><fmt:message key="label.custom.disk.size"/>:</label>
 					<select class="select" id="customized">						
 						<option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>
@@ -186,7 +186,7 @@ dictionary = {
                 </li>	
                 <li>
 				    <label>
-				        <fmt:message key="label.public"/>?:</label>
+				        <fmt:message key="label.public"/>:</label>
 				    <select class="select" id="public_dropdown">
 				        <option value="true"><fmt:message key="label.yes"/></option>
 				        <option value="false"><fmt:message key="label.no"/></option>

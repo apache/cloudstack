@@ -1230,7 +1230,7 @@ dictionary = {
             </li>
 			<li>
                 <label>
-                    <fmt:message key="label.is.default"/>?</label>
+                    <fmt:message key="label.is.default"/>:</label>
                 <select class="select" name="add_publicip_vlan_default" id="add_publicip_vlan_default">
                     <option value="false">No</option>
 					<option value="true">Yes</option>

@@ -308,7 +308,7 @@ dictionary = {
 					<div id="add_iso_os_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
 				</li>						
 				<li id="add_iso_public_container" style="display:none">
-					<label><fmt:message key="label.public"/>?:</label>
+					<label><fmt:message key="label.public"/>:</label>
 					<select class="select" id="add_iso_public">
 						<option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>						
@@ -316,7 +316,7 @@ dictionary = {
 				</li>	
 				
 				<li id="isfeatured_container" style="display:none">
-					<label><fmt:message key="label.featured"/>?:</label>
+					<label><fmt:message key="label.featured"/>:</label>
 					<select class="select" id="isfeatured">
 					    <option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>						

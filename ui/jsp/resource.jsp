@@ -289,7 +289,7 @@
                                     <div id="add_zone_guestcidraddress_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>				
                                 <li>
-                                    <label><fmt:message key="label.public"/>?:</label>
+                                    <label><fmt:message key="label.public"/>:</label>
                                     <select class="select" id="add_zone_public">
                                         <option value="true"><fmt:message key="label.yes"/></option>		
                                         <option value="false"><fmt:message key="label.no"/></option>										

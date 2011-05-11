@@ -268,7 +268,7 @@ dictionary = {
             </li>
             <li>
                 <label for="user_name">
-                    <fmt:message key="label.password.enabled"/>?:</label>
+                    <fmt:message key="label.password.enabled"/>:</label>
                 <select class="select" name="create_template_password" id="create_template_password">
                     <option value="false"><fmt:message key="label.no"/></option>
                     <option value="true"><fmt:message key="label.yes"/></option>
@@ -755,14 +755,14 @@ dictionary = {
 	                </select>
 	            </li>						
 				<li>
-					<label><fmt:message key="label.password.enabled"/>?:</label>
+					<label><fmt:message key="label.password.enabled"/>:</label>
 					<select class="select" id="password">						
 						<option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>
 					</select>
 				</li>
 				<li id="isfeatured_container" style="display:none">
-					<label><fmt:message key="label.featured"/>?:</label>
+					<label><fmt:message key="label.featured"/>:</label>
 					<select class="select" id="isfeatured">
 					    <option value="false"><fmt:message key="label.no"/></option>
 						<option value="true"><fmt:message key="label.yes"/></option>						
