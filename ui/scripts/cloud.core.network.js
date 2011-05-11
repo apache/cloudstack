@@ -88,6 +88,9 @@ function afterLoadNetworkJSP($leftmenuItem1) {
      
     networkPopulateMiddleMenu($leftmenuItem1);  
     bindAddNetworkButton();     
+    
+    $readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext");
+    $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit");    
 }
 
 function networkPopulateMiddleMenu($leftmenuItem1) {
@@ -297,17 +300,7 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
    
     var $actionLink = $template.find("#action_link");	
     bindActionLink($actionLink);
-    /*	
-	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {
-        $(this).find("#action_menu").hide();    
-        return false;
-    });		
-	*/
-	
+    	
 	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
        
@@ -1070,7 +1063,9 @@ function directNetworkJsonToDetailsTab() {
 	$thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));			
 	$thisTab.find("#id").text(fromdb(jsonObj.id));				
 	$thisTab.find("#name").text(fromdb(jsonObj.name));	
+	$thisTab.find("#name_edit").val(fromdb(jsonObj.name));	
 	$thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+	$thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
 	$thisTab.find("#default").text((jsonObj.isdefault) ? "Yes" : "No"); 	
     $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
@@ -1082,19 +1077,10 @@ function directNetworkJsonToDetailsTab() {
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	  
-    */
-    
+        
     var $actionMenu = $actionLink.find("#action_menu");
-    $actionMenu.find("#action_list").empty();        
+    $actionMenu.find("#action_list").empty();    
+    buildActionLinkForTab("label.action.edit.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	   
     buildActionLinkForTab("label.action.delete.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	      
         
     $thisTab.find("#tab_container").show(); 
@@ -1461,11 +1447,15 @@ function bindAddIpRangeToDirectNetworkButton($midmenuItem1) {
     });
 }
 
-var directNetworkActionMap = {       
+var directNetworkActionMap = {  
+    "label.action.edit.network": {    
+	    dialogBeforeActionFn : doEditDirectNetwork 
+	}    
+    ,
     "label.action.delete.network": {              
         isAsyncJob: true,    
         asyncJobResponse: "deletenetworkresponse", 
-        dialogBeforeActionFn : doDeleteNetwork,        
+        dialogBeforeActionFn : doDeleteDirectNetwork,        
         inProcessText: "label.action.delete.network.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
@@ -1479,7 +1469,55 @@ var directNetworkActionMap = {
     }    
 }  
 
-function doDeleteNetwork($actionLink, $detailsTab, $midmenuItem1) {       
+function doEditDirectNetwork($actionLink, $detailsTab, $midmenuItem1) {       
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        cancelEditMode($detailsTab);       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
+        return false;
+    });   
+}
+
+function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {     
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    var id = jsonObj.id;
+    
+    // validate values   
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"), true);		
+    isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"), true);				
+    if (!isValid) 
+        return;	
+     
+    var array1 = [];    
+    var name = $detailsTab.find("#name_edit").val();
+    array1.push("&name="+todb(name));
+    
+    var displaytext = $detailsTab.find("#displaytext_edit").val();
+    array1.push("&displayText="+todb(displaytext));
+		
+	$.ajax({
+	    data: createURL("command=updateNetwork&id="+id+array1.join("")),
+		dataType: "json",
+		success: function(json) {	
+		    var jsonObj = json.updatenetworkresponse.network;   
+		    directNetworkToMidmenu(jsonObj, $midmenuItem1);
+		    directNetworkToRightPanel($midmenuItem1);	
+		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();     	  
+		}
+	});
+}
+
+function doDeleteDirectNetwork($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 		

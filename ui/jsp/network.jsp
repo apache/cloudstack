@@ -13,6 +13,7 @@ dictionary = {
 	'label.action.delete.firewall.processing' : '<fmt:message key="label.action.delete.firewall.processing"/>',
 	'label.action.delete.load.balancer' : '<fmt:message key="label.action.delete.load.balancer"/>',
 	'label.action.delete.load.balancer.processing' : '<fmt:message key="label.action.delete.load.balancer.processing"/>',
+	'label.action.edit.network' : '<fmt:message key="label.action.edit.network"/>',
 	'label.action.delete.network' : '<fmt:message key="label.action.delete.network"/>',
 	'label.action.delete.network.processing' : '<fmt:message key="label.action.delete.network.processing"/>',
 	'message.action.delete.network' : '<fmt:message key="message.action.delete.network"/>',
@@ -327,7 +328,9 @@ dictionary = {
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="name">
-	                        </div>
+	                        </div>	                        
+	                        <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+	                    	<div id="name_edit_errormsg" style="display:none"></div>  	                        
 	                    </div>
 	                </div>	                
 	                <div class="grid_rows odd">
@@ -337,7 +340,9 @@ dictionary = {
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="displaytext">
-	                        </div>
+	                        </div>	                        
+	                        <input class="text" id="displaytext_edit" style="width: 200px; display: none;" type="text" />
+	                    	<div id="displaytext_edit_errormsg" style="display:none"></div>  	                        
 	                    </div>
 	                </div>
 					<div class="grid_rows even">
@@ -401,6 +406,12 @@ dictionary = {
 	                    </div>
 	                </div>	               
 	            </div>
+	            
+	            <div class="grid_botactionpanel">
+		        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+		            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+		        </div>  	            
+	            
 	        </div>    
         </div>   
         <!-- Details tab (end)-->
