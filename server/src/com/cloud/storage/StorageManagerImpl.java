@@ -90,7 +90,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -1708,6 +1707,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     @DB
     public void destroyVolume(VolumeVO volume) throws ConcurrentOperationException {
+        assert (volume.getState() != Volume.State.Destroy) : "Why destroy method is called for the volume that is already destroyed?";
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -2902,6 +2902,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return _storagePoolDao.findById(id);
     }
 
+    @Override
     public VMTemplateHostVO findVmTemplateHost(long templateId, long dcId, Long podId) {
         List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
         if (secHosts.size() == 1) {
