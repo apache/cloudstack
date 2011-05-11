@@ -832,15 +832,14 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
         async: false,
         success: function(json) {								
             var items = json.listsnapshotpoliciesresponse.snapshotpolicy;
-			var $snapInterval = dialogBox.find("#snapshot_interval");
-            if(items!=null && items.length>0) {
+			var $snapInterval = dialogBox.find("#snapshot_interval");            
+			$snapInterval.find("#snapshot_interval_0,#snapshot_interval_1,#snapshot_interval_2,#snapshot_interval_3").data("jsonObj", null);						
+			if(items!=null && items.length>0) {
 				for (var i = 0; i < items.length; i++) {
 					var item = items[i];
 					$snapInterval.find("#snapshot_interval_"+item.intervaltype).data("jsonObj", item);
 				}
-            } else {
-				// Maybe use a different message
-			}
+            } 
 			clearBottomPanel();
 			$snapInterval.val("0"); //default to hourly
 			$snapInterval.change();
