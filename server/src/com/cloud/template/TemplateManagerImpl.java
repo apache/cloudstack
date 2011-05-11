@@ -83,7 +83,6 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -903,8 +902,26 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
     public boolean deleteTemplate(DeleteTemplateCmd cmd) {
-		VMTemplateVO template = _tmpltDao.findById(cmd.getId());
-    	if (template == null || template.getRemoved() != null) {
+        Long templateId = cmd.getId();
+        Account caller = UserContext.current().getCaller();
+        
+        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        if (template == null) {
+            throw new InvalidParameterValueException("unable to find template with id " + templateId);
+        }
+        
+        if (template != null) {
+            Account templateOwner = _accountDao.findById(template.getAccountId());
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                if (caller.getId() != templateOwner.getId()) {
+                    throw new PermissionDeniedException("Account " + caller + " can't operate with template id=" + template.getId());
+                }
+            } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                _accountMgr.checkAccess(caller, templateOwner);
+            }
+        }   
+    	
+    	if (template.getFormat() == ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
@@ -914,9 +931,32 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
     public boolean deleteIso(DeleteIsoCmd cmd) {
-		VMTemplateVO template = _tmpltDao.findById(cmd.getId());
-    	if (template == null || template.getRemoved() != null) {
-    		throw new InvalidParameterValueException("Please specify a valid ISO.");
+        Long templateId = cmd.getId();
+        Account caller = UserContext.current().getCaller();
+        Long zoneId = cmd.getZoneId();
+        
+        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        if (template == null) {
+            throw new InvalidParameterValueException("unable to find iso with id " + templateId);
+        }
+        
+        if (template != null) {
+            Account templateOwner = _accountDao.findById(template.getAccountId());
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                if (caller.getId() != templateOwner.getId()) {
+                    throw new PermissionDeniedException("Account " + caller + " can't operate with iso id=" + template.getId());
+                }
+            } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                _accountMgr.checkAccess(caller, templateOwner);
+            }
+        }   
+    	
+    	if (template.getFormat() != ImageFormat.ISO) {
+    		throw new InvalidParameterValueException("Please specify a valid iso.");
+    	}
+    	
+    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
     	}
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
