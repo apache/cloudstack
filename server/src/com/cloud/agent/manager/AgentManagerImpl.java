@@ -1233,6 +1233,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         HostVO host = null;
         if (id != null) {
             synchronized (_loadingAgents) {
+                s_logger.debug("Adding to loading agents " + id);
                 _loadingAgents.add(id);
             }
         }

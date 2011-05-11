@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent.manager;
 
@@ -41,9 +41,9 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
-    
+
     static ScheduledExecutorService s_executor = Executors.newScheduledThreadPool(100, new NamedThreadFactory("DirectAgent"));
-    
+
     ServerResource _resource;
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     AgentManagerImpl _mgr;
@@ -60,7 +60,7 @@ public class DirectAgentAttache extends AgentAttache {
 	    if (s_logger.isDebugEnabled()) {
 	        s_logger.debug("Processing disconnect " + _id);
 	    }
-	    
+
 	    for (ScheduledFuture<?> future : _futures) {
 	        future.cancel(false);
 	    }
@@ -85,7 +85,7 @@ public class DirectAgentAttache extends AgentAttache {
 	public synchronized boolean isClosed() {
 	    return _resource == null;
 	}
-	
+
 	@Override
 	public void send(Request req) throws AgentUnavailableException {
 	    if (s_logger.isDebugEnabled()) {
@@ -109,7 +109,7 @@ public class DirectAgentAttache extends AgentAttache {
     	    }
 	    }
 	}
-	
+
 	@Override
     public void process(Answer[] answers) {
         if (answers != null && answers[0] instanceof StartupAnswer) {
@@ -119,17 +119,21 @@ public class DirectAgentAttache extends AgentAttache {
             _futures.add(s_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
 	}
-	
+
     @Override
-    protected void finalize() {
-        assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources.  Ever considered why there's a method called disconnect()?";
-        synchronized(this) {
-            if (_resource != null) {
-                disconnect(Status.Alert);
+    protected void finalize() throws Throwable {
+        try {
+            assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources.  Ever considered why there's a method called disconnect()?";
+            synchronized (this) {
+                if (_resource != null) {
+                    disconnect(Status.Alert);
+                }
             }
+        } finally {
+            super.finalize();
         }
     }
-	
+
 	protected class PingTask implements Runnable {
 	    @Override
 	    public synchronized void run() {
@@ -147,7 +151,7 @@ public class DirectAgentAttache extends AgentAttache {
                         s_logger.debug("Ping from " + _id);
                     }
         	        long seq = _seq++;
-        	        
+
         	        if (s_logger.isTraceEnabled()) {
         	            s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(seq, _id, -1, cmd, false).toString());
         	        }
@@ -161,15 +165,15 @@ public class DirectAgentAttache extends AgentAttache {
 	        }
 	    }
 	}
-	
+
 
 	protected class Task implements Runnable {
 	    Request _req;
-	    
+
 	    public Task(Request req) {
 	        _req = req;
 	    }
-	    
+
 	    @Override
 	    public void run() {
             long seq = _req.getSequence();
@@ -177,7 +181,7 @@ public class DirectAgentAttache extends AgentAttache {
                 ServerResource resource = _resource;
     	        Command[] cmds = _req.getCommands();
     	        boolean stopOnError = _req.stopOnError();
-    
+
     	        if (s_logger.isDebugEnabled()) {
     	            s_logger.debug(log(seq, "Executing request"));
     	        }
@@ -202,12 +206,12 @@ public class DirectAgentAttache extends AgentAttache {
                         break;
                     }
     	        }
-    	        
+
     	        Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
     	        if (s_logger.isDebugEnabled()) {
     	            s_logger.debug(log(seq, "Response Received: "));
     	        }
-    	        
+
     	        processAnswers(seq, resp);
     	    } catch (Exception e) {
     	        s_logger.warn(log(seq, "Exception caught "), e);

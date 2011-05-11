@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 package com.cloud.agent.manager;
@@ -32,7 +32,7 @@ import com.cloud.utils.nio.Link;
  */
 public class ConnectedAgentAttache extends AgentAttache {
     private static final Logger s_logger = Logger.getLogger(ConnectedAgentAttache.class);
-    
+
     protected Link _link;
 
     public ConnectedAgentAttache(final long id, final Link link, boolean maintenance) {
@@ -48,12 +48,12 @@ public class ConnectedAgentAttache extends AgentAttache {
             throw new AgentUnavailableException("Channel is closed", _id);
         }
     }
-    
+
     @Override
     public synchronized boolean isClosed() {
         return _link == null;
     }
-    
+
     @Override
     public void disconnect(final Status state) {
         synchronized (this) {
@@ -78,14 +78,18 @@ public class ConnectedAgentAttache extends AgentAttache {
             return false;
         }
     }
-    
+
     @Override
-    public void finalize() {
-        assert _link == null : "Duh...Says you....Forgot to call disconnect()!";
-        synchronized(this) {
-            if (_link != null) {
-                disconnect(Status.Alert);
+    protected void finalize() throws Throwable {
+        try {
+            assert _link == null : "Duh...Says you....Forgot to call disconnect()!";
+            synchronized (this) {
+                if (_link != null) {
+                    disconnect(Status.Alert);
+                }
             }
+        } finally {
+            super.finalize();
         }
     }
 }
