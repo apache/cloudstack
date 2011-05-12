@@ -329,7 +329,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
         _nodeId = ManagementServerNode.getManagementServerId();
 
-        _hostDao.markHostsAsDisconnected(_nodeId, Status.Up, Status.Connecting, Status.Updating, Status.Disconnected, Status.Down);
+        _hostDao.markHostsAsDisconnected(_nodeId);
 
         _monitor = new AgentMonitor(_nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);
@@ -1206,7 +1206,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
         return deleteHost(hostId, isForced, caller);
     }
-    
+
     @Override
     public boolean updateHostPassword(UpdateHostPasswordCmd cmd){
         List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
@@ -1289,7 +1289,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         return true;
     }
-    
+
 
     @DB
     protected boolean deleteSecondaryStorageHost(HostVO secStorageHost) {
@@ -2480,9 +2480,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if (!handled) {
             server = createHost(startup, null, null, false, null, null);
         } else {
-            server = _hostDao.findByGuid(startup[0].getGuid()); 
+            server = _hostDao.findByGuid(startup[0].getGuid());
         }
-         
+
     	if (server == null) {
     		return null;
     	}
@@ -2500,7 +2500,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             return _agents.get(hostId);
         }
     }
-    
+
     protected AgentAttache createAttache(long id, HostVO server, Link link) {
         s_logger.debug("create ConnectedAgentAttache for " + id);
         final AgentAttache attache = new ConnectedAgentAttache(this, id, link, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance

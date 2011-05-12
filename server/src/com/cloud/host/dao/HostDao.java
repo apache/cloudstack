@@ -51,14 +51,13 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	 */
 	List<HostVO> listSecondaryStorageHosts();
 
-	/**
-	 * Mark all hosts in Up or Orphaned state as disconnected.  This method
-	 * is used at AgentManager startup to reset all of the connections.
-	 *
-	 * @param msId management server id.
-     * @param statuses states of the host.
-	 */
-	void markHostsAsDisconnected(long msId, Status... states);
+    /**
+     * Mark all hosts associated with a certain management server
+     * as disconnected.
+     * 
+     * @param msId management server id.
+     */
+    void markHostsAsDisconnected(long msId);
 
 	List<HostVO> findLostHosts(long timeout);
 
@@ -96,9 +95,9 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	 * @return HostVO or null if not found.
 	 */
 	public HostVO findByGuid(String macAddress);
-	
+
 	public HostVO findByName(String name);
-	
+
 
 	/**
 	 * find all hosts of a certain type in a data center
@@ -139,7 +138,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     long getNextSequence(long hostId);
 
     void loadDetails(HostVO host);
-    
+
     void saveDetails(HostVO host);
 
 	HostVO findConsoleProxyHost(String name, Type type);
@@ -162,10 +161,10 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     void loadHostTags(HostVO host);
 
     List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
-    
+
     long countRoutingHostsByDataCenter(long dcId);
 
-    List<HostVO> listSecondaryStorageHosts(long dataCenterId);    
+    List<HostVO> listSecondaryStorageHosts(long dataCenterId);
 
     boolean directConnect(HostVO host, long msId, boolean secondConnect);
 
