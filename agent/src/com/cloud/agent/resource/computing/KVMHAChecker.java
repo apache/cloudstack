@@ -33,7 +33,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 	private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
 	private List<NfsStoragePool> _pools;
 	private String _hostIP;
-	private long _heartBeatCheckerTimeout = 300000; /*5 minutes*/
+	private long _heartBeatCheckerTimeout = 360000; /*6 minutes*/
 	public KVMHAChecker(List<NfsStoragePool> pools, String host) {
 		this._pools = pools;
 		this._hostIP = host;
@@ -50,7 +50,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 			cmd.add("-m", pool._mountDestPath);
 			cmd.add("-h", _hostIP);
 			cmd.add("-r");
-			cmd.add("-t", String.valueOf(_heartBeatUpdateFreq/1000 * 2));
+			cmd.add("-t", String.valueOf((_heartBeatUpdateFreq + _heartBeatUpdateTimeout)/1000 * 2));
 			OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
 			String result = cmd.execute(parser);
 			s_logger.debug("pool: " + pool._poolIp);
