@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
 
-@Local(value=FirewallRulesCidrsDaoImpl.class)
+@Local(value=FirewallRulesCidrsDao.class)
 public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrsVO, Long> implements FirewallRulesCidrsDao {
     private static final Logger s_logger = Logger.getLogger(FirewallRulesCidrsDaoImpl.class);
     protected final SearchBuilder<FirewallRulesCidrsVO> CidrsSearch;
@@ -49,12 +49,12 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
         sc.setParameters("firewallRuleId", firewallRuleId);
         
         List<FirewallRulesCidrsVO> results = search(sc, null);
-        List<String> hostTags = new ArrayList<String>(results.size());
+        List<String> cidrs = new ArrayList<String>(results.size());
         for (FirewallRulesCidrsVO result : results) {
-            hostTags.add(result.getCidr());
+            cidrs.add(result.getCidr());
         }
 
-        return hostTags;
+        return cidrs;
     }
     
     @Override @DB
@@ -63,7 +63,6 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
 
         txn.start();
         for (String tag : sourceCidrs) {
-            s_logger.info("Saving cidrs " + tag);
             FirewallRulesCidrsVO vo = new FirewallRulesCidrsVO(firewallRuleId, tag);
             persist(vo);
         }

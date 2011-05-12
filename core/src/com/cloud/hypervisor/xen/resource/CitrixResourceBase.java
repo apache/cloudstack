@@ -1207,18 +1207,22 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            args += rule.revoked() ? " -D " : " -A ";
-	        args += " -P " + rule.getProtocol().toLowerCase();
-	        args += " -l " + rule.getSrcIp();
-	        args += " -p " + rule.getStringSrcPortRange();
-	        args += " -r " + rule.getDstIp();
-	        args += " -d " + rule.getStringDstPortRange();
+            StringBuilder args = new StringBuilder();
+            args.append(routerIp);
+            args.append(rule.revoked() ? " -D " : " -A ");
+            args.append(" -P ").append(rule.getProtocol().toLowerCase());
+            args.append(" -l ").append(rule.getSrcIp());
+            args.append(" -p ").append(rule.getStringSrcPortRange());
+            args.append(" -r ").append(rule.getDstIp());
+            args.append(" -d ").append(rule.getStringDstPortRange());
+            if (rule.geStringSourceCidrs() != null){
+                args.append(" -s " + rule.geStringSourceCidrs());
+            }
+            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
 
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
             results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
         }
 

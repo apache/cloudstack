@@ -46,6 +46,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -79,6 +80,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Inject
     PortForwardingRulesDao _forwardingDao;
+    @Inject
+    FirewallRulesCidrsDao _firewallCidrsDao;
     @Inject
     FirewallRulesDao _firewallDao;
     @Inject
@@ -663,14 +666,26 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return _forwardingDao.search(sc, filter);
     }
+    
+    @Override
+    public List<String> getSourceCidrs(long ruleId){
+        return _firewallCidrsDao.getSourceCidrs(ruleId);
+    }
 
     @Override
     public boolean applyPortForwardingRules(long ipId, boolean continueOnError, Account caller) {
         List<PortForwardingRuleVO> rules = _forwardingDao.listForApplication(ipId);
+        
         if (rules.size() == 0) {
             s_logger.debug("There are no firwall rules to apply for ip id=" + ipId);
             return true;
         }
+        
+        for (PortForwardingRuleVO rule: rules){
+            // load cidrs if any
+            rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));  
+        }
+        
 
         if (caller != null) {
             _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));

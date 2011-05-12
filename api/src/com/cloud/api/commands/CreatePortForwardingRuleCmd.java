@@ -40,6 +40,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 
 @Implementation(description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
@@ -108,20 +109,27 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     public String getCommandName() {
         return s_name;
     }
+    
+    @Override
+    public void setSourceCidrList(List<String> cidrs){
+        cidrlist = cidrs;
+    }
 
     @Override
     public void execute() throws ResourceUnavailableException {
         UserContext callerContext = UserContext.current();
-
         boolean success = false;
         PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
+        // load cidrs if any
+        rule.setSourceCidrList(_rulesService.getSourceCidrs(rule.getId()));  
+        
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddressId(), callerContext.getCaller());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
-            FirewallRuleResponse fwResponse = new FirewallRuleResponse();
+            FirewallRuleResponse fwResponse = new FirewallRuleResponse(); 
             if (rule != null) {
                 fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
                 setResponseObject(fwResponse);
@@ -210,6 +218,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public void create() {
+        if (cidrlist != null)
+            for (String cidr: cidrlist){
+                if (!NetUtils.isValidCIDR(cidr)){
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Source cidrs formatting error " + cidr); 
+                }
+            }
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
             setEntityId(result.getId());

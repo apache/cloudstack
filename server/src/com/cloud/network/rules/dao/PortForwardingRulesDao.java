@@ -37,9 +37,13 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
     
     List<PortForwardingRuleVO> listByIp(long ipId);
 
-	List<PortForwardingRuleVO> listByVm(Long vmId);
-	
-	List<PortForwardingRuleVO> listByNetwork(long networkId);
-	
-	List<PortForwardingRuleVO> listByAccount(long accountId);
+    List<PortForwardingRuleVO> listByVm(Long vmId);
+    
+    List<PortForwardingRuleVO> listByNetwork(long networkId);
+    
+    List<PortForwardingRuleVO> listByAccount(long accountId);
+    
+    void loadSourceCidrs(PortForwardingRuleVO portForwardingRule);
+    
+    void saveSourceCidrs(PortForwardingRuleVO portForwardingRule);
 }

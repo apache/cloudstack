@@ -49,6 +49,8 @@ public interface PortForwardingRule extends FirewallRule {
      * @return source cidr to forward
      */
     List<String> getSourceCidrList();
-    
-  
+    /**
+     * @return source cidr to forward
+     */
+    void setSourceCidrList(List<String> cidrs);
 }

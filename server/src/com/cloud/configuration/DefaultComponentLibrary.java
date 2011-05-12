@@ -73,6 +73,7 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
@@ -256,6 +257,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ItWorkDao", ItWorkDaoImpl.class);
         addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
         addDao("PortForwardingRulesDao", PortForwardingRulesDaoImpl.class);
+        addDao("FirewallRulesCidrsDao", FirewallRulesCidrsDaoImpl.class);
         addDao("SSHKeyPairDao", SSHKeyPairDaoImpl.class);
         addDao("UsageEventDao", UsageEventDaoImpl.class);
         addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);

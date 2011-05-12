@@ -68,4 +68,6 @@ public interface RulesService {
     
     StaticNatRule buildStaticNatRule(FirewallRule rule);
     
+    List<String> getSourceCidrs(long ruleId);
+    
 }
