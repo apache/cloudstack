@@ -57,7 +57,27 @@ create_htaccess() {
     echo -e $entry > $htaccessFile
     result=$?
   fi
-  
+
+  #support access by http://<dhcp server>/latest/<metadata key> (legacy, see above) also
+  # http://<dhcp server>/latest/meta-data/<metadata key> (correct)
+  if [ "$folder" == "metadata" ] || [ "$folder" == "meta-data" ]
+  then
+    entry="RewriteRule ^meta-data/(.+)$  ../$folder/%{REMOTE_ADDR}/\$1 [L,NC,QSA]"
+    htaccessFolder="/var/www/html/latest"
+    htaccessFile=$htaccessFolder/.htaccess
+    grep -F "$entry" $htaccessFile
+    if [ $? -gt 0 ]
+    then
+      echo -e "$entry" >> $htaccessFile
+    fi
+    entry="RewriteRule ^meta-data/$  ../$folder/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
+    grep -F "$entry" $htaccessFile
+    if [ $? -gt 0 ]
+    then
+      echo -e "$entry" >> $htaccessFile
+    fi
+    result=$?
+  fi
   return $result  
 }
 
@@ -67,8 +87,18 @@ copy_vm_data_file() {
   local file=$3
   local dataFile=$4        
   
+  dest=/var/www/html/$folder/$vmIp/$file
+  metamanifest=/var/www/html/$folder/$vmIp/meta-data
   chmod +r $dataFile
-  cp $dataFile /var/www/html/$folder/$vmIp/$file >/dev/null
+  cp $dataFile $dest
+  chmod 644 $dest
+  touch $metamanifest
+  chmod 644 $metamanifest
+  if [ "$folder" == "metadata" ] || [ "$folder" == "meta-data" ]
+  then
+    sed -i '/$file/d' $metamanifest
+    echo $file >> $metamanifest
+  fi
   return $?
 }
 
