@@ -229,15 +229,6 @@ public class LibvirtStorageResource {
                     s_logger.debug(spd.toString());
                     addStoragePool(uuid);
 
-                    synchronized (getStoragePool(uuid)) {
-                        sp = conn.storagePoolDefineXML(spd.toString(), 0);
-
-                        if (sp == null) {
-                            s_logger.debug("Failed to define storage pool");
-                            return null;
-                        }
-                        sp.create(0);
-                    }
                 } else if (protocal.equalsIgnoreCase("DIR")) {
                     _storageLayer.mkdir(targetPath);
                     spd = new LibvirtStoragePoolDef(poolType.DIR, uuid, uuid,

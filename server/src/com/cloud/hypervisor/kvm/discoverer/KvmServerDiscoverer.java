@@ -162,26 +162,26 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				throw new DiscoveredWithErrorException("Authetication error");
 			}
 			
-			if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm >& /dev/null", 3)) {
+			if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm", 3)) {
 				s_logger.debug("It's not a KVM enabled machine");
 				return null;
 			}
 			
-			String parameters = " -m=" + _hostIp + " -z=" + dcId + " -p=" + podId + " -c=" + clusterId + " -g=" + guid + " -a";
+			String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
 			
 			if (_kvmPublicNic != null) {
-				parameters += " --pubNic= " + _kvmPublicNic;
+				parameters += " --pubNic=" + _kvmPublicNic;
 			}
 			
 			if (_kvmPrivateNic != null) {
-				parameters += " --prvNic= " + _kvmPrivateNic;
+				parameters += " --prvNic=" + _kvmPrivateNic;
 			}
 			
 			if (_kvmGuestNic != null) {
 			    parameters += " --guestNic=" + _kvmGuestNic;
 			}
 		
-			SSHCmdHelper.sshExecuteCmd(sshConnection, "cloud-setup-agent " + parameters + " >& /dev/null", 3);
+			SSHCmdHelper.sshExecuteCmd(sshConnection, "cloud-setup-agent " + parameters, 3);
 			
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
 			Map<String, Object> params = new HashMap<String, Object>();

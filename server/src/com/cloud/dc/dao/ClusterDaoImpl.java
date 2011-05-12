@@ -38,6 +38,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -84,7 +85,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         
         AvailHyperSearch = createSearchBuilder();
         AvailHyperSearch.and("zoneId", AvailHyperSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        AvailHyperSearch.groupBy(AvailHyperSearch.entity().getHypervisorType());
+        AvailHyperSearch.select(null, Func.DISTINCT, AvailHyperSearch.entity().getHypervisorType());
         AvailHyperSearch.done();
     }
     

@@ -1,4 +1,4 @@
-
+#!/bin/bash
   #
   # Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
   # 

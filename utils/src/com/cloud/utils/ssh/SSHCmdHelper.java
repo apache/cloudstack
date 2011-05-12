@@ -142,7 +142,8 @@ public class SSHCmdHelper {
 				}
 			}
 			
-			s_logger.debug(cmd + " output:" + new String(buffer));
+			if (buffer[0] != 0)
+			    s_logger.debug(cmd + " output:" + new String(buffer));
 			
 			Thread.sleep(1000);
 			return sshSession.getExitStatus();
