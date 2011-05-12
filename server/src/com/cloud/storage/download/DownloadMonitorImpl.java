@@ -68,9 +68,13 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
@@ -83,8 +87,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 @Local(value={DownloadMonitor.class})
 public class DownloadMonitorImpl implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
-
-	private static final String DEFAULT_HTTP_COPY_PORT = "80";
+	
     @Inject 
     VMTemplateHostDao _vmTemplateHostDao;
     @Inject 
@@ -108,6 +111,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	private AgentManager _agentMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    UserVmManager _vmMgr;
+
     
     @Inject 
     private UsageEventDao _usageEventDao;
@@ -120,7 +126,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
 	private String _copyAuthPasswd;
-
+    protected SearchBuilder<VMTemplateHostVO> ReadyTemplateStatesSearch;
 
 	Timer _timer;
 
@@ -146,6 +152,20 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         _copyAuthPasswd = configs.get("secstorage.copy.password");
         
         _agentMgr.registerForHostEvents(new DownloadListener(this), true, false, false);
+        
+        ReadyTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
+        ReadyTemplateStatesSearch.and("download_state", ReadyTemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
+        ReadyTemplateStatesSearch.and("destroyed", ReadyTemplateStatesSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        ReadyTemplateStatesSearch.and("host_id", ReadyTemplateStatesSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<VMTemplateVO> TemplatesWithNoChecksumSearch = _templateDao.createSearchBuilder();
+        TemplatesWithNoChecksumSearch.and("checksum", TemplatesWithNoChecksumSearch.entity().getChecksum(), SearchCriteria.Op.NULL);
+
+        ReadyTemplateStatesSearch.join("vm_template", TemplatesWithNoChecksumSearch, TemplatesWithNoChecksumSearch.entity().getId(),
+                ReadyTemplateStatesSearch.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
+        TemplatesWithNoChecksumSearch.done();
+        ReadyTemplateStatesSearch.done();
+               
 		return true;
 	}
 
@@ -582,6 +602,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
 			s_logger.info(description);
 		}
+		
+		//This code is mostly for migration purposes so that we have checksum for all the templates
+		checksumSync(sserverId);
+		
 
 	}
 
@@ -598,6 +622,23 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 				}
 			}
 		}
+	}
+	
+	private void checksumSync(long hostId){
+        SearchCriteria<VMTemplateHostVO> sc = ReadyTemplateStatesSearch.create();
+        sc.setParameters("download_state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+
+        List<VMTemplateHostVO> templateHostRefList = _vmTemplateHostDao.search(sc, null);
+        s_logger.debug("Found " +templateHostRefList.size()+ " templates with no checksum. Will ask for computation");
+        for(VMTemplateHostVO templateHostRef : templateHostRefList){
+            s_logger.debug("Getting checksum for template - " + templateHostRef.getTemplateId());
+            String checksum = _vmMgr.getChecksum(hostId, templateHostRef.getInstallPath());
+            VMTemplateVO template = _templateDao.findById(templateHostRef.getTemplateId());
+            s_logger.debug("Setting checksum " +checksum+ " for template - " + template.getName());
+            template.setChecksum(checksum);
+            _templateDao.update(template.getId(), template);
+        }
+
 	}
 	
 	private Long getMaxTemplateSizeInBytes() {

@@ -87,4 +87,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      * @return List of UserVMs.
      */
     List<UserVmVO> searchForUserVMs(Criteria c);
+
+    String getChecksum(Long hostId, String templatePath);
 }
