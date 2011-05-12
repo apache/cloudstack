@@ -875,7 +875,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 if(meridiem=="AM")	 
 								 hour24 = hour12;
 							 else //meridiem=="PM"	 
-								 hour24 = (parseInt(hour12)+12).toString();                
+								 hour24 = (parseInt(hour12,10)+12).toString();  //specify number base to be 10. Otherwise, "08" and "09" will be treated as octal numbers (base 8).              
 							 schedule = minute + ":" + hour24;		                    
 							 max = bottomPanel.find("#edit_max").val();	
 							 timezone = bottomPanel.find("#edit_timezone").val();		
@@ -892,7 +892,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 if(meridiem=="AM")	 
 								 hour24 = hour12;
 							 else //meridiem=="PM"	 
-								 hour24 = (parseInt(hour12)+12).toString();    
+								 hour24 = (parseInt(hour12,10)+12).toString();  //specify number base to be 10. Otherwise, "08" and "09" will be treated as octal numbers (base 8).  
 							 dayOfWeek = bottomPanel.find("#edit_day_of_week").val();  
 							 dayOfWeekString = bottomPanel.find("#edit_day_of_week option:selected").text();
 							 schedule = minute + ":" + hour24 + ":" + dayOfWeek;		                    
@@ -911,7 +911,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 if(meridiem=="AM")	 
 								 hour24 = hour12;
 							 else //meridiem=="PM"	 
-								 hour24 = (parseInt(hour12)+12).toString();    
+								 hour24 = (parseInt(hour12,10)+12).toString();  //specify number base to be 10. Otherwise, "08" and "09" will be treated as octal numbers (base 8).   
 							 dayOfMonth = bottomPanel.find("#edit_day_of_month").val();  		                     
 							 schedule = minute + ":" + hour24 + ":" + dayOfMonth;		                    
 							 max = bottomPanel.find("#edit_max").val();	
