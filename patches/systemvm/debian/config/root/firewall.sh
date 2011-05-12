@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-
-
-
   #
   # Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
   # 
@@ -18,8 +15,6 @@
   # You should have received a copy of the GNU General Public License
   # along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #
- 
-
 # $Id: firewall.sh 9947 2010-06-25 19:34:24Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/patches/xenserver/root/firewall.sh $
 # firewall.sh -- allow some ports / protocols to vm instances
 #
@@ -27,10 +22,10 @@
 # @VERSION@
 
 usage() {
-  printf "Usage: %s: (-A|-D)   -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> [-G]   \n" $(basename $0) >&2
+  printf "Usage: %s: (-A|-D)   -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> -s <source cidrs> [-G]   \n" $(basename $0) >&2
 }
 
-set -x
+#set -x
 
 get_dev_list() {
   ip link show | grep -e eth[2-9] | awk -F ":" '{print $2}'
@@ -57,6 +52,7 @@ tcp_or_udp_entry() {
   local port=$4
   local op=$5
   local proto=$6
+  local cidrs=$7
   logger -t cloud "$(basename $0): creating port fwd entry for PAT: public ip=$publicIp \
   instance ip=$instIp proto=$proto port=$port dport=$dport op=$op"
 
@@ -73,11 +69,11 @@ tcp_or_udp_entry() {
   (sudo iptables -t nat $op OUTPUT  --proto $proto -d $publicIp  \
            --destination-port $port -j DNAT  \
            --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
-  (sudo iptables $op FORWARD -p $proto -s 0/0 -d $instIp -m state \
+  (sudo iptables $op FORWARD -p $proto -s $cidrs -d $instIp -m state \
            --state ESTABLISHED,RELATED -m comment --comment "$publicIp:$port" -j ACCEPT &>>  $OUTFILE || [ "$op" == "-D" ]) &&
-  (sudo iptables $op FORWARD -p $proto -s 0/0 -d $instIp  \
+  (sudo iptables $op FORWARD -p $proto -s $cidrs -d $instIp  \
            --destination-port $dport0 -m state --state NEW -m comment --comment "$publicIp:$port" -j ACCEPT &>>  $OUTFILE)
-  	
+      
 
   local result=$?
   logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
@@ -100,10 +96,10 @@ icmp_entry() {
   # that the rules didn't exist in the first place
   local dev=$(ip_to_dev $publicIp)
   sudo iptables -t nat $op PREROUTING --proto icmp -i $dev -d $publicIp --icmp-type $icmptype -j DNAT --to-destination $instIp &>>  $OUTFILE
-   	
+       
   sudo iptables -t nat $op OUTPUT  --proto icmp -d $publicIp --icmp-type $icmptype -j DNAT --to-destination $instIp &>>  $OUTFILE
   sudo iptables $op FORWARD -p icmp -s 0/0 -d $instIp --icmp-type $icmptype  -j ACCEPT &>>  $OUTFILE
-  	
+      
   result=$?
   logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
   return $result
@@ -150,39 +146,43 @@ pflag=
 tflag=
 lflag=
 dflag=
+sflag=
 Gflag=
 op=""
 
-while getopts 'ADr:P:p:t:l:d:G' OPTION
+while getopts 'ADr:P:p:t:l:d:s:G' OPTION
 do
   case $OPTION in
-  A)	op="-A"
-		;;
-  D)	op="-D"
-		;;
-  r)	rflag=1
-		instanceIp="$OPTARG"
-		;;
-  P)	Pflag=1
-		protocol="$OPTARG"
-		;;
-  p)	pflag=1
-		ports="$OPTARG"
-		;;
-  t)	tflag=1
-		icmptype="$OPTARG"
-		;;
-  l)	lflag=1
-		publicIp="$OPTARG"
-		;;
-  d)	dflag=1
-		dport="$OPTARG"
-		;;
-  G)	Gflag=1
-		;;
-  ?)	usage
-		exit 2
-		;;
+  A)    op="-A"
+        ;;
+  D)    op="-D"
+        ;;
+  r)    rflag=1
+        instanceIp="$OPTARG"
+        ;;
+  P)    Pflag=1
+        protocol="$OPTARG"
+        ;;
+  p)    pflag=1
+        ports="$OPTARG"
+        ;;
+  t)    tflag=1
+        icmptype="$OPTARG"
+        ;;
+  l)    lflag=1
+        publicIp="$OPTARG"
+        ;;
+  s)    sflag=1
+        cidrs="$OPTARG"
+        ;;
+  d)    dflag=1
+        dport="$OPTARG"
+        ;;
+  G)    Gflag=1
+        ;;
+  ?)    usage
+        exit 2
+        ;;
   esac
 done
 
@@ -199,22 +199,27 @@ then
   exit $result
 fi
 
+if [ "$sflag" != "1" ]
+then
+    cidrs="0/0"
+fi
 
 case $protocol  in
-  tcp|udp)	
-		tcp_or_udp_entry $instanceIp $dport $publicIp $ports $op $protocol
+  tcp|udp)    
+        tcp_or_udp_entry $instanceIp $dport $publicIp $ports $op $protocol $cidrs
                 result=$?
                 [ "$result" -ne 0 ] && cat $OUTFILE >&2
                 rm -f $OUTFILE
-		exit $result
-		;;
+        exit $result
+        ;;
   "icmp")  
   
-		icmp_entry $instanceIp $icmptype $publicIp $op 
-		exit $?
+        icmp_entry $instanceIp $icmptype $publicIp $op 
+        exit $?
         ;;
       *)
         printf "Invalid protocol-- must be tcp, udp or icmp\n" >&2
         exit 5
         ;;
 esac
+
