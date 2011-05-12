@@ -41,7 +41,8 @@ create_htaccess() {
   local file=$4
   
   local result=0
-  
+  #rewrite rule in top level /latest folder to redirect 
+  #to vm specific folder based on source ip
   entry="RewriteRule ^$file$  ../$folder/%{REMOTE_ADDR}/$file [L,NC,QSA]"
   htaccessFolder="/var/www/html/latest"
   htaccessFile=$htaccessFolder/.htaccess
@@ -50,10 +51,25 @@ create_htaccess() {
   
   if [ $result -eq 0 ]
   then
+    #ensure that vm specific folder cannot be listed and that only 
+    #the vm that owns the data can access the items in this directory
     entry="Options -Indexes\\nOrder Deny,Allow\\nDeny from all\\nAllow from $vmIp"
     htaccessFolder="/var/www/html/$folder/$vmIp"
     htaccessFile=$htaccessFolder/.htaccess
     ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "mkdir -p $htaccessFolder; echo -e \"$entry\" > $htaccessFile" >/dev/null
+    result=$?
+  fi
+  
+  #support access by http://<dhcp server>/latest/<metadata key> (legacy, see above) also
+  # http://<dhcp server>/latest/meta-data/<metadata key> (correct)
+  if [ "$folder" == "metadata" ] || [ "$folder" == "meta-data" ]
+  then
+    entry="RewriteRule ^meta-data/(.+)$  ../$folder/%{REMOTE_ADDR}/\\\$1 [L,NC,QSA]"
+    htaccessFolder="/var/www/html/latest"
+    htaccessFile=$htaccessFolder/.htaccess
+    ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "grep -F \"$entry\" $htaccessFile; if [ \$? -gt 0 ]; then echo -e \"$entry\" >> $htaccessFile; fi" >/dev/null
+    entry="RewriteRule ^meta-data/$  ../$folder/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
+    ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "grep -F \"$entry\" $htaccessFile; if [ \$? -gt 0 ]; then echo -e \"$entry\" >> $htaccessFile; fi" >/dev/null
     result=$?
   fi
   
@@ -67,8 +83,16 @@ copy_vm_data_file() {
   local file=$4
   local dataFile=$5        
   
-  scp -P $PORT -o StrictHostKeyChecking=no -i $cert $dataFile root@$domrIp:/var/www/html/$folder/$vmIp/$file >/dev/null
-  ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "chmod 644 /var/www/html/$folder/$vmIp/$file" > /dev/null
+  dest=/var/www/html/$folder/$vmIp/$file
+  metamanifest=/var/www/html/$folder/$vmIp/meta-data
+  scp -P $PORT -o StrictHostKeyChecking=no -i $cert $dataFile root@$domrIp:$dest >/dev/null
+  ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "chmod 644 $dest" > /dev/null
+  ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "touch $metamanifest; chmod 644 $metamanifest" > /dev/null
+  if [ "$folder" == "metadata" ] || [ "$folder" == "meta-data" ]
+  then
+    ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "sed -i '/$file/d' $metamanifest; echo $file >> $metamanifest" > /dev/null
+  fi
+  
   return $?
 }
 
