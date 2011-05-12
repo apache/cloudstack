@@ -28,6 +28,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.UsageServerException;
 import com.cloud.utils.DateUtil;
@@ -43,6 +44,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     public static final Logger s_logger = Logger.getLogger(UsageEventDaoImpl.class.getName());
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
+    private final SearchBuilder<UsageEventVO> IpeventsSearch;
     private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type) " +
     		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.id <= ? ";
     private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type) " +
@@ -55,6 +57,14 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         latestEventsSearch.and("processed", latestEventsSearch.entity().isProcessed(), SearchCriteria.Op.EQ);
         latestEventsSearch.and("enddate", latestEventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
         latestEventsSearch.done();
+        
+        IpeventsSearch = createSearchBuilder();        
+        IpeventsSearch.and("startdate", IpeventsSearch.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
+        IpeventsSearch.and("enddate", IpeventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
+        IpeventsSearch.and().op("assignEvent", IpeventsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        IpeventsSearch.or("releaseEvent", IpeventsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        IpeventsSearch.closeParen();
+        IpeventsSearch.done();
     }
 
     @Override
@@ -159,4 +169,16 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             txn.close();
         }
     }
+
+    @Override
+    public List<UsageEventVO> listIpEvents(Date startDate, Date endDate) {
+        Filter filter = new Filter(UsageEventVO.class, "createDate", Boolean.TRUE, null, null);
+        SearchCriteria<UsageEventVO> sc = IpeventsSearch.create();
+        sc.setParameters("startdate", startDate);
+        sc.setParameters("enddate", endDate);
+        sc.setParameters("assignEvent", EventTypes.EVENT_NET_IP_ASSIGN);
+        sc.setParameters("releaseEvent", EventTypes.EVENT_NET_IP_RELEASE);
+        return listBy(sc, filter);
+    }
+
 }

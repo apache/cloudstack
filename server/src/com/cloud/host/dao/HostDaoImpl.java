@@ -799,4 +799,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         
         return secondaryStorageHosts;
     }
+    
+    @Override
+    public HostVO findTrafficMonitorHost() {
+        SearchCriteria<HostVO> sc = TypeSearch.create();
+        sc.setParameters("type", Host.Type.TrafficMonitor);
+        List<HostVO> trafficHosts = listBy(sc);
+        
+        if (trafficHosts == null || trafficHosts.size() < 1) {
+            return null;
+        } else {
+            return trafficHosts.get(0);
+        }
+    }
 }

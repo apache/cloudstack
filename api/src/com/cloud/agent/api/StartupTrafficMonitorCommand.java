@@ -16,25 +16,13 @@
  * 
  */
 
-package com.cloud.event.dao;
+package com.cloud.agent.api;
 
-import java.util.Date;
-import java.util.List;
+import com.cloud.host.Host;
 
-import com.cloud.event.UsageEventVO;
-import com.cloud.exception.UsageServerException;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
-
-public interface UsageEventDao extends GenericDao<UsageEventVO, Long> {
-    
-    public List<UsageEventVO> listLatestEvents(Date endDate);
-
-    public List<UsageEventVO> getLatestEvent();
-    
-    List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException;
-
-    List<UsageEventVO> listIpEvents(Date startDate, Date endDate);
+public class StartupTrafficMonitorCommand extends StartupCommand {
+    public StartupTrafficMonitorCommand() {
+        super(Host.Type.TrafficMonitor);
+    }
 
 }

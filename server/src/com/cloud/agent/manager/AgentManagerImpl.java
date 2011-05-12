@@ -69,6 +69,7 @@ import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.agent.manager.allocator.PodAllocator;
@@ -2386,6 +2387,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             type = Host.Type.PxeServer;
         } else if (startup instanceof StartupExternalDhcpCommand) {
             type = Host.Type.ExternalDhcp;
+        } else if (startup instanceof StartupTrafficMonitorCommand) {
+            type = Host.Type.TrafficMonitor;
         } else {
             assert false : "Did someone add a new Startup command?";
         }
@@ -2645,7 +2648,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         Long podId = null;
         if (p == null) {
-            if (type != Host.Type.SecondaryStorage && type != Host.Type.ExternalFirewall && type != Host.Type.ExternalLoadBalancer) {
+            if (type != Host.Type.SecondaryStorage && type != Host.Type.ExternalFirewall && type != Host.Type.ExternalLoadBalancer && type != Host.Type.TrafficMonitor) {
 
                 /*
                  * s_logger.info("Unable to find the pod so we are creating one." ); p = createPod(pod, dcId,

@@ -627,66 +627,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         @Override
         public void run() {
-            //Direct Network Usage
-            URL trafficSentinel;
-            try {
-                //Query traffic Sentinel
-                if(trafficSentinelHostname != null){
-                    trafficSentinel = new URL(trafficSentinelHostname+"/inmsf/Query?script=var+q+%3D+Query.topN(%22historytrmx%22,%0D%0A+++++++++++++++++%22ipsource,bytes%22,%0D%0A+++++++++++++++++%22sourcezone+!%3D+EXTERNAL" +
-                            "+%26+destinationzone+%3D+EXTERNAL%22,%0D%0A+++++++++++++++++%22end+-+5+minutes,+end%22,%0D%0A+++++++++++++++++%22bytes%22,%0D%0A+++++++++++++++++100000);%0D%0A%0D%0Avar+totalsSent+%3D+" +
-                            "{};%0D%0A%0D%0Avar+t+%3D+q.run(%0D%0A++function(row,table)+{%0D%0A++++if(row[0])+{++++%0D%0A++++++totalsSent[row[0]]+%3D+row[1];%0D%0A++++}%0D%0A++});%0D%0A%0D%0Avar+totalsRcvd+%3D+{};" +
-                            "%0D%0A%0D%0Avar+q+%3D+Query.topN(%22historytrmx%22,%0D%0A+++++++++++++++++%22ipdestination,bytes%22,%0D%0A+++++++++++++++++%22destinationzone+!%3D+EXTERNAL+%26+sourcezone+%3D+EXTERNAL%22," +
-                            "%0D%0A+++++++++++++++++%22end+-+5minutes,+end%22,%0D%0A+++++++++++++++++%22bytes%22,%0D%0A+++++++++++++++++100000);%0D%0A%0D%0Avar+t+%3D+q.run(%0D%0A++function(row,table)+{%0D%0A++++" +
-                            "if(row[0])+{%0D%0A++++++totalsRcvd[row[0]]+%3D+row[1];%0D%0A++++}%0D%0A++});%0D%0A%0D%0Afor+(var+addr+in+totalsSent)+{%0D%0A++++var+TS+%3D+0;%0D%0A++++var+TR+%3D+0;%0D%0A++++if(totalsSent[addr])" +
-                    "+TS+%3D+totalsSent[addr];%0D%0A++++if(totalsRcvd[addr])+TR+%3D+totalsRcvd[addr];%0D%0A++++println(addr+%2B+%22,%22+%2B+TS+%2B+%22,%22+%2B+TR);%0D%0A}&authenticate=basic&resultFormat=txt");
-
-                    BufferedReader in = new BufferedReader(
-                            new InputStreamReader(trafficSentinel.openStream()));
-
-                    String inputLine;
-
-                    while ((inputLine = in.readLine()) != null){
-                        //Parse the script output
-                        StringTokenizer st = new StringTokenizer(inputLine, ",");
-                        if(st.countTokens() == 3){
-                            String publicIp = st.nextToken();
-                            //Find the account owning the IP
-                            IPAddressVO ipaddress = _ipAddressDao.findByIpAddress(publicIp);
-                            if(ipaddress == null || ipaddress.getAccountId() == Account.ACCOUNT_ID_SYSTEM){
-                                continue;
-                            }
-                            Long bytesSent = new Long(st.nextToken());
-                            Long bytesRcvd = new Long(st.nextToken());
-                            if(bytesSent == null || bytesRcvd == null){
-                                s_logger.debug("Incorrect bytes for IP: "+publicIp);
-                            }
-                            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-                            txn.start();
-                            //update user_statistics
-                            UserStatisticsVO stats = _statsDao.lock(ipaddress.getAccountId(), ipaddress.getDataCenterId(), null, 0L, "DirectNetwork");
-                            if (stats == null) {
-                                stats = new UserStatisticsVO(ipaddress.getAccountId(), ipaddress.getDataCenterId(), null, 0L, "DirectNetwork", null);
-                                stats.setCurrentBytesSent(bytesSent);
-                                stats.setCurrentBytesReceived(bytesRcvd);
-                                _statsDao.persist(stats);
-                            } else {
-                                stats.setCurrentBytesSent(stats.getCurrentBytesSent() + bytesSent);
-                                stats.setCurrentBytesReceived(stats.getCurrentBytesReceived() + bytesRcvd);
-                                _statsDao.update(stats.getId(), stats);
-                            }
-                            txn.commit();
-                            txn.close();
-                        }
-                    }
-
-                    in.close();
-                }
-            } catch (MalformedURLException e1) {
-                s_logger.info("Invalid T raffic Sentinel URL",e1);
-            } catch (IOException e) {
-                s_logger.debug("Error in direct network usage accounting",e);
-            } 
-            
             
             final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
             s_logger.debug("Found " + routers.size() + " running routers. ");

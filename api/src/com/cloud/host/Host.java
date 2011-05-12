@@ -35,6 +35,7 @@ public interface Host {
         ExternalFirewall(false),
         ExternalLoadBalancer(false),
         PxeServer(false),
+        TrafficMonitor(false),
         ExternalDhcp(false);
         
         boolean _virtual;

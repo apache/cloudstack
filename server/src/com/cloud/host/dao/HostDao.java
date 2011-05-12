@@ -169,4 +169,5 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 
     boolean directConnect(HostVO host, long msId, boolean secondConnect);
 
+    HostVO findTrafficMonitorHost();
 }

@@ -52,6 +52,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCountForDashboard;
+    protected final SearchBuilder<IPAddressVO> AllocatedIpSearch;
     
     
     // make it public for JUnit test
@@ -96,6 +97,10 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCountForDashboard.and("dc", AllocatedIpCountForDashboard.entity().getDataCenterId(), Op.EQ);
         AllocatedIpCountForDashboard.and("allocated", AllocatedIpCountForDashboard.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpCountForDashboard.done();
+        
+        AllocatedIpSearch = createSearchBuilder();
+        AllocatedIpSearch.and("allocated", AllocatedIpSearch.entity().getAllocatedTime(), Op.NNULL);
+        AllocatedIpSearch.done();
     }
 
     @Override
@@ -269,9 +274,8 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
     
     @Override
-    public IPAddressVO findByIpAddress(String ipAddress) {
-        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("ipAddress", ipAddress);
-        return findOneBy(sc);
+    public List<IPAddressVO> listAllocatedIps() {
+        SearchCriteria<IPAddressVO> sc = AllocatedIpSearch.create();
+        return listBy(sc);
     }
 }
