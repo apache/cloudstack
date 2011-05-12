@@ -124,7 +124,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer {
 	private Map<AgentResourceBase, Map<String, String>> createAgentResources(
 			Map<String, Object> params) {
 		try {
-			s_logger.error("Creating Resources ...");
+			s_logger.info("Creating Resources ...");
 			SimulatorManagerImpl simMgr = SimulatorManagerImpl.getInstance();
 			simMgr.start();
 			return simMgr.createServerResources(params);
