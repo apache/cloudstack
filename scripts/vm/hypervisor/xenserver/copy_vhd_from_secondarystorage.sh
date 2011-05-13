@@ -88,6 +88,7 @@ copyvhd()
      exit 0
     fi
     if [ $type != "nfs" ]; then
+      dd if=$srcvhd of=$desvhd bs=512 seek=$(($(($vsize/512))-1)) count=1
       $VHDUTIL modify -s $vsize -n $desvhd
       if [ $? -ne 0 ]; then
         echo "32#failed to set new vhd physical size for vdi vdi $uuid"
