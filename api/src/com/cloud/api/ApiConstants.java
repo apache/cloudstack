@@ -116,6 +116,7 @@ public class ApiConstants {
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PASSWORD = "password";
+    public static final String NEW_PASSWORD = "new_password";
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String PATH = "path";
     public static final String POD_ID = "podid";

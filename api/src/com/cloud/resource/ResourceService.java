@@ -81,8 +81,6 @@ public interface ResourceService {
      */
     boolean deleteHost(long hostId, boolean isForced);
     
-    boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
-
     Host getHost(long hostId);
 
     Cluster getCluster(Long clusterId);

@@ -4697,8 +4697,13 @@ public class ManagementServerImpl implements ManagementServer {
             }
             DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
             if (nv.getValue().equals(cmd.getUsername())) {
-                DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                nvp.setValue(cmd.getPassword());
+                DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.NEW_PASSWORD);
+                if (nvp==null){
+                    nvp = new DetailVO(h.getId(), ApiConstants.NEW_PASSWORD, cmd.getPassword());
+                }
+                else {
+                    nvp.setValue(cmd.getPassword());
+                }
                 _detailsDao.persist(nvp);
             } else {
                 throw new InvalidParameterValueException("The username is not under use by management server.");
@@ -4715,8 +4720,13 @@ public class ManagementServerImpl implements ManagementServer {
                 // update password for this host
                 DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
                 if (nv.getValue().equals(cmd.getUsername())) {
-                    DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                    nvp.setValue(cmd.getPassword());
+                    DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.NEW_PASSWORD);
+                    if (nvp==null){
+                        nvp = new DetailVO(h.getId(), ApiConstants.NEW_PASSWORD, cmd.getPassword());
+                    }
+                    else {
+                        nvp.setValue(cmd.getPassword());
+                    }
                     _detailsDao.persist(nvp);
                 } else {
                     // if one host in the cluster has diff username then rollback to maintain consistency

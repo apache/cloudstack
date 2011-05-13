@@ -120,9 +120,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         UserContext callerContext = UserContext.current();
         boolean success = false;
         PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
-        // load cidrs if any
-        rule.setSourceCidrList(_rulesService.getSourceCidrs(rule.getId()));  
-        
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddressId(), callerContext.getCaller());
