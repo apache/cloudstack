@@ -232,6 +232,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (m_resourceCountLock.lock(120)) { // 2 minutes
             try {
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Incrementing the ResourceType." + type.toString() + " count for the account:" + accountId + " by " + numToIncrement);
+                }
+                
                 _resourceCountDao.updateAccountCount(accountId, type, true, numToIncrement);
 
                 // on a per-domain basis, increment the count
@@ -255,6 +260,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (m_resourceCountLock.lock(120)) { // 2 minutes
             try {
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Decrementing the ResourceType." + type.toString() + " count for the account:" + accountId + " by " + numToDecrement);
+                }
+
                 assert ((_resourceCountDao.getAccountCount(accountId, type) - numToDecrement) >= 0) : "Resource counts can not be negative. Check where we skipped increment.";
                 _resourceCountDao.updateAccountCount(accountId, type, false, numToDecrement);
 
