@@ -205,6 +205,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
     protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(17);
     protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(17);
+    protected List<Long> _loadingAgents = new ArrayList<Long>();
     protected int _monitorId = 0;
 
     protected NioServer _connection;
@@ -237,7 +238,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     @Inject
     protected StoragePoolDao _storagePoolDao = null;
     @Inject
-      protected StoragePoolHostDao _storagePoolHostDao = null;
+    protected StoragePoolHostDao _storagePoolHostDao = null;
     @Inject
     protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject
@@ -1420,6 +1421,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if (attache != null) {
             disconnect(attache, event, investigate);
         } else {
+            synchronized (_loadingAgents) {
+                if (_loadingAgents.contains(hostId)) {
+                    s_logger.info("Host " + hostId + " is being loaded so no disconnects needed.");
+                    return;
+                }
+            }
+
             HostVO host = _hostDao.findById(hostId);
             if (host != null && host.getRemoved() == null) {
                 if (event != null && event.equals(Event.Remove)) {
@@ -1694,50 +1702,65 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     protected AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState) throws IllegalArgumentException {
         HostVO host = null;
         if (id != null) {
-            host = _hostDao.findById(id);
-            if (!_hostDao.directConnect(host, _nodeId, false)) {
-                s_logger.info("MS " + host.getManagementServerId() + " is loading " + host);
-                return null;
+            synchronized (_loadingAgents) {
+                s_logger.debug("Adding to loading agents " + id);
+                _loadingAgents.add(id);
             }
         }
-
-        StartupCommand[] cmds = resource.initialize();
-        if (cmds == null) {
-            s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
-            if (id != null) {
-                _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
-            }
-            return null;
-        }
-
-        if (host != null) {
-            if (!_hostDao.directConnect(host, _nodeId, true)) {
-                host = _hostDao.findById(id);
-                s_logger.info("MS " + host.getManagementServerId() + " is loading " + host + " after it has been initialized.");
-                resource.disconnected();
-                return null;
-            }
-        }
-
         AgentAttache attache = null;
-        if (s_logger.isDebugEnabled()) {
-            new Request(0l, -1l, -1l, cmds, true, false, true).log(-1, "Startup request from directly connected host: ");
-            // s_logger.debug("Startup request from directly connected host: "
-            // + new Request(0l, -1l, -1l, cmds, true, false, true)
-            // .toString());
-        }
+        StartupCommand[] cmds = null;
         try {
-            attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState);
-        } catch (IllegalArgumentException ex) {
-            s_logger.warn("Unable to connect due to ", ex);
-            throw ex;
-        } catch (Exception e) {
-            s_logger.warn("Unable to connect due to ", e);
-        }
+            if (id != null) {
+                host = _hostDao.findById(id);
+                if (!_hostDao.directConnect(host, _nodeId, false)) {
+                    s_logger.info("MS " + host.getManagementServerId() + " is loading " + host);
+                    return null;
+                }
+            }
 
-        if (attache == null) {
-            resource.disconnected();
-            return null;
+            cmds = resource.initialize();
+            if (cmds == null) {
+                s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
+                return null;
+            }
+
+            if (host != null) {
+                if (!_hostDao.directConnect(host, _nodeId, true)) {
+                    host = _hostDao.findById(id);
+                    s_logger.info("MS " + host.getManagementServerId() + " is loading " + host + " after it has been initialized.");
+                    return null;
+                }
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                new Request(0l, -1l, -1l, cmds, true, false, true).log(-1, "Startup request from directly connected host: ");
+                // s_logger.debug("Startup request from directly connected host: "
+                // + new Request(0l, -1l, -1l, cmds, true, false, true)
+                // .toString());
+            }
+            try {
+                attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState);
+            } catch (IllegalArgumentException ex) {
+                s_logger.warn("Unable to connect due to ", ex);
+                throw ex;
+            } catch (Exception e) {
+                s_logger.warn("Unable to connect due to ", e);
+            }
+
+        } finally {
+            if (id != null) {
+                synchronized (_loadingAgents) {
+                    _loadingAgents.remove(id);
+                }
+            }
+            if (attache == null) {
+                if (cmds != null) {
+                    resource.disconnected();
+                }
+                if (host != null) {
+                    _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
+                }
+            }
         }
         return attache;
     }
