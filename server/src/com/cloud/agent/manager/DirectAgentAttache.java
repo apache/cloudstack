@@ -119,82 +119,87 @@ public class DirectAgentAttache extends AgentAttache {
             s_logger.info("StartupAnswer received " + startup.getHostId() + " Interval = " + interval );
             _futures.add(s_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
-	}
-	
+    }
+
     @Override
-    protected void finalize() {
-        assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources.  Ever considered why there's a method called disconnect()?";
-        synchronized(this) {
-            if (_resource != null) {
-                disconnect(Status.Alert);
+    protected void finalize() throws Throwable {
+        try {
+            assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources. Ever considered why there's a method called disconnect()?";
+            synchronized (this) {
+                if (_resource != null) {
+                    s_logger.warn("Lost attache for " + _id);
+                    disconnect(Status.Alert);
+                }
             }
+        } finally {
+            super.finalize();
         }
     }
-	
-	protected class PingTask implements Runnable {
-	    @Override
-	    public synchronized void run() {
-	        try {
-	            ServerResource resource = _resource;
-	            
-                if (resource != null) {                    
-        	        PingCommand cmd = resource.getCurrentStatus(_id);
-        	        if (cmd == null) {
-        	            s_logger.warn("Unable to get current status on " + _id);
-        	            _mgr.disconnect(DirectAgentAttache.this, Event.AgentDisconnected, true);
-        	            return;
-        	        }
+
+    protected class PingTask implements Runnable {
+        @Override
+        public synchronized void run() {
+            try {
+                ServerResource resource = _resource;
+
+                if (resource != null) {
+                    PingCommand cmd = resource.getCurrentStatus(_id);
+                    if (cmd == null) {
+                        s_logger.warn("Unable to get current status on " + _id);
+                        _mgr.disconnect(DirectAgentAttache.this, Event.AgentDisconnected, true);
+                        return;
+                    }
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Ping from " + _id);
                     }
-        	        long seq = _seq++;
-        	        
-        	        if (s_logger.isTraceEnabled()) {
-        	            s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(seq, _id, -1, cmd, false).toString());
-        	        }
+                    long seq = _seq++;
 
-        	        _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[]{cmd});
-	            } else {
-	                s_logger.debug("Unable to send ping because agent is disconnected " + _id);
-	            }
-	        } catch (Exception e) {
-	            s_logger.warn("Unable to complete the ping task", e);
-	        }
-	    }
-	}
-	
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(seq, _id, -1, cmd, false).toString());
+                    }
 
-	protected class Task implements Runnable {
-	    Request _req;
-	    
-	    public Task(Request req) {
-	        _req = req;
-	    }
-	    
-	    @Override
-	    public void run() {
+                    _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[]{cmd});
+                } else {
+                    s_logger.debug("Unable to send ping because agent is disconnected " + _id);
+                }
+            } catch (Exception e) {
+                s_logger.warn("Unable to complete the ping task", e);
+            }
+        }
+    }
+
+
+    protected class Task implements Runnable {
+        Request _req;
+
+        public Task(Request req) {
+            _req = req;
+        }
+
+        @Override
+        public void run() {
             long seq = _req.getSequence();
             try {
                 ServerResource resource = _resource;
-    	        Command[] cmds = _req.getCommands();
-    	        boolean stopOnError = _req.stopOnError();
-    
-    	        if (s_logger.isDebugEnabled()) {
-    	            s_logger.debug(log(seq, "Executing request"));
-    	        }
-    	        ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
-    	        for (int i = 0; i < cmds.length; i++) {
-    	            Answer answer = null;
-    	            try {
-    	                if (resource != null) {
-    	                    answer = resource.executeRequest(cmds[i]);
-    	                } else {
-    	                    answer = new Answer(cmds[i], false, "Agent is disconnected");
-    	                }
-    	            } catch (Exception e) {
-    	                s_logger.warn(log(seq, "Exception Caught while executing command"), e);
-    	                answer = new Answer(cmds[i], false, e.toString());
-    	            }
+                Command[] cmds = _req.getCommands();
+                boolean stopOnError = _req.stopOnError();
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(log(seq, "Executing request"));
+                }
+                ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
+                for (int i = 0; i < cmds.length; i++) {
+                    Answer answer = null;
+                    try {
+                        if (resource != null) {
+                            answer = resource.executeRequest(cmds[i]);
+                        } else {
+                            answer = new Answer(cmds[i], false, "Agent is disconnected");
+                        }
+                    } catch (Exception e) {
+                        s_logger.warn(log(seq, "Exception Caught while executing command"), e);
+                        answer = new Answer(cmds[i], false, e.toString());
+                    }
                     answers.add(answer);
                     if (!answer.getResult() && stopOnError) {
                         if (i < cmds.length - 1 && s_logger.isDebugEnabled()) {
@@ -202,17 +207,17 @@ public class DirectAgentAttache extends AgentAttache {
                         }
                         break;
                     }
-    	        }
-    	        
-    	        Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
-    	        if (s_logger.isDebugEnabled()) {
-    	            s_logger.debug(log(seq, "Response Received: "));
-    	        }
-    	        
-    	        processAnswers(seq, resp);
-    	    } catch (Exception e) {
-    	        s_logger.warn(log(seq, "Exception caught "), e);
-    	    }
-	    }
-	}
+                }
+
+                Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(log(seq, "Response Received: "));
+                }
+
+                processAnswers(seq, resp);
+            } catch (Exception e) {
+                s_logger.warn(log(seq, "Exception caught "), e);
+            }
+        }
+    }
 }
