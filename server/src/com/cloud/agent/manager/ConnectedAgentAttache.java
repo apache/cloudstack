@@ -33,7 +33,7 @@ import com.cloud.utils.nio.Link;
  */
 public class ConnectedAgentAttache extends AgentAttache {
     private static final Logger s_logger = Logger.getLogger(ConnectedAgentAttache.class);
-    
+
     protected Link _link;
 
     public ConnectedAgentAttache(AgentManager agentMgr, final long id, final Link link, boolean maintenance) {
@@ -49,12 +49,12 @@ public class ConnectedAgentAttache extends AgentAttache {
             throw new AgentUnavailableException("Channel is closed", _id);
         }
     }
-    
+
     @Override
     public synchronized boolean isClosed() {
         return _link == null;
     }
-    
+
     @Override
     public void disconnect(final Status state) {
         synchronized (this) {
@@ -76,17 +76,22 @@ public class ConnectedAgentAttache extends AgentAttache {
             return super.equals(obj) && this._link == that._link && this._link != null;
         } catch (ClassCastException e) {
             assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to " + this.getClass().getSimpleName() + ".equals()? ";
-            return false;
+        return false;
         }
     }
-    
+
     @Override
-    public void finalize() {
-        assert _link == null : "Duh...Says you....Forgot to call disconnect()!";
-        synchronized(this) {
-            if (_link != null) {
-                disconnect(Status.Alert);
+    protected void finalize() throws Throwable {
+        try {
+            assert _link == null : "Duh...Says you....Forgot to call disconnect()!";
+            synchronized (this) {
+                if (_link != null) {
+                    s_logger.warn("Lost attache " + _id);
+                    disconnect(Status.Alert);
+                }
             }
+        } finally {
+            super.finalize();
         }
     }
 }
