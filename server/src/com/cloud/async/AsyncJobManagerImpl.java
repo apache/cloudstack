@@ -50,7 +50,9 @@ import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -81,6 +83,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     private AsyncJobExecutorContext _context;
     private SyncQueueManager _queueMgr;
     private ClusterManager _clusterMgr;
+    private AccountManager _accountMgr;
     private AccountDao _accountDao;
     private AsyncJobDao _jobDao;
     private long _jobExpireSeconds = 86400;						// 1 day
@@ -273,10 +276,24 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     
     @Override
     public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+
         AsyncJobVO job = _jobDao.findById(cmd.getId());
         if (job == null) {
             throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
         }
+        Account jobOwner = _accountMgr.getAccount(job.getAccountId());
+        
+        //check permissions
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            //regular user can see only jobs he owns
+            if (caller.getId() != jobOwner.getId()) {
+                throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
+            }
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            _accountMgr.checkAccess(caller, jobOwner);
+        }
+        
         return queryAsyncJobResult(cmd.getId());
     }
 
@@ -658,6 +675,8 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 		}
 		
 		_clusterMgr = locator.getManager(ClusterManager.class);
+		
+		_accountMgr = locator.getManager(AccountManager.class);
 
 		_dispatcher = ApiDispatcher.getInstance();
 
