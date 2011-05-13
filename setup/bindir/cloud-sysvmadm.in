@@ -37,8 +37,6 @@ do
   h)    help=1
         ;;
   m)    ms="$OPTARG"
-        ;;
-  ?)    usage
   esac
 done
 
