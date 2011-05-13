@@ -51,14 +51,13 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	 */
 	List<HostVO> listSecondaryStorageHosts();
 
-	/**
-	 * Mark all hosts in Up or Orphaned state as disconnected.  This method
-	 * is used at AgentManager startup to reset all of the connections.
-	 *
-	 * @param msId management server id.
-     * @param statuses states of the host.
-	 */
-	void markHostsAsDisconnected(long msId, Status... states);
+    /**
+     * Mark all hosts associated with a certain management server
+     * as disconnected.
+     * 
+     * @param msId management server id.
+     */
+    void markHostsAsDisconnected(long msId);
 
 	List<HostVO> findLostHosts(long timeout);
 

@@ -354,7 +354,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             _nodeId = MacAddress.getMacAddress().toLong();
         }
 
-        _hostDao.markHostsAsDisconnected(_nodeId, Status.Up, Status.Connecting, Status.Updating, Status.Disconnected, Status.Down);
+        _hostDao.markHostsAsDisconnected(_nodeId);
 
         _monitor = new AgentMonitor(_nodeId, _hostDao, _volDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);
