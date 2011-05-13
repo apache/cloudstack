@@ -89,9 +89,16 @@ KeyboardMapper.prototype = {
 				if(this.charCodeMap && this.charCodeMap[code])
 					mappedEntry = this.charCodeMap[code];
 			}
-			
+
+			// reset deferred charCode->keyCode resolution
+			this.lastDeferedKeyCode = 0;
 			if(mappedEntry) {
 				if(mappedEntry.shift) {
+					if(mappedEntry.keyCode) {
+						this.mappedInput.push({type: AjaxViewer.KEY_DOWN, code: AjaxViewer.KEYCODE_SHIFT, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+						this.mappedInput.push({type: AjaxViewer.KEY_DOWN, code: mappedEntry.keyCode, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+						this.lastDeferedKeyCode = mappedEntry.keyCode;
+					}
 					this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
 					
 					if((modifiers & AjaxViewer.SHIFT_KEY) != 0)
@@ -99,6 +106,10 @@ KeyboardMapper.prototype = {
 					else
 						g_logger.log(Logger.LEVEL_INFO, "map char code " + code + " to SHIFTED " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
 				} else {
+					if(mappedEntry.keyCode) {
+						this.mappedInput.push({type: AjaxViewer.KEY_DOWN, code: mappedEntry.keyCode, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+						this.lastDeferedKeyCode = mappedEntry.keyCode;
+					}
 					this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
 	
 					if((modifiers & AjaxViewer.SHIFT_KEY) != 0)
@@ -123,13 +134,20 @@ KeyboardMapper.prototype = {
 			if(mappedEntry) {
 				if(mappedEntry.shift) {
 					if(eventType == AjaxViewer.KEY_DOWN) {
-						this.mappedInput.push({type: AjaxViewer.KEY_DOWN, code: AjaxViewer.KEYCODE_SHIFT, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
-						this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
-						
-						if(mappedEntry.charCode)
-							this.mappedInput.push({type: AjaxViewer.KEY_PRESS, code: mappedEntry.charCode, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+						if(!mappedEntry.defer) {
+							this.mappedInput.push({type: AjaxViewer.KEY_DOWN, code: AjaxViewer.KEYCODE_SHIFT, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+							this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+							
+							if(mappedEntry.charCode)
+								this.mappedInput.push({type: AjaxViewer.KEY_PRESS, code: mappedEntry.charCode, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+						}
 					} else {
-						this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+						if(!mappedEntry.defer) {
+							this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+						} else {
+							this.mappedInput.push({type: eventType, code: this.lastDeferedKeyCode, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+						}
+						
 						this.mappedInput.push({type: AjaxViewer.KEY_UP, code: AjaxViewer.KEYCODE_SHIFT, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
 					}
 					
@@ -138,8 +156,10 @@ KeyboardMapper.prototype = {
 					else
 						g_logger.log(Logger.LEVEL_INFO, "map key code " + code + " to SHIFTED " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
 				} else {
-					this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
-	
+					if(eventType != AjaxViewer.KEY_DOWN || !mappedEntry.defer) {
+						this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+					}
+						
 					if((modifiers & AjaxViewer.SHIFT_KEY) != 0)
 						g_logger.log(Logger.LEVEL_INFO, "map SHIFTED key code " + code + " to " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
 					else
@@ -433,8 +453,11 @@ AjaxViewer.prototype = {
 		shiftedKeyCodeMap[48] = { code: 192, shift : 1 };			// EN `/~)' -> JP 0/~
 		shiftedCharCodeMap[41] = { code: 126, shift : 1 };
 
-		keyCodeMap[107] = { code: 54, shift : 1 };					// JP  ^/_	
-		charCodeMap[61] = { code: 94, shift : 1 };
+		keyCodeMap[107] = { code: 107, shift : 1, defer : true };	// JP NUM +
+		charCodeMap[43] = { code: 43, shift : 1, keyCode: 107 };
+		
+		// keyCodeMap[107] = { code: 54, shift : 1, defer : true };	// JP  ^/_	
+		charCodeMap[61] = { code: 94, shift : 1, keyCode: 54 };
 		shiftedKeyCodeMap[107] = { code: 109, shift : 1 };			
 		shiftedCharCodeMap[43] = { code: 95, shift : 1 };
 
@@ -472,8 +495,6 @@ AjaxViewer.prototype = {
 		keyCodeMap[106] = { code: 56, shift : 1 };					// JP NUM *
 		charCodeMap[42] = { code: 42, shift : 1 };
 		
-		//keyCodeMap[107] = { code: 107, shift : 1 };					// JP NUM +
-		//charCodeMap[43] = { code: 43, shift : 1 };
 		
 		keyCodeMap[110] = { code: 190, shift : 0 };					// JP NUM .
 		charCodeMap[46] = { code: 46, shift : 0 };
