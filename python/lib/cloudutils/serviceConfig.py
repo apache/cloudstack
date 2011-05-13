@@ -73,7 +73,8 @@ class networkConfigBase:
         preCfged = False
         for br in self.syscfg.env.nics:
             if not self.netcfg.isNetworkDev(br):
-                raise CloudInternalException("%s is not a network device, is it down?"%br)
+                logging.debug("%s is not a network device, is it down?"%br)
+                return False
             if not self.netcfg.isBridge(br):
                 raise CloudInternalException("%s is not a bridge"%br)
             preCfged = True
