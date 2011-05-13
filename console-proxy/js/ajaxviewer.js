@@ -62,47 +62,103 @@ function KeyboardMapper(nativeKeypress, keyCodeMap, shiftedKeyCodeMap, charCodeM
 	this.shiftedKeyCodeMap = shiftedKeyCodeMap;
 	this.charCodeMap = charCodeMap;
 	this.shiftedCharCodeMap = shiftedCharCodeMap;
+	
+	this.mappedInput = [];
 }
 
 KeyboardMapper.prototype = {
 	supportNativeKeypress : function() {
 		return this.nativeKeypress;
 	},
-
-	mapKeyCode : function(code, modifiers) {
-		if((modifiers & AjaxViewer.SHIFT_KEY) != 0) {
-			if(this.shiftedKeyCodeMap && this.shiftedKeyCodeMap[code]) {
-				g_logger.log(Logger.LEVEL_INFO, "map SHIFTED keycode " + code + " to " +  this.shiftedKeyCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
-				return this.shiftedKeyCodeMap[code];
-			} else {
-				g_logger.log(Logger.LEVEL_INFO, "map SHIFTED keycode " + code + " to " +  code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
-			}
-		} else {
-			if(this.keyCodeMap && this.keyCodeMap[code]) {
-				g_logger.log(Logger.LEVEL_INFO, "map keycode " + code + " to " +  this.keyCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
-				return this.keyCodeMap[code];
-			} else {
-				g_logger.log(Logger.LEVEL_INFO, "map keycode " + code + " to " +  code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
-			}
+	
+	inputFeed : function(eventType, code, modifiers) {
+		if(this.nativeKeypress) {
+			this.mappedInput.push({type: eventType, code: code, modifiers: modifiers});
+			return;
 		}
 		
-		return code;
-	},
+		if(code == AjaxViewer.SHIFT_KEY && eventType == AjaxViewer.KEY_DOWN)
+			return;
+		
+		if(eventType == AjaxViewer.KEY_PRESS) {
+			var mappedEntry = null;
+			if((modifiers & AjaxViewer.SHIFT_KEY) != 0) {
+				if(this.shiftedCharCodeMap && this.shiftedCharCodeMap[code])
+					mappedEntry = this.shiftedCharCodeMap[code];
+			} else {
+				if(this.charCodeMap && this.charCodeMap[code])
+					mappedEntry = this.charCodeMap[code];
+			}
+			
+			if(mappedEntry) {
+				if(mappedEntry.shift) {
+					this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+					
+					if((modifiers & AjaxViewer.SHIFT_KEY) != 0)
+						g_logger.log(Logger.LEVEL_INFO, "map SHIFTED char code " + code + " to SHIFTED " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+					else
+						g_logger.log(Logger.LEVEL_INFO, "map char code " + code + " to SHIFTED " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+				} else {
+					this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
 	
-	mapCharCode : function(code, modifiers) {
-		if((modifiers & AjaxViewer.SHIFT_KEY) != 0) {
-			if(this.shiftedCharCodeMap && this.shiftedCharCodeMap[code]) {
-				g_logger.log(Logger.LEVEL_INFO, "map SHIFTED keycode " + code + " to charcode " +  this.shiftedCharCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
-				return this.shiftedCharCodeMap[code];
+					if((modifiers & AjaxViewer.SHIFT_KEY) != 0)
+						g_logger.log(Logger.LEVEL_INFO, "map SHIFTED char code " + code + " to " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+					else
+						g_logger.log(Logger.LEVEL_INFO, "map char code " + code + " to " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+				}
+			} else {
+				if(code != 0)
+					this.mappedInput.push({type: eventType, code: code, modifiers: modifiers});
 			}
 		} else {
-			if(this.charCodeMap && this.charCodeMap[code]) {
-				g_logger.log(Logger.LEVEL_INFO, "map keycode " + code + " to charcode " +  this.shiftedCharCodeMap[code] + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
-				return this.charCodeMap[code];
+			var mappedEntry = null;
+			if((modifiers & AjaxViewer.SHIFT_KEY) != 0) {
+				if(this.shiftedKeyCodeMap && this.shiftedKeyCodeMap[code])
+					mappedEntry = this.shiftedKeyCodeMap[code];
+			} else {
+				if(this.keyCodeMap && this.keyCodeMap[code])
+					mappedEntry = this.keyCodeMap[code];
+			}
+			
+			if(mappedEntry) {
+				if(mappedEntry.shift) {
+					if(eventType == AjaxViewer.KEY_DOWN) {
+						this.mappedInput.push({type: AjaxViewer.KEY_DOWN, code: AjaxViewer.KEYCODE_SHIFT, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+						this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+						
+						if(mappedEntry.charCode)
+							this.mappedInput.push({type: AjaxViewer.KEY_PRESS, code: mappedEntry.charCode, modifiers: modifiers | AjaxViewer.SHIFT_KEY});
+					} else {
+						this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+						this.mappedInput.push({type: AjaxViewer.KEY_UP, code: AjaxViewer.KEYCODE_SHIFT, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+					}
+					
+					if((modifiers & AjaxViewer.SHIFT_KEY) != 0)
+						g_logger.log(Logger.LEVEL_INFO, "map SHIFTED key code " + code + " to SHIFTED " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+					else
+						g_logger.log(Logger.LEVEL_INFO, "map key code " + code + " to SHIFTED " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+				} else {
+					this.mappedInput.push({type: eventType, code: mappedEntry.code, modifiers: modifiers & ~AjaxViewer.SHIFT_KEY});
+	
+					if((modifiers & AjaxViewer.SHIFT_KEY) != 0)
+						g_logger.log(Logger.LEVEL_INFO, "map SHIFTED key code " + code + " to " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+					else
+						g_logger.log(Logger.LEVEL_INFO, "map key code " + code + " to " +  mappedEntry.code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+				}
+			} else {
+				this.mappedInput.push({type: eventType, code: code, modifiers: modifiers});
 			}
 		}
-			
-		return undefined;
+	},
+	
+	getMappedInput : function() {
+		var mappedInput = this.mappedInput;
+		this.mappedInput = [];
+		return mappedInput;
+	},
+	
+	isModifierInput : function(code) {
+		return $.inArray(code, [AjaxViewer.ALT_KEY, AjaxViewer.SHIFT_KEY, AjaxViewer.CTRL_KEY, AjaxViewer.META_KEY]) >= 0;
 	}
 };
 
@@ -192,6 +248,36 @@ AjaxViewer.STATUS_SENT = 4;
 
 AjaxViewer.KEYBOARD_TYPE_ENGLISH = 0;
 AjaxViewer.KEYBOARD_TYPE_JAPANESE = 1;
+
+AjaxViewer.getEventName = function(type) {
+	switch(type) {
+	case AjaxViewer.MOUSE_MOVE :
+		return "MOUSE_MOVE";
+		
+	case AjaxViewer.MOUSE_DOWN :
+		return "MOUSE_DOWN";
+		
+	case AjaxViewer.MOUSE_UP :
+		return "MOUSE_UP";
+		
+	case AjaxViewer.KEY_PRESS :
+		return "KEY_PRESS";
+		
+	case AjaxViewer.KEY_DOWN :
+		return "KEY_DOWN";
+		
+	case AjaxViewer.KEY_UP :
+		return "KEY_UP";
+		
+	case AjaxViewer.EVENT_BAG :
+		return "EVENT_BAG";
+		
+	case AjaxViewer.MOUSE_DBLCLK :
+		return "MOUSE_DBLCLK";
+	}
+	
+	return "N/A";
+};
 
 AjaxViewer.prototype = {
 	setDirty: function(value) {
@@ -329,12 +415,68 @@ AjaxViewer.prototype = {
 		var charCodeMap = [];
 		var shiftedCharCodeMap = [];
 		
-		shiftedKeyCodeMap[50] = 222;		// EN 2/@ -> JP 2/"
-		shiftedCharCodeMap[50] = 34;
+		shiftedKeyCodeMap[50] 	= { code: 222, shift: 1 } ;			// EN 2/@ -> JP 2/"
+		shiftedCharCodeMap[64] 	= { code: 34, shift: 1 };
 		
-		shiftedKeyCodeMap[54] = 55;			// EN 6/^ -> JP 6/&
-		shiftedCharCodeMap[94] = 38;
+		shiftedKeyCodeMap[54] = { code: 55, shift : 1 };			// EN 6/^ -> JP 6/&
+		shiftedCharCodeMap[94] = { code: 38, shift : 1 };
+		
+		shiftedKeyCodeMap[55] = { code: 222, shift : 0 };			// EN '/' -> JP 7/'
+		shiftedCharCodeMap[38] = { code: 39, shift : 0 };
+		
+		shiftedKeyCodeMap[56] = { code: 57, shift : 1 };			// EN 9/'(' -> JP 8/(
+		shiftedCharCodeMap[42] = { code: 40, shift : 1 };
+		
+		shiftedKeyCodeMap[57] = { code: 48, shift : 1 };			// EN 0/')' -> JP 9/)
+		shiftedCharCodeMap[40] = { code: 41, shift : 1 };
 
+		shiftedKeyCodeMap[48] = { code: 192, shift : 1 };			// EN `/~)' -> JP 0/~
+		shiftedCharCodeMap[41] = { code: 126, shift : 1 };
+
+		keyCodeMap[107] = { code: 54, shift : 1 };					// JP  ^/_	
+		charCodeMap[61] = { code: 94, shift : 1 };
+		shiftedKeyCodeMap[107] = { code: 109, shift : 1 };			
+		shiftedCharCodeMap[43] = { code: 95, shift : 1 };
+
+		shiftedKeyCodeMap[109] = { code: 107, shift : 0 };
+		shiftedCharCodeMap[95] = { code: 61, shift : 0 };
+
+		shiftedKeyCodeMap[255] = { code: 220, shift : 1, charCode: 124 };	// EN \/| -> JP |
+		
+		keyCodeMap[219] = { code: 50, shift : 1 };					// EN 2/@' -> JP @/`
+		charCodeMap[91] = { code: 64, shift : 1 };
+		shiftedKeyCodeMap[219] = { code: 192, shift : 0 };			// EN `/~)' -> JP 0/~
+		shiftedCharCodeMap[123] = { code: 96, shift : 0 };
+		
+		keyCodeMap[221] = { code: 219, shift : 0 };					// EN [/{' -> JP [/{
+		charCodeMap[93] = { code: 91, shift : 0 };
+		shiftedKeyCodeMap[221] = { code: 219, shift : 1 };
+		shiftedCharCodeMap[125] = { code: 123, shift : 1 };
+
+		shiftedKeyCodeMap[59] = { code: 107, shift : 1 };			// EN =/+  -> JP ;/+
+		shiftedCharCodeMap[58] = { code: 43, shift : 1 };
+
+		keyCodeMap[222] = { code: 59, shift : 1 };					// EN ;/:' -> JP :/*
+		charCodeMap[39] = { code: 58, shift : 1 };
+		shiftedKeyCodeMap[222] = { code: 56, shift : 1 };
+		shiftedCharCodeMap[34] = { code: 42, shift : 1 };
+		
+		keyCodeMap[220] = { code: 221, shift : 0 };					// EN ]/}' -> JP ]/}
+		charCodeMap[92] = { code: 93, shift : 0 };
+		shiftedKeyCodeMap[220] = { code: 221, shift : 1 };
+		shiftedCharCodeMap[124] = { code: 125, shift : 1 };
+		
+		keyCodeMap[193] = { code: 220, shift : 0, charCode: 92 };					// EN ]/}' -> JP ]/}
+		shiftedKeyCodeMap[193] = { code: 109, shift : 0, charCode : 45 };
+		
+		keyCodeMap[106] = { code: 56, shift : 1 };					// JP NUM *
+		charCodeMap[42] = { code: 42, shift : 1 };
+		
+		//keyCodeMap[107] = { code: 107, shift : 1 };					// JP NUM +
+		//charCodeMap[43] = { code: 43, shift : 1 };
+		
+		keyCodeMap[110] = { code: 190, shift : 0 };					// JP NUM .
+		charCodeMap[46] = { code: 46, shift : 0 };
 		
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(false, keyCodeMap, shiftedKeyCodeMap, 
 			charCodeMap, shiftedCharCodeMap);
@@ -496,7 +638,7 @@ AjaxViewer.prototype = {
 		}
 			
 		var len;
-		g_logger.log(Logger.LEVEL_INFO, "Keyboard event: " + event + ", code: " + code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
+		g_logger.log(Logger.LEVEL_INFO, "Keyboard event: " + AjaxViewer.getEventName(event) + ", code: " + code + ", modifiers: " + modifiers + ', char: ' + String.fromCharCode(code));
 		this.eventQueue.push({
 			type: AjaxViewer.EVENT_QUEUE_KEYBOARD_EVENT,
 			event: event,
@@ -971,10 +1113,6 @@ AjaxViewer.prototype = {
 		var target = $(document);
 
 		target.keypress(function(e) {
-			var keyboardMapper = ajaxViewer.getCurrentKeyboardMapper();
-			if(!keyboardMapper.supportNativeKeypress())
-				return true;
-			
 			ajaxViewer.onKeyPress(e.which, ajaxViewer.getKeyModifiers(e));
 
 			e.stopPropagation();
@@ -986,15 +1124,7 @@ AjaxViewer.prototype = {
 		});
 		
 		target.keydown(function(e) {
-			var keyboardMapper = ajaxViewer.getCurrentKeyboardMapper();
-
-			ajaxViewer.onKeyDown(keyboardMapper.mapKeyCode(e.which, ajaxViewer.getKeyModifiers(e)), ajaxViewer.getKeyModifiers(e));
-			
-			if(!keyboardMapper.supportNativeKeypress()) {
-				var charCode = keyboardMapper.mapCharCode(e.which, ajaxViewer.getKeyModifiers(e));
-				if(charCode)
-					ajaxViewer.onKeyPress(charCode, ajaxViewer.getKeyModifiers(e));
-			}
+			ajaxViewer.onKeyDown(e.which, ajaxViewer.getKeyModifiers(e));
 			
 			e.stopPropagation();
 			if(ajaxViewer.requiresDefaultKeyProcess(e))
@@ -1052,15 +1182,39 @@ AjaxViewer.prototype = {
 	},
 	
 	onKeyPress: function(code, modifiers) {
-		this.sendKeyboardEvent(AjaxViewer.KEY_PRESS, code, modifiers);
+		this.dispatchKeyboardInput(AjaxViewer.KEY_PRESS, code, modifiers);
 	},
 	
 	onKeyDown: function(code, modifiers) {
-		this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, code, modifiers);
+		this.dispatchKeyboardInput(AjaxViewer.KEY_DOWN, code, modifiers);
 	},
 	
 	onKeyUp: function(code, modifiers) {
-		this.sendKeyboardEvent(AjaxViewer.KEY_UP, code, modifiers);
+		this.dispatchKeyboardInput(AjaxViewer.KEY_UP, code, modifiers);
+	},
+	
+	dispatchKeyboardInput : function(event, code, modifiers) {
+		var keyboardMapper = ajaxViewer.getCurrentKeyboardMapper();
+		keyboardMapper.inputFeed(event, code, modifiers);
+		this.dispatchMappedKeyboardInput(keyboardMapper.getMappedInput());
+	},
+	
+	dispatchMappedKeyboardInput : function(mappedInput) {
+		for(var i = 0; i < mappedInput.length; i++) {
+			switch(mappedInput[i].type) {
+			case AjaxViewer.KEY_DOWN :
+				this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, mappedInput[i].code, mappedInput[i].modifiers);
+				break;
+				
+			case AjaxViewer.KEY_UP :
+				this.sendKeyboardEvent(AjaxViewer.KEY_UP, mappedInput[i].code, mappedInput[i].modifiers);
+				break;
+				
+			case AjaxViewer.KEY_PRESS :
+				this.sendKeyboardEvent(AjaxViewer.KEY_PRESS, mappedInput[i].code, mappedInput[i].modifiers);
+				break;
+			}
+		}
 	},
 	
 	getKeyModifiers: function(e) {
