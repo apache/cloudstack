@@ -71,6 +71,8 @@ body {
 #toolbar ul li ul {
     position: absolute;
     top:32;
+    width: 130;
+    height: 66;
     display: block;
     display: none;
     border-top: 1px solid black;
@@ -93,6 +95,7 @@ body {
     padding:0 3px 0 3px; 
     text-decoration:none;
     line-height:32px;
+    vertical-align: bottom;    /* this is to fix the list gap in IE */
 }
 
 #toolbar ul li ul li a:hover {

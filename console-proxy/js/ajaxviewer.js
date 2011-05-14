@@ -513,6 +513,8 @@ AjaxViewer.prototype = {
 		pullDownElement.hover(
 			function(e) {
 				var subMenu = pullDownElement.find("ul");
+				var offset = subMenu.parent().offset();
+				subMenu.css("left", offset.left);
 			
 				$("li.current").removeClass("current");
 				$("li:eq(" + ajaxViewer.currentKeyboard + ")", subMenu).addClass("current");
