@@ -40,7 +40,8 @@ public interface SecondaryStorageVmManager extends Manager {
 	public boolean destroySecStorageVm(long ssVmVmId);
 	public void onAgentConnect(Long dcId, StartupCommand cmd);
 	public boolean  generateFirewallConfiguration(Long agentId);
-	public boolean generateSetupCommand(Long zoneId);
+	public boolean generateVMSetupCommand(Long hostId);
 	
 	public Pair<HostVO, SecondaryStorageVmVO> assignSecStorageVm(long zoneId, Command cmd);
+    boolean generateSetupCommand(Long hostId);
 }

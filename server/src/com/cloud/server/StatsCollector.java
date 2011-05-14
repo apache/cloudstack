@@ -248,17 +248,11 @@ public class StatsCollector {
 	class StorageCollector implements Runnable {
 		@Override
         public void run() {
-			try {
-				SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();				
-				ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
-				List<HostVO> hosts = _hostDao.search(sc, null);
-				
-                sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-                sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.SecondaryStorage.toString());
-                
-                hosts = _hostDao.search(sc, null);
+			try {               
+                List<HostVO> hosts = _hostDao.listSecondaryStorageHosts();
+                ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
                 for (HostVO host : hosts) {
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(host.getGuid());
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(host.getStorageUrl());
                     long hostId = host.getId();
                     Answer answer = _agentMgr.easySend(hostId, command);
                     if (answer != null && answer.getResult()) {

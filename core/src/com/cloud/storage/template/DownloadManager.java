@@ -24,6 +24,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -90,20 +91,12 @@ public interface DownloadManager extends Manager {
 	 * @param cmd cmd from server
 	 * @return answer representing status of download.
 	 */
-	public DownloadAnswer handleDownloadCommand(DownloadCommand cmd);
+	public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd);
 	
-	/**
-	 * List the paths of the public templates successfully installed in the public templates location
-	 * @return
-	 */
-	public List<String> listPublicTemplates();
 	
 	/**
 	/**
 	 * @return list of template info for installed templates
 	 */
-	public Map<String, TemplateInfo> gatherTemplateInfo();
-	   
-    public String getPublicTemplateRepo();
-
+	public Map<String, TemplateInfo> gatherTemplateInfo(String templateDir);
 }

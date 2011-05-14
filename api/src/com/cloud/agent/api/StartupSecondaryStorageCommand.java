@@ -15,28 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.agent.api;
 
-package com.cloud.agent.api.storage;
+import com.cloud.host.Host;
 
-
-public class DeleteTemplateCommand extends ssCommand {
-	private String templatePath;
-
-
-	public DeleteTemplateCommand() {	
-	}
-	
-	public DeleteTemplateCommand(String secUrl, String templatePath) {
-	    this.setSecUrl(secUrl);
-    	this.templatePath = templatePath;
+public class StartupSecondaryStorageCommand extends StartupCommand {
+    
+	public StartupSecondaryStorageCommand() {
+        super(Host.Type.ConsoleProxy);
+        setIqn("NoIqn");
     }
 	
-	@Override
+    @Override
     public boolean executeInSequence() {
         return true;
     }
-	
-	public String getTemplatePath() {
-		return templatePath;
-	}
 }

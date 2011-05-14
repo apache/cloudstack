@@ -38,12 +38,16 @@ public interface DownloadMonitor extends Manager{
 	
 	public void cancelAllDownloads(Long templateId);
 
-	public void handleTemplateSync(long id, Map<String, TemplateInfo> templateInfo);
+	public void handleTemplateSync(HostVO host);
 
 	public void copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer)
 			throws StorageUnavailableException;
 
 	/*When new host added, take a look at if there are templates needed to be downloaded for the same hypervisor as the host*/
     void handleSysTemplateDownload(HostVO hostId);
+
+    void handleTemplateSync(long dcId);
+
+    void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateInfo> templateInfos);
 
 }

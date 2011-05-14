@@ -39,6 +39,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
     private static final String GET_LAST_SNAPSHOT = "SELECT id FROM snapshots where volume_id = ? AND id != ? AND path IS NOT NULL ORDER BY created DESC";
     private static final String UPDATE_SNAPSHOT_VERSION = "UPDATE snapshots SET version = ? WHERE volume_id = ? AND version = ?";
+    private static final String GET_SECHOST_ID = "SELECT sechost_id FROM snapshots where volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
     
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
@@ -129,6 +130,23 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
        
     }
     
+    @Override 
+    public Long getSecHostId(long volumeId) {
+        
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        String sql = GET_SECHOST_ID;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, volumeId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        } catch (Exception ex) {
+        }
+        return null;      
+    }
     @Override
     public long getLastSnapshot(long volumeId, long snapId) {
         Transaction txn = Transaction.currentTxn();

@@ -35,6 +35,8 @@ import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingStorageCommand;
+import com.cloud.agent.api.ReadyAnswer;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -88,6 +90,8 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         	return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
+        } else if (cmd instanceof ReadyCommand) {
+            return new ReadyAnswer((ReadyCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }

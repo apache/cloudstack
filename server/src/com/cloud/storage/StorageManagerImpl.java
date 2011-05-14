@@ -182,6 +182,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import java.util.Random;
 
 @Local(value = { StorageManager.class, StorageService.class })
 public class StorageManagerImpl implements StorageManager, StorageService, Manager, ClusterManagerListener {
@@ -220,6 +221,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected HostDetailsDao _detailsDao;
     @Inject
     protected SnapshotDao _snapshotDao;
+    @Inject
+    protected SnapshotManager _snapMgr;
     @Inject
     protected SnapshotPolicyDao _snapshotPolicyDao;
     @Inject
@@ -590,7 +593,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Long volumeId = snapshot.getVolumeId();
         String primaryStoragePoolNameLabel = pool.getUuid(); // pool's uuid is actually the namelabel.
         Long dcId = snapshot.getDataCenterId();
-        String secondaryStoragePoolUrl = getSecondaryStorageURL(dcId);
+        String secondaryStoragePoolUrl = _snapMgr.getSecondaryStorageURL(snapshot);
         long accountId = snapshot.getAccountId();
 
         String backedUpSnapshotUuid = snapshot.getBackupSnapshotId();
@@ -928,7 +931,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public String getSecondaryStorageURL(long zoneId) {
         // Determine the secondary storage URL
-        HostVO secondaryStorageHost = _hostDao.findSecondaryStorageHost(zoneId);
+        HostVO secondaryStorageHost = getSecondaryStorageHost(zoneId);
 
         if (secondaryStorageHost == null) {
             return null;
@@ -939,7 +942,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public HostVO getSecondaryStorageHost(long zoneId) {
-        return _hostDao.findSecondaryStorageHost(zoneId);
+        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        if( hosts == null) {
+            return null;
+        }
+
+        int size = hosts.size();
+        Random rn = new Random();
+        int index = rn.nextInt(size);
+        return hosts.get(index);
     }
 
     @Override
@@ -1884,7 +1895,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                                 String installPath = destroyedTemplateHostVO.getInstallPath();
 
                                 if (installPath != null) {
-                                    Answer answer = _agentMgr.easySend(hostId, new DeleteTemplateCommand(destroyedTemplateHostVO.getInstallPath()));
+                                    Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(),destroyedTemplateHostVO.getInstallPath()));
 
                                     if (answer == null || !answer.getResult()) {
                                         s_logger.debug("Failed to delete " + destroyedTemplateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));

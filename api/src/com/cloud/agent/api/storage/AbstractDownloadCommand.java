@@ -19,7 +19,7 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.storage.Storage.ImageFormat;
 
-public abstract class AbstractDownloadCommand extends StorageCommand {
+public abstract class AbstractDownloadCommand extends ssCommand {
 
     private String url;
     private ImageFormat format;
@@ -40,7 +40,13 @@ public abstract class AbstractDownloadCommand extends StorageCommand {
     }
     
     protected AbstractDownloadCommand(AbstractDownloadCommand that) {
-        this(that.name, that.url, that.format, that.accountId);
+        super(that);
+        assert(that.url != null);
+        
+        this.url = that.url.replace('\\', '/');
+        this.format = that.format;
+        this.accountId = that.accountId;
+        this.name = that.name;
     }
     
     public String getUrl() {

@@ -39,4 +39,5 @@ public interface SecondaryStorageVmDao extends GenericDao<SecondaryStorageVmVO, 
     public List<Long> getRunningSecStorageVmListByMsid(SecondaryStorageVm.Role role, long msid);
     
     public List<Long> listRunningSecStorageOrderByLoad(SecondaryStorageVm.Role role, long zoneId);
+    SecondaryStorageVmVO findByInstanceName(String instanceName);
 }

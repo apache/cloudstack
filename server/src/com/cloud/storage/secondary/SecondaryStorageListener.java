@@ -25,6 +25,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -67,17 +68,26 @@ public class SecondaryStorageListener implements Listener {
 
     @Override
     public void processConnect(HostVO agent, StartupCommand cmd) {
-        if (cmd instanceof StartupStorageCommand) {
-            if(s_logger.isInfoEnabled())
-                s_logger.info("Received a host startup notification");
-            
-            StartupStorageCommand ss = (StartupStorageCommand)cmd;
-            if (ss.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
-            	_ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
-            	_ssVmMgr.generateFirewallConfiguration(agent.getId());
-            	_ssVmMgr.generateSetupCommand(agent.getDataCenterId());
+        
+        if ((cmd instanceof StartupStorageCommand) ) {
+            StartupStorageCommand scmd = (StartupStorageCommand)cmd;
+            if (scmd.getResourceType() ==  Storage.StorageResourceType.SECONDARY_STORAGE ) {
+                _ssVmMgr.generateSetupCommand(agent.getId());
+                return;
             }
-        }
+        } else if (cmd instanceof StartupSecondaryStorageCommand) {
+            if(s_logger.isInfoEnabled()) {
+                s_logger.info("Received a host startup notification " + cmd);
+            }
+            _ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
+            _ssVmMgr.generateSetupCommand(agent.getId());
+            _ssVmMgr.generateFirewallConfiguration(agent.getId());
+            _ssVmMgr.generateVMSetupCommand(agent.getId());
+            return;
+        } 
+        return;
+
+
     }
     
     @Override

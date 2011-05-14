@@ -18,17 +18,20 @@
 
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.Command;
 
-public class DeleteTemplateCommand extends ssCommand {
-	private String templatePath;
+public abstract class ssCommand extends Command {
+    private String secUrl;
 
 
-	public DeleteTemplateCommand() {	
+	public ssCommand() {	
 	}
 	
-	public DeleteTemplateCommand(String secUrl, String templatePath) {
-	    this.setSecUrl(secUrl);
-    	this.templatePath = templatePath;
+    protected ssCommand(ssCommand that) {
+        this.secUrl = that.secUrl;
+    }
+	public ssCommand(String secUrl) {
+	    this.secUrl = secUrl;
     }
 	
 	@Override
@@ -36,7 +39,12 @@ public class DeleteTemplateCommand extends ssCommand {
         return true;
     }
 	
-	public String getTemplatePath() {
-		return templatePath;
-	}
+    public String getSecUrl() {
+        return secUrl;
+    }
+
+    public void setSecUrl(String secUrl) {
+        this.secUrl = secUrl;
+    }
+	
 }

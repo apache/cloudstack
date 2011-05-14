@@ -518,8 +518,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
             Long dcId = volume.getDataCenterId();
             Long accountId = volume.getAccountId();
-
-            String secondaryStoragePoolUrl = _storageMgr.getSecondaryStorageURL(volume.getDataCenterId());
+            
+            HostVO secHost = getSecHost(volumeId, volume.getDataCenterId());
+            
+            String secondaryStoragePoolUrl = secHost.getStorageUrl();
             String snapshotUuid = snapshot.getPath();
             // In order to verify that the snapshot is not empty,
             // we check if the parent of the snapshot is not the same as the parent of the previous snapshot.
@@ -601,6 +603,14 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
         }
 
+    }
+
+    private HostVO getSecHost(long volumeId, long dcId) {
+        Long id = _snapshotDao.getSecHostId(volumeId);
+        if ( id != null) { 
+            return _hostDao.findById(id);
+        }
+        return _storageMgr.getSecondaryStorageHost(dcId);
     }
 
     private Long getSnapshotUserId() {
@@ -767,6 +777,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override
+    public String getSecondaryStorageURL(SnapshotVO snapshot) {
+        HostVO secHost = _hostDao.findById(snapshot.getSecHostId());
+        return secHost.getStorageUrl();
+        
+    }
+    
+    @Override
     @DB
     public boolean destroySnapshotBackUp(long snapshotId) {
         boolean success = false;
@@ -776,7 +793,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             throw new CloudRuntimeException("Destroying snapshot " + snapshotId + " backup failed due to unable to find snapshot ");
         }
 
-        String secondaryStoragePoolUrl = _storageMgr.getSecondaryStorageURL(snapshot.getDataCenterId());
+        String secondaryStoragePoolUrl = getSecondaryStorageURL(snapshot);
         Long dcId = snapshot.getDataCenterId();
         Long accountId = snapshot.getAccountId();
         Long volumeId = snapshot.getVolumeId();
@@ -954,32 +971,35 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
             Long volumeId = volume.getId();
             Long dcId = volume.getDataCenterId();
-            String secondaryStoragePoolURL = _storageMgr.getSecondaryStorageURL(dcId);
             String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
             if (_snapshotDao.listByVolumeIdIncludingRemoved(volumeId).isEmpty()) {
                 // This volume doesn't have any snapshots. Nothing do delete.
                 continue;
             }
-            DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, secondaryStoragePoolURL, dcId, accountId, volumeId, volume.getPath());
-            Answer answer = null;
-            Long poolId = volume.getPoolId();
-            if (poolId != null) {
-                // Retry only once for this command. There's low chance of failure because of a connection problem.
-                try {
-                    answer = _storageMgr.sendToPool(poolId, cmd);
-                } catch (StorageUnavailableException e) {
+            
+            List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
+            for ( HostVO ssHost : ssHosts ) {           
+                DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, ssHost.getStorageUrl(), dcId, accountId, volumeId, volume.getPath());
+                Answer answer = null;
+                Long poolId = volume.getPoolId();
+                if (poolId != null) {
+                    // Retry only once for this command. There's low chance of failure because of a connection problem.
+                    try {
+                        answer = _storageMgr.sendToPool(poolId, cmd);
+                    } catch (StorageUnavailableException e) {
+                    }
+                } else {
+                    s_logger.info("Pool id for volume id: " + volumeId + " belonging to account id: " + accountId + " is null. Assuming the snapshotsDir for the account has already been deleted");
                 }
-            } else {
-                s_logger.info("Pool id for volume id: " + volumeId + " belonging to account id: " + accountId + " is null. Assuming the snapshotsDir for the account has already been deleted");
-            }
-
-            if (success) {
-                // SnapshotsDir has been deleted for the volumes so far.
-                success = (answer != null) && answer.getResult();
+    
                 if (success) {
-                    s_logger.debug("Deleted snapshotsDir for volume: " + volumeId + " under account: " + accountId);
-                } else if (answer != null) {
-                    s_logger.error(answer.getDetails());
+                    // SnapshotsDir has been deleted for the volumes so far.
+                    success = (answer != null) && answer.getResult();
+                    if (success) {
+                        s_logger.debug("Deleted snapshotsDir for volume: " + volumeId + " under account: " + accountId);
+                    } else if (answer != null) {
+                        s_logger.error(answer.getDetails());
+                    }
                 }
             }
 

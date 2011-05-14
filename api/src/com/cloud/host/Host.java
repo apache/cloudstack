@@ -36,8 +36,10 @@ public interface Host {
         ExternalLoadBalancer(false),
         PxeServer(false),
         TrafficMonitor(false),
-        ExternalDhcp(false);
         
+        ExternalDhcp(false),
+        SecondaryStorageVM(true),
+        LocalSecondaryStorage(false);
         boolean _virtual;
         private Type(boolean virtual) {
             _virtual = virtual;

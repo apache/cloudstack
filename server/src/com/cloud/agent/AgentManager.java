@@ -264,4 +264,7 @@ public interface AgentManager extends Manager {
 
     boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
 
+    long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener);
+
+    Answer sendToSecStorage(HostVO ssHost, Command cmd);
 }

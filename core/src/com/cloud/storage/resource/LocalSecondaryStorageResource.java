@@ -32,13 +32,14 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingStorageCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -48,7 +49,7 @@ import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.ComponentLocator;
 
-public class LocalSecondaryStorageResource extends ServerResourceBase implements ServerResource {
+public class LocalSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
     private static final Logger s_logger = Logger.getLogger(LocalSecondaryStorageResource.class);
     int _timeout;
     
@@ -70,11 +71,13 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
-            return _dlMgr.handleDownloadCommand((DownloadProgressCommand)cmd);
+            return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
-            return _dlMgr.handleDownloadCommand((DownloadCommand)cmd);
+            return _dlMgr.handleDownloadCommand(this, (DownloadCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
+        } else if (cmd instanceof SecStorageSetupCommand){
+            return new Answer(cmd, true, "success");
         } else if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand)cmd);
         } else {
@@ -84,12 +87,18 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 
     @Override
     public Type getType() {
-        return Host.Type.SecondaryStorage;
+        return Host.Type.LocalSecondaryStorage;
     }
     
     @Override
     public PingCommand getCurrentStatus(final long id) {
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
+    }
+    
+    @Override
+    public String getRootDir(ssCommand cmd){
+        return null;
+        
     }
     
     @Override
@@ -159,8 +168,8 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     @Override
     public StartupCommand[] initialize() {
         
-        final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l*1024l*1024l*1024l, _dlMgr.gatherTemplateInfo());
-        cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
+        final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l*1024l*1024l*1024l, _dlMgr.gatherTemplateInfo(_parent));
+        cmd.setResourceType(Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE);
         cmd.setIqn("local://");
         fillNetworkInformation(cmd);
         cmd.setDataCenter(_dc);
@@ -168,11 +177,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         cmd.setGuid(_guid);
         cmd.setName(_guid);
         cmd.setVersion(LocalSecondaryStorageResource.class.getPackage().getImplementationVersion());
-        
-        /* gather TemplateInfo in second storage */
-        final Map<String, TemplateInfo> tInfo = _dlMgr.gatherTemplateInfo();
-        cmd.setTemplateInfo(tInfo);
-        
+              
         return new StartupCommand [] {cmd};
     }
     

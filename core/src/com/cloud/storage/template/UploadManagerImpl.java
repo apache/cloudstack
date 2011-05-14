@@ -44,6 +44,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
+import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.storage.template.TemplateUploader.Status;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
 import com.cloud.utils.NumbersUtil;
@@ -319,7 +320,7 @@ public class UploadManagerImpl implements UploadManager {
     }	
 	
     @Override
-    public UploadAnswer handleUploadCommand(UploadCommand cmd) {
+    public UploadAnswer handleUploadCommand(SecondaryStorageResource resource, UploadCommand cmd) {
     	s_logger.warn("Handling the upload " +cmd.getInstallPath() + " " + cmd.getId());
         if (cmd instanceof UploadProgressCommand) {
             return handleUploadProgressCmd((UploadProgressCommand) cmd);

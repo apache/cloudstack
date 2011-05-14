@@ -15,28 +15,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.agent.api.storage;
 
+import java.util.Map;
 
-public class DeleteTemplateCommand extends ssCommand {
-	private String templatePath;
+import com.cloud.agent.api.Answer;
 
+import com.cloud.storage.template.TemplateInfo;
 
-	public DeleteTemplateCommand() {	
+public class ListTemplateAnswer extends Answer  {
+    private String secUrl;
+    private Map<String, TemplateInfo> templateInfos;
+	
+	public ListTemplateAnswer() {
+		
 	}
 	
-	public DeleteTemplateCommand(String secUrl, String templatePath) {
+	public ListTemplateAnswer(String secUrl, Map<String, TemplateInfo> templateInfos) {
+	    super(null, true, "success");
 	    this.setSecUrl(secUrl);
-    	this.templatePath = templatePath;
-    }
-	
-	@Override
-    public boolean executeInSequence() {
-        return true;
-    }
-	
-	public String getTemplatePath() {
-		return templatePath;
+	    this.templateInfos = templateInfos;    
 	}
+	
+	public Map<String, TemplateInfo> getTemplateInfo() {
+	    return templateInfos;
+	}
+
+	public void setTemplateInfo(Map<String, TemplateInfo> templateInfos) {
+	    this.templateInfos = templateInfos;
+	}
+
+    public void setSecUrl(String secUrl) {
+        this.secUrl = secUrl;
+    }
+
+    public String getSecUrl() {
+        return secUrl;
+    }
 }

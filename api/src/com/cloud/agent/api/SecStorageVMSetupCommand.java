@@ -17,16 +17,13 @@
  */
 package com.cloud.agent.api;
 
-public class SecStorageSetupCommand extends Command {
-	private String secUrl;
+public class SecStorageVMSetupCommand extends Command {
+	String [] allowedInternalSites = new String[0];
+	String copyUserName;
+	String copyPassword;
 	
-	public SecStorageSetupCommand() {
+	public SecStorageVMSetupCommand() {
 		super();
-	}
-	
-	public SecStorageSetupCommand(String secUrl) {
-		super();
-		this.secUrl = secUrl;
 	}
 	
 	@Override
@@ -34,11 +31,28 @@ public class SecStorageSetupCommand extends Command {
 		return true;
 	}
 
-    public String getSecUrl() {
-        return secUrl;
-    }
+	public String[] getAllowedInternalSites() {
+		return allowedInternalSites;
+	}
 
-    public void setSecUrl(String secUrl) {
-        this.secUrl = secUrl;
-    }
+	public void setAllowedInternalSites(String[] allowedInternalSites) {
+		this.allowedInternalSites = allowedInternalSites;
+	}
+
+	public String getCopyUserName() {
+		return copyUserName;
+	}
+
+	public void setCopyUserName(String copyUserName) {
+		this.copyUserName = copyUserName;
+	}
+
+	public String getCopyPassword() {
+		return copyPassword;
+	}
+
+	public void setCopyPassword(String copyPassword) {
+		this.copyPassword = copyPassword;
+	}
+
 }

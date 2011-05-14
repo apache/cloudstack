@@ -91,6 +91,9 @@ public class SnapshotVO implements Snapshot {
     @Column(name="swift_id")
     long swiftId;
     
+    @Column(name="sechost_id")
+    Long secHostId;
+    
     @Column(name="swift_name")
     String swiftName;
     
@@ -122,6 +125,7 @@ public class SnapshotVO implements Snapshot {
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
+        this.secHostId = null;
     }
 
     
@@ -188,6 +192,14 @@ public class SnapshotVO implements Snapshot {
 
     public void setSwiftId(long swiftId) {
         this.swiftId = swiftId;
+    }
+
+    public Long getSecHostId() {
+        return secHostId;
+    }
+
+    public void setSecHostId(Long secHostId) {
+        this.secHostId = secHostId;
     }
 
     public String getSwiftName() {

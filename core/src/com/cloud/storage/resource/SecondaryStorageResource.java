@@ -15,28 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.storage.resource;
+import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.resource.ServerResource;
+/**
+ *
+ * SecondaryStorageServerResource is a generic container to execute commands sent
+ * to the agent.
+ */
+public interface SecondaryStorageResource extends ServerResource {
+    
+    public String getRootDir(ssCommand cmd);
 
-package com.cloud.agent.api.storage;
-
-
-public class DeleteTemplateCommand extends ssCommand {
-	private String templatePath;
-
-
-	public DeleteTemplateCommand() {	
-	}
-	
-	public DeleteTemplateCommand(String secUrl, String templatePath) {
-	    this.setSecUrl(secUrl);
-    	this.templatePath = templatePath;
-    }
-	
-	@Override
-    public boolean executeInSequence() {
-        return true;
-    }
-	
-	public String getTemplatePath() {
-		return templatePath;
-	}
 }

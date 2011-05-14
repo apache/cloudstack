@@ -48,6 +48,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     protected SearchBuilder<SecondaryStorageVmVO> HostUpSearch;
     protected SearchBuilder<SecondaryStorageVmVO> ZoneSearch;
     protected SearchBuilder<SecondaryStorageVmVO> StateChangeSearch;
+    protected SearchBuilder<SecondaryStorageVmVO> InstanceSearch;
     
     protected final Attribute _updateTimeAttr;
     
@@ -67,6 +68,10 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.and("role", HostSearch.entity().getRole(), SearchCriteria.Op.EQ);
         HostSearch.done();
+        
+        InstanceSearch = createSearchBuilder();
+        InstanceSearch.and("instanceName", InstanceSearch.entity().getInstanceName(), SearchCriteria.Op.EQ);
+        InstanceSearch.done();
         
         LastHostSearch = createSearchBuilder();
         LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
@@ -185,6 +190,19 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         } catch (Throwable e) {
         }
         return l;
+    }
+    
+
+    @Override
+    public SecondaryStorageVmVO findByInstanceName(String instanceName) {
+        SearchCriteria<SecondaryStorageVmVO> sc = InstanceSearch.create();
+        sc.setParameters("instanceName", instanceName);
+        List<SecondaryStorageVmVO> list = listBy(sc);
+        if( list == null ) {
+            return null;
+        } else {
+            return list.get(0);
+        }
     }
 
 	@Override

@@ -64,7 +64,11 @@ public class StartupStorageCommand extends StartupCommand {
         return parent;
     }
 	
-	public void setNfsShare(String nfsShare) {
+	public void setParent(String parent) {
+        this.parent = parent;
+    }
+
+    public void setNfsShare(String nfsShare) {
 	    this.nfsShare = nfsShare;
 	}
 	

@@ -26,6 +26,7 @@ import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload.Status;
+import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.utils.component.Manager;
 
 public interface UploadManager extends Manager {
@@ -70,7 +71,7 @@ public interface UploadManager extends Manager {
 	 * @param cmd cmd from server
 	 * @return answer representing status of upload.
 	 */
-	public UploadAnswer handleUploadCommand(UploadCommand cmd);		
+	public UploadAnswer handleUploadCommand(SecondaryStorageResource resource, UploadCommand cmd);		
     
     public String getPublicTemplateRepo();
 

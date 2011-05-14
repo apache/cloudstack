@@ -33,6 +33,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
@@ -48,6 +49,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
+import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -277,25 +279,16 @@ public class DownloadListener implements Listener {
 	
 	@Override
 	public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
-	    if (!((cmd instanceof StartupStorageCommand) || (cmd instanceof StartupRoutingCommand))) {
-	        return;
-	    }
 	    if (cmd instanceof StartupRoutingCommand) {
 	        downloadMonitor.handleSysTemplateDownload(agent);
-	    } else {
-	        if (cmd.getGuid().startsWith("iso:")) {
-	            //FIXME: do not download template for ISO secondary
-	            return;
-	        }
-
-	        long agentId = agent.getId();
-
+	    } else if ( cmd instanceof StartupStorageCommand) {
 	        StartupStorageCommand storage = (StartupStorageCommand)cmd;
-	        if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST ||
-	                storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE )
-	        {
-	            downloadMonitor.handleTemplateSync(agentId, storage.getTemplateInfo());
-	        } 
+            if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ) {
+                downloadMonitor.addSystemVMTemplatesToHost(agent, storage.getTemplateInfo());
+                downloadMonitor.handleTemplateSync(agent.getId());
+            }
+	    } else if ( cmd instanceof StartupSecondaryStorageCommand ) {        
+	        downloadMonitor.handleTemplateSync(agent.getDataCenterId());
 	    }
 	}
 

@@ -35,5 +35,6 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long> {
     List<SnapshotVO> listByBackupUuid(long volumeId, String backupUuid);
     long updateSnapshotVersion(long volumeId, String from, String to);
     List<SnapshotVO> listByVolumeIdVersion(long volumeId, String version);
+    Long getSecHostId(long volumeId);
 
 }

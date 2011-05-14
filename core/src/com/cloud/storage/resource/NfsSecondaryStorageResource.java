@@ -26,11 +26,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
@@ -48,28 +50,30 @@ import com.cloud.agent.api.PingStorageCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageSetupCommand;
+import com.cloud.agent.api.StartupSecondaryStorageCommand;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
+import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.agent.api.storage.ListTemplateAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
+import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -78,18 +82,14 @@ import com.cloud.utils.net.NfsUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
 
-public class NfsSecondaryStorageResource extends ServerResourceBase implements ServerResource {
+public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
     private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
     int _timeout;
     
-    String _instance;
-    String _parent;
-    
+    String _instance;  
     String _dc;
     String _pod;
     String _guid;
-    String _nfsPath;
-    String _mountParent;
     String _role;
     Map<String, Object> _params;
     StorageLayer _storage;
@@ -111,24 +111,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     
     @Override
     public void disconnected() {
-        if (_parent != null && !_inSystemVM) {
-            Script script = new Script(!_inSystemVM, "umount", _timeout, s_logger);
-            script.add(_parent);
-            script.execute();
-            
-            File file = new File(_parent);
-            file.delete();
-        }
     }
 
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
-            return _dlMgr.handleDownloadCommand((DownloadProgressCommand)cmd);
+            return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
-            return _dlMgr.handleDownloadCommand((DownloadCommand)cmd);
+            return _dlMgr.handleDownloadCommand(this, (DownloadCommand)cmd);
         } else if (cmd instanceof UploadCommand) {        	
-            return _upldMgr.handleUploadCommand((UploadCommand)cmd);
+            return _upldMgr.handleUploadCommand(this, (UploadCommand)cmd);
         } else if (cmd instanceof CreateEntityDownloadURLCommand){
             return _upldMgr.handleCreateEntityURLCommand((CreateEntityDownloadURLCommand)cmd);
         } else if(cmd instanceof DeleteEntityDownloadURLCommand){
@@ -143,10 +135,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if (cmd instanceof SecStorageFirewallCfgCommand){
         	return execute((SecStorageFirewallCfgCommand)cmd);
+        } else if (cmd instanceof SecStorageVMSetupCommand){
+        	return execute((SecStorageVMSetupCommand)cmd);
         } else if (cmd instanceof SecStorageSetupCommand){
-        	return execute((SecStorageSetupCommand)cmd);
+            return execute((SecStorageSetupCommand)cmd);
         } else if (cmd instanceof ComputeChecksumCommand){
             return execute((ComputeChecksumCommand)cmd);
+        } else if (cmd instanceof ListTemplateCommand){
+            return execute((ListTemplateCommand)cmd);    
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -210,7 +206,40 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, checksum);
     }
 
+    
     private Answer execute(SecStorageSetupCommand cmd) {
+        if (!_inSystemVM){
+            return new Answer(cmd, true, null);
+        }
+        String secUrl = cmd.getSecUrl();
+        try {
+            URI uri = new URI(secUrl);
+            String nfsHost = uri.getHost();
+
+            InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
+            String nfsHostIp = nfsHostAddr.getHostAddress();
+
+            addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, nfsHostIp);
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            s_logger.error(msg);
+            return new Answer(cmd, false, msg);
+
+        }
+    }
+    
+    
+    private Answer execute(ListTemplateCommand cmd) {
+        if (!_inSystemVM){
+            return new Answer(cmd, true, null);
+        }
+        String root = getRootDir(cmd.getSecUrl());
+        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
+        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+    }
+    
+    private Answer execute(SecStorageVMSetupCommand cmd) {
     	if (!_inSystemVM){
 			return new Answer(cmd, true, null);
 		}
@@ -274,8 +303,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	}
 
 	protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
-        final long usedSize = getUsedSize();
-        final long totalSize = getTotalSize();
+	    String rootDir = getRootDir(cmd.getLocalPath());
+        final long usedSize = getUsedSize(rootDir);
+        final long totalSize = getTotalSize(rootDir);
         if (usedSize == -1 || totalSize == -1) {
         	return new GetStorageStatsAnswer(cmd, "Unable to get storage stats");
         } else {
@@ -285,7 +315,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     
     protected Answer execute(final DeleteTemplateCommand cmd) {
         String relativeTemplatePath = cmd.getTemplatePath();
-        String parent = _parent;
+        String parent = getRootDir(cmd);
 
         if (relativeTemplatePath.startsWith(File.separator)) {
             relativeTemplatePath = relativeTemplatePath.substring(1);
@@ -331,12 +361,39 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, null);
     }
     
-    protected long getUsedSize() {
-    	return _storage.getUsedSpace(_parent);
+    
+    public String getRootDir(String secUrl) {
+        try {
+            URI uri = new URI(secUrl);
+            String nfsHost = uri.getHost();
+
+            InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
+            String nfsHostIp = nfsHostAddr.getHostAddress();
+            String nfsPath = nfsHostIp + ":" + uri.getPath();
+            String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
+            String root = "/mnt/SecStorage/" + dir;
+            mount(root, nfsPath);    
+            return root;
+        } catch (Exception e) {
+            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
     }
     
-    protected long getTotalSize() {
-      	return _storage.getTotalSpace(_parent);
+    
+    @Override
+    public String getRootDir(ssCommand cmd){
+        return getRootDir(cmd.getSecUrl());
+        
+    }
+    
+    protected long getUsedSize(String rootDir) {
+        return _storage.getUsedSpace(rootDir);
+    }
+    
+    protected long getTotalSize(String rootDir) {
+      	return _storage.getTotalSpace(rootDir);
     }
     
     protected long convertFilesystemSize(final String size) {
@@ -440,22 +497,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         _pod = (String)params.get("pod");
         
         _instance = (String)params.get("instance");
-
-        _mountParent = (String)params.get("mount.parent");
-        if (_mountParent == null) {
-            _mountParent = File.separator + "mnt";
-        }
-        
-        if (_instance != null) {
-            _mountParent = _mountParent + File.separator + _instance;
-        }
-
-        _nfsPath = (String)params.get("mount.path");
-        if (_nfsPath == null) {
-            throw new ConfigurationException("Unable to find mount.path");
-        }
-        
-
+    
         
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM == null || "true".equalsIgnoreCase(inSystemVM)) {
@@ -473,19 +515,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             	}
             	
             	String mgmtHost = (String)params.get("host");
-            	String nfsHost = NfsUtils.getHostPart(_nfsPath);
-            	if (nfsHost == null) {
-            		s_logger.error("Invalid or corrupt nfs url " + _nfsPath);
-            		throw new CloudRuntimeException("Unable to determine host part of nfs path");
-            	}
-            	try {
-            		InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
-            		nfsHost = nfsHostAddr.getHostAddress();
-            	} catch (UnknownHostException uhe) {
-            		s_logger.error("Unable to resolve nfs host " + nfsHost);
-            		throw new CloudRuntimeException("Unable to resolve nfs host to an ip address " + nfsHost);
-            	}
-            	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, nfsHost);
+
             	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
             	if (internalDns2 != null) {
                 	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
@@ -503,16 +533,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         	_params.put("install.numthreads", "50");
         	_params.put("secondary.storage.vm", "true");
         }
-        _parent = mount(_nfsPath, _mountParent);
-        if (_parent == null) {
-            throw new ConfigurationException("Unable to create mount point");
-        }
-        
-        
-        s_logger.info("Mount point established at " + _parent);
         
         try {
-            _params.put("template.parent", _parent);
             _params.put(StorageLayer.InstanceConfigKey, _storage);
             _dlMgr = new DownloadManagerImpl();
             _dlMgr.configure("DownloadManager", _params);
@@ -615,67 +637,58 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 		return result;
 	}
 	
-	protected String mount(String path, String parent) {
-        String mountPoint = null;
-        for (int i = 0; i < 10; i++) {
-            String mntPt = parent + File.separator + Integer.toHexString(_rand.nextInt(Integer.MAX_VALUE));
-            File file = new File(mntPt);
-            if (!file.exists()) {
-                if (_storage.mkdir(mntPt)) {
-                    mountPoint = mntPt;
-                    break;
-                }
+	protected String mount(String root, String nfsPath) {
+        File file = new File(root);
+        if (!file.exists()) {
+            if (!_storage.mkdir(root)) {
+                s_logger.debug("create mount point: " + root);
+            } else {
+                s_logger.debug("Unable to create mount point: " + root);
+                return null;       
             }
-            s_logger.debug("Unable to create mount: " + mntPt);
-        }
-        
-        if (mountPoint == null) {
-            s_logger.warn("Unable to create a mount point");
-            return null;
-        }
+	    }
        
         Script script = null;
         String result = null;
-        script = new Script(!_inSystemVM, "umount", _timeout, s_logger);
-        script.add(path);
-        result = script.execute();
-        
-        if( _parent != null ) {
-            script = new Script("rmdir", _timeout, s_logger);
-            script.add(_parent);
-            result = script.execute();
+        script = new Script(!_inSystemVM, "mount", _timeout, s_logger);
+        List<String> res = new ArrayList<String>();
+        ZfsPathParser parser = new ZfsPathParser(root);
+        script.execute(parser);
+        res.addAll(parser.getPaths());
+        for( String s : res ) {
+            if ( s.contains(root)) {
+                return root;
+            }
         }
- 
+            
         Script command = new Script(!_inSystemVM, "mount", _timeout, s_logger);
         command.add("-t", "nfs");
         if (_inSystemVM) {
         	//Fedora Core 12 errors out with any -o option executed from java
         	command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
         }
-        command.add(path);
-        command.add(mountPoint);
+        command.add(nfsPath);
+        command.add(root);
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Unable to mount " + path + " due to " + result);
-            File file = new File(mountPoint);
+            s_logger.warn("Unable to mount " + nfsPath + " due to " + result);
+            file = new File(root);
             if (file.exists())
             	file.delete();
             return null;
         }
         
-        
-        
         // XXX: Adding the check for creation of snapshots dir here. Might have to move it somewhere more logical later.
-        if (!checkForSnapshotsDir(mountPoint)) {
+        if (!checkForSnapshotsDir(root)) {
         	return null;
         }
         
         // Create the volumes dir
-        if (!checkForVolumesDir(mountPoint)) {
+        if (!checkForVolumesDir(root)) {
         	return null;
         }
         
-        return mountPoint;
+        return root;
     }
     
     @Override
@@ -690,62 +703,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public StartupCommand[] initialize() {
-        /*disconnected();
         
-        _parent = mount(_nfsPath, _mountParent);
-        
-        if( _parent == null ) {
-            s_logger.warn("Unable to mount the nfs server");
-            return null;
-        }
-        
-        try {
-            _params.put("template.parent", _parent);
-            _params.put(StorageLayer.InstanceConfigKey, _storage);
-            _dlMgr = new DownloadManagerImpl();
-            _dlMgr.configure("DownloadManager", _params);
-        } catch (ConfigurationException e) {
-            s_logger.warn("Caught problem while configuring folers", e);
-            return null;
-        }*/
-        
-        final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.NetworkFilesystem, getTotalSize(), new HashMap<String, TemplateInfo>());
-        
-        cmd.setHostType(getType());
-        cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
-        cmd.setIqn(null);
-        
+        final StartupSecondaryStorageCommand cmd = new StartupSecondaryStorageCommand();
         fillNetworkInformation(cmd);
-        cmd.setDataCenter(_dc);
-        cmd.setPod(_pod);
-        cmd.setGuid(_guid);
-        cmd.setName(_guid);
-        cmd.setVersion(NfsSecondaryStorageResource.class.getPackage().getImplementationVersion());
-        /* gather TemplateInfo in second storage */
-        
-        Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
-        if(SecondaryStorageVm.Role.templateProcessor.toString().equals(_role)) 
-        	tInfo = _dlMgr.gatherTemplateInfo();
-        cmd.setTemplateInfo(tInfo);
-        cmd.getHostDetails().put("mount.parent", _mountParent);
-        cmd.getHostDetails().put("mount.path", _nfsPath);
-        String tok[] = _nfsPath.split(":");
-        cmd.setNfsShare("nfs://" + tok[0] + tok[1]);
-        if (cmd.getHostDetails().get("orig.url") == null) {
-            if (tok.length != 2) {
-                throw new CloudRuntimeException("Not valid NFS path" + _nfsPath);
-            }
-            String nfsUrl = "nfs://" + tok[0] + tok[1];
-            cmd.getHostDetails().put("orig.url", nfsUrl);
-        }
-        InetAddress addr;
-        try {
-            addr = InetAddress.getByName(tok[0]);
-            cmd.setPrivateIpAddress(addr.getHostAddress());
-        } catch (UnknownHostException e) {
-            cmd.setPrivateIpAddress(tok[0]);
-        }
-        return new StartupCommand [] {cmd};
+        if(_publicIp != null)
+            cmd.setPublicIpAddress(_publicIp);
+        return new StartupCommand[] {cmd};
     }
 
     protected boolean checkForSnapshotsDir(String mountPoint) {

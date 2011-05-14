@@ -110,5 +110,5 @@ public class Storage {
         }
     }
 
-    public static enum StorageResourceType {STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE}
+    public static enum StorageResourceType {STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE, LOCAL_SECONDARY_STORAGE}
 }

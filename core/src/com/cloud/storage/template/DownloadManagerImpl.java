@@ -47,6 +47,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
@@ -125,14 +126,6 @@ public class DownloadManagerImpl implements DownloadManager {
             return checksum;
         }
 
-        public DownloadJob(TemplateDownloader td, String jobId, DownloadCommand cmd) {
-            this.td = td;
-            this.jobId = jobId;
-            this.tmpltName = cmd.getName();
-            this.format = cmd.getFormat();
-            this.hvm = cmd.isHvm();
-        }
-
         public TemplateDownloader getTemplateDownloader() {
             return td;
         }
@@ -205,8 +198,7 @@ public class DownloadManagerImpl implements DownloadManager {
     }
 
     public static final Logger s_logger = Logger.getLogger(DownloadManagerImpl.class);
-    private String parentDir;
-    private String publicTemplateRepo;
+    private String _templateDir;
     private String createTmpltScr;
     private Adapters<Processor> processors;
 
@@ -284,7 +276,7 @@ public class DownloadManagerImpl implements DownloadManager {
         _storage.mkdirs(templatePath);
         
         // once template path is set, remove the parent dir so that the template is installed with a relative path
-        String finalTemplatePath = templatePath.substring(parentDir.length());
+        String finalTemplatePath = _templateDir + File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
         dnld.setTmpltPath(finalTemplatePath);
 
         int imgSizeGigs = (int) Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
@@ -439,11 +431,6 @@ public class DownloadManagerImpl implements DownloadManager {
     }
 
     @Override
-    public String getPublicTemplateRepo() {
-        return publicTemplateRepo;
-    }
-
-    @Override
     public String getDownloadError(String jobId) {
         DownloadJob dj = jobs.get(jobId);
         if (dj != null) {
@@ -515,9 +502,9 @@ public class DownloadManagerImpl implements DownloadManager {
     }
 
     @Override
-    public DownloadAnswer handleDownloadCommand(DownloadCommand cmd) {
+    public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd) {
         if (cmd instanceof DownloadProgressCommand) {
-            return handleDownloadProgressCmd((DownloadProgressCommand) cmd);
+            return handleDownloadProgressCmd( resource, (DownloadProgressCommand) cmd);
         }
 
         if (cmd.getUrl() == null) {
@@ -527,9 +514,9 @@ public class DownloadManagerImpl implements DownloadManager {
         if (cmd.getName() == null) {
             return new DownloadAnswer("Invalid Name", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
-
+        
         String installPathPrefix = null;
-        installPathPrefix = publicTemplateRepo;
+        installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
 
         String user = null;
         String password = null;
@@ -556,7 +543,7 @@ public class DownloadManagerImpl implements DownloadManager {
         }
     }
 
-    private DownloadAnswer handleDownloadProgressCmd(DownloadProgressCommand cmd) {
+    private DownloadAnswer handleDownloadProgressCmd(SecondaryStorageResource resource, DownloadProgressCommand cmd) {
         String jobId = cmd.getJobId();
         DownloadAnswer answer;
         DownloadJob dj = null;
@@ -565,7 +552,7 @@ public class DownloadManagerImpl implements DownloadManager {
         if (dj == null) {
             if (cmd.getRequest() == RequestType.GET_OR_RESTART) {
                 DownloadCommand dcmd = new DownloadCommand(cmd);
-                return handleDownloadCommand(dcmd);
+                return handleDownloadCommand(resource, dcmd);
             } else {
                 return new DownloadAnswer("Cannot find job", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
             }
@@ -614,11 +601,6 @@ public class DownloadManagerImpl implements DownloadManager {
 
     }
 
-    @Override
-    public List<String> listPublicTemplates() {
-        return listTemplates(publicTemplateRepo);
-    }
-
     private List<String> listTemplates(String rootdir) {
         List<String> result = new ArrayList<String>();
         Script script = new Script(listTmpltScr, s_logger);
@@ -631,9 +613,10 @@ public class DownloadManagerImpl implements DownloadManager {
     }
 
     @Override
-    public Map<String, TemplateInfo> gatherTemplateInfo() {
+    public Map<String, TemplateInfo> gatherTemplateInfo(String rootDir) {
         Map<String, TemplateInfo> result = new HashMap<String, TemplateInfo>();
-        List<String> publicTmplts = listPublicTemplates();
+        String templateDir = rootDir + File.separator + _templateDir;
+        List<String> publicTmplts = listTemplates(templateDir);
         for (String tmplt : publicTmplts) {
             String path = tmplt.substring(0, tmplt.lastIndexOf(File.separator));
             TemplateLocation loc = new TemplateLocation(_storage, path);
@@ -641,14 +624,14 @@ public class DownloadManagerImpl implements DownloadManager {
                 if (!loc.load()) {
                     s_logger.warn("Post download installation was not completed for " + path);
                     loc.purge();
-                    _storage.cleanup(path, publicTemplateRepo);
+                    _storage.cleanup(path, templateDir);
                     continue;
                 }
             } catch (IOException e) {
                 s_logger.warn("Unable to load template location " + path, e);
                 loc.purge();
                 try {
-                    _storage.cleanup(path, publicTemplateRepo);
+                    _storage.cleanup(path, templateDir);
                 } catch (IOException e1) {
                     s_logger.warn("Unable to cleanup " + path, e1);
                 }
@@ -747,7 +730,6 @@ public class DownloadManagerImpl implements DownloadManager {
         	_sslCopy = Boolean.parseBoolean(useSsl);
         	
         }
-        configureFolders(name, params);
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
         	s_logger.info("DownloadManager: starting additional services since we are inside system vm");
@@ -797,6 +779,12 @@ public class DownloadManagerImpl implements DownloadManager {
         processors.add(new ComponentInfo<Adapter>("VMDK Processor", VmdkProcessor.class, processor));
         
         _processors = new Adapters<Processor>("processors", processors);
+        
+        _templateDir = (String) params.get("public.templates.root.dir");
+        if (_templateDir == null) {
+            _templateDir = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR;
+        }    
+        _templateDir += File.separator + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
         return true;
@@ -815,34 +803,6 @@ public class DownloadManagerImpl implements DownloadManager {
     		return;
     	}		
 	}
-
-	protected void configureFolders(String name, Map<String, Object> params) throws ConfigurationException {
-        parentDir = (String) params.get("template.parent");
-        if (parentDir == null) {
-            throw new ConfigurationException("Unable to find the parent root for the templates");
-        }
-
-        String value = (String) params.get("public.templates.root.dir");
-        if (value == null) {
-            value = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR;
-        }
-        
-        if (value.startsWith(File.separator)) {
-            publicTemplateRepo = value;
-        } else {
-            publicTemplateRepo = parentDir + File.separator + value;
-        }
-        
-        if (!publicTemplateRepo.endsWith(File.separator)) {
-            publicTemplateRepo += File.separator;
-        }
-        
-        publicTemplateRepo += TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
-        
-        if (!_storage.mkdirs(publicTemplateRepo)) {
-            throw new ConfigurationException("Unable to create public templates directory");
-        }
-    }
 
     @Override
     public String getName() {
@@ -896,15 +856,6 @@ public class DownloadManagerImpl implements DownloadManager {
     	result = command.execute();
     	if (result != null) {
     		s_logger.warn("Error in creating directory =" + result );
-    		return;
-    	}
-    	
-    	command = new Script("/bin/bash", s_logger);
-		command.add("-c");
-    	command.add("ln -sf " + publicTemplateRepo + " /var/www/html/copy/template");
-    	result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in linking  err=" + result );
     		return;
     	}
 	}

@@ -130,4 +130,6 @@ public interface SnapshotManager {
     List<SnapshotVO> listSnapsforPolicy(long policyId, Filter filter);
 
     void downloadSnapshotsFromSwift(SnapshotVO ss);
+
+    String getSecondaryStorageURL(SnapshotVO snapshot);
 }
