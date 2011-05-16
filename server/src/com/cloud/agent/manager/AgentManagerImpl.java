@@ -2101,13 +2101,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         else if (event == Event.UpdatePassword) { 
             AgentAttache attache = findAttache(hostId);
-            DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
-            String username = nv.getValue();
-            nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
-            String password = nv.getValue();
-            UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
             if (attache != null) {
+                DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
+                String username = nv.getValue();
+                nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
+                String password = nv.getValue();
+                UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
                 attache.updatePassword(cmd);
+                return true;
             }
         }
         return false;
