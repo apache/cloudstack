@@ -22,8 +22,10 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -148,9 +150,11 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }         
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
-            String hostIp = ia.getHostAddress();           
-            String masterIp = _connPool.getMasterIp(hostIp, username, password);          
-            conn = _connPool.masterConnect(masterIp, username, password);
+            String hostIp = ia.getHostAddress(); 
+            Queue<String> pass=new LinkedList<String>();
+            pass.add(password);
+            String masterIp = _connPool.getMasterIp(hostIp, username, pass);          
+            conn = _connPool.masterConnect(masterIp, username, pass);
             if (conn == null) {
                 String msg = "Unable to get a connection to " + url;
                 s_logger.debug(msg);
@@ -335,12 +339,14 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         String masterIp = null;
         String username = null;
         String password = null;
+        Queue<String> pass=new LinkedList<String>();
         for (HostVO host : hosts) {
             _hostDao.loadDetails(host);
             username = host.getDetail("username");
             password = host.getDetail("password");
+            pass.add(password);
             String address = host.getPrivateIpAddress();
-            Connection hostConn = _connPool.slaveConnect(address, username, password);
+            Connection hostConn = _connPool.slaveConnect(address, username, pass);
             if (hostConn == null) {
                 continue;
             }
@@ -367,7 +373,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             throw new CloudRuntimeException("Unable to reach the pool master of the existing cluster");
         }
         
-        if( !_connPool.joinPool(conn, hostIp, masterIp, username, password) ){
+        if( !_connPool.joinPool(conn, hostIp, masterIp, username, pass) ){
             s_logger.warn("Unable to join the pool");
             throw new DiscoveryException("Unable to join the pool");
         }   

@@ -515,7 +515,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 if (Request.fromServer(data)) {
 
-                    AgentAttache agent = findAgent(hostId);
+                    AgentAttache agent = findAttache(hostId);
 
                     if (Request.isControl(data)) {
                         if (agent == null) {

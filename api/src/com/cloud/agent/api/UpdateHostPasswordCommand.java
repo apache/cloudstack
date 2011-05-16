@@ -15,43 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.manager;
-
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.transport.Request;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.host.Status;
+package com.cloud.agent.api;
 
 
-public class DummyAttache extends AgentAttache {
 
-	public DummyAttache(AgentManager agentMgr, long id, boolean maintenance) {
-		super(agentMgr, id, maintenance);
-	}
-
-
-	@Override
-	public void disconnect(Status state) {
-
-	}
-
-	
-	@Override
-	protected boolean isClosed() {
-		return false;
-	}
-
-	
-	@Override
-	public void send(Request req) throws AgentUnavailableException {
-
-	}
-
-
-    @Override
-    public void updatePassword(Command newPassword) {
-        throw new IllegalStateException("Should not have come here ");
+public class UpdateHostPasswordCommand extends Command {
+    protected String _username;
+    protected String _new_password;
+    
+    protected UpdateHostPasswordCommand() {
+    }
+    
+    public UpdateHostPasswordCommand(String username, String new_password) {
+        this._username = username;
+        this._new_password = new_password;
+    }
+    
+    public String getNewPassword() {
+        return _new_password;
+    }
+    
+    public String getUsername() {
+        return _username;
     }
 
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

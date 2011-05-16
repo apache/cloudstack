@@ -24,6 +24,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.naming.ConfigurationException;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -38,6 +40,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class DirectAgentAttache extends AgentAttache {
@@ -219,5 +222,11 @@ public class DirectAgentAttache extends AgentAttache {
                 s_logger.warn(log(seq, "Exception caught "), e);
             }
         }
+    }
+
+
+    @Override
+    public void updatePassword(Command new_password) {
+        _resource.executeRequest(new_password);
     }
 }

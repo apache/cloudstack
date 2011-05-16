@@ -21,7 +21,9 @@ package com.cloud.migration;
 import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -94,7 +96,9 @@ public class Db21to22MigrationUtil {
                         || password.isEmpty()) {
                     continue;
                 }
-                Connection conn = _connPool.slaveConnect(ip, username, password);
+                Queue<String> pass=new LinkedList<String>();
+                pass.add(password);
+                Connection conn = _connPool.slaveConnect(ip, username, pass);
                 if (conn == null)
                     continue;
                 Pool.Record pr = null;

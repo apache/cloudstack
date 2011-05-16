@@ -90,6 +90,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     @Override
     public void execute() {
         _mgr.updateHostPassword(this);
+        _resourceService.updateHostPassword(this);
         this.setResponseObject(new SuccessResponse(getCommandName()));
     }
 }

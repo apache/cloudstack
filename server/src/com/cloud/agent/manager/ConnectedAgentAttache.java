@@ -23,6 +23,7 @@ import java.nio.channels.ClosedChannelException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
@@ -93,5 +94,10 @@ public class ConnectedAgentAttache extends AgentAttache {
         } finally {
             super.finalize();
         }
+    }
+
+    @Override
+    public void updatePassword(Command newPassword) {
+        throw new IllegalStateException("Should not have come here ");
     }
 }

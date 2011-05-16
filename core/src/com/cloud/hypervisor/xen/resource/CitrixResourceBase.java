@@ -33,9 +33,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 
@@ -119,6 +121,7 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -229,7 +232,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected static final int MB = 1024 * 1024;
     protected String _name;
     protected String _username;
-    protected String _password;
+    protected Queue<String> _password=new LinkedList<String>();
     protected final int _retry = 24;
     protected final int _sleep = 10000;
     protected long _dcId;
@@ -355,7 +358,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             URL slaveUrl = null;
             slaveUrl = _connPool.getURL(_host.ip);
             slaveConn = new Connection(slaveUrl, 10);
-            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
+            slaveSession = _connPool.slaveLocalLoginWithPassword(slaveConn, _username, _password);
             return true;
         } catch (Exception e) {
         } finally {
@@ -369,7 +372,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         return false;
     }
-
+    
     protected String logX(XenAPIObject obj, String msg) {
         return new StringBuilder("Host ").append(_host.ip).append(" ").append(obj.toWireString()).append(": ").append(msg).toString();
     }
@@ -489,6 +492,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((OvsCreateTunnelCommand)cmd);
         } else if (cmd instanceof OvsDestroyTunnelCommand) {
             return execute((OvsDestroyTunnelCommand)cmd);
+        } else if (cmd instanceof UpdateHostPasswordCommand) {
+            return execute((UpdateHostPasswordCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -3920,7 +3925,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(hr.address, 22);
             try {
                 sshConnection.connect(null, 60000, 60000);
-                if (!sshConnection.authenticateWithPassword(_username, _password)) {
+                if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {  
                     throw new CloudRuntimeException("Unable to authenticate");
                 }
 
@@ -4263,6 +4268,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
     
+    
+    private Answer execute(UpdateHostPasswordCommand cmd) {
+        _password.add(cmd.getNewPassword());
+        return new Answer(cmd, true, null);
+    }
+    
     private OvsCreateTunnelAnswer execute(OvsCreateTunnelCommand cmd) {
         Connection conn = getConnection();
         String bridge = "unknown";
@@ -4567,7 +4578,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         _host.ip = (String) params.get("ipaddress");
 
         _username = (String) params.get("username");
-        _password = (String) params.get("password");
+        _password.add((String) params.get("password"));
         _pod = (String) params.get("pod");
         _cluster = (String)params.get("cluster");
         _privateNetworkName = (String) params.get("private.network.device");
@@ -4613,7 +4624,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private void CheckXenHostInfo() throws ConfigurationException {
         Connection conn = _connPool.slaveConnect(_host.ip, _username, _password);
-        if( conn == null ) {
+        if( conn == null ) {  
             throw new ConfigurationException("Can not create slave connection to " + _host.ip);
         }
         try {

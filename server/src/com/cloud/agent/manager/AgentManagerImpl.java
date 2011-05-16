@@ -71,6 +71,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
+import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
@@ -84,6 +85,7 @@ import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
+import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -1206,6 +1208,27 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
         return deleteHost(hostId, isForced, caller);
     }
+    
+
+    @Override
+    public boolean updateHostPassword(UpdateHostPasswordCmd upasscmd) {
+        if (upasscmd.getClusterId() == null) {
+            //update agent attache password
+            AgentAttache agent = this.findAttache(upasscmd.getHostId());
+            UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(upasscmd.getUsername(), upasscmd.getPassword());
+            agent.updatePassword(cmd);
+        }
+        else {
+            // get agents for the cluster
+            List<HostVO> hosts = _hostDao.listByCluster(upasscmd.getClusterId());
+            for (HostVO h : hosts) {
+                AgentAttache agent = this.findAttache(h.getId());
+                UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(upasscmd.getUsername(), upasscmd.getPassword());
+                agent.updatePassword(cmd); 
+            }
+        }       
+        return false;
+    }
 
     @DB
     protected boolean deleteSecondaryStorageHost(HostVO secStorageHost) {
@@ -1719,6 +1742,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         try {
             resource.configure(host.getName(), params);
         } catch (ConfigurationException e) {
+            e.printStackTrace();
             s_logger.warn("Unable to configure resource due to ", e);
             return;
         }
@@ -2433,12 +2457,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         return attache;
     }
 
-    public AgentAttache findAgent(long hostId) {
-        synchronized (_agents) {
-            return _agents.get(hostId);
-        }
-    }
-
     protected AgentAttache createAttache(long id, HostVO server, Link link) {
         s_logger.debug("create ConnectedAgentAttache for " + id);
         final AgentAttache attache = new ConnectedAgentAttache(this, id, link, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance
@@ -3005,4 +3023,5 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     protected AgentManagerImpl() {
     }
+
 }

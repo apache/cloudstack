@@ -468,6 +468,12 @@ public abstract class AgentAttache {
     public abstract void send(Request req) throws AgentUnavailableException;
     
     /**
+     * Update password.
+     * @param new/changed password.
+     */
+    public abstract void updatePassword(Command new_password);
+    
+    /**
      * Process disconnect.
      * @param state state of the agent.
      */
