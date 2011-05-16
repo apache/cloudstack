@@ -458,10 +458,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         String dbString = _configDao.getValue("ssl.keystore");
-        String keystorePath = "/etc/cloud/management/cloud.keystore";
+        File confFile= PropertiesUtil.findConfigFile("db.properties");
+        /* This line may throw a NPE, but that's due to fail to find db.properities, meant some bugs in the other places */
+        String confPath = confFile.getParent();
+        String keystorePath = confPath + "/cloud.keystore";
         File keystoreFile = new File(keystorePath);
         boolean dbExisted = (dbString != null && !dbString.isEmpty());
 
+        s_logger.info("SSL keystore located at " + keystorePath);
         try {
             if (!dbExisted) {
                 if  (!keystoreFile.exists()) {
