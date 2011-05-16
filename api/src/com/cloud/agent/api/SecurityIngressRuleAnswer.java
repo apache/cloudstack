@@ -44,10 +44,4 @@ public class SecurityIngressRuleAnswer extends Answer {
 		return vmId;
 	}
 
-	@Override
-	public String toString() {
-		return "[NWGRPRuleAns: vmId=" + vmId + ", seqno=" + logSequenceNumber+"]";
-	}
-    
-   
 }

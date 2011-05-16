@@ -20,35 +20,35 @@ package com.cloud.agent.api;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 /**
- * Command is a command that is sent between the management agent and management
- * server. Parameter and Command are loosely connected. The protocol layer does
- * not care what parameter is carried with which command. That tie in is made at
- * a higher level than here.
+ * All communications between the agent and the management server must be
+ * implemented by classes that extends the Command class. Command specifies
+ * all of the methods that needs to be implemented by the children classes.
  * 
- * Parameter names can only be 4 characters long and is checked with an assert.
- * The value of the parameter is basically an arbitrary length byte array.
  */
+@LogLevel(level = Log4jLevel.Debug)
 public abstract class Command {
 
-	 // allow command to carry over hypervisor or other environment related context info 
+    // allow command to carry over hypervisor or other environment related context info
     protected Map<String, String> contextMap = new HashMap<String, String>();
-	
+
     protected Command() {
     }
-    
+
     @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
+    public final String toString() {
+        return this.getClass().getName();
     }
-    
+
+    /**
+     * @return Does this command need to be executed in sequence on the agent?
+     *         When this is set to true, the commands are executed by a single
+     *         thread on the agent.
+     */
     public abstract boolean executeInSequence();
-    
-    public boolean logTrace() {
-        return false;
-    }
-    
+
     public void setContextParam(String name, String value) {
         contextMap.put(name, value);
     }
@@ -56,9 +56,12 @@ public abstract class Command {
     public String getContextParam(String name) {
         return contextMap.get(name);
     }
-    
-    public boolean doNotLogCommandParams(){
-    	return false;
+
+    public boolean logTrace() {
+        return false;
     }
 
+    public boolean doNotLogCommandParams() {
+        return false;
+    }
 }

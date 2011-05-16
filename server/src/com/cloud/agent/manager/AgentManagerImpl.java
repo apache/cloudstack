@@ -1354,7 +1354,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
 
         long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, false);
+        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true);
         Answer[] answers = agent.send(req, timeout);
         notifyAnswersToMonitors(hostId, seq, answers);
         commands.setAnswers(answers);
@@ -1415,7 +1415,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             return -1;
         }
         long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, false);
+        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true);
         agent.send(req, listener);
         return seq;
     }
@@ -1791,7 +1791,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             }
 
             if (s_logger.isDebugEnabled()) {
-                new Request(0l, -1l, -1l, cmds, true, false, true).log(-1, "Startup request from directly connected host: ");
+                new Request(0l, -1l, -1l, cmds, true, false).log(-1, "Startup request from directly connected host: ");
                 // s_logger.debug("Startup request from directly connected host: "
                 // + new Request(0l, -1l, -1l, cmds, true, false, true)
                 // .toString());
