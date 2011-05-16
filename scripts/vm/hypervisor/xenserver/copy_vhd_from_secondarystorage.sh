@@ -10,7 +10,7 @@ usage() {
 cleanup()
 {
   if [ ! -z $localmp ]; then 
-    umount $localmp
+    umount -fl $localmp
     if [ $? -eq 0 ];  then
       rm $localmp -rf
     fi
@@ -48,7 +48,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount $mountpoint $localmp
+mount $mountpoint $localmp -r
 if [ $? -ne 0 ]; then
   echo "6#cann't mounbt $mountpoint to $localmp"
   exit 0
