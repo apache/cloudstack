@@ -2634,7 +2634,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (zone.getNetworkType() == NetworkType.Advanced) {
             return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) &&
-                    zone.getFirewallProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()));
+                    zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));
         } else {
             return (zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));            
         }
