@@ -1007,6 +1007,24 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
     
+    
+    @Override
+    public HostVO getSSAgent(HostVO ssHost) {
+        if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
+            return  ssHost;
+        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
+            Long dcId = ssHost.getDataCenterId();
+            List<HostVO> ssAHosts = _hostDao.listBy(Host.Type.SecondaryStorageVM, dcId);
+            if (ssAHosts == null || ssAHosts.isEmpty() ) {
+                return null;
+            }
+            int size = ssAHosts.size();
+            Random rn = new Random(System.currentTimeMillis());
+            return ssAHosts.get(rn.nextInt(size));
+        }
+        return null;       
+    }
+    
     @Override
     public long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
@@ -1021,7 +1039,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
 
     private long sendToSSVM(final long dcId, final Command cmd, final Listener listener) {
-        List<HostVO> ssAHosts = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorageVM, dcId);
+        List<HostVO> ssAHosts = _hostDao.listBy(Host.Type.SecondaryStorageVM, dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return -1;
         }
@@ -1496,6 +1514,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
 
+    @Override
+    public void updateStatus(HostVO host, Status.Event event) {
+        _hostDao.updateStatus(host, event, _nodeId);
+    }
     public void disconnect(AgentAttache attache, final Status.Event event, final boolean investigate) {
         _executor.submit(new DisconnectTask(attache, event, investigate));
     }
@@ -2810,6 +2832,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     } else if (cmd instanceof StartupProxyCommand) {
                         final StartupProxyCommand startup = (StartupProxyCommand) cmd;
                         answer = new StartupAnswer(startup, attache.getId(), getPingInterval());
+                    } else if (cmd instanceof StartupSecondaryStorageCommand) {
+                        final StartupSecondaryStorageCommand startup = (StartupSecondaryStorageCommand) cmd;
+                        answer = new StartupAnswer(startup, attache.getId(), getPingInterval());                        
                     } else if (cmd instanceof StartupStorageCommand) {
                         final StartupStorageCommand startup = (StartupStorageCommand) cmd;
                         answer = new StartupAnswer(startup, attache.getId(), getPingInterval());

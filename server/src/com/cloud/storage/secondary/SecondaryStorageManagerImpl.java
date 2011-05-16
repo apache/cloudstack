@@ -751,7 +751,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         value = agentMgrConfigs.get("port");
         _mgmt_port = NumbersUtil.parseInt(value, 8250);
 
-        _listener = new SecondaryStorageListener(this);
+        _listener = new SecondaryStorageListener(this, _agentMgr);
         _agentMgr.registerForHostEvents(_listener, true, false, true);
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
@@ -931,6 +931,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
+        buf.append(" role=").append(profile.getVirtualMachine().getRole().toString());
+
 
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");

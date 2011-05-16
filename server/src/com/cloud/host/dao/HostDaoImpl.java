@@ -21,9 +21,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
@@ -54,8 +56,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import edu.emory.mathcs.backport.java.util.Collections;
 
 @Local(value = { HostDao.class }) @DB(txn=false)
 @TableGenerator(name="host_req_sq", table="op_host", pkColumnName="id", valueColumnName="sequence", allocationSize=1)
@@ -812,16 +812,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("status", Status.Up.toString());
         return customSearch(sc, null).get(0);
-    }
-
-    @Override
-    public List<HostVO> listSecondaryStorageHosts(long dataCenterId) {
-        SearchCriteria<HostVO> sc = TypeDcSearch.create();
-        sc.setParameters("type", Host.Type.SecondaryStorage);
-        sc.setParameters("dc", dataCenterId);
-        List<HostVO> secondaryStorageHosts = listIncludingRemovedBy(sc);
-
-        return secondaryStorageHosts;
     }
 
     @Override

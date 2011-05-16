@@ -267,4 +267,8 @@ public interface AgentManager extends Manager {
     long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener);
 
     Answer sendToSecStorage(HostVO ssHost, Command cmd);
+
+    HostVO getSSAgent(HostVO ssHost);
+
+    void updateStatus(HostVO host, Event event);
 }

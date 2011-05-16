@@ -2922,13 +2922,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         if (podId != null) {
             List<VMTemplateHostVO> templHosts = _templateHostDao.listByTemplateStatus(templateId, dcId, podId, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-            for (VMTemplateHostVO templHost: templHosts) {
-                return templHost;
+            if( templHosts != null && ! templHosts.isEmpty()) {
+                Collections.shuffle(templHosts);
+                return templHosts.get(0);
             }
         }
         List<VMTemplateHostVO> templHosts = _templateHostDao.listByTemplateStatus(templateId, dcId,  VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        for (VMTemplateHostVO templHost: templHosts) {
-            return templHost;
+        if( templHosts != null && ! templHosts.isEmpty()) {
+            Collections.shuffle(templHosts);
+            return templHosts.get(0);
         }
         return null;
     }

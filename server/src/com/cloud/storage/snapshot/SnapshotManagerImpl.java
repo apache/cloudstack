@@ -1274,8 +1274,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // user
         Type snapshotType = getSnapshotType(policyId);
         HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
+        HostVO ssHost  = _hostDao.findSecondaryStorageHost(volume.getDataCenterId());
+        if( ssHost == null ) {
+            throw new CloudRuntimeException("There is no secondary storage in this zone :" + volume.getDataCenterId());
+        }
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), null, snapshotName,
-                (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
+                (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType, ssHost.getId());
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
 
         if (snapshot != null) {

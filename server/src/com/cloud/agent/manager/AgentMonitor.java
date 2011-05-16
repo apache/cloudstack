@@ -107,7 +107,8 @@ public class AgentMonitor extends Thread implements Listener {
                 for (HostVO host : hosts) {
                 	if (host.getType().equals(Host.Type.ExternalFirewall) ||
                 		host.getType().equals(Host.Type.ExternalLoadBalancer) || 
-                		host.getType().equals(Host.Type.TrafficMonitor)) {
+                		host.getType().equals(Host.Type.TrafficMonitor) ||
+                		host.getType().equals(Host.Type.SecondaryStorage)) {
                 		continue;
                 	}
                 	

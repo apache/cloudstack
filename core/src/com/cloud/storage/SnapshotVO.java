@@ -110,7 +110,7 @@ public class SnapshotVO implements Snapshot {
     
     public SnapshotVO() { }
 
-    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
+    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType, Long secHostId) {
         this.dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -125,7 +125,7 @@ public class SnapshotVO implements Snapshot {
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
-        this.secHostId = null;
+        this.secHostId = secHostId;
     }
 
     

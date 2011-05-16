@@ -19,6 +19,7 @@ package com.cloud.storage.secondary;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -29,15 +30,17 @@ import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Status.Event;
 import com.cloud.storage.Storage;
 
 public class SecondaryStorageListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
     
     SecondaryStorageVmManager _ssVmMgr = null;
-
-    public SecondaryStorageListener(SecondaryStorageVmManager ssVmMgr) {
+    AgentManager _agentMgr = null;
+    public SecondaryStorageListener(SecondaryStorageVmManager ssVmMgr, AgentManager agentMgr) {
         _ssVmMgr = ssVmMgr;
+        _agentMgr = agentMgr;
     }
     
     @Override
@@ -79,6 +82,7 @@ public class SecondaryStorageListener implements Listener {
             if(s_logger.isInfoEnabled()) {
                 s_logger.info("Received a host startup notification " + cmd);
             }
+            _agentMgr.updateStatus(agent, Event.Ready);
             _ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
             _ssVmMgr.generateSetupCommand(agent.getId());
             _ssVmMgr.generateFirewallConfiguration(agent.getId());

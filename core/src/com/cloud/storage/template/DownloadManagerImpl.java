@@ -623,13 +623,13 @@ public class DownloadManagerImpl implements DownloadManager {
             try {
                 if (!loc.load()) {
                     s_logger.warn("Post download installation was not completed for " + path);
-                    loc.purge();
+                    //loc.purge();
                     _storage.cleanup(path, templateDir);
                     continue;
                 }
             } catch (IOException e) {
                 s_logger.warn("Unable to load template location " + path, e);
-                loc.purge();
+                //loc.purge();
                 try {
                     _storage.cleanup(path, templateDir);
                 } catch (IOException e1) {

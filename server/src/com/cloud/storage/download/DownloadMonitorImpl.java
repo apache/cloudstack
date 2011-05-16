@@ -42,6 +42,7 @@ import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -304,7 +305,12 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			if (vmTemplateHost.isCopy()) {
 				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
 			}
-			DownloadListener dl = new DownloadListener(sserver, template, _timer, _vmTemplateHostDao, vmTemplateHost.getId(), this, dcmd);
+			HostVO ssAhost = _agentMgr.getSSAgent(sserver);
+			if( ssAhost == null ) {
+	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
+	             return;
+			}
+			DownloadListener dl = new DownloadListener(ssAhost, template, _timer, _vmTemplateHostDao, vmTemplateHost.getId(), this, dcmd);
 			if (downloadJobExists) {
 				dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
 				dl.setCurrState(vmTemplateHost.getDownloadState());
@@ -312,7 +318,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 			_listenerMap.put(vmTemplateHost, dl);
 
-			long result = _agentMgr.sendToSecStorage(sserver, dcmd, dl);
+			long result = send(ssAhost.getId(), dcmd, dl);
 			if (result == -1) {
 				s_logger.warn("Unable to start /resume download of template " + template.getUniqueName() + " to " + sserver.getName());
 				dl.setDisconnected();
