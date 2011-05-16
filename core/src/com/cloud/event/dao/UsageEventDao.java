@@ -35,6 +35,6 @@ public interface UsageEventDao extends GenericDao<UsageEventVO, Long> {
     
     List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException;
 
-    List<UsageEventVO> listIpEvents(Date startDate, Date endDate);
+    List<UsageEventVO> listDirectIpEvents(Date startDate, Date endDate, long zoneId);
 
 }

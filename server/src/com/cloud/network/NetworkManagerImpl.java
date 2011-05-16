@@ -307,7 +307,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Save usage event
         if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat);
+            long networkId = addr.getSourceNetworkId();
+            NetworkVO network = _networksDao.findByIdIncludingRemoved(networkId);
+            String guestType = "";
+            if( (network != null) && (network.getGuestType() != null) ){
+                guestType = network.getGuestType().toString(); 
+            }
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat, guestType);
             _usageEventDao.persist(usageEvent);
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
@@ -2751,7 +2757,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
 
                 if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat);
+                    NetworkVO network = _networksDao.findByIdIncludingRemoved(ip.getSourceNetworkId());
+                    String guestType = "";
+                    if( (network != null) && (network.getGuestType() != null)){
+                        guestType = network.getGuestType().toString(); 
+                    }
+
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat, guestType);
                     _usageEventDao.persist(usageEvent);
                 }
 

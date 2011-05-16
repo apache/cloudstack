@@ -93,13 +93,14 @@ public class UsageEventVO implements UsageEvent {
         this.resourceName = resourceName;
     }
 	
-	public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, long size) {
+	public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, long size, String resourceType) {
 	    this.type = usageType;
         this.accountId = accountId;
         this.zoneId = zoneId;
         this.resourceId = resourceId;
         this.resourceName = resourceName;
         this.size = size;
+        this.resourceType = resourceType;
     }
 	
 	public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, String resourceType) {

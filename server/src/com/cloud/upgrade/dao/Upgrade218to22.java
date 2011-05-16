@@ -1896,9 +1896,9 @@ public class Upgrade218to22 implements DbUpgrade {
 
         if (EventTypes.EVENT_NET_IP_ASSIGN.equals(event.getType())) {
             zoneId = Long.parseLong(ipEventParams.getProperty("dcId"));
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, event.getAccountId(), zoneId, ipId, ipAddress, isSourceNatLong);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, event.getAccountId(), zoneId, ipId, ipAddress, isSourceNatLong,"");
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, event.getAccountId(), zoneId, ipId, ipAddress, isSourceNatLong);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, event.getAccountId(), zoneId, ipId, ipAddress, isSourceNatLong,"");
         }
         return usageEvent;
     }

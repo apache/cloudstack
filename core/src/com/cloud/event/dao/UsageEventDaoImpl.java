@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.UsageServerException;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -61,6 +62,8 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         IpeventsSearch = createSearchBuilder();        
         IpeventsSearch.and("startdate", IpeventsSearch.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         IpeventsSearch.and("enddate", IpeventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
+        IpeventsSearch.and("zoneid", IpeventsSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        IpeventsSearch.and("networktype", IpeventsSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         IpeventsSearch.and().op("assignEvent", IpeventsSearch.entity().getType(), SearchCriteria.Op.EQ);
         IpeventsSearch.or("releaseEvent", IpeventsSearch.entity().getType(), SearchCriteria.Op.EQ);
         IpeventsSearch.closeParen();
@@ -171,13 +174,15 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     }
 
     @Override
-    public List<UsageEventVO> listIpEvents(Date startDate, Date endDate) {
+    public List<UsageEventVO> listDirectIpEvents(Date startDate, Date endDate, long zoneId) {
         Filter filter = new Filter(UsageEventVO.class, "createDate", Boolean.TRUE, null, null);
         SearchCriteria<UsageEventVO> sc = IpeventsSearch.create();
         sc.setParameters("startdate", startDate);
         sc.setParameters("enddate", endDate);
         sc.setParameters("assignEvent", EventTypes.EVENT_NET_IP_ASSIGN);
         sc.setParameters("releaseEvent", EventTypes.EVENT_NET_IP_RELEASE);
+        sc.setParameters("zoneid", zoneId);
+        sc.setParameters("networktype", GuestIpType.Direct.toString());
         return listBy(sc, filter);
     }
 
