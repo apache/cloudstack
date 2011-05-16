@@ -64,8 +64,8 @@ import com.cloud.event.dao.EventDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.ha.HighAvailabilityManagerImpl;
 import com.cloud.ha.dao.HighAvailabilityDaoImpl;
-import com.cloud.host.dao.DetailsDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
 import com.cloud.keystore.KeystoreDaoImpl;
@@ -105,6 +105,7 @@ import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
+import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
@@ -117,6 +118,7 @@ import com.cloud.storage.dao.SnapshotScheduleDaoImpl;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
 import com.cloud.storage.dao.StoragePoolHostDaoImpl;
 import com.cloud.storage.dao.StoragePoolWorkDaoImpl;
+import com.cloud.storage.dao.SwiftDaoImpl;
 import com.cloud.storage.dao.UploadDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateHostDaoImpl;
@@ -128,11 +130,10 @@ import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
-import com.cloud.storage.dao.SwiftDaoImpl;
 import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
-import com.cloud.template.TemplateManagerImpl;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
+import com.cloud.template.TemplateManagerImpl;
 import com.cloud.upgrade.DatabaseUpgradeChecker;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
@@ -162,7 +163,7 @@ import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
-    
+
     @Override
     public List<SystemIntegrityChecker> getSystemIntegrityCheckers() {
         ArrayList<SystemIntegrityChecker> checkers = new ArrayList<SystemIntegrityChecker>();
@@ -242,7 +243,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("GuestOSCategoryDao", GuestOSCategoryDaoImpl.class);
         addDao("StoragePoolDao", StoragePoolDaoImpl.class);
         addDao("StoragePoolHostDao", StoragePoolHostDaoImpl.class);
-        addDao("DetailsDao", DetailsDaoImpl.class);
+        addDao("DetailsDao", HostDetailsDaoImpl.class);
         addDao("SnapshotPolicyDao", SnapshotPolicyDaoImpl.class);
         addDao("SnapshotScheduleDao", SnapshotScheduleDaoImpl.class);
         addDao("ClusterDao", ClusterDaoImpl.class);
@@ -276,7 +277,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DcDetailsDao", DcDetailsDaoImpl.class);
         addDao("SwiftDao", SwiftDaoImpl.class);
     }
-    
+
     @Override
     public synchronized Map<String, ComponentInfo<GenericDao<?, ?>>> getDaos() {
         if (_daos.size() == 0) {
@@ -323,7 +324,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
-        
+        addManager("ResourceManager", ResourceManagerImpl.class);
+
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
     }
@@ -335,9 +337,9 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         }
         return _managers;
     }
-    
+
     protected void populateAdapters() {
-    	addAdapter(TemplateAdapter.class, TemplateAdapterType.Hypervisor.getName(), HyervisorTemplateAdapter.class);
+        addAdapter(TemplateAdapter.class, TemplateAdapterType.Hypervisor.getName(), HyervisorTemplateAdapter.class);
     }
 
     @Override
@@ -347,9 +349,9 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         }
         return _adapters;
     }
-    
+
     @Override
-    public synchronized Map<Class<?>, Class<?>> getFactories() { 
+    public synchronized Map<Class<?>, Class<?>> getFactories() {
         HashMap<Class<?>, Class<?>> factories = new HashMap<Class<?>, Class<?>>();
         factories.put(EntityManager.class, EntityManagerImpl.class);
         return factories;

@@ -167,7 +167,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.DetailsDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
@@ -284,7 +284,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final AccountVlanMapDao _accountVlanMapDao;
     private final PodVlanMapDao _podVlanMapDao;
     private final HostDao _hostDao;
-    private final DetailsDao _detailsDao;
+    private final HostDetailsDao _detailsDao;
     private final UserDao _userDao;
     private final UserVmDao _userVmDao;
     private final ConfigurationDao _configDao;
@@ -344,7 +344,7 @@ public class ManagementServerImpl implements ManagementServer {
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
         _podVlanMapDao = locator.getDao(PodVlanMapDao.class);
         _hostDao = locator.getDao(HostDao.class);
-        _detailsDao = locator.getDao(DetailsDao.class);
+        _detailsDao = locator.getDao(HostDetailsDao.class);
         _hostPodDao = locator.getDao(HostPodDao.class);
         _jobDao = locator.getDao(AsyncJobDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);

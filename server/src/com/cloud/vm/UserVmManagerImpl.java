@@ -109,7 +109,7 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.DetailsDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
@@ -215,7 +215,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected HostDao _hostDao = null;
     @Inject
-    protected DetailsDao _detailsDao = null;
+    protected HostDetailsDao _detailsDao = null;
     @Inject
     protected DomainRouterDao _routerDao = null;
     @Inject

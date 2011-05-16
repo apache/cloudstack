@@ -17,38 +17,757 @@
  */
 package com.cloud.resource;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.manager.AgentAttache;
+import com.cloud.api.commands.AddClusterCmd;
+import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.commands.AddSecondaryStorageCmd;
+import com.cloud.api.commands.CancelMaintenanceCmd;
+import com.cloud.api.commands.DeleteClusterCmd;
+import com.cloud.api.commands.PrepareForMaintenanceCmd;
+import com.cloud.api.commands.ReconnectHostCmd;
+import com.cloud.api.commands.UpdateHostCmd;
+import com.cloud.api.commands.UpdateHostPasswordCmd;
+import com.cloud.cluster.ManagementServerNode;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.DiscoveredWithErrorException;
+import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.Host;
+import com.cloud.host.Host.HostAllocationState;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local({ ResourceManager.class, ResourceService.class })
-public class ResourceManagerImpl implements ResourceManager, Manager {
+public class ResourceManagerImpl implements ResourceManager, ResourceService, Manager {
+    private static final Logger s_logger = Logger.getLogger(ResourceManagerImpl.class);
+
+    private String                           _name;
+
+    @Inject
+    AccountManager                           _accountMgr;
+    @Inject
+    AgentManager                             _agentMgr;
+    @Inject
+    StorageManager                           _storageMgr;
+
+    @Inject
+    protected DataCenterDao                  _dcDao;
+    @Inject
+    protected HostPodDao                     _podDao;
+    @Inject
+    protected ClusterDetailsDao              _clusterDetailsDao;
+    @Inject
+    protected ClusterDao                     _clusterDao;
+    @Inject
+    protected HostDao                        _hostDao;
+    @Inject
+    protected HostDetailsDao                 _hostDetailsDao;
+    @Inject
+    protected GuestOSCategoryDao             _guestOSCategoryDao;
+
+    @Inject(adapter = Discoverer.class)
+    protected Adapters<? extends Discoverer> _discoverers;
+
+    protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
+
+    @Override
+    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
+        return _agentMgr.updateHostPassword(cmd);
+    }
+
+    @Override
+    public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException {
+        Long dcId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        String clusterName = cmd.getClusterName();
+        String url = cmd.getUrl();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+
+        if (url != null) {
+            url = URLDecoder.decode(url);
+        }
+
+        URI uri = null;
+
+        // Check if the zone exists in the system
+        DataCenterVO zone = _dcDao.findById(dcId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by id " + dcId);
+        }
+
+        Account account = UserContext.current().getCaller();
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dcId);
+        }
+
+        // Check if the pod exists in the system
+        if (podId != null) {
+            if (_podDao.findById(podId) == null) {
+                throw new InvalidParameterValueException("Can't find pod by id " + podId);
+            }
+            // check if pod belongs to the zone
+            HostPodVO pod = _podDao.findById(podId);
+            if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
+                throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
+            }
+        }
+
+        // Verify cluster information and create a new cluster if needed
+        if (clusterName == null || clusterName.isEmpty()) {
+            throw new InvalidParameterValueException("Please specify cluster name");
+        }
+
+        if (cmd.getHypervisor() == null || cmd.getHypervisor().isEmpty()) {
+            throw new InvalidParameterValueException("Please specify a hypervisor");
+        }
+
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
+        if (hypervisorType == null) {
+            s_logger.error("Unable to resolve " + cmd.getHypervisor() + " to a valid supported hypervisor type");
+            throw new InvalidParameterValueException("Unable to resolve " + cmd.getHypervisor() + " to a supported ");
+        }
+
+        Cluster.ClusterType clusterType = null;
+        if (cmd.getClusterType() != null && !cmd.getClusterType().isEmpty()) {
+            clusterType = Cluster.ClusterType.valueOf(cmd.getClusterType());
+        }
+        if (clusterType == null) {
+            clusterType = Cluster.ClusterType.CloudManaged;
+        }
+
+        Grouping.AllocationState allocationState = null;
+        if (cmd.getAllocationState() != null && !cmd.getAllocationState().isEmpty()) {
+            try {
+                allocationState = Grouping.AllocationState.valueOf(cmd.getAllocationState());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve Allocation State '" + cmd.getAllocationState() + "' to a supported state");
+            }
+        }
+        if (allocationState == null) {
+            allocationState = Grouping.AllocationState.Enabled;
+        }
+
+        Discoverer discoverer = getMatchingDiscover(hypervisorType);
+        if (discoverer == null) {
+
+            throw new InvalidParameterValueException("Could not find corresponding resource manager for " + cmd.getHypervisor());
+        }
+
+        List<ClusterVO> result = new ArrayList<ClusterVO>();
+
+        long clusterId = 0;
+        ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+        cluster.setHypervisorType(cmd.getHypervisor());
+
+        cluster.setClusterType(clusterType);
+        cluster.setAllocationState(allocationState);
+        try {
+            cluster = _clusterDao.persist(cluster);
+        } catch (Exception e) {
+            // no longer tolerate exception during the cluster creation phase
+            throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
+        }
+        clusterId = cluster.getId();
+        result.add(cluster);
+
+        if (clusterType == Cluster.ClusterType.CloudManaged) {
+            return result;
+        }
+
+        // save cluster details for later cluster/host cross-checking
+        Map<String, String> details = new HashMap<String, String>();
+        details.put("url", url);
+        details.put("username", username);
+        details.put("password", password);
+        _clusterDetailsDao.persist(cluster.getId(), details);
+
+        boolean success = false;
+        try {
+            try {
+                uri = new URI(UriUtils.encodeURIComponent(url));
+                if (uri.getScheme() == null) {
+                    throw new InvalidParameterValueException("uri.scheme is null " + url + ", add http:// as a prefix");
+                } else if (uri.getScheme().equalsIgnoreCase("http")) {
+                    if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+                        throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format http://hostname/path");
+                    }
+                }
+            } catch (URISyntaxException e) {
+                throw new InvalidParameterValueException(url + " is not a valid uri");
+            }
+
+            List<HostVO> hosts = new ArrayList<HostVO>();
+            Map<? extends ServerResource, Map<String, String>> resources = null;
+
+            try {
+                resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+            } catch (Exception e) {
+                s_logger.info("Exception in external cluster discovery process with discoverer: " + discoverer.getName());
+            }
+            if (resources != null) {
+                for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
+                    ServerResource resource = entry.getKey();
+
+                    // For Hyper-V, we are here means agent have already started and connected to management server
+                    if (hypervisorType == Hypervisor.HypervisorType.Hyperv) {
+                        break;
+                    }
+
+                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, null, null);
+                    if (attache != null) {
+                        hosts.add(_hostDao.findById(attache.getId()));
+                    }
+                    discoverer.postDiscovery(hosts, _nodeId);
+                }
+                s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
+                success = true;
+                return result;
+            }
+
+            s_logger.warn("Unable to find the server resources at " + url);
+            throw new DiscoveryException("Unable to add the external cluster");
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception ", e);
+            throw new DiscoveryException("Unable to add the external cluster due to unhandled exception");
+        } finally {
+            if (!success) {
+                _clusterDetailsDao.deleteDetails(clusterId);
+                _clusterDao.remove(clusterId);
+            }
+        }
+    }
+
+    private Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
+        Enumeration<? extends Discoverer> en = _discoverers.enumeration();
+        while (en.hasMoreElements()) {
+            Discoverer discoverer = en.nextElement();
+            if (discoverer.getHypervisorType() == hypervisorType) {
+                return discoverer;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        Long dcId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        Long clusterId = cmd.getClusterId();
+        String clusterName = cmd.getClusterName();
+        String url = cmd.getUrl();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        Long memCapacity = cmd.getMemCapacity();
+        Long cpuSpeed = cmd.getCpuSpeed();
+        Long cpuNum = cmd.getCpuNum();
+        String mac = cmd.getMac();
+        List<String> hostTags = cmd.getHostTags();
+        Map<String, String> bareMetalParams = new HashMap<String, String>();
+
+        dcId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), dcId);
+
+        // this is for standalone option
+        if (clusterName == null && clusterId == null) {
+            clusterName = "Standalone-" + url;
+        }
+
+        if (clusterId != null) {
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            if (cluster == null) {
+                throw new InvalidParameterValueException("can not fine cluster for clusterId " + clusterId);
+            } else {
+                if (cluster.getGuid() == null) {
+                    List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+                    if (!hosts.isEmpty()) {
+                        throw new CloudRuntimeException("Guid is not updated for cluster " + clusterId + " need to wait hosts in this cluster up");
+                    }
+                }
+            }
+        }
+
+        if (cmd.getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.BareMetal.toString())) {
+            if (memCapacity == null) {
+                memCapacity = Long.valueOf(0);
+            }
+            if (cpuSpeed == null) {
+                cpuSpeed = Long.valueOf(0);
+            }
+            if (cpuNum == null) {
+                cpuNum = Long.valueOf(0);
+            }
+            if (mac == null) {
+                mac = "unknown";
+            }
+
+            bareMetalParams.put("cpuNum", cpuNum.toString());
+            bareMetalParams.put("cpuCapacity", cpuSpeed.toString());
+            bareMetalParams.put("memCapacity", memCapacity.toString());
+            bareMetalParams.put("mac", mac);
+            if (hostTags != null) {
+                bareMetalParams.put("hostTag", hostTags.get(0));
+            }
+        }
+        String allocationState = cmd.getAllocationState();
+        if (allocationState == null) {
+            allocationState = Host.HostAllocationState.Enabled.toString();
+        }
+
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, bareMetalParams, allocationState);
+    }
+
+    @Override
+    public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        Long dcId = cmd.getZoneId();
+        String url = cmd.getUrl();
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, null);
+    }
+
+    private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
+            Map<String, String> params, String allocationState) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        URI uri = null;
+
+        // Check if the zone exists in the system
+        DataCenterVO zone = _dcDao.findById(dcId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by id " + dcId);
+        }
+
+        Account account = UserContext.current().getCaller();
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dcId);
+        }
+
+        // Check if the pod exists in the system
+        if (podId != null) {
+            if (_podDao.findById(podId) == null) {
+                throw new InvalidParameterValueException("Can't find pod by id " + podId);
+            }
+            // check if pod belongs to the zone
+            HostPodVO pod = _podDao.findById(podId);
+            if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
+                throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
+            }
+        }
+
+        // Deny to add a secondary storage multiple times for the same zone
+        if ((username == null) && (_hostDao.findSecondaryStorageHost(dcId) != null)) {
+            throw new InvalidParameterValueException("A secondary storage host already exists in the specified zone");
+        }
+
+        // Verify cluster information and create a new cluster if needed
+        if (clusterName != null && clusterId != null) {
+            throw new InvalidParameterValueException("Can't specify cluster by both id and name");
+        }
+
+        if (hypervisorType == null || hypervisorType.isEmpty()) {
+            throw new InvalidParameterValueException("Need to specify Hypervisor Type");
+        }
+
+        if ((clusterName != null || clusterId != null) && podId == null) {
+            throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
+        }
+
+        if (clusterId != null) {
+            if (_clusterDao.findById(clusterId) == null) {
+                throw new InvalidParameterValueException("Can't find cluster by id " + clusterId);
+            }
+        }
+
+        if (clusterName != null) {
+            ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+            cluster.setHypervisorType(hypervisorType);
+            try {
+                cluster = _clusterDao.persist(cluster);
+            } catch (Exception e) {
+                cluster = _clusterDao.findBy(clusterName, podId);
+                if (cluster == null) {
+                    throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
+                }
+            }
+            clusterId = cluster.getId();
+        }
+
+        try {
+            uri = new URI(UriUtils.encodeURIComponent(url));
+            if (uri.getScheme() == null) {
+                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
+            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+                    throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
+                }
+            }
+        } catch (URISyntaxException e) {
+            throw new InvalidParameterValueException(url + " is not a valid uri");
+        }
+
+        List<HostVO> hosts = new ArrayList<HostVO>();
+        s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
+        Enumeration<? extends Discoverer> en = _discoverers.enumeration();
+        boolean isHypervisorTypeSupported = false;
+        while (en.hasMoreElements()) {
+            Discoverer discoverer = en.nextElement();
+            if (params != null) {
+                discoverer.putParam(params);
+            }
+
+            if (!discoverer.matchHypervisor(hypervisorType)) {
+                continue;
+            }
+            isHypervisorTypeSupported = true;
+            Map<? extends ServerResource, Map<String, String>> resources = null;
+
+            try {
+                resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+            } catch (DiscoveredWithErrorException e) {
+                throw e;
+            } catch (Exception e) {
+                s_logger.info("Exception in host discovery process with discoverer: " + discoverer.getName() + ", skip to another discoverer if there is any");
+            }
+            if (resources != null) {
+                for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
+                    ServerResource resource = entry.getKey();
+                    /*
+                     * For KVM, if we go to here, that means kvm agent is already connected to mgt svr.
+                     */
+                    if (resource instanceof KvmDummyResourceBase) {
+                        Map<String, String> details = entry.getValue();
+                        String guid = details.get("guid");
+                        List<HostVO> kvmHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
+                        for (HostVO host : kvmHosts) {
+                            if (host.getGuid().equalsIgnoreCase(guid)) {
+                                hosts.add(host);
+                                return hosts;
+                            }
+                        }
+                        return null;
+                    }
+                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, hostTags, allocationState);
+                    if (attache != null) {
+                        hosts.add(_hostDao.findById(attache.getId()));
+                    }
+                    discoverer.postDiscovery(hosts, _nodeId);
+
+                }
+                s_logger.info("server resources successfully discovered by " + discoverer.getName());
+                return hosts;
+            }
+        }
+        if (!isHypervisorTypeSupported) {
+            String msg = "Do not support HypervisorType " + hypervisorType + " for " + url;
+            s_logger.warn(msg);
+            throw new DiscoveryException(msg);
+        }
+        s_logger.warn("Unable to find the server resources at " + url);
+        throw new DiscoveryException("Unable to add the host");
+    }
+
+    @Override
+    public Host getHost(long hostId) {
+        return _hostDao.findById(hostId);
+    }
+
+    @Override
+    public boolean deleteHost(long hostId, boolean isForced) {
+        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        // Verify that host exists
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+        }
+        _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
+        return _agentMgr.deleteHost(hostId, isForced, caller);
+    }
+
+    @Override
+    @DB
+    public boolean deleteCluster(DeleteClusterCmd cmd) {
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            ClusterVO cluster = _clusterDao.lockRow(cmd.getId(), true);
+            if (cluster == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " does not even exist.  Delete call is ignored.");
+                }
+                txn.rollback();
+                return true;
+            }
+
+            List<HostVO> hosts = _hostDao.listByCluster(cmd.getId());
+            if (hosts.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " still has hosts");
+                }
+                txn.rollback();
+                return false;
+            }
+
+            _clusterDao.remove(cmd.getId());
+
+            txn.commit();
+            return true;
+        } catch (Throwable t) {
+            s_logger.error("Unable to delete cluster: " + cmd.getId(), t);
+            txn.rollback();
+            return false;
+        }
+    }
+
+    @Override
+    @DB
+    public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState) {
+
+        ClusterVO cluster = (ClusterVO) clusterToUpdate;
+        // Verify cluster information and update the cluster if needed
+        boolean doUpdate = false;
+
+        if (hypervisor != null && !hypervisor.isEmpty()) {
+            Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
+            if (hypervisorType == null) {
+                s_logger.error("Unable to resolve " + hypervisor + " to a valid supported hypervisor type");
+                throw new InvalidParameterValueException("Unable to resolve " + hypervisor + " to a supported type");
+            } else {
+                cluster.setHypervisorType(hypervisor);
+                doUpdate = true;
+            }
+        }
+
+        Cluster.ClusterType newClusterType = null;
+        if (clusterType != null && !clusterType.isEmpty()) {
+            try {
+                newClusterType = Cluster.ClusterType.valueOf(clusterType);
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve " + clusterType + " to a supported type");
+            }
+            if (newClusterType == null) {
+                s_logger.error("Unable to resolve " + clusterType + " to a valid supported cluster type");
+                throw new InvalidParameterValueException("Unable to resolve " + clusterType + " to a supported type");
+            } else {
+                cluster.setClusterType(newClusterType);
+                doUpdate = true;
+            }
+        }
+
+        Grouping.AllocationState newAllocationState = null;
+        if (allocationState != null && !allocationState.isEmpty()) {
+            try {
+                newAllocationState = Grouping.AllocationState.valueOf(allocationState);
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationState + "' to a supported state");
+            }
+            if (newAllocationState == null) {
+                s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
+                throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
+            } else {
+                cluster.setAllocationState(newAllocationState);
+                doUpdate = true;
+            }
+        }
+        if (doUpdate) {
+            Transaction txn = Transaction.currentTxn();
+            try {
+                txn.start();
+                _clusterDao.update(cluster.getId(), cluster);
+                txn.commit();
+            } catch (Exception e) {
+                s_logger.error("Unable to update cluster due to " + e.getMessage(), e);
+                throw new CloudRuntimeException("Failed to update cluster. Please contact Cloud Support.");
+            }
+        }
+        return cluster;
+    }
+
+    @Override
+    public Host cancelMaintenance(CancelMaintenanceCmd cmd) {
+        Long hostId = cmd.getId();
+
+        // verify input parameters
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null || host.getRemoved() != null) {
+            throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
+        }
+
+        boolean success = _agentMgr.cancelMaintenance(hostId);
+        if (!success) {
+            throw new CloudRuntimeException("Internal error cancelling maintenance.");
+        }
+        return host;
+    }
+
+    @Override
+    public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
+        Long hostId = cmd.getId();
+
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
+        }
+
+        boolean result = _agentMgr.reconnect(hostId);
+        if (result) {
+            return host;
+        }
+        throw new CloudRuntimeException("Failed to reconnect host with id " + hostId.toString() + ", internal error.");
+    }
+
+    @Override
+    public Host maintain(PrepareForMaintenanceCmd cmd) {
+        Long hostId = cmd.getId();
+        HostVO host = _hostDao.findById(hostId);
+
+        if (host == null) {
+            s_logger.debug("Unable to find host " + hostId);
+            throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
+        }
+
+        if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance) > 0) {
+            throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
+        }
+
+        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
+            throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+        }
+
+        try {
+            if (_agentMgr.maintain(hostId)) {
+                return _hostDao.findById(hostId);
+            } else {
+                throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
+            }
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
+        }
+    }
+
+    @Override
+    public Host updateHost(UpdateHostCmd cmd) {
+        Long hostId = cmd.getId();
+        Long guestOSCategoryId = cmd.getOsCategoryId();
+
+        if (guestOSCategoryId != null) {
+
+            // Verify that the host exists
+            HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+            }
+
+            // Verify that the guest OS Category exists
+            if (guestOSCategoryId > 0) {
+                if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid guest OS category.");
+                }
+            }
+
+            GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+            Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+
+            if (guestOSCategory != null) {
+                // Save a new entry for guest.os.category.id
+                hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+            } else {
+                // Delete any existing entry for guest.os.category.id
+                hostDetails.remove("guest.os.category.id");
+            }
+            _hostDetailsDao.persist(hostId, hostDetails);
+        }
+
+        String allocationState = cmd.getAllocationState();
+        if (allocationState != null) {
+            // Verify that the host exists
+            HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+            }
+
+            try {
+                HostAllocationState newAllocationState = Host.HostAllocationState.valueOf(allocationState);
+                if (newAllocationState == null) {
+                    s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
+                    throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
+                } else {
+                    host.setHostAllocationState(newAllocationState);
+                }
+            } catch (IllegalArgumentException ex) {
+                s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
+                throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
+            }
+
+            _hostDao.update(hostId, host);
+        }
+
+        HostVO updatedHost = _hostDao.findById(hostId);
+        return updatedHost;
+    }
+
+    @Override
+    public Cluster getCluster(Long clusterId) {
+        return _clusterDao.findById(clusterId);
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        // TODO Auto-generated method stub
-        return false;
+        _name = name;
+        return true;
     }
 
     @Override
     public boolean start() {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean stop() {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return _name;
     }
 
 }

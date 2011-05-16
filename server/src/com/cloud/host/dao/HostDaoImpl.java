@@ -96,7 +96,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final Attribute _msIdAttr;
     protected final Attribute _pingTimeAttr;
 
-    protected final DetailsDaoImpl _detailsDao = ComponentLocator.inject(DetailsDaoImpl.class);
+    protected final HostDetailsDaoImpl _detailsDao = ComponentLocator.inject(HostDetailsDaoImpl.class);
     protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
 
     public HostDaoImpl() {

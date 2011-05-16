@@ -22,7 +22,7 @@ import java.util.Map;
 import com.cloud.host.DetailVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface DetailsDao extends GenericDao<DetailVO, Long> {
+public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
     Map<String, String> findDetails(long hostId);
     
     void persist(long hostId, Map<String, String> details);

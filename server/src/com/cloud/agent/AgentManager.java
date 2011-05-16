@@ -23,18 +23,17 @@ import java.util.Set;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -137,16 +136,16 @@ public interface AgentManager extends Manager {
      * @return id to unregister if needed.
      */
     int registerForHostEvents(Listener listener, boolean connections, boolean commands, boolean priority);
- 
-    
+
+
     /**
-     * Register to listen for initial agent connections. 
+     * Register to listen for initial agent connections.
      * @param creator
      * @param priority in listening for events.
      * @return id to unregister if needed.
      */
     int registerForInitialConnects(StartupCommandProcessor creator,  boolean priority);
-    
+
     /**
      * Unregister for listening to host events.
      * 
@@ -253,9 +252,6 @@ public interface AgentManager extends Manager {
 
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
 
-    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisor, List<String> hostTags)
-            throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
-
     Answer easySend(Long hostId, Command cmd, int timeout);
 
     boolean isHostNativeHAEnabled(long hostId);
@@ -263,4 +259,9 @@ public interface AgentManager extends Manager {
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
     void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers);
+
+    AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState) throws IllegalArgumentException;
+
+    boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
+
 }

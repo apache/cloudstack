@@ -112,7 +112,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.DetailsDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
@@ -217,7 +217,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject
     protected ConsoleProxyDao _consoleProxyDao;
     @Inject
-    protected DetailsDao _detailsDao;
+    protected HostDetailsDao _detailsDao;
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject

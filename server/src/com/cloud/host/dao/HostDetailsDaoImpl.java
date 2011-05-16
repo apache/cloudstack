@@ -29,12 +29,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-@Local(value=DetailsDao.class)
-public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements DetailsDao {
+@Local(value=HostDetailsDao.class)
+public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
     
-    protected DetailsDaoImpl() {
+    protected HostDetailsDaoImpl() {
         HostSearch = createSearchBuilder();
         HostSearch.and("hostId", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();

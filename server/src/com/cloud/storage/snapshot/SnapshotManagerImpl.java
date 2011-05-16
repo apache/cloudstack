@@ -63,7 +63,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.DetailsDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Snapshot;
@@ -140,7 +140,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject
     protected SnapshotScheduleDao _snapshotScheduleDao;
     @Inject
-    protected DetailsDao _detailsDao;
+    protected HostDetailsDao _detailsDao;
     @Inject
     protected DomainDao _domainDao;
     @Inject

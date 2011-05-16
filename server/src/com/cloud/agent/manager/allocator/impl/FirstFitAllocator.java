@@ -39,7 +39,7 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.DetailsDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -72,7 +72,7 @@ public class FirstFitAllocator implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
     private String _name;
     @Inject HostDao _hostDao = null;
-    @Inject DetailsDao _hostDetailsDao = null;
+    @Inject HostDetailsDao _hostDetailsDao = null;
     @Inject UserVmDao _vmDao = null;
     @Inject ServiceOfferingDao _offeringDao = null;
     @Inject DomainRouterDao _routerDao = null;
