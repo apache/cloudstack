@@ -283,9 +283,10 @@ public class DownloadListener implements Listener {
 	        downloadMonitor.handleSysTemplateDownload(agent);
 	    } else if ( cmd instanceof StartupStorageCommand) {
 	        StartupStorageCommand storage = (StartupStorageCommand)cmd;
-            if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ) {
+            if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ||  
+                    storage.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE  ) {
                 downloadMonitor.addSystemVMTemplatesToHost(agent, storage.getTemplateInfo());
-                downloadMonitor.handleTemplateSync(agent.getId());
+                downloadMonitor.handleTemplateSync(agent);
             }
 	    } else if ( cmd instanceof StartupSecondaryStorageCommand ) {        
 	        downloadMonitor.handleTemplateSync(agent.getDataCenterId());

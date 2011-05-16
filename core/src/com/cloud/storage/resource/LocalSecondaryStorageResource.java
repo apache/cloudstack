@@ -20,6 +20,7 @@ package com.cloud.storage.resource;
 import java.util.HashMap;
 import java.util.Map;
 
+
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -35,6 +36,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.storage.ListTemplateAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
@@ -48,6 +51,7 @@ import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LocalSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
     private static final Logger s_logger = Logger.getLogger(LocalSecondaryStorageResource.class);
@@ -68,6 +72,17 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     public void disconnected() {
     }
 
+    
+    @Override
+    public String getRootDir(ssCommand cmd){
+        return getRootDir();
+        
+    }
+    
+    public String getRootDir() {
+        return _parent;
+    }
+    
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
@@ -80,9 +95,17 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
             return new Answer(cmd, true, "success");
         } else if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand)cmd);
+        } else if (cmd instanceof ListTemplateCommand){
+            return execute((ListTemplateCommand)cmd);   
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+    
+    private Answer execute(ListTemplateCommand cmd) {
+        String root = getRootDir();
+        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
+        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
     }
 
     @Override
@@ -95,12 +118,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
     }
     
-    @Override
-    public String getRootDir(ssCommand cmd){
-        return null;
-        
-    }
-    
+   
     @Override
     @SuppressWarnings("unchecked")
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
