@@ -161,7 +161,6 @@ Requires: /usr/bin/ssh-keygen
 Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
-Requires: augeas <= 0.7.4
 Group:     System Environment/Libraries
 %description client
 The Cloud.com management server is the central point of coordination,
