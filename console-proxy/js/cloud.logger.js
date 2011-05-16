@@ -54,6 +54,8 @@ Logger.prototype = {
 	open: function() {
 		if(this.logWin) {
 			this.logWin.show();
+			
+			this.log(Logger.LEVEL_SYS, "Logger is open in browser: " + this.objectToString($.browser));
 			return;
 		}
 		
@@ -165,7 +167,7 @@ Logger.prototype = {
 		this.logWin.css("left", (($(document.body).width() - this.logWin.width()) / 2) + "px");
 		this.dockIn();
 		
-		this.log(Logger.LEVEL_SYS, "Logger started");
+		this.log(Logger.LEVEL_SYS, "Logger is open in browser: " + this.objectToString($.browser));
 	},
 	
 	close: function() {
@@ -299,6 +301,37 @@ Logger.prototype = {
 		}
 		
 		return "LEVEL " + level;
+	},
+	
+	// this is a util function which actually can be put elsewhere instead of in this class
+	objectToString : function(object) {
+		if(object) {
+			if(object instanceof Object) {
+				var sb = ['{' ];
+				
+				$.each(object, function(name, val) {
+					sb.push('' + name + ': ');
+					
+					if(val instanceof Object) {
+						sb.push(this.objectToString(val));
+					} else {
+						sb.push('' + val);
+					}
+					
+					sb.push(',');
+				});
+				
+				if(sb[sb.length - 1] == ',' )
+					sb.length = sb.length - 1;
+				
+				sb.push('}');
+				return sb.join("");
+			} else {
+				return '' + object;
+			}
+		} else {
+			return 'N/A';
+		}
 	}
 };
 
