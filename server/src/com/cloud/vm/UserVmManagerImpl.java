@@ -1587,17 +1587,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public String getChecksum(Long hostId, String templatePath){
+        HostVO ssHost = _hostDao.findById(hostId);
+        Host.Type type = ssHost.getType();
+        if( type != Host.Type.SecondaryStorage && type != Host.Type.LocalSecondaryStorage ) {
+            return null;
+        }
+        String secUrl = ssHost.getStorageUrl();
         Answer answer;
-        try {
-            answer = _agentMgr.send(hostId, new ComputeChecksumCommand(templatePath));
-            if(answer.getResult())
-                return answer.getDetails();
-            else 
-                return null;
-        } catch (AgentUnavailableException e) {
-            s_logger.error("Unable to send ComputeChecksumCommand to " + hostId, e);
-        } catch (OperationTimedoutException e) {
-            s_logger.error("Unable to send ComputeChecksumCommand to " + hostId, e);
+        answer = _agentMgr.sendToSecStorage(ssHost, new ComputeChecksumCommand(secUrl, templatePath));
+        if(answer.getResult()) {
+            return answer.getDetails();
         }
         return null;
     }

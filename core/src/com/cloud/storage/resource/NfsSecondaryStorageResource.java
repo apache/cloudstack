@@ -151,7 +151,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private Answer execute(ComputeChecksumCommand cmd) {
         
         String relativeTemplatePath = cmd.getTemplatePath();
-        String parent = _parent;
+        String parent = getRootDir(cmd);
 
         if (relativeTemplatePath.startsWith(File.separator)) {
             relativeTemplatePath = relativeTemplatePath.substring(1);

@@ -25,19 +25,27 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.commands.AddClusterCmd;
+import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.commands.AddSecondaryStorageCmd;
+import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.template.VirtualMachineTemplate;
@@ -271,4 +279,20 @@ public interface AgentManager extends Manager {
     HostVO getSSAgent(HostVO ssHost);
 
     void updateStatus(HostVO host, Event event);
+
+    List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException;
+
+    Cluster getCluster(Long clusterId);
+
+    Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState);
+
+    boolean deleteCluster(DeleteClusterCmd cmd);
+
+    List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags)
+            throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+
+
+    List<? extends Host> discoverHosts(com.cloud.api.commands.AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+
+    List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 }

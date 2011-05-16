@@ -17,16 +17,19 @@
  */
 package com.cloud.agent.api;
 
-public class ComputeChecksumCommand extends Command {
-    
+import com.cloud.agent.api.storage.ssCommand;
+
+
+public class ComputeChecksumCommand extends ssCommand {
+
+
+    private String templatePath;
     public ComputeChecksumCommand() {
         super();
     }
-
-    private String templatePath;
     
-    public ComputeChecksumCommand(String templatePath) {
-        super();
+    public ComputeChecksumCommand(String secUrl, String templatePath) {
+        super(secUrl);
         this.templatePath = templatePath;
     }    
     
@@ -34,9 +37,5 @@ public class ComputeChecksumCommand extends Command {
         return templatePath;
     }
 
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
 
 }
