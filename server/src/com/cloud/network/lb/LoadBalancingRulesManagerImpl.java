@@ -436,7 +436,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
 
     @DB
-    private boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs) throws ResourceUnavailableException {
+    protected boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs) throws ResourceUnavailableException {
         Transaction txn = Transaction.currentTxn();
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         for (LoadBalancerVO lb : lbs) {
