@@ -67,8 +67,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("2.1.8", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans() });
         _upgradeMap.put("2.1.9", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans() });
         _upgradeMap.put("2.2.1", new DbUpgrade[] { new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224()});
-        _upgradeMap.put("2.2.2", new DbUpgrade[] { new UpgradeSnapshot223to224(), new Upgrade222to224() });
-        _upgradeMap.put("2.2.3", new DbUpgrade[] { new UpgradeSnapshot223to224(), new Upgrade222to224() });
+        _upgradeMap.put("2.2.2", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224() });
+        _upgradeMap.put("2.2.3", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224() });
     }
 
     protected void runScript(File file) {
@@ -122,7 +122,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         for (DbUpgrade upgrade : upgrades) {
             s_logger.info("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1]
-                    + " to " + upgrade.getUpgradedVersion());
+                                                                                                                                                                                             + " to " + upgrade.getUpgradedVersion());
             Transaction txn = Transaction.open("Upgrade");
             txn.start();
             try {
