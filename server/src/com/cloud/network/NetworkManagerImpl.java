@@ -58,6 +58,7 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -257,6 +258,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<IPAddressVO> addrs = _ipAddressDao.lockRows(sc, filter, true);
 
         if (addrs.size() == 0) {
+            if (podId != null) {
+                throw new InsufficientAddressCapacityException("Insufficient address capacity", HostPodDao.class, podId);
+            } 
             throw new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
         }
 
