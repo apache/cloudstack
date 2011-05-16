@@ -43,7 +43,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
                                                                      "FROM user_statistics us, account a " +
                                                                      "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
                                                                      "ORDER BY us.id";
-    private final SearchBuilder<UserStatisticsVO> AccountDcIpDeviceSearch;
+    private final SearchBuilder<UserStatisticsVO> AllFieldsSearch;
     private final SearchBuilder<UserStatisticsVO> AccountSearch;
     
     public UserStatisticsDaoImpl() {
@@ -51,34 +51,37 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
     	AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
     	AccountSearch.done();
 
-    	AccountDcIpDeviceSearch = createSearchBuilder();
-        AccountDcIpDeviceSearch.and("account", AccountDcIpDeviceSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountDcIpDeviceSearch.and("dc", AccountDcIpDeviceSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        AccountDcIpDeviceSearch.and("ip", AccountDcIpDeviceSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
-        AccountDcIpDeviceSearch.and("device", AccountDcIpDeviceSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
-        AccountDcIpDeviceSearch.and("deviceType", AccountDcIpDeviceSearch.entity().getDeviceType(), SearchCriteria.Op.EQ);
-        AccountDcIpDeviceSearch.done();
+    	AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ip", AllFieldsSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("device", AllFieldsSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("deviceType", AllFieldsSearch.entity().getDeviceType(), SearchCriteria.Op.EQ);        
+        AllFieldsSearch.done();
     }
     
     @Override
-    public UserStatisticsVO findBy(long accountId, long dcId, String publicIp, Long deviceId, String deviceType) {
-        SearchCriteria<UserStatisticsVO> sc = AccountDcIpDeviceSearch.create();
+    public UserStatisticsVO findBy(long accountId, long dcId, long networkId, String publicIp, Long deviceId, String deviceType) {
+        SearchCriteria<UserStatisticsVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
+        sc.setParameters("network", networkId);
         sc.setParameters("ip", publicIp);
         sc.setParameters("device", deviceId);
-        sc.setParameters("deviceType", deviceType);
+        sc.setParameters("deviceType", deviceType);        
         return findOneBy(sc);
     }
 
     @Override
-    public UserStatisticsVO lock(long accountId, long dcId, String publicIp, Long deviceId, String deviceType) {
-        SearchCriteria<UserStatisticsVO> sc = AccountDcIpDeviceSearch.create();
+    public UserStatisticsVO lock(long accountId, long dcId, long networkId, String publicIp, Long deviceId, String deviceType) {
+        SearchCriteria<UserStatisticsVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
+        sc.setParameters("network", networkId);
         sc.setParameters("ip", publicIp);
         sc.setParameters("device", deviceId);
-        sc.setParameters("deviceType", deviceType);
+        sc.setParameters("deviceType", deviceType);        
         return lockOneRandomRow(sc, true);
     }
 

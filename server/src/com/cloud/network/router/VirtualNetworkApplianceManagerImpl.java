@@ -423,7 +423,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         final Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            final UserStatisticsVO userStats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), null, router.getId(), router.getType().toString());
+            final UserStatisticsVO userStats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
             if (userStats != null) {
                 final RebootAnswer sa = (RebootAnswer) answer;
                 final Long received = sa.getBytesReceived();
@@ -644,7 +644,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                 continue;
                             }
                             txn.start();
-                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), router.getDataCenterId(), null, router.getId(), router.getType().toString());
+                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), router.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
                             if (stats == null) {
                                 s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                 continue;
@@ -761,7 +761,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             // Creating stats entry for router
-            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, null, router.getId(), router.getType().toString());
+            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
             if (stats == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
@@ -846,7 +846,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
             }
             // Creating stats entry for router
-            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, null, router.getId(), router.getType().toString());
+            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
             if (stats == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
