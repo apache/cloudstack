@@ -325,6 +325,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             //update agent attache password
             try {
                 Boolean result = _clusterMgr.propagateAgentEvent(upasscmd.getHostId(), Event.UpdatePassword);
+                if (result != null) {
+                    return result;
+                }
             } catch (AgentUnavailableException e) {
             }
         }
@@ -334,6 +337,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             for (HostVO h : hosts) {
                 try {
                     Boolean result = _clusterMgr.propagateAgentEvent(h.getId(), Event.UpdatePassword);
+                    if (result != null) {
+                        return result;
+                    }
                 } catch (AgentUnavailableException e) {
                 }
             }

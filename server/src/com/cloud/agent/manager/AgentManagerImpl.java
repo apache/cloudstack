@@ -721,6 +721,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         if (upasscmd.getClusterId() == null) {
             //update agent attache password
             AgentAttache agent = this.findAttache(upasscmd.getHostId());
+            if (!(agent instanceof DirectAgentAttache)) {
+                return false;
+            }
             UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(upasscmd.getUsername(), upasscmd.getPassword());
             agent.updatePassword(cmd);
         }
@@ -729,6 +732,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             List<HostVO> hosts = _hostDao.listByCluster(upasscmd.getClusterId());
             for (HostVO h : hosts) {
                 AgentAttache agent = this.findAttache(h.getId());
+                if (!(agent instanceof DirectAgentAttache)) {
+                    continue;
+                }
                 UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(upasscmd.getUsername(), upasscmd.getPassword());
                 agent.updatePassword(cmd);
             }
