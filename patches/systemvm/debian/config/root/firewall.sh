@@ -57,7 +57,7 @@ tcp_or_udp_entry() {
   instance ip=$instIp proto=$proto port=$port dport=$dport op=$op"
 
   #if adding, this might be a duplicate, so delete the old one first
-  [ "$op" == "-A" ] && tcp_or_udp_entry $instIp $dport0 $publicIp $port "-D" $proto 
+  [ "$op" == "-A" ] && tcp_or_udp_entry $instIp $dport0 $publicIp $port "-D" $proto $cidrs
   # the delete operation may have errored out but the only possible reason is 
   # that the rules didn't exist in the first place
   local dev=$(ip_to_dev $publicIp)
