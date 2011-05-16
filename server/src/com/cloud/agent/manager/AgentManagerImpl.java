@@ -77,6 +77,7 @@ import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -207,6 +208,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     protected NioServer _connection;
     @Inject
     protected HostDao _hostDao = null;
+    @Inject
+    protected DetailsDao _detailsDao = null;
     @Inject
     protected DataCenterDao _dcDao = null;
     @Inject
@@ -1227,7 +1230,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                 agent.updatePassword(cmd); 
             }
         }       
-        return false;
+        return true;
     }
 
     @DB
@@ -2095,6 +2098,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             return true;
         } else if (event == Event.ShutdownRequested) {
             return reconnect(hostId);
+        }
+        else if (event == Event.UpdatePassword) { 
+            AgentAttache attache = findAttache(hostId);
+            DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
+            String username = nv.getValue();
+            nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
+            String password = nv.getValue();
+            UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
+            if (attache != null) {
+                attache.updatePassword(cmd);
+            }
         }
         return false;
     }

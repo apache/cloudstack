@@ -72,7 +72,8 @@ public enum Status {
         ManagementServerDown(false, "Management Server that the agent is connected is going down"),
         WaitedTooLong(false, "Waited too long from the agent to reconnect on its own.  Time to do HA"),
         Remove(true, "Host is removed"),
-        Ready(false, "Host is ready for commands");
+        Ready(false, "Host is ready for commands"),
+        UpdatePassword(false, "Update host password from db");
 
         private final boolean isUserRequest;
         private final String comment;

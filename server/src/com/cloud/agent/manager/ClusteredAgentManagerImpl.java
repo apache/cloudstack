@@ -26,9 +26,11 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Request.Version;
 import com.cloud.agent.transport.Response;
+import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -317,6 +319,28 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         return super.deleteHost(hostId, isForced, caller);
+    }
+    
+    @Override
+    public boolean updateHostPassword(UpdateHostPasswordCmd upasscmd) {
+        if (upasscmd.getClusterId() == null) {
+            //update agent attache password
+            try {
+                Boolean result = _clusterMgr.propagateAgentEvent(upasscmd.getHostId(), Event.UpdatePassword);
+            } catch (AgentUnavailableException e) {
+            }
+        }
+        else {
+            // get agents for the cluster
+            List<HostVO> hosts = _hostDao.listByCluster(upasscmd.getClusterId());
+            for (HostVO h : hosts) {
+                try {
+                    Boolean result = _clusterMgr.propagateAgentEvent(h.getId(), Event.UpdatePassword);
+                } catch (AgentUnavailableException e) {
+                }
+            }
+        } 
+        return super.updateHostPassword(upasscmd);
     }
 
     public void notifyNodesInCluster(AgentAttache attache) {
