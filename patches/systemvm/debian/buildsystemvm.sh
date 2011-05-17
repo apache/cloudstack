@@ -22,8 +22,6 @@
 
 
 set -x
-set -u
-set -e
 
 IMAGENAME=systemvm
 LOCATION=/var/lib/images/systemvm
