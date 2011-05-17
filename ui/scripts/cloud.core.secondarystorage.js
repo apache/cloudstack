@@ -68,7 +68,7 @@ function secondaryStorageToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#first_row").text(firstRowText);    
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
-    var secondRowText = fromdb(jsonObj.ipaddress);
+    var secondRowText = fromdb(jsonObj.id);
     $midmenuItem1.find("#second_row").text(secondRowText); 
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
@@ -97,7 +97,7 @@ function secondaryStorageToDetailsTab() {
     $thisTab.find("#tab_spinning_wheel").show();                   
          
     $.ajax({
-        data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+jsonObj.zoneid),
+        data: createURL("command=listHosts&id="+jsonObj.id),
         dataType: "json",
         async: false,
         success: function(json) {              
