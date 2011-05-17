@@ -17,13 +17,15 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.storage.Storage.StoragePoolType;
 
+@LogLevel(Log4jLevel.Trace)
 public class GetStorageStatsCommand extends Command {
     private String id;
     private String localPath;
     private StoragePoolType pooltype;
-    
+
 
     public GetStorageStatsCommand() {
     }
@@ -39,12 +41,12 @@ public class GetStorageStatsCommand extends Command {
     public GetStorageStatsCommand(String id) {
         this.id = id;
     }
-    
+
     public GetStorageStatsCommand(String id, StoragePoolType pooltype) {
         this.id = id;
         this.pooltype = pooltype;
     }
-    
+
     public GetStorageStatsCommand(String id, StoragePoolType pooltype, String localPath) {
         this.id = id;
         this.pooltype = pooltype;
@@ -54,18 +56,13 @@ public class GetStorageStatsCommand extends Command {
     public String getStorageId() {
         return this.id;
     }
-    
+
     public String getLocalPath() {
-    	return this.localPath;
+        return this.localPath;
     }
 
     @Override
     public boolean executeInSequence() {
         return false;
-    }
-    
-    @Override
-    public boolean logTrace() {
-        return true;
     }
 }

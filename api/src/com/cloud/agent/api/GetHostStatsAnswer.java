@@ -17,30 +17,32 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.host.HostStats;
 
 /**
  * @author ajoshi
  *
  */
+@LogLevel(Log4jLevel.Trace)
 public class GetHostStatsAnswer extends Answer implements HostStats {
-	
-	HostStatsEntry hostStats;
+
+    HostStatsEntry hostStats;
 
     protected GetHostStatsAnswer() {
-    	hostStats = new HostStatsEntry();
+        hostStats = new HostStatsEntry();
     }
-        
-	public GetHostStatsAnswer(GetHostStatsCommand cmd, HostStatsEntry hostStatistics) {
-		super(cmd);
-		this.hostStats = hostStatistics;
-	}
-	
-    public GetHostStatsAnswer(GetHostStatsCommand cmd, double cpuUtilization, double freeMemoryKBs, double totalMemoryKBs, double networkReadKBs, 
-    		double networkWriteKBs, String entityType) {
+
+    public GetHostStatsAnswer(GetHostStatsCommand cmd, HostStatsEntry hostStatistics) {
+        super(cmd);
+        this.hostStats = hostStatistics;
+    }
+
+    public GetHostStatsAnswer(GetHostStatsCommand cmd, double cpuUtilization, double freeMemoryKBs, double totalMemoryKBs, double networkReadKBs,
+            double networkWriteKBs, String entityType) {
         super(cmd);
         hostStats = new HostStatsEntry();
-        
+
         hostStats.setCpuUtilization(cpuUtilization);
         hostStats.setFreeMemoryKBs(freeMemoryKBs);
         hostStats.setTotalMemoryKBs(totalMemoryKBs);
@@ -48,49 +50,44 @@ public class GetHostStatsAnswer extends Answer implements HostStats {
         hostStats.setNetworkWriteKBs(networkWriteKBs);
         hostStats.setEntityType(entityType);
     }
-    
+
     @Override
     public double getUsedMemory() {
-    	return hostStats.getUsedMemory();
+        return hostStats.getUsedMemory();
     }
-    
+
     @Override
     public double getFreeMemoryKBs() {
         return hostStats.getFreeMemoryKBs();
     }
-    
+
     @Override
     public double getTotalMemoryKBs() {
-    	return hostStats.getTotalMemoryKBs();
+        return hostStats.getTotalMemoryKBs();
     }
-    
+
     @Override
     public double getCpuUtilization() {
         return hostStats.getCpuUtilization();
     }
-    
+
     @Override
     public double getNetworkReadKBs() {
-    	return hostStats.getNetworkReadKBs();
+        return hostStats.getNetworkReadKBs();
     }
-    
+
     @Override
     public double getNetworkWriteKBs() {
-    	return hostStats.getNetworkWriteKBs();
+        return hostStats.getNetworkWriteKBs();
     }
 
-	@Override
-	public String getEntityType() {
-		return hostStats.getEntityType();
-	}
-
-	@Override
-	public HostStats getHostStats() {
-		return hostStats;
-	}
-	
     @Override
-    public boolean logTrace() {
-        return true;
+    public String getEntityType() {
+        return hostStats.getEntityType();
+    }
+
+    @Override
+    public HostStats getHostStats() {
+        return hostStats;
     }
 }

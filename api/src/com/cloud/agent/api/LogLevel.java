@@ -33,14 +33,10 @@ import org.apache.log4j.Logger;
 @Target({ TYPE, FIELD })
 @Retention(RUNTIME)
 public @interface LogLevel {
-    public enum Log4jLevel {
+    public enum Log4jLevel { // Had to do this because Level is not primitive.
         Off(Level.OFF),
         Trace(Level.TRACE),
-        Debug(Level.DEBUG),
-        Info(Level.INFO),
-        Warn(Level.WARN),
-        Error(Level.ERROR),
-        Fatal(Level.FATAL);
+        Debug(Level.DEBUG);
 
         Level _level;
 
@@ -48,14 +44,10 @@ public @interface LogLevel {
             _level = level;
         }
 
-        public void log(Logger logger, String msg) {
-            logger.log(_level, msg);
-        }
-
         public boolean enabled(Logger logger) {
-            return logger.isEnabledFor(_level);
+            return _level != Level.OFF && logger.isEnabledFor(_level);
         }
     }
 
-    Log4jLevel level() default Log4jLevel.Debug;
+    Log4jLevel value() default Log4jLevel.Debug;
 }

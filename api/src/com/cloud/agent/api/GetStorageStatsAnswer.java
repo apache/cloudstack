@@ -17,39 +17,36 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.storage.StorageStats;
 
+@LogLevel(Log4jLevel.Trace)
 public class GetStorageStatsAnswer extends Answer implements StorageStats {
     protected GetStorageStatsAnswer() {
     }
-    
+
     protected long used;
-    
+
     protected long capacity;
-    
+
     @Override
     public long getByteUsed() {
         return used;
     }
-    
+
     @Override
     public long getCapacityBytes() {
         return capacity;
     }
-    
-    
+
+
     public GetStorageStatsAnswer(GetStorageStatsCommand cmd, long capacity, long used) {
         super(cmd, true, null);
         this.capacity = capacity;
         this.used = used;
     }
-    
+
     public GetStorageStatsAnswer(GetStorageStatsCommand cmd, String details) {
         super(cmd, false, details);
-    }
-
-    @Override
-    public boolean logTrace() {
-        return true;
     }
 }

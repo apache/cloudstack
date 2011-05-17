@@ -19,39 +19,37 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
+@LogLevel(Log4jLevel.Trace)
 public class GetVmStatsCommand extends Command {
     List<String> vmNames;
     String hostGuid;
     String hostName;
-    
+
     protected GetVmStatsCommand() {
     }
-    
+
     public GetVmStatsCommand(List<String> vmNames, String hostGuid, String hostName) {
         this.vmNames = vmNames;
         this.hostGuid = hostGuid;
         this.hostName = hostName;
     }
-    
+
     public List<String> getVmNames() {
         return vmNames;
     }
-    
+
     public String getHostGuid(){
-    	return this.hostGuid;
+        return this.hostGuid;
     }
-    
+
     public String getHostName(){
-    	return this.hostName;
+        return this.hostName;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return false;
-    }
-    
-    @Override
-    public boolean logTrace() {
-        return true;
     }
 }

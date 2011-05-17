@@ -19,7 +19,6 @@ package com.cloud.agent.transport;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.exception.UnsupportedVersionException;
-import com.google.gson.Gson;
 
 /**
  *
@@ -27,42 +26,41 @@ import com.google.gson.Gson;
 public class Response extends Request {
     protected Response() {
     }
-    
+
     public Response(Request request, Answer answer) {
         this(request, new Answer[] { answer });
     }
-    
+
     public Response(Request request, Answer answer, long mgmtId, long agentId) {
         this(request, new Answer[] { answer }, mgmtId, agentId);
     }
-    
+
     public Response(Request request, Answer[] answers) {
         super(request, answers);
     }
-    
+
     public Response(Request request, Answer[] answers, long mgmtId, long agentId) {
-    	super(request, answers);
-    	_mgmtId = mgmtId;
-        _agentId = agentId;
+        super(request, answers);
+        _mgmtId = mgmtId;
+        _via = agentId;
     }
-    
-    protected Response(Version ver, long seq, long agentId, long mgmtId, short flags, String ans) {
-        super(ver, seq, agentId, mgmtId, flags, ans);
+
+    protected Response(Version ver, long seq, long agentId, long mgmtId, long via, short flags, String ans) {
+        super(ver, seq, agentId, mgmtId, via, flags, ans);
     }
-    
+
     public Answer getAnswer() {
-    	Answer[] answers = getAnswers();
-    	return answers[0];
+        Answer[] answers = getAnswers();
+        return answers[0];
     }
-    
+
     public Answer[] getAnswers() {
-    	if (_cmds == null) {
-            final Gson json = s_gBuilder.create();
-    		_cmds = json.fromJson(_content, Answer[].class);
-    	}
-		return (Answer[])_cmds;
+        if (_cmds == null) {
+            _cmds = s_gson.fromJson(_content, Answer[].class);
+        }
+        return (Answer[])_cmds;
     }
-    
+
     @Override
     protected String getType() {
         return "Ans: ";

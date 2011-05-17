@@ -18,18 +18,10 @@
 
 package com.cloud.serializer;
 
-import java.lang.reflect.Type;
-import java.util.List;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.transport.ArrayTypeAdaptor;
-import com.cloud.agent.transport.VolListTypeAdaptor;
-import com.cloud.storage.VolumeVO;
-import com.cloud.utils.Pair;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 
 public class GsonHelper {
 	private static final GsonBuilder s_gBuilder;
@@ -38,8 +30,6 @@ public class GsonHelper {
         s_gBuilder.setVersion(1.3);
         s_gBuilder.registerTypeAdapter(Command[].class, new ArrayTypeAdaptor<Command>());
         s_gBuilder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
-        Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
-        s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
 	}
 	
 	public static GsonBuilder getBuilder() {

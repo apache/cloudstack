@@ -20,25 +20,23 @@ package com.cloud.agent.api;
 
 import java.util.HashMap;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
+@LogLevel(Log4jLevel.Trace)
 public class GetVmStatsAnswer extends Answer {
-	
-	HashMap<String, VmStatsEntry> vmStatsMap;
-	
-	public GetVmStatsAnswer(GetVmStatsCommand cmd, HashMap<String, VmStatsEntry> vmStatsMap) {
-		super(cmd);
-		this.vmStatsMap = vmStatsMap;
-	}
-	
-	public HashMap<String, VmStatsEntry> getVmStatsMap() {
-		return vmStatsMap;
-	}
-	
-	protected GetVmStatsAnswer() {
-		//no-args constructor for json serialization-deserialization
-	}
-	
-    @Override
-    public boolean logTrace() {
-        return true;
+
+    HashMap<String, VmStatsEntry> vmStatsMap;
+
+    public GetVmStatsAnswer(GetVmStatsCommand cmd, HashMap<String, VmStatsEntry> vmStatsMap) {
+        super(cmd);
+        this.vmStatsMap = vmStatsMap;
+    }
+
+    public HashMap<String, VmStatsEntry> getVmStatsMap() {
+        return vmStatsMap;
+    }
+
+    protected GetVmStatsAnswer() {
+        //no-args constructor for json serialization-deserialization
     }
 }

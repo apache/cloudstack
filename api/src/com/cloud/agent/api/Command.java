@@ -28,10 +28,10 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
  * all of the methods that needs to be implemented by the children classes.
  * 
  */
-@LogLevel(level = Log4jLevel.Debug)
 public abstract class Command {
 
     // allow command to carry over hypervisor or other environment related context info
+    @LogLevel(Log4jLevel.Trace)
     protected Map<String, String> contextMap = new HashMap<String, String>();
 
     protected Command() {
@@ -55,13 +55,5 @@ public abstract class Command {
 
     public String getContextParam(String name) {
         return contextMap.get(name);
-    }
-
-    public boolean logTrace() {
-        return false;
-    }
-
-    public boolean doNotLogCommandParams() {
-        return false;
     }
 }

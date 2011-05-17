@@ -17,24 +17,27 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 
 public class UpdateHostPasswordCommand extends Command {
+    @LogLevel(Log4jLevel.Off)
     protected String _username;
+    @LogLevel(Log4jLevel.Off)
     protected String _new_password;
-    
+
     protected UpdateHostPasswordCommand() {
     }
-    
+
     public UpdateHostPasswordCommand(String username, String new_password) {
         this._username = username;
         this._new_password = new_password;
     }
-    
+
     public String getNewPassword() {
         return _new_password;
     }
-    
+
     public String getUsername() {
         return _username;
     }

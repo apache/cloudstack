@@ -246,8 +246,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        Request.initBuilder();
-
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         if (configDao == null) {

@@ -83,29 +83,35 @@ public class Request {
     protected static final short       FLAG_REQUEST         = 0x1;
     protected static final short       FLAG_STOP_ON_ERROR   = 0x2;
     protected static final short       FLAG_IN_SEQUENCE     = 0x4;
-    protected static final short       FLAG_REVERT_ON_ERROR = 0x8;
     protected static final short       FLAG_FROM_SERVER     = 0x20;
     protected static final short       FLAG_CONTROL         = 0x40;
 
-    protected static final GsonBuilder s_gBuilder;
+    protected static final Gson  s_gson;
+    protected static final Gson  s_gogger;
 
     static {
-        s_gBuilder = new GsonBuilder();
-        setDefaultGsonConfig(s_gBuilder);
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        s_gson = setDefaultGsonConfig(gsonBuilder);
+        GsonBuilder loggerBuilder = new GsonBuilder();
+        loggerBuilder.disableHtmlEscaping();
+        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(s_logger));
+        s_gogger = setDefaultGsonConfig(loggerBuilder);
         s_logger.info("Default Builder inited.");
     }
 
-    public static void setDefaultGsonConfig(GsonBuilder builder) {
-        builder.registerTypeAdapter(Command[].class, new ArrayTypeAdaptor<Command>());
-        builder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
+    public static Gson setDefaultGsonConfig(GsonBuilder builder) {
+        ArrayTypeAdaptor<Command> cmdAdaptor = new ArrayTypeAdaptor<Command>();
+        builder.registerTypeAdapter(Command[].class, cmdAdaptor);
+        ArrayTypeAdaptor<Answer> ansAdaptor = new ArrayTypeAdaptor<Answer>();
+        builder.registerTypeAdapter(Answer[].class, ansAdaptor);
         builder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {
         }.getType(), new PortConfigListTypeAdaptor());
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
         }.getType(), new NwGroupsCommandTypeAdaptor());
-    }
-
-    public static GsonBuilder initBuilder() {
-        return s_gBuilder;
+        Gson gson = builder.create();
+        cmdAdaptor.initGson(gson);
+        ansAdaptor.initGson(gson);
+        return gson;
     }
 
     protected Version   _ver;
@@ -113,6 +119,7 @@ public class Request {
     protected long      _seq;
     protected short     _flags;
     protected long      _mgmtId;
+    protected long      _via;
     protected long      _agentId;
     protected Command[] _cmds;
     protected String    _content;
@@ -120,18 +127,23 @@ public class Request {
     protected Request() {
     }
 
-    protected Request(Version ver, long seq, long agentId, long mgmtId, short flags, final Command[] cmds) {
+    protected Request(Version ver, long seq, long agentId, long mgmtId, long via, short flags, final Command[] cmds) {
         _ver = ver;
         _cmds = cmds;
         _flags = flags;
         _seq = seq;
+        _via = via;
         _agentId = agentId;
         _mgmtId = mgmtId;
         setInSequence(cmds);
     }
 
-    protected Request(Version ver, long seq, long agentId, long mgmtId, short flags, final String content) {
-        this(ver, seq, agentId, mgmtId, flags, (Command[]) null);
+    protected Request(Version ver, long seq, long agentId, long mgmtId, short flags, final Command[] cmds) {
+        this(ver, seq, agentId, mgmtId, agentId, flags, cmds);
+    }
+
+    protected Request(Version ver, long seq, long agentId, long mgmtId, long via, short flags, final String content) {
+        this(ver, seq, agentId, mgmtId, via, flags, (Command[])null);
         _content = content;
     }
 
@@ -164,6 +176,7 @@ public class Request {
         setStopOnError(that.stopOnError());
         this._cmds = cmds;
         this._mgmtId = that._mgmtId;
+        this._via = that._via;
         this._agentId = that._agentId;
         setFromServer(!that.isFromServer());
     }
@@ -182,14 +195,6 @@ public class Request {
 
     public void setControl(boolean control) {
         _flags |= (control ? FLAG_CONTROL : 0);
-    }
-
-    public boolean revertOnError() {
-        return (_flags & FLAG_CONTROL) > 0;
-    }
-
-    private final void setRevertOnError(boolean revertOnError) {
-        _flags |= (revertOnError ? FLAG_REVERT_ON_ERROR : 0);
     }
 
     private final void setFromServer(boolean fromServer) {
@@ -212,6 +217,10 @@ public class Request {
         _agentId = agentId;
     }
 
+    public void setVia(long agentId) {
+        _via = agentId;
+    }
+
     public boolean executeInSequence() {
         return (_flags & FLAG_IN_SEQUENCE) > 0;
     }
@@ -231,8 +240,7 @@ public class Request {
 
     public Command[] getCommands() {
         if (_cmds == null) {
-            final Gson json = s_gBuilder.create();
-            _cmds = json.fromJson(_content, Command[].class);
+            _cmds = s_gson.fromJson(_content, Command[].class);
         }
         return _cmds;
     }
@@ -244,17 +252,17 @@ public class Request {
     public String toString() {
         String content = _content;
         if (content == null) {
-            final Gson gson = s_gBuilder.create();
             try {
-                content = gson.toJson(_cmds);
+                content = s_gson.toJson(_cmds);
             } catch (Throwable e) {
                 s_logger.error("Gson serialization error on Request.toString() " + getClass().getCanonicalName(), e);
             }
         }
         final StringBuilder buffer = new StringBuilder();
         buffer.append("{ ").append(getType());
-        buffer.append(", Seq: ").append(_seq).append(", Ver: ").append(_ver.toString()).append(", MgmtId: ").append(_mgmtId).append(", AgentId: ").append(_agentId).append(", Flags: ")
-        .append(Integer.toBinaryString(getFlags()));
+        buffer.append(", Seq: ").append(_agentId).append("-").append(_seq).append(", Ver: ").append(_ver.toString());
+        buffer.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via);
+        buffer.append(", Flags: ").append(Integer.toBinaryString(getFlags()));
         buffer.append(", ").append(content).append(" }");
         return buffer.toString();
     }
@@ -264,13 +272,14 @@ public class Request {
     }
 
     protected ByteBuffer serializeHeader(final int contentSize) {
-        final ByteBuffer buffer = ByteBuffer.allocate(32);
+        final ByteBuffer buffer = ByteBuffer.allocate(40);
         buffer.put(getVersionInByte());
         buffer.put((byte) 0);
         buffer.putShort(getFlags());
         buffer.putLong(_seq);
         buffer.putInt(contentSize);
         buffer.putLong(_mgmtId);
+        buffer.putLong(_via);
         buffer.putLong(_agentId);
         buffer.flip();
 
@@ -278,11 +287,10 @@ public class Request {
     }
 
     public ByteBuffer[] toBytes() {
-        final Gson gson = s_gBuilder.create();
         final ByteBuffer[] buffers = new ByteBuffer[2];
 
         if (_content == null) {
-            _content = gson.toJson(_cmds, _cmds.getClass());
+            _content = s_gson.toJson(_cmds, _cmds.getClass());
         }
         buffers[1] = ByteBuffer.wrap(_content.getBytes());
         buffers[0] = serializeHeader(buffers[1].capacity());
@@ -309,58 +317,30 @@ public class Request {
     }
 
     public void log(long agentId, String msg) {
-        if (!s_logger.isDebugEnabled()) {
-            return;
-        }
-
         StringBuilder buf = new StringBuilder("Seq ");
-        buf.append(agentId).append("-").append(_seq).append(": ");
-        boolean debug = false;
+        buf.append(_agentId).append("-").append(_seq).append(": ");
 
-        List<Command> cmdListTonotLog = new ArrayList<Command>();
+        buf.append(msg);
+        buf.append("{ ").append(getType());
+        buf.append(", Ver: ").append(_ver.toString());
+        buf.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via);
+        buf.append(", Flags: ").append(Integer.toBinaryString(getFlags())).append(", ");
         if (_cmds != null) {
-            for (Command cmd : _cmds) {
-                if (cmd.doNotLogCommandParams()) {
-                    cmdListTonotLog.add(cmd);
-                }
+            try {
+                s_gogger.toJson(_cmds, buf);
+            } catch (Throwable e) {
+                s_logger.error("Gson serialization error on Request.toString() " + getClass().getCanonicalName(), e);
+                return;
             }
-        }
-
-        if (_cmds != null) {
-            for (Command cmd : _cmds) {
-                if (!cmd.logTrace()) {
-                    debug = true;
-                    break;
-                }
-            }
+        } else if (_content != null) {
+            buf.append(_content.subSequence(0, 32));
         } else {
-            debug = true;
+            buf.append("I've got nada here!");
+            assert false : "How can both commands and content be null?  What are we sending here?";
         }
+        buf.append(" }");
 
-        buf.append(msg).append(toString());
-
-        if (!cmdListTonotLog.isEmpty()) {
-            removeCmdContentFromLog(cmdListTonotLog, buf);
-        }
-
-        if (executeInSequence() || debug) {
-            s_logger.debug(buf.toString());
-        } else {
-            s_logger.trace(buf.toString());
-        }
-    }
-
-    private void removeCmdContentFromLog(List<Command> cmdListTonotLog, StringBuilder buf) {
-        for (Command cmd : cmdListTonotLog) {
-            int cmdNameIndex = buf.indexOf(cmd.toString());
-            if (cmdNameIndex != -1) {
-                int colonIndex = buf.indexOf(":", cmdNameIndex);
-                int cmdEndIndex = buf.indexOf("]", cmdNameIndex);
-                if (colonIndex != -1 && cmdEndIndex != -1) {
-                    buf.replace(colonIndex + 1, cmdEndIndex, "{}}");
-                }
-            }
-        }
+        s_logger.debug(buf.toString());
     }
 
     /**
@@ -388,6 +368,7 @@ public class Request {
         final long seq = buff.getLong();
         final int size = buff.getInt();
         final long mgmtId = buff.getLong();
+        final long via = buff.getLong();
         final long agentId = buff.getLong();
 
         byte[] command = null;
@@ -404,14 +385,18 @@ public class Request {
         final String content = new String(command, offset, command.length - offset);
 
         if (isRequest) {
-            return new Request(version, seq, agentId, mgmtId, flags, content);
+            return new Request(version, seq, agentId, mgmtId, via, flags, content);
         } else {
-            return new Response(Version.get(ver), seq, agentId, mgmtId, flags, content);
+            return new Response(Version.get(ver), seq, agentId, mgmtId, via, flags, content);
         }
     }
 
     public long getAgentId() {
         return _agentId;
+    }
+
+    public long getViaAgentId() {
+        return _via;
     }
 
     public static boolean requiresSequentialExecution(final byte[] bytes) {
@@ -458,15 +443,14 @@ public class Request {
         @Override
         public JsonElement serialize(Pair<Long, Long> src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonArray array = new JsonArray();
-            Gson json = s_gBuilder.create();
             if (src.first() != null) {
-                array.add(json.toJsonTree(src.first()));
+                array.add(s_gson.toJsonTree(src.first()));
             } else {
                 array.add(new JsonNull());
             }
 
             if (src.second() != null) {
-                array.add(json.toJsonTree(src.second()));
+                array.add(s_gson.toJsonTree(src.second()));
             } else {
                 array.add(new JsonNull());
             }
@@ -507,11 +491,10 @@ public class Request {
                 s_logger.info("Returning JsonNull");
                 return new JsonNull();
             }
-            Gson json = s_gBuilder.create();
             s_logger.debug("Returning gson tree");
             JsonArray array = new JsonArray();
             for (PortConfig pc : src) {
-                array.add(json.toJsonTree(pc));
+                array.add(s_gson.toJsonTree(pc));
             }
 
             return array;
@@ -522,13 +505,12 @@ public class Request {
             if (json.isJsonNull()) {
                 return new ArrayList<PortConfig>();
             }
-            Gson jsonp = s_gBuilder.create();
             List<PortConfig> pcs = new ArrayList<PortConfig>();
             JsonArray array = json.getAsJsonArray();
             Iterator<JsonElement> it = array.iterator();
             while (it.hasNext()) {
                 JsonElement element = it.next();
-                pcs.add(jsonp.fromJson(element, PortConfig.class));
+                pcs.add(s_gson.fromJson(element, PortConfig.class));
             }
             return pcs;
         }

@@ -27,7 +27,6 @@ import java.util.Map;
 import com.cloud.agent.api.Command;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -39,23 +38,24 @@ import com.google.gson.JsonSerializer;
 
 public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerializer<T[]> {
 
-	static final GsonBuilder s_gBuilder;
-    static {
-        s_gBuilder = Request.initBuilder();
-    }
-	
-	
+    protected Gson              _gson = null;
+
+
     private static final String s_pkg = Command.class.getPackage().getName() + ".";
+
     public ArrayTypeAdaptor() {
+    }
+
+    public void initGson(Gson gson) {
+        _gson = gson;
     }
 
     @Override
     public JsonElement serialize(T[] src, Type typeOfSrc, JsonSerializationContext context) {
-        Gson gson = s_gBuilder.create();
         JsonArray array = new JsonArray();
         for (T cmd : src) {
             JsonObject obj = new JsonObject();
-            obj.add(cmd.getClass().getName().substring(s_pkg.length()), gson.toJsonTree(cmd));
+            obj.add(cmd.getClass().getName().substring(s_pkg.length()), _gson.toJsonTree(cmd));
             array.add(obj);
         }
 
@@ -65,15 +65,14 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
     @Override
     @SuppressWarnings("unchecked")
     public T[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-            throws JsonParseException {
+    throws JsonParseException {
         JsonArray array = json.getAsJsonArray();
         Iterator<JsonElement> it = array.iterator();
         ArrayList<T> cmds = new ArrayList<T>();
-        Gson gson = s_gBuilder.create();
         while (it.hasNext()) {
             JsonObject element = (JsonObject)it.next();
             Map.Entry<String, JsonElement> entry = element.entrySet().iterator().next();
-            
+
             String name = s_pkg + entry.getKey();
             Class<?> clazz;
             try {
@@ -81,7 +80,7 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
             } catch (ClassNotFoundException e) {
                 throw new CloudRuntimeException("can't find " + name);
             }
-            T cmd = (T)gson.fromJson(entry.getValue(), clazz);
+            T cmd = (T)_gson.fromJson(entry.getValue(), clazz);
             cmds.add(cmd);
         }
         Class<?> type = ((Class<?>)typeOfT).getComponentType();

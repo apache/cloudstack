@@ -17,38 +17,36 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
+@LogLevel(Log4jLevel.Trace)
 public class NetworkUsageAnswer extends Answer {
     Long bytesSent;
     Long bytesReceived;
-    
+
     protected NetworkUsageAnswer() {
     }
-    
+
     public NetworkUsageAnswer(NetworkUsageCommand cmd, String details, Long bytesSent, Long bytesReceived) {
         super(cmd, true, details);
         this.bytesReceived = bytesReceived;
         this.bytesSent = bytesSent;
     }
-    
-    
+
+
     public void setBytesReceived(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
     }
-    
+
     public Long getBytesReceived() {
         return bytesReceived;
     }
-    
+
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
     }
-    
+
     public Long getBytesSent() {
         return bytesSent;
-    }
-    
-    @Override
-    public boolean logTrace() {
-        return true;
     }
 }
