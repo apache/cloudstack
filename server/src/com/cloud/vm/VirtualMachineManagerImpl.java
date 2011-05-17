@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
- * This software is licensed under the GNU General Public License v3 or later.  
+ * This software is licensed under the GNU General Public License v3 or later.
  * 
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -476,7 +476,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @DB
     protected <T extends VMInstanceVO> Ternary<T, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru<T> vmGuru, T vm, User caller, Account account)
-            throws ConcurrentOperationException {
+    throws ConcurrentOperationException {
         long vmId = vm.getId();
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Starting, vm.getType(), vm.getId());
@@ -548,7 +548,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
         VirtualMachineGuru<T> vmGuru;
         if (vm.getHypervisorType() == HypervisorType.BareMetal) {
@@ -583,7 +583,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
             for (VolumeVO vol : vols) {
                 // make sure if the templateId is unchanged. If it is changed, let planner
-                // reassign pool for the volume even if it ready. 
+                // reassign pool for the volume even if it ready.
                 Long volTemplateId = vol.getTemplateId();
                 if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
                     if (s_logger.isDebugEnabled()) {
@@ -634,10 +634,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 try {
+                    _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         _storageMgr.prepare(vmProfile, dest);
                     }
-                    _networkMgr.prepare(vmProfile, dest, ctx);
 
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
@@ -681,7 +681,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
                             }
                         }
-                    } 
+                    }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
                 } catch (OperationTimedoutException e) {
                     s_logger.debug("Unable to send the start command to host " + dest.getHost());
@@ -711,7 +711,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     }
                 } catch (Exception e) {
                     s_logger.error("Failed to start instance " + vm, e);
-                    throw new AgentUnavailableException("Unable to start instance", destHostId, e); 
+                    throw new AgentUnavailableException("Unable to start instance", destHostId, e);
                 } finally {
                     if (startedVm == null && canRetry) {
                         _workDao.updateStep(work, Step.Release);
@@ -721,13 +721,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         } finally {
             if (startedVm == null) {
-            	// decrement only for user VM's and newly created VM
-            	if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
+                // decrement only for user VM's and newly created VM
+                if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
                     _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
                 }
-            	if (canRetry) {
-            	    changeState(vm, Event.OperationFailed, null, work, Step.Done);
-            	}
+                if (canRetry) {
+                    changeState(vm, Event.OperationFailed, null, work, Step.Done);
+                }
             }
         }
 
@@ -995,7 +995,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-            VirtualMachineMigrationException {
+    VirtualMachineMigrationException {
         s_logger.info("Migrating " + vm + " to " + dest);
 
         long dstHostId = dest.getHost().getId();
@@ -1264,7 +1264,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
         T rebootedVm = null;
 
         DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
