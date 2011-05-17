@@ -36,9 +36,10 @@ import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.IngressRule;
-import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
 @Implementation(responseObject = IngressRuleResponse.class, description = "Authorizes a particular ingress rule for this security group")
@@ -67,20 +68,33 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_ID, type = CommandType.LONG, required = true, description = "The ID of the security group")
-    private Long securityGroupId;
-
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list associated")
-    private List<String> cidrList;
+    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="the cidr list associated")
+    private List cidrList;
 
     @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")
     private Map userSecurityGroupList;
+    
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
+    private Long domainId;
+    
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
+    private String accountName;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, description="The ID of the security group. Mutually exclusive with securityGroupName parameter")
+    private Long securityGroupId;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupName parameter")
+    private String securityGroupName;
 
-    // ///////////////////////////////////////////////////
-    // ///////////////// Accessors ///////////////////////
-    // ///////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
 
-    public List<String> getCidrList() {
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public List getCidrList() {
         return cidrList;
     }
 
@@ -97,6 +111,17 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     public Long getSecurityGroupId() {
+        if (securityGroupId != null && securityGroupName != null) {
+            throw new InvalidParameterValueException("securityGroupId and securityGroupName parameters are mutually exclusive");
+        }
+        
+        if (securityGroupName != null) {
+            securityGroupId = _responseGenerator.getSecurityGroupId(securityGroupName, getEntityOwnerId());
+            if (securityGroupId == null) {
+                throw new InvalidParameterValueException("Unable to find security group " + securityGroupName + " for account id=" + getEntityOwnerId());
+            }
+        }
+        
         return securityGroupId;
     }
 
@@ -130,12 +155,19 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        SecurityGroup group = _entityMgr.findById(SecurityGroup.class, getSecurityGroupId());
-        if (group != null) {
-            return group.getAccountId();
+        Account account = UserContext.current().getCaller();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
+                }
+            }
         }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        
+        return account.getId();
     }
 
     @Override

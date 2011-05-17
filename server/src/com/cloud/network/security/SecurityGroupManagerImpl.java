@@ -1168,4 +1168,30 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
         return false;
     }
+    
+    @Override
+    public SecurityGroupVO getDefaultSecurityGroup(long accountId) {
+        return _securityGroupDao.findByAccountAndName(accountId, DEFAULT_GROUP_NAME);
+    }
+    
+    @Override
+    public SecurityGroup getSecurityGroup(String name, long accountId) {
+        return _securityGroupDao.findByAccountAndName(accountId, name);
+    }
+    
+    @Override
+    public boolean isVmMappedToDefaultSecurityGroup(long vmId) {
+        UserVmVO vm = _userVmMgr.getVirtualMachine(vmId);
+        SecurityGroup defaultGroup = getDefaultSecurityGroup(vm.getAccountId());
+        if (defaultGroup == null) {
+            s_logger.warn("Unable to find default security group for account id=" + vm.getAccountId());
+            return false;
+        }
+        SecurityGroupVMMapVO map = _securityGroupVMMapDao.findByVmIdGroupId(vmId, defaultGroup.getId());
+        if (map == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 }

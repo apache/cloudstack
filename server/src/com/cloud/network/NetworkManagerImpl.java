@@ -1446,7 +1446,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
-        List<NicVO> nics = _nicDao.listIncludingRemovedBy(vm.getId());
+        List<NicVO> nics = _nicDao.listByVmIdIncludingRemoved(vm.getId());
         for (NicVO nic : nics) {
             _nicDao.expunge(nic.getId());
         }

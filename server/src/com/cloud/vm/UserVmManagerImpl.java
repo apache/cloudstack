@@ -126,6 +126,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
@@ -209,6 +210,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
+
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; // 3 seconds
 
     @Inject
@@ -292,7 +294,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected VMTemplateHostDao _vmTemplateHostDao;
     @Inject
-    protected SecurityGroupManager _networkGroupMgr;
+    protected SecurityGroupManager _securityGroupMgr;
     @Inject
     protected ServiceOfferingDao _serviceOfferingDao;
     @Inject
@@ -1216,11 +1218,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     private boolean cleanupVmResources(long vmId) {
         boolean success = true;
-
-        // Remove vm from security groups
-        _networkGroupMgr.removeInstanceFromGroups(vmId);
-
-        // Remove vm from instance group
+        //Remove vm from security groups
+        _securityGroupMgr.removeInstanceFromGroups(vmId);
+        
+        //Remove vm from instance group
         removeInstanceFromInstanceGroup(vmId);
 
         // cleanup port forwarding rules
@@ -2010,9 +2011,37 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         } else {
             networkList.add(_networkDao.findById(defaultNetwork.getId()));
         }
-
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor,
-                caller);
+        
+        if (securityGroupIdList == null) {
+            securityGroupIdList = new ArrayList<Long>();
+        }
+        
+        SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
+        if (defaultGroup != null) {
+          //check if security group id list already contains Default security group, and if not - add it
+            boolean defaultGroupPresent = false;
+            for (Long securityGroupId : securityGroupIdList) {
+                if (securityGroupId.longValue() == defaultGroup.getId()) {
+                    defaultGroupPresent = true;
+                    break;
+                }
+            }
+            
+            if (!defaultGroupPresent) {
+                securityGroupIdList.add(defaultGroup.getId());
+            }
+          
+        } else {
+            //create default security group for the account
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
+            }
+            defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
+            securityGroupIdList.add(defaultGroup.getId());
+        }
+        
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
+                                    diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller);
     }
 
     @Override
@@ -2023,8 +2052,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
-
-        // Verify that caller can perform actions in behalf of vm owner
+        boolean isSecurityGroupEnabledNetworkUsed = false;
+        
+        //Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, owner);
 
         // If no network is specified, find system security group enabled network
@@ -2053,7 +2083,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             networkList.add(network);
-
+            isSecurityGroupEnabledNetworkUsed = true;
+            
         } else {
             // Verify that all the networks are Direct/Guest/AccountSpecific; can't create combination of SG enabled network and
             // regular networks
@@ -2084,9 +2115,40 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 networkList.add(network);
             }
         }
-
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor,
-                caller);
+        
+        // if network is security group enabled, and default security group is not present in the list of groups specified, add it automatically
+        if (isSecurityGroupEnabledNetworkUsed) {
+            if (securityGroupIdList == null) {
+                securityGroupIdList = new ArrayList<Long>();
+            }
+            
+            SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
+            if (defaultGroup != null) {
+              //check if security group id list already contains Default security group, and if not - add it
+                boolean defaultGroupPresent = false;
+                for (Long securityGroupId : securityGroupIdList) {
+                    if (securityGroupId.longValue() == defaultGroup.getId()) {
+                        defaultGroupPresent = true;
+                        break;
+                    }
+                }
+                
+                if (!defaultGroupPresent) {
+                    securityGroupIdList.add(defaultGroup.getId());
+                }
+              
+            } else {
+                //create default security group for the account
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
+                }
+                defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
+                securityGroupIdList.add(defaultGroup.getId());
+            }
+        }
+        
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
+                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller);
     }
 
     @Override
@@ -2403,8 +2465,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
 
-        _networkGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
-
+        
+        _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
+        
         return vm;
     }
 
@@ -2720,6 +2783,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         userId = accountAndUserValidation(vmId, account, userId, vm);
         UserVO user = _userDao.findById(userId);
+        
+        //check if vm is security group enabled
+        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId)) {
+            //if vm is not mapped to security group, create a mapping
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Vm " + vm + " is security group enabled, but not mapped to default security group; creating the mapping automatically");
+            }
+            
+            SecurityGroup defaultSecurityGroup = _securityGroupMgr.getDefaultSecurityGroup(vm.getAccountId());
+            if (defaultSecurityGroup != null) {
+                List<Long> groupList = new ArrayList<Long>();
+                groupList.add(defaultSecurityGroup.getId());
+                _securityGroupMgr.addInstanceToGroups(vmId, groupList);
+            }
+        }
+  
         return _itMgr.start(vm, null, user, account);
     }
 

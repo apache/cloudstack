@@ -581,6 +581,10 @@ public class ApiDBUtils {
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
         return cpuOverprovisioningFactor;
     }
+    
+    public static SecurityGroup getSecurityGroup(String groupName, long ownerId) {
+        return _securityGroupMgr.getSecurityGroup(groupName, ownerId);
+    }
 
     public static ConsoleProxyVO findConsoleProxy(long id) {
         return _consoleProxyDao.findById(id);
