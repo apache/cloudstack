@@ -167,8 +167,8 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
@@ -1637,7 +1637,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr) {
-        
+
         Account caller = UserContext.current().getCaller();
         VMTemplateVO template = null;
         if (templateId != null) {
@@ -1673,7 +1673,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (template == null) {
             templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr);
         } else {
-            //if template is not public, perform permission check here
+            // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 Account owner = _accountMgr.getAccount(template.getAccountId());
                 _accountMgr.checkAccess(caller, owner);
@@ -3889,6 +3889,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);
 
         SearchCriteria<VMInstanceVO> sc = sb.create();
 
@@ -3922,6 +3923,8 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (type != null) {
             sc.setParameters("type", type);
+        } else {
+            sc.setParameters("nulltype", VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy);
         }
 
         return _vmInstanceDao.search(sc, searchFilter);
@@ -4697,7 +4700,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
             DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
             if (nv.getValue().equals(cmd.getUsername())) {
-                DetailVO nvp =  new DetailVO(h.getId(), ApiConstants.PASSWORD, cmd.getPassword());
+                DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, cmd.getPassword());
                 nvp.setValue(cmd.getPassword());
                 _detailsDao.persist(nvp);
             } else {
