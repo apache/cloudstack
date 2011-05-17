@@ -30,6 +30,7 @@ import org.junit.Before;
 import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DbTestUtils;
+import com.cloud.utils.db.Transaction;
 
 public class AdvanceZone223To224UpgradeTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(AdvanceZone217To224UpgradeTest.class);
@@ -51,6 +52,16 @@ public class AdvanceZone223To224UpgradeTest extends TestCase {
 
         Connection conn;
         PreparedStatement pstmt;
+        conn = Transaction.getStandaloneConnection();
+
+        pstmt = conn
+        .prepareStatement("CREATE TABLE IF NOT EXISTS `cloud`.`version` ( " + "`id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',"
+                + "`version` char(40) NOT NULL UNIQUE COMMENT 'version'," + "`updated` datetime NOT NULL COMMENT 'Date this version table was updated',"
+                + "`step` char(32) NOT NULL COMMENT 'Step in the upgrade to this version'," + "PRIMARY KEY (`id`)," + "INDEX `i_version__version`(`version`)"
+                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+        pstmt.executeUpdate();
+        pstmt.close();
 
         VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
         DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);

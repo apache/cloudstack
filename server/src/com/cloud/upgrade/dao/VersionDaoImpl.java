@@ -102,19 +102,10 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                         pstmt.close();
                     }
                 } else {
-                    try {
-                        rs.close();
-                        pstmt.close();
-                        pstmt = conn.prepareStatement("SELECT is_static_nat from firewall_rules");
-                        pstmt.executeQuery();
-                        return "2.2.1";
-                    } catch (SQLException e) {
-                        s_logger.debug("Assuming the exception means static_nat field doesn't exist in firewall_rules table, returning version 2.2.2");
-                        return "2.2.2";
-                    } finally {
-                        rs.close();
-                        pstmt.close();
-                    }
+                    rs.close();
+                    pstmt.close();
+                    s_logger.debug("No version table but has nics table, returning 2.2.1");
+                    return "2.2.1";
                 }
             }
 
