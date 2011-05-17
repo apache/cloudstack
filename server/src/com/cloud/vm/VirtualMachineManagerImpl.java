@@ -562,8 +562,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
         VirtualMachineGuru<T> vmGuru;
         if (vm.getHypervisorType() == HypervisorType.BareMetal) {
@@ -672,10 +672,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 try {
+                    _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         _storageMgr.prepare(vmProfile, dest);
                     }
-                    _networkMgr.prepare(vmProfile, dest, ctx);
 
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
