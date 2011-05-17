@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -127,20 +128,18 @@ public class RegisterIsoCmd extends BaseCmd {
 	@Override
 	public long getEntityOwnerId() {
 	    Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
+        if (isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
                     return userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Unable to find account by name " + getAccountName() + " in domain " + getDomainId());
                 }
             }
         }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        
+        return account.getId();
 	  }	
 	
     @Override

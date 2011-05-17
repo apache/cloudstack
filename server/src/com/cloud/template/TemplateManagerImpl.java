@@ -812,14 +812,14 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
 	public boolean attachIso(AttachIsoCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
         Long vmId = cmd.getVirtualMachineId();
         Long isoId = cmd.getId();
         
     	// Verify input parameters
-    	UserVmVO vmInstanceCheck = _userVmDao.findById(vmId);
-    	if (vmInstanceCheck == null) {
+    	UserVmVO vm = _userVmDao.findById(vmId);
+    	if (vm == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
     	
@@ -828,16 +828,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
     	}
     	
-        State vmState = vmInstanceCheck.getState();
+        State vmState = vm.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
         	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
         
         String errMsg = "Unable to attach ISO" + isoId + "to virtual machine " + vmId;
-        userId = accountAndUserValidation(account, userId, vmInstanceCheck, iso, errMsg);
+        userId = accountAndUserValidation(caller, userId, vm, iso, errMsg);
 
-        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vmInstanceCheck.getHypervisorType() != Hypervisor.HypervisorType.XenServer){
-        	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vmInstanceCheck.getHypervisorType());
+        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vm.getHypervisorType() != Hypervisor.HypervisorType.XenServer){
+        	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
         
         return attachISOToVM(vmId, userId, isoId, true);
@@ -859,36 +859,29 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         return success;
     }
 
-	private Long accountAndUserValidation(Account account, Long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) throws PermissionDeniedException{
+	private Long accountAndUserValidation(Account caller, Long userId, UserVmVO userVm, VMTemplateVO template, String msg) throws PermissionDeniedException{
 		
-    	if (account != null) {
-    	    if (!isAdmin(account.getType())) {
-				if ((vmInstanceCheck != null) && (account.getId() != vmInstanceCheck.getAccountId())) {
+    	if (caller != null) {
+    	    if (!isAdmin(caller.getType())) {
+				if ((userVm != null) && (caller.getId() != userVm.getAccountId())) {
 		            throw new PermissionDeniedException(msg + ". Permission denied.");
 		        }
 
-	    		if ((template != null) && (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
+	    		if ((template != null) && (!template.isPublicTemplate() && (caller.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
                     throw new PermissionDeniedException(msg + ". Permission denied.");
                 }
                 
     	    } else {
-    	        if ((vmInstanceCheck != null) && !_domainDao.isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-                    throw new PermissionDeniedException(msg + ". Permission denied.");
+    	        if (userVm != null) {
+                    _accountMgr.checkAccess(caller, userVm);
     	        }
-    	        // FIXME:  if template/ISO owner is null we probably need to throw some kind of exception
     	        
-    	        if (template != null) {
+    	        if (template != null && !template.isPublicTemplate()) {
     	        	Account templateOwner = _accountDao.findById(template.getAccountId());
-	    	        if ((templateOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
-	                    throw new PermissionDeniedException(msg + ". Permission denied.");
-	    	        }
+    	        	_accountMgr.checkAccess(caller, templateOwner);
     	        }
     	    }
     	}
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = new Long(1);
-        }
         
         return userId;
 	}

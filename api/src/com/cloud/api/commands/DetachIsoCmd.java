@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.user.Account;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject=UserVmResponse.class)
@@ -65,9 +65,9 @@ public class DetachIsoCmd extends BaseAsyncCmd {
         UserVm vm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
         if (vm != null) {
             return vm.getAccountId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        } else {
+            throw new InvalidParameterValueException("Unable to find vm by id " + getVirtualMachineId());
+        }  
     }
 
     @Override
