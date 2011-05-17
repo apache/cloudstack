@@ -1,5 +1,5 @@
 --;
--- Schema upgrade from 2.2.4 to 2.2.5;
+-- Schema upgrade from 2.2.5 to 2.2.6;
 --;
 
 ALTER TABLE `cloud`.`mshost` ADD COLUMN `runid` bigint NOT NULL DEFAULT 0 COMMENT 'run id, combined with msid to form a cluster session';

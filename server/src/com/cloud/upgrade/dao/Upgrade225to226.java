@@ -23,16 +23,16 @@ import java.sql.Connection;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade224to225 implements DbUpgrade {
+public class Upgrade225to226 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"2.2.4"};
+        return new String[] {"2.2.5"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "2.2.5";
+        return "2.2.6";
     }
 
     @Override

@@ -41,6 +41,7 @@ import com.cloud.upgrade.dao.Upgrade218to22;
 import com.cloud.upgrade.dao.Upgrade218to224DomainVlans;
 import com.cloud.upgrade.dao.Upgrade221to222;
 import com.cloud.upgrade.dao.Upgrade222to224;
+import com.cloud.upgrade.dao.Upgrade225to226;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
@@ -69,6 +70,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("2.2.1", new DbUpgrade[] { new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224()});
         _upgradeMap.put("2.2.2", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224() });
         _upgradeMap.put("2.2.3", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224() });
+        _upgradeMap.put("2.2.5", new DbUpgrade[] { new Upgrade225to226()});
     }
 
     protected void runScript(File file) {
