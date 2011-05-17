@@ -25,8 +25,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -87,7 +85,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.encoding.Base64.OutputStream;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -360,6 +357,19 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         // now insert the user
         insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
                 "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
+        
+
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        }
+        
+        //save default security group
+        insertSql = "INSERT INTO `cloud`.`security_group` (name, description, account_id, domain_id) " +
+                "VALUES ('default', 'Default Security Group', 2, 1)";
+        
 
         txn = Transaction.currentTxn();
         try {
@@ -932,5 +942,5 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
         return networks.get(0).getId();
     }
-    
+
 }
