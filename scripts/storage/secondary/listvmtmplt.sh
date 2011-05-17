@@ -55,7 +55,7 @@ fi
 for i in $(find /$rootdir -name template.properties );
 do  
   d=$(dirname $i)
-  filename=$(grep "filename" $i | awk -F"=" '{print $NF}')
+  filename=$(grep "^filename" $i | awk -F"=" '{print $NF}')
 #  size=$(grep "virtualsize" $i | awk -F"=" '{print $NF}')
 #  if [ -n "$filename" ] && [ -n "$size" ]
 #  then

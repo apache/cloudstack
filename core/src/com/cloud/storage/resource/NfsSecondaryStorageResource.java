@@ -108,7 +108,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	private String _localgw;
 	private String _eth1mask;
 	private String _eth1ip;
-    
+	final private String _parent = "/mnt/SecStorage/";
     @Override
     public void disconnected() {
     }
@@ -361,8 +361,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, null);
     }
     
-    
-    public String getRootDir(String secUrl) {
+    synchronized public String getRootDir(String secUrl) {
         try {
             URI uri = new URI(secUrl);
             String nfsHost = uri.getHost();
@@ -371,7 +370,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String nfsHostIp = nfsHostAddr.getHostAddress();
             String nfsPath = nfsHostIp + ":" + uri.getPath();
             String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
-            String root = "/mnt/SecStorage/" + dir;
+            String root = _parent + "/" + dir;
             mount(root, nfsPath);    
             return root;
         } catch (Exception e) {
@@ -465,6 +464,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 throw new ConfigurationException("Unable to find class " + value);
             }
         }
+        _storage.mkdirs(_parent);
         _configSslScr = Script.findScript(getDefaultScriptsDir(), "config_ssl.sh");
         if (_configSslScr != null) {
             s_logger.info("config_ssl.sh found in " + _configSslScr);
@@ -538,8 +538,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _params.put(StorageLayer.InstanceConfigKey, _storage);
             _dlMgr = new DownloadManagerImpl();
             _dlMgr.configure("DownloadManager", _params);
-            _upldMgr = new UploadManagerImpl();
-            _upldMgr.configure("UploadManager", params);
+            //_upldMgr = new UploadManagerImpl();
+            //_upldMgr.configure("UploadManager", params);
         } catch (ConfigurationException e) {
             s_logger.warn("Caught problem while configuring DownloadManager", e);
             return false;

@@ -470,7 +470,6 @@ public class UploadManagerImpl implements UploadManager {
         	_sslCopy = Boolean.parseBoolean(useSsl);
         	
         }
-        configureFolders(name, params);
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
         	s_logger.info("UploadManager: starting additional services since we are inside system vm");
@@ -525,34 +524,6 @@ public class UploadManagerImpl implements UploadManager {
     	}
 		
 	}
-
-	protected void configureFolders(String name, Map<String, Object> params) throws ConfigurationException {
-        parentDir = (String) params.get("template.parent");
-        if (parentDir == null) {
-            throw new ConfigurationException("Unable to find the parent root for the templates");
-        }
-
-        String value = (String) params.get("public.templates.root.dir");
-        if (value == null) {
-            value = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR;
-        }
-               
-		if (value.startsWith(File.separator)) {
-            publicTemplateRepo = value;
-        } else {
-            publicTemplateRepo = parentDir + File.separator + value;
-        }
-        
-        if (!publicTemplateRepo.endsWith(File.separator)) {
-            publicTemplateRepo += File.separator;
-        }
-        
-        publicTemplateRepo += TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
-        
-        if (!_storage.mkdirs(publicTemplateRepo)) {
-            throw new ConfigurationException("Unable to create public templates directory");
-        }
-    }
 
 	@Override
 	public String getName() {

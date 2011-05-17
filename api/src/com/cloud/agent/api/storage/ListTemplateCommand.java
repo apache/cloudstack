@@ -29,7 +29,7 @@ public class ListTemplateCommand extends StorageCommand {
 	
     @Override
     public boolean executeInSequence() {
-        return false;
+        return true;
     }
 
     public String getSecUrl() {

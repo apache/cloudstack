@@ -608,7 +608,7 @@ public class DownloadManagerImpl implements DownloadManager {
         ZfsPathParser zpp = new ZfsPathParser(rootdir);
         script.execute(zpp);
         result.addAll(zpp.getPaths());
-        s_logger.info("found " + zpp.getPaths().size() + " templates");
+        s_logger.info("found " + zpp.getPaths().size() + " templates" + zpp.getPaths());
         return result;
     }
 
