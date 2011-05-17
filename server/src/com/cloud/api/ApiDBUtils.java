@@ -105,7 +105,7 @@ public class ApiDBUtils {
     private static AccountManager _accountMgr;
     private static AgentManager _agentMgr;
     public static AsyncJobManager _asyncMgr;
-    private static SecurityGroupManager _networkGroupMgr;
+    private static SecurityGroupManager _securityGroupMgr;
     private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
     private static UserVmManager _userVmMgr;
@@ -150,7 +150,7 @@ public class ApiDBUtils {
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _networkGroupMgr = locator.getManager(SecurityGroupManager.class);
+        _securityGroupMgr = locator.getManager(SecurityGroupManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
@@ -252,11 +252,11 @@ public class ApiDBUtils {
     }
 
     public static String getNetworkGroupsNamesForVm(long vmId) {
-        return _networkGroupMgr.getSecurityGroupsNamesForVm(vmId);
+        return _securityGroupMgr.getSecurityGroupsNamesForVm(vmId);
     }
     
     public static List<SecurityGroupVO> getSecurityGroupsForVm(long vmId) {
-        return _networkGroupMgr.getSecurityGroupsForVm(vmId);
+        return _securityGroupMgr.getSecurityGroupsForVm(vmId);
     }
 
     public static String getSnapshotIntervalTypes(long snapshotId) {
@@ -553,6 +553,10 @@ public class ApiDBUtils {
         String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
         return cpuOverprovisioningFactor;
+    }
+    
+    public static SecurityGroup getSecurityGroup(String groupName, long ownerId) {
+        return _securityGroupMgr.getSecurityGroup(groupName, ownerId);
     }
 
 }

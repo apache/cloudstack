@@ -2430,4 +2430,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("network");
         return response;
     }
+    
+    @Override
+    public Long getSecurityGroupId (String groupName, long accountId) {
+        SecurityGroup sg = ApiDBUtils.getSecurityGroup(groupName, accountId);
+        if (sg == null) {
+            return null;
+        } else {
+            return sg.getId();
+        }
+    }
 }

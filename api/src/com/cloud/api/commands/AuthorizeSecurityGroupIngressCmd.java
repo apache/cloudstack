@@ -36,6 +36,7 @@ import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.IngressRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -66,9 +67,6 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ICMP_CODE, type=CommandType.INTEGER, description="error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, required=true, description="The ID of the security group")
-    private Long securityGroupId;
-
     @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="the cidr list associated")
     private List cidrList;
 
@@ -80,6 +78,12 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, description="The ID of the security group. Mutually exclusive with securityGroupName parameter")
+    private Long securityGroupId;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupName parameter")
+    private String securityGroupName;
 
 
     /////////////////////////////////////////////////////
@@ -111,6 +115,17 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     public Long getSecurityGroupId() {
+        if (securityGroupId != null && securityGroupName != null) {
+            throw new InvalidParameterValueException("securityGroupId and securityGroupName parameters are mutually exclusive");
+        }
+        
+        if (securityGroupName != null) {
+            securityGroupId = _responseGenerator.getSecurityGroupId(securityGroupName, getEntityOwnerId());
+            if (securityGroupId == null) {
+                throw new InvalidParameterValueException("Unable to find security group " + securityGroupName + " for account id=" + getEntityOwnerId());
+            }
+        }
+        
         return securityGroupId;
     }
 
@@ -151,15 +166,13 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
                     return userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
                 }
             }
         }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        
+        return account.getId();
     }
 
     @Override

@@ -34,7 +34,7 @@ public interface SecurityGroupManager {
 	
 	public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName);
 	
-	public SecurityGroupVO createDefaultSecurityGroup( Long accountId);
+	public SecurityGroupVO createDefaultSecurityGroup(Long accountId);
 	
 	public boolean addInstanceToGroups(Long userVmId, List<Long> groups);
 
@@ -47,4 +47,10 @@ public interface SecurityGroupManager {
     public List<SecurityGroupVO> getSecurityGroupsForVm(long vmId);
 
     public boolean isVmSecurityGroupEnabled(Long vmId);
+    
+    SecurityGroup getDefaultSecurityGroup(long accountId);
+    
+    SecurityGroup getSecurityGroup(String name, long accountId);
+    
+    boolean isVmMappedToDefaultSecurityGroup(long vmId);
 }

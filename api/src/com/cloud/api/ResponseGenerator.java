@@ -204,5 +204,7 @@ public interface ResponseGenerator {
 	UserResponse createUserResponse(User user);
 
 	AccountResponse createUserAccountResponse(UserAccount user);
+	
+	Long getSecurityGroupId(String groupName, long accountId);
 
 }

@@ -18,6 +18,7 @@
 
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -82,9 +83,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     //Network information
     @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine")
     private List<Long> networkIds;
-    
-    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support")
-    private List<Long> securityGroupIdList;
 
     //DataDisk information
     @Parameter(name=ApiConstants.DISK_OFFERING_ID, type=CommandType.LONG, description="the ID of the disk offering for the virtual machine. If the template is of ISO format, the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the offering for the data disk volume. If the templateId parameter passed is from a Template object, the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
@@ -107,6 +105,12 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupnames parameter")
+    private List<Long> securityGroupIdList;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter")
+    private List<String> securityGroupNameList;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -143,7 +147,24 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     public List<Long> getSecurityGroupIdList() {
-        return securityGroupIdList;
+        if (securityGroupIdList != null && securityGroupIdList != null) {
+            throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
+        }
+        
+       //transform group names to ids here
+       if (securityGroupNameList != null) {
+            securityGroupIdList = new ArrayList<Long>();
+            for (String groupName : securityGroupNameList) {
+                Long groupId = _responseGenerator.getSecurityGroupId(groupName, getEntityOwnerId());
+                if (groupId == null) {
+                    throw new InvalidParameterValueException("Unable to find group by name " + groupName + " for account " + getEntityOwnerId());
+                } else {
+                    securityGroupIdList.add(groupId);
+                }
+            }    
+        }
+       
+       return securityGroupIdList;
     }
 
     public Long getServiceOfferingId() {
@@ -203,15 +224,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
                     return userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Unable to find account by name " + getAccountName() + " in domain " + getDomainId());
                 }
             }
         }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        
+        return account.getId();
     }
 
     @Override
