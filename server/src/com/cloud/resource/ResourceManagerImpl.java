@@ -403,11 +403,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
 
-        // Deny to add a secondary storage multiple times for the same zone
-        if ((username == null) && (_hostDao.findSecondaryStorageHost(dcId) != null)) {
-            throw new InvalidParameterValueException("A secondary storage host already exists in the specified zone");
-        }
-
         // Verify cluster information and create a new cluster if needed
         if (clusterName != null && clusterId != null) {
             throw new InvalidParameterValueException("Can't specify cluster by both id and name");
