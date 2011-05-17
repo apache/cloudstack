@@ -367,6 +367,19 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         // now insert the user
         insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
                 "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
+        
+
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        }
+        
+        //save default security group
+        insertSql = "INSERT INTO `cloud`.`security_group` (name, description, account_id, domain_id, account_name) " +
+                "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
+        
 
         txn = Transaction.currentTxn();
         try {
@@ -864,5 +877,5 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
         return networks.get(0).getId();
     }
-    
+
 }

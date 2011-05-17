@@ -1282,6 +1282,7 @@ CREATE TABLE `cloud`.`security_group` (
   `domain_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `account_name` varchar(100) NOT NULL,
+  UNIQUE (`name`, `account_id`),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
