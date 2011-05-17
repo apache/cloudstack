@@ -27,8 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="Attaches an ISO to a virtual machine.", responseObject=UserVmResponse.class)
@@ -72,11 +71,12 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     
     @Override
     public long getEntityOwnerId() {
-        VirtualMachineTemplate iso = _responseGenerator.findTemplateById(getId());
-        if (iso == null) {
-            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
-        }
-        return iso.getAccountId();
+        UserVm vm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find virtual machine by id " + getVirtualMachineId());
+        } 
+        
+        return vm.getAccountId();
     }
 
     @Override

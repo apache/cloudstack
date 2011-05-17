@@ -1695,6 +1695,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public User getActiveUser(long userId) {
         return _userDao.findById(userId);
     }
+    
+    @Override
+    public User getUser(long userId) {
+        return _userDao.findByIdIncludingRemoved(userId);
+    }
 
     @Override
     public Domain getDomain(long domainId) {

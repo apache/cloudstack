@@ -155,6 +155,8 @@ public interface AccountService {
 	
 	User getActiveUser(long userId);
 	
+	User getUser(long userId);
+	
 	Domain getDomain(long id);
 	
 	boolean isRootAdmin(short accountType);

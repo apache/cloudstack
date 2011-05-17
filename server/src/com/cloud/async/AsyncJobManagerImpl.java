@@ -53,6 +53,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.maid.StackMaid;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -281,7 +282,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
         if (job == null) {
             throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
         }
-        Account jobOwner = _accountMgr.getAccount(job.getAccountId());
+       
+        User userJobOwner = _accountMgr.getUser(job.getUserId());
+        Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
         
         //check permissions
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
