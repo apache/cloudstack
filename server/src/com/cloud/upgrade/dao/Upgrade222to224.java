@@ -292,10 +292,19 @@ public class Upgrade222to224 implements DbUpgrade {
                 }
             }
 
-            s_logger.debug("Successfully update user_statistics table with network_ids as a part of 222 to 224 upgrade");
             rs.close();
             pstmt.close();
+            
+            // update network_id information for ExternalFirewall and ExternalLoadBalancer device types
+            PreparedStatement pstmt1 = conn.prepareStatement("update user_statistics us, user_ip_address uip set us.network_id = uip.network_id where us.public_ip_address = uip.public_ip_address " +
+            		"and us.device_type = ('ExternalFirewall' or 'ExternalLoadBalancer')");
+            pstmt1.executeUpdate();
+            pstmt1.close();
 
+            s_logger.debug("Upgraded user_statistics with networkId for ExternalFirewall and ExternalLoadBalancer device types");
+            
+            s_logger.debug("Successfully update user_statistics table with network_ids as a part of 222 to 224 upgrade");
+            
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update the Mode field for nics as a part of 222 to 224 upgrade", e);
         }
