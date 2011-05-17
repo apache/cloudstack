@@ -280,7 +280,7 @@ public class DownloadListener implements Listener {
 	@Override
 	public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
 	    if (cmd instanceof StartupRoutingCommand) {
-	        //downloadMonitor.handleSysTemplateDownload(agent);
+	        downloadMonitor.handleSysTemplateDownload(agent);
 	    } else if ( cmd instanceof StartupStorageCommand) {
 	        StartupStorageCommand storage = (StartupStorageCommand)cmd;
             if( storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE ||  

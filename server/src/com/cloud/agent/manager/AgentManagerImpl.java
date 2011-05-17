@@ -150,6 +150,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  *
@@ -488,16 +490,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     @Override
     public HostVO getSSAgent(HostVO ssHost) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            return  ssHost;
+            if( ssHost.getStatus() == Status.Up ) {
+                return  ssHost;
+            }
         } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
             Long dcId = ssHost.getDataCenterId();
             List<HostVO> ssAHosts = _hostDao.listBy(Host.Type.SecondaryStorageVM, dcId);
             if (ssAHosts == null || ssAHosts.isEmpty() ) {
                 return null;
             }
-            int size = ssAHosts.size();
-            Random rn = new Random(System.currentTimeMillis());
-            return ssAHosts.get(rn.nextInt(size));
+            Collections.shuffle(ssAHosts);
+            return ssAHosts.get(0);
         }
         return null;
     }
@@ -520,9 +523,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return -1;
         }
-        int size = ssAHosts.size();
-        Random rn = new Random(System.currentTimeMillis());
-        HostVO ssAhost = ssAHosts.get(rn.nextInt(size));
+        Collections.shuffle(ssAHosts);
+        HostVO ssAhost = ssAHosts.get(0);
         try {
             return send(ssAhost.getId(), new Commands(cmd), listener);
         } catch (final AgentUnavailableException e) {
@@ -535,9 +537,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return new Answer(cmd, false, "can not find secondary storage VM agent for data center " + dcId);
         }
-        int size = ssAHosts.size();
-        Random rn = new Random(System.currentTimeMillis());
-        HostVO ssAhost = ssAHosts.get(rn.nextInt(size));
+        Collections.shuffle(ssAHosts);
+        HostVO ssAhost = ssAHosts.get(0);
         return easySend(ssAhost.getId(), cmd);
     }
 
