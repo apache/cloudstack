@@ -20,6 +20,7 @@ package com.cloud.vm;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,7 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
@@ -99,6 +101,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -120,6 +123,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -214,6 +218,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Inject(adapter = DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
+
+    @Inject(adapter = HostAllocator.class)
+    protected Adapters<HostAllocator>                                    _hostAllocators;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -433,7 +440,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Override
     public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
         return start(vm, params, caller, account, null);
-    }    
+    }
     @Override
     public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
@@ -597,7 +604,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
             for (VolumeVO vol : vols) {
                 // make sure if the templateId is unchanged. If it is changed, let planner
-                // reassign pool for the volume even if it ready. 
+                // reassign pool for the volume even if it ready.
                 Long volTemplateId = vol.getTemplateId();
                 if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
                     if (s_logger.isDebugEnabled()) {
@@ -631,7 +638,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
                         }
-                    }                    
+                    }
                 }
             }
 
@@ -712,7 +719,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
                             }
                         }
-                    } 
+                    }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
                 } catch (OperationTimedoutException e) {
                     s_logger.debug("Unable to send the start command to host " + dest.getHost());
@@ -742,7 +749,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     }
                 } catch (Exception e) {
                     s_logger.error("Failed to start instance " + vm, e);
-                    throw new AgentUnavailableException("Unable to start instance", destHostId, e); 
+                    throw new AgentUnavailableException("Unable to start instance", destHostId, e);
                 } finally {
                     if (startedVm == null && canRetry) {
                         _workDao.updateStep(work, Step.Release);
@@ -752,13 +759,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         } finally {
             if (startedVm == null) {
-            	// decrement only for user VM's and newly created VM
-            	if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
+                // decrement only for user VM's and newly created VM
+                if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
                     _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
                 }
-            	if (canRetry) {
-            	    changeState(vm, Event.OperationFailed, null, work, Step.Done);
-            	}
+                if (canRetry) {
+                    changeState(vm, Event.OperationFailed, null, work, Step.Done);
+                }
             }
         }
 
@@ -1283,6 +1290,18 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 s_logger.error("VM Operations failed due to ", e);
             }
         }
+    }
+
+    @Override
+    public boolean isVirtualMachineUpgradable(UserVm vm, ServiceOffering offering) {
+        Enumeration<HostAllocator> en = _hostAllocators.enumeration();
+        boolean isMachineUpgradable = true;
+        while (isMachineUpgradable && en.hasMoreElements()) {
+            final HostAllocator allocator = en.nextElement();
+            isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
+        }
+
+        return isMachineUpgradable;
     }
 
     @Override

@@ -68,6 +68,7 @@ import com.cloud.org.Grouping;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -92,6 +93,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     AgentManager                             _agentMgr;
     @Inject
     StorageManager                           _storageMgr;
+    @Inject
+    protected SecondaryStorageVmManager      _secondaryStorageMgr;
 
     @Inject
     protected DataCenterDao                  _dcDao;
@@ -112,6 +115,13 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected Adapters<? extends Discoverer> _discoverers;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
+
+    protected HashMap<Host.Type, ResourceLifeCycleListener> _listeners = new HashMap<Host.Type, ResourceLifeCycleListener>();
+
+    @Override
+    public void registerForLifeCycleEvents(Host.Type type, ResourceLifeCycleListener listener) {
+        _listeners.put(type, listener);
+    }
 
     @Override
     public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
@@ -519,7 +529,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
         }
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
-        return _agentMgr.deleteHost(hostId, isForced, caller);
+        if (Host.Type.SecondaryStorage.equals(host.getType())) {
+            return _secondaryStorageMgr.destroySecStorageVm(hostId);
+        } else {
+            return _agentMgr.deleteHost(hostId, isForced, caller);
+        }
     }
 
     @Override

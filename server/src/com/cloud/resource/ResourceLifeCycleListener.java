@@ -15,14 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.upgrade;
+package com.cloud.resource;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AdvanceZone217To224UpgradeTest.class, AdvanceZone223To224UpgradeTest.class, PortForwarding218To224UpgradeTest.class, InstanceGroup218To224UpgradeTest.class,
-        BasicZone218To224UpgradeTest.class, UsageEvents218To224UpgradeTest.class })
-public class DbUpgrade22Test {
+/**
+ * Listener registered with the ResourceManager if you want to be informed
+ * of a certain type of host's life cycles.
+ * 
+ */
+public interface ResourceLifeCycleListener {
+    /**
+     * @return the type of resource this listener can process.
+     */
+    Host.Type getType();
+
+    void add(HostVO host, StartupCommand cmd, boolean created);
+
+    /**
+     * Put the resource into maintenance mode.
+     */
+    void maintain(HostVO host, boolean force);
+
+    void removed(HostVO host, boolean force);
+
+    void enable(HostVO host);
+
+    void disable(HostVO host);
 
 }

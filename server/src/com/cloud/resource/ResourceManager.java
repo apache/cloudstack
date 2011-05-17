@@ -17,6 +17,19 @@
  */
 package com.cloud.resource;
 
-public interface ResourceManager {
+import com.cloud.host.Host;
 
+/**
+ * ResourceManager manages how physical resources are organized within the
+ * CloudStack. It also manages the life cycle of the physical resources.
+ */
+public interface ResourceManager {
+    /**
+     * Register a listener for different types of resource life cycle events.
+     * There can only be one type of listener per type of host.
+     * 
+     * @param type the resource type the listener is responsible to.
+     * @param listener the listener to notify.
+     */
+    void registerForLifeCycleEvents(Host.Type type, ResourceLifeCycleListener listener);
 }

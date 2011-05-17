@@ -1657,7 +1657,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         // Show only those that are downloaded.
         boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
-                || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
+        || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
 
         Account account = null;
         DomainVO domain = null;
@@ -4225,7 +4225,7 @@ public class ManagementServerImpl implements ManagementServer {
         VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
         boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
         if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are allowed
-                                                                                                    // to extract
+            // to extract
             throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
         }
 

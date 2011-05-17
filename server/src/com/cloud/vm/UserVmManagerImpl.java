@@ -95,7 +95,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -109,8 +108,8 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
@@ -937,7 +936,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // Check that there are enough resources to upgrade the service offering
-        if (!_agentMgr.isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
+        if (!_itMgr.isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
             throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available for an offering of " + newServiceOffering.getCpu() + " cpu(s) at "
                     + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
         }
@@ -1341,11 +1340,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
-            
+
             if (snapshot.getStatus() != Snapshot.Status.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for template creation");
             }
-            
+
             domainId = snapshot.getDomainId();
             accountId = snapshot.getAccountId();
             hyperType = snapshot.getHypervisorType();
@@ -1385,11 +1384,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
         String description = cmd.getDisplayText();
         boolean isExtractable = false;
-        Long sourceTemplateId = null;        
+        Long sourceTemplateId = null;
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            sourceTemplateId = template.getId();            
+            sourceTemplateId = template.getId();
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue, bitsValue, accountId,
                 null, description, passwordEnabledValue, guestOS.getId(), true, hyperType);
@@ -1584,7 +1583,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         return privateTemplate;
     }
-    
+
     @Override
     public String getChecksum(Long hostId, String templatePath){
         HostVO ssHost = _hostDao.findById(hostId);
@@ -1600,7 +1599,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         return null;
     }
-    
+
     // used for vm transitioning to error state
     private void updateVmStateForFailedVmCreation(Long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
@@ -2259,12 +2258,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (isIso && !template.isBootable()) {
             throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
         }
-        
+
         // Check templates permissions
         if (!template.isPublicTemplate()) {
             Account templateOwner = _accountMgr.getAccount(template.getAccountId());
             _accountMgr.checkAccess(owner, templateOwner);
-        }        
+        }
 
         // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
         // Else, a disk offering is optional, and if present will be used to create the data disk
@@ -2619,7 +2618,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (ipChanged) {
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
             UserVmVO userVm = profile.getVirtualMachine();
-            if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){            
+            if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){
                 _nicDao.update(guestNic.getId(), guestNic);
                 userVm.setPrivateIpAddress(guestNic.getIp4Address());
                 _vmDao.update(userVm.getId(), userVm);

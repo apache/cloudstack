@@ -41,7 +41,9 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.manager.Commands;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -88,7 +90,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.net.NfsUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -104,6 +105,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 //
 // Possible secondary storage vm state transition cases
@@ -128,9 +130,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
-                                                                     // seconds
+    // seconds
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180; // 3
-                                                                         // minutes
+    // minutes
 
     private static final int STARTUP_DELAY = 60000; // 60 seconds
 
@@ -175,6 +177,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private AccountService _accountMgr;
     @Inject
     private VirtualMachineManager _itMgr;
+    @Inject
+    protected VMInstanceDao                       _vmDao;
+    @Inject
+    protected CapacityDao                         _capacityDao;
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
@@ -185,6 +191,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private boolean _useLocalStorage;
     private boolean _useSSlCopy;
     private String _allowedInternalSites;
+    protected long                                _nodeId                              = ManagementServerNode.getManagementServerId();
 
     private SystemVmLoadScanner<Long> _loadScanner;
     private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
