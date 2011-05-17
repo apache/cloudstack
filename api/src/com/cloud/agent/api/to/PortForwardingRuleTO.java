@@ -68,7 +68,7 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
         return sourceCidrs;
     }
     
-    public String geStringSourceCidrs(){
+    public String getStringSourceCidrs(){
         return StringUtils.join(sourceCidrs, ",");
     }    
     
