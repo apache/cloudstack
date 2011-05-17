@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.console.Logger;
@@ -389,7 +390,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 	}
 	
 	private void handleClientStart(HttpExchange t, ConsoleProxyViewer viewer, String title) throws IOException {
-		String response = viewer.onAjaxClientStart(title);
+		List<String> languages = t.getRequestHeaders().get("Accept-Language");
+		String response = viewer.onAjaxClientStart(title, languages);
 		
 		Headers hds = t.getResponseHeaders();
 		hds.set("Content-Type", "text/html");

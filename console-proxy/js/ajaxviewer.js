@@ -53,6 +53,19 @@ StringBuilder.prototype = {
 	}
 };
 
+
+function getCurrentLanguage() {
+	if(acceptLanguages) {
+		var tokens = acceptLanguages.split(',');
+		if(tokens.length > 0)
+			return tokens[0];
+		
+		return "en-us";
+	} else {
+		return "en-us";
+	}
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // class KeyboardMapper
 //
@@ -435,84 +448,164 @@ AjaxViewer.prototype = {
 		var charCodeMap = [];
 		var shiftedCharCodeMap = [];
 		
-		shiftedKeyCodeMap[50] 	= { code: 222, shift: 1 } ;			// JP SHIFT + 2 -> "
-		shiftedCharCodeMap[64] 	= { code: 34, shift: 1 };
-		
-		shiftedKeyCodeMap[54] = { code: 55, shift : 1 };			// JP SHIFT + 6 -> &
-		shiftedCharCodeMap[94] = { code: 38, shift : 1 };
-		
-		shiftedKeyCodeMap[55] = { code: 222, shift : 0 };			// JP SHIFT + 7 -> '
-		shiftedCharCodeMap[38] = { code: 39, shift : 0 };
-		
-		shiftedKeyCodeMap[56] = { code: 57, shift : 1 };			// JP SHIFT + 8 -> (
-		shiftedCharCodeMap[42] = { code: 40, shift : 1 };
-		
-		shiftedKeyCodeMap[57] = { code: 48, shift : 1 };			// JP SHIFT + 9 -> )
-		shiftedCharCodeMap[40] = { code: 41, shift : 1 };
-
-		shiftedKeyCodeMap[48] = { code: 192, shift : 1 };			// JP SHIFT + 0 -> ~
-		shiftedCharCodeMap[41] = { code: 126, shift : 1 };
-
-		shiftedKeyCodeMap[109] = { code: 107, shift : 0 };			// JP SHIFT + (-=), keycode/charcode(109, 95) from Firefox
-		shiftedCharCodeMap[95] = { code: 61, shift : 0 };
-		
-		shiftedKeyCodeMap[189] = { code: 107, shift : 0 };			// JP SHIFT + (-=), keycode/charcode(109, 95) from Chrome/Safari/MSIE
-		shiftedCharCodeMap[95] = { code: 61, shift : 0 };
-
-		if($.browser.mozilla) {
-			keyCodeMap[107] = { code: 107, shift : 1, defer : true };	// JP NUM +, keycode/charcode (107, 43) from Firefox
-			charCodeMap[43] = { code: 43, shift : 1, keyCode: 107 };
-			charCodeMap[61] = { code: 94, shift : 1, keyCode: 54 };		// JP (-^), keycode/charcode (107, 61) from Firefox
+		var currentLanguage = getCurrentLanguage();
+		if(currentLanguage == 'ja') {
+			shiftedKeyCodeMap[50] 	= { code: 222, shift: 1, defer: true };			// JP SHIFT + 2 -> "
+			shiftedCharCodeMap[34] = { code: 34, shift : 1, keyCode: 222 };
 			
-			shiftedKeyCodeMap[107] = { code: 109, shift : 1 };			// JP SHIFT + (-^)				
-			shiftedCharCodeMap[43] = { code: 95, shift : 1 };
-		} else {
-			keyCodeMap[187] = { code: 54, shift: 1};					// JP -^
-			charCodeMap[61] = { code: 94, shift: 1};
+			shiftedKeyCodeMap[54] = { code: 55, shift : 1 };			// JP SHIFT + 6 -> &
+			shiftedCharCodeMap[94] = { code: 38, shift : 1 };
 			
-			shiftedKeyCodeMap[187] = { code: 109, shift : 1 };			// JP SHIFT + (-^)				
-			shiftedCharCodeMap[43] = { code: 95, shift : 1 };
-		}
-		
-		shiftedKeyCodeMap[255] = { code: 220, shift : 1, charCode: 124 };	// JP (|-, key before backspace)
-		
-		keyCodeMap[219] = { code: 50, shift : 1 };					// JP @`
-		charCodeMap[91] = { code: 64, shift : 1 };
-		shiftedKeyCodeMap[219] = { code: 192, shift : 0 };			// JP SHIFT + (@`)
-		shiftedCharCodeMap[123] = { code: 96, shift : 0 };
-		
-		keyCodeMap[221] = { code: 219, shift : 0 };					// JP [{
-		charCodeMap[93] = { code: 91, shift : 0 };
-		shiftedKeyCodeMap[221] = { code: 219, shift : 1 };
-		shiftedCharCodeMap[125] = { code: 123, shift : 1 };
-
-		if($.browser.mozilla) {
-			shiftedKeyCodeMap[59] = { code: 107, shift : 1 };			// JP ;+
-			shiftedCharCodeMap[58] = { code: 43, shift : 1 };
+			shiftedKeyCodeMap[55] = { code: 222, shift : 0 };			// JP SHIFT + 7 -> '
+			shiftedCharCodeMap[38] = { code: 39, shift : 0 };
+			
+			shiftedKeyCodeMap[56] = { code: 57, shift : 1 };			// JP SHIFT + 8 -> (
+			shiftedCharCodeMap[42] = { code: 40, shift : 1 };
+			
+			shiftedKeyCodeMap[57] = { code: 48, shift : 1 };			// JP SHIFT + 9 -> )
+			shiftedCharCodeMap[40] = { code: 41, shift : 1 };
+	
+			shiftedKeyCodeMap[48] = { code: 192, shift : 1 };			// JP SHIFT + 0 -> ~
+			shiftedCharCodeMap[41] = { code: 126, shift : 1 };
+	
+			shiftedKeyCodeMap[109] = { code: 107, shift : 0 };			// JP SHIFT + (-=), keycode/charcode(109, 95) from Firefox
+			shiftedCharCodeMap[95] = { code: 61, shift : 0 };
+			
+			shiftedKeyCodeMap[189] = { code: 107, shift : 0 };			// JP SHIFT + (-=), keycode/charcode(109, 95) from Chrome/Safari/MSIE
+			shiftedCharCodeMap[95] = { code: 61, shift : 0 };
+	
+			if($.browser.mozilla) {
+				keyCodeMap[107] = { code: 107, shift : 1, defer : true };	// JP NUM +, keycode/charcode (107, 43) from Firefox
+				charCodeMap[43] = { code: 43, shift : 1, keyCode: 107 };
+				charCodeMap[61] = { code: 94, shift : 1, keyCode: 54 };		// JP (-^), keycode/charcode (107, 61) from Firefox
+				
+				shiftedKeyCodeMap[107] = { code: 109, shift : 1 };			// JP SHIFT + (-^)				
+				shiftedCharCodeMap[43] = { code: 95, shift : 1 };
+			} else {
+				keyCodeMap[187] = { code: 54, shift: 1};					// JP -^
+				charCodeMap[61] = { code: 94, shift: 1};
+				
+				shiftedKeyCodeMap[187] = { code: 109, shift : 1 };			// JP SHIFT + (-^)				
+				shiftedCharCodeMap[43] = { code: 95, shift : 1 };
+			}
+			
+			shiftedKeyCodeMap[255] = { code: 220, shift : 1, charCode: 124 };	// JP (|-, key before backspace)
+			
+			keyCodeMap[219] = { code: 50, shift : 1 };					// JP @`
+			charCodeMap[91] = { code: 64, shift : 1 };
+			shiftedKeyCodeMap[219] = { code: 192, shift : 0 };			// JP SHIFT + (@`)
+			shiftedCharCodeMap[123] = { code: 96, shift : 0 };
+			
+			keyCodeMap[221] = { code: 219, shift : 0 };					// JP [{
+			charCodeMap[93] = { code: 91, shift : 0 };
+			shiftedKeyCodeMap[221] = { code: 219, shift : 1 };
+			shiftedCharCodeMap[125] = { code: 123, shift : 1 };
+	
+			if($.browser.mozilla) {
+				shiftedKeyCodeMap[59] = { code: 107, shift : 1 };			// JP ;+
+				shiftedCharCodeMap[58] = { code: 43, shift : 1 };
+			} else {
+				shiftedKeyCodeMap[186] = { code: 107, shift : 1 };			// JP ;+
+				shiftedCharCodeMap[58] = { code: 43, shift : 1 };
+			}
+			
+			keyCodeMap[222] = { code: 59, shift : 1 };					// JP :*
+			charCodeMap[39] = { code: 58, shift : 1 };
+			shiftedKeyCodeMap[222] = { code: 56, shift : 1 };
+			// shiftedCharCodeMap[34] = { code: 42, shift : 1 };
+			
+			keyCodeMap[220] = { code: 221, shift : 0 };					// JP ]}
+			charCodeMap[92] = { code: 93, shift : 0 };
+			shiftedKeyCodeMap[220] = { code: 221, shift : 1 };
+			shiftedCharCodeMap[124] = { code: 125, shift : 1 };
+			
+			keyCodeMap[193] = { code: 220, shift : 0, charCode: 92 };			// JP \-|
+			shiftedKeyCodeMap[193] = { code: 109, shift : 0, charCode : 45 };
+			
+			keyCodeMap[106] = { code: 56, shift : 1 };					// JP NUM *
+			charCodeMap[42] = { code: 42, shift : 1 };
+			
+			keyCodeMap[110] = { code: 190, shift : 0 };					// JP NUM .
+			charCodeMap[46] = { code: 46, shift : 0 };
 		} else {
-			shiftedKeyCodeMap[186] = { code: 107, shift : 1 };			// JP ;+
-			shiftedCharCodeMap[58] = { code: 43, shift : 1 };
+			shiftedKeyCodeMap[50] 	= { code: 222, shift: 1 } ;			// JP SHIFT + 2 -> "
+			shiftedCharCodeMap[64] 	= { code: 34, shift: 1 };
+			
+			shiftedKeyCodeMap[54] = { code: 55, shift : 1 };			// JP SHIFT + 6 -> &
+			shiftedCharCodeMap[94] = { code: 38, shift : 1 };
+			
+			shiftedKeyCodeMap[55] = { code: 222, shift : 0 };			// JP SHIFT + 7 -> '
+			shiftedCharCodeMap[38] = { code: 39, shift : 0 };
+			
+			shiftedKeyCodeMap[56] = { code: 57, shift : 1 };			// JP SHIFT + 8 -> (
+			shiftedCharCodeMap[42] = { code: 40, shift : 1 };
+			
+			shiftedKeyCodeMap[57] = { code: 48, shift : 1 };			// JP SHIFT + 9 -> )
+			shiftedCharCodeMap[40] = { code: 41, shift : 1 };
+	
+			shiftedKeyCodeMap[48] = { code: 192, shift : 1 };			// JP SHIFT + 0 -> ~
+			shiftedCharCodeMap[41] = { code: 126, shift : 1 };
+	
+			shiftedKeyCodeMap[109] = { code: 107, shift : 0 };			// JP SHIFT + (-=), keycode/charcode(109, 95) from Firefox
+			shiftedCharCodeMap[95] = { code: 61, shift : 0 };
+			
+			shiftedKeyCodeMap[189] = { code: 107, shift : 0 };			// JP SHIFT + (-=), keycode/charcode(109, 95) from Chrome/Safari/MSIE
+			shiftedCharCodeMap[95] = { code: 61, shift : 0 };
+	
+			if($.browser.mozilla) {
+				keyCodeMap[107] = { code: 107, shift : 1, defer : true };	// JP NUM +, keycode/charcode (107, 43) from Firefox
+				charCodeMap[43] = { code: 43, shift : 1, keyCode: 107 };
+				charCodeMap[61] = { code: 94, shift : 1, keyCode: 54 };		// JP (-^), keycode/charcode (107, 61) from Firefox
+				
+				shiftedKeyCodeMap[107] = { code: 109, shift : 1 };			// JP SHIFT + (-^)				
+				shiftedCharCodeMap[43] = { code: 95, shift : 1 };
+			} else {
+				keyCodeMap[187] = { code: 54, shift: 1};					// JP -^
+				charCodeMap[61] = { code: 94, shift: 1};
+				
+				shiftedKeyCodeMap[187] = { code: 109, shift : 1 };			// JP SHIFT + (-^)				
+				shiftedCharCodeMap[43] = { code: 95, shift : 1 };
+			}
+			
+			shiftedKeyCodeMap[255] = { code: 220, shift : 1, charCode: 124 };	// JP (|-, key before backspace)
+			
+			keyCodeMap[219] = { code: 50, shift : 1 };					// JP @`
+			charCodeMap[91] = { code: 64, shift : 1 };
+			shiftedKeyCodeMap[219] = { code: 192, shift : 0 };			// JP SHIFT + (@`)
+			shiftedCharCodeMap[123] = { code: 96, shift : 0 };
+			
+			keyCodeMap[221] = { code: 219, shift : 0 };					// JP [{
+			charCodeMap[93] = { code: 91, shift : 0 };
+			shiftedKeyCodeMap[221] = { code: 219, shift : 1 };
+			shiftedCharCodeMap[125] = { code: 123, shift : 1 };
+	
+			if($.browser.mozilla) {
+				shiftedKeyCodeMap[59] = { code: 107, shift : 1 };			// JP ;+
+				shiftedCharCodeMap[58] = { code: 43, shift : 1 };
+			} else {
+				shiftedKeyCodeMap[186] = { code: 107, shift : 1 };			// JP ;+
+				shiftedCharCodeMap[58] = { code: 43, shift : 1 };
+			}
+			
+			keyCodeMap[222] = { code: 59, shift : 1 };					// JP :*
+			charCodeMap[39] = { code: 58, shift : 1 };
+			shiftedKeyCodeMap[222] = { code: 56, shift : 1 };
+			shiftedCharCodeMap[34] = { code: 42, shift : 1 };
+			
+			keyCodeMap[220] = { code: 221, shift : 0 };					// JP ]}
+			charCodeMap[92] = { code: 93, shift : 0 };
+			shiftedKeyCodeMap[220] = { code: 221, shift : 1 };
+			shiftedCharCodeMap[124] = { code: 125, shift : 1 };
+			
+			keyCodeMap[193] = { code: 220, shift : 0, charCode: 92 };			// JP \-|
+			shiftedKeyCodeMap[193] = { code: 109, shift : 0, charCode : 45 };
+			
+			keyCodeMap[106] = { code: 56, shift : 1 };					// JP NUM *
+			charCodeMap[42] = { code: 42, shift : 1 };
+			
+			keyCodeMap[110] = { code: 190, shift : 0 };					// JP NUM .
+			charCodeMap[46] = { code: 46, shift : 0 };
 		}
-		
-		keyCodeMap[222] = { code: 59, shift : 1 };					// JP :*
-		charCodeMap[39] = { code: 58, shift : 1 };
-		shiftedKeyCodeMap[222] = { code: 56, shift : 1 };
-		shiftedCharCodeMap[34] = { code: 42, shift : 1 };
-		
-		keyCodeMap[220] = { code: 221, shift : 0 };					// JP ]}
-		charCodeMap[92] = { code: 93, shift : 0 };
-		shiftedKeyCodeMap[220] = { code: 221, shift : 1 };
-		shiftedCharCodeMap[124] = { code: 125, shift : 1 };
-		
-		keyCodeMap[193] = { code: 220, shift : 0, charCode: 92 };			// JP \-|
-		shiftedKeyCodeMap[193] = { code: 109, shift : 0, charCode : 45 };
-		
-		keyCodeMap[106] = { code: 56, shift : 1 };					// JP NUM *
-		charCodeMap[42] = { code: 42, shift : 1 };
-		
-		keyCodeMap[110] = { code: 190, shift : 0 };					// JP NUM .
-		charCodeMap[46] = { code: 46, shift : 0 };
-		
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(false, keyCodeMap, shiftedKeyCodeMap, 
 			charCodeMap, shiftedCharCodeMap);
 	},
@@ -578,6 +671,7 @@ AjaxViewer.prototype = {
 			if(!g_logger.isOpen()) {
 				g_logger.enable(true);
 				g_logger.open();
+				g_logger.log(Logger.LEVEL_SYS, "Accept languages: " + acceptLanguages + ", current language: " + getCurrentLanguage());
 			} else {
 				g_logger.close();
 			}
@@ -669,6 +763,7 @@ AjaxViewer.prototype = {
 			if(!g_logger.isOpen()) {
 				g_logger.enable(true);
 				g_logger.open();
+				g_logger.log(Logger.LEVEL_SYS, "Accept languages: " + acceptLanguages + ", current language: " + getCurrentLanguage());
 			} else {
 				g_logger.close();
 			}

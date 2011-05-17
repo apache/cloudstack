@@ -921,7 +921,7 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 			"</p></div></body></html>";
 	}
 	
-	public String onAjaxClientStart(String title) {
+	public String onAjaxClientStart(String title, List<String> languages) {
 		if(!waitForViewerReady())
 			return onAjaxClientConnectFailed();
 
@@ -1002,11 +1002,21 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 	*/
 		return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, 
 				updateUrl, width, height, tileWidth, tileHeight, title, 
-				ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW);
+				ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, languages);
 	}
 	
 	private String getAjaxViewerPageContent(String tileSequence, String imgUrl, String updateUrl, int width,
-		int height, int tileWidth, int tileHeight, String title, boolean rawKeyboard) {
+		int height, int tileWidth, int tileHeight, String title, boolean rawKeyboard, List<String> languages) {
+
+		StringBuffer sbLanguages = new StringBuffer("");
+		if(languages != null) {
+			for(String lang : languages) {
+				if(sbLanguages.length() > 0) {
+					sbLanguages.append(",");
+				}
+				sbLanguages.append(lang);
+			}
+		}
 		
 		String[] content = new String[] {
 			"<html>",
@@ -1047,7 +1057,7 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 			"</div>",
 			"<div id=\"main_panel\" tabindex=\"1\"></div>",
 			"<script language=\"javascript\">",
-			
+			"var acceptLanguages = '" + sbLanguages.toString() + "';",
 			"var tileMap = [ " + tileSequence + " ];",
 			"var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', tileMap, ", 
 				String.valueOf(width) + ", " + String.valueOf(height) + ", " + String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ", " + (rawKeyboard ? "true" : "false") + ");",
