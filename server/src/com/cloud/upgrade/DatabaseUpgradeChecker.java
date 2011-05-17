@@ -41,6 +41,7 @@ import com.cloud.upgrade.dao.Upgrade218to22;
 import com.cloud.upgrade.dao.Upgrade218to224DomainVlans;
 import com.cloud.upgrade.dao.Upgrade221to222;
 import com.cloud.upgrade.dao.Upgrade222to224;
+import com.cloud.upgrade.dao.Upgrade224to225;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
@@ -69,6 +70,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("2.2.1", new DbUpgrade[] { new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224()});
         _upgradeMap.put("2.2.2", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224() });
         _upgradeMap.put("2.2.3", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224() });
+        _upgradeMap.put("2.2.4", new DbUpgrade[] { new Upgrade224to225() });
     }
 
     protected void runScript(File file) {
@@ -100,12 +102,14 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             s_logger.error("There is no upgrade path from " + dbVersion + " to " + currentVersion);
             throw new CloudRuntimeException("There is no upgrade path from " + dbVersion + " to " + currentVersion);
         }
-
+        
         if (Version.compare(trimmedCurrentVersion, upgrades[upgrades.length - 1].getUpgradedVersion()) != 0) {
             s_logger.error("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() + " but our management server code version is at " + currentVersion);
             throw new CloudRuntimeException("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() + " but our management server code version is at "
                     + currentVersion);
         }
+        
+        
 
         boolean supportsRollingUpgrade = true;
         for (DbUpgrade upgrade : upgrades) {
@@ -121,7 +125,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
 
         for (DbUpgrade upgrade : upgrades) {
-            s_logger.info("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1]
+            s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1]
                                                                                                                                                                                              + " to " + upgrade.getUpgradedVersion());
             Transaction txn = Transaction.open("Upgrade");
             txn.start();

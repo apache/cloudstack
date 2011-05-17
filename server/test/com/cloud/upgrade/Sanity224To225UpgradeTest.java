@@ -33,8 +33,8 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 
-public class Sanity222To224UpgradeTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(Sanity222To224UpgradeTest.class);
+public class Sanity224To225UpgradeTest extends TestCase {
+    private static final Logger s_logger = Logger.getLogger(Sanity224To225UpgradeTest.class);
 
     @Override
     @Before
@@ -47,9 +47,9 @@ public class Sanity222To224UpgradeTest extends TestCase {
     public void tearDown() throws Exception {
     }
 
-    public void test222to224Upgrade() throws SQLException {
-        s_logger.debug("Finding sample data from 2.2.2");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.2/2.2.2_cloud_db_sample.sql", false, true);
+    public void test224to225Upgrade() throws SQLException {
+        s_logger.debug("Finding sample data from 2.2.4");
+        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.4/2.2.4_cloud_db_sample.sql", false, true);
 
         Connection conn;
         PreparedStatement pstmt;
@@ -60,17 +60,17 @@ public class Sanity222To224UpgradeTest extends TestCase {
 
         String version = dao.getCurrentVersion();
 
-        if (!version.equals("2.2.2")) {
-            s_logger.error("Version returned is not 2.2.2 but " + version);
+        if (!version.equals("2.2.4")) {
+            s_logger.error("Version returned is not 2.2.4 but " + version);
         } else {
-            s_logger.debug("Sanity 2.2.2 to 2.2.4 test version is " + version);
+            s_logger.debug("Sanity 2.2.4 to 2.2.5 test version is " + version);
         }
 
-        checker.upgrade("2.2.2", "2.2.4");
+        checker.upgrade("2.2.4", "2.2.5");
 
         conn = Transaction.getStandaloneConnection();
         try {
-            s_logger.debug("Starting tesing upgrade from 2.2.2 to 2.2.4...");
+            s_logger.debug("Starting tesing upgrade from 2.2.4 to 2.2.5...");
 
             // Version check
             pstmt = conn.prepareStatement("SELECT version FROM version");
@@ -78,13 +78,13 @@ public class Sanity222To224UpgradeTest extends TestCase {
 
             if (!rs.next()) {
                 s_logger.error("ERROR: No version selected");
-            } else if (!rs.getString(1).equals("2.2.4")) {
-                s_logger.error("ERROR: VERSION stored is not 2.2.4: " + rs.getString(1));
+            } else if (!rs.getString(1).equals("2.2.5")) {
+                s_logger.error("ERROR: VERSION stored is not 2.2.5: " + rs.getString(1));
             }
             rs.close();
             pstmt.close();
 
-            s_logger.debug("Sanity 2.2.2 to 2.2.4 DB upgrade test passed");
+            s_logger.debug("Sanity 2.2.4 to 2.2.5 DB upgrade test passed");
 
         } finally {
             conn.close();
