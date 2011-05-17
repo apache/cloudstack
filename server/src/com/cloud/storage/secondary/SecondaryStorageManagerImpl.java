@@ -238,10 +238,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 s_logger.warn("secondary storage VM " + cssHost.getName() + " doesn't exist");
                 return false;
             }
-            if (secStorageVm.getState() != State.Running) {
-                s_logger.warn("secondary storage VM " + cssHost.getName() + " is not running");
-                return false;
-            }
+
             List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(zoneId);
             for( HostVO ssHost : ssHosts ) {
                 String secUrl = ssHost.getStorageUrl();
@@ -292,11 +289,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             s_logger.warn("secondary storage VM " + ssAHost.getName() + " doesn't exist");
             return false;
         }
-        if (secStorageVm.getState() != State.Running) {
-            s_logger.warn("secondary storage VM " + ssAHost.getName() + " is not running");
-            return false;
-        }
-       
+      
         SecStorageVMSetupCommand setupCmd = new SecStorageVMSetupCommand();
         if (_allowedInternalSites != null) {
             List<String> allowedCidrs = new ArrayList<String>();
@@ -349,10 +342,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         
         if (thisSecStorageVm == null) {
             s_logger.warn("secondary storage VM " + ssAHost.getName() + " doesn't exist");
-            return false;
-        }
-        if (thisSecStorageVm.getState() != State.Running) {
-            s_logger.warn("secondary storage VM " + ssAHost.getName() + " is not running");
             return false;
         }
 

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.net.URI;
@@ -108,7 +107,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	private String _localgw;
 	private String _eth1mask;
 	private String _eth1ip;
-	final private String _parent = "/mnt/SecStorage/";
+	final private String _parent = "/mnt/SecStorage";
     @Override
     public void disconnected() {
     }
@@ -640,7 +639,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	protected String mount(String root, String nfsPath) {
         File file = new File(root);
         if (!file.exists()) {
-            if (!_storage.mkdir(root)) {
+            if (_storage.mkdir(root)) {
                 s_logger.debug("create mount point: " + root);
             } else {
                 s_logger.debug("Unable to create mount point: " + root);
