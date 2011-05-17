@@ -1901,37 +1901,47 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");
     		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
+    		
+    		$dialogAddPool.find("#add_pool_nfs_server").val("");
+    		$dialogAddPool.find("#add_pool_server_container").show();    		
     	} 
     	if($(this).val() == "PreSetup") {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", true).val("127.0.0.1");    		
     		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
+    		
+    		$dialogAddPool.find("#add_pool_nfs_server").val("localhost");  
+    		$dialogAddPool.find("#add_pool_server_container").hide();    		
     	} 
     	else if($(this).val() == "iscsi") {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).hide();
     		$('li[input_group="iscsi"]', $dialogAddPool).show();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");
+    		
+    		$dialogAddPool.find("#add_pool_nfs_server").val("");
+    		$dialogAddPool.find("#add_pool_server_container").show();
     	} 
     	else if($(this).val() == "vmfs") {
     		$("#add_pool_server_container", $dialogAddPool).hide();
     		$('li[input_group="nfs"]', $dialogAddPool).hide();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).show();   
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val(""); 		
+    		
+    		$dialogAddPool.find("#add_pool_nfs_server").val(""); 	
+    		$dialogAddPool.find("#add_pool_server_container").show();
     	}
     	else if($(this).val() == "SharedMountPoint") {  //"SharedMountPoint" show the same fields as "nfs" does.
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", true).val("localhost");
+    		
+    		$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+    		$dialogAddPool.find("#add_pool_server_container").hide();
     	} 
     	else {    	    
     	    //$("#add_pool_server_container", $dialogAddPool).hide();
@@ -1939,7 +1949,8 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
     		
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val(""); 	
+    		$dialogAddPool.find("#add_pool_nfs_server").val(""); 	
+    		$dialogAddPool.find("#add_pool_server_container").show();
     	}
 	});		
 }
