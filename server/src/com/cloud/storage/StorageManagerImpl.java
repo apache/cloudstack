@@ -943,7 +943,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public HostVO getSecondaryStorageHost(long zoneId) {
         List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
-        if( hosts == null) {
+        if( hosts == null || hosts.size() == 0) {
             return null;
         }
 
