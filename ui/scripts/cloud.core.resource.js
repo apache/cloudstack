@@ -116,10 +116,12 @@ function buildZoneTree() {
 	
 	$("#secondarystorage_header").unbind("click").bind("click", function(event) {	   
 	    selectRowInZoneTree($(this));	
-	    
-	    clearMiddleMenu();
-	    hideMiddleMenu();	
-	    
+	    	 
+	    secondaryStorageClearRightPanel();
+	    var zoneObj = $(this).data("zoneObj");
+        listMidMenuItems(("listHosts&type=SecondaryStorage&zoneid="+zoneObj.id), secondaryStorageGetSearchParams, "listhostsresponse", "host", "jsp/secondarystorage.jsp", afterLoadSecondaryStorageJSP, secondaryStorageToMidmenu, secondaryStorageToRightPanel, getMidmenuId, false, ("zone_"+zoneObj.id+"_secondarystorage"), secondaryStorageRefreshDataBinding);    
+	    	    
+        /*
         if(currentRightPanelJSP != "jsp/secondarystorage.jsp") {            
             removeDialogs();
             
@@ -128,7 +130,7 @@ function buildZoneTree() {
                 currentRightPanelJSP = "jsp/secondarystorage.jsp";                 
                                                      
                 $(this).data("onRefreshFn", function() {		        
-                    secondaryStorageJsonToDetailsTab();    
+                    secondaryStorageToDetailsTab();    
                 }); 
                                 
                 afterLoadSecondaryStorageJSP($thisNode);                       
@@ -137,7 +139,8 @@ function buildZoneTree() {
         else {
             secondaryStorageRefreshDataBinding(); 
         }	    
-	       
+	    */
+        
 	    return false;
 	});
 	
@@ -332,7 +335,7 @@ function zoneJSONToTreeNode(jsonObj, $zoneNode) {
     var zoneid = jsonObj.id;
     $zoneNode.attr("id", "zone_" + zoneid);  
     $zoneNode.data("jsonObj", jsonObj);
-    $zoneNode.find("#secondarystorage_header").data("zoneObj", jsonObj);    
+    $zoneNode.find("#secondarystorage_header").data("zoneObj", jsonObj).attr("id",("zone_"+jsonObj.id+"_secondarystorage"));	 
     
     $zoneNode.find("#network_header").data("jsonObj", jsonObj);	
     /*

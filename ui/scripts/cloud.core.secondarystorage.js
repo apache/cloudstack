@@ -16,44 +16,88 @@
  * 
  */
 
-function afterLoadSecondaryStorageJSP($midmenuItem1) {
-    var $topButtonContainer = clearButtonsOnTop();			    	       
-	$("#top_buttons").appendTo($topButtonContainer); 
+function secondaryStorageGetSearchParams() {
+    var moreCriteria = [];	
+   
+    /*
+	var searchInput = $("#basic_search").find("#search_input").val();	 
+    if (searchInput != null && searchInput.length > 0) {	           
+        moreCriteria.push("&keyword="+todb(searchInput));	       
+    }     
+
+	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {		
+ 
+        var state = $advancedSearchPopup.find("#adv_search_state").val();				
+	    if (state!=null && state.length > 0) 
+		    moreCriteria.push("&state="+todb(state));	
+        
+        var zone = $advancedSearchPopup.find("#adv_search_zone").val();	
+	    if (zone!=null && zone.length > 0) 
+			moreCriteria.push("&zoneId="+zone);	
+		
+		if ($advancedSearchPopup.find("#adv_search_pod_li").css("display") != "none") {	
+		    var pod = $advancedSearchPopup.find("#adv_search_pod").val();		
+	        if (pod!=null && pod.length > 0) 
+			    moreCriteria.push("&podId="+pod);
+        }
+	} 
+	*/
+    
+	return moreCriteria.join("");          
+}
+
+function afterLoadSecondaryStorageJSP($midmenuItem1) {    
 	initDialog("dialog_add_secondarystorage");   
     secondaryStorageRefreshDataBinding();    	
 }
 
 function secondaryStorageRefreshDataBinding() {      
-    var $secondaryStorageNode = $selectedSubMenu;     
-    secondaryStorageJsonToRightPanel($secondaryStorageNode);		  
+    var $secondaryStorageNode = $selectedSubMenu; 
+    bindAddSecondaryStorageButton($secondaryStorageNode.data("zoneObj"));  
 }
 
-function secondaryStorageJsonToRightPanel($midmenuItem1) {	    
-    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
-    bindAddSecondaryStorageButton($midmenuItem1.data("zoneObj"));   
-    secondaryStorageJsonToDetailsTab();    
+function secondaryStorageToMidmenu(jsonObj, $midmenuItem1) {    
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
+    $midmenuItem1.data("jsonObj", jsonObj);      
+    
+    var $iconContainer = $midmenuItem1.find("#icon_container").show(); 
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");   
+          
+	var firstRowText = fromdb(jsonObj.name);
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
+    
+    var secondRowText = fromdb(jsonObj.ipaddress);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
-function secondaryStorageJsonToDetailsTab() {	    
+function secondaryStorageToRightPanel($midmenuItem1) {	
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
+    secondaryStorageToDetailsTab();     
+}
+
+function secondaryStorageToDetailsTab() {	    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null) {
         secondaryStorageClearDetailsTab();      
         return;
     }
-        
-    var zoneObj = $midmenuItem1.data("zoneObj");    
-    if(zoneObj == null) {
-        secondaryStorageClearDetailsTab();      
-	    return;	
-	}
     
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null) {
+    	secondaryStorageClearDetailsTab();  
+        return;    
+    }
+       
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();                   
-     
-    var jsonObj;
+         
     $.ajax({
-        data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+zoneObj.id),
+        data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+jsonObj.zoneid),
         dataType: "json",
         async: false,
         success: function(json) {              
@@ -66,7 +110,7 @@ function secondaryStorageJsonToDetailsTab() {
     });    
     
     if(jsonObj == null) {
-        secondaryStorageJsonClearRightPanel();  
+        secondaryStorageClearRightPanel();  
         $thisTab.find("#tab_spinning_wheel").hide();    
         $thisTab.find("#tab_container").show();      
         return;
@@ -97,7 +141,7 @@ function secondaryStorageJsonToDetailsTab() {
     $thisTab.find("#tab_container").show();      
 }	  
 
-function secondaryStorageJsonClearRightPanel() {
+function secondaryStorageClearRightPanel() {
     secondaryStorageClearDetailsTab();      
 }
 
@@ -126,7 +170,7 @@ var secondaryStorageActionMap = {
         inProcessText: "label.action.delete.secondary.storage.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                             
             if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                secondaryStorageJsonClearRightPanel();   
+                secondaryStorageClearRightPanel();   
             }
         }
     } 
@@ -183,7 +227,7 @@ function bindAddSecondaryStorageButton(zoneObj) {
 				    success: function(json) {	
 				        $thisDialog.find("#spinning_wheel").hide();				        
 				        $thisDialog.dialog("close");										    
-					    $("#zone_"+zoneId).find("#secondarystorage_header").click();					    
+				        $("#zone_"+zoneId+"_secondarystorage").click();				        					    
 				    },			
                    error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {
