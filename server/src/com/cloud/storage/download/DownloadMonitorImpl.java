@@ -486,13 +486,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     public void handleTemplateSync(long dcId) {
         List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
         for ( HostVO ssHost : ssHosts ) {
-            Long hostId = ssHost.getId();
-            List<VMTemplateHostVO> ths = _vmTemplateHostDao.listByHostId(hostId);
-            Map<String, TemplateInfo> templateInfos = new HashMap<String, TemplateInfo>();
-            for ( VMTemplateHostVO th : ths ) {
-                String tname = _templateDao.findById(th.getTemplateId()).getUniqueName();
-                templateInfos.put(tname, null);
-            }
             handleTemplateSync(ssHost);
         }
     }
