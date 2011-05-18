@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDispatcher;
+import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -38,7 +39,6 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -67,7 +67,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={SnapshotScheduler.class})
 public class SnapshotSchedulerImpl implements SnapshotScheduler {
     private static final Logger s_logger = Logger.getLogger(SnapshotSchedulerImpl.class);
-    
+
     private String _name = null;
     @Inject protected AsyncJobDao             _asyncJobDao;
     @Inject protected SnapshotDao             _snapshotDao;
@@ -77,13 +77,13 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Inject protected SnapshotManager         _snapshotManager;
     @Inject protected StoragePoolHostDao      _poolHostDao;
     @Inject protected VolumeDao               _volsDao;
-    
+
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int        _snapshotPollInterval;
     private Timer      _testClockTimer;
     private Date       _currentTimestamp;
     private TestClock  _testTimerTask;
-    
+
     private Date getNextScheduledTime(long policyId, Date currentTimestamp) {
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         Date nextTimestamp = null;
@@ -107,7 +107,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     public void poll(Date currentTimestamp) {
         // We don't maintain the time. The timer task does.
         _currentTimestamp = currentTimestamp;
-        
+
         GlobalLock scanLock = GlobalLock.getInternLock("snapshot.poll");
         try {
             if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
@@ -120,7 +120,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         } finally {
             scanLock.releaseRef();
         }
-        
+
         scanLock = GlobalLock.getInternLock("snapshot.poll");
         try {
             if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
@@ -132,9 +132,9 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             }
         } finally {
             scanLock.releaseRef();
-        } 
+        }
     }
-    
+
     private void checkStatusOfCurrentlyExecutingSnapshots() {
         SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
         sc.addAnd("asyncJobId", SearchCriteria.Op.NNULL);
@@ -182,19 +182,19 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                         // and cleanup the previous snapshot
                         // Set the userId to that of system.
                         //_snapshotManager.validateSnapshot(1L, snapshot);
-                        // In all cases, schedule the next snapshot job 
+                        // In all cases, schedule the next snapshot job
                         scheduleNextSnapshotJob(snapshotSchedule);
                     }
                 }
- 
+
                 break;
             case AsyncJobResult.STATUS_IN_PROGRESS:
-                // There is no way of knowing from here whether 
+                // There is no way of knowing from here whether
                 // 1) Another management server is processing this snapshot job
-                // 2) The management server has crashed and this snapshot is lying 
+                // 2) The management server has crashed and this snapshot is lying
                 // around in an inconsistent state.
                 // Hopefully, this can be resolved at the backend when the current snapshot gets executed.
-                // But if it remains in this state, the current snapshot will not get executed. 
+                // But if it remains in this state, the current snapshot will not get executed.
                 // And it will remain in stasis.
                 break;
             }
@@ -205,7 +205,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     protected void scheduleSnapshots() {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, _currentTimestamp);
         s_logger.debug("Snapshot scheduler.poll is being called at " + displayTime);
-        
+
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
 
@@ -244,12 +244,12 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "1");
                 params.put("ctxStartEventId", String.valueOf(eventId));
-                
+
                 CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                 ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
                 params.put("id", ""+cmd.getEntityId());
                 params.put("ctxStartEventId", "1");
-                
+
                 AsyncJobVO job = new AsyncJobVO();
                 job.setUserId(userId);
                 // Just have SYSTEM own the job for now.  Users won't be able to see this job, but
@@ -257,7 +257,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 job.setAccountId(1L);
                 job.setCmd(CreateSnapshotCmd.class.getName());
                 job.setInstanceId(cmd.getEntityId());
-                job.setCmdInfo(GsonHelper.getBuilder().create().toJson(params));
+                job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
 
                 long jobId = _asyncMgr.submitAsyncJob(job);
 
@@ -286,7 +286,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         }
         return scheduleNextSnapshotJob(snapshotPolicy);
     }
-    
+
     @Override @DB
     public Date scheduleNextSnapshotJob(SnapshotPolicyVO policy) {
         if ( policy == null) {
@@ -317,9 +317,9 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         }
         return nextSnapshotTimestamp;
     }
-    
- 
-    
+
+
+
     @Override @DB
     public boolean removeSchedule(Long volumeId, Long policyId) {
         // We can only remove schedules which are in the future. Not which are already executed in the past.
@@ -341,7 +341,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         _name = name;
 
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
+
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         if (configDao == null) {
             s_logger.error("Unable to get the configuration dao. " + ConfigurationDao.class.getName());
@@ -357,12 +357,12 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             int daysPerMonth = NumbersUtil.parseInt(configDao.getValue("snapshot.test.days.per.month"), 30);
             int weeksPerMonth = NumbersUtil.parseInt(configDao.getValue("snapshot.test.weeks.per.month"), 4);
             int monthsPerYear = NumbersUtil.parseInt(configDao.getValue("snapshot.test.months.per.year"), 12);
-    
+
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }
         _currentTimestamp = new Date();
         s_logger.info("Snapshot Scheduler is configured.");
-       
+
         return true;
     }
 
@@ -397,7 +397,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             _testClockTimer = new Timer("SnapshotPollTask");
             _testClockTimer.schedule(timerTask, _snapshotPollInterval*1000L, _snapshotPollInterval*1000L);
         }
-        
+
         return true;
     }
 

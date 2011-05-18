@@ -41,19 +41,20 @@ public class RequestTest extends TestCase {
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         cmd2.addPortConfig("abc", "24", true, "eth0");
         cmd2.addPortConfig("127.0.0.1", "44", false, "eth1");
-        Request sreq = new Request(1, 2, 3, new Command[] { cmd1, cmd2, cmd3 }, true, true);
+        Request sreq = new Request(2, 3, new Command[] { cmd1, cmd2, cmd3 }, true, true);
+        sreq.setSequence(1);
 
         Logger logger = Logger.getLogger(Request.class);
         Level level = logger.getLevel();
 
         logger.setLevel(Level.DEBUG);
-        sreq.log(1, "Debug");
+        sreq.log("Debug", true);
 
         logger.setLevel(Level.TRACE);
-        sreq.log(1, "Trace");
+        sreq.log("Trace", true);
 
         logger.setLevel(Level.INFO);
-        sreq.log(1, "Info");
+        sreq.log("Info", true);
 
         logger.setLevel(level);
 

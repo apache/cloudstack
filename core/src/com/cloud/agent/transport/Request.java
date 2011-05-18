@@ -25,15 +25,14 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.exception.UnsupportedVersionException;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -42,7 +41,6 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * Request is a simple wrapper around command and answer to add sequencing,
@@ -63,6 +61,9 @@ import com.google.gson.reflect.TypeToken;
  */
 public class Request {
     private static final Logger s_logger = Logger.getLogger(Request.class);
+
+    protected static final Gson s_gson = GsonHelper.getGson();
+    protected static final Gson s_gogger = GsonHelper.getGsonLogger();
 
     public enum Version {
         v1, // using gson to marshall
@@ -86,33 +87,6 @@ public class Request {
     protected static final short       FLAG_FROM_SERVER     = 0x20;
     protected static final short       FLAG_CONTROL         = 0x40;
 
-    protected static final Gson  s_gson;
-    protected static final Gson  s_gogger;
-
-    static {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        s_gson = setDefaultGsonConfig(gsonBuilder);
-        GsonBuilder loggerBuilder = new GsonBuilder();
-        loggerBuilder.disableHtmlEscaping();
-        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(s_logger));
-        s_gogger = setDefaultGsonConfig(loggerBuilder);
-        s_logger.info("Default Builder inited.");
-    }
-
-    public static Gson setDefaultGsonConfig(GsonBuilder builder) {
-        ArrayTypeAdaptor<Command> cmdAdaptor = new ArrayTypeAdaptor<Command>();
-        builder.registerTypeAdapter(Command[].class, cmdAdaptor);
-        ArrayTypeAdaptor<Answer> ansAdaptor = new ArrayTypeAdaptor<Answer>();
-        builder.registerTypeAdapter(Answer[].class, ansAdaptor);
-        builder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {
-        }.getType(), new PortConfigListTypeAdaptor());
-        builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
-        }.getType(), new NwGroupsCommandTypeAdaptor());
-        Gson gson = builder.create();
-        cmdAdaptor.initGson(gson);
-        ansAdaptor.initGson(gson);
-        return gson;
-    }
 
     protected Version   _ver;
     protected long      _session;
