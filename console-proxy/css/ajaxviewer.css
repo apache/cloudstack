@@ -71,8 +71,8 @@ body {
 #toolbar ul li ul {
     position: absolute;
     top:32;
-    width: 130;
-    height: 66;
+    width: 260;
+    height: 99;
     display: block;
     display: none;
     border-top: 1px solid black;
@@ -103,7 +103,7 @@ body {
 }
 
 #toolbar ul li ul li a:hover span {
-    background: url(/resource/images/right.png) no-repeat right center; 
+    background: url(/resource/images/right2.png) no-repeat right center; 
 }
 
 span.dark {

@@ -280,7 +280,8 @@ AjaxViewer.STATUS_SENDING = 3;
 AjaxViewer.STATUS_SENT = 4;
 
 AjaxViewer.KEYBOARD_TYPE_ENGLISH = 0;
-AjaxViewer.KEYBOARD_TYPE_JAPANESE = 1;
+AjaxViewer.KEYBOARD_TYPE_JAPANESE_TO_ENGLISH = 1;
+AjaxViewer.KEYBOARD_TYPE_JAPANESE_TO_JAPANESE = 2;
 
 AjaxViewer.getEventName = function(type) {
 	switch(type) {
@@ -442,7 +443,11 @@ AjaxViewer.prototype = {
 	setupKeyboardTranslationTable : function() {
 		this.keyboardMappers = [];
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = new KeyboardMapper(true, null, null, null, null);
-
+		this.setupJapaneseKeyboardToEnglishVmMapping();
+		this.setupJapaneseKeyboardToJapaneseVmMapping();
+	},
+	
+	setupJapaneseKeyboardToEnglishVmMapping : function() {
 		var keyCodeMap = [];
 		var shiftedKeyCodeMap = [];
 		var charCodeMap = [];
@@ -593,8 +598,28 @@ AjaxViewer.prototype = {
 			keyCodeMap[110] = { code: 190, shift : 0 };								// JP NUM .
 			charCodeMap[46] = { code: 46, shift : 0 };
 		}
-		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = new KeyboardMapper(false, keyCodeMap, shiftedKeyCodeMap, 
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE_TO_ENGLISH] = new KeyboardMapper(false, keyCodeMap, shiftedKeyCodeMap, 
 			charCodeMap, shiftedCharCodeMap);
+	},
+	
+	setupJapaneseKeyboardToJapaneseVmMapping : function() {
+		
+		var keyCodeMap = [];
+		var shiftedKeyCodeMap = [];
+		var charCodeMap = [];
+		var shiftedCharCodeMap = [];
+		
+		var currentLanguage = getCurrentLanguage();
+		if(currentLanguage == 'ja' || currentLanguage == 'ja-JP') {
+			// TODO
+			// two keys need to be handled in this case, one is the one that is at left of BACKSPACE KEY
+			// the other one is at left of RIGHT SHIFT key
+		} else {
+			// TODO
+		}
+		
+		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE_TO_ENGLISH] = new KeyboardMapper(false, keyCodeMap, shiftedKeyCodeMap, 
+				charCodeMap, shiftedCharCodeMap);
 	},
 	
 	getCurrentKeyboardMapper : function() {
@@ -642,7 +667,10 @@ AjaxViewer.prototype = {
 	onCommand : function(cmd) {
 		if(cmd == "keyboard_jp") {
 			$("#toolbar").find(".pulldown").find("ul").hide();
-			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_JAPANESE;
+			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_JAPANESE_TO_ENGLISH;
+		} else if(cmd == "keyboard_jp_jp") {
+			$("#toolbar").find(".pulldown").find("ul").hide();
+			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_JAPANESE_TO_JAPANESE;
 		} else if(cmd == "keyboard_en") {
 			$("#toolbar").find(".pulldown").find("ul").hide();
 			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_ENGLISH;
@@ -1143,7 +1171,7 @@ AjaxViewer.prototype = {
 	
 	installMouseHook: function() {
 		var ajaxViewer = this;
-		var target = $(document);
+		var target = $(document.body);
 		
 		target.mousemove(function(e) {
 			if(!ajaxViewer.ptInPanel(e.pageX, e.pageY))
@@ -1180,6 +1208,7 @@ AjaxViewer.prototype = {
 			var whichButton = e.button;
 			
 			var pt = ajaxViewer.pageToPanel(e.pageX, e.pageY);  
+
 			ajaxViewer.onMouseUp(pt.x, pt.y, whichButton, modifiers);
 			e.stopPropagation();
 			return false;
