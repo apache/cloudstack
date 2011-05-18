@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.storage.template;
 
@@ -43,10 +43,10 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageResource;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
@@ -60,7 +60,7 @@ import com.cloud.utils.script.Script;
 
 /**
  * @author chiradeep
- * 
+ *
  */
 @Local(value = DownloadManager.class)
 public class DownloadManagerImpl implements DownloadManager {
@@ -206,6 +206,7 @@ public class DownloadManagerImpl implements DownloadManager {
     private int installTimeoutPerGig = 180 * 60 * 1000;
 	private boolean _sslCopy;
 
+    @Override
     public String setRootDir(String rootDir, StorageResource storage) {
         /*
          * if (!storage.existPath(rootDir + templateDownloadDir)) { s_logger.info("Creating template download path: " +
@@ -220,7 +221,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
     /**
      * Get notified of change of job status. Executed in context of downloader thread
-     * 
+     *
      * @param jobId
      *            the id of the job
      * @param status
@@ -273,7 +274,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
     /**
      * Post download activity (install and cleanup). Executed in context of downloader thread
-     * 
+     *
      * @throws IOException
      */
     private String postDownload(String jobId) {
@@ -283,7 +284,7 @@ public class DownloadManagerImpl implements DownloadManager {
         templatePath = dnld.getInstallPathPrefix() + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;// dnld.getTmpltName();
 
         _storage.mkdirs(templatePath);
-        
+
         // once template path is set, remove the parent dir so that the template is installed with a relative path
         String finalTemplatePath = templatePath.substring(parentDir.length());
         dnld.setTmpltPath(finalTemplatePath);
@@ -310,8 +311,8 @@ public class DownloadManagerImpl implements DownloadManager {
         } else {
             templateName = java.util.UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes()).toString();
         }
-        
-        String templateFilename = templateName + "." + extension; 
+
+        String templateFilename = templateName + "." + extension;
         dnld.setTmpltPath(finalTemplatePath + "/" + templateFilename);
         scr.add("-n", templateFilename);
 
@@ -327,11 +328,11 @@ public class DownloadManagerImpl implements DownloadManager {
         if (result != null) {
             return result;
         }
-        
+
         // Set permissions for the downloaded template
         File downloadedTemplate = new File(templatePath + "/" + templateFilename);
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
-        
+
         // Set permissions for template.properties
         File templateProperties = new File(templatePath + "/template.properties");
         _storage.setWorldReadableAndWriteable(templateProperties);
@@ -344,11 +345,11 @@ public class DownloadManagerImpl implements DownloadManager {
             loc.purge();
             return "Unable to download due to " + e.getMessage();
         }
-        
+
         Enumeration<Processor> en = _processors.enumeration();
         while (en.hasMoreElements()) {
             Processor processor = en.nextElement();
-            
+
             FormatInfo info = null;
 			try {
 				info = processor.process(templatePath, null, templateName);
@@ -361,12 +362,12 @@ public class DownloadManagerImpl implements DownloadManager {
                 break;
             }
         }
-        
+
         if (!loc.save()) {
             s_logger.warn("Cleaning up because we're unable to save the formats");
             loc.purge();
         }
-        
+
         return null;
     }
 
@@ -389,19 +390,19 @@ public class DownloadManagerImpl implements DownloadManager {
         String tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
 
         try {
-            
+
             if (!_storage.mkdirs(tmpDir)) {
                 s_logger.warn("Unable to create " + tmpDir);
                 return "Unable to create " + tmpDir;
             }
 
             File file = _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename);
-            
+
             if (!file.createNewFile()) {
                 s_logger.warn("Unable to create new file: " + file.getAbsolutePath());
                 return "Unable to create new file: " + file.getAbsolutePath();
             }
-            
+
             URI uri;
             try {
                 uri = new URI(url);
@@ -437,6 +438,7 @@ public class DownloadManagerImpl implements DownloadManager {
         }
     }
 
+    @Override
     public String getPublicTemplateRepo() {
         return publicTemplateRepo;
     }
@@ -527,7 +529,7 @@ public class DownloadManagerImpl implements DownloadManager {
         	user = cmd.getAuth().getUserName();
         	password = new String(cmd.getAuth().getPassword());
         }
-        
+
         long maxDownloadSizeInBytes = (cmd.getMaxDownloadSizeInBytes() == null) ? TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES : (cmd.getMaxDownloadSizeInBytes());
         String jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes);
         sleep();
@@ -643,7 +645,7 @@ public class DownloadManagerImpl implements DownloadManager {
                 }
                 continue;
             }
-            
+
             TemplateInfo tInfo = loc.getTemplateInfo();
 
             result.put(tInfo.templateName, tInfo);
@@ -704,6 +706,11 @@ public class DownloadManagerImpl implements DownloadManager {
         public List<String> getPaths() {
             return paths;
         }
+
+        @Override
+        public boolean drain() {
+            return true;
+        }
     }
 
     public DownloadManagerImpl() {
@@ -734,7 +741,7 @@ public class DownloadManagerImpl implements DownloadManager {
         String useSsl = (String)params.get("sslcopy");
         if (useSsl != null) {
         	_sslCopy = Boolean.parseBoolean(useSsl);
-        	
+
         }
         configureFolders(name, params);
         String inSystemVM = (String)params.get("secondary.storage.vm");
@@ -748,7 +755,7 @@ public class DownloadManagerImpl implements DownloadManager {
         this.installTimeoutPerGig = NumbersUtil.parseInt(value, 15 * 60) * 1000;
 
         value = (String) params.get("install.numthreads");
-        final int numInstallThreads = NumbersUtil.parseInt(value, 10);        
+        final int numInstallThreads = NumbersUtil.parseInt(value, 10);
 
         String scriptsDir = (String) params.get("template.scripts.dir");
         if (scriptsDir == null) {
@@ -770,14 +777,14 @@ public class DownloadManagerImpl implements DownloadManager {
         List<Processor> processors = new ArrayList<Processor>();
         _processors = new Adapters<Processor>("processors", processors);
         Processor processor = new VhdProcessor();
-        
+
         processor.configure("VHD Processor", params);
         processors.add(processor);
-        
+
         processor = new IsoProcessor();
         processor.configure("ISO Processor", params);
         processors.add(processor);
-        
+
         processor = new QCOW2Processor();
         processor.configure("QCOW2 Processor", params);
         processors.add(processor);
@@ -797,7 +804,7 @@ public class DownloadManagerImpl implements DownloadManager {
     	if (result != null) {
     		s_logger.warn("Error in blocking outgoing to port 80/443 err=" + result );
     		return;
-    	}		
+    	}
 	}
 
 	protected void configureFolders(String name, Map<String, Object> params) throws ConfigurationException {
@@ -810,19 +817,19 @@ public class DownloadManagerImpl implements DownloadManager {
         if (value == null) {
             value = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR;
         }
-        
+
         if (value.startsWith(File.separator)) {
             publicTemplateRepo = value;
         } else {
             publicTemplateRepo = parentDir + File.separator + value;
         }
-        
+
         if (!publicTemplateRepo.endsWith(File.separator)) {
             publicTemplateRepo += File.separator;
         }
-        
+
         publicTemplateRepo += TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
-        
+
         if (!_storage.mkdirs(publicTemplateRepo)) {
             throw new ConfigurationException("Unable to create public templates directory");
         }
@@ -842,9 +849,9 @@ public class DownloadManagerImpl implements DownloadManager {
     public boolean stop() {
         return true;
     }
-    
+
     private void startAdditionalServices() {
-    	
+
     	Script command = new Script("/bin/bash", s_logger);
 		command.add("-c");
     	command.add("service httpd stop ");
@@ -854,7 +861,7 @@ public class DownloadManagerImpl implements DownloadManager {
     	}
     	String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
     	String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
-    	
+
     	command = new Script("/bin/bash", s_logger);
 		command.add("-c");
     	command.add("iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
@@ -874,7 +881,7 @@ public class DownloadManagerImpl implements DownloadManager {
     		s_logger.warn("Error in opening up httpd port err=" + result );
     		return;
     	}
-    	
+
     	command = new Script("/bin/bash", s_logger);
 		command.add("-c");
     	command.add("service httpd start ");
@@ -891,7 +898,7 @@ public class DownloadManagerImpl implements DownloadManager {
     		s_logger.warn("Error in creating directory =" + result );
     		return;
     	}
-    	
+
     	command = new Script("/bin/bash", s_logger);
 		command.add("-c");
     	command.add("ln -sf " + publicTemplateRepo + " /var/www/html/copy/template");
