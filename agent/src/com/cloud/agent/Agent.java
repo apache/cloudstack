@@ -224,7 +224,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             final ShutdownCommand cmd = new ShutdownCommand(reason, detail);
             try {
                 if (_link != null) {
-                    Request req = new Request(0, (_id != null ? _id : -1), -1, cmd, false);
+                    Request req = new Request((_id != null ? _id : -1), -1, cmd, false);
                     _link.send(req.toBytes());
                 }
             } catch (final ClosedChannelException e) {
@@ -289,7 +289,8 @@ public class Agent implements HandlerFactory, IAgentControl {
             commands[i] = startup[i];
         }
 
-        final Request request = new Request(getNextSequence(), _id != null ? _id : -1, -1, commands, false, false);
+        final Request request = new Request(_id != null ? _id : -1, -1, commands, false, false);
+        request.setSequence(getNextSequence());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Sending Startup: " + request.toString());
@@ -544,7 +545,8 @@ public class Agent implements HandlerFactory, IAgentControl {
             }
 
             final PingCommand ping = _resource.getCurrentStatus(getId());
-            final Request request = new Request(getNextSequence(), _id, -1, ping, false);
+            final Request request = new Request(_id, -1, ping, false);
+            request.setSequence(getNextSequence());
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Sending ping: " + request.toString());
             }
@@ -624,7 +626,9 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     @Override
     public AgentControlAnswer sendRequest(AgentControlCommand cmd, int timeoutInMilliseconds) throws AgentControlChannelException {
-        Request request = new Request(this.getNextSequence(), this.getId(), -1, new Command[] { cmd }, true, false);
+        Request request = new Request(this.getId(), -1, new Command[] { cmd }, true, false);
+        request.setSequence(getNextSequence());
+
         AgentControlListener listener = new AgentControlListener(request);
 
         registerControlListener(listener);
@@ -646,7 +650,8 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     @Override
     public void postRequest(AgentControlCommand cmd) throws AgentControlChannelException {
-        Request request = new Request(this.getNextSequence(), this.getId(), -1, new Command[] { cmd }, true, false);
+        Request request = new Request(this.getId(), -1, new Command[] { cmd }, true, false);
+        request.setSequence(getNextSequence());
         postRequest(request);
     }
 

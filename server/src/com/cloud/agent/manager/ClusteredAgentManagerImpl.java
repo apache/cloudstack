@@ -26,7 +26,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Request.Version;
 import com.cloud.agent.transport.Response;
@@ -397,7 +396,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     public void cancel(String peerName, long hostId, long sequence, String reason) {
         CancelCommand cancel = new CancelCommand(sequence, reason);
-        Request req = new Request(-1, hostId, _nodeId, cancel, true);
+        Request req = new Request(hostId, _nodeId, cancel, true);
         req.setControl(true);
         routeToPeer(peerName, req.getBytes());
     }

@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -57,40 +58,41 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  */
 public abstract class AgentAttache {
     private static final Logger s_logger = Logger.getLogger(AgentAttache.class);
-    
+
     private static final ScheduledExecutorService s_listenerExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("ListenerTimer"));
-    
+    private static final Random                       s_rand                               = new Random(System.currentTimeMillis());
+
     protected static final Comparator<Request> s_reqComparator =
         new Comparator<Request>() {
-            @Override
-            public int compare(Request o1, Request o2) {
-                long seq1 = o1.getSequence();
-                long seq2 = o2.getSequence();
-                if (seq1 < seq2) {
-                    return -1;
-                } else if (seq1 > seq2) {
-                    return 1;
-                } else {
-                    return 0;
-                }
+        @Override
+        public int compare(Request o1, Request o2) {
+            long seq1 = o1.getSequence();
+            long seq2 = o2.getSequence();
+            if (seq1 < seq2) {
+                return -1;
+            } else if (seq1 > seq2) {
+                return 1;
+            } else {
+                return 0;
             }
-        };
-        
+        }
+    };
+
     protected static final Comparator<Object> s_seqComparator =
         new Comparator<Object>() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                long seq1 = ((Request) o1).getSequence();
-                long seq2 = (Long) o2;
-                if (seq1 < seq2) {
-                    return -1;
-                } else if (seq1 > seq2) {
-                    return 1;
-                } else {
-                    return 0;
-                }
+        @Override
+        public int compare(Object o1, Object o2) {
+            long seq1 = ((Request) o1).getSequence();
+            long seq2 = (Long) o2;
+            if (seq1 < seq2) {
+                return -1;
+            } else if (seq1 > seq2) {
+                return 1;
+            } else {
+                return 0;
             }
-        };
+        }
+    };
 
     protected final long _id;
     protected final ConcurrentHashMap<Long, Listener> _waitForList;
@@ -98,9 +100,10 @@ public abstract class AgentAttache {
     protected Long _currentSequence;
     protected Status _status = Status.Connecting;
     protected boolean _maintenance;
-    
+    protected long                                    _nextSequence;
+
     protected AgentManager _agentMgr;
-    
+
     public final static String[] s_commandsAllowedInMaintenanceMode =
         new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString(), ShutdownCommand.class.toString() };
     protected final static String[] s_commandsNotAllowedInConnectingMode =
@@ -109,7 +112,7 @@ public abstract class AgentAttache {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
     }
-    
+
 
     protected AgentAttache(AgentManager agentMgr, final long id, boolean maintenance) {
         _id = id;
@@ -118,27 +121,32 @@ public abstract class AgentAttache {
         _maintenance = maintenance;
         _requests = new LinkedList<Request>();
         _agentMgr = agentMgr;
+        _nextSequence = s_rand.nextInt(Short.MAX_VALUE) << 48;
+    }
+
+    public synchronized long getNextSequence() {
+        return ++_nextSequence;
     }
 
     public synchronized void setMaintenanceMode(final boolean value) {
         _maintenance = value;
     }
-    
+
     public void ready() {
         _status = Status.Up;
     }
-    
+
     public boolean isReady() {
         return _status == Status.Up;
     }
-    
+
     public boolean isConnecting() {
         return _status == Status.Connecting;
     }
-    
-	public boolean forForward() {
-		return false;
-	}
+
+    public boolean forForward() {
+        return false;
+    }
 
     protected void checkAvailability(final Command[] cmds) throws AgentUnavailableException {
         if (!_maintenance && _status != Status.Connecting) {
@@ -152,7 +160,7 @@ public abstract class AgentAttache {
                 }
             }
         }
-        
+
         if (_status == Status.Connecting) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsNotAllowedInConnectingMode, cmd.getClass().toString()) >= 0) {
@@ -161,14 +169,14 @@ public abstract class AgentAttache {
             }
         }
     }
-    
+
     protected synchronized void addRequest(Request req) {
         int index = findRequest(req);
         assert (index < 0) : "How can we get index again? " + index + ":" + req.toString();
         _requests.add(-index - 1, req);
     }
 
-    
+
     protected void cancel(Request req) {
         long seq = req.getSequence();
         cancel(seq);
@@ -187,7 +195,7 @@ public abstract class AgentAttache {
             _requests.remove(index);
         }
     }
-    
+
     protected synchronized int findRequest(Request req) {
         return Collections.binarySearch(_requests, req, s_reqComparator);
     }
@@ -200,13 +208,13 @@ public abstract class AgentAttache {
     protected String log(final long seq, final String msg) {
         return "Seq " + _id + "-" + seq + ": " + msg;
     }
-    
+
     protected void registerListener(final long seq, final Listener listener) {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace(log(seq, "Registering listener"));
         }
         if (listener.getTimeout() != -1) {
-        	s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
+            s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
         }
         _waitForList.put(seq, listener);
     }
@@ -217,7 +225,7 @@ public abstract class AgentAttache {
         }
         return _waitForList.remove(sequence);
     }
-    
+
     protected Listener getListener(final long sequence) {
         return _waitForList.get(sequence);
     }
@@ -225,20 +233,13 @@ public abstract class AgentAttache {
     public long getId() {
         return _id;
     }
-    
+
     public int getQueueSize() {
         return _requests.size();
     }
 
     public boolean processAnswers(final long seq, final Response resp) {
-        resp.log(_id, "Processing: ");
-//        if (s_logger.isDebugEnabled()) {
-//            if (!resp.executeInSequence()) {
-//                s_logger.debug(log(seq, "Processing: " + resp.toString()));
-//            } else {
-//                s_logger.trace(log(seq, "Processing: " + resp.toString()));
-//            }
-//        }
+        resp.logD("Processing: ", true);
 
         final Answer[] answers = resp.getAnswers();
 
@@ -267,7 +268,7 @@ public abstract class AgentAttache {
         if (resp.executeInSequence()) {
             sendNext(seq);
         }
-        
+
         _agentMgr.notifyAnswersToMonitors(_id, seq, answers);
         return processed;
     }
@@ -298,15 +299,16 @@ public abstract class AgentAttache {
             return this._id == that._id;
         } catch (ClassCastException e) {
             assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to AgentAttache.equals()? ";
-            return false;
+        return false;
         }
     }
-    
+
     public void send(Request req, final Listener listener) throws AgentUnavailableException {
         checkAvailability(req.getCommands());
-        
-        long seq = req.getSequence();
-        
+
+        long seq = getNextSequence();
+        req.setSequence(seq);
+
         if (listener != null) {
             registerListener(seq, listener);
         } else if (s_logger.isDebugEnabled()) {
@@ -318,25 +320,19 @@ public abstract class AgentAttache {
                 if (isClosed()) {
                     throw new AgentUnavailableException("The link to the agent has been closed", _id);
                 }
-        
+
                 if (req.executeInSequence() && _currentSequence != null) {
-                    req.log(_id, "Waiting for Seq " + _currentSequence + " Scheduling: ");
-//                    if (s_logger.isDebugEnabled()) {
-//                        s_logger.debug(log(seq, "Waiting for Seq " + _currentSequence + " Scheduling: " + req.toString()));
-//                    }
+                    req.logD("Waiting for Seq " + _currentSequence + " Scheduling: ", true);
                     addRequest(req);
                     return;
                 }
-        
+
                 // If we got to here either we're not suppose to set
                 // the _currentSequence or it is null already.
-                
-                req.log(_id, "Sending ");
-//                if (s_logger.isDebugEnabled()) {
-//                    s_logger.debug(log(seq, "Sending " + req.toString()));
-//                }
+
+                req.logD("Sending ", true);
                 send(req);
-        
+
                 if (req.executeInSequence() && _currentSequence == null) {
                     _currentSequence = seq;
                     if (s_logger.isTraceEnabled()) {
@@ -355,9 +351,10 @@ public abstract class AgentAttache {
         }
     }
 
-    public Answer[] send(Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
-        final SynchronousListener sl = new SynchronousListener(null);
-        final long seq = req.getSequence();
+    public Answer[] send(Request req, int wait) throws AgentUnavailableException, OperationTimedoutException {
+        SynchronousListener sl = new SynchronousListener(null);
+        long seq = getNextSequence();
+        req.setSequence(seq);
 
         send(req, sl);
 
@@ -371,15 +368,7 @@ public abstract class AgentAttache {
                 }
                 if (answers != null) {
                     if (s_logger.isDebugEnabled()) {
-                        new Response(req, answers).log(_id, "Received: ");
-//                        if (req.executeInSequence()) {
-//                            s_logger.debug(log(seq, "Received: " + new Response(req, answers).toString()));
-//                        } else {
-//                            s_logger.debug(log(seq, "Received: "));
-//                            if (s_logger.isTraceEnabled()) {
-//                                s_logger.trace(log(seq, "Received: " + new Response(req, answers).toString()));
-//                            }
-//                        }
+                        new Response(req, answers).logD("Received: ", false);
                     }
                     return answers;
                 }
@@ -387,10 +376,9 @@ public abstract class AgentAttache {
                 answers = sl.getAnswers(); // Try it again.
                 if (answers != null) {
                     if (s_logger.isDebugEnabled()) {
-                        new Response(req, answers).log(_id, "Received after timeout: ");
-//                        s_logger.debug(log(seq, "Received after timeout: " + new Response(req, answers).toString()));
+                        new Response(req, answers).logD("Received after timeout: ", true);
                     }
-                    
+
                     _agentMgr.notifyAnswersToMonitors(_id, seq, answers);
                     return answers;
                 }
@@ -430,7 +418,7 @@ public abstract class AgentAttache {
             unregisterListener(seq);
         }
     }
-    
+
     protected synchronized void sendNext(final long seq) {
         _currentSequence = null;
         if (_requests.isEmpty()) {
@@ -454,10 +442,10 @@ public abstract class AgentAttache {
         }
         _currentSequence = req.getSequence();
     }
-    
-	public void process(Answer[] answers) {
+
+    public void process(Answer[] answers) {
         //do nothing
-	}
+    }
 
     /**
      * sends the request asynchronously.
@@ -466,42 +454,42 @@ public abstract class AgentAttache {
      * @throws AgentUnavailableException
      */
     public abstract void send(Request req) throws AgentUnavailableException;
-    
+
     /**
      * Update password.
      * @param new/changed password.
      */
     public abstract void updatePassword(Command new_password);
-    
+
     /**
      * Process disconnect.
      * @param state state of the agent.
      */
     public abstract void disconnect(final Status state);
-    
+
     /**
      * Is the agent closed for more commands?
      * @return true if unable to reach agent or false if reachable.
      */
     protected abstract boolean isClosed();
-    
+
     protected class Alarm implements Runnable {
-    	long _seq;
-    	public Alarm(long seq) {
-    		_seq = seq;
-    	}
-    	
-    	@Override
-    	public void run() {
-    	    try {
-        		Listener listener = unregisterListener(_seq);
-        		if (listener != null) {
-    	    		cancel(_seq);
-    	    		listener.processTimeout(_id, _seq);
-        		}
-    	    } catch (Exception e) {
-    	        s_logger.warn("Exception ", e);
-    	    }
-    	}
+        long _seq;
+        public Alarm(long seq) {
+            _seq = seq;
+        }
+
+        @Override
+        public void run() {
+            try {
+                Listener listener = unregisterListener(_seq);
+                if (listener != null) {
+                    cancel(_seq);
+                    listener.processTimeout(_id, _seq);
+                }
+            } catch (Exception e) {
+                s_logger.warn("Exception ", e);
+            }
+        }
     }
 }

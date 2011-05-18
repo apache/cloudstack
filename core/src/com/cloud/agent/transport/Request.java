@@ -147,14 +147,18 @@ public class Request {
         _content = content;
     }
 
-    public Request(long seq, long agentId, long mgmtId, final Command command, boolean fromServer) {
-        this(seq, agentId, mgmtId, new Command[] { command }, true, fromServer);
+    public Request(long agentId, long mgmtId, Command command, boolean fromServer) {
+        this(agentId, mgmtId, new Command[] { command }, true, fromServer);
     }
 
-    public Request(long seq, long agentId, long mgmtId, Command[] cmds, boolean stopOnError, boolean fromServer) {
-        this(Version.v3, seq, agentId, mgmtId, (short) 0, cmds);
+    public Request(long agentId, long mgmtId, Command[] cmds, boolean stopOnError, boolean fromServer) {
+        this(Version.v1, -1l, agentId, mgmtId, (short)0, cmds);
         setStopOnError(stopOnError);
         setFromServer(fromServer);
+    }
+
+    public void setSequence(long seq) {
+        _seq = seq;
     }
 
     protected void setInSequence(Command[] cmds) {
@@ -316,31 +320,55 @@ public class Request {
         return (short) (((this instanceof Response) ? FLAG_RESPONSE : FLAG_REQUEST) | _flags);
     }
 
-    public void log(long agentId, String msg) {
+    public void logD(String msg) {
+        logD(msg, true);
+    }
+
+    public void logD(String msg, boolean logContent) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(log(msg, logContent));
+        }
+    }
+
+    public void logT(String msg, boolean logD) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(log(msg, true));
+        } else if (logD && s_logger.isDebugEnabled()) {
+            s_logger.debug(log(msg, false));
+        }
+    }
+
+    public String log(String msg, boolean logContent) {
         StringBuilder buf = new StringBuilder("Seq ");
         buf.append(_agentId).append("-").append(_seq).append(": ");
 
         buf.append(msg);
         buf.append("{ ").append(getType());
-        buf.append(", Ver: ").append(_ver.toString());
         buf.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via);
-        buf.append(", Flags: ").append(Integer.toBinaryString(getFlags())).append(", ");
-        if (_cmds != null) {
-            try {
-                s_gogger.toJson(_cmds, buf);
-            } catch (Throwable e) {
-                s_logger.error("Gson serialization error on Request.toString() " + getClass().getCanonicalName(), e);
-                return;
+        if (logContent) {
+            buf.append(", Ver: ").append(_ver.toString());
+            buf.append(", Flags: ").append(Integer.toBinaryString(getFlags())).append(", ");
+            if (_cmds != null) {
+                try {
+                    s_gogger.toJson(_cmds, buf);
+                } catch (Throwable e) {
+                    StringBuilder buff = new StringBuilder();
+                    for (Command cmd : _cmds) {
+                        buff.append(cmd.getClass().getName()).append("/");
+                    }
+                    s_logger.error("Gson serialization error " + buff.toString(), e);
+                    assert false : "More gson errors on " + buff.toString();
+                    return "";
+                }
+            } else if (_content != null) {
+                buf.append(_content.subSequence(0, 32));
+            } else {
+                buf.append("I've got nada here!");
+                assert false : "How can both commands and content be null?  What are we sending here?";
             }
-        } else if (_content != null) {
-            buf.append(_content.subSequence(0, 32));
-        } else {
-            buf.append("I've got nada here!");
-            assert false : "How can both commands and content be null?  What are we sending here?";
         }
         buf.append(" }");
-
-        s_logger.debug(buf.toString());
+        return buf.toString();
     }
 
     /**
@@ -358,7 +386,7 @@ public class Request {
         final ByteBuffer buff = ByteBuffer.wrap(bytes);
         final byte ver = buff.get();
         final Version version = Version.get(ver);
-        if (version.ordinal() < Version.v3.ordinal()) {
+        if (version.ordinal() != Version.v1.ordinal()) {
             throw new UnsupportedVersionException("This version is no longer supported: " + version.toString(), UnsupportedVersionException.IncompatibleVersion);
         }
         final byte reserved = buff.get(); // tossed away for now.

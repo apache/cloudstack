@@ -786,10 +786,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             throw new AgentUnavailableException("agent not logged into this management server", hostId);
         }
 
-        long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true);
+        Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
         Answer[] answers = agent.send(req, timeout);
-        notifyAnswersToMonitors(hostId, seq, answers);
+        notifyAnswersToMonitors(hostId, req.getSequence(), answers);
         commands.setAnswers(answers);
         return answers;
     }
@@ -801,8 +800,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
 
         try {
-            long seq = _hostDao.getNextSequence(hostId);
-            Request req = new Request(seq, hostId, _nodeId, new CheckHealthCommand(), true);
+            Request req = new Request(hostId, _nodeId, new CheckHealthCommand(), true);
             Answer[] answers = agent.send(req, 50 * 1000);
             if (answers != null && answers[0] != null) {
                 Status status = answers[0].getResult() ? Status.Up : Status.Down;
@@ -847,17 +845,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         if (cmds.length == 0) {
             return -1;
         }
-        long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true);
+        Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
         agent.send(req, listener);
-        return seq;
+        return req.getSequence();
     }
 
 
 
 
     @Override
-    public long gatherStats(final Long hostId, final Command cmd, final Listener listener) {
+    public long gatherStats(Long hostId, Command cmd, Listener listener) {
         try {
             return send(hostId, new Commands(cmd), listener);
         } catch (final AgentUnavailableException e) {
@@ -1232,10 +1229,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
 
             if (s_logger.isDebugEnabled()) {
-                new Request(0l, -1l, -1l, cmds, true, false).log(-1, "Startup request from directly connected host: ");
-                // s_logger.debug("Startup request from directly connected host: "
-                // + new Request(0l, -1l, -1l, cmds, true, false, true)
-                // .toString());
+                new Request(-1l, -1l, cmds, true, false).log("Startup request from directly connected host: ", true);
             }
             try {
                 attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState);

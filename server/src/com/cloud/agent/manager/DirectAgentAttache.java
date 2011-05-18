@@ -24,8 +24,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.naming.ConfigurationException;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -40,7 +38,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
-import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class DirectAgentAttache extends AgentAttache {
@@ -91,10 +88,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public void send(Request req) throws AgentUnavailableException {
-        req.log(_id, "Executing: ");
-        //	    if (s_logger.isDebugEnabled()) {
-        //	        s_logger.debug(log(req.getSequence(), "Executing " + req.toString()));
-        //	    }
+        req.logD("Executing: ", true);
         if (req instanceof Response) {
             Response resp = (Response)req;
             Answer[] answers = resp.getAnswers();
@@ -158,7 +152,7 @@ public class DirectAgentAttache extends AgentAttache {
                     long seq = _seq++;
 
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(seq, _id, -1, cmd, false).toString());
+                        s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(_id, -1, cmd, false).toString());
                     }
 
                     _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[]{cmd});
