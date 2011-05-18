@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -565,6 +566,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         String password = cmd.getPassword();
 
         URI uri = null;
+        if(url != null)
+        	url = URLDecoder.decode(url);
 
         // Check if the zone exists in the system
         DataCenterVO zone = _dcDao.findById(dcId);
@@ -735,6 +738,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         String hostTag = cmd.getHostTag();
         Map<String, String> bareMetalParams = new HashMap<String, String>();
 
+        if(url != null)
+        	url = URLDecoder.decode(url);
+        
         // this is for standalone option
         if (clusterName == null && clusterId == null) {
             clusterName = "Standalone-" + url;
