@@ -115,8 +115,6 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             txn.rollback();
             s_logger.error("error copying events from cloud db to usage db", ex);
             throw new UsageServerException(ex.getMessage());
-        } finally {
-            txn.close();
         }
     }
 
