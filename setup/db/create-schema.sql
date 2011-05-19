@@ -1122,6 +1122,7 @@ CREATE TABLE `cloud`.`disk_offering` (
 
 CREATE TABLE  `cloud`.`service_offering` (
   `id` bigint unsigned NOT NULL,
+  `is_system` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'is a system vm offering',
   `cpu` int(10) unsigned NOT NULL COMMENT '# of cores',
   `speed` int(10) unsigned NOT NULL COMMENT 'speed per core in mhz',
   `ram_size` bigint unsigned NOT NULL,

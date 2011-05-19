@@ -59,6 +59,9 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     
     @Column(name="host_tag")
     private String hostTag;    
+
+    @Column(name="is_system")
+    private boolean isSystem=false;
     
     protected ServiceOffering21VO() {
         super();
@@ -78,6 +81,12 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, String hostTag) {
     	this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, guestIpType, useLocalStorage, recreatable, tags);
        	this.hostTag = hostTag;
+    }
+    
+
+    @Override
+    public boolean getIsSystem() {
+        return isSystem;
     }
 
 	@Override

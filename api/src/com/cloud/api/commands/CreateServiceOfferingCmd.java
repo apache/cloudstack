@@ -71,6 +71,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.STRING, description="the host tag for this service offering.")
     private String hostTag;
 
+    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
+    private Boolean isSystem;
+
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -118,7 +121,12 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public String getHostTag() {
         return hostTag;
-    }	
+    }
+
+    public Boolean getIsSystem() {
+        return  isSystem == null ? false : isSystem;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

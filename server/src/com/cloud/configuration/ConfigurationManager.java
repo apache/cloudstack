@@ -70,7 +70,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param hostTag
 	 * @return ID
 	 */
-	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag);
+	ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag);
 	
 	/**
 	 * Creates a new disk offering

@@ -53,6 +53,11 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the service offering")
     private Long domainId;
 
+
+    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
+    private Boolean isSystem;
+
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +77,11 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     public Long getDomainId(){
     	return domainId;
     }
+    
+    public Boolean getIsSystem() {
+        return isSystem == null ? false : isSystem;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

@@ -37,6 +37,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
+    protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdAndIsSystemSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
     
@@ -51,6 +52,12 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         ServiceOfferingsByDomainIdSearch = createSearchBuilder();
         ServiceOfferingsByDomainIdSearch.and("domainId", ServiceOfferingsByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ServiceOfferingsByDomainIdSearch.done();
+        
+        ServiceOfferingsByDomainIdAndIsSystemSearch = createSearchBuilder();
+        ServiceOfferingsByDomainIdAndIsSystemSearch.and("domainId", ServiceOfferingsByDomainIdAndIsSystemSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        ServiceOfferingsByDomainIdAndIsSystemSearch.and("isSystem", ServiceOfferingsByDomainIdAndIsSystemSearch.entity().getIsSystem(), SearchCriteria.Op.EQ);
+        ServiceOfferingsByDomainIdAndIsSystemSearch.done();
+        
         
         PublicServiceOfferingSearch = createSearchBuilder();
         PublicServiceOfferingSearch.and("domainId", PublicServiceOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
@@ -101,6 +108,15 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     	SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdSearch.create();
     	sc.setParameters("domainId", domainId);
         return listBy(sc);    	
+    }
+    
+
+    @Override
+    public List<ServiceOfferingVO> findServiceOfferingByDomainIdAndIsSystem(Long domainId, Boolean isSystem){
+        SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdAndIsSystemSearch.create();
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("isSystem", isSystem);
+        return listBy(sc);      
     }
     
     @Override

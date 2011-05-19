@@ -36,7 +36,8 @@ public class EventTypes {
 	public static final String EVENT_ROUTER_START = "ROUTER.START";
 	public static final String EVENT_ROUTER_STOP = "ROUTER.STOP";
 	public static final String EVENT_ROUTER_REBOOT = "ROUTER.REBOOT";
-	public static final String EVENT_ROUTER_HA = "ROUTER.HA";
+	public static final String EVENT_ROUTER_HA = "ROUTER.HA";  
+    public static final String EVENT_ROUTER_UPGRADE = "ROUTER.UPGRADE";
 
 	// Console proxy
 	public static final String EVENT_PROXY_CREATE = "PROXY.CREATE";

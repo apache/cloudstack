@@ -20,6 +20,8 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -64,7 +66,11 @@ public class ServiceOfferingResponse extends BaseResponse {
     private String domain;
     
     @SerializedName(ApiConstants.HOST_TAGS) @Param(description="the host tag for the service offering")
-    private String hostTag;    
+    private String hostTag; 
+
+    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
+    private Boolean isSystem;
+
 
     public Long getId() {
         return id;
@@ -81,6 +87,15 @@ public class ServiceOfferingResponse extends BaseResponse {
     public void setName(String name) {
         this.name = name;
     }
+    
+    public Boolean getIsSystem() {
+        return isSystem;
+    }
+    
+    public void setIsSystemOffering(Boolean isSystem) {
+        this.isSystem = isSystem;
+    }
+
 
     public String getDisplayText() {
         return displayText;

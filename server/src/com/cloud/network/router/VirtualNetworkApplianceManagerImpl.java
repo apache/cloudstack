@@ -355,6 +355,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
         }
+        
+        // check if it is a system service offering, if yes return with error as it cannot be used for user vms
+        if (!newServiceOffering.getIsSystem()) {
+            throw new InvalidParameterValueException("Cannot upgrade router vm to a non system service offering " + serviceOfferingId);
+        }       
 
         // Check that the router is stopped
         if (!router.getState().equals(State.Stopped)) {
@@ -364,7 +369,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
-
+        
+        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service
+        // offering      
         if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
             throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getUseLocalStorage() + " is different from "
                     + "curruent local storage status: " + currentServiceOffering.getUseLocalStorage());

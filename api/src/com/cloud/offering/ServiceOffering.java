@@ -32,6 +32,12 @@ public interface ServiceOffering {
     
     String getTags();
     
+
+    /**
+     * @return Is this a system VM offering?
+     */
+    boolean getIsSystem();
+    
 	/**
      * @return user readable description
      */
