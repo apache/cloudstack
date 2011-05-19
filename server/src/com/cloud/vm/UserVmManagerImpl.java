@@ -1565,7 +1565,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _templateHostDao.persist(templateHostVO);
 
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), secondaryStorageHost.getDataCenterId(), privateTemplate.getId(),
-                        privateTemplate.getName(), null, null, templateHostVO.getSize());
+                        privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(), templateHostVO.getSize());
                 _usageEventDao.persist(usageEvent);
 
             }

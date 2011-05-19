@@ -542,7 +542,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	_downloadMonitor.copyTemplate(vmTemplate, srcSecHost, dstSecHost);
     	
     	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
-    	    UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), destZoneId, templateId, null, null, null, srcTmpltHost.getSize());
+    	    UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), destZoneId, templateId, null, null, vmTemplate.getSourceTemplateId(), srcTmpltHost.getSize());
     	    _usageEventDao.persist(usageEvent);
     	}
     	return true;

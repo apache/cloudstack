@@ -382,7 +382,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 eventType = EventTypes.EVENT_ISO_CREATE;
             }
             if(template.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
-                UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, null , size);
+                UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, template.getSourceTemplateId() , size);
                 _usageEventDao.persist(usageEvent);
             }
         } 
