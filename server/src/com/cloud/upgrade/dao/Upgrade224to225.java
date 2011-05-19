@@ -33,20 +33,20 @@ import com.cloud.utils.script.Script;
 
 public class Upgrade224to225 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade224to225.class);
-    
+
     @Override
     public File[] getPrepareScripts() {
         String file = Script.findScript("", "db/schema-224to225.sql");
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-224to225.sql");
         }
-        
-        return new File[] {new File(file)};
+
+        return new File[] { new File(file) };
     }
-        
+
     @Override
     public void performDataMigration(Connection conn) {
-        //create security groups for existing accounts if not present
+        // create security groups for existing accounts if not present
         createSecurityGroups(conn);
         dropKeysIfExist(conn);
         dropTableColumnsIfExist(conn);
@@ -60,25 +60,25 @@ public class Upgrade224to225 implements DbUpgrade {
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the cleanup script, schema-224to225-cleanup.sql");
         }
-        
-        return new File[] {new File(file)};
+
+        return new File[] { new File(file) };
     }
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.4", "2.2.4"};
+        return new String[] { "2.2.4", "2.2.4" };
     }
 
     @Override
     public String getUpgradedVersion() {
         return "2.2.5";
     }
-    
+
     @Override
     public boolean supportsRollingUpgrade() {
         return false;
     }
-    
+
     private void createSecurityGroups(Connection conn) {
         s_logger.debug("Creating missing default security group as a part of 224-225 upgrade");
         try {
@@ -88,17 +88,17 @@ public class Upgrade224to225 implements DbUpgrade {
             while (rs.next()) {
                 accounts.add(rs.getLong(1));
             }
-            
+
             for (Long accountId : accounts) {
-                //get default security group
+                // get default security group
                 pstmt = conn.prepareStatement("SELECT * FROM security_group WHERE name='default' and account_id=?");
                 pstmt.setLong(1, accountId);
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
                     s_logger.debug("Default security group is missing for account id=" + accountId + " so adding it");
-                    
-                    //get accountName/domainId information
-                    
+
+                    // get accountName/domainId information
+
                     pstmt = conn.prepareStatement("SELECT account_name, domain_id FROM account WHERE id=?");
                     pstmt.setLong(1, accountId);
                     ResultSet rs1 = pstmt.executeQuery();
@@ -107,29 +107,31 @@ public class Upgrade224to225 implements DbUpgrade {
                     }
                     String accountName = rs1.getString(1);
                     Long domainId = rs1.getLong(2);
-                    
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`security_group` (name, description, account_name, account_id, domain_id) VALUES ('default', 'Default Security Group', ?, ?, ?)");
+
+                    pstmt = conn
+                            .prepareStatement("INSERT INTO `cloud`.`security_group` (name, description, account_name, account_id, domain_id) VALUES ('default', 'Default Security Group', ?, ?, ?)");
                     pstmt.setString(1, accountName);
                     pstmt.setLong(2, accountId);
                     pstmt.setLong(3, domainId);
                     pstmt.executeUpdate();
                 }
+                rs.close();
+                pstmt.close();
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create default security groups for existing accounts due to", e);
         }
     }
-    
-    
+
     private void dropTableColumnsIfExist(Connection conn) {
         HashMap<String, List<String>> tablesToModify = new HashMap<String, List<String>>();
-        
-        //account table
+
+        // account table
         List<String> columns = new ArrayList<String>();
         columns.add("network_domain");
         tablesToModify.put("account", columns);
-        
-        //console proxy table
+
+        // console proxy table
         columns = new ArrayList<String>();
         columns.add("gateway");
         columns.add("dns1");
@@ -142,9 +144,8 @@ public class Upgrade224to225 implements DbUpgrade {
         columns.add("vlan_id");
         columns.add("ram_size");
         tablesToModify.put("console_proxy", columns);
-        
-        
-        //secondary storage table
+
+        // secondary storage table
         columns = new ArrayList<String>();
         columns.add("gateway");
         columns.add("dns1");
@@ -157,13 +158,13 @@ public class Upgrade224to225 implements DbUpgrade {
         columns.add("vlan_id");
         columns.add("ram_size");
         tablesToModify.put("secondary_storage_vm", columns);
-        
-        //disk offering table
+
+        // disk offering table
         columns = new ArrayList<String>();
         columns.add("mirrored");
         tablesToModify.put("disk_offering", columns);
-        
-        //domain router table
+
+        // domain router table
         columns = new ArrayList<String>();
         columns.add("gateway");
         columns.add("ram_size");
@@ -178,20 +179,20 @@ public class Upgrade224to225 implements DbUpgrade {
         columns.add("vlan_id");
         columns.add("dhcp_ip_address");
         tablesToModify.put("domain_router", columns);
-        
-        //volumes table
+
+        // volumes table
         columns = new ArrayList<String>();
         columns.add("mirror_state");
         columns.add("mirror_vol");
         columns.add("destroyed");
         tablesToModify.put("volumes", columns);
-        
-        //vm_instance table
+
+        // vm_instance table
         columns = new ArrayList<String>();
         columns.add("mirrored_vols");
         tablesToModify.put("vm_instance", columns);
-        
-        //user_vm table
+
+        // user_vm table
         columns = new ArrayList<String>();
         columns.add("domain_router_id");
         columns.add("vnet");
@@ -200,137 +201,140 @@ public class Upgrade224to225 implements DbUpgrade {
         columns.add("external_mac_address");
         columns.add("external_vlan_db_id");
         tablesToModify.put("user_vm", columns);
-       
-        //service_offerings table
+
+        // service_offerings table
         columns = new ArrayList<String>();
         columns.add("guest_ip_type");
         tablesToModify.put("service_offering", columns);
-        
+
+        s_logger.debug("Dropping columns that don't exist in 2.2.5 version of the DB...");
         for (String tableName : tablesToModify.keySet()) {
             dropTableColumnsIfExist(conn, tableName, tablesToModify.get(tableName));
         }
     }
-    
+
     private void dropTableColumnsIfExist(Connection conn, String tableName, List<String> columns) {
-       
+
         try {
             for (String column : columns) {
-                s_logger.debug("Dropping columns that don't exist in 2.2.5 version of the DB for table " + tableName);
                 try {
                     PreparedStatement pstmt = conn.prepareStatement("SELECT " + column + " FROM " + tableName);
                     pstmt.executeQuery();
-                    
-                    } catch (SQLException e) {
-                        //if there is an exception, it means that field doesn't exist, so do nothing here
-                        s_logger.trace("Field " + column + " doesn't exist in " + tableName);
-                        continue;
-                    }
-                        
-                    PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + column);
-                    pstmt.executeUpdate();
-                    s_logger.debug("Column " + column + " is dropped successfully from the table " + tableName);
-            } 
+
+                } catch (SQLException e) {
+                    // if there is an exception, it means that field doesn't exist, so do nothing here
+                    s_logger.trace("Field " + column + " doesn't exist in " + tableName);
+                    continue;
+                }
+
+                PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + column);
+                pstmt.executeUpdate();
+                s_logger.debug("Column " + column + " is dropped successfully from the table " + tableName);
+                pstmt.close();
+            }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to drop columns due to ", e);
         }
     }
-    
+
     private void dropKeysIfExist(Connection conn) {
         HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
         HashMap<String, List<String>> indexes = new HashMap<String, List<String>>();
-        
-        //account table
+
+        // account table
         List<String> keys = new ArrayList<String>();
         keys.add("fk_console_proxy__vlan_id");
         foreignKeys.put("console_proxy", keys);
-        
+
         keys = new ArrayList<String>();
         keys.add("i_console_proxy__vlan_id");
         indexes.put("console_proxy", keys);
-        
-        //mshost table
+
+        // mshost table
         keys = new ArrayList<String>();
         keys.add("msid_2");
         indexes.put("mshost", keys);
-        
-        //domain router table
+
+        // domain router table
         keys = new ArrayList<String>();
         keys.add("fk_domain_router__vlan_id");
         keys.add("fk_domain_route__id");
         foreignKeys.put("domain_router", keys);
-        
+
         keys = new ArrayList<String>();
         keys.add("i_domain_router__public_ip_address");
         keys.add("i_domain_router__vlan_id");
         indexes.put("domain_router", keys);
-        
-        //user_vm table
+
+        // user_vm table
         keys = new ArrayList<String>();
         keys.add("i_user_vm__domain_router_id");
         keys.add("i_user_vm__external_ip_address");
         keys.add("i_user_vm__external_vlan_db_id");
         indexes.put("user_vm", keys);
-        
+
         keys = new ArrayList<String>();
         keys.add("fk_user_vm__domain_router_id");
         keys.add("fk_user_vm__external_vlan_db_id");
         foreignKeys.put("user_vm", keys);
-        
-        //user_vm_details table
+
+        // user_vm_details table
         keys = new ArrayList<String>();
         keys.add("fk_user_vm_details__vm_id");
         foreignKeys.put("user_vm_details", keys);
         indexes.put("user_vm_details", keys);
-        
-        //snapshots table
+
+        // snapshots table
         keys = new ArrayList<String>();
         keys.add("id_2");
         indexes.put("snapshots", keys);
-        
-        //remote_access_vpn
+
+        // remote_access_vpn
         keys = new ArrayList<String>();
         keys.add("fk_remote_access_vpn__server_addr");
         foreignKeys.put("remote_access_vpn", keys);
-        
+
         keys = new ArrayList<String>();
         keys.add("fk_remote_access_vpn__server_addr_id");
         indexes.put("remote_access_vpn", keys);
- 
-        //drop all foreign keys first
+
+        // drop all foreign keys first
+        s_logger.debug("Dropping keys that don't exist in 2.2.5 version of the DB...");
         for (String tableName : foreignKeys.keySet()) {
             dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
         }
-        
-        //drop indexes now
+
+        // drop indexes now
         for (String tableName : indexes.keySet()) {
             dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
         }
     }
-    
+
     private void dropKeysIfExist(Connection conn, String tableName, List<String> keys, boolean isForeignKey) {
-        s_logger.debug("Dropping keys that don't exist in 2.2.5 version of the DB...");
-            for (String key : keys) {
-                try {
-                    PreparedStatement pstmt = null;
-                    if (isForeignKey) {
-                        pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + key); 
-                    } else {
-                        pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP KEY " + key); 
-                    }
-                    pstmt.executeUpdate();
-                    s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
-                } catch (SQLException e) {
-                    //do nothing here
-                    continue;
+        for (String key : keys) {
+            try {
+                PreparedStatement pstmt = null;
+                if (isForeignKey) {
+                    pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + key);
+                } else {
+                    pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP KEY " + key);
                 }
-            } 
+                pstmt.executeUpdate();
+                s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
+                pstmt.close();
+            } catch (SQLException e) {
+                // do nothing here
+                continue;
+            }
+        }
     }
-    
+
     private void addMissingKeys(Connection conn) {
+        PreparedStatement pstmt = null;
         try {
             s_logger.debug("Adding missing foreign keys");
-            
-            HashMap<String, String> keyToTableMap = new HashMap<String, String> ();
+
+            HashMap<String, String> keyToTableMap = new HashMap<String, String>();
             keyToTableMap.put("fk_console_proxy__id", "console_proxy");
             keyToTableMap.put("fk_secondary_storage_vm__id", "secondary_storage_vm");
             keyToTableMap.put("fk_template_spool_ref__template_id", "template_spool_ref");
@@ -339,8 +343,8 @@ public class Upgrade224to225 implements DbUpgrade {
             keyToTableMap.put("fk_op_ha_work__instance_id", "op_ha_work");
             keyToTableMap.put("fk_op_ha_work__mgmt_server_id", "op_ha_work");
             keyToTableMap.put("fk_op_ha_work__host_id", "op_ha_work");
-            
-            HashMap<String, String> keyToStatementMap = new HashMap<String, String> ();
+
+            HashMap<String, String> keyToStatementMap = new HashMap<String, String>();
             keyToStatementMap.put("fk_console_proxy__id", "(`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE");
             keyToStatementMap.put("fk_secondary_storage_vm__id", "(`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE");
             keyToStatementMap.put("fk_template_spool_ref__template_id", "(`template_id`) REFERENCES `vm_template` (`id`)");
@@ -348,42 +352,43 @@ public class Upgrade224to225 implements DbUpgrade {
             keyToStatementMap.put("fk_user_vm_details__vm_id", "(`vm_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE");
             keyToStatementMap.put("fk_op_ha_work__instance_id", "(`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE");
             keyToStatementMap.put("fk_op_ha_work__mgmt_server_id", "(`mgmt_server_id`) REFERENCES `mshost`(`msid`)");
-            keyToStatementMap.put("fk_op_ha_work__host_id", "(`host_id`) REFERENCES `host` (`id`)");    
-            
+            keyToStatementMap.put("fk_op_ha_work__host_id", "(`host_id`) REFERENCES `host` (`id`)");
+
             for (String key : keyToTableMap.keySet()) {
                 String tableName = keyToTableMap.get(key);
-                PreparedStatement pstmt = conn.prepareStatement("show keys from " + tableName + " where key_name=?");
+                pstmt = conn
+                        .prepareStatement("SELECT * FROM information_schema.table_constraints a JOIN information_schema.key_column_usage b ON a.table_schema = b.table_schema AND a.constraint_name = b.constraint_name WHERE a.table_schema=database() AND a.constraint_type='FOREIGN KEY' and a.constraint_name=?");
                 pstmt.setString(1, key);
                 ResultSet rs = pstmt.executeQuery();
-                if (rs.next()){
+                if (rs.next()) {
                     continue;
                 }
-                
+
                 pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " ADD CONSTRAINT " + key + " FOREIGN KEY " + keyToStatementMap.get(key));
                 pstmt.executeUpdate();
                 s_logger.debug("Added missing key " + key + " to table " + tableName);
+                rs.close();
             }
-          
+            s_logger.debug("Missing keys were added successfully as a part of 224 to 225 upgrade");
+            pstmt.close();
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to add missign keys due to ", e);
+            s_logger.error("Unable to add missing foreign key; following statement was executed:" + pstmt);
+            throw new CloudRuntimeException("Unable to add missign keys due to exception", e);
         }
     }
-    
+
     private void addMissingOvsAccount(Connection conn) {
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT * from ovs_tunnel_account");
             ResultSet rs = pstmt.executeQuery();
-            if (rs.next()){
-                return;
+            if (!rs.next()) {
+                s_logger.debug("Adding missing ovs tunnel account");
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS')");
+                pstmt.executeUpdate();
             }
-            
-            s_logger.debug("Adding missing ovs tunnel account");
-            pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS')");
-            pstmt.executeUpdate();
-           
-          
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to add missign ovs tunner account due to ", e);
+            s_logger.error("Unable to add missing ovs tunnel account due to ", e);
+            throw new CloudRuntimeException("Unable to add missign ovs tunnel account due to ", e);
         }
     }
 }
