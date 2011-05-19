@@ -214,11 +214,11 @@ public class Upgrade224to225 implements DbUpgrade {
     }
 
     private void dropTableColumnsIfExist(Connection conn, String tableName, List<String> columns) {
-
+        PreparedStatement pstmt = null;
         try {
             for (String column : columns) {
                 try {
-                    PreparedStatement pstmt = conn.prepareStatement("SELECT " + column + " FROM " + tableName);
+                    pstmt = conn.prepareStatement("SELECT " + column + " FROM " + tableName);
                     pstmt.executeQuery();
 
                 } catch (SQLException e) {
@@ -227,12 +227,13 @@ public class Upgrade224to225 implements DbUpgrade {
                     continue;
                 }
 
-                PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + column);
+                pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + column);
                 pstmt.executeUpdate();
                 s_logger.debug("Column " + column + " is dropped successfully from the table " + tableName);
                 pstmt.close();
             }
         } catch (SQLException e) {
+            s_logger.warn("Unable to drop columns using query " + pstmt + " due to exception", e);
             throw new CloudRuntimeException("Unable to drop columns due to ", e);
         }
     }
@@ -241,7 +242,7 @@ public class Upgrade224to225 implements DbUpgrade {
         HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
         HashMap<String, List<String>> indexes = new HashMap<String, List<String>>();
 
-        // account table
+        // console proxy table
         List<String> keys = new ArrayList<String>();
         keys.add("fk_console_proxy__vlan_id");
         foreignKeys.put("console_proxy", keys);
@@ -276,6 +277,7 @@ public class Upgrade224to225 implements DbUpgrade {
         keys = new ArrayList<String>();
         keys.add("fk_user_vm__domain_router_id");
         keys.add("fk_user_vm__external_vlan_db_id");
+        keys.add("fk_user_vm__external_ip_address");
         foreignKeys.put("user_vm", keys);
 
         // user_vm_details table
