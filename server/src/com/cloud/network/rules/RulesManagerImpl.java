@@ -224,6 +224,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (rule.getDestinationPortStart() > rule.getDestinationPortEnd() || rule.getSourcePortStart() > rule.getSourcePortEnd()) {
             throw new InvalidParameterValueException("Start port can't be bigger than end port");
         }
+        
+        // check that the port ranges are of equal size
+        if ((rule.getDestinationPortEnd() - rule.getDestinationPortStart()) != (rule.getSourcePortEnd() - rule.getSourcePortStart())) {
+            throw new InvalidParameterValueException("Source port and destination port ranges should be of equal sizes.");
+        }
 
         Network network = _networkMgr.getNetwork(networkId);
         assert network != null : "Can't create port forwarding rule as network associated with public ip address is null...how is it possible?";

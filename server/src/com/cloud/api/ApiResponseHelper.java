@@ -952,9 +952,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     public FirewallRuleResponse createFirewallRuleResponse(PortForwardingRule fwRule) {
         FirewallRuleResponse response = new FirewallRuleResponse();
         response.setId(fwRule.getId());
-        response.setPrivatePort(Integer.toString(fwRule.getDestinationPortStart()));
+        response.setPrivateStartPort(Integer.toString(fwRule.getDestinationPortStart()));
+        response.setPrivateEndPort(Integer.toString(fwRule.getDestinationPortEnd()));        
         response.setProtocol(fwRule.getProtocol());
-        response.setPublicPort(Integer.toString(fwRule.getSourcePortStart()));
+        response.setPublicStartPort(Integer.toString(fwRule.getSourcePortStart()));
+        response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
         response.setPublicIpAddressId(ip.getId());

@@ -18,6 +18,8 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -25,14 +27,20 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
     private Long id;
 
-    @SerializedName(ApiConstants.PRIVATE_PORT) @Param(description="the private port for the port forwarding rule")
-    private String privatePort;
+    @SerializedName(ApiConstants.PRIVATE_START_PORT) @Param(description = "the starting port of port forwarding rule's private port range")
+    private String privateStartPort;
+
+    @SerializedName(ApiConstants.PRIVATE_END_PORT) @Param(description = "the ending port of port forwarding rule's private port range")
+    private String privateEndPort;
 
     @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the port forwarding rule")
     private String protocol;
 
-    @SerializedName(ApiConstants.PUBLIC_PORT) @Param(description="the public port for the port forwarding rule")
-    private String publicPort;
+    @SerializedName(ApiConstants.PUBLIC_START_PORT) @Param(description="the starting port of port forwarding rule's public port range")
+    private String publicStartPort;
+
+    @SerializedName(ApiConstants.PUBLIC_END_PORT)  @Param(description = "the ending port of port forwarding rule's private port range")
+    private String publicEndPort;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
     private Long virtualMachineId;
@@ -60,14 +68,22 @@ public class FirewallRuleResponse extends BaseResponse {
         this.id = id;
     }
 
-    public String getPrivatePort() {
-        return privatePort;
+    public String getPrivateStartPort() {
+        return privateStartPort;
     }
 
-    public void setPrivatePort(String privatePort) {
-        this.privatePort = privatePort;
+    public String getPrivateEndPort() {
+        return privateEndPort;
     }
 
+    public void setPrivateStartPort(String privatePort) {
+        this.privateStartPort = privatePort;
+    }
+
+    public void setPrivateEndPort(String privatePort) {
+        this.privateEndPort = privatePort;
+    }    
+    
     public String getProtocol() {
         return protocol;
     }
@@ -76,12 +92,20 @@ public class FirewallRuleResponse extends BaseResponse {
         this.protocol = protocol;
     }
 
-    public String getPublicPort() {
-        return publicPort;
+    public String getPublicStartPort() {
+        return publicStartPort;
     }
 
-    public void setPublicPort(String publicPort) {
-        this.publicPort = publicPort;
+    public String getPublicEndPort() {
+        return publicEndPort;
+    }
+    
+    public void setPublicStartPort(String publicPort) {
+        this.publicStartPort = publicPort;
+    }
+
+    public void setPublicEndPort(String publicPort) {
+        this.publicEndPort = publicPort;
     }
 
     public Long getVirtualMachineId() {

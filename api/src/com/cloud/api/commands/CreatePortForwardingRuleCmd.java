@@ -55,14 +55,20 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required = true, description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
-    @Parameter(name = ApiConstants.PRIVATE_PORT, type = CommandType.INTEGER, required = true, description = "the private port of the port forwarding rule")
-    private Integer privatePort;
+    @Parameter(name = ApiConstants.PRIVATE_START_PORT, type = CommandType.INTEGER, required = true, description = "the starting port of port forwarding rule's private port range")
+    private Integer privateStartPort;
+
+    @Parameter(name = ApiConstants.PRIVATE_END_PORT, type = CommandType.INTEGER, required = false, description = "the ending port of port forwarding rule's private port range")
+    private Integer privateEndPort;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name = ApiConstants.PUBLIC_PORT, type = CommandType.INTEGER, required = true, description = "the public port of the port forwarding rule")
-    private Integer publicPort;
+    @Parameter(name = ApiConstants.PUBLIC_START_PORT, type = CommandType.INTEGER, required = true, description = "the starting port of port forwarding rule's public port range")
+    private Integer publicStartPort;
+
+    @Parameter(name = ApiConstants.PUBLIC_END_PORT, type = CommandType.INTEGER, required = false, description = "the ending port of port forwarding rule's private port range")
+    private Integer publicEndPort;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.LONG, required = true, description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
@@ -70,7 +76,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
 
-
+    
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -79,17 +85,9 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         return ipAddressId;
     }
 
-    public Integer getPrivatePort() {
-        return privatePort;
-    }
-
     @Override
     public String getProtocol() {
         return protocol.trim();
-    }
-
-    public Integer getPublicPort() {
-        return publicPort;
     }
 
     @Override
@@ -158,12 +156,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public int getSourcePortStart() {
-        return publicPort.intValue();
+        return publicStartPort.intValue();
     }
 
     @Override
     public int getSourcePortEnd() {
-        return publicPort.intValue();
+        return (publicEndPort == null)? publicStartPort.intValue() : publicEndPort.intValue();        
     }
 
     @Override
@@ -205,12 +203,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public int getDestinationPortStart() {
-        return privatePort.intValue();
+        return privateStartPort.intValue();
     }
 
     @Override
     public int getDestinationPortEnd() {
-        return privatePort.intValue();
+        return (privateEndPort == null)? privateStartPort.intValue() : privateEndPort.intValue();
     }
 
     @Override
