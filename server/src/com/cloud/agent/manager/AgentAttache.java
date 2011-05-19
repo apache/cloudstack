@@ -1,8 +1,8 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
+ *
  * This software is licensed under the GNU General Public License v3 or later.
- * 
+ *
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or any later version.
@@ -10,10 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 package com.cloud.agent.manager;
 
@@ -56,9 +56,9 @@ import com.cloud.agent.api.MaintainCommand;
  */
 public abstract class AgentAttache {
     private static final Logger s_logger = Logger.getLogger(AgentAttache.class);
-    
+
     private static final ScheduledExecutorService s_listenerExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("ListenerTimer"));
-    
+
     protected static final Comparator<Request> s_reqComparator =
         new Comparator<Request>() {
             @Override
@@ -74,7 +74,7 @@ public abstract class AgentAttache {
                 }
             }
         };
-        
+
     protected static final Comparator<Object> s_seqComparator =
         new Comparator<Object>() {
             @Override
@@ -97,7 +97,7 @@ public abstract class AgentAttache {
     protected Long _currentSequence;
     protected Status _status = Status.Connecting;
     protected boolean _maintenance;
-    
+
     public final static String[] s_commandsAllowedInMaintenanceMode =
         new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString() };
     protected final static String[] s_commandsNotAllowedInConnectingMode =
@@ -106,9 +106,10 @@ public abstract class AgentAttache {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
     }
-    
+
 
     protected AgentAttache(final long id, boolean maintenance) {
+        s_logger.debug("Creating attache for " + id);
         _id = id;
         _waitForList = new ConcurrentHashMap<Long, Listener>();
         _currentSequence = null;
@@ -119,19 +120,19 @@ public abstract class AgentAttache {
     public synchronized void setMaintenanceMode(final boolean value) {
         _maintenance = value;
     }
-    
+
     public void ready() {
         _status = Status.Up;
     }
-    
+
     public boolean isReady() {
         return _status == Status.Up;
     }
-    
+
     public boolean isConnecting() {
         return _status == Status.Connecting;
     }
-    
+
 	public boolean forForward() {
 		return false;
 	}
@@ -148,7 +149,7 @@ public abstract class AgentAttache {
                 }
             }
         }
-        
+
         if (_status == Status.Connecting) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsNotAllowedInConnectingMode, cmd.getClass().toString()) >= 0) {
@@ -157,14 +158,14 @@ public abstract class AgentAttache {
             }
         }
     }
-    
+
     protected synchronized void addRequest(Request req) {
         int index = findRequest(req);
         assert (index < 0) : "How can we get index again? " + index + ":" + req.toString();
         _requests.add(-index - 1, req);
     }
 
-    
+
     protected void cancel(Request req) {
         long seq = req.getSequence();
         cancel(seq);
@@ -183,7 +184,7 @@ public abstract class AgentAttache {
             _requests.remove(index);
         }
     }
-    
+
     protected synchronized int findRequest(Request req) {
         return Collections.binarySearch(_requests, req, s_reqComparator);
     }
@@ -196,7 +197,7 @@ public abstract class AgentAttache {
     protected String log(final long seq, final String msg) {
         return "Seq " + _id + "-" + seq + ": " + msg;
     }
-    
+
     protected void registerListener(final long seq, final Listener listener) {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace(log(seq, "Registering listener"));
@@ -213,7 +214,7 @@ public abstract class AgentAttache {
         }
         return _waitForList.remove(sequence);
     }
-    
+
     protected Listener getListener(final long sequence) {
         return _waitForList.get(sequence);
     }
@@ -221,7 +222,7 @@ public abstract class AgentAttache {
     public long getId() {
         return _id;
     }
-    
+
     public int getQueueSize() {
         return _requests.size();
     }
@@ -294,12 +295,12 @@ public abstract class AgentAttache {
             return false;
         }
     }
-    
+
     public void send(Request req, final Listener listener) throws AgentUnavailableException {
         checkAvailability(req.getCommands());
-        
+
         long seq = req.getSequence();
-        
+
         if (listener != null) {
             registerListener(seq, listener);
         } else if (s_logger.isDebugEnabled()) {
@@ -311,7 +312,7 @@ public abstract class AgentAttache {
                 if (isClosed()) {
                     throw new AgentUnavailableException("The link to the agent has been closed", _id);
                 }
-        
+
                 if (req.executeInSequence() && _currentSequence != null) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(log(seq, "Waiting for Seq " + _currentSequence + " Scheduling: " + req.toString()));
@@ -319,15 +320,15 @@ public abstract class AgentAttache {
                     addRequest(req);
                     return;
                 }
-        
+
                 // If we got to here either we're not suppose to set
                 // the _currentSequence or it is null already.
-                
+
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(log(seq, "Sending " + req.toString()));
                 }
                 send(req);
-        
+
                 if (req.executeInSequence() && _currentSequence == null) {
                     _currentSequence = seq;
                     if (s_logger.isTraceEnabled()) {
@@ -413,7 +414,7 @@ public abstract class AgentAttache {
             }
         }
     }
-    
+
     protected synchronized void sendNext(final long seq) {
         _currentSequence = null;
         if (_requests.isEmpty()) {
@@ -437,37 +438,37 @@ public abstract class AgentAttache {
         }
         _currentSequence = req.getSequence();
     }
-    
+
 	public void process(Answer[] answers) {
         //do nothing
 	}
 
     /**
      * sends the request asynchronously.
-     * 
+     *
      * @param req
      * @throws AgentUnavailableException
      */
     public abstract void send(Request req) throws AgentUnavailableException;
-    
+
     /**
      * Process disconnect.
      * @param state state of the agent.
      */
     public abstract void disconnect(final Status state);
-    
+
     /**
      * Is the agent closed for more commands?
      * @return true if unable to reach agent or false if reachable.
      */
     protected abstract boolean isClosed();
-    
+
     protected class Alarm implements Runnable {
     	long _seq;
     	public Alarm(long seq) {
     		_seq = seq;
     	}
-    	
+
     	@Override
     	public void run() {
     	    try {
