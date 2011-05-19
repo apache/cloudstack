@@ -50,7 +50,6 @@ DROP TABLE IF EXISTS `cloud`.`op_lock`;
 DROP TABLE IF EXISTS `cloud`.`op_host_upgrade`;
 DROP TABLE IF EXISTS `cloud`.`snapshots`;
 DROP TABLE IF EXISTS `cloud`.`scheduled_volume_backups`;
-DROP TABLE IF EXISTS `cloud`.`vm_disk`;
 DROP TABLE IF EXISTS `cloud`.`disk_offering`;
 DROP TABLE IF EXISTS `cloud`.`security_group`;
 DROP TABLE IF EXISTS `cloud`.`network_rule_config`;
