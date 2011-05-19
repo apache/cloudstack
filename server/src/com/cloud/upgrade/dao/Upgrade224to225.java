@@ -23,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -47,11 +48,20 @@ public class Upgrade224to225 implements DbUpgrade {
     public void performDataMigration(Connection conn) {
         //create security groups for existing accounts if not present
         createSecurityGroups(conn);
+        dropKeysIfExist(conn);
+        dropTableColumnsIfExist(conn);
+        addMissingKeys(conn);
+        addMissingOvsAccount(conn);
     }
 
     @Override
     public File[] getCleanupScripts() {
-        return null;
+        String file = Script.findScript("", "db/schema-224to225-cleanup.sql");
+        if (file == null) {
+            throw new CloudRuntimeException("Unable to find the cleanup script, schema-224to225-cleanup.sql");
+        }
+        
+        return new File[] {new File(file)};
     }
 
     @Override
@@ -105,10 +115,275 @@ public class Upgrade224to225 implements DbUpgrade {
                     pstmt.executeUpdate();
                 }
             }
-            
-            
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create default security groups for existing accounts due to", e);
+        }
+    }
+    
+    
+    private void dropTableColumnsIfExist(Connection conn) {
+        HashMap<String, List<String>> tablesToModify = new HashMap<String, List<String>>();
+        
+        //account table
+        List<String> columns = new ArrayList<String>();
+        columns.add("network_domain");
+        tablesToModify.put("account", columns);
+        
+        //console proxy table
+        columns = new ArrayList<String>();
+        columns.add("gateway");
+        columns.add("dns1");
+        columns.add("dns2");
+        columns.add("domain");
+        columns.add("guest_mac_address");
+        columns.add("guest_ip_address");
+        columns.add("guest_netmask");
+        columns.add("vlan_db_id");
+        columns.add("vlan_id");
+        columns.add("ram_size");
+        tablesToModify.put("console_proxy", columns);
+        
+        
+        //secondary storage table
+        columns = new ArrayList<String>();
+        columns.add("gateway");
+        columns.add("dns1");
+        columns.add("dns2");
+        columns.add("domain");
+        columns.add("guest_mac_address");
+        columns.add("guest_ip_address");
+        columns.add("guest_netmask");
+        columns.add("vlan_db_id");
+        columns.add("vlan_id");
+        columns.add("ram_size");
+        tablesToModify.put("secondary_storage_vm", columns);
+        
+        //disk offering table
+        columns = new ArrayList<String>();
+        columns.add("mirrored");
+        tablesToModify.put("disk_offering", columns);
+        
+        //domain router table
+        columns = new ArrayList<String>();
+        columns.add("gateway");
+        columns.add("ram_size");
+        columns.add("dns1");
+        columns.add("dns2");
+        columns.add("domain");
+        columns.add("guest_mac_address");
+        columns.add("guest_dc_mac_address");
+        columns.add("vnet");
+        columns.add("dc_vlan");
+        columns.add("vlan_db_id");
+        columns.add("vlan_id");
+        columns.add("dhcp_ip_address");
+        tablesToModify.put("domain_router", columns);
+        
+        //volumes table
+        columns = new ArrayList<String>();
+        columns.add("mirror_state");
+        columns.add("mirror_vol");
+        columns.add("destroyed");
+        tablesToModify.put("volumes", columns);
+        
+        //vm_instance table
+        columns = new ArrayList<String>();
+        columns.add("mirrored_vols");
+        tablesToModify.put("vm_instance", columns);
+        
+        //user_vm table
+        columns = new ArrayList<String>();
+        columns.add("domain_router_id");
+        columns.add("vnet");
+        columns.add("dc_vlan");
+        columns.add("external_ip_address");
+        columns.add("external_mac_address");
+        columns.add("external_vlan_db_id");
+        tablesToModify.put("user_vm", columns);
+       
+        //service_offerings table
+        columns = new ArrayList<String>();
+        columns.add("guest_ip_type");
+        tablesToModify.put("service_offering", columns);
+        
+        for (String tableName : tablesToModify.keySet()) {
+            dropTableColumnsIfExist(conn, tableName, tablesToModify.get(tableName));
+        }
+    }
+    
+    private void dropTableColumnsIfExist(Connection conn, String tableName, List<String> columns) {
+       
+        try {
+            for (String column : columns) {
+                s_logger.debug("Dropping columns that don't exist in 2.2.5 version of the DB for table " + tableName);
+                try {
+                    PreparedStatement pstmt = conn.prepareStatement("SELECT " + column + " FROM " + tableName);
+                    pstmt.executeQuery();
+                    
+                    } catch (SQLException e) {
+                        //if there is an exception, it means that field doesn't exist, so do nothing here
+                        s_logger.trace("Field " + column + " doesn't exist in " + tableName);
+                        continue;
+                    }
+                        
+                    PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + column);
+                    pstmt.executeUpdate();
+                    s_logger.debug("Column " + column + " is dropped successfully from the table " + tableName);
+            } 
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to drop columns due to ", e);
+        }
+    }
+    
+    private void dropKeysIfExist(Connection conn) {
+        HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
+        HashMap<String, List<String>> indexes = new HashMap<String, List<String>>();
+        
+        //account table
+        List<String> keys = new ArrayList<String>();
+        keys.add("fk_console_proxy__vlan_id");
+        foreignKeys.put("console_proxy", keys);
+        
+        keys = new ArrayList<String>();
+        keys.add("i_console_proxy__vlan_id");
+        indexes.put("console_proxy", keys);
+        
+        //mshost table
+        keys = new ArrayList<String>();
+        keys.add("msid_2");
+        indexes.put("mshost", keys);
+        
+        //domain router table
+        keys = new ArrayList<String>();
+        keys.add("fk_domain_router__vlan_id");
+        keys.add("fk_domain_route__id");
+        foreignKeys.put("domain_router", keys);
+        
+        keys = new ArrayList<String>();
+        keys.add("i_domain_router__public_ip_address");
+        keys.add("i_domain_router__vlan_id");
+        indexes.put("domain_router", keys);
+        
+        //user_vm table
+        keys = new ArrayList<String>();
+        keys.add("i_user_vm__domain_router_id");
+        keys.add("i_user_vm__external_ip_address");
+        keys.add("i_user_vm__external_vlan_db_id");
+        indexes.put("user_vm", keys);
+        
+        keys = new ArrayList<String>();
+        keys.add("fk_user_vm__domain_router_id");
+        keys.add("fk_user_vm__external_vlan_db_id");
+        foreignKeys.put("user_vm", keys);
+        
+        //user_vm_details table
+        keys = new ArrayList<String>();
+        keys.add("fk_user_vm_details__vm_id");
+        foreignKeys.put("user_vm_details", keys);
+        indexes.put("user_vm_details", keys);
+        
+        //snapshots table
+        keys = new ArrayList<String>();
+        keys.add("id_2");
+        indexes.put("snapshots", keys);
+        
+        //remote_access_vpn
+        keys = new ArrayList<String>();
+        keys.add("fk_remote_access_vpn__server_addr");
+        foreignKeys.put("remote_access_vpn", keys);
+        
+        keys = new ArrayList<String>();
+        keys.add("fk_remote_access_vpn__server_addr_id");
+        indexes.put("remote_access_vpn", keys);
+ 
+        //drop all foreign keys first
+        for (String tableName : foreignKeys.keySet()) {
+            dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
+        }
+        
+        //drop indexes now
+        for (String tableName : indexes.keySet()) {
+            dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
+        }
+    }
+    
+    private void dropKeysIfExist(Connection conn, String tableName, List<String> keys, boolean isForeignKey) {
+        s_logger.debug("Dropping keys that don't exist in 2.2.5 version of the DB...");
+            for (String key : keys) {
+                try {
+                    PreparedStatement pstmt = null;
+                    if (isForeignKey) {
+                        pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + key); 
+                    } else {
+                        pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP KEY " + key); 
+                    }
+                    pstmt.executeUpdate();
+                    s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
+                } catch (SQLException e) {
+                    //do nothing here
+                    continue;
+                }
+            } 
+    }
+    
+    private void addMissingKeys(Connection conn) {
+        try {
+            s_logger.debug("Adding missing foreign keys");
+            
+            HashMap<String, String> keyToTableMap = new HashMap<String, String> ();
+            keyToTableMap.put("fk_console_proxy__id", "console_proxy");
+            keyToTableMap.put("fk_secondary_storage_vm__id", "secondary_storage_vm");
+            keyToTableMap.put("fk_template_spool_ref__template_id", "template_spool_ref");
+            keyToTableMap.put("fk_template_spool_ref__pool_id", "template_spool_ref");
+            keyToTableMap.put("fk_user_vm_details__vm_id", "user_vm_details");
+            keyToTableMap.put("fk_op_ha_work__instance_id", "op_ha_work");
+            keyToTableMap.put("fk_op_ha_work__mgmt_server_id", "op_ha_work");
+            keyToTableMap.put("fk_op_ha_work__host_id", "op_ha_work");
+            
+            HashMap<String, String> keyToStatementMap = new HashMap<String, String> ();
+            keyToStatementMap.put("fk_console_proxy__id", "(`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE");
+            keyToStatementMap.put("fk_secondary_storage_vm__id", "(`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE");
+            keyToStatementMap.put("fk_template_spool_ref__template_id", "(`template_id`) REFERENCES `vm_template` (`id`)");
+            keyToStatementMap.put("fk_template_spool_ref__pool_id", "(`pool_id`) REFERENCES `storage_pool` (`id`) ON DELETE CASCADE");
+            keyToStatementMap.put("fk_user_vm_details__vm_id", "(`vm_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE");
+            keyToStatementMap.put("fk_op_ha_work__instance_id", "(`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE");
+            keyToStatementMap.put("fk_op_ha_work__mgmt_server_id", "(`mgmt_server_id`) REFERENCES `mshost`(`msid`)");
+            keyToStatementMap.put("fk_op_ha_work__host_id", "(`host_id`) REFERENCES `host` (`id`)");    
+            
+            for (String key : keyToTableMap.keySet()) {
+                String tableName = keyToTableMap.get(key);
+                PreparedStatement pstmt = conn.prepareStatement("show keys from " + tableName + " where key_name=?");
+                pstmt.setString(1, key);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()){
+                    continue;
+                }
+                
+                pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " ADD CONSTRAINT " + key + " FOREIGN KEY " + keyToStatementMap.get(key));
+                pstmt.executeUpdate();
+                s_logger.debug("Added missing key " + key + " to table " + tableName);
+            }
+          
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to add missign keys due to ", e);
+        }
+    }
+    
+    private void addMissingOvsAccount(Connection conn) {
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT * from ovs_tunnel_account");
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()){
+                return;
+            }
+            
+            s_logger.debug("Adding missing ovs tunnel account");
+            pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS')");
+            pstmt.executeUpdate();
+           
+          
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to add missign ovs tunner account due to ", e);
         }
     }
 }
