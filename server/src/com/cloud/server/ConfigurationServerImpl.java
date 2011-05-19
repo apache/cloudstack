@@ -31,6 +31,7 @@ import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -376,16 +377,28 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } catch (SQLException ex) {
         }
         
-        //save default security group
-        insertSql = "INSERT INTO `cloud`.`security_group` (name, description, account_id, domain_id, account_name) " +
-                "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
         
-
-        txn = Transaction.currentTxn();
         try {
+            insertSql = "SELECT * FROM `cloud`.`security_group` where account_id=2 and name='default'";
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.executeUpdate();
-        } catch (SQLException ex) {
+            ResultSet rs = stmt.executeQuery();
+            if (!rs.next()) {
+                //save default security group
+                insertSql = "INSERT INTO `cloud`.`security_group` (name, description, account_id, domain_id, account_name) " +
+                        "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
+                
+
+                txn = Transaction.currentTxn();
+                try {
+                    stmt = txn.prepareAutoCloseStatement(insertSql);
+                    stmt.executeUpdate();
+                } catch (SQLException ex) {
+                    s_logger.warn("Failed to create default security group for default admin account due to ", ex);
+                }
+            }
+            rs.close();
+        } catch (Exception ex) {
+            s_logger.warn("Failed to create default security group for default admin account due to ", ex);
         }
     }
 
