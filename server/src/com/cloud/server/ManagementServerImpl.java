@@ -1005,12 +1005,13 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = cmd.getKeyword();
         Long vmId = cmd.getVirtualMachineId();
         Long domainId = cmd.getDomainId();
+        Boolean issystem = cmd.getIsSystem();
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this domain
         if (domainId != null) {
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                return _offeringsDao.findServiceOfferingByDomainId(domainId);// no perm check
+                return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, issystem);// no perm check
             } else {
                 // check if the user's domain == so's domain || user's domain is a child of so's domain
                 if (isPermissible(account.getDomainId(), domainId)) {
