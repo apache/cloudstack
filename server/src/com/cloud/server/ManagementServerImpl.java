@@ -2342,8 +2342,9 @@ public class ManagementServerImpl implements ManagementServer {
         // display user vm volumes only
         SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
         vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
-        sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-
+        vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
+        sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
+        
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
         if (keyword != null) {

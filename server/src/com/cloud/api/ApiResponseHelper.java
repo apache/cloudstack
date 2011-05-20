@@ -798,8 +798,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             volResponse.setVirtualMachineId(vm.getId());
             volResponse.setVirtualMachineName(vm.getHostName());
             UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
-            volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
-            volResponse.setVirtualMachineState(vm.getState().toString());
+            if (userVm != null) {
+                volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+                volResponse.setVirtualMachineState(vm.getState().toString());
+            }
         }
 
         // Show the virtual size of the volume
