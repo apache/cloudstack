@@ -89,7 +89,25 @@ public class JavaStorageLayer implements StorageLayer {
             return file.delete();
         }
     }
-
+    
+    @Override
+    public boolean deleteDir(String dir) {
+        File Dir = new File(dir);
+        if ( !Dir.isDirectory() ) {
+            return false;
+        }
+        
+        synchronized(dir.intern()) {
+            File[] files = Dir.listFiles();
+            for( File file : files) {
+                if(!file.delete() ) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
     @Override
     public boolean exists(String path) {
         synchronized(path.intern()) {

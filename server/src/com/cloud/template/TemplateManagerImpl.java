@@ -37,7 +37,6 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.api.commands.AttachIsoCmd;
-import com.cloud.api.commands.CopyIsoCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
@@ -94,6 +93,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
@@ -453,50 +453,24 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     @Override
     @DB
-    public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException, ResourceAllocationException {
-    	HostVO srcSecHost = _storageMgr.getSecondaryStorageHost(sourceZoneId);
-    	HostVO dstSecHost = _storageMgr.getSecondaryStorageHost(destZoneId);
-    	DataCenterVO destZone = _dcDao.findById(destZoneId);
-    	
-    	DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
-		if (sourceZone == null) {
-			throw new InvalidParameterValueException("Please specify a valid source zone.");
-		}
-		
-		DataCenterVO dstZone = _dcDao.findById(destZoneId);
-		if (dstZone == null) {
-			throw new InvalidParameterValueException("Please specify a valid destination zone.");
-		}
-		
-    	if (sourceZoneId == destZoneId) {
-    		throw new InvalidParameterValueException("Please specify different source and destination zones.");
+    public boolean copy(long userId, VMTemplateVO template, HostVO srcSecHost, DataCenterVO srcZone, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException {
+    	List<HostVO> dstSecHosts = _hostDao.listSecondaryStorageHosts(dstZone.getId());
+    	long tmpltId = template.getId();
+        long dstZoneId = dstZone.getId();
+    	if (dstSecHosts == null || dstSecHosts.isEmpty() ) {
+    		throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, dstZone.getId());
     	}
-    	
-    	if (srcSecHost == null) {
-    		throw new StorageUnavailableException("Source zone is not ready", DataCenter.class, sourceZoneId);
-    	}
-    	if (dstSecHost == null) {
-    		throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, destZoneId);
-    	}
-    	
-    	VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
-    	VMTemplateHostVO srcTmpltHost = null;
-        srcTmpltHost = _tmpltHostDao.findByHostTemplate(srcSecHost.getId(), templateId);
-        if (srcTmpltHost == null || srcTmpltHost.getDestroyed() || srcTmpltHost.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-	      	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
-	    }
-        
-        AccountVO account = _accountDao.findById(vmTemplate.getAccountId());
+        AccountVO account = _accountDao.findById(template.getAccountId());
         if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
         	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
         	rae.setResourceType("template");
         	throw rae;
         }
-        
+               
         // Event details        
         String copyEventType;
         String createEventType;
-        if (vmTemplate.getFormat().equals(ImageFormat.ISO)){
+        if (template.getFormat().equals(ImageFormat.ISO)){
             copyEventType = EventTypes.EVENT_ISO_COPY;
             createEventType = EventTypes.EVENT_ISO_CREATE;
         } else {
@@ -507,80 +481,52 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
-
-        VMTemplateHostVO dstTmpltHost = null;
-        try {
-        	dstTmpltHost = _tmpltHostDao.findByHostTemplate(dstSecHost.getId(), templateId, true);
-        	if (dstTmpltHost != null) {
-        		dstTmpltHost = _tmpltHostDao.lockRow(dstTmpltHost.getId(), true);
-        		if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOADED) {
-        			if (dstTmpltHost.getDestroyed() == false)  {
-        				return true;
-        			} else {
-        				dstTmpltHost.setDestroyed(false);
-        				_tmpltHostDao.update(dstTmpltHost.getId(), dstTmpltHost);
-        				
-        				return true;
-        			}
-        		} else if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOAD_ERROR){
-        			if (dstTmpltHost.getDestroyed() == true)  {
-        				dstTmpltHost.setDestroyed(false);
-        				dstTmpltHost.setDownloadState(Status.NOT_DOWNLOADED);
-        				dstTmpltHost.setDownloadPercent(0);
-        				dstTmpltHost.setCopy(true);
-        				dstTmpltHost.setErrorString("");
-        				dstTmpltHost.setJobId(null);
-        				_tmpltHostDao.update(dstTmpltHost.getId(), dstTmpltHost);
-        			}
-        		}
-        	}
-        } finally {
-        	txn.commit();
-        }
-    	_tmpltDao.addTemplateToZone(vmTemplate, destZoneId);
         
-    	_downloadMonitor.copyTemplate(vmTemplate, srcSecHost, dstSecHost);
-    	
-    	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
-    	    UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), destZoneId, templateId, null, null, vmTemplate.getSourceTemplateId(), srcTmpltHost.getSize());
-    	    _usageEventDao.persist(usageEvent);
-    	}
-    	return true;
+        VMTemplateHostVO srcTmpltHost = _tmpltHostDao.findByHostTemplate(srcSecHost.getId(), tmpltId);
+        for ( HostVO dstSecHost : dstSecHosts ) {
+            VMTemplateHostVO dstTmpltHost = null;
+            try {
+            	dstTmpltHost = _tmpltHostDao.findByHostTemplate(dstSecHost.getId(), tmpltId, true);
+            	if (dstTmpltHost != null) {
+            		dstTmpltHost = _tmpltHostDao.lockRow(dstTmpltHost.getId(), true);
+            		if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOADED) {
+            			if (dstTmpltHost.getDestroyed() == false)  {
+            				return true;
+            			} else {
+            				dstTmpltHost.setDestroyed(false);
+            				_tmpltHostDao.update(dstTmpltHost.getId(), dstTmpltHost);
+            				
+            				return true;
+            			}
+            		} else if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOAD_ERROR){
+            			if (dstTmpltHost.getDestroyed() == true)  {
+            				dstTmpltHost.setDestroyed(false);
+            				dstTmpltHost.setDownloadState(Status.NOT_DOWNLOADED);
+            				dstTmpltHost.setDownloadPercent(0);
+            				dstTmpltHost.setCopy(true);
+            				dstTmpltHost.setErrorString("");
+            				dstTmpltHost.setJobId(null);
+            				_tmpltHostDao.update(dstTmpltHost.getId(), dstTmpltHost);
+            			}
+            		}
+            	}
+            } finally {
+            	txn.commit();
+            }
+            
+            if(_downloadMonitor.copyTemplate(template, srcSecHost, dstSecHost) ) {
+                _tmpltDao.addTemplateToZone(template, dstZoneId);
+            	
+            	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
+            	    UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltHost.getSize());
+            	    _usageEventDao.persist(usageEvent);
+            	}
+            	return true;
+            }
+        }
+        return false;
     }
-      
-    @Override
-    public VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
-    	Long isoId = cmd.getId();
-    	Long userId = UserContext.current().getCallerUserId();
-    	Long sourceZoneId = cmd.getSourceZoneId();
-    	Long destZoneId = cmd.getDestinationZoneId();
-    	Account account = UserContext.current().getCaller();
-    	
-        //Verify parameters
-        VMTemplateVO iso = _tmpltDao.findById(isoId);
-        if (iso == null) {
-            throw new InvalidParameterValueException("Unable to find ISO with id " + isoId);
-        }
-        
-        boolean isIso = Storage.ImageFormat.ISO.equals(iso.getFormat());
-        if (!isIso) {
-        	throw new InvalidParameterValueException("Please specify a valid ISO.");
-        }
-        
-        //Verify account information
-        String errMsg = "Unable to copy ISO " + isoId;
-        userId = accountAndUserValidation(account, userId, null, iso, errMsg);
-        
-        boolean success = copy(userId, isoId, sourceZoneId, destZoneId);
-        
-        VMTemplateVO copiedIso = null;
-        if (success) {
-            copiedIso = _tmpltDao.findById(isoId);
-        }
-       
-        return copiedIso;
-    }
-    
+  
     
     @Override
     public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
@@ -591,28 +537,49 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	Account account = UserContext.current().getCaller();
         
         //Verify parameters
+    	
+        if (sourceZoneId == destZoneId) {
+            throw new InvalidParameterValueException("Please specify different source and destination zones.");
+        }
+        
+        DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
+        if (sourceZone == null) {
+            throw new InvalidParameterValueException("Please specify a valid source zone.");
+        }
+        
+        DataCenterVO dstZone = _dcDao.findById(destZoneId);
+        if (dstZone == null) {
+            throw new InvalidParameterValueException("Please specify a valid destination zone.");
+        }
+    	
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("Unable to find template with id");
         }
-        
-        boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());
-        if (isIso) {
-        	throw new InvalidParameterValueException("Please specify a valid template.");
+      
+        HostVO dstSecHost = _storageMgr.getSecondaryStorageHost(destZoneId, templateId);
+        if ( dstSecHost != null ) {
+            s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecHost.getId() + " in zone " + destZoneId + " , don't need to copy");
+            return template;
         }
         
+        HostVO srcSecHost = _storageMgr.getSecondaryStorageHost(sourceZoneId, templateId);
+        if ( srcSecHost == null ) {
+            throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId );
+        }
         //Verify account information
         String errMsg = "Unable to copy template " + templateId;
         userId = accountAndUserValidation(account, userId, null, template, errMsg);
         
-        boolean success = copy(userId, templateId, sourceZoneId, destZoneId);
+        boolean success = copy(userId, template, srcSecHost, sourceZone, dstZone);
         
-        VMTemplateVO copiedTemplate = null;
         if (success) {
-            copiedTemplate = _tmpltDao.findById(templateId);
+            return template;
+        } else {
+            s_logger.warn(errMsg);
         }
        
-        return copiedTemplate;
+        return null;
     }
 
     @Override

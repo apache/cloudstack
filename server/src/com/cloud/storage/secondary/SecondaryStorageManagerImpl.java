@@ -34,6 +34,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -246,6 +247,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);
                 if (answer != null && answer.getResult()) {
+                    SecStorageSetupAnswer an = (SecStorageSetupAnswer) answer;
+                    ssHost.setParent(an.get_dir());
+                    _hostDao.update(ssHost.getId(), ssHost);
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Successfully programmed secondary storage " + ssHost.getName() + " in secondary storage VM " + secStorageVm.getInstanceName());
                     }

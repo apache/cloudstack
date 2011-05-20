@@ -20,7 +20,6 @@ package com.cloud.template;
 import java.net.URISyntaxException;
 
 import com.cloud.api.commands.AttachIsoCmd;
-import com.cloud.api.commands.CopyIsoCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
@@ -38,8 +37,6 @@ public interface TemplateService {
     VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException;
 
     VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;
-
-    VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
 
     VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
 

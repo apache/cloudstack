@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
@@ -49,6 +49,7 @@ import com.cloud.agent.api.PingStorageCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
@@ -94,8 +95,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     StorageLayer _storage;
     boolean _inSystemVM = false;
     boolean _sslCopy = false;
-    
-    Random _rand = new Random(System.currentTimeMillis());
     
     DownloadManager _dlMgr;
     UploadManager _upldMgr;
@@ -219,7 +218,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String nfsHostIp = nfsHostAddr.getHostAddress();
 
             addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, nfsHostIp);
-            return new Answer(cmd, true, "success");
+            String nfsPath = nfsHostIp + ":" + uri.getPath();
+            String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
+            String root = _parent + "/" + dir;
+            mount(root, nfsPath);
+            return new SecStorageSetupAnswer(dir);
         } catch (Exception e) {
             String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
             s_logger.error(msg);
@@ -707,6 +710,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         fillNetworkInformation(cmd);
         if(_publicIp != null)
             cmd.setPublicIpAddress(_publicIp);
+        
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("ln -sf " + _parent + " /var/www/html/copy");
+        String result = command.execute();
+        if (result != null) {
+            s_logger.warn("Error in linking  err=" + result);
+            return null;
+        }
         return new StartupCommand[] {cmd};
     }
 

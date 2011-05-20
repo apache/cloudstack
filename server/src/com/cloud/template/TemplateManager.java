@@ -20,9 +20,11 @@ package com.cloud.template;
 import java.net.URI;
 import java.util.List;
 
+import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -89,31 +91,16 @@ public interface TemplateManager {
     /**
      * Copies a template from its current secondary storage server to the secondary storage server in the specified zone.
      * 
-     * @param templateId
-     * @param sourceZoneId
-     * @param destZoneId
+     * @param template
+     * @param srcSecHost
+     * @param srcZone
+     * @param destZone
      * @return true if success
      * @throws InternalErrorException
-     *             URI uri = new URI(url); if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
-     *             throw new IllegalArgumentException("Unsupported scheme for url: " + url); } String host = uri.getHost();
-     * 
-     *             try { InetAddress hostAddr = InetAddress.getByName(host); if (hostAddr.isAnyLocalAddress() ||
-     *             hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) { throw new
-     *             IllegalArgumentException("Illegal host specified in url"); } if (hostAddr instanceof Inet6Address) { throw
-     *             new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")"); } } catch
-     *             (UnknownHostException uhe) { throw new IllegalArgumentException("Unable to resolve " + host); }
-     * 
-     *             if (_dcDao.findById(zoneId) == null) { throw new IllegalArgumentException("Please specify a valid zone."); }
-     * 
-     *             VMTemplateVO template = findTemplateById(templateId);
-     * 
-     *             VMTemplateHostVO tmpltHostRef = findTemplateHostRef(templateId, zoneId); if (tmpltHostRef != null &&
-     *             tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED){ throw
-     *             new IllegalArgumentException("The template hasnt been downloaded "); }
      * @throws StorageUnavailableException
      * @throws ResourceAllocationException
      */
-    boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException, ResourceAllocationException;
+    boolean copy(long userId, VMTemplateVO template, HostVO srcSecHost, DataCenterVO srcZone, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Deletes a template from secondary storage servers

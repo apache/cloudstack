@@ -40,7 +40,7 @@ public interface DownloadMonitor extends Manager{
 
 	public void handleTemplateSync(HostVO host);
 
-	public void copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer)
+	public boolean copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer)
 			throws StorageUnavailableException;
 
 	/*When new host added, take a look at if there are templates needed to be downloaded for the same hypervisor as the host*/

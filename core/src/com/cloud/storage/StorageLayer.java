@@ -147,4 +147,6 @@ public interface StorageLayer extends Manager {
      * @return true if the file was set to be both world readable and writeable
      */
     boolean setWorldReadableAndWriteable(File file);
+
+    boolean deleteDir(String dir);
 }

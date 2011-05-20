@@ -941,6 +941,21 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
+    public HostVO getSecondaryStorageHost(long zoneId, long tmpltId) {
+        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        if( hosts == null || hosts.size() == 0) {
+            return null;
+        }
+        for( HostVO host : hosts ) {
+            VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), tmpltId);
+            if (tmpltHost != null && !tmpltHost.getDestroyed() && tmpltHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                return host;
+            }
+        }
+        return null;
+    }
+    
+    @Override
     public HostVO getSecondaryStorageHost(long zoneId) {
         List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
         if( hosts == null || hosts.size() == 0) {

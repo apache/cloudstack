@@ -390,6 +390,9 @@ public class DownloadManagerImpl implements DownloadManager {
             }
 
             File file = _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename);
+            if ( file.exists() ) {
+                file.delete();
+            }
 
             if (!file.createNewFile()) {
                 s_logger.warn("Unable to create new file: " + file.getAbsolutePath());

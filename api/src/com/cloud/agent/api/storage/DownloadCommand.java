@@ -61,6 +61,7 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	    this.id = that.id;
 	    this.description = that.description;
 	    this.auth = that.getAuth();
+	    this.setSecUrl(that.getSecUrl());
 	    this.maxDownloadSizeInBytes = that.getMaxDownloadSizeInBytes();
 	}
 	
@@ -75,8 +76,13 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	}
 
 	public DownloadCommand(String secUrl, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
-	    this(secUrl, template, maxDownloadSizeInBytes);
-	    this.setUrl(url);
+	    super(template.getUniqueName(), url, template.getFormat(), template.getAccountId());
+        this.hvm = template.isRequiresHvm();
+        this.checksum = template.getChecksum();
+        this.id = template.getId();
+        this.description = template.getDisplayText();
+        this.setSecUrl(secUrl);
+        this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 		auth = new PasswordAuth(user, passwd);
 	}
 	
