@@ -223,6 +223,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         if (destTmpltHost == null) {
             destTmpltHost = new VMTemplateHostVO(destServer.getId(), template.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, url);
             destTmpltHost.setCopy(true);
+            destTmpltHost.setPhysicalSize(srcTmpltHost.getPhysicalSize());
             _vmTemplateHostDao.persist(destTmpltHost);
         } else if ((destTmpltHost.getJobId() != null) && (destTmpltHost.getJobId().length() > 2)) {
             downloadJobExists = true;
@@ -396,7 +397,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         if (dnldStatus == Status.DOWNLOADED) {
             long size = -1;
             if(vmTemplateHost!=null){
-            	size = vmTemplateHost.getSize();
+            	size = vmTemplateHost.getPhysicalSize();
             }
             else{
             	s_logger.warn("Failed to get size for template" + template.getName());
