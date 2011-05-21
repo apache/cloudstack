@@ -945,9 +945,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Override
 	@DB
 	public boolean addInstanceToGroups(final Long userVmId, final List<Long> groups) {
-		if (!isVmSecurityGroupEnabled(userVmId)) {
-			return true;
-		}
+	    if (!isVmSecurityGroupEnabled(userVmId)) {
+	           s_logger.warn("User vm " + userVmId + " is not security group enabled, can't add it to security group");
+	           return false;
+	        }
 		if (groups != null && !groups.isEmpty()) {
 	
 			final Transaction txn = Transaction.currentTxn();

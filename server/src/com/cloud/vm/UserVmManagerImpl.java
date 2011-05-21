@@ -123,6 +123,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -205,6 +206,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 @Local(value={UserVmManager.class, UserVmService.class})
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
+
 	private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
 
     @Inject protected HostDao _hostDao = null;
@@ -263,6 +265,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject protected SSHKeyPairDao _sshKeyPairDao;
     @Inject protected UserVmDetailsDao _vmDetailsDao;
     
+    @Inject 
+    protected SecurityGroupDao _securityGroupDao;
+
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
     protected int _expungeDelay;
@@ -1934,32 +1939,35 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             networkList.add(defaultNetwork);
         }
         
-        if (securityGroupIdList == null) {
-            securityGroupIdList = new ArrayList<Long>();
-        }
+        boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
         
-        SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
-        if (defaultGroup != null) {
-          //check if security group id list already contains Default security group, and if not - add it
-            boolean defaultGroupPresent = false;
-            for (Long securityGroupId : securityGroupIdList) {
-                if (securityGroupId.longValue() == defaultGroup.getId()) {
-                    defaultGroupPresent = true;
-                    break;
+        if (securityGroupIdList != null && isVmWare) {
+            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+        } else if (securityGroupIdList == null && !isVmWare) {
+            securityGroupIdList = new ArrayList<Long>();
+            SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
+            if (defaultGroup != null) {
+              //check if security group id list already contains Default security group, and if not - add it
+                boolean defaultGroupPresent = false;
+                for (Long securityGroupId : securityGroupIdList) {
+                    if (securityGroupId.longValue() == defaultGroup.getId()) {
+                        defaultGroupPresent = true;
+                        break;
+                    }
                 }
-            }
-            
-            if (!defaultGroupPresent) {
+                
+                if (!defaultGroupPresent) {
+                    securityGroupIdList.add(defaultGroup.getId());
+                }
+              
+            } else {
+                //create default security group for the account
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
+                }
+                defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
                 securityGroupIdList.add(defaultGroup.getId());
             }
-          
-        } else {
-            //create default security group for the account
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
-            }
-            defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, owner.getDomainId(), owner.getId(), owner.getAccountName());
-            securityGroupIdList.add(defaultGroup.getId());
         }
         
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
@@ -1976,6 +1984,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
         boolean isSecurityGroupEnabledNetworkUsed = false;
+        boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
         
         //Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, owner);
@@ -1988,9 +1997,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             
             networkList.add(networkWithSecurityGroup);
-            
-        } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {    
-            //Only one network can be specified, and it should be security group enabled
+
+        } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
+            if (isVmWare) {
+                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            }
+            // Only one network can be specified, and it should be security group enabled
             if (networkIdList.size() > 1) {
                 throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
             }
@@ -2039,7 +2051,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         // if network is security group enabled, and default security group is not present in the list of groups specified, add it automatically
-        if (isSecurityGroupEnabledNetworkUsed) {
+        if (isSecurityGroupEnabledNetworkUsed && !isVmWare) {
             if (securityGroupIdList == null) {
                 securityGroupIdList = new ArrayList<Long>();
             }
@@ -2227,7 +2239,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	throw rae;	
         }
         
-        //check if we have available pools for vm deployment
+        //verify security group ids
+        if (securityGroupIdList != null) {
+            for (Long securityGroupId : securityGroupIdList) {
+                if (_securityGroupDao.findById(securityGroupId) == null) {
+                    throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
+                }
+            }
+        }
+
+        // check if we have available pools for vm deployment
         List<StoragePoolVO> availablePools = _storagePoolDao.listPoolsByStatus(StoragePoolStatus.Up);
         
         if( availablePools == null || availablePools.size() < 1) {
