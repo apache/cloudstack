@@ -383,13 +383,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	public void handleDownloadEvent(HostVO host, VMTemplateVO template, Status dnldStatus) {
 		if ((dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) || (dnldStatus==Status.ABANDONED)){
 			VMTemplateHostVO vmTemplateHost = new VMTemplateHostVO(host.getId(), template.getId());
-			DownloadListener oldListener = null;
 	        synchronized (_listenerMap) {
-	            oldListener = _listenerMap.remove(vmTemplateHost);
+	            _listenerMap.remove(vmTemplateHost);
 	        }
-			if (oldListener != null) {
-			    oldListener.abandon();
-			}
 		}
 		
 		VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
