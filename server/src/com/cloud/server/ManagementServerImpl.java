@@ -3783,8 +3783,8 @@ public class ManagementServerImpl implements ManagementServer {
 
         Object accountId = null;
         Long domainId = cmd.getDomainId();
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
+        Account caller = UserContext.current().getCaller();
+        if (isAdmin(caller.getType())) {
             String accountName = cmd.getAccountName();
 
             if ((accountName != null) && (domainId != null)) {
@@ -3795,36 +3795,60 @@ public class ManagementServerImpl implements ManagementServer {
                     throw new InvalidParameterValueException("Failed to list async jobs for account " + accountName + " in domain " + domainId + "; account not found.");
                 }
             } else if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                     throw new PermissionDeniedException("Failed to list async jobs for domain " + domainId + "; permission denied.");
                 }
-
-                // we can do a domain match for the admin case
-                SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-                domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-
-                SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
-                accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
-
-                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
             }
+            
+            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN && domainId == null) {
+                domainId = caller.getDomainId();
+            }
+            
         } else {
-            accountId = account.getId();
+            accountId = caller.getId();
         }
-
+        
+        // we should do domain based search for domain admin
+        if (domainId != null) {
+            sb.and("accountsIn", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        }
+       
         Object keyword = cmd.getKeyword();
         Object startDate = cmd.getStartDate();
 
-        SearchCriteria<AsyncJobVO> sc = _jobDao.createSearchCriteria();
+        SearchCriteria<AsyncJobVO> sc = sb.create();
+        
         if (keyword != null) {
             sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         if (accountId != null) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        } else if (domainId != null) {
+        } 
+        
+        
+        if (domainId != null) {
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            
+            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+            accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
+            
+            SearchCriteria<AccountVO> accountSc = accountSearch.create();
             DomainVO domain = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            
+            accountSc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            
+            List<AccountVO> allowedAccounts = _accountDao.search(accountSc, null);
+            if (!allowedAccounts.isEmpty()) {
+                Long[] accountIds = new Long[allowedAccounts.size()];
+                for (int i = 0; i < allowedAccounts.size(); i++) {
+                  AccountVO allowedAccount = allowedAccounts.get(i);
+                  accountIds[i] = allowedAccount.getId();
+                }
+                
+                sc.setParameters("accountsIn", (Object[])accountIds);
+            }
         }
 
         if (startDate != null) {
