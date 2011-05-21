@@ -360,7 +360,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             dcs.add(_dcDao.findById(zoneId));
         }
         for ( DataCenterVO dc : dcs ) {
-    	    List<HostVO> ssHosts = _hostDao.listBy(Host.Type.SecondaryStorage, dc.getId());
+    	    List<HostVO> ssHosts = _hostDao.listAllSecondaryStorageHosts(dc.getId());
     	    for ( HostVO ssHost : ssHosts ) {
         		if (isTemplateUpdateable(ssHost.getId(), templateId)) {
          
@@ -533,7 +533,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
 			return;
 		}
-		if ( ssHost.getType() != Host.Type.SecondaryStorage ) {
+		if ( !(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage) ) {
 	        s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
 		    return;
 		}
@@ -676,7 +676,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		}
 		
 		//This code is mostly for migration purposes so that we have checksum for all the templates
-		checksumSync(sserverId);
+		if (ssHost.getType() == Host.Type.SecondaryStorage)
+		    checksumSync(sserverId);
 		
 
 	}

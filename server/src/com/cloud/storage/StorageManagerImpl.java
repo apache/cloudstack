@@ -959,7 +959,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public HostVO getSecondaryStorageHost(long zoneId) {
         List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
         if( hosts == null || hosts.size() == 0) {
-            return null;
+            hosts = _hostDao.listLocalSecondaryStorageHosts(zoneId);
+            if (hosts.isEmpty()) {
+                return null;
+            }
         }
 
         int size = hosts.size();

@@ -1598,7 +1598,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String secUrl = ssHost.getStorageUrl();
         Answer answer;
         answer = _agentMgr.sendToSecStorage(ssHost, new ComputeChecksumCommand(secUrl, templatePath));
-        if(answer.getResult()) {
+        if(answer != null && answer.getResult()) {
             return answer.getDetails();
         }
         return null;

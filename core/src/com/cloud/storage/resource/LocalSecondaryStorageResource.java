@@ -29,6 +29,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingStorageCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -97,11 +98,18 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if (cmd instanceof ListTemplateCommand){
             return execute((ListTemplateCommand)cmd);   
+        } else if (cmd instanceof ComputeChecksumCommand){
+            return execute((ComputeChecksumCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
     
+    private Answer execute(ComputeChecksumCommand cmd) {
+        return new Answer(cmd, false, null);   
+    }
+
+
     private Answer execute(ListTemplateCommand cmd) {
         String root = getRootDir();
         Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);

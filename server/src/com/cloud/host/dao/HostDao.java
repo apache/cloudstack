@@ -173,4 +173,6 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     List<HostVO> listLocalSecondaryStorageHosts();
 
     List<HostVO> listLocalSecondaryStorageHosts(long dataCenterId);
+
+    List<HostVO> listAllSecondaryStorageHosts(long dataCenterId);
 }
