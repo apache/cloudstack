@@ -223,28 +223,6 @@ public class Request {
         return _cmds;
     }
 
-    /**
-     * Use this only surrounded by debug.
-     */
-    @Override
-    public String toString() {
-        String content = _content;
-        if (content == null) {
-            try {
-                content = s_gson.toJson(_cmds);
-            } catch (Throwable e) {
-                s_logger.error("Gson serialization error on Request.toString() " + getClass().getCanonicalName(), e);
-            }
-        }
-        final StringBuilder buffer = new StringBuilder();
-        buffer.append("{ ").append(getType());
-        buffer.append(", Seq: ").append(_agentId).append("-").append(_seq).append(", Ver: ").append(_ver.toString());
-        buffer.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via);
-        buffer.append(", Flags: ").append(Integer.toBinaryString(getFlags()));
-        buffer.append(", ").append(content).append(" }");
-        return buffer.toString();
-    }
-
     protected String getType() {
         return "Cmd ";
     }
@@ -312,7 +290,7 @@ public class Request {
         }
     }
 
-    public String log(String msg, boolean logContent) {
+    protected String log(String msg, boolean logContent) {
         StringBuilder buf = new StringBuilder("Seq ");
         buf.append(_agentId).append("-").append(_seq).append(": ");
 

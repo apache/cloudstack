@@ -1,4 +1,4 @@
-package com.cloud.agent.api.transport;
+package com.cloud.agent.transport;
 
 import junit.framework.TestCase;
 
@@ -10,9 +10,15 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
-import com.cloud.agent.transport.Request;
-import com.cloud.agent.transport.Response;
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.exception.UnsupportedVersionException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
@@ -44,17 +50,32 @@ public class RequestTest extends TestCase {
         Request sreq = new Request(2, 3, new Command[] { cmd1, cmd2, cmd3 }, true, true);
         sreq.setSequence(1);
 
-        Logger logger = Logger.getLogger(Request.class);
+        Logger logger = Logger.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
 
         logger.setLevel(Level.DEBUG);
-        sreq.log("Debug", true);
+        String log = sreq.log("Debug", true);
+        assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
+        assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
+        assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
+        assert (!log.contains("username"));
+        assert (!log.contains("password"));
 
         logger.setLevel(Level.TRACE);
-        sreq.log("Trace", true);
+        log = sreq.log("Trace", true);
+        assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
+        assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
+        assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
+        assert (!log.contains("username"));
+        assert (!log.contains("password"));
 
         logger.setLevel(Level.INFO);
         sreq.log("Info", true);
+        assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
+        assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
+        assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
+        assert (!log.contains("username"));
+        assert (!log.contains("password"));
 
         logger.setLevel(level);
 
@@ -89,6 +110,21 @@ public class RequestTest extends TestCase {
         assert sresp != null : "Couldn't get the response back";
 
         compareRequest(cresp, sresp);
+    }
+
+    public void testDownload() {
+        VMTemplateVO template = new VMTemplateVO(1, "templatename", ImageFormat.QCOW2, true, true, true, TemplateType.USER, "url", true, 32, 1, "chksum", "displayText", true, 30, true,
+                HypervisorType.KVM);
+        DownloadCommand cmd = new DownloadCommand("secUrl", template, 30000000l);
+        Request req = new Request(1, 1, cmd, true);
+
+        req.logD("Debug for Download");
+
+
+        DownloadAnswer answer = new DownloadAnswer("jobId", 50, "errorString", Status.ABANDONED, "filesystempath", "installpath", 10000000, 20000000);
+        Response resp = new Response(req, answer);
+        resp.logD("Debug for Download");
+
     }
 
     protected void compareRequest(Request req1, Request req2) {
