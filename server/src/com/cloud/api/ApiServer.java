@@ -366,8 +366,8 @@ public class ApiServer implements HttpRequestHandler {
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) {
     	UserContext ctx = UserContext.current();
-        Long userId = ctx.getCallerUserId();
-        Account account = ctx.getCaller();
+        Long callerUserId = ctx.getCallerUserId();
+        Account caller = ctx.getCaller();
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
@@ -381,18 +381,18 @@ public class ApiServer implements HttpRequestHandler {
 
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
 
-            if (userId != null) {
-                params.put("ctxUserId", userId.toString());
+            if (callerUserId != null) {
+                params.put("ctxUserId", callerUserId.toString());
             }
-            if (account != null) {
-                params.put("ctxAccountId", String.valueOf(account.getId()));
+            if (caller != null) {
+                params.put("ctxAccountId", String.valueOf(caller.getId()));
             }
 
             long startEventId = ctx.getStartEventId();
             asyncCmd.setStartEventId(startEventId);
             
             // save the scheduled event
-            Long eventId = EventUtils.saveScheduledEvent((userId == null) ? User.UID_SYSTEM : userId, asyncCmd.getEntityOwnerId(),
+            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(),
                     asyncCmd.getEventType(), asyncCmd.getEventDescription(), startEventId);
             if(startEventId == 0){
                 //There was no create event before, set current event id as start eventId
@@ -407,8 +407,8 @@ public class ApiServer implements HttpRequestHandler {
             AsyncJobVO job = new AsyncJobVO();
             job.setInstanceId((objectId == null) ? asyncCmd.getInstanceId() : objectId);
             job.setInstanceType(asyncCmd.getInstanceType());
-            job.setUserId(userId);
-            job.setAccountId(asyncCmd.getEntityOwnerId());
+            job.setUserId(callerUserId);
+            job.setAccountId(caller.getId());
           
             job.setCmd(cmdObj.getClass().getName());
             job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
@@ -431,7 +431,7 @@ public class ApiServer implements HttpRequestHandler {
             // if the command is of the listXXXCommand, we will need to also return the 
             // the job id and status if possible
             if (cmdObj instanceof BaseListCmd) {
-            	buildAsyncListResponse((BaseListCmd)cmdObj, account);
+            	buildAsyncListResponse((BaseListCmd)cmdObj, caller);
             }
             return ApiResponseSerializer.toSerializedString((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType());    
         }
