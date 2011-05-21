@@ -1235,7 +1235,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
 
             if (s_logger.isDebugEnabled()) {
-                new Request(-1l, -1l, cmds, true, false).log("Startup request from directly connected host: ", true);
+                new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
             }
             try {
                 attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState);
