@@ -57,9 +57,6 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name="host_tag")
     private String hostTag;
     
-    @Column(name="is_system")
-    private boolean isSystem;
-    
     protected ServiceOfferingVO() {
         super();
     }
@@ -90,23 +87,6 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, displayText, useLocalStorage, recreatable, tags, systemUse, domainId);
         this.hostTag = hostTag;
     }    
-    
-
-    public ServiceOfferingVO(String name, boolean isSystem, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitResourceUse, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId, String hostTag) {
-        this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, displayText, useLocalStorage, recreatable, tags, systemUse, domainId);
-        this.hostTag = hostTag;
-        this.isSystem = isSystem;
-    }  
-    
-
-    @Override
-    public boolean getIsSystem() {
-        return isSystem;
-    }
-    
-    public void setIsSystemOffering(boolean isSystem) {
-        this.isSystem = isSystem;
-    }
 
     @Override
 	public boolean getOfferHA() {

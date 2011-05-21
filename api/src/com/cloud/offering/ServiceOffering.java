@@ -32,16 +32,16 @@ public interface ServiceOffering {
     
     String getTags();
     
-
-    /**
-     * @return Is this a system VM offering?
-     */
-    boolean getIsSystem();
-    
 	/**
      * @return user readable description
      */
     String getName();
+    
+    
+    /**
+     * @return is this a system service offering
+     */
+    boolean getSystemUse();
     
     /**
      * @return # of cpu.

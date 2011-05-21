@@ -357,7 +357,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         
         // check if it is a system service offering, if yes return with error as it cannot be used for user vms
-        if (!newServiceOffering.getIsSystem()) {
+        if (!newServiceOffering.getSystemUse()) {
             throw new InvalidParameterValueException("Cannot upgrade router vm to a non system service offering " + serviceOfferingId);
         }       
 

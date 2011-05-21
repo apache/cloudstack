@@ -180,8 +180,14 @@ public class DiskOfferingVO implements DiskOffering {
         this.name = name;
     }
     
-    public boolean isSystemUse() {
+
+    @Override
+    public boolean getSystemUse() {
         return systemUse;
+    }
+    
+    public void setSystemUse(boolean systemUse) {
+        this.systemUse = systemUse;
     }
 
     @Override

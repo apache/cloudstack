@@ -36,6 +36,8 @@ public interface DiskOffering {
     
     String getName();
     
+    boolean getSystemUse();
+    
     String getDisplayText();
     
     long getDiskSizeInBytes();

@@ -86,6 +86,9 @@ public class DiskOffering21VO {
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
 
+    @Column(name="system_use")
+    protected boolean systemUse;
+    
     
     public DiskOffering21VO() {
     }
@@ -123,6 +126,14 @@ public class DiskOffering21VO {
     
     public String getUniqueName() {
         return uniqueName;
+    }
+
+    public boolean getSystemUse() {
+        return systemUse;
+    }
+    
+    public void setSystemUse(boolean systemUse) {
+        this.systemUse = systemUse;
     }
     
     public boolean getUseLocalStorage() {

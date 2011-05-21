@@ -1502,7 +1502,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags,
             Long domainId, String hostTag) {
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, isSystem, cpu, ramSize, speed, null, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, false, domainId, hostTag);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());

@@ -59,9 +59,6 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     
     @Column(name="host_tag")
     private String hostTag;    
-
-    @Column(name="is_system")
-    private boolean isSystem=false;
     
     protected ServiceOffering21VO() {
         super();
@@ -83,11 +80,6 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
        	this.hostTag = hostTag;
     }
     
-
-    @Override
-    public boolean getIsSystem() {
-        return isSystem;
-    }
 
 	@Override
 	public boolean getOfferHA() {

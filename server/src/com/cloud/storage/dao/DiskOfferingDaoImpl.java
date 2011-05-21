@@ -54,7 +54,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         
         PublicDiskOfferingSearch = createSearchBuilder();
         PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
-        PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
+        PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
         PublicDiskOfferingSearch.done();
         
         _typeAttr = _allAttributes.get("type");

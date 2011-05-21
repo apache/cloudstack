@@ -2326,7 +2326,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
 
         SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
-        diskOfferingSearch.and("systemUse", diskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+        diskOfferingSearch.and("systemUse", diskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.NEQ);
         sb.join("diskOfferingSearch", diskOfferingSearch, sb.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
 
         if (((accountId == null) && (domainId != null) && isRecursive)) {
