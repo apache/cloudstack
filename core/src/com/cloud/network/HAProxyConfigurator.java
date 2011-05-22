@@ -38,7 +38,7 @@ import com.cloud.utils.net.NetUtils;
  */
 public class HAProxyConfigurator implements LoadBalancerConfigurator {
 	private static String [] globalSection = {"global",
-			"\tlog 127.0.0.1:3914   local0 info",
+			"\tlog 127.0.0.1:3914   local0 warning",
 			"\tmaxconn 4096",
 			"\tchroot /var/lib/haproxy",
 			"\tuser haproxy",
@@ -139,8 +139,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 			sb = new StringBuilder();
 			sb.append("\t").append("server ").append(poolName)
 			   .append("_").append(Integer.toString(i++)).append(" ")
-			   .append(rule.getDstIp()).append(":").append(rule.getDstPortRange()[0])
-			   .append(" check");
+			   .append(rule.getDstIp()).append(":").append(rule.getDstPortRange()[0]);
 			result.add(sb.toString());
 		}
 		result.add(getBlankLine());
