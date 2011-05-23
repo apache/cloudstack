@@ -244,7 +244,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                  s_logger.warn("There is no secondary storage VM for secondary storage host " + destServer.getName());
                  return false;
             }
-            DownloadListener dl = new DownloadListener(ssAhost, template, _timer, _vmTemplateHostDao, destTmpltHost.getId(), this, dcmd);
+            DownloadListener dl = new DownloadListener(ssAhost, destServer, template, _timer, _vmTemplateHostDao, destTmpltHost.getId(), this, dcmd);
             if (downloadJobExists) {
                 dl.setCurrState(destTmpltHost.getDownloadState());
             }
@@ -328,7 +328,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
 	             return;
 			}
-			DownloadListener dl = new DownloadListener(ssAhost, template, _timer, _vmTemplateHostDao, vmTemplateHost.getId(), this, dcmd);
+			DownloadListener dl = new DownloadListener(ssAhost, sserver, template, _timer, _vmTemplateHostDao, vmTemplateHost.getId(), this, dcmd);
 			if (downloadJobExists) {
 				dl.setCurrState(vmTemplateHost.getDownloadState());
 	 		}

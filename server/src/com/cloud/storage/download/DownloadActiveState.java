@@ -41,7 +41,6 @@ public abstract class DownloadActiveState extends DownloadState {
 			getDownloadListener().scheduleStatusCheck(RequestType.GET_STATUS);
 			return Status.DOWNLOAD_IN_PROGRESS.toString();
 		case DOWNLOADED:
-			getDownloadListener().scheduleImmediateStatusCheck(RequestType.PURGE);
 			getDownloadListener().cancelTimeoutTask();
 			return Status.DOWNLOADED.toString();
 		case NOT_DOWNLOADED:

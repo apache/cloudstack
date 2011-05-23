@@ -35,16 +35,17 @@ public class DownloadCompleteState extends DownloadInactiveState {
 
 
 	@Override
-	public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
-		super.onEntry(prevState, event, evtObj);
-		if (! prevState.equals(getName())) {
-			if (event == DownloadEvent.DOWNLOAD_ANSWER){
-				getDownloadListener().scheduleImmediateStatusCheck(RequestType.PURGE);
-			}
-			getDownloadListener().setDownloadInactive(Status.DOWNLOADED);
-		}
-		
-	}
+    public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
+        super.onEntry(prevState, event, evtObj);
+        if (!prevState.equals(getName())) {
+            if (event == DownloadEvent.DOWNLOAD_ANSWER) {
+                getDownloadListener().scheduleImmediateStatusCheck(RequestType.PURGE);
+            }
+        } else {
+            getDownloadListener().setDownloadInactive(Status.DOWNLOADED);
+
+        }
+    }
 
 
 }

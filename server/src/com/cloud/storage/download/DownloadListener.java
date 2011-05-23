@@ -39,8 +39,6 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
@@ -49,7 +47,6 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
-import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -102,6 +99,7 @@ public class DownloadListener implements Listener {
 
 
 	private HostVO sserver;
+	private HostVO ssAgent;
 	private VMTemplateVO template;
 	
 	private boolean downloadActive = true;
@@ -124,8 +122,9 @@ public class DownloadListener implements Listener {
 	private final Map<String,  DownloadState> stateMap = new HashMap<String, DownloadState>();
 	private Long templateHostId;
 	
-	public DownloadListener(HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd) {
-		this.sserver = host;
+	public DownloadListener(HostVO ssAgent, HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd) {
+	    this.ssAgent = ssAgent;
+        this.sserver = host;
 		this.template = template;
 		this.vmTemplateHostDao = dao;
 		this.downloadMonitor = downloadMonitor;
@@ -160,7 +159,7 @@ public class DownloadListener implements Listener {
 			if (s_logger.isTraceEnabled()) {
 				log("Sending progress command ", Level.TRACE);
 			}
-			long sent = downloadMonitor.send(sserver.getId(), new DownloadProgressCommand(getCommand(), getJobId(), reqType), this);
+			long sent = downloadMonitor.send(ssAgent.getId(), new DownloadProgressCommand(getCommand(), getJobId(), reqType), this);
 			if (sent == -1) {
 				setDisconnected();
 			}
