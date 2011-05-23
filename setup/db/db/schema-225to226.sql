@@ -31,6 +31,17 @@ CREATE TABLE `cloud`.`cmd_exec_log` (
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+CREATE TABLE  IF NOT EXISTS `cloud`.`firewall_rules_cidrs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `firewall_rule_id` bigint(20) unsigned NOT NULL COMMENT 'firewall rule id',
+  `source_cidr` varchar(18) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_firewall_cidrs_firewall_rules` (`firewall_rule_id`),
+  CONSTRAINT `fk_firewall_cidrs_firewall_rules` FOREIGN KEY (`firewall_rule_id`) REFERENCES `firewall_rules` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 ALTER TABLE `cloud`.`secondary_storage_vm` ADD COLUMN `role` varchar(64) NOT NULL DEFAULT 'templateProcessor';
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) VALUES ('Network', 'DEFAULT', 'management-server', 'vm.network.throttling.rate', 200, 'Default data transfer rate in megabits per second allowed in user vm\'s default network.');
