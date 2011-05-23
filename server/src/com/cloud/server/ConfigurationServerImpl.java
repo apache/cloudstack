@@ -370,14 +370,28 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
 
         try {
-            insertSql = "SELECT * FROM `cloud`.`security_group` where account_id=2 and name='default'";
+            String tableName = "security_group";
+            try {
+                String checkSql = "SELECT * from network_group";
+                PreparedStatement stmt = txn.prepareAutoCloseStatement(checkSql);
+                stmt.executeQuery();
+                tableName = "network_group";
+            } catch (Exception ex) {
+                // if network_groups table exists, create the default security group there
+            }  
+            
+            insertSql = "SELECT * FROM " + tableName + " where account_id=2 and name='default'";
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             ResultSet rs = stmt.executeQuery();
             if (!rs.next()) {
                 //save default security group
-                insertSql = "INSERT INTO `cloud`.`security_group` (name, description, account_id, domain_id) " +
-                        "VALUES ('default', 'Default Security Group', 2, 1)";
-                
+                if (tableName.equals("security_group")) {
+                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id) " +
+                    "VALUES ('default', 'Default Security Group', 2, 1)";
+                } else {
+                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id, account_name) " +
+                    "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
+                }
 
                 txn = Transaction.currentTxn();
                 try {
