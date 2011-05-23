@@ -16,31 +16,16 @@
  * 
  */
 
-package com.cloud.cluster;
+package com.cloud.cluster.agentlb;
 
 import java.util.List;
 
-public class ClusterManagerMessage {
-	public static enum MessageType { nodeAdded, nodeRemoved, nodeIsolated };
+import com.cloud.host.HostVO;
+import com.cloud.utils.component.Adapter;
 
-	MessageType _type;
-	List<ManagementServerHostVO> _nodes;
-	
-	public ClusterManagerMessage(MessageType type) {
-		_type = type;
-	}
-	
-	public ClusterManagerMessage(MessageType type, List<ManagementServerHostVO> nodes) {
-		_type = type;
-		_nodes = nodes;
-	}
-	
-	public MessageType getMessageType() {
-		return _type;
-	}
-	
-	public List<ManagementServerHostVO> getNodes() {
-		return _nodes;
-	}
+
+public interface AgentLoadBalancerPlanner extends Adapter{
     
+    List<HostVO> getHostsToRebalance(long msId, long avLoad);
+
 }

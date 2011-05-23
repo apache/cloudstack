@@ -1,0 +1,167 @@
+/**
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * 
+ * This software is licensed under the GNU General Public License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
+package com.cloud.cluster.agentlb;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.utils.component.Inject;
+
+
+@Local(value=AgentLoadBalancerPlanner.class)
+public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPlanner{
+    private static final Logger s_logger = Logger.getLogger(AgentLoadBalancerPlanner.class);
+    private String _name;
+    
+    @Inject HostDao _hostDao = null;
+    
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return _name;
+    }
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+    
+    @Override
+    public List<HostVO> getHostsToRebalance(long msId, long avLoad) {
+        List<HostVO> allHosts = _hostDao.listByManagementServer(msId);
+ 
+        if (allHosts.size() <= avLoad) {
+            s_logger.debug("Agent load for management server " + msId + " doesn't exceed av load " + avLoad + "; so it doesn't participate in agent rebalancing process");
+            return null;
+        }
+        
+        List<HostVO> directHosts = _hostDao.listDirectHostsBy(msId, Status.Up);
+        if (directHosts.isEmpty()) {
+            s_logger.debug("No direct agents in status " + Status.Up + " exist for the management server " + msId + "; so it doesn't participate in agent rebalancing process");
+            return null;
+        } 
+        
+       
+        Map<Long, List<HostVO>> hostToClusterMap = new HashMap<Long, List<HostVO>>();
+        
+        for (HostVO directHost : directHosts) {
+            Long clusterId = directHost.getClusterId();
+            List<HostVO> directHostsPerCluster = null;
+            if (!hostToClusterMap.containsKey(clusterId)) {
+                directHostsPerCluster = new ArrayList<HostVO>();
+            } else {
+                directHostsPerCluster = hostToClusterMap.get(clusterId);
+            }
+            directHostsPerCluster.add(directHost);
+            hostToClusterMap.put(clusterId, directHostsPerCluster);
+        }
+        
+        hostToClusterMap = sortByClusterSize(hostToClusterMap);
+        
+        long hostsToGive = allHosts.size() - avLoad;
+        long hostsLeftToGive = hostsToGive;
+        long hostsLeft = directHosts.size();
+        List<HostVO> hostsToReturn = new ArrayList<HostVO>();
+        int count = 0;
+        
+        for (Long cluster : hostToClusterMap.keySet()) {
+            List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
+            hostsLeft = hostsLeft - hostsInCluster.size();
+            count++;
+            if (hostsToReturn.size() < hostsToGive) {
+                s_logger.debug("Trying cluster id=" + cluster);
+                
+                if (hostsInCluster.size() > hostsLeftToGive) {
+                    if (hostsLeft >= hostsLeftToGive) {
+                        s_logger.debug("Skipping cluster id=" + cluster + " as it has more hosts that we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive);
+                        continue;
+                    } else {
+                        if (count == hostToClusterMap.size()) {
+                            //get all hosts that are needed from the cluster
+                            for (int i=0; i <= hostsLeftToGive; i++) {
+                                hostsToReturn.add(hostsInCluster.get(i));
+                                hostsLeftToGive = hostsLeftToGive - 1;
+                                s_logger.debug("Taking host " + hostsInCluster.get(i) + " from cluster " + cluster);
+                            } 
+                        }
+                        break;
+                    }  
+                } else {
+                    s_logger.debug("Taking all " + hostsInCluster.size() + " hosts: " + hostsInCluster + " from cluster id=" + cluster);
+                    hostsToReturn.addAll(hostsInCluster);
+                    hostsLeftToGive = hostsLeftToGive - hostsInCluster.size();
+                }
+            } else {
+                break;
+            }
+        }
+        
+        return hostsToReturn;
+    }
+    
+    public static LinkedHashMap<Long, List<HostVO>> sortByClusterSize(final Map<Long, List<HostVO>> hostToClusterMap) {
+        List<Long> keys = new ArrayList<Long>();
+        keys.addAll(hostToClusterMap.keySet());
+        Collections.sort(keys, new Comparator<Long>() {
+            @Override
+            public int compare(Long o1, Long o2) {
+                List<HostVO> v1 = hostToClusterMap.get(o1);
+                List<HostVO> v2 = hostToClusterMap.get(o2);
+                if (v1 == null) {
+                    return (v2 == null) ? 0 : 1;
+                }
+                
+                if (v1.size() < v2.size()) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        
+        LinkedHashMap<Long, List<HostVO>> sortedMap = new LinkedHashMap<Long, List<HostVO>>();
+        for (Long key : keys) {
+            sortedMap.put(key, hostToClusterMap.get(key));
+        }
+        return sortedMap;
+    }
+
+}

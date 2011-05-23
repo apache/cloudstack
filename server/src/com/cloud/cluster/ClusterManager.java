@@ -62,4 +62,8 @@ public interface ClusterManager extends Manager {
      * @param cmds commands to broadcast
      */
     public void broadcast(long agentId, Command[] cmds);
+    
+    boolean rebalanceAgent(long agentId, Event event) throws AgentUnavailableException, OperationTimedoutException;
+    
+    boolean isAgentRebalanceEnabled();
 }

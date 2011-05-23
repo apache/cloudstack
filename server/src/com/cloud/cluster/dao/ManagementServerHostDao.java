@@ -22,10 +22,12 @@ import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ManagementServerHostDao extends GenericDao<ManagementServerHostVO, Long> {
+    @Override
     boolean remove(Long id);
 
 	ManagementServerHostVO findByMsid(long msid);
@@ -41,4 +43,6 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 	void invalidateRunSession(Connection conn, long id, long runid);
 	List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime);
 	List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime);
+	
+	void update(Connection conn, long id, long runId, State state, Date lastUpdate);
 }

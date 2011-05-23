@@ -17,7 +17,13 @@
  */
 package com.cloud.agent.manager;
 
+import java.util.LinkedList;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.Listener;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
@@ -26,15 +32,36 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ClusteredDirectAgentAttache extends DirectAgentAttache implements Routable {
+    private final static Logger s_logger = Logger.getLogger(ClusteredDirectAgentAttache.class);
     private final ClusteredAgentManagerImpl _mgr;
     private final long _nodeId;
-    
+    private boolean _transferMode = false;
+
     public ClusteredDirectAgentAttache(AgentManager agentMgr, long id, long mgmtId, ServerResource resource, boolean maintenance, ClusteredAgentManagerImpl mgr) {
         super(agentMgr, id, resource, maintenance, mgr);
         _mgr = mgr;
         _nodeId = mgmtId;
     }
-    
+
+    public synchronized void setTransferMode(final boolean transfer) {
+        _transferMode = transfer;
+    }
+
+    @Override
+    protected void checkAvailability(final Command[] cmds) throws AgentUnavailableException {
+
+        if (_transferMode) {
+            // need to throw some other exception while agent is in rebalancing mode
+            for (final Command cmd : cmds) {
+                if (!cmd.allowCaching()) {
+                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent is in Rebalancing mode", _id);
+                }
+            }
+        }
+
+        super.checkAvailability(cmds);
+    }
+
     @Override
     public void routeToAgent(byte[] data) throws AgentUnavailableException {
         Request req;
@@ -45,14 +72,14 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
         } catch (UnsupportedVersionException e) {
             throw new CloudRuntimeException("Unable to rout to an agent ", e);
         }
-        
+
         if (req instanceof Response) {
-            super.process(((Response)req).getAnswers());
+            super.process(((Response) req).getAnswers());
         } else {
             super.send(req);
         }
     }
-    
+
     @Override
     public boolean processAnswers(long seq, Response response) {
         long mgmtId = response.getManagementServerId();
@@ -66,4 +93,37 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
             return super.processAnswers(seq, response);
         }
     }
+
+    @Override
+    public void send(Request req, final Listener listener) throws AgentUnavailableException {
+        checkAvailability(req.getCommands());
+
+        if (_transferMode) {
+            long seq = req.getSequence();
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(log(seq, "Holding request as the corresponding agent is in transfer mode: "));
+            }
+                
+            synchronized (this) {
+                addRequest(req);
+                return;
+            }
+        } else {
+            super.send(req, listener);
+        }
+    }
+    
+    public boolean getTransferMode() {
+        return _transferMode;
+    }
+    
+    public LinkedList<Request> getRequests() {
+        if (_transferMode) {
+            return _requests;
+        } else {
+            return null;
+        }
+    }
+    
 }

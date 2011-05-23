@@ -41,6 +41,7 @@ import com.cloud.cluster.ClusterFenceManagerImpl;
 import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.cluster.DummyClusterManagerImpl;
 import com.cloud.cluster.ManagementServerNode;
+import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.cluster.dao.ManagementServerHostDaoImpl;
 import com.cloud.cluster.dao.StackMaidDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
@@ -276,6 +277,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("KeystoreDao", KeystoreDaoImpl.class);
         addDao("DcDetailsDao", DcDetailsDaoImpl.class);
         addDao("SwiftDao", SwiftDaoImpl.class);
+        addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
     }
 
     @Override

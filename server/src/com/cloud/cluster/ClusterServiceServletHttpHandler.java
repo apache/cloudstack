@@ -38,6 +38,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentAnswer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.TransferAgentCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.serializer.GsonHelper;
@@ -203,6 +204,29 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
 
             Answer[] answers = new Answer[1];
             answers[0] = new ChangeAgentAnswer(cmd, result);
+            return gson.toJson(answers);
+        } else if (cmds.length == 1 && cmds[0] instanceof TransferAgentCommand) {
+            TransferAgentCommand cmd = (TransferAgentCommand) cmds[0];
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Intercepting command for agent rebalancing: agent " + cmd.getAgentId() + " event: " + cmd.getEvent());
+            }
+            boolean result = false;
+            try {
+                result = manager.rebalanceAgent(cmd.getAgentId(), cmd.getEvent());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Result is " + result);
+                }
+
+            } catch (AgentUnavailableException e) {
+                s_logger.warn("Agent is unavailable", e);
+                return null;
+            } catch (OperationTimedoutException e) {
+                s_logger.warn("Operation timed out", e);
+                return null;
+            }
+            Answer[] answers = new Answer[1];
+            answers[0] = new Answer(cmd, result, null);
             return gson.toJson(answers);
         }
 

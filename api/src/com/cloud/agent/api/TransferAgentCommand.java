@@ -15,32 +15,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.agent.api;
 
-package com.cloud.cluster;
+import com.cloud.host.Status.Event;
 
-import java.util.List;
-
-public class ClusterManagerMessage {
-	public static enum MessageType { nodeAdded, nodeRemoved, nodeIsolated };
-
-	MessageType _type;
-	List<ManagementServerHostVO> _nodes;
-	
-	public ClusterManagerMessage(MessageType type) {
-		_type = type;
-	}
-	
-	public ClusterManagerMessage(MessageType type, List<ManagementServerHostVO> nodes) {
-		_type = type;
-		_nodes = nodes;
-	}
-	
-	public MessageType getMessageType() {
-		return _type;
-	}
-	
-	public List<ManagementServerHostVO> getNodes() {
-		return _nodes;
-	}
+public class TransferAgentCommand extends Command {
+    protected long agentId;
+    protected long futureOwner;
+    Event event;
     
+    protected TransferAgentCommand() {
+    }
+    
+    public TransferAgentCommand(long agentId, long futureOwner, Event event) {
+        this.agentId = agentId;
+        this.futureOwner = futureOwner;
+        this.event = event;
+    }
+
+    public long getAgentId() {
+        return agentId;
+    }
+
+    public long getFutureOwner() {
+        return futureOwner;
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

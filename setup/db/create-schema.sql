@@ -113,6 +113,7 @@ DROP TABLE IF EXISTS `cloud`.`user_vm_details`;
 DROP TABLE IF EXISTS `cloud`.`vpn_users`;
 DROP TABLE IF EXISTS `cloud`.`data_center_details`;
 DROP TABLE IF EXISTS `cloud`.`network_tags`;
+DROP TABLE IF EXISTS `cloud`.`op_host_transfer`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -1519,5 +1520,17 @@ CREATE TABLE `cloud`.`swift` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+CREATE TABLE `cloud`.`op_host_transfer` (
+  `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Id of the host',
+  `initial_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered from',
+  `future_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered to',
+  `state` varchar(32) NOT NULL COMMENT 'the transfer state of the host',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_host_transfer__id` FOREIGN KEY `fk_op_host_transfer__id` (`id`) REFERENCES `host` (`id`),
+  CONSTRAINT `fk_op_host_transfer__initial_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__initial_mgmt_server_id`(`initial_mgmt_server_id`) REFERENCES `mshost`(`msid`),
+  CONSTRAINT `fk_op_host_transfer__future_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__future_mgmt_server_id`(`future_mgmt_server_id`) REFERENCES `mshost`(`msid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

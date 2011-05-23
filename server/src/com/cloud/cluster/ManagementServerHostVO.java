@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="mshost")
-public class ManagementServerHostVO {
+public class ManagementServerHostVO implements ManagementServerHost{
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -53,7 +53,7 @@ public class ManagementServerHostVO {
 	
     @Column(name="state", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
-	private ManagementServerNode.State state;
+	private ManagementServerHost.State state;
 	
 	@Column(name="version", updatable=true, nullable=true)
 	private String version;
@@ -101,6 +101,7 @@ public class ManagementServerHostVO {
 		this.runid = runid;
 	}
 
+	@Override
 	public long getMsid() {
 		return msid;
 	}
@@ -117,14 +118,16 @@ public class ManagementServerHostVO {
 		this.name = name;
 	}
 	
-	public ManagementServerNode.State getState() {
+	@Override
+	public ManagementServerHost.State getState() {
 		return this.state;
 	}
 	
-	public void setState(ManagementServerNode.State state) {
+	public void setState(ManagementServerHost.State state) {
 		this.state = state;
 	}
 	
+	@Override
 	public String getVersion() {
 		return version;
 	}

@@ -37,7 +37,7 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     private String serviceUrl;
 
-    private Gson gson;
+    private final Gson gson;
 
     public ClusterServiceServletImpl() {
         gson = GsonHelper.getGson();
@@ -103,7 +103,6 @@ public class ClusterServiceServletImpl implements ClusterService {
                     + ", excutingPeer: " + executingPeer
                     + ", seq: " + seq + ", gsonPackage: " + gsonPackage);
         }
-
         HttpClient client = new HttpClient();
         PostMethod method = new PostMethod(serviceUrl);
 
@@ -169,6 +168,7 @@ public class ClusterServiceServletImpl implements ClusterService {
         } catch(Throwable e) {
             s_logger.error("Exception from : " + serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
         }
+
         return result;
     }
 

@@ -30,8 +30,9 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ClusterInvalidSessionException;
+import com.cloud.cluster.ManagementServerHost;
+import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.cluster.ManagementServerNode;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -48,7 +49,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
 
-	public void update(Connection conn, long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
+	@Override
+    public void update(Connection conn, long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=? where id=?");
@@ -75,7 +77,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         }
 	}
 
-	public void update(Connection conn, long id, long runid, Date lastUpdate) {
+	@Override
+    public void update(Connection conn, long id, long runid, Date lastUpdate) {
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");
@@ -101,7 +104,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         }
 	}
 	
-	public void invalidateRunSession(Connection conn, long id, long runid) {
+	@Override
+    public void invalidateRunSession(Connection conn, long id, long runid) {
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement("update mshost set runid=0, state='Down' where id=? and runid=?");
@@ -123,7 +127,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         }
 	}
 	
-	public List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime) {
+	@Override
+    public List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime) {
 		Transaction txn = Transaction.openNew("getActiveList", conn);
 		try {
 		    SearchCriteria<ManagementServerHostVO> sc = ActiveSearch.create();
@@ -135,7 +140,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 		}
 	}
 	
-	public List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime) {
+	@Override
+    public List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime) {
 		Transaction txn = Transaction.openNew("getInactiveList", conn);
 		try {
 		    SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
@@ -147,7 +153,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 		}
 	}
 	
-	public ManagementServerHostVO findByMsid(long msid) {
+	@Override
+    public ManagementServerHostVO findByMsid(long msid) {
         SearchCriteria<ManagementServerHostVO> sc = MsIdSearch.create();
         sc.setParameters("msid", msid);
 		
@@ -158,21 +165,23 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 		return null;
 	}
 	
-	@DB
+	@Override
+    @DB
 	public void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
             
-            pstmt = txn.prepareAutoCloseStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=? where id=?");
+            pstmt = txn.prepareAutoCloseStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=?, state=? where id=?");
             pstmt.setString(1, name);
             pstmt.setString(2, version);
             pstmt.setString(3, serviceIP);
             pstmt.setInt(4, servicePort);
             pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(6, runid);
-            pstmt.setLong(7, id);
+            pstmt.setString(7, State.Starting.toString());
+            pstmt.setLong(8, id);
             
             pstmt.executeUpdate();
             txn.commit();
@@ -182,7 +191,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         }
 	}
 	
-	@DB
+	@Override
+    @DB
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
     
@@ -190,7 +200,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         	txn.start();
         	
         	ManagementServerHostVO msHost = findById(id);
-        	msHost.setState(ManagementServerNode.State.Down);
+        	msHost.setState(ManagementServerHost.State.Down);
         	super.remove(id);
         	
         	txn.commit();
@@ -203,7 +213,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         return false;
     }
 
-	@DB
+	@Override
+    @DB
 	public void update(long id, long runid, Date lastUpdate) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
@@ -226,21 +237,24 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         }
 	}
 	
-	public List<ManagementServerHostVO> getActiveList(Date cutTime) {
+	@Override
+    public List<ManagementServerHostVO> getActiveList(Date cutTime) {
 	    SearchCriteria<ManagementServerHostVO> sc = ActiveSearch.create();
 	    sc.setParameters("lastUpdateTime", cutTime);
 	    
 	    return listIncludingRemovedBy(sc);
 	}
 
-	public List<ManagementServerHostVO> getInactiveList(Date cutTime) {
+	@Override
+    public List<ManagementServerHostVO> getInactiveList(Date cutTime) {
 	    SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
 	    sc.setParameters("lastUpdateTime", cutTime);
 	    
 	    return listIncludingRemovedBy(sc);
 	}
 	
-	@DB
+	@Override
+    @DB
 	public void increaseAlertCount(long id) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
@@ -273,4 +287,33 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	    InactiveSearch.and("removed", InactiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 	    InactiveSearch.done();
 	}
+	
+	
+	@Override
+    public void update(Connection conn, long id, long runId, State state, Date lastUpdate) {
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("update mshost set state=?, last_update=? where id=? and runid=?");
+            pstmt.setString(1, state.toString());
+            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
+            pstmt.setLong(3, id);
+            pstmt.setLong(4, runId);
+            
+            int count = pstmt.executeUpdate();
+            conn.commit();
+            
+            if(count < 1)
+                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runId + " is no longer valid"));
+        } catch (SQLException e) { 
+            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+        } finally {
+            if(pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch(Exception e) {
+                    s_logger.warn("Unable to close prepared statement due to exception ", e);
+                }
+            }
+        }
+    }
 }

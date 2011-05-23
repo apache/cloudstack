@@ -237,6 +237,10 @@ public abstract class AgentAttache {
     public int getQueueSize() {
         return _requests.size();
     }
+    
+    public int getListenersSize() {
+        return _waitForList.size();
+    }
 
     public boolean processAnswers(final long seq, final Response resp) {
         resp.logD("Processing: ", true);

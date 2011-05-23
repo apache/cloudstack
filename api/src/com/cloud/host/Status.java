@@ -32,7 +32,8 @@ public enum Status {
     ErrorInMaintenance(false, false, false),
     Maintenance(false, false, false),
     Alert(true, true, true),
-    Removed(true, false, true);
+    Removed(true, false, true),
+    Rebalance(false, false, false);
     
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;
@@ -72,7 +73,11 @@ public enum Status {
         WaitedTooLong(false, "Waited too long from the agent to reconnect on its own.  Time to do HA"),
         Remove(true, "Host is removed"),
         Ready(false, "Host is ready for commands"),
-        UpdatePassword(false, "Update host password from db");
+        UpdatePassword(false, "Update host password from db"),
+        RequestAgentRebalance(false, "Request rebalance for the certain host"),
+        StartAgentRebalance(false, "Start rebalance for the certain host"),
+        RebalanceCompleted(false, "Host is rebalanced successfully"),
+        RebalanceFailed(false, "Failed to rebalance the host");
 
         private final boolean isUserRequest;
         private final String comment;
@@ -132,6 +137,7 @@ public enum Status {
         s_fsm.addTransition(Status.Up, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Up, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Up, Event.ManagementServerDown, Status.Disconnected);
+        s_fsm.addTransition(Status.Up, Event.StartAgentRebalance, Status.Rebalance);
         s_fsm.addTransition(Status.Updating, Event.PingTimeout, Status.Alert);
         s_fsm.addTransition(Status.Updating, Event.Ping, Status.Updating);
         s_fsm.addTransition(Status.Updating, Event.AgentConnected, Status.Connecting);
@@ -177,6 +183,8 @@ public enum Status {
         s_fsm.addTransition(Status.Alert, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Alert, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Alert, Event.ManagementServerDown, Status.Alert);
+        s_fsm.addTransition(Status.Rebalance, Event.RebalanceFailed, Status.Alert);
+        s_fsm.addTransition(Status.Rebalance, Event.RebalanceCompleted, Status.Connecting);
     }
 
     public static void main(String[] args) {

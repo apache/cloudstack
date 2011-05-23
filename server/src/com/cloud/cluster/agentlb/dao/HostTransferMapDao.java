@@ -16,31 +16,26 @@
  * 
  */
 
-package com.cloud.cluster;
+package com.cloud.cluster.agentlb.dao;
 
+import java.util.Date;
 import java.util.List;
 
-public class ClusterManagerMessage {
-	public static enum MessageType { nodeAdded, nodeRemoved, nodeIsolated };
+import com.cloud.cluster.agentlb.HostTransferMapVO;
+import com.cloud.cluster.agentlb.HostTransferMapVO.HostTransferState;
+import com.cloud.utils.db.GenericDao;
 
-	MessageType _type;
-	List<ManagementServerHostVO> _nodes;
-	
-	public ClusterManagerMessage(MessageType type) {
-		_type = type;
-	}
-	
-	public ClusterManagerMessage(MessageType type, List<ManagementServerHostVO> nodes) {
-		_type = type;
-		_nodes = nodes;
-	}
-	
-	public MessageType getMessageType() {
-		return _type;
-	}
-	
-	public List<ManagementServerHostVO> getNodes() {
-		return _nodes;
-	}
+public interface HostTransferMapDao extends GenericDao<HostTransferMapVO, Long> {
+
+    List<HostTransferMapVO> listHostsLeavingCluster(long clusterId);
+
+    List<HostTransferMapVO> listHostsJoiningCluster(long clusterId);
+
+    HostTransferMapVO startAgentTransfering(long hostId, long currentOwner, long futureOwner);
+
+    boolean completeAgentTransfering(long hostId, boolean success);
     
+    List<HostTransferMapVO> listBy(long futureOwnerId, HostTransferState state);
+    
+    boolean isActive(long hostId, Date cutTime);
 }

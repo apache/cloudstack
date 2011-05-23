@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -238,7 +239,9 @@ public enum Config {
 	DefaultMaxAccountTemplates("Account Defaults", ManagementServer.class, Long.class, "max.account.templates", "20", "The default maximum number of templates that can be deployed for an account", null),
 	DefaultMaxAccountSnapshots("Account Defaults", ManagementServer.class, Long.class, "max.account.snapshots", "20", "The default maximum number of snapshots that can be created for an account", null),
 	DefaultMaxAccountVolumes("Account Defaults", ManagementServer.class, Long.class, "max.account.volumes", "20", "The default maximum number of volumes that can be created for an account", null),
-	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null);
+	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
+	
+	AgentLbEnable("Advanced", ClusterManager.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;

@@ -33,19 +33,17 @@
 
 package com.xensource.xenapi;
 
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VersionException;
-import com.xensource.xenapi.Types.XenAPIException;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.XenAPIException;
 
 /**
  * Asynchronous event registration and handling
@@ -66,6 +64,7 @@ public class Event extends XenAPIObject {
        this.ref = ref;
     }
 
+    @Override
     public String toWireString() {
        return this.ref;
     }
@@ -96,6 +95,7 @@ public class Event extends XenAPIObject {
      * Represents all the fields in a Event
      */
     public static class Record implements Types.Record {
+        @Override
         public String toString() {
             StringWriter writer = new StringWriter();
             PrintWriter print = new PrintWriter(writer);
@@ -112,6 +112,7 @@ public class Event extends XenAPIObject {
         /**
          * Convert a event.Record to a Map
          */
+        @Override
         public Map<String,Object> toMap() {
             Map<String,Object> map = new HashMap<String,Object>();
             map.put("id", this.id == null ? 0 : this.id);
