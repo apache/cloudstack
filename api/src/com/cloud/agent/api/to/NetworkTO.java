@@ -18,6 +18,7 @@
 package com.cloud.agent.api.to;
 
 import java.net.URI;
+import java.util.List;
 
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -38,10 +39,11 @@ public class NetworkTO {
     protected URI broadcastUri;
     protected URI isolationUri;
     protected boolean isSecurityGroupEnabled;
-    
+    protected String[] tags;
+
     public NetworkTO() {
     }
-    
+
     public String getUuid() {
         return uuid;
     }
@@ -85,11 +87,19 @@ public class NetworkTO {
     public void setType(TrafficType type) {
         this.type = type;
     }
-    
+
+    public void setTags(List<String> tags) {
+        this.tags = tags.toArray(new String[tags.size()]);
+    }
+
+    public String[] getTags() {
+        return tags;
+    }
+
     public void setSecurityGroupEnabled(boolean enabled) {
         this.isSecurityGroupEnabled = enabled;
     }
-    
+
     /**
      * This constructor is usually for hosts where the other information are not important.
      * 
@@ -100,7 +110,7 @@ public class NetworkTO {
     public NetworkTO(String ip, String netmask, String mac) {
         this(ip, netmask, mac, null, null, null);
     }
-    
+
     /**
      * This is the full constructor and should be used for VM's network as it contains
      * the full information about what is needed.
@@ -145,27 +155,27 @@ public class NetworkTO {
     public String getDns2() {
         return dns2;
     }
-    
+
     public TrafficType getType() {
         return type;
     }
-    
+
     public URI getBroadcastUri() {
         return broadcastUri;
     }
-    
+
     public void setBroadcastUri(URI broadcastUri) {
         this.broadcastUri = broadcastUri;
     }
-    
+
     public URI getIsolationUri() {
         return isolationUri;
     }
-    
+
     public void setIsolationuri(URI isolationUri) {
         this.isolationUri = isolationUri;
     }
-    
+
     public boolean isSecurityGroupEnabled() {
         return this.isSecurityGroupEnabled;
     }

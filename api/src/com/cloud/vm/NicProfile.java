@@ -22,6 +22,7 @@
 package com.cloud.vm;
 
 import java.net.URI;
+import java.util.List;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
@@ -53,9 +54,14 @@ public class NicProfile {
     String dns2;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
+    List<String> tags;
 
     public String getDns1() {
         return dns1;
+    }
+
+    public List<String> getTags() {
+        return tags;
     }
 
     public String getDns2() {
@@ -226,6 +232,7 @@ public class NicProfile {
         this.netmask = nic.getNetmask();
         this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
         this.vmId = nic.getInstanceId();
+        this.tags = network.getTags();
 
         if (networkRate != null) {
             this.networkRate = networkRate;

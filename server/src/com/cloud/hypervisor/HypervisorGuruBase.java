@@ -33,7 +33,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected HypervisorGuruBase() {
         super();
     }
-    
+
     protected NicTO toNicTO(NicProfile profile) {
         NicTO to = new NicTO();
         to.setDeviceId(profile.getDeviceId());
@@ -50,39 +50,41 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setIsolationuri(profile.getIsolationUri());
         to.setNetworkRateMbps(profile.getNetworkRate());
         to.setSecurityGroupEnabled(profile.isSecurityGroupEnabled());
+        to.setTags(profile.getTags());
         return to;
     }
-    
-    
+
+
     protected <T extends VirtualMachine> VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile<T> vmProfile) {
-        
+
         ServiceOffering offering = vmProfile.getServiceOffering();  
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        
+
         VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), offering.getSpeed(), 
-        	offering.getRamSize() * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
+                offering.getRamSize() * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
-        
+
         List<NicProfile> nicProfiles = vmProfile.getNics();
         NicTO[] nics = new NicTO[nicProfiles.size()];
         int i = 0;
         for (NicProfile nicProfile : nicProfiles) {
             nics[i++] = toNicTO(nicProfile);
         }
-        
+
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new VolumeTO[vmProfile.getDisks().size()]));
-        
+
         if(vmProfile.getTemplate().getBits() == 32) {
             to.setArch("i686");
         } else {
             to.setArch("x86_64");
         }
-        
+
         return to;
     }
-    
+
+    @Override
     public long getCommandHostDelegation(long hostId, Command cmd) {
-    	return hostId;
+        return hostId;
     }
 }

@@ -18,7 +18,9 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,6 +34,7 @@ import javax.persistence.Transient;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -47,99 +50,102 @@ public class NetworkVO implements Network {
     @TableGenerator(name="networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="networks_seq", allocationSize=1)
     @Column(name="id")
     long id;
-    
+
     @Column(name="mode")
     @Enumerated(value=EnumType.STRING)
     Mode mode;
-    
+
     @Column(name="broadcast_domain_type")
     @Enumerated(value=EnumType.STRING)
     BroadcastDomainType broadcastDomainType;
-    
+
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
-    
+
     @Column(name="guest_type")
     GuestIpType guestType;
-    
+
     @Column(name="name")
     String name;
-    
+
     @Column(name="display_text")
     String displayText;;
-    
+
     @Column(name="broadcast_uri")
     URI broadcastUri; 
-    
+
     @Column(name="gateway")
     String gateway;
-    
+
     @Column(name="cidr")
     String cidr;
-    
+
     @Column(name="network_offering_id")
     long networkOfferingId;
-    
+
     @Column(name="data_center_id")
     long dataCenterId;
-    
+
     @Column(name="related")
     long related;
-    
+
     @Column(name="guru_name")
     String guruName;
-    
+
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     State state;
-    
+
     @Column(name="dns1")
     String dns1;
-    
+
     @Column(name="domain_id")
     long domainId;
-    
+
     @Column(name="account_id")
     long accountId;
-    
+
     @Column(name="set_fields")
     long setFields;
-    
+
     @TableGenerator(name="mac_address_seq", table="op_networks", pkColumnName="id", valueColumnName="mac_address_seq", allocationSize=1)
     @Transient
     long macAddress = 1;
-    
+
     @Column(name="guru_data")
     String guruData;
-    
+
     @Column(name="dns2")
     String dns2;
-    
+
     @Column(name="shared")
     boolean isShared;
-    
+
     @Column(name="network_domain")
     String networkDomain;
-    
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
-    
+
     @Column(name="reservation_id")
     String reservationId;  
-    
+
     @Column(name="is_default")
     boolean isDefault;
-    
+
     @Column(name="is_security_group_enabled")
     boolean securityGroupEnabled;
-    
+
+    @Transient
+    List<String> tags;
+
     public NetworkVO() {
     }
-    
+
     /**
      * Constructor to be used for the adapters because it only initializes what's needed.
      * @param trafficType
@@ -163,7 +169,7 @@ public class NetworkVO implements Network {
         this.id = -1;
         this.guestType = guestType;
     }
-    
+
     public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled) {
         this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared, isDefault);
         this.gateway = that.getGateway();
@@ -204,25 +210,25 @@ public class NetworkVO implements Network {
         this.isShared = isShared;
         this.isDefault = isDefault;
     }
-    
+
     @Override
     public String getReservationId() {
         return reservationId;
     }
-    
+
     public void setReservationId(String reservationId) {
         this.reservationId = reservationId;
     }
-    
+
     @Override
     public State getState() {
         return state;
     }
-    
+
     public void setState(State state) {
         this.state = state;
     }
-    
+
     @Override
     public long getRelated() {
         return related;
@@ -232,7 +238,23 @@ public class NetworkVO implements Network {
     public long getId() {
         return id;
     }
-    
+
+    @Override
+    public List<String> getTags() {
+        return tags != null ? tags : new ArrayList<String>();
+    }
+
+    public void addTag(String tag) {
+        if (tags == null) {
+            tags = new ArrayList<String>();
+        }
+        tags.add(tag);
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
     @Override
     public GuestIpType getGuestType() {
         return guestType;
@@ -242,17 +264,17 @@ public class NetworkVO implements Network {
     public Mode getMode() {
         return mode;
     }
-    
+
     @Override
     public long getAccountId() {
         return accountId;
     }
-    
+
     @Override
     public long getDomainId() {
         return domainId;
     }
-    
+
     @Override
     public long getNetworkOfferingId() {
         return networkOfferingId;
@@ -266,19 +288,19 @@ public class NetworkVO implements Network {
     public BroadcastDomainType getBroadcastDomainType() {
         return broadcastDomainType;
     }
-    
+
     public String getGuruData() {
         return guruData;
     }
-    
+
     public void setGuruData(String guruData) {
         this.guruData = guruData;
     }
-    
+
     public String getGuruName() {
         return guruName;
     }
-    
+
     public void setGuruName(String guruName) {
         this.guruName = guruName;
     }
@@ -286,12 +308,12 @@ public class NetworkVO implements Network {
     public void setBroadcastDomainType(BroadcastDomainType broadcastDomainType) {
         this.broadcastDomainType = broadcastDomainType;
     }
-    
+
     @Override
     public String getNetworkDomain() {
         return networkDomain;
     }
-    
+
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
     }
@@ -322,7 +344,7 @@ public class NetworkVO implements Network {
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
-    
+
     @Override
     public URI getBroadcastUri() {
         return broadcastUri;
@@ -331,33 +353,33 @@ public class NetworkVO implements Network {
     public void setBroadcastUri(URI broadcastUri) {
         this.broadcastUri = broadcastUri;
     }
-    
+
     @Override
     public int hashCode() {
         return NumbersUtil.hash(id);
     }
-    
+
     @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
-    
+
     public String getDns1() {
         return dns1;
     }
-    
+
     public void setDns1(String dns) {
         this.dns1 = dns;
     }
-    
+
     public String getDns2() {
         return dns2;
     }
-    
+
     public void setDns2(String dns) {
         this.dns2 = dns;
     }
-    
+
     @Override
     public String getName() {
         return name;
@@ -366,7 +388,7 @@ public class NetworkVO implements Network {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -375,22 +397,22 @@ public class NetworkVO implements Network {
     public void setDisplayText(String displayText) {
         this.displayText = displayText;
     }
-    
+
     @Override
     public boolean getIsShared() {
         return isShared;
     }
-    
+
     @Override
     public boolean isDefault() {
         return isDefault;
     }
-    
+
     @Override 
     public boolean isSecurityGroupEnabled() {
         return securityGroupEnabled;
     }
-    
+
     public void setSecurityGroupEnabled(boolean enabled) {
         this.securityGroupEnabled = enabled;
     }
@@ -424,26 +446,28 @@ public class NetworkVO implements Network {
         if (this.trafficType != that.trafficType) {
             return false;
         }
-        
+
         if ((this.cidr == null && that.cidr != null) || (this.cidr != null && that.cidr == null)) {
             return false;
         }
-        
+
         if (this.cidr == null && that.cidr == null) {
             return true;
         }
-        
+
         return NetUtils.isNetworkAWithinNetworkB(this.cidr, that.cidr);
     }
-    
-    public boolean isImplemented() {
-        return broadcastUri != null && cidr != null && gateway != null && mode != null && broadcastDomainType != null;
-    }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("Ntwk[");
         buf.append(id).append("|").append(trafficType.toString()).append("|").append(networkOfferingId).append("]");
         return buf.toString();
     }
+
+    private static NetworkDao _networkDao = null;
+    static void init(NetworkDao networkDao) {
+        _networkDao = networkDao;
+    }
+
 }

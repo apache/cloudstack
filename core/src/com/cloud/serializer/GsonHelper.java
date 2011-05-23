@@ -75,4 +75,8 @@ public class GsonHelper {
     public final static Gson getGsonLogger() {
         return s_gogger;
     }
+
+    public final static Logger getLogger() {
+        return s_logger;
+    }
 }

@@ -54,7 +54,7 @@ public class RequestTest extends TestCase {
         Level level = logger.getLevel();
 
         logger.setLevel(Level.DEBUG);
-        String log = sreq.log("Debug", true);
+        String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
         assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
@@ -62,7 +62,7 @@ public class RequestTest extends TestCase {
         assert (!log.contains("password"));
 
         logger.setLevel(Level.TRACE);
-        log = sreq.log("Trace", true);
+        log = sreq.log("Trace", true, Level.TRACE);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
@@ -70,7 +70,7 @@ public class RequestTest extends TestCase {
         assert (!log.contains("password"));
 
         logger.setLevel(Level.INFO);
-        sreq.log("Info", true);
+        sreq.log("Info", true, Level.INFO);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
         assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
@@ -125,6 +125,28 @@ public class RequestTest extends TestCase {
         Response resp = new Response(req, answer);
         resp.logD("Debug for Download");
 
+    }
+
+    public void testLogging() {
+        GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
+        Request sreq = new Request(2, 3, new Command[] { cmd3 }, true, true);
+        sreq.setSequence(1);
+        Logger logger = Logger.getLogger(GsonHelper.class);
+        Level level = logger.getLevel();
+
+        logger.setLevel(Level.DEBUG);
+        String log = sreq.log("Debug", true, Level.DEBUG);
+        assert (log == null);
+
+        log = sreq.log("Debug", false, Level.DEBUG);
+        assert (log != null);
+
+        logger.setLevel(Level.TRACE);
+        log = sreq.log("Trace", true, Level.TRACE);
+        assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
+        s_logger.debug(log);
+
+        logger.setLevel(level);
     }
 
     protected void compareRequest(Request req1, Request req2) {

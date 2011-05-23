@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.exception.UnsupportedVersionException;
@@ -64,6 +66,7 @@ public class Request {
 
     protected static final Gson s_gson = GsonHelper.getGson();
     protected static final Gson s_gogger = GsonHelper.getGsonLogger();
+    protected static final Logger s_gsonLogger = GsonHelper.getLogger();
 
     public enum Version {
         v1, // using gson to marshall
@@ -278,47 +281,69 @@ public class Request {
 
     public void logD(String msg, boolean logContent) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(msg, logContent));
+            String log = log(msg, logContent, Level.DEBUG);
+            if (log != null) {
+                s_logger.debug(log);
+            }
         }
     }
 
     public void logT(String msg, boolean logD) {
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(log(msg, true));
+            String log = log(msg, true, Level.TRACE);
+            if (log != null) {
+                s_logger.trace(log);
+            }
         } else if (logD && s_logger.isDebugEnabled()) {
-            s_logger.debug(log(msg, false));
+            String log = log(msg, false, Level.DEBUG);
+            if (log != null) {
+                s_logger.debug(log);
+            }
         }
     }
 
-    protected String log(String msg, boolean logContent) {
+    protected String log(String msg, boolean logContent, Level level) {
+        StringBuilder content = new StringBuilder();
+        if (logContent) {
+            if (_cmds == null) {
+                _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
+            }
+            try {
+                s_gogger.toJson(_cmds, content);
+            } catch (Throwable e) {
+                StringBuilder buff = new StringBuilder();
+                for (Command cmd : _cmds) {
+                    buff.append(cmd.getClass().getSimpleName()).append("/");
+                }
+                s_logger.error("Gson serialization error " + buff.toString(), e);
+                assert false : "More gson errors on " + buff.toString();
+                return "";
+            }
+            if (content.length() <= 4) {
+                return null;
+            }
+        } else {
+            if (_cmds == null) {
+                _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
+            }
+            content.append("{ ");
+            for (Command cmd : _cmds) {
+                content.append(cmd.getClass().getSimpleName()).append(", ");
+            }
+            content.replace(content.length() - 2, content.length(), " }");
+
+        }
+
         StringBuilder buf = new StringBuilder("Seq ");
+
         buf.append(_agentId).append("-").append(_seq).append(": ");
 
         buf.append(msg);
-        buf.append("{ ").append(getType());
+        buf.append(" { ").append(getType());
         buf.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via);
-        if (logContent) {
-            buf.append(", Ver: ").append(_ver.toString());
-            buf.append(", Flags: ").append(Integer.toBinaryString(getFlags())).append(", ");
-            if (_cmds != null) {
-                try {
-                    s_gogger.toJson(_cmds, buf);
-                } catch (Throwable e) {
-                    StringBuilder buff = new StringBuilder();
-                    for (Command cmd : _cmds) {
-                        buff.append(cmd.getClass().getName()).append("/");
-                    }
-                    s_logger.error("Gson serialization error " + buff.toString(), e);
-                    assert false : "More gson errors on " + buff.toString();
-                    return "";
-                }
-            } else if (_content != null) {
-                buf.append(_content.subSequence(0, 32));
-            } else {
-                buf.append("I've got nada here!");
-                assert false : "How can both commands and content be null?  What are we sending here?";
-            }
-        }
+        buf.append(", Ver: ").append(_ver.toString());
+        buf.append(", Flags: ").append(Integer.toBinaryString(getFlags())).append(", ");
+        buf.append(content);
         buf.append(" }");
         return buf.toString();
     }

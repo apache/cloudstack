@@ -31,6 +31,14 @@ CREATE TABLE `cloud`.`cmd_exec_log` (
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`network_tags` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
+  `tag` varchar(255) NOT NULL COMMENT 'tag',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  UNIQUE KEY(`network_id`, `tag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  IF NOT EXISTS `cloud`.`firewall_rules_cidrs` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',

@@ -112,6 +112,7 @@ DROP TABLE IF EXISTS `cloud`.`storage_pool_work`;
 DROP TABLE IF EXISTS `cloud`.`user_vm_details`;
 DROP TABLE IF EXISTS `cloud`.`vpn_users`;
 DROP TABLE IF EXISTS `cloud`.`data_center_details`;
+DROP TABLE IF EXISTS `cloud`.`network_tags`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -188,6 +189,15 @@ CREATE TABLE `cloud`.`networks` (
   CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
   CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
   INDEX `i_networks__removed`(`removed`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_tags` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
+  `tag` varchar(255) NOT NULL COMMENT 'tag',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  UNIQUE KEY(`network_id`, `tag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`account_network_ref` (

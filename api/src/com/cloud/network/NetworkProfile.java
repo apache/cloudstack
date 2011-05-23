@@ -19,13 +19,14 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.util.List;
 
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 
 
-public class NetworkProfile implements Network{
+public class NetworkProfile implements Network {
     private long id;
     private long dataCenterId;
     private long ownerId;
@@ -49,6 +50,7 @@ public class NetworkProfile implements Network{
     private boolean isDefault;
     private String networkDomain;
     private boolean isSecurityGroupEnabled;
+    private List<String> tags;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -74,6 +76,11 @@ public class NetworkProfile implements Network{
         this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
     }
 
+    @Override
+    public List<String> getTags() {
+        return tags;
+    }
+
     public String getDns1() {
         return dns1;
     }
@@ -89,7 +96,7 @@ public class NetworkProfile implements Network{
     public void setDns2(String dns2) {
         this.dns2 = dns2;
     }
-    
+
     public void setBroadcastUri(URI broadcastUri) {
         this.broadcastUri = broadcastUri;
     }
@@ -103,22 +110,22 @@ public class NetworkProfile implements Network{
     public long getId() {
         return id;
     }
-    
+
     @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
-    
+
     @Override
     public long getAccountId() {
         return ownerId;
     }
-    
+
     @Override
     public State getState() {
         return state;
     }
-    
+
     @Override
     public String getName() {
         return name;
@@ -153,37 +160,37 @@ public class NetworkProfile implements Network{
     public long getNetworkOfferingId() {
         return networkOfferingId;
     }
-    
+
     @Override
     public long getRelated() {
         return related;
     }
-    
+
     @Override
     public GuestIpType getGuestType() {
         return guestIpType;
     }
-    
+
     @Override
     public String getDisplayText() {
         return displayText;
     }
-    
+
     @Override
     public boolean getIsShared() {
         return isShared;
     }
-    
+
     @Override
     public String getReservationId() {
         return reservationId;
     }
-    
+
     @Override
     public boolean isDefault() {
         return isDefault;
     }
-    
+
     @Override
     public String getNetworkDomain() {
         return networkDomain;
@@ -193,7 +200,7 @@ public class NetworkProfile implements Network{
     public long getDomainId() {
         return domainId;
     }
-    
+
     @Override
     public boolean isSecurityGroupEnabled() {
         return isSecurityGroupEnabled;

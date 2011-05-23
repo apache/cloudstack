@@ -234,7 +234,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @DB
     public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign)
-            throws InsufficientAddressCapacityException {
+    throws InsufficientAddressCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<IPAddressVO> sc = null;
@@ -570,7 +570,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             boolean isSourceNat = false;
 
             txn.start();
-            
+
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (!offering.isSharedSourceNatService()) {
                 // First IP address should be source nat when it's being associated with Guest Virtual network
@@ -828,7 +828,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
-            throws ConcurrentOperationException {
+    throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, isShared, isDefault, false, null);
     }
 
@@ -1098,7 +1098,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    InsufficientCapacityException {
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
@@ -1193,7 +1193,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
 
         // we have to implement default nics first - to ensure that default network elements start up first in multiple nics
@@ -1667,7 +1667,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -2500,7 +2500,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         Account owner = _accountMgr.getActiveAccount(accountId);
         boolean createNetwork = false;
 

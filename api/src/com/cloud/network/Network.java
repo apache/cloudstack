@@ -37,14 +37,14 @@ import com.cloud.utils.fsm.StateMachine;
  * owned by an account. 
  */
 public interface Network extends ControlledEntity {
-    
+
     public enum GuestIpType {
         Virtual,
         Direct,
     }
-    
+
     public static class Service {
-        
+
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnTypes);
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns");
@@ -52,7 +52,7 @@ public interface Network extends ControlledEntity {
         public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat, Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
         public static final Service UserData = new Service("UserData");
-        
+
         private String name;
         private Capability[] caps;
 
@@ -60,15 +60,15 @@ public interface Network extends ControlledEntity {
             this.name = name;
             this.caps = caps;
         }  
-       
+
         public String getName() {
             return name;
         }
-        
+
         public Capability[] getCapabilities() {
             return caps;
         }
-        
+
         public boolean containsCapability(Capability cap) {
             boolean success = false;
             if (caps != null) {
@@ -80,13 +80,13 @@ public interface Network extends ControlledEntity {
                     }
                 }
             } 
-            
+
             return success;
         }
     }
-    
+
     public static class Provider {
-        
+
         public static final Provider VirtualRouter = new Provider("VirtualRouter");
         public static final Provider DhcpServer = new Provider("DhcpServer");
         public static final Provider JuniperSRX = new Provider("JuniperSRX");
@@ -94,20 +94,20 @@ public interface Network extends ControlledEntity {
         public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer");
         public static final Provider ExternalGateWay = new Provider("ExternalGateWay");
         public static final Provider None = new Provider("None");
-        
+
         private String name;
-        
+
         public Provider(String name) {
             this.name = name;
         }
-        
+
         public String getName() {
             return name;
         }
     }
-    
+
     public static class Capability {
-        
+
         public static final Capability PortForwarding = new Capability("PortForwarding");
         public static final Capability StaticNat = new Capability("StaticNat");
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
@@ -117,25 +117,25 @@ public interface Network extends ControlledEntity {
         public static final Capability SupportedVpnTypes = new Capability("SupportedVpnTypes");
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
-        
+
         private String name;
-        
+
         public Capability(String name) {
             this.name = name;
         }
-        
+
         public String getName() {
             return name;
         }
     }
-    
+
     enum Event {
         ImplementNetwork,
         DestroyNetwork,
         OperationSucceeded,
         OperationFailed;
     }
-    
+
     enum State implements FiniteState<State, Event> {
         Allocated("Indicates the network configuration is in allocated but not setup"),
         Setup("Indicates the network configuration is setup"),
@@ -143,7 +143,7 @@ public interface Network extends ControlledEntity {
         Implemented("Indicates the network configuration is in use"),
         Shutdown("Indicates the network configuration is being destroyed"),
         Destroy("Indicates that the network is destroyed");
-        
+
 
         @Override
         public StateMachine<State, Event> getStateMachine() {
@@ -164,18 +164,18 @@ public interface Network extends ControlledEntity {
         public Set<Event> getPossibleEvents() {
             return s_fsm.getPossibleEvents(this);
         }
-        
+
         String _description;
-        
+
         @Override
         public String getDescription() {
             return _description;
         }
-        
+
         private State(String description) {
             _description = description;
         }
-        
+
         private static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
             s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implementing);
@@ -186,12 +186,12 @@ public interface Network extends ControlledEntity {
             s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
         }
     }
-    
+
     /**
      * @return id of the network profile.  Null means the network profile is not from the database.
      */
     long getId();
-    
+
     String getName();
 
     Mode getMode();
@@ -205,27 +205,29 @@ public interface Network extends ControlledEntity {
     String getCidr();
 
     long getDataCenterId();
-    
+
     long getNetworkOfferingId();
-    
+
     State getState();
-    
+
     long getRelated();
-    
+
     URI getBroadcastUri();
-    
+
     GuestIpType getGuestType();
-    
+
     String getDisplayText();
-    
+
     boolean getIsShared();
-    
+
     String getReservationId();
-    
+
     boolean isDefault();
-    
+
     String getNetworkDomain();
 
     boolean isSecurityGroupEnabled();
+
+    List<String> getTags();
 
 }
