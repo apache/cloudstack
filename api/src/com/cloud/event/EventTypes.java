@@ -161,6 +161,8 @@ public class EventTypes {
 	// VLANs/IP ranges
 	public static final String EVENT_VLAN_IP_RANGE_CREATE = "VLAN.IP.RANGE.CREATE";
 	public static final String EVENT_VLAN_IP_RANGE_DELETE = "VLAN.IP.RANGE.DELETE";
+	public static final String EVENT_ZONE_VLAN_CREATE = "ZONE.VLAN.CREATE";
+	public static final String EVENT_ZONE_VLAN_DELETE = "ZONE.VLAN.DELETE";
 
 	// Configuration Table
 	public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";
