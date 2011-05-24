@@ -298,7 +298,7 @@
                                 <li id="domain_container" style="display:none">
                                     <label><fmt:message key="label.domain"/>:</label>                                    
                                     <input class="text" type="text" id="domain" />
-                					<div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                					<div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
                                     <!--  
                                     <select class="select" id="domain_dropdown">					
                                     </select>

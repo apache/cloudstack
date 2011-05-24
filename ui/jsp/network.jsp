@@ -892,7 +892,7 @@ dictionary = {
                     <fmt:message key="label.domain"/>:</label>
                 
                 <input class="text" type="text" id="domain" />
-                <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
                 <!--  
                 <select class="select" id="add_publicip_vlan_domain">
                 </select>
@@ -1255,7 +1255,7 @@ dictionary = {
                     <fmt:message key="label.domain"/>:</label>
                     
                 <input class="text" type="text" id="domain" />
-                <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
+                <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
                 <!--  
                 <select class="select" id="add_publicip_vlan_domain">

@@ -361,7 +361,7 @@ dictionary = {
 				<li>
 					<label><fmt:message key="label.parent.domain"/>:</label>					
 					<input class="text" type="text" id="parent_domain" />
-                	<div id="parent_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                	<div id="parent_domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
 					<!--  
 					<select class="select" id="domain_dropdown">						
 					</select>
