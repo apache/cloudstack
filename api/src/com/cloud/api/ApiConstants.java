@@ -234,5 +234,14 @@ public class ApiConstants {
     public static final String NETWORK_DEVICE_TYPE = "networkdevicetype";
     public static final String NETWORK_DEVICE_PARAMETER_LIST = "networkdeviceparameterlist";
     public static final String ZONE_TOKEN = "zonetoken";
-    public static final String DHCP_PROVIDER = "dhcpprovider";    
+    public static final String DHCP_PROVIDER = "dhcpprovider";
+    public static final String RESULT = "success";
+    public static final String LUN_ID = "lunId";
+    public static final String IQN = "iqn";
+    public static final String AGGREGATE_NAME = "aggrname";
+    public static final String POOL_NAME = "poolname";
+    public static final String VOLUME_NAME = "volumename";
+    public static final String SNAPSHOT_POLICY = "snapshotpolicy";
+    public static final String SNAPSHOT_RESERVATION = "snapshotreservation";
+    
 }
