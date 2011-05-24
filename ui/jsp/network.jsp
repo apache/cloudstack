@@ -1329,7 +1329,7 @@ dictionary = {
             <ol>
                 <li id="adv_search_domain_li" style="display: none;">
                     <input class="text textwatermark" type="text" id="domain" value='<fmt:message key="label.by.domain" />' />
-                    <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    <div id="domain_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
                     <!--
                     <select class="select" id="adv_search_domain">
                     </select>
