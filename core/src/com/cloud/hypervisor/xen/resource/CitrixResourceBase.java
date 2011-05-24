@@ -5051,6 +5051,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             SR primaryStoragePool = getStorageRepository(conn, poolTO);
             String srUuid = primaryStoragePool.getUuid(conn);         
             if (toSecondaryStorage) {
+                // Create the volume folder
+                if (!createSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder)) {
+                    throw new InternalErrorException("Failed to create the volume folder.");
+                }
                 VDI vdi = VDI.getByUuid(conn, volumeUUID);
                 String pUuid = getVhdParent(conn, srUuid, vdi.getUuid(conn), IsISCSI(primaryStoragePool.getType(conn)));
                 if( pUuid != null ) {
@@ -5068,10 +5072,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         removeSR(conn, secondaryStorage);
                     }
                 } else {
-                    // Create the volume folder
-                    if (!createSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder)) {
-                        throw new InternalErrorException("Failed to create the volume folder.");
-                    }
                     String uuid = copy_vhd_to_secondarystorage(conn, mountpoint, volumeUUID, srUuid);            
                     return new CopyVolumeAnswer(cmd, true, null, null, uuid);
                 }
