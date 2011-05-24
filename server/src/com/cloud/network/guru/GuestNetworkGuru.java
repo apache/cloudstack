@@ -32,9 +32,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -75,8 +72,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     protected NicDao _nicDao;
     @Inject
     protected NetworkDao _networkDao;
-    @Inject
-    protected UsageEventDao _usageEventDao;
 
     String _defaultGateway;
     String _defaultCidr;
@@ -159,10 +154,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
-
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_ZONE_VLAN_CREATE,  network.getAccountId(), dcId, network.getId(), vnet);
-            _usageEventDao.persist(usageEvent);
-
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
@@ -270,8 +261,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
         if (profile.getBroadcastUri() != null) {
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getAccountId(), profile.getReservationId());
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_ZONE_VLAN_DELETE, profile.getAccountId(), profile.getDataCenterId(), profile.getId(), profile.getBroadcastUri().getHost());
-            _usageEventDao.persist(usageEvent);            
             profile.setBroadcastUri(null);
         }
     }
