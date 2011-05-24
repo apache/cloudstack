@@ -524,7 +524,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 _snapshotDao.update(snapshotId, snapshot);
 
-                if (snapshot.getType() == Type.RECURRING) {
+                if (snapshot.isRecursive()) {
                     _accountMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
                 }
 
