@@ -620,6 +620,9 @@ public class ClusterManagerImpl implements ClusterManager {
             }
             
             private boolean isClusterReadyToStart() {
+                if (!_agentLBEnabled) {
+                    return true;
+                }
                 boolean isReady = false;
                 int transferCount = _hostTransferDao.listHostsJoiningCluster(_msId).size();
                 if (transferCount == 0) {
