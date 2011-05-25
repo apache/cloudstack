@@ -628,14 +628,22 @@ public class ClusterManagerImpl implements ClusterManager {
                 if (transferCount == 0) {
                     //Check how many servers got transfered successfully
                     List<HostTransferMapVO> rebalancedHosts = _hostTransferDao.listBy(_msId, HostTransferState.TransferCompleted);
-                    s_logger.debug(rebalancedHosts.size() + " hosts joined the cluster " + _msId + " as a result of rebalance process");
+                    
+                    if (!rebalancedHosts.isEmpty() && s_logger.isDebugEnabled()) {
+                        s_logger.debug(rebalancedHosts.size() + " hosts joined the cluster " + _msId + " as a result of rebalance process");
+
+                    }
+                    
                     for (HostTransferMapVO host : rebalancedHosts) {
                         _hostTransferDao.remove(host.getId());
                     }     
                     
                     //Check how many servers failed to transfer
                     List<HostTransferMapVO> failedToRebalanceHosts = _hostTransferDao.listBy(_msId, HostTransferState.TransferFailed);
-                    s_logger.debug(failedToRebalanceHosts.size() + " hosts failed to join the cluster " + _msId + " as a result of rebalance process");
+                    if (!failedToRebalanceHosts.isEmpty() && s_logger.isDebugEnabled()) {
+                        s_logger.debug(failedToRebalanceHosts.size() + " hosts failed to join the cluster " + _msId + " as a result of rebalance process");
+                    }
+                    
                     for (HostTransferMapVO host : failedToRebalanceHosts) {
                         _hostTransferDao.remove(host.getId());
                     }

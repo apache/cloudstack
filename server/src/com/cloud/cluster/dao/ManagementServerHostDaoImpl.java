@@ -33,6 +33,8 @@ import com.cloud.cluster.ClusterInvalidSessionException;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -48,6 +50,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
+    private final SearchBuilder<ManagementServerHostVO> StateSearch;
 
 	@Override
     public void update(Connection conn, long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
@@ -286,6 +289,10 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	    InactiveSearch.and("lastUpdateTime", InactiveSearch.entity().getLastUpdateTime(),  SearchCriteria.Op.LTEQ);
 	    InactiveSearch.and("removed", InactiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 	    InactiveSearch.done();
+	    
+	    StateSearch = createSearchBuilder();
+	    StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
+	    StateSearch.done();
 	}
 	
 	
@@ -316,4 +323,13 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             }
         }
     }
+	
+	@Override
+	public List<ManagementServerHostVO> listBy(ManagementServerHost.State...states) {
+	    SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
+
+        sc.setParameters("status", (Object[]) states);
+        
+        return listBy(sc);
+	}
 }

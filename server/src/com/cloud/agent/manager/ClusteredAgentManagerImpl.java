@@ -43,6 +43,7 @@ import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
+import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.agentlb.AgentLoadBalancerPlanner;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
@@ -696,19 +697,26 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     public void startRebalanceAgents() {
-        Date cutTime = DateUtil.currentGMTTime();
-        List<ManagementServerHostVO> activeNodes = _mshostDao.getActiveList(new Date(cutTime.getTime() - ClusterManager.DEFAULT_HEARTBEAT_THRESHOLD));
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Management server " + _nodeId + " was asked to do agent rebalancing; checking how many hosts can be taken from this server");
+        }
+        
+        List<ManagementServerHostVO> allMS = _mshostDao.listBy(ManagementServerHost.State.Up, ManagementServerHost.State.Starting);
         List<HostVO> allManagedAgents = _hostDao.listManagedAgents();
 
         long avLoad = 0L;
 
-        if (!allManagedAgents.isEmpty() && !activeNodes.isEmpty()) {
-            avLoad = allManagedAgents.size() / activeNodes.size();
+        if (!allManagedAgents.isEmpty() && !allMS.isEmpty()) {
+            avLoad = allManagedAgents.size() / allMS.size();
         } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Management server " + _nodeId + " found no hosts to rebalance. Current number of active management server nodes in the system is " + allMS.size() + "; number of managed agents is " + allMS.size());
+            }
             return;
         }
 
-        for (ManagementServerHostVO node : activeNodes) {
+        for (ManagementServerHostVO node : allMS) {
             if (node.getMsid() != _nodeId) {
                 
                 List<HostVO> hostsToRebalance = new ArrayList<HostVO>();
@@ -716,11 +724,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     hostsToRebalance = lbPlanner.getHostsToRebalance(node.getMsid(), avLoad);
                     if (!hostsToRebalance.isEmpty()) {
                         break;
+                    } else {
+                        s_logger.debug("Agent load balancer planner " + lbPlanner.getName() + " found no hosts to be rebalanced from management server " + _nodeId);
                     }
                 }
 
                 if (!hostsToRebalance.isEmpty()) {
-                    //TODO - execute rebalance for every host; right now we are doing it for (0) host just for testing
                     for (HostVO host : hostsToRebalance) {
                         long hostId = host.getId();
                         s_logger.debug("Asking management server " + node.getMsid() + " to give away host id=" + hostId);
@@ -746,6 +755,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             }
                         }
                     }
+                } else {
+                    s_logger.debug("Management server " + _nodeId + " found no hosts to rebalance.");
                 }
             }
         }
