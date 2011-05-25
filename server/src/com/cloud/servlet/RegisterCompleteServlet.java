@@ -79,42 +79,48 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 	@Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 		String registrationToken = req.getParameter("token");
+		int statusCode = HttpServletResponse.SC_OK;
+		String responseMessage = null;
+		
 		if (registrationToken == null || registrationToken.trim().length() == 0) {
-			// Return an error code
-		} 
-		
-		User resourceAdminUser = _accountSvc.getActiveUserByRegistrationToken(registrationToken);
-		if (resourceAdminUser == null) {
-			// Return an error code
+			statusCode = 503;
+			responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"Missing token\" } }";
+		} else {
+			User resourceAdminUser = _accountSvc.getActiveUserByRegistrationToken(registrationToken);
+			if (resourceAdminUser != null) {
+				if(!resourceAdminUser.isRegistered()){
+					_accountSvc.markUserRegistered(resourceAdminUser.getId());
+				}
+				
+				Account resourceAdminAccount = _accountSvc.getActiveAccount(resourceAdminUser.getAccountId());
+				Account rsUserAccount = _accountSvc.getActiveAccount(resourceAdminAccount.getAccountName()+"-user", resourceAdminAccount.getDomainId());
+				
+				List<UserVO> users =  _userDao.listByAccount(rsUserAccount.getId());
+				User rsUser = users.get(0);
+				
+				Configuration config = _configDao.findByName("endpointe.url");
+				
+				StringBuffer sb = new StringBuffer();
+		        sb.append("{ \"registration_info\" : { \"endpoint_url\" : \""+config.getValue()+"\", ");
+		        sb.append("\"domain_id\" : \""+resourceAdminAccount.getDomainId()+"\", ");
+		        sb.append("\"admin_account\" : \""+resourceAdminUser.getUsername()+"\", ");
+		        sb.append("\"admin_account_api_key\" : \""+resourceAdminUser.getApiKey()+"\", ");
+		        sb.append("\"admin_account_secret_key\" : \""+resourceAdminUser.getSecretKey()+"\", ");
+		        sb.append("\"user_account\" : \""+rsUser.getUsername()+"\", ");
+		        sb.append("\"user_account_api_key\" : \""+rsUser.getApiKey()+"\", ");
+		        sb.append("\"user_account_secret_key\" : \""+rsUser.getSecretKey()+"\" ");
+		        sb.append("} }");
+		        responseMessage = sb.toString();
+			} else {
+				statusCode = 503;
+				responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"Invalid token = " + registrationToken + "\" } }";
+			}
 		}
-		
-		if(!resourceAdminUser.isRegistered()){
-			_accountSvc.markUserRegistered(resourceAdminUser.getId());
-		}
-		
-		Account resourceAdminAccount = _accountSvc.getActiveAccount(resourceAdminUser.getAccountId());
-		Account rsUserAccount = _accountSvc.getActiveAccount(resourceAdminAccount.getAccountName()+"-user", resourceAdminAccount.getDomainId());
-		
-		List<UserVO> users =  _userDao.listByAccount(rsUserAccount.getId());
-		User rsUser = users.get(0);
-		
-		Configuration config = _configDao.findByName("endpointe.url");
-		
-		StringBuffer sb = new StringBuffer();
-        sb.append("{ \"registration_info\" : { \"endpoint_url\" : \""+config.getValue()+"\", ");
-        sb.append("\"domain_id\" : \""+resourceAdminAccount.getDomainId()+"\", ");
-        sb.append("\"admin_account\" : \""+resourceAdminUser.getUsername()+"\", ");
-        sb.append("\"admin_account_api_key\" : \""+resourceAdminUser.getApiKey()+"\", ");
-        sb.append("\"admin_account_secret_key\" : \""+resourceAdminUser.getSecretKey()+"\", ");
-        sb.append("\"user_account\" : \""+rsUser.getUsername()+"\", ");
-        sb.append("\"user_account_api_key\" : \""+rsUser.getApiKey()+"\", ");
-        sb.append("\"user_account_secret_key\" : \""+rsUser.getSecretKey()+"\" ");
-        sb.append("} }");
         
         try {
 	        resp.setContentType("text/javascript; charset=UTF-8");
-	        resp.setStatus(HttpServletResponse.SC_OK);
-			resp.getWriter().print(sb.toString());
+	        resp.setStatus(statusCode);
+			resp.getWriter().print(responseMessage);
         } catch (Exception ex) {
         	s_logger.error("unknown exception writing register complete response", ex);
         }
