@@ -515,7 +515,7 @@ fi
 %{_javadir}/%{name}-jstl-1.2.jar
 %{_javadir}/jetty-6.1.26.jar
 %{_javadir}/jetty-util-6.1.26.jar
-
+%{_javadir}/manageontap.jar
 %{_javadir}/%{name}-axis.jar
 %{_javadir}/%{name}-commons-discovery.jar
 %{_javadir}/%{name}-iControl.jar
@@ -611,6 +611,7 @@ fi
 
 %files cli
 %{_bindir}/%{name}-tool
+%{_bindir}/cloudvoladm
 %{_sysconfdir}/%{name}/cli/commands.xml
 %dir %{_prefix}/lib*/python*/site-packages/%{name}tool
 %{_prefix}/lib*/python*/site-packages/%{name}tool/*
