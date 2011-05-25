@@ -19,6 +19,7 @@ package com.cloud.utils.db;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +51,6 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.OneToMany;
 import javax.persistence.TableGenerator;
 
 import net.sf.cglib.proxy.Callback;
@@ -71,6 +72,8 @@ import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  *  GenericDaoBase is a simple way to implement DAOs.  It DOES NOT
@@ -135,7 +138,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     protected Map<String, Attribute[]> _idAttributes;
     protected Map<String, TableGenerator> _tgs;
     protected final Map<String, Attribute> _allAttributes;
-    protected List<Attribute> _oneToManyAttributes;
+    protected List<Attribute> _ecAttributes;
     protected final Map<Pair<String, String>, Attribute> _allColumns;
     protected Enhancer _enhancer;
     protected Factory _factory;
@@ -224,7 +227,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         _deleteSqls = generator.buildDeleteSqls();
         _removed = generator.getRemovedAttribute();
         _tgs = generator.getTableGenerators();
-        _oneToManyAttributes = generator.getOneToManyAttributes();
+        _ecAttributes = generator.getElementCollectionAttributes();
 
         TableGenerator tg = this.getClass().getAnnotation(TableGenerator.class);
         if (tg != null) {
@@ -260,6 +263,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             s_logger.trace("Delete SQLs");
             for (final Pair<String, Attribute[]> deletSql : _deleteSqls) {
                 s_logger.trace(deletSql.first());
+            }
+
+            s_logger.trace("Collection SQLs");
+            for (Attribute attr : _ecAttributes) {
+                EcInfo info = (EcInfo)attr.attache;
+                s_logger.trace(info.insertSql);
+                s_logger.trace(info.selectSql);
             }
         }
     }
@@ -610,7 +620,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     return (M)new String(bytes, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     throw new CloudRuntimeException("UnsupportedEncodingException exception while converting UTF-8 data");
-                }	
+                }
             } else {
                 return null;
             }
@@ -767,7 +777,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
             final String sqlStr = pstmt.toString();
             throw new CloudRuntimeException("DB Exception on: " + sqlStr, e);
-        } 
+        }
     }
 
     @DB(txn=false)
@@ -892,8 +902,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             ResultSet rs = pstmt.executeQuery();
             return rs.next() ? toEntityBean(rs, true) : null;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt.toString(), e);
-        } 
+            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+        }
     }
 
     @Override @DB(txn=false)
@@ -1212,6 +1222,30 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     }
                 }
             }
+            for (Attribute attr : _ecAttributes) {
+                EcInfo ec = (EcInfo)attr.attache;
+                Object obj;
+                try {
+                    obj = attr.field.get(entity);
+                    if (ec.rawClass != null) {
+                        Enumeration en = Collections.enumeration((Collection)obj);
+                        while (en.hasMoreElements()) {
+                            pstmt = txn.prepareAutoCloseStatement(ec.insertSql);
+                            if (ec.targetClass == Date.class) {
+                                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), (Date)en.nextElement()));
+                            } else {
+                                pstmt.setObject(1, en.nextElement());
+                            }
+                            prepareAttribute(2, pstmt, _idAttributes.get(attr.table)[0], _idField.get(entity));
+                            pstmt.executeUpdate();
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
+                    throw new CloudRuntimeException("Yikes! ", e);
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException("Yikes! ", e);
+                }
+            }
             txn.commit();
         } catch (final SQLException e) {
             if (e.getSQLState().equals("23000") && e.getErrorCode() == 1062) {
@@ -1235,7 +1269,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         } else if (attr.is(Attribute.Flag.AutoGV)) {
             if (attr.columnName.equals(GenericDao.XID_COLUMN)) {
                 return UUID.randomUUID().toString();
-            } 
+            }
             assert (false) : "Auto generation is not supported.";
             return null;
         } else if (attr.is(Attribute.Flag.SequenceGV)) {
@@ -1268,7 +1302,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             final Column column = attr.field.getAnnotation(Column.class);
             final int length = column != null ? column.length() : 255;
 
-            // to support generic localization, utilize MySql UTF-8 support 
+            // to support generic localization, utilize MySql UTF-8 support
             if (length < str.length()) {
                 try {
                     pstmt.setBytes(j, str.substring(0, column.length()).getBytes("UTF-8"));
@@ -1379,9 +1413,78 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         for (int index = 1, max = meta.getColumnCount(); index <= max; index++) {
             setField(entity, result, meta, index);
         }
-        for (Attribute attr : _oneToManyAttributes) {
-            OneToMany otm = attr.field.getAnnotation(OneToMany.class);
+        for (Attribute attr : _ecAttributes) {
+            loadCollection(entity, attr);
+        }
+    }
 
+    @DB(txn = true)
+    @SuppressWarnings("unchecked")
+    protected void loadCollection(T entity, Attribute attr)  {
+        EcInfo ec = (EcInfo)attr.attache;
+
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(ec.selectSql);
+            pstmt.setObject(1, _idField.get(entity));
+            ResultSet rs = pstmt.executeQuery();
+            ArrayList lst = new ArrayList();
+            if (ec.targetClass == Integer.class) {
+                while (rs.next()) {
+                    lst.add(rs.getInt(1));
+                }
+            } else if (ec.targetClass == Long.class) {
+                while (rs.next()) {
+                    lst.add(rs.getLong(1));
+                }
+            } else if (ec.targetClass == String.class) {
+                while (rs.next()) {
+                    lst.add(rs.getString(1));
+                }
+            } else if (ec.targetClass == Short.class) {
+                while (rs.next()) {
+                    lst.add(rs.getShort(1));
+                }
+            } else if (ec.targetClass == Date.class) {
+                while (rs.next()) {
+                    lst.add(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(1)));
+                }
+            } else if (ec.targetClass == Boolean.class) {
+                while (rs.next()) {
+                    lst.add(rs.getBoolean(1));
+                }
+            } else {
+                assert (false) : "You'll need to add more classeses";
+            }
+    
+            if (ec.rawClass == null) {
+                Object[] array = (Object[])Array.newInstance(ec.targetClass);
+                lst.toArray(array);
+                try {
+                    attr.field.set(entity, array);
+                } catch (IllegalArgumentException e) {
+                    throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
+                }
+            } else {
+                try {
+                    Collection coll = (Collection)ec.rawClass.newInstance();
+                    coll.addAll(lst);
+                    attr.field.set(entity, coll);
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException("Come on we screen for this stuff, don't we?", e);
+                } catch (InstantiationException e) {
+                    throw new CloudRuntimeException("Never should happen", e);
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error executing " + pstmt, e);
+        } catch (IllegalArgumentException e) {
+            throw new CloudRuntimeException("Error executing " + pstmt, e);
+        } catch (IllegalAccessException e) {
+            throw new CloudRuntimeException("Error executing " + pstmt, e);
         }
     }
 

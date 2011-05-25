@@ -29,16 +29,16 @@ import java.util.List;
 import java.util.Map;
 
 import javax.persistence.AttributeOverride;
-import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.DiscriminatorValue;
+import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.TableGenerator;
@@ -54,13 +54,13 @@ public class SqlGenerator {
     ArrayList<Class<?>> _tables;
     LinkedHashMap<String, List<Attribute>> _ids;
     HashMap<String, TableGenerator> _generators;
-    ArrayList<Attribute> _otmAttrs;
+    ArrayList<Attribute> _ecAttrs;
 
     public SqlGenerator(Class<?> clazz) {
         _clazz = clazz;
         _tables = new ArrayList<Class<?>>();
         _attributes = new ArrayList<Attribute>();
-        _otmAttrs = new ArrayList<Attribute>();
+        _ecAttrs = new ArrayList<Attribute>();
         _embeddeds = new ArrayList<Field>();
         _ids = new LinkedHashMap<String, List<Attribute>>();
         _generators = new HashMap<String, TableGenerator>();
@@ -68,6 +68,7 @@ public class SqlGenerator {
         buildAttributes(clazz, DbUtil.getTableName(clazz), DbUtil.getAttributeOverrides(clazz), false, false);
         assert (_tables.size() > 0) : "Did you forget to put @Entity on " + clazz.getName();
         handleDaoAttributes(clazz);
+        findEcAttributes();
     }
 
     protected boolean checkMethods(Class<?> clazz, Map<String, Attribute> attrs) {
@@ -140,27 +141,33 @@ public class SqlGenerator {
                 attrs.add(attr);
             }
 
-            if (field.getAnnotation(OneToMany.class) != null) {
-                assert supportsOneToMany(field) : "Doesn't support One To Many";
-                _otmAttrs.add(attr);
-            } else {
-                _attributes.add(attr);
+            _attributes.add(attr);
+        }
+    }
+
+    protected void findEcAttributes() {
+        for (Attribute attr : _attributes) {
+            ElementCollection ec = attr.field.getAnnotation(ElementCollection.class);
+            if (ec != null) {
+                Attribute idAttr = _ids.get(attr.table).get(0);
+                assert supportsElementCollection(attr.field) : "Doesn't support ElementCollection for " + attr.field.getName();
+                attr.attache = new EcInfo(attr, idAttr);
+                _ecAttrs.add(attr);
             }
         }
     }
 
-    protected boolean supportsOneToMany(Field field) {
-        OneToMany otm = field.getAnnotation(OneToMany.class);
+    protected boolean supportsElementCollection(Field field) {
+        ElementCollection otm = field.getAnnotation(ElementCollection.class);
         if (otm.fetch() == FetchType.LAZY) {
-            assert (false) : "Doesn't support laz fetch: " + field.getName(); 
-            return false; 
+            assert (false) : "Doesn't support laz fetch: " + field.getName();
+            return false;
         }
 
-        for (CascadeType cascade : otm.cascade()) {
-            if (cascade == CascadeType.ALL || cascade == CascadeType.PERSIST || cascade == CascadeType.MERGE || cascade == CascadeType.REMOVE) {
-                assert (false) : "Doesn't support " + cascade + " for " + field.getName();
-                return false;
-            }
+        CollectionTable ct = field.getAnnotation(CollectionTable.class);
+        if (ct == null) {
+            assert (false) : "No collection table sepcified for " + field.getName();
+            return false;
         }
 
         return true;
@@ -264,8 +271,8 @@ public class SqlGenerator {
         }
     }
 
-    public List<Attribute> getOneToManyAttributes() {
-        return _otmAttrs;
+    public List<Attribute> getElementCollectionAttributes() {
+        return _ecAttrs;
     }
 
     public Attribute findAttribute(String name) {

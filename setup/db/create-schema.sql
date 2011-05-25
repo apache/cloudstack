@@ -197,7 +197,7 @@ CREATE TABLE `cloud`.`network_tags` (
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
   `tag` varchar(255) NOT NULL COMMENT 'tag',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   UNIQUE KEY(`network_id`, `tag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

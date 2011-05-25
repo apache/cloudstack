@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -54,49 +55,50 @@ public class Attribute {
         CharDT(0x100000),
         StringDT(0x200000),
         IntegerDT(0x400000);
-        
+
         int place;
         Flag(int place) {
             this.place = place;
         }
-        
+
         public int place() {
             return place;
         }
-        
+
         public boolean check(int value) {
             return (value & place) == place;
         }
-        
+
         public int setTrue(int value) {
             return (value | place);
         }
-        
+
         public int setFalse(int value) {
             return (value & ~place);
         }
     }
-    
+
     protected String table;
     protected String columnName;
     protected Field field;
     protected int flags;
     protected Column column;
-    
+    protected Object attache;
+
     public Attribute(Class<?> clazz, AttributeOverride[] overrides, Field field, String tableName, boolean isEmbedded, boolean isId) {
         this.field = field;
         flags = 0;
         table = tableName;
         setupColumnInfo(clazz, overrides, tableName, isEmbedded, isId);
     }
-    
+
     public Attribute(String table, String columnName) {
         this.table = table;
         this.columnName = columnName;
         this.field = null;
         this.column = null;
     }
-    
+
     protected void setupColumnInfo(Class<?> clazz, AttributeOverride[] overrides, String tableName, boolean isEmbedded, boolean isId) {
         flags = Flag.Selectable.setTrue(flags);
         GeneratedValue gv = field.getAnnotation(GeneratedValue.class);
@@ -122,7 +124,7 @@ public class Attribute {
         if (isEmbedded) {
             flags = Flag.Embedded.setTrue(flags);
         }
-        
+
         if (isId) {
             flags = Flag.Id.setTrue(flags);
         } else {
@@ -143,6 +145,12 @@ public class Attribute {
                 flags = Flag.Nullable.setTrue(flags);
             }
         }
+        ElementCollection ec = field.getAnnotation(ElementCollection.class);
+        if (ec != null) {
+            flags = Flag.Insertable.setFalse(flags);
+            flags = Flag.Selectable.setFalse(flags);
+        }
+
         Temporal temporal = field.getAnnotation(Temporal.class);
         if (temporal != null) {
             if (temporal.value() == TemporalType.DATE) {
@@ -153,50 +161,50 @@ public class Attribute {
                 flags = Flag.TimeStamp.setTrue(flags);
             }
         }
-        
+
         if (column != null && column.table().length() > 0) {
             table = column.table();
         }
-        
+
         columnName = DbUtil.getColumnName(field, overrides);
     }
-    
+
     public final boolean isInsertable() {
         return Flag.Insertable.check(flags);
     }
-    
+
     public final boolean isUpdatable() {
         return Flag.Updatable.check(flags);
     }
-    
+
     public final boolean isNullable() {
         return Flag.Nullable.check(flags);
     }
-    
+
     public final boolean isId() {
         return Flag.Id.check(flags);
     }
-    
+
     public final boolean isSelectable() {
         return Flag.Selectable.check(flags);
     }
-    
+
     public final boolean is(Flag flag) {
         return flag.check(flags);
     }
-    
+
     public final void setTrue(Flag flag) {
         flags = flag.setTrue(flags);
     }
-    
+
     public final void setFalse(Flag flag) {
         flags = flag.setFalse(flags);
     }
-    
+
     public Field getField() {
         return field;
     }
-    
+
     public Object get(Object entity) {
         try {
             return field.get(entity);
@@ -205,23 +213,23 @@ public class Attribute {
             return null;
         }
     }
-    
+
     @Override
     public int hashCode() {
-    	return columnName.hashCode();
+        return columnName.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
-    	if (!(obj instanceof Attribute)) {
-    		return false;
-    	}
-    	
-    	Attribute that = (Attribute)obj;
-    	
-    	return columnName.equals(that.columnName) && table.equals(that.table);
+        if (!(obj instanceof Attribute)) {
+            return false;
+        }
+
+        Attribute that = (Attribute)obj;
+
+        return columnName.equals(that.columnName) && table.equals(that.table);
     }
-    
+
     @Override
     public String toString() {
         return table + "." + columnName;
