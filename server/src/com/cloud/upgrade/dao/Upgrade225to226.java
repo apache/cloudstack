@@ -19,11 +19,24 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.List;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade225to226 implements DbUpgrade {
+    @Inject
+    protected SnapshotDao _snapshotDao;
+    @Inject
+    protected HostDao _hostDao;
+    @Inject
+    protected DataCenterDao _dcDao;
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -52,6 +65,11 @@ public class Upgrade225to226 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        List<DataCenterVO> dcs = _dcDao.listAll();
+        for ( DataCenterVO dc : dcs ) {
+            HostVO host = _hostDao.findSecondaryStorageHost(dc.getId());
+            _snapshotDao.updateSnapshotSecHost(dc.getId(), host.getId());           
+        }
     }
 
     @Override

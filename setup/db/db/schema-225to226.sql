@@ -94,3 +94,19 @@ CREATE TABLE `cloud`.`op_host_transfer` (
   CONSTRAINT `fk_op_host_transfer__future_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__future_mgmt_server_id`(`future_mgmt_server_id`) REFERENCES `mshost`(`msid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `swift_id` bigint unsigned;
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `swift_name` varchar(255);
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `sechost_id` bigint unsigned;
+
+
+CREATE TABLE `cloud`.`swift` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `hostname` varchar(255),
+  `account` varchar(255) COMMENT ' account in swift',
+  `username` varchar(255) COMMENT ' username in swift',
+  `token` varchar(255) COMMENT 'token for this user',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+

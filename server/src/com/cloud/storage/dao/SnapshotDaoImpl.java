@@ -40,6 +40,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String GET_LAST_SNAPSHOT = "SELECT id FROM snapshots where volume_id = ? AND id != ? AND path IS NOT NULL ORDER BY created DESC";
     private static final String UPDATE_SNAPSHOT_VERSION = "UPDATE snapshots SET version = ? WHERE volume_id = ? AND version = ?";
     private static final String GET_SECHOST_ID = "SELECT sechost_id FROM snapshots where volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
+    private static final String UPDATE_SECHOST_ID = "UPDATE snapshots SET sechost_id = ? WHERE data_center_id = ?";
     
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
@@ -180,6 +181,23 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
             return 1;
         } catch (Exception ex) {
             s_logger.error("error getting last snapshot", ex);
+        }
+        return 0;
+    }
+    
+    @Override
+    public long updateSnapshotSecHost(long dcId, long secHostId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        String sql = UPDATE_SECHOST_ID;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, secHostId);
+            pstmt.setLong(2, dcId);
+            pstmt.executeUpdate();
+            return 1;
+        } catch (Exception ex) {
+            s_logger.error("error set secondary storage host id", ex);
         }
         return 0;
     }
