@@ -161,14 +161,13 @@ def Help():
     return parser
 
 def httpErrorHandler(code, msg):
-    if code == 430:
-        info = msg.split(":")[1]
-        info = info.split("<")[0]
-        print "Reason:" + info      
-    elif code == 436:
-        print msg
-    elif code == 530:
-        print "Internal Error"
+    try:
+        errtext = xml.dom.minidom.parseString(msg) 
+        if errtext.getElementsByTagName("errortext") is not None:
+            err = getText(errtext.getElementsByTagName("errortext")[0].childNodes).strip()
+            print err
+    except:
+        print "Internal Error %s"%msg
     
 def getText(nodelist):
     rc = []
@@ -274,7 +273,8 @@ def createvol(options):
         output = cloudtool.main(['cloud-tool', 'createVolumeOnFiler', '--ipaddress=' + NetAppServerIP ,  '--aggregatename=' + options.aggregate_name,
                             '--poolname=' + options.pool_name, '--volumename=' + options.vol_name,
                             '--size=' + options.size,                  
-                            '--username=' + NetAppUserName, '--password=' + NetAppPassword, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)] + args)
+                            '--username=' + NetAppUserName, '--password=' + NetAppPassword, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"] + args)
+        print "Successfully added volume"
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -285,21 +285,14 @@ def createvol(options):
         print "executing createvol cmd failed: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "Successfully added volume"
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to add volume: %s" %(exception)
-    
 
 def deletevol(options):
     validate_parameter(options, delvolParser)
 
     try:
         output = cloudtool.main(['cloud-tool', 'destroyVolumeOnFiler', '--ipaddress=' + NetAppServerIP,  '--aggregatename=' + options.aggregate_name,
-                             '--volumename=' + options.vol_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+                             '--volumename=' + options.vol_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully deleted volume"
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -309,20 +302,23 @@ def deletevol(options):
     except urllib2.URLError, err:
         print "executing deletevol cmd failed: %s" % (err.reason)
         sys.exit(1)
-
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "Successfully deleted volume"
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to delete volume: %s"% (exception)
         
 def listvol(options):
     validate_parameter(options, listvolParser)
     
     try:
-        output = cloudtool.main(['cloud-tool', 'listVolumesOnFiler', '--poolname=' + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+        output = cloudtool.main(['cloud-tool', 'listVolumesOnFiler', '--poolname=' + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"]).strip("\n")
+
+        xmlResult = xml.dom.minidom.parseString(output) 
+        print "%-10s %-20s %-20s %-40s %-20s %-30s "%('Id', 'Address', 'Aggregate', 'Volume', 'Size(GB)', 'snapshotPolicy', )
+        for volume in xmlResult.getElementsByTagName("volume"):
+            aggregatename = getText(volume.getElementsByTagName('aggregatename')[0].childNodes).strip()
+            id = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
+            volumeName = getText(volume.getElementsByTagName('volumename')[0].childNodes).strip()
+            snapshotPolicy = getText(volume.getElementsByTagName('snapshotpolicy')[0].childNodes).strip()
+            ipaddress = getText(volume.getElementsByTagName('ipaddress')[0].childNodes).strip()
+            volSize = getText(volume.getElementsByTagName('size')[0].childNodes).strip()
+            print "%-10s %-20s %-20s %-40s %-20s %-30s "%(id, ipaddress, aggregatename, volumeName, volSize, snapshotPolicy)
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -333,28 +329,20 @@ def listvol(options):
         print "executing listvol cmd failed: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output) 
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "%-10s %-20s %-20s %-40s %-20s %-30s "%('Id', 'Address', 'Aggregate', 'Volume', 'Size(GB)', 'snapshotPolicy', )
-        for volume in xmlResult.getElementsByTagName("volume"):
-            aggregatename = getText(volume.getElementsByTagName('aggregatename')[0].childNodes).strip()
-            id = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
-            volumeName = getText(volume.getElementsByTagName('volumename')[0].childNodes).strip()
-            snapshotPolicy = getText(volume.getElementsByTagName('snapshotpolicy')[0].childNodes).strip()
-            ipaddress = getText(volume.getElementsByTagName('ipaddress')[0].childNodes).strip()
-            volSize = getText(volume.getElementsByTagName('volsizestr')[0].childNodes).strip()
-            print "%-10s %-20s %-20s %-40s %-20s %-30s "%(id, ipaddress, aggregatename, volumeName, volSize, snapshotPolicy)
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to list volume: %s"% (exception)
 
 def createlun(options):
     validate_parameter(options, createlunParser)
 
     try:
-        output = cloudtool.main(['cloud-tool', 'createLunOnFiler', '--poolname=' + options.pool_name,
-                                              '--size=' + options.size, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+        output = cloudtool.main(['cloud-tool', 'createLunOnFiler', '--name=' + options.pool_name,
+                                              '--size=' + options.size, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+
+        xmlResult = xml.dom.minidom.parseString(output.strip("\n"))
+        path = getText(xmlResult.getElementsByTagName("path")[0].childNodes).strip()
+        iqn = getText(xmlResult.getElementsByTagName("iqn")[0].childNodes).strip()
+        ipAddr = getText(xmlResult.getElementsByTagName('ipaddress')[0].childNodes).strip()
+        print "%-30s %-30s %-50s "%('LUN Name', 'Address', 'Target IQN')
+        print "%-30s %-30s %-50s "%(path, ipAddr, iqn)
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -365,24 +353,21 @@ def createlun(options):
         print "executing createlun cmd failed: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        path = getText(xmlResult.getElementsByTagName("path")[0].childNodes).strip()
-        iqn = getText(xmlResult.getElementsByTagName("iqn")[0].childNodes).strip()
-        ipAddr = getText(xmlResult.getElementsByTagName('ipaddress')[0].childNodes).strip()
-        print "%-30s %-30s %-50s "%('LUN Name', 'Address', 'Target IQN')
-        print "%-30s %-30s %-50s "%(path, ipAddr, iqn)
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to create lun: %s"% (exception)
-
 def listlun(options):
     validate_parameter(options, listlunParser)
 
-    args = ["--poolname=" + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)]
+    args = ["--poolname=" + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"]
     try:
-        output = cloudtool.main(['cloud-tool', 'listLunsOnFiler'] + args)
+        output = cloudtool.main(['cloud-tool', 'listLunsOnFiler'] + args).strip("\n")
+        xmlResult = xml.dom.minidom.parseString(output)
+        
+        print "%-10s %-10s %-50s %-30s "%('LUN Id', 'Volume Id', 'Target IQN', 'LUN Name')
+        for volume in xmlResult.getElementsByTagName("lun"):
+            uuid = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
+            path = getText(volume.getElementsByTagName('name')[0].childNodes).strip()
+            targetiqn = getText(volume.getElementsByTagName('iqn')[0].childNodes).strip()
+            volumeId = getText(volume.getElementsByTagName('volumeid')[0].childNodes).strip()
+            print "%-10s %-10s %-50s %-30s "%(uuid, volumeId, targetiqn, path)
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -393,27 +378,13 @@ def listlun(options):
         print "executing listlun cmd failed: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output) 
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "%-10s %-10s %-50s %-30s "%('LUN Id', 'Volume Id', 'Target IQN', 'LUN Name')
-        for volume in xmlResult.getElementsByTagName("lun"):
-            uuid = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
-            path = getText(volume.getElementsByTagName('name')[0].childNodes).strip()
-            targetiqn = getText(volume.getElementsByTagName('targetiqn')[0].childNodes).strip()
-            volumeId = getText(volume.getElementsByTagName('volumeid')[0].childNodes).strip()
-            print "%-10s %-10s %-50s %-30s "%(uuid, volumeId, targetiqn, path)
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to list lun: %s"% (exception)
-        
-
 def destroylun(options):
     validate_parameter(options, destroylunParser)
 
     try:
         output = cloudtool.main(['cloud-tool', 'destroyLunOnFiler', '--path=' + options.lun_name,
-                                              "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+                                              "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully destroyed LUN"
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -424,20 +395,18 @@ def destroylun(options):
         print "executing destroylun failed: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "Successfully destroyed LUN"
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to destroy lun: %s" % (exception)
-
 def assoclun(options):
     validate_parameter(options, assocLunParser)
 
     try:
         output = cloudtool.main(['cloud-tool', 'associateLun', '--name=' + options.lun_name,
-                                              '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+                                              '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        xmlResult = xml.dom.minidom.parseString(output.strip("\n"))
+        lunid = getText(xmlResult.getElementsByTagName("id")[0].childNodes).strip()
+        iqn = getText(xmlResult.getElementsByTagName("targetiqn")[0].childNodes).strip()
+        ipAddr = getText(xmlResult.getElementsByTagName('ipaddress')[0].childNodes).strip()
+        print "%-30s %-30s %-50s "%('LUN Id', 'Address', 'Target IQN')
+        print "%-30s %-30s %-50s" % (lunid, ipAddr, iqn)
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -448,24 +417,13 @@ def assoclun(options):
         print "executing assoclun failed: %s" % (err.reason)
         sys.exit(1)
         
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        lunid = getText(xmlResult.getElementsByTagName("lunid")[0].childNodes).strip()
-        iqn = getText(xmlResult.getElementsByTagName("targetiqn")[0].childNodes).strip()
-        ipAddr = getText(xmlResult.getElementsByTagName('ipaddress')[0].childNodes).strip()
-        print "%-30s %-30s %-50s "%('LUN Id', 'Address', 'Target IQN')
-        print "%-30s %-30s %-50s" % (lunid, ipAddr, iqn)
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to assoclun: %s" % (exception)
-
 def disassoclun(options):
     validate_parameter(options, disassocLunParser)
 
     try:
         output = cloudtool.main(['cloud-tool', 'dissociateLun', '--path=' + options.lun_name,
-                                              '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+                                              '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully dissociated LUN"
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -476,14 +434,6 @@ def disassoclun(options):
         print "executing disassoclun failed: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "Successfully dissociated LUN"
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to dissociate lun: %s" % (exception)      
-
 def createpool(options):
     validate_parameter(options, createPoolParser)
 
@@ -491,30 +441,30 @@ def createpool(options):
         print "Only roundrobin or leastfull algorithm is supported"
         sys.exit(1)
     try:
-        output = cloudtool.main(['cloud-tool', 'createPool', '--poolname=' + options.pool_name,
-                                              '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+        output = cloudtool.main(['cloud-tool', 'createPool', '--name=' + options.pool_name,
+                                              '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully created pool"
     except urllib2.HTTPError, err:
         code = err.code
-        msg = err.read()
         print "executing createpool cmd failed, http returning error code: %s" % (code)
-        httpErrorHandler(code, msg)
+        httpErrorHandler(code, err.read())
         sys.exit(1)
     except urllib2.URLError, err:
         print "executing createpool failed: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "Successfully created pool"
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to create pool: %s" % (exception)     
-
 def listpools(options):
     try:
         output = cloudtool.main(['cloud-tool', 'listPools',
-                                 "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+                                 "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        output = output.strip("\n")
+        xmlResult = xml.dom.minidom.parseString(output) 
+        print "%-10s %-40s %-10s" %('Id', 'Pool Name', 'Algorithm')
+        for volume in xmlResult.getElementsByTagName("pool"):
+            id = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
+            poolname = getText(volume.getElementsByTagName('name')[0].childNodes).strip()
+            alg = getText(volume.getElementsByTagName('algorithm')[0].childNodes).strip()
+            print "%-10s %-40s %-10s"%(id, poolname, alg)
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -525,27 +475,13 @@ def listpools(options):
         print "executing listpools failed, due to: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output) 
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "%-10s %-40s %-10s" %('Id', 'Pool Name', 'Algorithm')
-        for volume in xmlResult.getElementsByTagName("pool"):
-            id = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
-            poolname = getText(volume.getElementsByTagName('poolname')[0].childNodes).strip()
-            alg = getText(volume.getElementsByTagName('algorithm')[0].childNodes).strip()
-            print "%-10s %-40s %-10s"%(id, poolname, alg)
-
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to list pool: %s"% (exception)
-    
-
 def modifypool(options):
     validate_parameter(options, modifyPoolParser)
     
     try:
         output = cloudtool.main(['cloud-tool', 'modifyPool', '--poolname=' + options.pool_name,
-                                              '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+                                              '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully modified pool"
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -556,20 +492,13 @@ def modifypool(options):
         print "executing modifypool failed, due to: %s" % (err.reason)
         sys.exit(1)
 
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "Successfully modified pool"
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to modify pool: %s" % (exception)     
-
 def destroypool(options):
     validate_parameter(options, destroyPoolParser)
 
     try:
         output = cloudtool.main(['cloud-tool', 'deletePool', '--poolname=' + options.pool_name,
-                                         "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+                                         "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully destroyed pool: " + options.pool_name
     except urllib2.HTTPError, err:
         code = err.code
         msg = err.read()
@@ -579,14 +508,6 @@ def destroypool(options):
     except urllib2.URLError, err:
         print "executing destroypool failed, due to: %s" % (err.reason)
         sys.exit(1)
-
-    xmlResult = xml.dom.minidom.parseString(output)
-    result = getText(xmlResult.getElementsByTagName("success")[0].childNodes).strip()
-    if result == "true":
-        print "Successfully destroyed pool: " + options.pool_name
-    else:
-        exception = getText(xmlResult.getElementsByTagName("exception")[0].childNodes).strip()
-        print "Unable to destroy pool: %s " % (exception)
 
 def loadCfgFile():
     options = dict()
