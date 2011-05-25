@@ -519,7 +519,7 @@ fi
 %{_javadir}/%{name}-jstl-1.2.jar
 %{_javadir}/jetty-6.1.26.jar
 %{_javadir}/jetty-util-6.1.26.jar
-%{_javadir}/manageontap.jar
+%{_javadir}/%{name}-manageontap.jar
 %{_javadir}/%{name}-axis.jar
 %{_javadir}/%{name}-commons-discovery.jar
 %{_javadir}/%{name}-iControl.jar
