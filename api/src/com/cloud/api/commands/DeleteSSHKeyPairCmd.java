@@ -28,7 +28,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a keypair by name", responseObject=SuccessResponse.class, includeInApiDoc=false) 
+@Implementation(description="Deletes a keypair by name", responseObject=SuccessResponse.class) 
 public class DeleteSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "deletekeypairresponse";

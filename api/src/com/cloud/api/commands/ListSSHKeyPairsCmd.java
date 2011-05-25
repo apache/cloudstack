@@ -31,7 +31,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.user.SSHKeyPair;
 
-@Implementation(description="List registered keypairs", responseObject=SSHKeyPairResponse.class, includeInApiDoc=false) 
+@Implementation(description="List registered keypairs", responseObject=SSHKeyPairResponse.class) 
 public class ListSSHKeyPairsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSSHKeyPairsCmd.class.getName());
     private static final String s_name = "listsshkeypairsresponse";

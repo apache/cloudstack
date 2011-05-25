@@ -30,7 +30,7 @@ import com.cloud.api.response.GetVMPasswordResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(responseObject=GetVMPasswordResponse.class, description="Returns an encrypted password for the VM", includeInApiDoc=false)
+@Implementation(responseObject=GetVMPasswordResponse.class, description="Returns an encrypted password for the VM")
 public class GetVMPasswordCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetVMPasswordCmd.class.getName());
     private static final String s_name = "getvmpasswordresponse";

@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Create a new keypair and returns the private key", responseObject=SSHKeyPairResponse.class, includeInApiDoc=false) 
+@Implementation(description="Create a new keypair and returns the private key", responseObject=SSHKeyPairResponse.class) 
 public class CreateSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "createkeypairresponse";
