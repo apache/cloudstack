@@ -18,11 +18,18 @@
 package com.cloud.agent.api;
 
 public class MaintainAnswer extends Answer {
+	boolean willMigrate;
+	
     public MaintainAnswer() {
     }
     
     public MaintainAnswer(MaintainCommand cmd) {
         this(cmd, true, null);
+    }
+    
+    public MaintainAnswer(MaintainCommand cmd, boolean willMigrate) {
+        this(cmd, true, null);
+        this.willMigrate = willMigrate;
     }
     
     public MaintainAnswer(MaintainCommand cmd, String details) {
@@ -31,5 +38,10 @@ public class MaintainAnswer extends Answer {
     
     public MaintainAnswer(MaintainCommand cmd, boolean result, String details) {
         super(cmd, result, details);
+        this.willMigrate = true;
+    }
+    
+    public boolean getMigrate() {
+    	return this.willMigrate;
     }
 }

@@ -49,6 +49,7 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PingAnswer;
 import com.cloud.agent.api.PingCommand;
@@ -658,6 +659,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     } catch (OperationTimedoutException e) {
                         s_logger.warn("Sending ShutdownCommand failed: ", e);
                     }
+                } else if (host.getHypervisorType() == HypervisorType.BareMetal) {
+                	List<VMInstanceVO> deadVms = _vmDao.listByLastHostId(hostId);
+                	for (VMInstanceVO vm : deadVms) {
+                		if (vm.getState() == State.Running || vm.getHostId() != null) {
+                			throw new CloudRuntimeException("VM " + vm.getId() + "is still running on host " + hostId);
+                		}
+                		_vmDao.remove(vm.getId());
+                	}
                 }
             }
 
@@ -1527,7 +1536,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         HostVO host = _hostDao.findById(hostId);
         Status state;
 
-        Answer answer = easySend(hostId, new MaintainCommand());
+        MaintainAnswer answer = (MaintainAnswer) easySend(hostId, new MaintainCommand());
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to put host in maintainance mode: " + hostId);
             return false;
@@ -1569,7 +1578,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());
 
             for (final VMInstanceVO vm : vms) {
-                if (hosts == null || hosts.size() <= 1) {
+                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate()) {
                     // for the last host in this cluster, stop all the VMs
                     _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                 } else {
