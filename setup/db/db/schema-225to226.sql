@@ -82,3 +82,15 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `shared_source_nat_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the shared source nat service';
 
+CREATE TABLE `cloud`.`op_host_transfer` (
+  `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Id of the host',
+  `initial_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered from',
+  `future_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered to',
+  `state` varchar(32) NOT NULL COMMENT 'the transfer state of the host',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_host_transfer__id` FOREIGN KEY `fk_op_host_transfer__id` (`id`) REFERENCES `host` (`id`),
+  CONSTRAINT `fk_op_host_transfer__initial_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__initial_mgmt_server_id`(`initial_mgmt_server_id`) REFERENCES `mshost`(`msid`),
+  CONSTRAINT `fk_op_host_transfer__future_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__future_mgmt_server_id`(`future_mgmt_server_id`) REFERENCES `mshost`(`msid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
