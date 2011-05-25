@@ -238,7 +238,7 @@ public class ApiConstants {
     public static final String RESULT = "success";
     public static final String LUN_ID = "lunId";
     public static final String IQN = "iqn";
-    public static final String AGGREGATE_NAME = "aggrname";
+    public static final String AGGREGATE_NAME = "aggregatename";
     public static final String POOL_NAME = "poolname";
     public static final String VOLUME_NAME = "volumename";
     public static final String SNAPSHOT_POLICY = "snapshotpolicy";
