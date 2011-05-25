@@ -84,7 +84,7 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 		
 		if (registrationToken == null || registrationToken.trim().length() == 0) {
 			statusCode = 503;
-			responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"Missing token\" } }";
+			responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"errortext\" : \"Missing token\" } }";
 		} else {
 			User resourceAdminUser = _accountSvc.getActiveUserByRegistrationToken(registrationToken);
 			if (resourceAdminUser != null) {
@@ -113,7 +113,7 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 		        responseMessage = sb.toString();
 			} else {
 				statusCode = 503;
-				responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"Invalid token = " + registrationToken + "\" } }";
+				responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"errortext\" : \"Invalid token = " + registrationToken + "\" } }";
 			}
 		}
         
