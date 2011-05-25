@@ -271,7 +271,7 @@ def createvol(options):
 	
 
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'createVolumeOnFiler', '--ipaddress=' + NetAppServerIP ,  '--aggregatename=' + options.aggregate_name,
+		output = cloudtool.main(['cloud-tool', 'createVolumeOnFiler', '--ipaddress=' + NetAppServerIP ,  '--aggregatename=' + options.aggregate_name,
 							'--poolname=' + options.pool_name, '--volumename=' + options.vol_name,
 				 			'--size=' + options.size,				   
 							'--username=' + NetAppUserName, '--password=' + NetAppPassword, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)] + args)
@@ -298,7 +298,7 @@ def deletevol(options):
 	validate_parameter(options, delvolParser)
 
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'destroyVolumeOnFiler', '--ipaddress=' + NetAppServerIP,  '--aggregatename=' + options.aggregate_name,
+		output = cloudtool.main(['cloud-tool', 'destroyVolumeOnFiler', '--ipaddress=' + NetAppServerIP,  '--aggregatename=' + options.aggregate_name,
 							 '--volumename=' + options.vol_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -322,7 +322,7 @@ def listvol(options):
 	validate_parameter(options, listvolParser)
 	
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'listVolumesOnFiler', '--poolname=' + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
+		output = cloudtool.main(['cloud-tool', 'listVolumesOnFiler', '--poolname=' + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
 		msg = err.read()
@@ -353,7 +353,7 @@ def createlun(options):
 	validate_parameter(options, createlunParser)
 
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'createLunOnFiler', '--poolname=' + options.pool_name,
+		output = cloudtool.main(['cloud-tool', 'createLunOnFiler', '--poolname=' + options.pool_name,
 										      '--size=' + options.size, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -382,7 +382,7 @@ def listlun(options):
 
 	args = ["--poolname=" + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)]
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'listLunsOnFiler'] + args)
+		output = cloudtool.main(['cloud-tool', 'listLunsOnFiler'] + args)
 	except urllib2.HTTPError, err:
 		code = err.code
 		msg = err.read()
@@ -412,7 +412,7 @@ def destroylun(options):
 	validate_parameter(options, destroylunParser)
 
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'destroyLunOnFiler', '--path=' + options.lun_name,
+		output = cloudtool.main(['cloud-tool', 'destroyLunOnFiler', '--path=' + options.lun_name,
 										      "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -436,7 +436,7 @@ def assoclun(options):
 	validate_parameter(options, assocLunParser)
 
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'associateLun', '--name=' + options.lun_name,
+		output = cloudtool.main(['cloud-tool', 'associateLun', '--name=' + options.lun_name,
 										      '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -464,7 +464,7 @@ def disassoclun(options):
 	validate_parameter(options, disassocLunParser)
 
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'dissociateLun', '--path=' + options.lun_name,
+		output = cloudtool.main(['cloud-tool', 'dissociateLun', '--path=' + options.lun_name,
 										      '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -491,7 +491,7 @@ def createpool(options):
 		print "Only roundrobin or leastfull algorithm is supported"
 		sys.exit(1)
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'createPool', '--poolname=' + options.pool_name,
+		output = cloudtool.main(['cloud-tool', 'createPool', '--poolname=' + options.pool_name,
 										      '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -513,7 +513,7 @@ def createpool(options):
 
 def listpools(options):
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'listPools',
+		output = cloudtool.main(['cloud-tool', 'listPools',
 								 "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -544,7 +544,7 @@ def modifypool(options):
 	validate_parameter(options, modifyPoolParser)
 	
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'modifyPool', '--poolname=' + options.pool_name,
+		output = cloudtool.main(['cloud-tool', 'modifyPool', '--poolname=' + options.pool_name,
 										      '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code
@@ -568,7 +568,7 @@ def destroypool(options):
 	validate_parameter(options, destroyPoolParser)
 
 	try:
-		output = cloudtool.main(['cloud-tool', 'cloud', 'deletePool', '--poolname=' + options.pool_name,
+		output = cloudtool.main(['cloud-tool', 'deletePool', '--poolname=' + options.pool_name,
 										 "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort)])
 	except urllib2.HTTPError, err:
 		code = err.code

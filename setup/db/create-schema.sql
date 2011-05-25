@@ -1533,4 +1533,39 @@ CREATE TABLE `cloud`.`op_host_transfer` (
   CONSTRAINT `fk_op_host_transfer__future_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__future_mgmt_server_id`(`future_mgmt_server_id`) REFERENCES `mshost`(`msid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+CREATE TABLE `cloud`.`netapp_volume` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `ip_address` varchar(255) NOT NULL COMMENT 'ip address/fqdn of the volume',
+  `pool_id` bigint unsigned NOT NULL COMMENT 'id for the pool',
+  `pool_name` varchar(255) NOT NULL COMMENT 'name for the pool',
+  `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
+  `volume_name` varchar(255) NOT NULL COMMENT 'name for the volume',
+  `volume_size` varchar(255) NOT NULL COMMENT 'volume size',
+  `snapshot_policy` varchar(255) NOT NULL COMMENT 'snapshot policy',
+  `snapshot_reservation` int NOT NULL COMMENT 'snapshot reservation',
+  `username` varchar(255) NOT NULL COMMENT 'username',
+  `password` varchar(200) COMMENT 'password',
+  `round_robin_marker` int COMMENT 'This marks the volume to be picked up for lun creation, RR fashion',
+  PRIMARY KEY (`ip_address`,`aggregate_name`,`volume_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`netapp_pool` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL UNIQUE COMMENT 'name for the pool',
+  `algorithm` varchar(255) NOT NULL COMMENT 'algorithm',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`netapp_lun` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `lun_name` varchar(255) NOT NULL COMMENT 'lun name',
+  `target_iqn` varchar(255) NOT NULL COMMENT 'target iqn',
+  `path` varchar(255) NOT NULL COMMENT 'lun path',
+  `size` bigint NOT NULL COMMENT 'lun size',
+  `volume_id` bigint unsigned NOT NULL COMMENT 'parent volume id',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 SET foreign_key_checks = 1;
