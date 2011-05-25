@@ -74,7 +74,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     }
 
     @Override
-    public boolean checkAccess(Account account, ControlledEntity entity) throws PermissionDeniedException {
+    public boolean checkAccess(Account caller, ControlledEntity entity) throws PermissionDeniedException {
         if (entity instanceof VirtualMachineTemplate) {
             
             VirtualMachineTemplate template = (VirtualMachineTemplate)entity;
@@ -82,22 +82,28 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             // validate that the template is usable by the account
             if (!template.isPublicTemplate()) {
                 Account owner = _accountDao.findById(template.getAccountId());
-                if (BaseCmd.isAdmin(owner.getType()) || (owner.getId() == account.getId())) {
+                if (BaseCmd.isAdmin(owner.getType()) || (owner.getId() == caller.getId())) {
                     return true;
                 }
                 
                 // since the current account is not the owner of the template, check the launch permissions table to see if the
                 // account can launch a VM from this template
-                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), account.getId());
+                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
                 if (permission == null) {
-                    throw new PermissionDeniedException(account + " does not have permission to launch instances from " + template);
+                    throw new PermissionDeniedException(caller + " does not have permission to launch instances from " + template);
                 }
             }
             
             return true;
         } else {
-            return true;
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                if (caller.getId() != entity.getAccountId()) {
+                    throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                }
+            }
         }
+        
+        return true;
     }
 
     @Override
