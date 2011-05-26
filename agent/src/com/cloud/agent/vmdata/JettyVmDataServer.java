@@ -207,7 +207,7 @@ public class JettyVmDataServer implements VmDataServer {
         if (vmName == null){
             return null;
         }
-        String vmDataFile = _vmDataDir + File.separator + vmName + dataItem;
+        String vmDataFile = _vmDataDir + File.separator + vmName + File.separator + dataItem;
         try {
             BufferedReader input =  new BufferedReader(new FileReader(vmDataFile));
             StringBuilder result = new StringBuilder();
