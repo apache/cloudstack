@@ -416,7 +416,8 @@ public class LibvirtStorageResource {
             }
         }
     }
-    public com.cloud.agent.api.StoragePoolInfo initializeLocalStorage(Connect conn, String localStoragePath, String hostIp) {
+    
+    public com.cloud.agent.api.StoragePoolInfo initializeLocalStorage(Connect conn, String localStoragePath, String hostIp, String uuid) {
         if (!(_storageLayer.exists(localStoragePath) && _storageLayer.isDirectory(localStoragePath))) {
             return null;
         }
@@ -425,8 +426,6 @@ public class LibvirtStorageResource {
         if (!(path.canWrite() && path.canRead() && path.canExecute())) {
             return null;
         }
-        String lh = hostIp + localStoragePath;
-        String uuid = UUID.nameUUIDFromBytes(lh.getBytes()).toString();
         StoragePool pool = null;
         try {
             pool = conn.storagePoolLookupByUUIDString(uuid);

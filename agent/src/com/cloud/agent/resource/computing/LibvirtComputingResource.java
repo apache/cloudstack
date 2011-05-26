@@ -294,6 +294,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected String _localGateway;
 	private boolean _can_bridge_firewall;
 	protected String _localStoragePath;
+	protected String _localStorageUUID;
 	private Pair<String, String> _pifs;
 	private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 	
@@ -560,6 +561,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _localStoragePath = (String)params.get("local.storage.path");
         if (_localStoragePath == null) {
             _localStoragePath = "/var/lib/libvirt/images/";
+        }
+        
+        _localStorageUUID = (String)params.get("local.storage.uuid");
+        if (_localStorageUUID == null) {
+        	throw new ConfigurationException("Can't find local.storage.uuid");
         }
         
          value = (String)params.get("scripts.timeout");
@@ -2509,7 +2515,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         StartupStorageCommand sscmd = null;
         try {
             Connect conn = LibvirtConnection.getConnection();
-            com.cloud.agent.api.StoragePoolInfo pi = _storageResource.initializeLocalStorage(conn, _localStoragePath, cmd.getPrivateIpAddress());
+            com.cloud.agent.api.StoragePoolInfo pi = _storageResource.initializeLocalStorage(conn, _localStoragePath, cmd.getPrivateIpAddress(), _localStorageUUID);
             sscmd = new StartupStorageCommand();
             sscmd.setPoolInfo(pi);
             sscmd.setGuid(pi.getUuid());

@@ -254,7 +254,7 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
                 self.syscfg.svo.disableService("NetworkManager")
 
          
-            if not bash("service network restart").success():
+            if not bash("service network restart").isSuccess():
                 raise CloudInternalException("Can't restart network")
             
             self.syscfg.env.nics.append(self.brName)
@@ -537,6 +537,8 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.addEntry("private.network.device", self.syscfg.env.nics[0])
             cfo.addEntry("public.network.device", self.syscfg.env.nics[1])
             cfo.addEntry("guest.network.device", self.syscfg.env.nics[2])
+            if cfo.getEntry("local.storage.uuid") == "":
+                cfo.addEntry("local.storage.uuid", str(bash("uuidgen").getStdout()))
             cfo.addEntry("guid", str(self.syscfg.env.uuid))
             cfo.addEntry("mount.path", "/mnt")
             cfo.addEntry("resource", "com.cloud.storage.resource.LocalSecondaryStorageResource|com.cloud.agent.resource.computing.CloudZonesComputingResource")
@@ -560,6 +562,8 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.addEntry("public.network.device", self.syscfg.env.nics[1])
             cfo.addEntry("guest.network.device", self.syscfg.env.nics[2])
             cfo.addEntry("guid", str(self.syscfg.env.uuid))
+            if cfo.getEntry("local.storage.uuid") == "":
+                cfo.addEntry("local.storage.uuid", str(bash("uuidgen").getStdout()))
             cfo.addEntry("resource", "com.cloud.agent.resource.computing.LibvirtComputingResource")
             cfo.save()
             

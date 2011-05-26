@@ -4,7 +4,7 @@ import logging
 import sys
 import socket
 from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
-from cloudutils.utilities import initLoging
+from cloudutils.utilities import initLoging, bash
 from cloudutils.configFileOps import  configFileOps
 from cloudutils.globalEnv import globalEnv
 from cloudutils.networkConfig import networkConfig
@@ -13,7 +13,7 @@ from cloudutils.syscfg import sysConfigFactory
 from optparse import OptionParser
     
 def getUserInputs():
-    print "Welcome to myCloud Setup:"
+    print "Welcome to Cloud Agent Setup:"
 
     cfo = configFileOps("/etc/cloud/agent/agent.properties")
     oldMgt = cfo.getEntry("host")
@@ -28,10 +28,21 @@ def getUserInputs():
         exit(1)
 
     oldToken = cfo.getEntry("zone")
-    zoneToken = raw_input("Please input the Zone Token:[%s]"%oldToken)
+    zoneToken = raw_input("Please input the Zone Id:[%s]"%oldToken)
     
     if zoneToken == "":
         zoneToken = oldToken
+
+    oldPod = cfo.getEntry("pod")
+    podId = raw_input("Please input the Pod Id:[%s]"%oldPod)
+    
+    if podId == "":
+       podId  = oldToken
+    
+    oldCluster = cfo.getEntry("cluster")
+    clusterId = raw_input("Please input the Cluster Id:[%s]"%oldCluster)
+    if clusterId == "":
+        clusterId = oldCluster
 
     try:
         defaultNic = networkConfig.getDefaultNetwork()
@@ -48,7 +59,7 @@ def getUserInputs():
         elif network == "":
             network = defNic
 
-    return [mgtSvr, zoneToken, network]
+    return [mgtSvr, zoneToken, network, podId, clusterId]
 
 if __name__ == '__main__':
     initLoging("/var/log/cloud/setupAgent.log")
@@ -73,6 +84,8 @@ if __name__ == '__main__':
         glbEnv.mgtSvr = userInputs[0]
         glbEnv.zone = userInputs[1]
         glbEnv.defaultNic = userInputs[2]
+        glbEnv.pod = userInputs[3]
+        glbEnv.cluster = userInputs[4]
         #generate UUID
         glbEnv.uuid = configFileOps("/etc/cloud/agent/agent.properties").getEntry("guid")
         if glbEnv.uuid == "":
