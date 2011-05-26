@@ -120,6 +120,11 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
             if (securityGroupId == null) {
                 throw new InvalidParameterValueException("Unable to find security group " + securityGroupName + " for account id=" + getEntityOwnerId());
             }
+            securityGroupName = null;
+        }
+        
+        if (securityGroupId == null) {
+            throw new InvalidParameterValueException("Either securityGroupId or securityGroupName is required by authorizeSecurityGroupIngress command");
         }
         
         return securityGroupId;

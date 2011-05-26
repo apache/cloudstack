@@ -59,6 +59,10 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
             }
         }
         
+        if (id == null) {
+            throw new InvalidParameterValueException("Either id or name parameter is requred by deleteSecurityGroup command");
+        }
+        
         return id;
     }
 
