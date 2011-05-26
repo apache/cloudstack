@@ -251,6 +251,10 @@ Requires: cloud-qemu-img
 Requires: cloud-qemu-img
 %endif
 
+%if 0%{?rhel} >= 5
+Requires: qemu-img
+%endif
+
 Requires: libcgroup
 Requires: /usr/bin/uuidgen
 Requires: rsync
