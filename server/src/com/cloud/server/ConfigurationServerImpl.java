@@ -795,7 +795,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     }
 
     private DiskOfferingVO createDiskOffering(Long domainId, String name, String description, int numGibibytes, String tags) {
-        long diskSize = numGibibytes * 1024;
+        long diskSize = numGibibytes;
+        diskSize = diskSize * 1024 * 1024 * 1024;
         tags = cleanupTags(tags);
 
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags,false);

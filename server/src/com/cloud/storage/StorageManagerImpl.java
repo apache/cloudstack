@@ -446,7 +446,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             return new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), ss.getSize(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(),
                     diskOffering.isRecreatable(), Storage.ImageFormat.ISO != template.getFormat() ? template.getId() : null);
         } else {
-            return new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(),
+            return new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getTagsArray(),
                     diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
         }
     }
@@ -662,7 +662,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
 
         if (diskOffering != null && diskOffering.isCustomized()) {
-            diskOffering.setDiskSize(size / (1024 * 1024));
+            diskOffering.setDiskSize(size);
         }
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
@@ -1457,7 +1457,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         // Find a destination storage pool with the specified criteria
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(),
+        DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getTagsArray(),
                 diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
         dskCh.setHyperType(dataDiskHyperType);
         DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
@@ -1582,7 +1582,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             diskOfferingId = cmd.getDiskOfferingId();
-            size = cmd.getSize();
+            size = cmd.getSize() * 1024 * 1024 * 1024; // user specify size in GB
             if (diskOfferingId == null) {
                 throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
             }
@@ -1605,19 +1605,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             } else {
                 _configMgr.checkDiskOfferingAccess(account, diskOffering);
             }
-
-            if (!validateVolumeSizeRange(diskOffering.getDiskSize() / 1024)) {// convert size from mb to gb for validation
-                throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
-            }
-
+            
             if (diskOffering.getDiskSize() > 0) {
-                size = (diskOffering.getDiskSize() * 1024 * 1024);// the disk offering size is in MB, which needs to be
-                                                                  // converted into bytes
-            } else {
-                if (!validateVolumeSizeRange(size)) {
-                    throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
-                }
-                size = (size * 1024 * 1024 * 1024);// custom size entered is in GB, to be converted to bytes
+                size = diskOffering.getDiskSize();
+            } 
+
+            if (!validateVolumeSizeRange(size)) {// convert size from mb to gb for validation
+                throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
             }
         } else { // create volume from snapshot
             Long snapshotId = cmd.getSnapshotId();
@@ -2414,7 +2408,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     private boolean validateVolumeSizeRange(long size) {
-        if (size < 0 || (size > 0 && size < 1)) {
+        if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
         } else if (size > _maxVolumeSizeInGb) {
             throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
@@ -2431,7 +2425,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public <T extends VMInstanceVO> DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, T vm, Account owner) {
         if (size == null) {
-            size = offering.getDiskSizeInBytes();
+            size = offering.getDiskSize();
         } else {
             size = (size * 1024 * 1024 * 1024);
         }

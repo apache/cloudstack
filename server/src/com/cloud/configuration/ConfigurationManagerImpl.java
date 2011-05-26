@@ -1589,7 +1589,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         if (numGibibytes != null) {
-            diskSize = numGibibytes * 1024;
+            diskSize = numGibibytes * 1024 * 1024 * 1024;
         }
 
         if (diskSize == 0) {

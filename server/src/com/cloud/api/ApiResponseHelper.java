@@ -362,7 +362,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         diskOfferingResponse.setName(offering.getName());
         diskOfferingResponse.setDisplayText(offering.getDisplayText());
         diskOfferingResponse.setCreated(offering.getCreated());
-        diskOfferingResponse.setDiskSize(offering.getDiskSize() / 1024);
+        diskOfferingResponse.setDiskSize(offering.getDiskSize() / (1024 * 1024 * 1024));
         if (offering.getDomainId() != null) {
             diskOfferingResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
             diskOfferingResponse.setDomainId(offering.getDomainId());

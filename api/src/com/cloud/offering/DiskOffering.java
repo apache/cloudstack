@@ -39,9 +39,7 @@ public interface DiskOffering {
     boolean getSystemUse();
     
     String getDisplayText();
-    
-    long getDiskSizeInBytes();
-    
+       
     public String getTags();
     
     public String[] getTagsArray();
@@ -51,4 +49,6 @@ public interface DiskOffering {
     long getDiskSize();
     
     boolean isCustomized();
+
+    void setDiskSize(long diskSize);
 }

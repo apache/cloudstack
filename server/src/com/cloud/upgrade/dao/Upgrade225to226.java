@@ -25,6 +25,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -37,6 +39,8 @@ public class Upgrade225to226 implements DbUpgrade {
     protected HostDao _hostDao;
     @Inject
     protected DataCenterDao _dcDao;
+    @Inject
+    protected DiskOfferingDao _diskOfferingDao;
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -69,6 +73,13 @@ public class Upgrade225to226 implements DbUpgrade {
         for ( DataCenterVO dc : dcs ) {
             HostVO host = _hostDao.findSecondaryStorageHost(dc.getId());
             _snapshotDao.updateSnapshotSecHost(dc.getId(), host.getId());           
+        }
+        List<DiskOfferingVO> offerings = _diskOfferingDao.listAll();
+        for ( DiskOfferingVO offering : offerings ) {
+            if( offering.getDiskSize() <= 2 * 1024 * 1024) { // the unit is MB
+                offering.setDiskSize(offering.getDiskSize() * 1024 * 1024);
+                _diskOfferingDao.update(offering.getId(), offering);
+            }
         }
     }
 
