@@ -1824,7 +1824,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (hostIdsToAvoid != null) {
             hostIds.removeAll(hostIdsToAvoid);
         }
-
+        if ( hostIds == null || hostIds.isEmpty() ) {
+            throw new StorageUnavailableException("Unable to send command to the pool " + pool.getId() + " due to there is no hosts up in this cluster", pool.getId() );
+        }
         for (Long hostId : hostIds) {
             try {
                 List<Answer> answers = new ArrayList<Answer>();

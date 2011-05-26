@@ -336,6 +336,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         VolumeVO v = _volsDao.findById(volumeId);
         Account owner = _accountMgr.getAccount(v.getAccountId());
         SnapshotVO snapshot = null;
+        VolumeVO volume = null;
         boolean backedUp = false;
         // does the caller have the authority to act on this volume
         checkAccountPermissions(v.getAccountId(), v.getDomainId(), "volume", volumeId);
@@ -380,13 +381,14 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 }
             }
 
-            VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);
+            volume = _volsDao.acquireInLockTable(volumeId, 10);
             if (volume == null) {
                 _snapshotDao.expunge(snapshotId);
                 volume = _volsDao.findById(volumeId);
                 if (volume == null) {
                     throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
                 } else {
+                    volume = null;
                     throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
                 }
             }
@@ -409,7 +411,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             // Cleanup jobs to do after the snapshot has been created; decrement resource count
             if (snapshot != null) {
                 postCreateSnapshot(volumeId, snapshot.getId(), policyId, backedUp);
-                _volsDao.releaseFromLockTable(volumeId);
+
                 if (backedUp) {
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
                             v.getSize());
@@ -417,7 +419,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 }
             } else if (snapshot == null || !backedUp) {
                 _accountMgr.decrementResourceCount(owner.getId(), ResourceType.snapshot);
-
+            }
+            
+            if ( volume != null ) {
+                _volsDao.releaseFromLockTable(volumeId);
             }
         }
 
