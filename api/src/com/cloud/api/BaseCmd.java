@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -86,6 +87,8 @@ public abstract class BaseCmd {
     public static final int NETWORK_RULE_CONFLICT_ERROR = 537;
 
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     
     private Object _responseObject = null;

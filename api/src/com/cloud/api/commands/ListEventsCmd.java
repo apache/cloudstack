@@ -54,7 +54,7 @@ public class ListEventsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DURATION, type=CommandType.INTEGER, description="the duration of the event")
     private Integer duration;
 
-    @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, description="the end date range of the list you want to retrieve (use format \"yyyy-MM-dd\")")
+    @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, description="the end date range of the list you want to retrieve (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\")")
     private Date endDate;
 
     @Parameter(name=ApiConstants.ENTRY_TIME, type=CommandType.INTEGER, description="the time the event was entered")
@@ -63,7 +63,7 @@ public class ListEventsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.LEVEL, type=CommandType.STRING, description="the event level (INFO, WARN, ERROR)")
     private String level;
 
-    @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, description="the start date range of the list you want to retrieve (use format \"yyyy-MM-dd\")")
+    @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, description="the start date range of the list you want to retrieve (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\")")
     private Date startDate;
 
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the event type (see event types)")

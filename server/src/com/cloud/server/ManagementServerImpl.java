@@ -2124,15 +2124,11 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("type", type);
         }
 
-        if (startDate != null && endDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
-            endDate = massageDate(endDate, 23, 59, 59);
+        if (startDate != null && endDate != null) {            
             sc.setParameters("createDateB", startDate, endDate);
-        } else if (startDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
+        } else if (startDate != null) {            
             sc.setParameters("createDateG", startDate);
         } else if (endDate != null) {
-            endDate = massageDate(endDate, 23, 59, 59);
             sc.setParameters("createDateL", endDate);
         }
 

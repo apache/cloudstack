@@ -21,13 +21,17 @@ import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.AccountLimitException;
@@ -212,7 +216,7 @@ public class ApiDispatcher {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName());
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName() + ", please pass dates in the format yyyy-MM-dd");
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName() + ", please pass dates in the format mentioned in the api documentation");
             } catch (CloudRuntimeException cloudEx) {
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically means
                 // there was
@@ -232,9 +236,32 @@ public class ApiDispatcher {
                 field.set(cmdObj, Boolean.valueOf(paramObj.toString()));
                 break;
             case DATE:
-                DateFormat format = BaseCmd.INPUT_FORMAT;
-                synchronized (format) {
-                    field.set(cmdObj, format.parse(paramObj.toString()));
+                // This piece of code is for maintaining backward compatibility and support both the date formats(Bug 9724)
+                // Do the date massaging for ListEventsCmd only
+                if(cmdObj instanceof ListEventsCmd){
+                    boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
+                    if (isObjInNewDateFormat){
+                        DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
+                        synchronized (newFormat) {
+                            field.set(cmdObj, newFormat.parse(paramObj.toString()));        
+                        }
+                    }else{
+                        DateFormat format = BaseCmd.INPUT_FORMAT;
+                        synchronized (format) {
+                            Date date = format.parse(paramObj.toString());                             
+                            if (field.getName().equals("startDate")){
+                                date = massageDate(date, 0, 0, 0);
+                            }else if (field.getName().equals("endDate")){
+                                date = massageDate(date, 23, 59, 59);
+                            }
+                            field.set(cmdObj, date);
+                        }
+                    }                    
+                }else{
+                    DateFormat format = BaseCmd.INPUT_FORMAT;
+                    synchronized (format) {
+                        field.set(cmdObj, format.parse(paramObj.toString()));
+                    }
                 }
                 break;
             case FLOAT:
@@ -281,5 +308,19 @@ public class ApiDispatcher {
             s_logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
             throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() + " is not accessible]");
         }
+    }
+    
+    private static boolean isObjInNewDateFormat(String string) {
+        Matcher matcher = BaseCmd.newInputDateFormat.matcher(string);
+        return matcher.matches();
+    }
+    
+    private static Date massageDate(Date date, int hourOfDay, int minute, int second) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.SECOND, second);
+        return cal.getTime();
     }
 }
