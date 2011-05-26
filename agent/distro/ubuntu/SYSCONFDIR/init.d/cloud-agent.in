@@ -37,15 +37,6 @@ start() {
 		log_end_msg 1
 		exit 1
 	fi
-
-	# Workaround for ubuntu bug:577264, make sure cgconfig/cgred start before libvirt
-    service libvirt-bin stop
-	service cgred stop
-	service cgconfig stop
-	service cgconfig start
-	service cgred start
-	service libvirt-bin start
-        
  
 	if start-stop-daemon --start --quiet \
 		--pidfile "$PIDFILE" \

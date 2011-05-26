@@ -131,6 +131,27 @@ class configFileOps:
         file(self.fileName, "w").write(repl)
         if addToBackup:
             self.backups.append([src, dst])
+
+    def append_lines(self, match_lines, append_lines):
+        fp = file(self.fileName).read(-1)
+        sh = re.escape(match_lines)
+        match = re.search(sh, fp, re.MULTILINE)
+        if match is None:
+            return
+
+        sh = re.escape(append_lines)
+        if re.search(sh, fp, re.MULTILINE) is not None:
+            return
+
+        newlines = []
+        for line in file(self.fileName).readlines():
+            if re.search(match_lines, line) is not None:
+                newlines.append(line + append_lines)
+                self.backups.append([line, line + append_lines])
+            else:
+                newlines.append(line)
+
+        file(self.fileName, "w").writelines(newlines)
             
     def backup(self):
         for oldLine, newLine in self.backups:

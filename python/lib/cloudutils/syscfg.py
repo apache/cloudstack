@@ -91,8 +91,7 @@ class sysConfigAgentUbuntu(sysConfigAgent):
         super(sysConfigAgentUbuntu, self).__init__(glbEnv)
         self.svo = serviceOpsUbuntu()
 
-        self.services = [cgroupConfig(self),
-                         securityPolicyConfigUbuntu(self),
+        self.services = [securityPolicyConfigUbuntu(self),
                          networkConfigUbuntu(self),
                          libvirtConfigUbuntu(self),
                          firewallConfigUbuntu(self),

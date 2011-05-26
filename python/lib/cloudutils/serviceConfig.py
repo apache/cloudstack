@@ -431,15 +431,9 @@ class libvirtConfigUbuntu(serviceCfgBase):
     
     def config(self):
         try:
-            cfgline = "export CGROUP_DAEMON='cpu:/virt'"
-            libvirtfile = "/etc/default/libvirt-bin"
-            cfo = configFileOps(libvirtfile, self)
-            cfo.add_lines(cfgline)
-            
             self.setupLiveMigration()
             
-            cfgline = "cgroup_controllers = [ \"cpu\" ]\n" \
-                  "security_driver = \"none\"\n"
+            cfgline = "security_driver = \"none\"\n"
             filename = "/etc/libvirt/qemu.conf"
     
             cfo = configFileOps(filename, self)
