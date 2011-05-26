@@ -243,20 +243,20 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         _proxyVmId = NumbersUtil.parseLong(value, 0);
 
         if (_localgw != null) {
-        	String internalDns1 = (String)params.get("dns1");
-        	String internalDns2 = (String)params.get("dns2");
+            String mgmtHost = (String) params.get("host");
+            addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
 
-        	if (internalDns1 == null) {
-        		s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
-        	} else {
-        		addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
-        	}
-        	
-        	String mgmtHost = (String)params.get("host");
-        	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
-        	if (internalDns2 != null) {
-        		addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
-        	}
+            String internalDns1 = (String) params.get("internaldns1");
+            if (internalDns1 == null) {
+                s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
+            } else {
+                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
+            }
+
+            String internalDns2 = (String) params.get("internaldns2");
+            if (internalDns2 != null) {
+                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
+            }
         }
         
         _pubIp = (String)params.get("public.ip");

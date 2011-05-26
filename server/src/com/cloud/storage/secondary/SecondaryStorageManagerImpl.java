@@ -959,7 +959,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 if (NetUtils.isValidCIDR(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
-
                 buf.append(" localgw=").append(dest.getPod().getGateway());
                 buf.append(" private.network.device=").append("eth").append(deviceId);
             } else if (nic.getTrafficType() == TrafficType.Public) {
@@ -973,9 +972,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
-        buf.append(" dns1=").append(dc.getInternalDns1());
+        buf.append(" internaldns1=").append(dc.getInternalDns1());
         if (dc.getInternalDns2() != null) {
-            buf.append(" dns2=").append(dc.getInternalDns2());
+            buf.append(" internaldns2=").append(dc.getInternalDns2());
+        }
+        buf.append(" dns1=").append(dc.getDns1());
+        if (dc.getDns2() != null) {
+            buf.append(" dns2=").append(dc.getDns2());
         }
 
         String bootArgs = buf.toString();

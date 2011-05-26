@@ -433,6 +433,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	_eth1ip = (String)params.get("eth1ip");
+        _eth1mask = (String)params.get("eth1mask");
         if (_eth1ip != null) { //can only happen inside service vm
         	params.put("private.network.device", "eth1");
         } else {
@@ -505,23 +506,21 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (inSystemVM == null || "true".equalsIgnoreCase(inSystemVM)) {
         	_inSystemVM = true;
             _localgw = (String)params.get("localgw");
-            if (_localgw != null) { //can only happen inside service vm
-            	_eth1mask = (String)params.get("eth1mask");
-            	String internalDns1 = (String)params.get("dns1");
-            	String internalDns2 = (String)params.get("dns2");
+            if (_localgw != null) { // can only happen inside service vm
+                String mgmtHost = (String) params.get("host");
+                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
 
-            	if (internalDns1 == null) {
-            		s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
-            	} else {
-            		addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
-            	}
-            	
-            	String mgmtHost = (String)params.get("host");
+                String internalDns1 = (String) params.get("internaldns1");
+                if (internalDns1 == null) {
+                    s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
+                } else {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
+                }
 
-            	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
-            	if (internalDns2 != null) {
-                	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
-            	}
+                String internalDns2 = (String) params.get("internaldns2");
+                if (internalDns2 != null) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
+                }
 
             }
             String useSsl = (String)params.get("sslcopy");
