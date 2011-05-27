@@ -322,13 +322,19 @@ class securityPolicyConfigUbuntu(serviceCfgBase):
 
     def config(self):
         try:
-            if bash("service apparmor status").getStdout() == "":
+            cmd = bash("service apparmor status")
+            if not cmd.isSuccess() or cmd.getStdout() == "":
                 self.spRunning = False
                 return True
             
-            bash("service apparmor stop")
-            
-            bash("update-rc.d -f apparmor remove")
+            if not bash("apparmor_status |grep libvirt").isSuccess():
+                return True
+
+            bash("ln -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/")
+            bash("ln -s /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper /etc/apparmor.d/disable/")
+            bash("apparmor_parser -R /etc/apparmor.d/usr.sbin.libvirtd")
+            bash("apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper")
+
             return True
         except:
             raise CloudRuntimeException("Failed to configure apparmor, please see the /var/log/cloud/setupAgent.log for detail, \
