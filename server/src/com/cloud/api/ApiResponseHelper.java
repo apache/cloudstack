@@ -1612,6 +1612,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             templateResponse.setFeatured(template.isFeatured());
+            templateResponse.setExtractable(template.isExtractable());
             templateResponse.setBootable(template.isBootable());
             templateResponse.setOsTypeId(template.getGuestOSId());
             templateResponse.setOsTypeName(ApiDBUtils.findGuestOSById(template.getGuestOSId()).getDisplayName());

@@ -113,9 +113,6 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	        	guestOSId = 138L; //Guest os id of None.
 	        }
 		} else {
-			if (isExtractable == null) {
-				isExtractable = Boolean.TRUE;
-			}
 			if (bits == null) {
 				bits = Integer.valueOf(64);
 			}
@@ -127,6 +124,9 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 			}	
 		}
 		
+        if (isExtractable == null) {
+            isExtractable = Boolean.TRUE;
+        }
 		if ((accountName == null) ^ (domainId == null)) {// XOR - Both have to be passed or don't pass any of them
 			throw new InvalidParameterValueException("Please specify both account and domainId or dont specify any of them");
 		}
@@ -241,7 +241,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
-					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), true, ImageFormat.ISO.toString(), cmd.getOsTypeId(),
+					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
 					cmd.getZoneId(), HypervisorType.None, cmd.getAccountName(), cmd.getDomainId(), null, cmd.isBootable());
 	}
 	
