@@ -21,6 +21,7 @@ package com.cloud.agent.vmdata;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
@@ -294,10 +296,18 @@ public class JettyVmDataServer implements VmDataServer {
             try {
                 _fs.create(vmDataDir, item[1]);
                 String vmDataFile = vmDataDir + File.separator + item[1];
+                byte[] data;
                 if (item[2] != null) {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(vmDataFile));
-                    writer.write(item[2]);
-                    writer.close();
+                    if (item[1].equals("userdata")) {
+                        data = Base64.decodeBase64(item[2]);
+                    } else {
+                        data = item[2].getBytes();
+                    }
+                    if (data != null && data.length > 0) {
+                        FileOutputStream writer = new FileOutputStream(vmDataFile);
+                        writer.write(data);
+                        writer.close();
+                    }
                 }
             } catch (IOException e) {
                 s_logger.warn("Failed to write vm data item " + item[1], e);

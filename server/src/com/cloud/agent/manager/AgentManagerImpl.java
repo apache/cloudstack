@@ -489,9 +489,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     @Override
     public HostVO getSSAgent(HostVO ssHost) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            if( ssHost.getStatus() == Status.Up ) {
-                return  ssHost;
-            }
+            return  ssHost;
         } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
             Long dcId = ssHost.getDataCenterId();
             List<HostVO> ssAHosts = _hostDao.listBy(Host.Type.SecondaryStorageVM, dcId);

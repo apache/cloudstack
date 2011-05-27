@@ -970,6 +970,18 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         int index = rn.nextInt(size);
         return hosts.get(index);
     }
+    
+    @Override
+    public List<HostVO> getSecondaryStorageHosts(long zoneId) {
+        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        if( hosts == null || hosts.size() == 0) {
+            hosts = _hostDao.listLocalSecondaryStorageHosts(zoneId);
+            if (hosts.isEmpty()) {
+                return new ArrayList<HostVO>();
+            }
+        }
+        return hosts;
+    }
 
     @Override
     public String getStoragePoolTags(long poolId) {

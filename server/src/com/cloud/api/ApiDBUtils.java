@@ -484,12 +484,14 @@ public class ApiDBUtils {
             if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
                 return _templateHostDao.listByTemplateId(templateId);
             } else {
-                HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-                if (secondaryStorageHost == null) {
-                    return new ArrayList<VMTemplateHostVO>();
-                } else {
-                    return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
+                List<VMTemplateHostVO> templates = new ArrayList<VMTemplateHostVO>();
+                List<HostVO> secondaryStorageHosts = _storageMgr.getSecondaryStorageHosts(zoneId);
+                if (!secondaryStorageHosts.isEmpty()) {
+                    for (HostVO ssh : secondaryStorageHosts) {
+                        templates.addAll(_templateHostDao.listByHostTemplate(ssh.getId(), templateId));
+                    }
                 }
+                return templates;
             }
         } else {
             return _templateHostDao.listByOnlyTemplateId(templateId);

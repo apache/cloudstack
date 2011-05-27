@@ -196,4 +196,6 @@ public interface StorageManager extends Manager {
     boolean delPoolFromHost(long hostId);
 
     HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
+
+    List<HostVO> getSecondaryStorageHosts(long zoneId);
 }
