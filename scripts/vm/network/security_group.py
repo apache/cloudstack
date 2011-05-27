@@ -18,6 +18,7 @@
 
 import cloud_utils
 from cloud_utils import Command
+from cloudutils.configFileOps import configFileOps
 import logging
 import sys
 import os
@@ -28,7 +29,6 @@ bash = Command("/bin/bash")
 virsh = Command("virsh")
 ebtablessave = Command("ebtables-save")
 ebtables = Command("ebtables")
-augtool = Command("augtool")
 def execute(cmd):
     logging.debug(cmd)
     return bash("-c", cmd).stdout
@@ -545,26 +545,12 @@ def getvmId(vmName):
     
 def addFWFramework(brname):
     try:
-        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-arptables", "1").stdout.strip()
-        if len(alreadySetup) == 0:
-            script = """
-                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-arptables 1
-                        save"""
-            augtool < script
+        cfo = configFileOps("/etc/sysctl.conf")
+        cfo.addEntry("net.bridge.bridge-nf-call-arptables", "1")
+        cfo.addEntry("net.bridge.bridge-nf-call-iptables", "1")
+        cfo.addEntry("net.bridge.bridge-nf-call-ip6tables", "1")
+        cfo.save()
 
-        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-iptables", "1").stdout.strip()
-        if len(alreadySetup) == 0:
-            script = """
-                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-iptables 1
-                        save"""
-            augtool < script
-
-        alreadySetup = augtool.match("/files/etc/sysctl.conf/net.bridge.bridge-nf-call-ip6tables", "1").stdout.strip()
-        if len(alreadySetup) == 0:
-            script = """
-                        set /files/etc/sysctl.conf/net.bridge.bridge-nf-call-ip6tables 1
-                        save"""
-            augtool < script
         execute("sysctl -p /etc/sysctl.conf")
     except:
         logging.debug("failed to turn on bridge netfilter")
