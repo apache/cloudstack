@@ -1,7 +1,4 @@
 #!/bin/bash
-
-
-
   #
   # Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
   # 
@@ -71,19 +68,23 @@ mount|grep -v sunrpc|grep nfs 1> /dev/null 2>&1
 if [ $? -eq 0 ]
 then
     echo "NFS is currently mounted"
-    
     # check for write access
-    MOUNTPT=`mount|grep -v sunrpc|grep nfs| awk '{print $3}'`
-    echo Mount point is $MOUNTPT
-    touch $MOUNTPT/foo
-    if [ $? -eq 0 ]
-    then
-	echo "Good: Can write to mount point"
-	rm $MOUNTPT/foo
-    else 
-	echo "ERROR: Cannot write to mount point"
-	echo "You need to export with norootsquash"
-    fi
+    for MOUNTPT in `mount|grep -v sunrpc|grep nfs| awk '{print $3}'`
+    do
+        if [ $MOUNTPT != "/proc/xen" ] # mounted by xen
+        then
+            echo Mount point is $MOUNTPT
+            touch $MOUNTPT/foo
+            if [ $? -eq 0 ]
+            then
+                echo "Good: Can write to mount point"
+                rm $MOUNTPT/foo
+            else
+                echo "ERROR: Cannot write to mount point"
+                echo "You need to export with norootsquash"
+            fi
+        fi
+     done
 else
     echo "ERROR: NFS is not currently mounted"
     echo "Try manually mounting from inside the VM"
