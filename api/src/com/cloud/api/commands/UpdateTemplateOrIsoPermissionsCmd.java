@@ -40,11 +40,14 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the template ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true for featured templates/isos, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true for featured template/iso, false otherwise")
     private Boolean featured;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true for public templates/isos, false for private templates/isos")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true for public template/iso, false for private templates/isos")
     private Boolean isPublic;
+    
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the template/iso is extractable, false other wise. Can be set only by root admin")
+    private Boolean isExtractable;
 
     @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
     private String operation;
@@ -68,7 +71,11 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     public Boolean isPublic() {
         return isPublic;
     }
-
+    
+    public Boolean isExtractable() {
+        return isExtractable;
+    }
+    
     public String getOperation() {
         return operation;
     }

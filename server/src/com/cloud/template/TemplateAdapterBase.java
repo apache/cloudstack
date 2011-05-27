@@ -114,7 +114,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	        }
 		} else {
 			if (isExtractable == null) {
-				isExtractable = Boolean.FALSE;
+				isExtractable = Boolean.TRUE;
 			}
 			if (bits == null) {
 				bits = Integer.valueOf(64);

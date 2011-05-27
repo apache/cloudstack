@@ -3240,6 +3240,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long userId = UserContext.current().getCallerUserId();
         Boolean isFeatured = cmd.isFeatured();
         Boolean isPublic = cmd.isPublic();
+        Boolean isExtractable = cmd.isExtractable();
         String operation = cmd.getOperation();
         String mediaType = "";
 
@@ -3314,6 +3315,12 @@ public class ManagementServerImpl implements ManagementServer {
         if (isFeatured != null) {
             updatedTemplate.setFeatured(isFeatured.booleanValue());
         }
+        
+       if (isExtractable != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {//Only ROOT admins allowed to change this powerful attribute
+           updatedTemplate.setExtractable(isExtractable.booleanValue());
+       }else if (isExtractable != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+           throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
+       }
 
         _templateDao.update(template.getId(), updatedTemplate);
 
