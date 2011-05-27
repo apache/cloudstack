@@ -115,6 +115,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         HostPathDcPodSearch.and("path", HostPathDcPodSearch.entity().getPath(), SearchCriteria.Op.EQ);
         HostPathDcPodSearch.and("datacenterId", HostPathDcPodSearch.entity().getDataCenterId(), Op.EQ);
         HostPathDcPodSearch.and("podId", HostPathDcPodSearch.entity().getPodId(), Op.EQ);
+        HostPathDcPodSearch.and("uuid", HostPathDcPodSearch.entity().getUuid(), Op.EQ);
         HostPathDcPodSearch.done();
         
         HostPathDcSearch = createSearchBuilder();
@@ -145,6 +146,8 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("uuid", uuid);
         return findOneIncludingRemovedBy(sc);
 	}
+	
+	
 
 	@Override
 	public List<StoragePoolVO> findIfDuplicatePoolsExistByUUID(String uuid) {
@@ -193,12 +196,13 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     }
 
     @Override
-    public StoragePoolVO findPoolByHostPath(long datacenterId, Long podId, String host, String path) {
+    public StoragePoolVO findPoolByHostPath(long datacenterId, Long podId, String host, String path, String uuid) {
         SearchCriteria<StoragePoolVO> sc = HostPathDcPodSearch.create();
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         sc.setParameters("datacenterId", datacenterId);
         sc.setParameters("podId", podId);
+        sc.setParameters("uuid", uuid);
         
         return findOneBy(sc);
     }

@@ -82,7 +82,7 @@ public class LocalStoragePoolListener implements Listener {
         }
         
         try {
-            StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath());
+            StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath(), pInfo.getUuid());
             if (pool == null) {
                 long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
                 String name = cmd.getName() == null ? (host.getName() + " Local Storage") : cmd.getName();

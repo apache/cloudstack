@@ -89,7 +89,7 @@ public interface StoragePoolDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> listByStorageHost(String hostFqdnOrIp);
 
-    StoragePoolVO findPoolByHostPath(long dcId, Long podId, String host, String path);
+    StoragePoolVO findPoolByHostPath(long dcId, Long podId, String host, String path, String uuid);
     
     List<StoragePoolVO> listPoolByHostPath(String host, String path);
     
