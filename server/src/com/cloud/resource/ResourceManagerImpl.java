@@ -357,7 +357,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             bareMetalParams.put("cpuCapacity", cpuSpeed.toString());
             bareMetalParams.put("memCapacity", memCapacity.toString());
             bareMetalParams.put("mac", mac);
-            if (hostTags != null) {
+            if (hostTags != null && hostTags.size() > 0) {
                 bareMetalParams.put("hostTag", hostTags.get(0));
             }
         }
