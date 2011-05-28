@@ -2503,20 +2503,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.debug("Ignoring VM " + vm + " in migrating state.");
                 } else {
                     State newState = State.Stopped;
-                    try {
-                        Set<VM> missingVMs = VM.getByNameLabel(conn, vm);
-                        if( missingVMs != null && !missingVMs.isEmpty()) {
-                            String shutdownInitiator = missingVMs.iterator().next().getOtherConfig(conn).get("last_shutdown_initiator");
-                            if( shutdownInitiator != null && shutdownInitiator.equals("internal")) {
-                                newState = State.Shutdowned;
-                            }
-                        }
-                    } catch (Exception e) {
-                    }
-                    /*
-                     * if (_vmsKilled.remove(entry.getKey())) { s_logger.debug("VM " + vm +
-                     * " has been killed by storage monitor"); state = State.Error; }
-                     */
                     changes.put(entry.getKey(), newState);
                 }
             }
