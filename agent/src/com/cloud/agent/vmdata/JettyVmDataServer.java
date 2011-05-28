@@ -298,7 +298,7 @@ public class JettyVmDataServer implements VmDataServer {
                 String vmDataFile = vmDataDir + File.separator + item[1];
                 byte[] data;
                 if (item[2] != null) {
-                    if (item[1].equals("userdata")) {
+                    if (item[1].equals("user-data")) {
                         data = Base64.decodeBase64(item[2]);
                     } else {
                         data = item[2].getBytes();
