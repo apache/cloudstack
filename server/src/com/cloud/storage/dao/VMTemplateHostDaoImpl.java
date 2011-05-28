@@ -29,7 +29,6 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.DateUtil;
@@ -50,7 +49,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	protected final SearchBuilder<VMTemplateHostVO> HostTemplatePoolSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatusSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatesSearch;
-	
+
 	
 	protected static final String UPDATE_TEMPLATE_HOST_REF =
 		"UPDATE type_host_ref SET download_state = ?, download_pct= ?, last_updated = ? "
@@ -72,8 +71,12 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		"SELECT * FROM template_host_ref t "
 	+	" where t.template_id=? and t.download_state=?";
 	
-
-		
+    protected static final String ZONE_TEMPLATE_SEARCH=
+        "SELECT t.id, t.host_id, t.pool_id, t.template_id, t.created, t.last_updated, t.job_id, " 
+    +   "t.download_pct, t.size, t.physical_size, t.download_state, t.error_str, t.local_path, "
+    +   "t.install_path, t.url, t.destroyed, t.is_copy FROM template_host_ref t, host h"
+    +   " where t.host_id = h.id and h.data_center_id=? and t.template_id=? ";
+	
 	public VMTemplateHostDaoImpl () {
 		HostSearch = createSearchBuilder();
 		HostSearch.and("host_id", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -153,6 +156,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    return listIncludingRemovedBy(sc);
 	}
 	
+	
 	@Override
 	public List<VMTemplateHostVO> listByOnlyTemplateId(long templateId) {
 	    SearchCriteria<VMTemplateHostVO> sc = TemplateSearch.create();
@@ -167,7 +171,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    sc.setParameters("template_id", templateId);
 	    return findOneIncludingRemovedBy(sc);
 	}
-
+	
 	@Override
 	public List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState) {
 		SearchCriteria<VMTemplateHostVO> sc = TemplateStatusSearch.create();
@@ -270,6 +274,28 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    return listIncludingRemovedBy(sc);
 	}
 
+    @Override
+    public List<VMTemplateHostVO> listByZoneTemplate(long dcId, long templateId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<VMTemplateHostVO> result = new ArrayList<VMTemplateHostVO>();
+        try {
+            String sql = ZONE_TEMPLATE_SEARCH;
+            pstmt = txn.prepareStatement(sql);
+            
+            pstmt.setLong(1, dcId);
+            pstmt.setLong(2, templateId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(toEntityBean(rs, false));
+            }
+            
+        } catch (Exception e) {
+            s_logger.warn("Exception: ", e);
+        }
+        return result;
+    }
+	
 	@Override
 	public List<VMTemplateHostVO> listByTemplatePool(long templateId, long poolId) {
 		SearchCriteria<VMTemplateHostVO> sc = PoolTemplateSearch.create();

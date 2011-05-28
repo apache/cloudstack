@@ -20,6 +20,7 @@ package com.cloud.storage.download;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -525,6 +526,25 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         
         return null;
     }
+    
+    private List<VMTemplateVO> listAllInZone(long dcId){
+        List<VMTemplateVO> tmplts = _templateDao.listAllInZone(dcId);
+        Iterator<VMTemplateVO> iter = tmplts.iterator();
+        while ( iter.hasNext() ) {
+            VMTemplateVO tmplt = iter.next();
+            if( tmplt.isPublicTemplate() || tmplt.isFeatured() ) {
+                continue;
+            }
+            List<VMTemplateHostVO> tmpltHosts = _vmTemplateHostDao.listByZoneTemplate(dcId, tmplt.getId());
+            for ( VMTemplateHostVO tmpltHost : tmpltHosts ) {
+               if ( tmpltHost.getDownloadState() == Status.DOWNLOADED || tmpltHost.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
+                   iter.remove();
+                   continue;
+               }
+            }
+        }
+        return tmplts;       
+    }
 	
 	@Override
 	public void handleTemplateSync(HostVO ssHost) {
@@ -544,7 +564,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		long zoneId = ssHost.getDataCenterId();
 
 		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(ssHost.getDataCenterId());
+		List<VMTemplateVO> allTemplates = listAllInZone(ssHost.getDataCenterId());
 		List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
 		List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 		
