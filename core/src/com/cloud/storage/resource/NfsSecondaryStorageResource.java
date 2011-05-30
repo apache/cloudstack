@@ -539,8 +539,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _params.put(StorageLayer.InstanceConfigKey, _storage);
             _dlMgr = new DownloadManagerImpl();
             _dlMgr.configure("DownloadManager", _params);
-            //_upldMgr = new UploadManagerImpl();
-            //_upldMgr.configure("UploadManager", params);
+            _upldMgr = new UploadManagerImpl();
+            _upldMgr.configure("UploadManager", params);
         } catch (ConfigurationException e) {
             s_logger.warn("Caught problem while configuring DownloadManager", e);
             return false;

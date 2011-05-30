@@ -200,11 +200,20 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    
 	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 	    
-	    //Check if ssvm is up
-	    HostVO sserver = storageServers.get(0);
-	    if(sserver.getStatus() != com.cloud.host.Status.Up){
-	    	throw new CloudRuntimeException("Couldnt create extract link - Secondary Storage Vm is not up");
-	    }
+	    List<HostVO> storageServerVMs = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorageVM, dataCenterId);
+        //Check if one ssvm is up
+        boolean no_vm_up = true;
+        HostVO use_ssvm = null;
+        for (HostVO ssvm: storageServerVMs){
+            if(ssvm.getStatus() == com.cloud.host.Status.Up){
+                no_vm_up = false;
+                use_ssvm = ssvm;
+                break;
+            }  
+        }
+        if(no_vm_up){
+            throw new CloudRuntimeException("Couldnt create extract link - Secondary Storage Vm is not up");
+        }
 	    
 	    //Check if it already exists.
 	    List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(template.getId(), type, UploadVO.Status.DOWNLOAD_URL_CREATED);	    
@@ -213,7 +222,7 @@ public class UploadMonitorImpl implements UploadMonitor {
         }
 	    
 	    // It doesn't exist so create a DB entry.	    
-	    UploadVO uploadTemplateObj = new UploadVO(sserver.getId(), template.getId(), new Date(), 
+	    UploadVO uploadTemplateObj = new UploadVO(use_ssvm.getId(), template.getId(), new Date(), 
 	                                                Status.DOWNLOAD_URL_NOT_CREATED, 0, type, Mode.HTTP_DOWNLOAD); 
 	    uploadTemplateObj.setInstallPath(vmTemplateHost.getInstallPath());	                                                
 	    _uploadDao.persist(uploadTemplateObj);
@@ -221,7 +230,7 @@ public class UploadMonitorImpl implements UploadMonitor {
     	    // Create Symlink at ssvm
 	    	String uuid = UUID.randomUUID().toString() + ".vhd";
     	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(vmTemplateHost.getInstallPath(), uuid);
-    	    long result = send(sserver.getId(), cmd, null);
+    	    long result = send(use_ssvm.getId(), cmd, null);
     	    if (result == -1){
     	        errorString = "Unable to create a link for " +type+ " id:"+template.getId();
                 s_logger.error(errorString);
@@ -230,7 +239,7 @@ public class UploadMonitorImpl implements UploadMonitor {
     	    
     	    //Construct actual URL locally now that the symlink exists at SSVM
     	    List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running);
-            if (ssVms.size() > 0) {
+    	    if (ssVms.size() > 0) {
                 SecondaryStorageVmVO ssVm = ssVms.get(0);
                 if (ssVm.getPublicIpAddress() == null) {
                     errorString = "A running secondary storage vm has a null public ip?";
