@@ -15,7 +15,10 @@ dictionary = {
 	'message.action.stop.router' : '<fmt:message key="message.action.stop.router"/>',
 	'label.action.reboot.router' : '<fmt:message key="label.action.reboot.router"/>',
 	'label.action.reboot.router.processing' : '<fmt:message key="label.action.reboot.router.processing"/>',
-	'message.action.reboot.router' : '<fmt:message key="message.action.reboot.router"/>'
+	'message.action.reboot.router' : '<fmt:message key="message.action.reboot.router"/>',
+	'label.action.change.service': '<fmt:message key="label.action.change.service"/>',
+	'label.action.change.service.processing': '<fmt:message key="label.action.change.service.processing"/>',
+	'message.action.change.service.warning.for.router': '<fmt:message key="message.action.change.service.warning.for.router"/>',
 };	
 </script>
 
@@ -210,6 +213,26 @@ dictionary = {
 </div>
 <!-- view console template (end)  -->
 
+<!-- Change Service Offering Dialog -->
+<div id="dialog_change_system_service_offering" title='<fmt:message key="label.action.change.service" />' style="display: none">
+    <p> 
+		<fmt:message key="message.change.offering.confirm" />
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <fmt:message key="label.service.offering" />:</label>
+                <select class="select" id="change_service_offerings">
+                </select>
+                <div id="change_service_offerings_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
 
 <div id="hidden_container">
     <!-- advanced search popup (begin) -->

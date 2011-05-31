@@ -47,7 +47,7 @@ dictionary = {
 	'label.full': '<fmt:message key="label.full"/>',
 	'label.available': '<fmt:message key="label.available"/>',
 	'message.launch.vm.on.private.network': '<fmt:message key="message.launch.vm.on.private.network"/>',
-	'message.action.change.service.warning': '<fmt:message key="message.action.change.service.warning"/>',
+	'message.action.change.service.warning.for.instance': '<fmt:message key="message.action.change.service.warning.for.instance"/>',
 	'message.action.reset.password.warning': '<fmt:message key="message.action.reset.password.warning"/>',
 	'message.action.reset.password.off': '<fmt:message key="message.action.reset.password.off"/>'
 };	
