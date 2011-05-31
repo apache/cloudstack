@@ -4970,6 +4970,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
         try {
+            Set<VDI> snapshots = vdi.getSnapshots(conn);
+            for( VDI snapshot: snapshots ) {
+                snapshot.destroy(conn);
+            }           
             vdi.destroy(conn);
         } catch (Exception e) {
             String msg = "VDI destroy for " + volumeUUID + " failed due to " + e.toString();
