@@ -301,6 +301,11 @@ public class Request {
             }
         }
     }
+    
+    @Override
+    public String toString() {
+        return log("", true, Level.DEBUG);
+    }
 
     protected String log(String msg, boolean logContent, Level level) {
         StringBuilder content = new StringBuilder();

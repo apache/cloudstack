@@ -29,9 +29,9 @@ import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
@@ -83,7 +83,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         router.setPublicIpAddress(null);
         UpdateBuilder ub = getUpdateBuilder(router);
         ub.set(router, "state", State.Destroyed);
-        update(id, ub);
+        update(id, ub, router);
 
         boolean result = super.remove(id);
         txn.commit();

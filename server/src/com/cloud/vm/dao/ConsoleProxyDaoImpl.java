@@ -137,7 +137,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostUpSearch.and("states", HostUpSearch.entity().getState(), SearchCriteria.Op.NIN);
-        HostUpSearch.done();        
+        HostUpSearch.done();
         
         StateChangeSearch = createSearchBuilder();
         StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -171,7 +171,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         UpdateBuilder ub = getUpdateBuilder(proxy);
         ub.set(proxy, "state", State.Destroyed);
         ub.set(proxy, "privateIpAddress", null);
-        update(id, ub);
+        update(id, ub, proxy);
         
         boolean result = super.remove(id);
         txn.commit();
@@ -204,7 +204,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     public List<ConsoleProxyVO> listUpByHostId(long hostId) {
         SearchCriteria<ConsoleProxyVO> sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging}); 
+        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
         return listBy(sc);
     }
     

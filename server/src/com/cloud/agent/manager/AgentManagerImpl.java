@@ -2153,7 +2153,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
             Response response = null;
             if (attache == null) {
-                s_logger.debug("Processing sequence " + request.getSequence() + ": Processing " + request.toString());
+                request.logD("Processing the first command ");
                 if (!(cmd instanceof StartupCommand)) {
                     s_logger.warn("Throwing away a request because it came through as the first command on a connect: " + request.toString());
                     return;

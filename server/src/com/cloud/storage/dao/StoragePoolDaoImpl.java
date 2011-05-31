@@ -280,7 +280,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	    sql.delete(sql.length() - 4, sql.length());
 	    sql.append(DetailsSqlSuffix);
 	    Transaction txn = Transaction.currentTxn();
-	    PreparedStatement pstmt = s_initStmt;
+	    PreparedStatement pstmt = null;
 	    try {
 	        pstmt = txn.prepareAutoCloseStatement(sql.toString());
 	        int i = 1;
@@ -297,7 +297,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	        }
 	        return pools;
 	    } catch (SQLException e) {
-	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
+	        throw new CloudRuntimeException("Unable to execute " + pstmt, e);
 	    }
 	}
 	
@@ -351,7 +351,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 
 	        while (rs.next()) {
 	            tags.add(rs.getString("name"));
-	        }	        
+	        }
 	        return tags;
 	    } catch (SQLException e) {
 	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
