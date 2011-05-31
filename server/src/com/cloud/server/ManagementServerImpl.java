@@ -1307,7 +1307,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
         if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.LIKE, "%" + type + "%");
+            sc.addAnd("type", SearchCriteria.Op.LIKE, "%" + type);
         }
         if (state != null) {
             sc.addAnd("status", SearchCriteria.Op.EQ, state);
