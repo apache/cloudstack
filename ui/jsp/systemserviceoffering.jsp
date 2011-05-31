@@ -20,7 +20,7 @@ dictionary = {
         <img src="images/title_serviceofferingicon.gif"/></div>
     
     <h1>
-        <fmt:message key="label.service.offering"/>
+        <fmt:message key="label.system.service.offering"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -191,20 +191,20 @@ dictionary = {
 
 <!--  top buttons (begin) -->
 <div id="top_buttons">
-    <div class="actionpanel_button_wrapper" id="add_serviceoffering_button">
+    <div class="actionpanel_button_wrapper" id="add_systemserviceoffering_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Service Offering" /></div>
+                <img src="images/addvm_actionicon.png" alt="Add System Service Offering" /></div>
             <div class="actionpanel_button_links">
-                <fmt:message key="label.add.service.offering"/>
+                <fmt:message key="label.add.system.service.offering"/>
             </div>
         </div>
     </div>
 </div>
 <!--  top buttons (end) -->
 
-<!-- Add Service Offering Dialog -->
-<div id="dialog_add_service" title='<fmt:message key="label.add.service.offering"/>' style="display:none">
+<!-- Add System Service Offering Dialog -->
+<div id="dialog_add_systemserviceoffering" title='<fmt:message key="label.add.system.service.offering"/>' style="display:none">
 	<p><fmt:message key="message.add.service.offering"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">

@@ -159,7 +159,7 @@ function initAddServiceOfferingDialog() {
 	            }            
 								
 				$.ajax({
-				  data: createURL("command=createServiceOffering"+array1.join("")),
+				  data: createURL("command=createServiceOffering&issystem=false"+array1.join("")),
 					dataType: "json",
 					success: function(json) {					    				
 						var item = json.createserviceofferingresponse.serviceoffering;							

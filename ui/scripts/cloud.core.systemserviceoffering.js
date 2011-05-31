@@ -61,30 +61,30 @@ function afterLoadSystemServiceOfferingJSP() {
 }
 
 function initAddSystemServiceOfferingDialog() {
-    initDialog("dialog_add_service");
+    initDialog("dialog_add_systemserviceoffering");
     
-    var $dialogAddService = $("#dialog_add_service");
-    $dialogAddService.find("#public_dropdown").unbind("change").bind("change", function(event) {        
+    var $dialogAddSystemServiceOffering = $("#dialog_add_systemserviceoffering");
+    $dialogAddSystemServiceOffering.find("#public_dropdown").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
-            $dialogAddService.find("#domain_container").hide();  
+            $dialogAddSystemServiceOffering.find("#domain_container").hide();  
         }
         else {  //private zone
-            $dialogAddService.find("#domain_container").show();  
+            $dialogAddSystemServiceOffering.find("#domain_container").show();  
         }
         return false;
     });
     
-    applyAutoCompleteToDomainField($dialogAddService.find("#domain"));   
+    applyAutoCompleteToDomainField($dialogAddSystemServiceOffering.find("#domain"));   
    		         
     $("#add_systemserviceoffering_button").unbind("click").bind("click", function(event) {    
-		$dialogAddService.find("#add_service_name").val("");
-		$dialogAddService.find("#add_service_display").val("");
-		$dialogAddService.find("#add_service_cpucore").val("");
-		$dialogAddService.find("#add_service_cpu").val("");
-		$dialogAddService.find("#add_service_memory").val("");
-		$dialogAddService.find("#add_service_offerha").val("false");
+		$dialogAddSystemServiceOffering.find("#add_service_name").val("");
+		$dialogAddSystemServiceOffering.find("#add_service_display").val("");
+		$dialogAddSystemServiceOffering.find("#add_service_cpucore").val("");
+		$dialogAddSystemServiceOffering.find("#add_service_cpu").val("");
+		$dialogAddSystemServiceOffering.find("#add_service_memory").val("");
+		$dialogAddSystemServiceOffering.find("#add_service_offerha").val("false");
 			
-		$dialogAddService
+		$dialogAddSystemServiceOffering
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 	
 			    var $thisDialog = $(this);
@@ -159,7 +159,7 @@ function initAddSystemServiceOfferingDialog() {
 	            }            
 								
 				$.ajax({
-				  data: createURL("command=createServiceOffering"+array1.join("")),
+				  data: createURL("command=createServiceOffering&issystem=true"+array1.join("")),
 					dataType: "json",
 					success: function(json) {					    				
 						var item = json.createserviceofferingresponse.serviceoffering;							
