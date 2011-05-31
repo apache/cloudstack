@@ -511,23 +511,34 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     throw new InvalidParameterValueException("Failed to list limits for account " + accountName + " no domain id specified.");
                 }
 
-                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                DomainVO domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+                }
 
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
                 if (userAccount == null) {
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                } else if (account != null
-                        && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
-                    // If this is a non-root admin, make sure that the admin and the user account belong in the same domain or
-                    // that the user account's domain is a child domain of the parent
-                    if (account.getDomainId() != userAccount.getDomainId() && !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-                        throw new PermissionDeniedException("You do not have permission to access limits for this account: " + accountName);
-                    }
+                }
+
+                if (account != null) {
+                    checkAccess(account, domain);
                 }
 
                 accountId = userAccount.getId();
                 domainId = null;
             } else if (domainId != null) {
                 // Look up limits for the specified domain
+
+                DomainVO domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+                }
+
+                if (account != null) {
+                    checkAccess(account, domain);
+                }
+
                 accountId = null;
             } else if (account == null) {
                 // Look up limits for the ROOT domain
