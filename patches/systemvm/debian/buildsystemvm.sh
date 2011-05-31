@@ -378,6 +378,8 @@ packages() {
   chroot . apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
   chroot . apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
+  #keepalived and conntrackd
+  chroot . apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
 
   echo "***** getting sun jre 6*********"
   chroot . echo 'sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true

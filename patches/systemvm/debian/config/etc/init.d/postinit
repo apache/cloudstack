@@ -33,6 +33,15 @@ setup_console_proxy() {
   echo "$public_ip $NAME" >> /etc/hosts
 }
 
+setup_redundant_router() {
+  if [ "$RROUTER" != "1" ]
+  then
+      return 1
+  fi
+  eth2mac=`ip link show eth2 | awk '/ether/ {print $2}'`
+  sed -i "s/\[ETH2MAC\]/$eth2mac/g" /root/redundant_router/enable_pubip.sh
+}
+
 start() {
   case $TYPE in 
      secstorage)
@@ -43,6 +52,11 @@ start() {
          [ "$NAME" == "" ] && NAME=consoleproxy
          setup_console_proxy;
 	  ;;
+     router)
+         [ "$NAME" == "" ] && NAME=router
+         setup_redundant_router;
+      ;;
+
   esac
 }
 
@@ -54,7 +68,7 @@ status() {
    echo ""
 }
 
-CMDLINE=$(cat /proc/cmdline)
+CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="router"
 BOOTPROTO="static"
 
@@ -115,10 +129,13 @@ for i in $CMDLINE
       type)
         TYPE=$VALUE	
 	;;
+      redundant_router)
+        RROUTER=$VALUE
+    ;;
     esac
 done
 
-if [ "$BOOTPROTO" == "static" ]
+if [ "$BOOTPROTO" == "static" -a "$RROUTER" != "1" ]
 then
     exit 0
 fi

@@ -40,6 +40,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
@@ -86,6 +88,7 @@ public class VirtualRoutingResource implements Manager {
     private String _vmDataPath;
     private String _publicEthIf;
     private String _privateEthIf;
+    private String _getRouterStatusPath;
 
 
     private int _timeout;
@@ -116,6 +119,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute((DhcpEntryCommand)cmd);
             } else if (cmd instanceof VmDataCommand) {
                 return execute ((VmDataCommand)cmd);
+            } else if (cmd instanceof CheckRouterCommand) {
+                return execute ((CheckRouterCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -344,6 +349,28 @@ public class VirtualRoutingResource implements Manager {
         return new Answer(cmd, result==null, result);
     }
 
+    public String getRouterStatus(String routerIP) {
+        final Script command  = new Script(_getRouterStatusPath, _timeout, s_logger);
+        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        command.add(routerIP);
+        String result = command.execute(parser);
+        if (result == null) {
+            return parser.getLine();
+        }
+        return null;
+    }
+
+	protected Answer execute(CheckRouterCommand cmd) {
+	    final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+	    final String result = getRouterStatus(routerPrivateIPAddress);
+	    CheckRouterAnswer answer = new CheckRouterAnswer(cmd, false, "Router return: " + result);
+	    if (result != null) {
+	        answer.setIsMaster(result.equals("Status: MASTER"));
+	    }
+	    return answer;
+	}
+	
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }
@@ -521,7 +548,6 @@ public class VirtualRoutingResource implements Manager {
             deleteBridge(privBrName);
         }
     }
-    
 
     //    protected Answer execute(final SetFirewallRuleCommand cmd) {
     //    	String args;
@@ -647,6 +673,11 @@ public class VirtualRoutingResource implements Manager {
         _vmDataPath = findScript("vm_data.sh");
         if(_vmDataPath == null) {
             throw new ConfigurationException("Unable to find user_data.sh");
+        }
+
+        _getRouterStatusPath = findScript("getRouterStatus.sh");
+        if(_getRouterStatusPath == null) {
+            throw new ConfigurationException("Unable to find getRouterStatus.sh");
         }
 
         _publicEthIf = (String)params.get("public.network.device");

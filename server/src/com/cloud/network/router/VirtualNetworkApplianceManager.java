@@ -34,6 +34,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
@@ -65,17 +66,17 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
     
-    VirtualRouter getRouter(long accountId, long zoneId);
+    List<DomainRouterVO> getRouters(long accountId, long zoneId);
 	
-	VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
-	VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	List<DomainRouterVO> deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
 	boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	
 	boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	
-	VirtualRouter addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
+	List<VirtualRouter> addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
     boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     
@@ -83,7 +84,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     
     String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException;
     
-    VirtualRouter getRouterForNetwork(long networkId);
+    List<VirtualRouter> getRoutersForNetwork(long networkId);
     
     VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException, ResourceUnavailableException;
 }

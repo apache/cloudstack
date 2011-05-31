@@ -126,29 +126,30 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         DeployDestination dest = new DeployDestination(dc, null, null, null);
-        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
-        if (router == null) {
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers.isEmpty()) {
             s_logger.trace("Can't find virtual router element in network " + network.getId());
             return true;
         }
         
         VirtualRouter result = null;
-        if (canHandle(network.getGuestType(), dest.getDataCenter())) {
-            if (router.getState() == State.Stopped) {
-                result = _routerMgr.startRouter(router.getId(), false);
+        boolean ret = true;
+        for (DomainRouterVO router : routers) {
+            if (canHandle(network.getGuestType(), dest.getDataCenter())) {
+                if (router.getState() == State.Stopped) {
+                    result = _routerMgr.startRouter(router.getId(), false);
+                } else {
+                    result = _routerMgr.rebootRouter(router.getId(), false);
+                }
+                if (result == null) {
+                    s_logger.warn("Failed to restart virtual router element " + router + " as a part of netowrk " + network + " restart");
+                    ret = false;
+                }
             } else {
-                result = _routerMgr.rebootRouter(router.getId(), false);
+                s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
             }
-            if (result == null) {
-                s_logger.warn("Failed to restart virtual router element " + router + " as a part of netowrk " + network + " restart");
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
-            return true;
         }
+        return ret;
     }
 
     @Override
@@ -157,8 +158,8 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
         if (canHandle(config.getGuestType(),dc)) {
             long networkId = config.getId();
-            DomainRouterVO router = _routerDao.findByNetwork(networkId);
-            if (router == null) {
+            List<DomainRouterVO> routers = _routerDao.findByNetwork(networkId);
+            if (routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + config.getId());
                 return true;
             }
@@ -210,8 +211,8 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             
-            DomainRouterVO router = _routerDao.findByNetwork(network.getId());
-            if (router == null) {
+            List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+            if (routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual router doesn't exist in the network " + network.getId());
                 return true;
             }

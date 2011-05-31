@@ -101,6 +101,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
@@ -643,6 +644,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
 
             ExcludeList avoids = new ExcludeList();
+            if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
+                List<DomainRouterVO> routers = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterId());
+                for (DomainRouterVO router : routers) {
+                    if (router.hostId != null) {
+                        avoids.addHost(router.hostId);
+                        s_logger.info("Router: try to avoid host " + router.hostId);
+                    }
+                }
+            }
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
 
@@ -662,7 +672,25 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 if (dest == null) {
-                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+                    //see if we can allocate the router without limitation
+                    if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
+                        avoids = new ExcludeList();
+                        s_logger.info("Router: cancel avoids ");
+                        for (DeploymentPlanner planner : _planners) {
+                            if (planner.canHandle(vmProfile, plan, avoids)) {
+                                dest = planner.plan(vmProfile, plan, avoids);
+                            } else {
+                                continue;
+                            }
+                            if (dest != null) {
+                                avoids.addHost(dest.getHost().getId());
+                                journal.record("Deployment found ", vmProfile, dest);
+                                break;
+                            }
+                        }
+                    }
+                    if (dest == null)
+                        throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
                 }
 
                 long destHostId = dest.getHost().getId();

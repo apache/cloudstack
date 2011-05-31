@@ -112,6 +112,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name="guest_type")
     GuestIpType guestType;
+    
+    @Column(name="redundant_router")
+    boolean redundantRouter;
 
     @Override
     public String getDisplayText() {
@@ -317,7 +320,12 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.guestType = guestType;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType) {
+    @Override
+    public boolean isRedundantRouterEnabled() {
+        return this.redundantRouter;
+    }
+    
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType, boolean isRedundantRouterEnabled) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -336,6 +344,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.lbService = lbService;
         this.vpnService = vpnService;
         this.guestType = guestIpType;
+        this.redundantRouter = isRedundantRouterEnabled;
     }
     
     /**
@@ -344,7 +353,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, false, false, false, false, false, false, false, null);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, false, false, false, false, false, false, false, null, false);
     }
     
     @Override

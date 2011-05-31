@@ -723,20 +723,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, true, false, null, null,
                 null, true, Availability.Required,
                 // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct);
+                true, true, true, false, false, false, false, GuestIpType.Direct, false);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
 
         NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null,
                 true, Availability.Required,
                 // services
-                true, true, true, true, true, true, true, GuestIpType.Virtual);
+                true, true, true, true, true, true, true, GuestIpType.Virtual, false);
 
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
         NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, false, true, null, null, null, true,
                 Availability.Optional,
                 // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct);
+                true, true, true, false, false, false, false, GuestIpType.Direct, false);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();

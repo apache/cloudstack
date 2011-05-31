@@ -61,6 +61,9 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
 
+    @SerializedName(ApiConstants.REDUNDANT_ROUTER) @Param(description="true if redundant router would be enabled, false otherwise")
+    private Boolean redundantRouter;
+    
     public Long getId() {
         return id;
     }
@@ -165,5 +168,12 @@ public class NetworkOfferingResponse extends BaseResponse{
         this.guestIpType = guestIpType;
     }
     
-    
+    public Boolean getRedundantRouter() {
+        return redundantRouter;
+    }
+
+    public void setRedundantRouter(Boolean redundantRouter) {
+        this.redundantRouter = redundantRouter;
+    }
+
 }

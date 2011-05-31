@@ -35,6 +35,8 @@ add_nat_entry() {
   local pubIp=$1
   logger -t cloud "$(basename $0):Adding nat entry for ip $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  sudo ip link show $ethDev | grep "state DOWN" > /dev/null
+  local old_state=$?
   sudo ip link set $ethDev up
   sudo ip addr add dev $ethDev $pubIp
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
@@ -50,9 +52,12 @@ add_nat_entry() {
      return 1
   fi
   logger -t cloud "$(basename $0):Added nat entry for ip $pubIp on interface $ethDev"
+  if [ $old_state -eq 0 ]
+  then
+      sudo ip link set $ethDev down
+  fi
 
   return 0
-   
 }
 
 del_nat_entry() {
@@ -79,10 +84,18 @@ add_an_ip () {
   local pubIp=$1
   logger -t cloud "$(basename $0):Adding ip $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  sudo ip link show $ethDev | grep "state DOWN" > /dev/null
+  local old_state=$?
 
   sudo ip link set $ethDev up
   sudo ip addr add dev $ethDev $pubIp ;
   sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+
+  if [ $old_state -eq 0 ]
+  then
+      sudo ip link set $ethDev down
+  fi
+
   return $?
    
 }

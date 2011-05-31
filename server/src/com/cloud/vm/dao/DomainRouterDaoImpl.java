@@ -98,21 +98,21 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public DomainRouterVO findBy(long accountId, long dcId) {
+    public List<DomainRouterVO> findBy(long accountId, long dcId) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("role", Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
-        return findOneBy(sc);
+        return listBy(sc);
     }
     
     @Override
-    public DomainRouterVO findBy(long accountId, long dcId, Role role) {
+    public List<DomainRouterVO> findBy(long accountId, long dcId, Role role) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("role", role);
-        return findOneBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -148,10 +148,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public DomainRouterVO findByNetwork(long networkId) {
+    public List<DomainRouterVO> findByNetwork(long networkId) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
-        return findOneBy(sc);
+        return listBy(sc);
     }
   
 	@Override
@@ -163,10 +163,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
 	}
 	
 	@Override
-	public DomainRouterVO findByNetworkAndPod(long networkId, long podId) {
+	public List<DomainRouterVO> findByNetworkAndPod(long networkId, long podId) {
 	    SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("podId", podId);
-        return findOneBy(sc);
+        return listBy(sc);
 	}
 }

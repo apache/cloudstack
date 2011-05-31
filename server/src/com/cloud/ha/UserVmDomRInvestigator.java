@@ -78,7 +78,8 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
                 continue;
             }
 
-            VirtualRouter router = _vnaMgr.getRouterForNetwork(nic.getNetworkId());
+            /* Any active domR should able to do so */
+            VirtualRouter router = _vnaMgr.getRoutersForNetwork(nic.getNetworkId()).get(0);
             if (router == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find a router in network " + nic.getNetworkId() + " to ping " + vm);

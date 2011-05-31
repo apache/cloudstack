@@ -230,12 +230,15 @@ setup_common() {
     ip route add $MGMTNET via $LOCAL_GW dev eth1
   fi
 
-  ip route  delete default
-  if [ -n "$3" ]
-  then 
-    ip route add default via $GW dev $3
-  else
-    ip route add default via $GW dev eth0
+  ip route delete default
+  if [ "$RROUTER" != "1" ]
+  then
+      if [ -z "$3" ]
+      then
+          ip route add default via $GW dev eth0
+      else
+          ip route add default via $GW dev $3
+      fi
   fi
 }
 
@@ -255,6 +258,13 @@ setup_dnsmasq() {
   sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
   sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
 
+  if [ "$RROUTER" == "1" ]
+  then
+      sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option=option:router,$GUEST_GW" >> /etc/dnsmasq.conf
+      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option=6,$GUEST_GW" >> /etc/dnsmasq.conf
+  fi
 }
 
 setup_sshd(){
@@ -272,11 +282,35 @@ setup_apache2() {
   [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
 }
 
+setup_redundant_router() {
+    ip route delete default
+    cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
+    cp /root/redundant_router/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
+    cp /root/redundant_router/enable_pubip.sh.templ /root/redundant_router/enable_pubip.sh
+    sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[PRIORITY\]/$ROUTER_PR/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[LINK_IF\]/eth0/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[LINK_IP\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[IGNORE_IP1\]/$GUEST_GW/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[IGNORE_IP2\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[IGNORE_IP3\]/$ETH1_IP/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[ETH2IP\]/$ETH2_IP/g" /root/redundant_router/enable_pubip.sh
+    sed -i "s/\[GATEWAY\]/$GW/g" /root/redundant_router/enable_pubip.sh
+}
+
 setup_router() {
   log_it "Setting up virtual router system vm"
   if [ -n "$ETH2_IP" ]
   then
-  	setup_common eth0 eth1 eth2
+      if [ "$RROUTER" == "1" ]
+      then
+  	    setup_common eth0 eth1
+        setup_redundant_router
+      else
+  	    setup_common eth0 eth1 eth2
+      fi
   else
   	setup_common eth0 eth1
   fi
@@ -503,6 +537,21 @@ for i in $CMDLINE
       defaultroute)
         DEFAULTROUTE=$VALUE	
 	;;
+      redundant_router)
+        RROUTER=$VALUE
+        ;;
+      guestgw)
+        GUEST_GW=$VALUE
+        ;;
+      guestbrd)
+        GUEST_BRD=$VALUE
+        ;;
+      guestcidrsize)
+        GUEST_CIDR_SIZE=$VALUE
+        ;;
+      router_pr)
+        ROUTER_PR=$VALUE
+        ;;
     esac
 done
 }

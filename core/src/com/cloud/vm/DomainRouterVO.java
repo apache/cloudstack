@@ -51,6 +51,15 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="network_id")
     long networkId;
     
+    @Column(name="is_redundant_router")
+    boolean isRedundantRouter;
+    
+    @Column(name="priority")
+    int priority;
+    
+    @Column(name="is_master")
+    boolean isMaster;
+    
     @Column(name="role")
     @Enumerated(EnumType.STRING)
     private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
@@ -64,9 +73,15 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long domainId,
             long accountId,
             long networkId,
+            boolean isRedundantRouter,
+            int priority,
+            boolean isMaster,
             boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
+        this.isRedundantRouter = isRedundantRouter;
+        this.priority = priority;
+        this.isMaster = isMaster;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
@@ -122,11 +137,36 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 	public void setRole(Role role) {
 		this.role = role;
 	}
+    
+	public boolean getIsRedundantRouter() {
+	    return this.isRedundantRouter;
+ 	}
+
+	public void setIsRedundantRouter(boolean isRedundantRouter) {
+	    this.isRedundantRouter = isRedundantRouter;
+	}
 
 	@Override
 	public long getServiceOfferingId() {
 	    return serviceOfferingId;
 	}
+
+	public int getPriority() {
+	    return this.priority;
+	}
+	
+	public void setPriority(int priority) {
+	    this.priority = priority;
+	}
+
+	public boolean getIsMaster() {
+	    return this.isMaster;
+	}
+	
+	public void setIsMaster(boolean isMaster) {
+	    this.isMaster = isMaster;
+	}
+	
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }

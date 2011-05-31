@@ -153,7 +153,8 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		long hostId = dest.getHost().getId();
 		long accountId = instance.getAccountId();
 		List<UserVmVO>vms = _userVmDao.listByAccountId(accountId);
-		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
+		/* FIXME: Redundant virtual router doesn't support OVS */
+		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn()).get(0);
 		List<VMInstanceVO>ins = new ArrayList<VMInstanceVO>();
 		if (vms != null) {
 			ins.addAll(vms);
@@ -284,7 +285,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
                 return;
             }
             
-            DomainRouterVO router = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn());
+            DomainRouterVO router = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn()).get(0);
             if (router.getHostId() == vm.getHostId()) {
                 return;
             }

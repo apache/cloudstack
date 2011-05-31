@@ -97,6 +97,8 @@ public interface NetworkOffering {
     boolean isDhcpService();
     
     boolean isSharedSourceNatService();
+    
+    boolean isRedundantRouterEnabled();
 
     GuestIpType getGuestType();
 }
