@@ -249,7 +249,7 @@ function initCreateVmFromIsoDialog() {
     var $dialogCreateVmFromIso = $("#dialog_create_vm_from_iso");
     
     $.ajax({
-	    data: createURL("command=listServiceOfferings"),
+	    data: createURL("command=listServiceOfferings&issystem=false"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;

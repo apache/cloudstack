@@ -399,7 +399,7 @@ function initVMWizard() {
 		});		
 		
 	    $.ajax({
-		    data: createURL("command=listServiceOfferings"),
+		    data: createURL("command=listServiceOfferings&issystem=false"),
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {
