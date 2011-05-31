@@ -1440,11 +1440,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         EcInfo ec = (EcInfo)attr.attache;
 
         Transaction txn = Transaction.currentTxn();
+        ResultSet rs = null;
         PreparedStatement pstmt = null;
         try {
-            pstmt = txn.prepareAutoCloseStatement(ec.selectSql);
+            pstmt = txn.prepareStatement(ec.selectSql);
             pstmt.setObject(1, _idField.get(entity));
-            ResultSet rs = pstmt.executeQuery();
+            rs = pstmt.executeQuery();
             ArrayList lst = new ArrayList();
             if (ec.targetClass == Integer.class) {
                 while (rs.next()) {
@@ -1501,6 +1502,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             throw new CloudRuntimeException("Error executing " + pstmt, e);
         } catch (IllegalAccessException e) {
             throw new CloudRuntimeException("Error executing " + pstmt, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                s_logger.error("Why are we getting an exception at close? ", e);
+            }
         }
     }
 

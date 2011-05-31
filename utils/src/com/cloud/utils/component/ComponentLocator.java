@@ -90,6 +90,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected static Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback()};
     protected static CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final List<AnnotationInterceptor<?>> s_interceptors = new ArrayList<AnnotationInterceptor<?>>();
+    protected static CleanupThread s_janitor = null;
     
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
@@ -99,12 +100,18 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected HashMap<Class<?>, Class<?>>                               _factories;
     
     static {
-        Runtime.getRuntime().addShutdownHook(new CleanupThread());
+        if (s_janitor == null) {
+            s_janitor = new CleanupThread();
+            Runtime.getRuntime().addShutdownHook(new CleanupThread());
+        }
     }
 
     public ComponentLocator(String server) {
         _serverName = server;
-        Runtime.getRuntime().addShutdownHook(new CleanupThread());
+        if (s_janitor == null) {
+            s_janitor = new CleanupThread();
+            Runtime.getRuntime().addShutdownHook(new CleanupThread());
+        }
     }
 
     public String getLocatorName() {
@@ -237,7 +244,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     if (singleton.state == Singleton.State.Instantiated) {
                         inject(info.clazz, info.instance);
                         singleton.state = Singleton.State.Injected;
-                    } 
+                    }
                     if (singleton.state == Singleton.State.Injected) {
                         if (!info.instance.configure(info.name, info.params)) {
                             s_logger.error("Unable to configure DAO: " + info.name);
@@ -398,7 +405,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                         System.exit(1);
                     }
                     s.state = Singleton.State.Configured;
-                } 
+                }
             } else {
                 s_logger.info("Configuring Manager: " + info.name);
                 try {
@@ -526,7 +533,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                             s_logger.info("Injecting singleton Adapter: " + info.getName());
                             inject(info.clazz, info.instance);
                             singleton.state = Singleton.State.Injected;
-                        } 
+                        }
                         if (singleton.state == Singleton.State.Injected) {
                             s_logger.info("Configuring singleton Adapter: " + info.getName());
                             if (!info.instance.configure(info.name, info.params)) {
@@ -551,7 +558,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     s_logger.error("Unable to configure adapter: " + info.name, e);
                     System.exit(1);
                 }
-            }            
+            }
         }
     }
 
@@ -1015,43 +1022,45 @@ public class ComponentLocator implements ComponentLocatorMBean {
     
     protected static class CleanupThread extends Thread {
         @Override
-        public synchronized void run() {
-            for (ComponentLocator locator : s_locators.values()) {
-                Iterator<Adapters<? extends Adapter>> itAdapters = locator._adapterMap.values().iterator();
-                while (itAdapters.hasNext()) {
-                    Adapters<? extends Adapter> adapters = itAdapters.next();
-                    itAdapters.remove();
-                    for (ComponentInfo<Adapter> adapter : adapters._infos) {
-                        if (adapter.singleton) {
-                            Singleton singleton = s_singletons.get(adapter.clazz);
-                            if (singleton.state == Singleton.State.Started) {
+        public void run() {
+            synchronized (CleanupThread.class) {
+                for (ComponentLocator locator : s_locators.values()) {
+                    Iterator<Adapters<? extends Adapter>> itAdapters = locator._adapterMap.values().iterator();
+                    while (itAdapters.hasNext()) {
+                        Adapters<? extends Adapter> adapters = itAdapters.next();
+                        itAdapters.remove();
+                        for (ComponentInfo<Adapter> adapter : adapters._infos) {
+                            if (adapter.singleton) {
+                                Singleton singleton = s_singletons.get(adapter.clazz);
+                                if (singleton.state == Singleton.State.Started) {
+                                    s_logger.info("Asking " + adapter.getName() + " to shutdown.");
+                                    adapter.instance.stop();
+                                    singleton.state = Singleton.State.Stopped;
+                                } else {
+                                    s_logger.debug("Skippng " + adapter.getName() + " because it has already stopped");
+                                }
+                            } else {
                                 s_logger.info("Asking " + adapter.getName() + " to shutdown.");
                                 adapter.instance.stop();
-                                singleton.state = Singleton.State.Stopped;
-                            } else {
-                                s_logger.debug("Skippng " + adapter.getName() + " because it has already stopped");
                             }
-                        } else {
-                            s_logger.info("Asking " + adapter.getName() + " to shutdown.");
-                            adapter.instance.stop();
                         }
                     }
                 }
-            }
-            
-            for (ComponentLocator locator : s_locators.values()) {
-                Iterator<ComponentInfo<Manager>> itManagers = locator._managerMap.values().iterator();
-                while (itManagers.hasNext()) {
-                    ComponentInfo<Manager> manager = itManagers.next();
-                    itManagers.remove();
-                    if (manager.singleton == true) {
-                        Singleton singleton = s_singletons.get(manager.clazz);
-                        if (singleton != null && singleton.state == Singleton.State.Started) {
-                            s_logger.info("Asking Manager " + manager.getName() + " to shutdown.");
-                            manager.instance.stop();
-                            singleton.state = Singleton.State.Stopped;
-                        } else {
-                            s_logger.info("Skipping Manager " + manager.getName() + " because it is not in a state to shutdown.");
+                
+                for (ComponentLocator locator : s_locators.values()) {
+                    Iterator<ComponentInfo<Manager>> itManagers = locator._managerMap.values().iterator();
+                    while (itManagers.hasNext()) {
+                        ComponentInfo<Manager> manager = itManagers.next();
+                        itManagers.remove();
+                        if (manager.singleton == true) {
+                            Singleton singleton = s_singletons.get(manager.clazz);
+                            if (singleton != null && singleton.state == Singleton.State.Started) {
+                                s_logger.info("Asking Manager " + manager.getName() + " to shutdown.");
+                                manager.instance.stop();
+                                singleton.state = Singleton.State.Stopped;
+                            } else {
+                                s_logger.info("Skipping Manager " + manager.getName() + " because it is not in a state to shutdown.");
+                            }
                         }
                     }
                 }
