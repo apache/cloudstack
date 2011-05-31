@@ -1061,7 +1061,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
+        sc.addAnd("systemUse", SearchCriteria.Op.EQ, issystem);
 
         return _offeringsDao.search(sc, searchFilter);
 
