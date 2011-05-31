@@ -194,7 +194,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    String errorString = "";
 	    boolean success = false;
 	    List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
-	    if(storageServers == null ) {
+	    if(storageServers == null || storageServers.size() == 0) {
             throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);
         }
 	    
@@ -229,7 +229,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    try{
     	    // Create Symlink at ssvm
 	    	String uuid = UUID.randomUUID().toString() + ".vhd";
-    	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(vmTemplateHost.getInstallPath(), uuid);
+    	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(storageServers.get(0).getParent(), vmTemplateHost.getInstallPath(), uuid);
     	    long result = send(use_ssvm.getId(), cmd, null);
     	    if (result == -1){
     	        errorString = "Unable to create a link for " +type+ " id:"+template.getId();
