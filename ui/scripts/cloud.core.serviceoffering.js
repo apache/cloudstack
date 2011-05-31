@@ -363,6 +363,7 @@ function serviceOfferingClearDetailsTab() {
     $thisTab.find("#memory").text("");    
     $thisTab.find("#offerha").text("");
     $thisTab.find("#offerha_edit").val("");    
+    $thisTab.find("#limitcpuuse").text("");
     $thisTab.find("#tags").text("");  
     $thisTab.find("#domain").text(""); 
     $thisTab.find("#domain_edit").val("");   
