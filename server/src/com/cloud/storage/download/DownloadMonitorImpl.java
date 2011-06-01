@@ -539,7 +539,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             for ( VMTemplateHostVO tmpltHost : tmpltHosts ) {
                if ( tmpltHost.getDownloadState() == Status.DOWNLOADED || tmpltHost.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                    iter.remove();
-                   continue;
+                   break;
                }
             }
         }

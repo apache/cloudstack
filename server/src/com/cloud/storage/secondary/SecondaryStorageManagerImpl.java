@@ -71,9 +71,11 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -162,7 +164,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private AgentManager _agentMgr;
     @Inject
     private NetworkManager _networkMgr;
-
+    @Inject
+    protected SnapshotDao _snapshotDao;
+    
     @Inject
     private ClusterManager _clusterMgr;
 
@@ -279,6 +283,26 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 }               
             }
         }
+        return true;
+    }
+    
+    
+    @Override 
+    public boolean deleteHost(Long hostId) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
+        if( snapshots != null && !snapshots.isEmpty()) {
+            throw new CloudRuntimeException("Can not delete this secondary storage due to there are still snapshots on it ");
+        }
+        List<Long> list = _templateDao.listPrivateTemplatesByHost(hostId);
+        if( list != null && !list.isEmpty()) {
+            throw new CloudRuntimeException("Can not delete this secondary storage due to there are still private template on it ");
+        }
+        _vmTemplateHostDao.deleteByHost(hostId);
+        HostVO host = _hostDao.findById(hostId);
+        host.setGuid(null);
+        _hostDao.update(hostId, host);
+        _hostDao.remove(hostId);
+        
         return true;
     }
     

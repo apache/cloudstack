@@ -21,11 +21,13 @@ package com.cloud.storage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -39,6 +41,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.info.RunningHostCountInfo;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -46,6 +49,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -139,6 +143,30 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		return listBy(sc, filter);
 	}
 
+    @Override
+    public List<Long> listPrivateTemplatesByHost(Long hostId) {
+
+        String sql = "select * from template_host_ref as thr INNER JOIN vm_template as t ON t.id=thr.template_id " 
+            + "where thr.host_id=? and t.public=0 and t.featured=0 and t.type='USER' and t.removed is NULL";
+
+        List<Long> l = new ArrayList<Long>();
+
+        Transaction txn = Transaction.currentTxn();
+
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, hostId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                l.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+        } catch (Throwable e) {
+        }
+        return l;
+    }
+	
 	@Override
 	public List<VMTemplateVO> listReadyTemplates() {
 		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();

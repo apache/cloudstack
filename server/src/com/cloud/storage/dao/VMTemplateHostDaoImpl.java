@@ -52,7 +52,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	
 	protected static final String UPDATE_TEMPLATE_HOST_REF =
-		"UPDATE type_host_ref SET download_state = ?, download_pct= ?, last_updated = ? "
+		"UPDATE template_host_ref SET download_state = ?, download_pct= ?, last_updated = ? "
 	+   ", error_str = ?, local_path = ?, job_id = ? "
 	+   "WHERE host_id = ? and type_id = ?";
 			
@@ -322,5 +322,13 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    else
 	    	return lockOneRandomRow(sc, true);
 	}
+
+    @Override
+    public void deleteByHost(Long hostId) {
+        List<VMTemplateHostVO> tmpltHosts = listByHostId(hostId);
+        for (VMTemplateHostVO tmpltHost : tmpltHosts ) {
+            remove(tmpltHost.getId());
+        }
+    }
 
 }
