@@ -1011,16 +1011,26 @@ public class ManagementServerImpl implements ManagementServer {
         // if a domainId is provided, we just return the so associated with this domain
         if (domainId != null) {
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                if (domainId != 1 && issystem){ //NON ROOT admin
+                    throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+                }
                 return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, issystem);// no perm check
             } else {
+                if (issystem){
+                    throw new InvalidParameterValueException("Non root users cannot access system's offering");
+                }
                 // check if the user's domain == so's domain || user's domain is a child of so's domain
                 if (isPermissible(account.getDomainId(), domainId)) {
                     // perm check succeeded
-                    return _offeringsDao.findServiceOfferingByDomainId(domainId);
+                    return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, false);
                 } else {
                     throw new PermissionDeniedException("The account:" + account.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
                 }
             }
+        }
+        
+        if (issystem){  // if domain is not specified then never return the system's offering
+            throw new InvalidParameterValueException("Specify the domain to access system's offering");
         }
 
         // For non-root users
@@ -1061,7 +1071,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, issystem);
+        sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
 
         return _offeringsDao.search(sc, searchFilter);
 
