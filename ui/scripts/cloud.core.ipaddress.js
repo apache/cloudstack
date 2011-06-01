@@ -1222,22 +1222,26 @@ function ipJsonToDetailsTab() {
 function ipFindNetworkServiceByName(pName, networkObj) {    
     if(networkObj == null)
         return null;
-    for(var i=0; i<networkObj.service.length; i++) {
-        var networkServiceObj = networkObj.service[i];
-        if(networkServiceObj.name == pName)
-            return networkServiceObj;
-    }
+    if(networkObj.service != null) {
+	    for(var i=0; i<networkObj.service.length; i++) {
+	        var networkServiceObj = networkObj.service[i];
+	        if(networkServiceObj.name == pName)
+	            return networkServiceObj;
+	    }
+    }    
     return null;
 }
 
 function ipFindCapabilityByName(pName, networkServiceObj) {  
     if(networkServiceObj == null)
         return null;  
-    for(var i=0; i<networkServiceObj.capability.length; i++) {
-        var capabilityObj = networkServiceObj.capability[i];
-        if(capabilityObj.name == pName)
-            return capabilityObj;
-    }
+    if(networkServiceObj.capability != null) {
+	    for(var i=0; i<networkServiceObj.capability.length; i++) {
+	        var capabilityObj = networkServiceObj.capability[i];
+	        if(capabilityObj.name == pName)
+	            return capabilityObj;
+	    }
+    }    
     return null;
 }
 
