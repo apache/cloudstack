@@ -75,7 +75,8 @@ function routerGetSearchParams() {
 }
 
 function afterLoadRouterJSP() {
-    
+	// dialogs    
+    initDialog("dialog_change_system_service_offering", 600);  
 }
 
 function routerToMidmenu(jsonObj, $midmenuItem1) {
@@ -177,6 +178,7 @@ function routerJsonToDetailsTab() {
     $thisTab.find("#privateip").text(fromdb(jsonObj.linklocalip));
     $thisTab.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
     $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
+    $thisTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));	
     $thisTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));  
     $thisTab.find("#account").text(fromdb(jsonObj.account));  
@@ -225,6 +227,7 @@ function routerClearDetailsTab() {
     $thisTab.find("#privateip").text("");
     $thisTab.find("#guestipaddress").text("");
     $thisTab.find("#hostname").text("");
+    $thisTab.find("#serviceOfferingName").text("");	
     $thisTab.find("#networkdomain").text("");
     $thisTab.find("#domain").text("");  
     $thisTab.find("#account").text("");  
@@ -309,7 +312,7 @@ function doChangeSystemServiceOffering($actionLink, $detailsTab, $midmenuItem1) 
 	}
 	
 	$.ajax({	   
-	    data: createURL("command=listServiceOfferings&VirtualMachineId="+id), 
+	    data: createURL("command=listServiceOfferings&issystem=true"), 
 		dataType: "json",
 		async: false,
 		success: function(json) {
