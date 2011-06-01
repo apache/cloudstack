@@ -827,7 +827,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
              vm.setIsoId(iso.getId());
             _userVmDao.update(vmId, vm);
         } 
-        if ( !attach ) {
+        if ( success && !attach ) {
             vm.setIsoId(null);
             _userVmDao.update(vmId, vm);
         }    
