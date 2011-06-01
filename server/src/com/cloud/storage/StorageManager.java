@@ -186,4 +186,5 @@ public interface StorageManager extends Manager {
     boolean createStoragePool(long hostId, StoragePoolVO pool);
 
     boolean delPoolFromHost(long hostId);
+    List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
 }
