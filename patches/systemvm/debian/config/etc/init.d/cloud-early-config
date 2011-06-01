@@ -283,6 +283,7 @@ setup_apache2() {
 }
 
 setup_redundant_router() {
+    rm /tmp/rrouter.lock
     ip route delete default
     cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
     cp /root/redundant_router/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
