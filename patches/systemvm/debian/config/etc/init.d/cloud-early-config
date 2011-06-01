@@ -193,7 +193,7 @@ setup_common() {
   init_interfaces $1 $2 $3
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
-  if [ -n "$ETH2_IP" ]
+  if [ -n "$ETH2_IP" -a "$RROUTER" != "1" ]
   then
   	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
   fi
@@ -300,6 +300,11 @@ setup_redundant_router() {
     sed -i "s/\[ETH2IP\]/$ETH2_IP/g" /root/redundant_router/enable_pubip.sh
     sed -i "s/\[GATEWAY\]/$GW/g" /root/redundant_router/enable_pubip.sh
     sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
+    grep "sleep 10;" /etc/init.d/keepalived > /dev/null
+    if [ $? -ne 0 ]
+    then
+        sed -i "s/if\ start-stop-daemon\ --start/sleep\ 10;if\ start-stop-daemon\ --start/g" /etc/init.d/keepalived
+    fi
 }
 
 setup_router() {
