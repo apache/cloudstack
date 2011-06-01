@@ -1545,7 +1545,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
     		return new SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
     	} else {
-    		s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
+    		s_logger.debug("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
     		return new SecurityIngressRuleAnswer(cmd);
     	}
     }
@@ -1857,7 +1857,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
 		String result = cpuScript.execute(parser);
 		if (result != null) {
-			s_logger.info("Unable to get the host CPU state: " + result);
+			s_logger.debug("Unable to get the host CPU state: " + result);
 			return new Answer(cmd, false, result);
 		}
 		double cpuUtil = (100.0D - Double.parseDouble(parser.getLine()));
@@ -1869,7 +1869,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		final OutputInterpreter.OneLineParser Memparser = new OutputInterpreter.OneLineParser();
 		result = memScript.execute(Memparser);
 		if (result != null) {
-			s_logger.info("Unable to get the host Mem state: " + result);
+			s_logger.debug("Unable to get the host Mem state: " + result);
 			return new Answer(cmd, false, result);
 		}
 		freeMem = Long.parseLong(Memparser.getLine());
@@ -1880,7 +1880,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		final OutputInterpreter.OneLineParser totMemparser = new OutputInterpreter.OneLineParser();
 		result = totalMem.execute(totMemparser);
 		if (result != null) {
-			s_logger.info("Unable to get the host Mem state: " + result);
+			s_logger.debug("Unable to get the host Mem state: " + result);
 			return new Answer(cmd, false, result);
 		}
 		long totMem = Long.parseLong(totMemparser.getLine());
@@ -2824,7 +2824,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         long dom0ram = Math.min(ram/10, 768*1024*1024L);//save a maximum of 10% of system ram or 768M
         dom0ram = Math.max(dom0ram, _dom0MinMem);
         info.add(dom0ram);
-    	s_logger.info("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", dom0ram=" + dom0ram);
+    	s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", dom0ram=" + dom0ram);
 
         return info;
     }
