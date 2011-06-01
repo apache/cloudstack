@@ -1011,7 +1011,7 @@ public class ManagementServerImpl implements ManagementServer {
         // if a domainId is provided, we just return the so associated with this domain
         if (domainId != null) {
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                if (domainId != 1 && issystem){ //NON ROOT admin
+                if (account.getDomainId() != 1 && issystem){ //NON ROOT admin
                     throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
                 }
                 return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, issystem);// no perm check
@@ -1028,17 +1028,20 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
         }
-        
-        if (issystem){  // if domain is not specified then never return the system's offering
-            throw new InvalidParameterValueException("Specify the domain to access system's offering");
-        }
 
         // For non-root users
         if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            if (issystem){
+                throw new InvalidParameterValueException("Only root admins can access system's offering");
+            }
             return searchServiceOfferingsInternal(account, name, id, vmId, keyword, searchFilter);
         }
 
         // for root users, the existing flow
+        if (account.getDomainId() != 1 && issystem){ //NON ROOT admin
+            throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+        }
+
         if (keyword != null) {
             SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1071,7 +1074,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
+        sc.addAnd("systemUse", SearchCriteria.Op.EQ, issystem);
 
         return _offeringsDao.search(sc, searchFilter);
 
