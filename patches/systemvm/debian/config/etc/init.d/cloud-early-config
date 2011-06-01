@@ -299,6 +299,7 @@ setup_redundant_router() {
     sed -i "s/\[IGNORE_IP3\]/$ETH1_IP/g" /etc/conntrackd/conntrackd.conf
     sed -i "s/\[ETH2IP\]/$ETH2_IP/g" /root/redundant_router/enable_pubip.sh
     sed -i "s/\[GATEWAY\]/$GW/g" /root/redundant_router/enable_pubip.sh
+    sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
 }
 
 setup_router() {
