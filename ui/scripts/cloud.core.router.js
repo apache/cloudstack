@@ -345,7 +345,7 @@ function doChangeSystemServiceOffering($actionLink, $detailsTab, $midmenuItem1) 
 		        $midmenuItem1.find("#info_icon").addClass("error").show();
                 $midmenuItem1.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: virtual instance needs to be stopped before you can change its service."));  
 	        }
-            var apiCommand = "command=changeServiceForVirtualMachine&id="+id+"&serviceOfferingId="+serviceOfferingId;	     
+            var apiCommand = "command=changeServiceForRouter&id="+id+"&serviceofferingid="+serviceOfferingId;	     
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
 		}, 
 		"Cancel": function() { 
@@ -389,8 +389,8 @@ var routerActionMap = {
         isAsyncJob: false,        
         inProcessText: "label.action.change.service",
         dialogBeforeActionFn : doChangeSystemServiceOffering,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
-            var jsonObj = json.changeserviceforvirtualmachineresponse.virtualmachine;       
+        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
+            var jsonObj = json.changeserviceforrouterresponse.domainrouter;       
             vmToMidmenu(jsonObj, $midmenuItem1);           
         }
     }
