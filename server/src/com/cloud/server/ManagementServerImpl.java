@@ -1624,7 +1624,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                isAccountSpecific, true);
+                isAccountSpecific, true, cmd.listInReadyState());
     }
 
     @Override
@@ -1646,11 +1646,11 @@ public class ManagementServerImpl implements ManagementServer {
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                isAccountSpecific, showDomr);
+                isAccountSpecific, showDomr, cmd.listInReadyState());
     }
 
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize,
-            Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr) {
+            Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr, boolean onlyReady) {
 
         Account caller = UserContext.current().getCaller();
         VMTemplateVO template = null;
@@ -1668,10 +1668,6 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the template id " + templateId);
             }
         }
-
-        // Show only those that are downloaded.
-        boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
-        || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
 
         Account account = null;
         DomainVO domain = null;

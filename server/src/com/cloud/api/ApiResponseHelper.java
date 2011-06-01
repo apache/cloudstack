@@ -1449,12 +1449,21 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin, Account account) {
-        List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(templateZonePair.first(), templateZonePair.second());
+    public void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin, Account account, boolean readyOnly) {
+        List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(templateZonePair.first(), templateZonePair.second(), readyOnly);
         VMTemplateVO template = ApiDBUtils.findTemplateById(templateZonePair.first());
 
         for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
-
+            if (readyOnly) {
+                if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
+                    continue;
+                }
+                for (TemplateResponse res : responses) {
+                    if (res.getId() == templateHostRef.getTemplateId()) {
+                        continue;
+                    }
+                }
+            }
             TemplateResponse templateResponse = new TemplateResponse();
             templateResponse.setId(template.getId());
             templateResponse.setName(template.getName());
@@ -1491,8 +1500,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             HostVO host = ApiDBUtils.findHostById(templateHostRef.getHostId());
+            templateResponse.setHostId(host.getId());
+            templateResponse.setHostName(host.getName());
+            
             DataCenterVO datacenter = ApiDBUtils.findZoneById(host.getDataCenterId());
-
+            
             // Add the zone ID
             templateResponse.setZoneId(host.getDataCenterId());
             templateResponse.setZoneName(datacenter.getName());
@@ -1986,7 +1998,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long, Long>> isoZonePairSet, boolean isAdmin, Account account, Boolean isBootable) {
+    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long, Long>> isoZonePairSet, boolean isAdmin, Account account, Boolean isBootable, boolean readyOnly) {
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
@@ -2022,7 +2034,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second());
+            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second(), readyOnly);
             for (VMTemplateHostVO isoHost : isoHosts) {
                 TemplateResponse isoResponse = new TemplateResponse();
                 isoResponse.setId(iso.getId());

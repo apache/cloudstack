@@ -24,15 +24,22 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -40,7 +47,8 @@ import com.cloud.utils.db.Transaction;
 @Local(value={VMTemplateHostDao.class})
 public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long> implements VMTemplateHostDao {
 	public static final Logger s_logger = Logger.getLogger(VMTemplateHostDaoImpl.class.getName());
-	
+    @Inject
+    HostDao   _hostDao;
 	protected final SearchBuilder<VMTemplateHostVO> HostSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateSearch;
 	protected final SearchBuilder<VMTemplateHostVO> HostTemplateSearch;
@@ -49,6 +57,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	protected final SearchBuilder<VMTemplateHostVO> HostTemplatePoolSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatusSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatesSearch;
+	protected SearchBuilder<VMTemplateHostVO> ZONE_TEMPLATE_SEARCH;
 
 	
 	protected static final String UPDATE_TEMPLATE_HOST_REF =
@@ -70,12 +79,6 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	protected static final String DOWNLOADS_STATE=
 		"SELECT * FROM template_host_ref t "
 	+	" where t.template_id=? and t.download_state=?";
-	
-    protected static final String ZONE_TEMPLATE_SEARCH=
-        "SELECT t.id, t.host_id, t.pool_id, t.template_id, t.created, t.last_updated, t.job_id, " 
-    +   "t.download_pct, t.size, t.physical_size, t.download_state, t.error_str, t.local_path, "
-    +   "t.install_path, t.url, t.destroyed, t.is_copy FROM template_host_ref t, host h"
-    +   " where t.host_id = h.id and h.data_center_id=? and t.template_id=? ";
 	
 	public VMTemplateHostDaoImpl () {
 		HostSearch = createSearchBuilder();
@@ -119,6 +122,18 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		PoolTemplateSearch.done();
 	}
 	
+	@Override
+	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+	    boolean result = super.configure(name, params);
+	    ZONE_TEMPLATE_SEARCH = createSearchBuilder();
+	    ZONE_TEMPLATE_SEARCH.and("template_id", ZONE_TEMPLATE_SEARCH.entity().getTemplateId(), SearchCriteria.Op.EQ);
+	    ZONE_TEMPLATE_SEARCH.and("state", ZONE_TEMPLATE_SEARCH.entity().getDownloadState(), SearchCriteria.Op.EQ);
+	    SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
+	    hostSearch.and("zone_id", hostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+	    ZONE_TEMPLATE_SEARCH.join("tmplHost", hostSearch, hostSearch.entity().getId(), ZONE_TEMPLATE_SEARCH.entity().getHostId(), JoinBuilder.JoinType.INNER);
+	    ZONE_TEMPLATE_SEARCH.done();
+	    return result;
+	}
 	@Override
     public void update(VMTemplateHostVO instance) {
         Transaction txn = Transaction.currentTxn();
@@ -275,25 +290,18 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	}
 
     @Override
-    public List<VMTemplateHostVO> listByZoneTemplate(long dcId, long templateId) {
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        List<VMTemplateHostVO> result = new ArrayList<VMTemplateHostVO>();
-        try {
-            String sql = ZONE_TEMPLATE_SEARCH;
-            pstmt = txn.prepareStatement(sql);
-            
-            pstmt.setLong(1, dcId);
-            pstmt.setLong(2, templateId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.add(toEntityBean(rs, false));
-            }
-            
-        } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+    public List<VMTemplateHostVO> listByZoneTemplate(long dcId, long templateId, boolean readyOnly) {
+        SearchCriteria<VMTemplateHostVO> sc = ZONE_TEMPLATE_SEARCH.create();
+        sc.setParameters("template_id", templateId);
+        sc.setJoinParameters("tmplHost", "zone_id", dcId);
+        if (readyOnly) {
+            sc.setParameters("state", VMTemplateHostVO.Status.DOWNLOADED);
+            List<VMTemplateHostVO> tmplHost = new ArrayList<VMTemplateHostVO>();
+            tmplHost.add(findOneBy(sc));
+            return tmplHost;
+        } else {
+            return listBy(sc);
         }
-        return result;
     }
 	
 	@Override

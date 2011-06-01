@@ -535,7 +535,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             if( tmplt.isPublicTemplate() || tmplt.isFeatured() ) {
                 continue;
             }
-            List<VMTemplateHostVO> tmpltHosts = _vmTemplateHostDao.listByZoneTemplate(dcId, tmplt.getId());
+            List<VMTemplateHostVO> tmpltHosts = _vmTemplateHostDao.listByZoneTemplate(dcId, tmplt.getId(), false);
             for ( VMTemplateHostVO tmpltHost : tmpltHosts ) {
                if ( tmpltHost.getDownloadState() == Status.DOWNLOADED || tmpltHost.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                    iter.remove();
