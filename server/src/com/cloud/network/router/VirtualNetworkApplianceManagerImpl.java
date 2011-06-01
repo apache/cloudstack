@@ -72,6 +72,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -95,6 +96,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
@@ -712,6 +714,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             for (DomainRouterVO router : routers) {
                 String privateIP = router.getPrivateIpAddress();
+                HostVO host = _hostDao.findById(router.getHostId());
+                /* Only cover hosts managed by this management server */
+                if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                    continue;
+                }
                 if (privateIP != null) {
                     final CheckRouterCommand command = new CheckRouterCommand();
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
