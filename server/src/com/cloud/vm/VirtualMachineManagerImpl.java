@@ -1319,12 +1319,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         T rebootedVm = null;
 
         DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
-        HostPodVO pod = _configMgr.getPod(vm.getPodId());
         Host host = _hostDao.findById(vm.getHostId());
         Cluster cluster = null;
         if (host != null) {
             cluster = _configMgr.getCluster(host.getClusterId());
         }
+        HostPodVO pod = _configMgr.getPod(host.getPodId());
         DeployDestination dest = new DeployDestination(dc, pod, cluster, host);
 
         try {
