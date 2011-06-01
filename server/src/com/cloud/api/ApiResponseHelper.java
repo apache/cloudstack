@@ -1223,6 +1223,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
+    	Map<Long, ServiceOffering> serviceOfferings = new HashMap<Long, ServiceOffering>();
+    	
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getId());
         routerResponse.setZoneId(router.getDataCenterId());
@@ -1236,7 +1238,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             routerResponse.setHostId(router.getHostId());
             routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
         }
+          
+        // Service Offering Info
+        ServiceOffering offering = serviceOfferings.get(router.getServiceOfferingId());
 
+        if (offering == null) {
+            offering = ApiDBUtils.findServiceOfferingById(router.getServiceOfferingId());
+            serviceOfferings.put(offering.getId(), offering);
+        }
+        routerResponse.setServiceOfferingId(offering.getId());
+        routerResponse.setServiceOfferingName(offering.getName());
+              
         Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
         if (accountTemp != null) {
             routerResponse.setAccountName(accountTemp.getAccountName());

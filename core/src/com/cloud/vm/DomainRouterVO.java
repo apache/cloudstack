@@ -123,6 +123,10 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 		this.role = role;
 	}
 
+	@Override
+	public long getServiceOfferingId() {
+	    return serviceOfferingId;
+	}
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
