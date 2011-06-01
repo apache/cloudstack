@@ -196,10 +196,21 @@ setup_common() {
   hostname $NAME
   
   #Nameserver
+  if [ -n "$internalNS1" ]
+  then
+    echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS1" > /etc/resolv.conf
+  fi
+  
+  if [ -n "$internalNS2" ]
+  then
+    echo "nameserver $internalNS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS2" >> /etc/resolv.conf
+  fi
   if [ -n "$NS1" ]
   then
-    echo "nameserver $NS1" > /etc/dnsmasq-resolv.conf
-    echo "nameserver $NS1" > /etc/resolv.conf
+    echo "nameserver $NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS1" >> /etc/resolv.conf
   fi
   
   if [ -n "$NS2" ]
@@ -445,6 +456,12 @@ for i in $CMDLINE
           ;;
       eth2mask)
           ETH2_MASK=$VALUE
+          ;;
+      internaldns1)
+          internalNS1=$VALUE
+          ;;
+      internaldns2)
+          internalNS2=$VALUE
           ;;
       dns1)
           NS1=$VALUE

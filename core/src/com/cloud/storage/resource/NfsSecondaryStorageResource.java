@@ -388,14 +388,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _localgw = (String)params.get("localgw");
             if (_localgw != null) { //can only happen inside service vm
             	_eth1mask = (String)params.get("eth1mask");
-            	String internalDns1 = (String)params.get("dns1");
-            	String internalDns2 = (String)params.get("dns2");
-
-            	if (internalDns1 == null) {
-            		s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
-            	} else {
-            		addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
-            	}
             	
             	String mgmtHost = (String)params.get("host");
             	String nfsHost = NfsUtils.getHostPart(_nfsPath);
@@ -412,10 +404,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             	}
             	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, nfsHost);
             	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+
+            	String internalDns1 = (String)params.get("internaldns1");
+            	String internalDns2 = (String)params.get("internaldns2");
+
+            	if (internalDns1 == null) {
+            		s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
+            	} else {
+            		addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
+            	}
+
             	if (internalDns2 != null) {
                 	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
             	}
-
             }
             String useSsl = (String)params.get("sslcopy");
             if (useSsl != null) {

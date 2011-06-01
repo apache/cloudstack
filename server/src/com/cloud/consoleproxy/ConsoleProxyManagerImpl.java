@@ -1416,10 +1416,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
-                buf.append(" dns1=").append(nic.getDns1());
-                if (nic.getDns2() != null) {
-                    buf.append(" dns2=").append(nic.getDns2());
-                }
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
@@ -1435,7 +1431,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (externalDhcp) {
             buf.append(" bootproto=dhcp");
         }
-
+        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
+        buf.append(" internaldns1=").append(dc.getInternalDns1());
+        if (dc.getInternalDns2() != null) {
+            buf.append(" internaldns2=").append(dc.getInternalDns2());
+        }
+        buf.append(" dns1=").append(dc.getDns1());
+        if (dc.getDns2() != null) {
+            buf.append(" dns2=").append(dc.getDns2());
+        }
+        
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
