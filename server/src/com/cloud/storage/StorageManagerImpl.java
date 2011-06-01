@@ -353,6 +353,23 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             return true;
         }
     }
+    
+    @Override
+    public List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type) {
+        List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(datacenterId);
+        List<StoragePoolVO> retPools = new ArrayList<StoragePoolVO>();
+        for (StoragePoolVO pool : pools ) {
+            if( pool.getStatus() != StoragePoolStatus.Up) {
+                continue;
+            }
+            ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
+            if( type == cluster.getHypervisorType()) {
+                retPools.add(pool);
+            }
+        }
+        Collections.shuffle(retPools);
+        return retPools;
+    }
 
     @Override
     public boolean isLocalStorageActiveOnHost(Host host) {

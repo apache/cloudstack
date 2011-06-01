@@ -198,4 +198,6 @@ public interface StorageManager extends Manager {
     HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
 
     List<HostVO> getSecondaryStorageHosts(long zoneId);
+
+    List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
 }

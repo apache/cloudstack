@@ -1456,11 +1456,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 volumeId = snapshot.getVolumeId();
 
                 String origTemplateInstallPath = null;
-                List<StoragePoolVO> storagePools = _storagePoolDao.listByDataCenterId(zoneId);
-                if (storagePools == null || storagePools.size() == 0) {
+                List<StoragePoolVO> pools = _storageMgr.ListByDataCenterHypervisor(zoneId, snapshot.getHypervisorType());
+                if (pools == null ||  pools.size() == 0 ) {
                     throw new CloudRuntimeException("Unable to find storage pools in zone " + zoneId);
                 }
-                pool = storagePools.get(0);
+                pool = pools.get(0);
                 if (snapshot.getVersion() != null && snapshot.getVersion().equalsIgnoreCase("2.1")) {
                     VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
                     if (volume == null) {
