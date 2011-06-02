@@ -555,7 +555,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             /* Need to create the volume */
             VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
             DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
-            HostPodVO pod = _podDao.findById(vm.getPodId());
+            HostPodVO pod = _podDao.findById(rootVolumeOfVm.getPodId());
             StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
             ServiceOfferingVO svo = _serviceOfferingDao.findById(vm.getServiceOfferingId());
             DiskOfferingVO diskVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
