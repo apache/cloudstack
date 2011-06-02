@@ -87,13 +87,17 @@ public class CreateNetworkCmd extends BaseCmd {
     private String networkDomain;
     
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the network")
-    private List<String> tag;
+    private List<String> tags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     public Long getNetworkOfferingId() {
         return networkOfferingId;
+    }
+    
+    public List<String> getTags() {
+        return tags;
     }
 
     public Long getZoneId() {

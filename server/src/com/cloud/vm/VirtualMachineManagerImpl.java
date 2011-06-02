@@ -1433,7 +1433,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Command command = null;
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("VM " + serverName + ": server state = " + serverState.toString() + " and agent state = " + agentState.toString());
+            s_logger.debug("VM " + serverName + ": server state = " + serverState + " and agent state = " + agentState);
         }
 
         if (agentState == State.Error) {
