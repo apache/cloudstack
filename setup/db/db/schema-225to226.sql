@@ -6,6 +6,7 @@ ALTER TABLE `cloud`.`mshost` ADD COLUMN `runid` bigint NOT NULL DEFAULT 0 COMMEN
 ALTER TABLE `cloud`.`mshost` ADD COLUMN `state` varchar(10) NOT NULL default 'Down';
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `limit_cpu_use` tinyint(1) NOT NULL DEFAULT 0 ;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `limit_cpu_use` tinyint(1) NOT NULL DEFAULT 0 ;
+ALTER TABLE `cloud`.`storage_pool` MODIFY `host_address` varchar(255) NOT NULL;
 
 DROP TABLE IF EXISTS `cloud`.`certificate`;
 CREATE TABLE `cloud`.`keystore` (
