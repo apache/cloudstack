@@ -3,6 +3,7 @@
 --;
 
 ALTER TABLE `cloud`.`security_group` add UNIQUE KEY (`name`, `account_id`);
+ALTER TABLE `cloud`.`storage_pool` MODIFY `host_address` varchar(255) NOT NULL;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`ovs_tunnel`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
