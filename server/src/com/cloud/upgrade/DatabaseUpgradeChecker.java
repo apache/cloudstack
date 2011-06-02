@@ -73,10 +73,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("2.2.4", new DbUpgrade[] { new Upgrade224to225() });
     }
 
-    protected void runScript(File file) {
+    protected void runScript(Connection conn, File file) {
         try {
             FileReader reader = new FileReader(file);
-            Connection conn = Transaction.getStandaloneConnection();
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
         } catch (FileNotFoundException e) {
@@ -140,7 +139,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 File[] scripts = upgrade.getPrepareScripts();
                 if (scripts != null) {
                     for (File script : scripts) {
-                        runScript(script);
+                        runScript(conn, script);
                     }
                 }
 
@@ -201,11 +200,19 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                                     + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
 
                             txn.start();
+                            
+                            Connection conn;
+                            try {
+                                conn = txn.getConnection();
+                            } catch (SQLException e) {
+                                s_logger.error("Unable to cleanup the database", e);
+                                throw new CloudRuntimeException("Unable to cleanup the database", e);
+                            }
 
                             File[] scripts = upgrade.getCleanupScripts();
                             if (scripts != null) {
                                 for (File script : scripts) {
-                                    runScript(script);
+                                    runScript(conn, script);
                                     s_logger.debug("Cleanup script " + script.getAbsolutePath() + " is executed successfully");
                                 }
                             }
