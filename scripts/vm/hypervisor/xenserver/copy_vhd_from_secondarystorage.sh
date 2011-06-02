@@ -111,6 +111,12 @@ if [ $type == "nfs" ]; then
   uuid=$(uuidgen -r)
   desvhd=/var/run/sr-mount/$sruuid/$uuid
   copyvhd $desvhd $vhdfile 0 $type
+  $VHDUTIL set -n $desvhd -f "hidden" -v "0" > /dev/null
+  if [ $? -ne 0 ]; then
+    echo "21#failed to set hidden to 0  $desvhd"
+    cleanup
+    exit 0
+  fi
   mv /var/run/sr-mount/$sruuid/$uuid /var/run/sr-mount/$sruuid/${uuid}.vhd
   xe sr-scan uuid=$sruuid
   if [ $? -ne 0 ]; then
@@ -140,6 +146,12 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
     exit 0
   fi
   copyvhd $desvhd $vhdfile $lvsize $type
+  $VHDUTIL set -n $desvhd -f "hidden" -v "0" > /dev/null
+  if [ $? -ne 0 ]; then
+    echo "22#failed to set hidden to 0  $desvhd"
+    cleanup
+    exit 0
+  fi
   xe sr-scan uuid=$sruuid
   if [ $? -ne 0 ]; then
     echo "14#failed to scan sr $sruuid"
