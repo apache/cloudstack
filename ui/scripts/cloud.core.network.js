@@ -1253,7 +1253,8 @@ function bindAddNetworkButton() {
 				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
-				
+				isValid &= validateString("Tags", $thisDialog.find("#tags"), $thisDialog.find("#tags_errormsg"), true); //optional
+							
 				if($thisDialog.find("#domain_container").css("display") != "none") {
 				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
 				    var domainName = $thisDialog.find("#domain").val();
@@ -1285,13 +1286,23 @@ function bindAddNetworkButton() {
 				    				
 				$thisDialog.find("#spinning_wheel").show()
 				
+				var array1 = [];
+				array1.push("&zoneId="+zoneObj.id);
+				
+				var name = todb($thisDialog.find("#add_publicip_vlan_network_name").val());
+				array1.push("&name="+name);
+				
+				var desc = todb($thisDialog.find("#add_publicip_vlan_network_desc").val());
+				array1.push("&displayText="+desc);
+								
 				var vlan = trim($thisDialog.find("#add_publicip_vlan_vlan").val());
 				if (isTagged) {
 					vlan = "&vlan="+vlan;
 				} else {
 					vlan = "&vlan=untagged";
 				}
-								
+				array1.push(vlan);
+				
 				var scopeParams = "";
 				if($thisDialog.find("#domain_container").css("display") != "none") {
 					if ($thisDialog.find("#add_publicip_vlan_account_container").css("display") != "none") {
@@ -1301,17 +1312,28 @@ function bindAddNetworkButton() {
 					}
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
-				}
+				}				
+				array1.push(scopeParams);
 				
-				var isDefault = trim($thisDialog.find("#add_publicip_vlan_default").val());
-				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
-				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
-				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
-				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
-										
-				// Creating network for the direct networking
-				var name = todb($thisDialog.find("#add_publicip_vlan_network_name").val());
-				var desc = todb($thisDialog.find("#add_publicip_vlan_network_desc").val());
+				var isDefault = $thisDialog.find("#add_publicip_vlan_default").val();
+				array1.push("isDefault="+isDefault);
+								
+				var gateway = $thisDialog.find("#add_publicip_vlan_gateway").val();
+				array1.push("&gateway="+todb(gateway));
+				
+				var netmask = $thisDialog.find("#add_publicip_vlan_netmask").val();
+				array1.push("&netmask="+todb(netmask));
+				
+				var startip = $thisDialog.find("#add_publicip_vlan_startip").val();
+				array1.push("&startip="+todb(startip));
+				
+				var endip = $thisDialog.find("#add_publicip_vlan_endip").val();
+				array1.push("&endip="+todb(endip));
+				
+				var tags = $thisDialog.find("#add_publicip_vlan_endip").val();
+				array1.push("&tags="+todb(tags));
+				
+				// Creating network for the direct networking				
 				$.ajax({
 					data: createURL("command=listNetworkOfferings&guestiptype=Direct"),
 					dataType: "json",
@@ -1321,9 +1343,11 @@ function bindAddNetworkButton() {
 						if (networkOfferings != null && networkOfferings.length > 0) {
 							for (var i = 0; i < networkOfferings.length; i++) {
 								if (networkOfferings[i].isdefault) {
+									array1.push("&networkOfferingId="+networkOfferings[i].id);
+									
 									// Create a network from this.
 									$.ajax({
-										data: createURL("command=createNetwork&isDefault="+isDefault+"&name="+name+"&displayText="+desc+"&networkOfferingId="+networkOfferings[i].id+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
+										data: createURL("command=createNetwork"+array1.join("")),
 										dataType: "json",
 										success: function(json) {	
 											$thisDialog.find("#spinning_wheel").hide();

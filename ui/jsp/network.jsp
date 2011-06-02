@@ -1308,6 +1308,13 @@ dictionary = {
                 </div>
                 <div id="add_publicip_vlan_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
+            </li>            
+            <li>
+                <label>
+                    <fmt:message key="label.tags"/>:</label>
+                <input class="text" type="text" id="tags" />
+                <div id="tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
             </li>
         </ol>
         </form>
