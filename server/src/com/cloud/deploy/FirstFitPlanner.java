@@ -192,7 +192,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 								
 								Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools);
 								if(potentialResources != null){
-									Pod pod = _podDao.findById(vm.getPodId());
+									Pod pod = _podDao.findById(host.getPodId());
 									Cluster cluster = _clusterDao.findById(host.getClusterId());
 									Map<Volume, StoragePool> storageVolMap = potentialResources.second();
 									// remove the reused vol<->pool from destination, since we don't have to prepare this volume.
