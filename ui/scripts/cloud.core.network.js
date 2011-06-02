@@ -89,8 +89,8 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     networkPopulateMiddleMenu($leftmenuItem1);  
     bindAddNetworkButton();     
     
-    $readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext");
-    $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit");    
+    $readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext, #tags");
+    $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit, #tags_edit");    
 }
 
 function networkPopulateMiddleMenu($leftmenuItem1) {
@@ -1070,7 +1070,8 @@ function directNetworkJsonToDetailsTab() {
     $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
     $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));
-        
+    $thisTab.find("#tags").text(fromdb(jsonObj.tags));
+	$thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));    
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      //might be null
     $thisTab.find("#account").text(fromdb(jsonObj.account));    //might be null
         
@@ -1079,7 +1080,8 @@ function directNetworkJsonToDetailsTab() {
     bindActionLink($actionLink);
         
     var $actionMenu = $actionLink.find("#action_menu");
-    $actionMenu.find("#action_list").empty();    
+    $actionMenu.find("#action_list").empty();   
+
     buildActionLinkForTab("label.action.edit.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	   
     buildActionLinkForTab("label.action.delete.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	      
         
@@ -1092,11 +1094,15 @@ function directNetworkJsonClearDetailsTab() {
 	$thisTab.find("#grid_header_title").text("");			
 	$thisTab.find("#id").text("");				
 	$thisTab.find("#name").text("");	
+	$thisTab.find("#name_edit").val("");
 	$thisTab.find("#displaytext").text("");	 
+	$thisTab.find("#displaytext_edit").val("");	 
 	$thisTab.find("#default").text(""); 	 	
     $thisTab.find("#vlan").text("");
     $thisTab.find("#gateway").text("");
-    $thisTab.find("#netmask").text("");        
+    $thisTab.find("#netmask").text("");  
+    $thisTab.find("#tags").text("");	
+	$thisTab.find("#tags_edit").val("");    
     $thisTab.find("#domain").text("");      
     $thisTab.find("#account").text("");       
        
@@ -1525,7 +1531,10 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
     
     var displaytext = $detailsTab.find("#displaytext_edit").val();
     array1.push("&displayText="+todb(displaytext));
-		
+	
+    var tags = $detailsTab.find("#tags_edit").val();
+    array1.push("&tags="+todb(tags));
+    
 	$.ajax({
 	    data: createURL("command=updateNetwork&id="+id+array1.join("")),
 		dataType: "json",
