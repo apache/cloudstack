@@ -18,6 +18,7 @@
 
 package com.cloud.dc;
 
+import java.util.Date;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -34,6 +35,7 @@ import javax.persistence.Transient;
 import com.cloud.network.Network.Provider;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="data_center")
@@ -111,6 +113,9 @@ public class DataCenterVO implements DataCenter {
     
 	@Column(name="zone_token")
 	private String zoneToken;    
+	
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    private Date removed;
     
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -397,5 +402,9 @@ public class DataCenterVO implements DataCenter {
  	
  	public void setZoneToken(String zoneToken) {
  		this.zoneToken = zoneToken;
+ 	}
+ 	
+ 	public Date getRemoved() {
+ 	    return removed;
  	}
 }

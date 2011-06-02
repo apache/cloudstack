@@ -280,7 +280,7 @@ CREATE TABLE `cloud`.`cluster` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this cluster enabled for allocation for new resources',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`),
+  CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
   UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`),
   INDEX `i_cluster__allocation_state`(`allocation_state`)
@@ -490,6 +490,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this data center enabled for allocation for new resources',
   `zone_token` varchar(255),
+  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
   INDEX `i_data_center__domain_id`(`domain_id`),

@@ -1065,11 +1065,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         List<NetworkVO> networks = _networkDao.listByZoneIncludingRemoved(zoneId);
         if (networks != null && !networks.isEmpty()) {
             for (NetworkVO network : networks) {
-                _networkDao.expunge(network.getId());
+                _networkDao.remove(network.getId());
             }
         }
-
-        success = _zoneDao.expunge(zoneId);
+        success = _zoneDao.remove(zoneId);
 
         txn.commit();
 

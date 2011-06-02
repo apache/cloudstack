@@ -32,6 +32,7 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanVO;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
@@ -353,6 +354,20 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
                 }
             }
         }
+        return result;
+    }
+    
+    @Override
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        DataCenterVO zone = createForUpdate();
+        zone.setName(null);
+        
+        update(id, zone);
+
+        boolean result = super.remove(id);
+        txn.commit();
         return result;
     }
 }
