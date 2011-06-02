@@ -130,6 +130,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -937,8 +938,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 selectSql += " AND taken IS NOT NULL";
             }
 
-            if (tableName.equals("host_pod_ref")) {
+            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")) {
                 selectSql += " AND removed is NULL";
+            }
+            
+            if (tableName.equals("vm_instance")) {
+                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
             }
 
             Transaction txn = Transaction.currentTxn();
