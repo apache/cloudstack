@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -44,11 +46,14 @@ public class UpdateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the network")
     private Long id;
     
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the new name for the network")   
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the new name for the network")
     private String name;
     
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the new display text for the network")   
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the new display text for the network")
     private String displayText;
+    
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="tags for the network")
+    private List<String> tags;
     
   
     /////////////////////////////////////////////////////
@@ -65,7 +70,11 @@ public class UpdateNetworkCmd extends BaseCmd {
     
     public String getDisplayText() {
         return displayText;
-    } 
+    }
+    
+    public List<String> getTags() {
+        return tags;
+    }
     
     
     /////////////////////////////////////////////////////
@@ -90,7 +99,7 @@ public class UpdateNetworkCmd extends BaseCmd {
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         
-        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), UserContext.current().getCaller());
+        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), tags, UserContext.current().getCaller());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());

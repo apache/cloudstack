@@ -2834,14 +2834,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = false)
-    public Network updateNetwork(long networkId, String name, String displayText, Account caller) {
+    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller) {
 
         // verify input parameters
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
         }
-
+        
+        if (tags != null && tags.size() > 1) {
+            throw new InvalidParameterException("Unable to support more than one tag on network yet");
+        }
+        
         // Don't allow to update system network
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (offering.isSystemOnly()) {
@@ -2856,6 +2860,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (displayText != null) {
             network.setDisplayText(displayText);
+        }
+        
+        if (tags != null) {
+            network.setTags(tags);
         }
 
         _networksDao.update(networkId, network);
