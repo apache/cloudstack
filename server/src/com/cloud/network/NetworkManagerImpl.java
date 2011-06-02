@@ -1232,6 +1232,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 updateNic(nic, network.getId(), 1);
             } else {
                 profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
+                guru.updateNicProfile(profile, network);
                 nic.setState(Nic.State.Reserved);
                 updateNic(nic, network.getId(), 1);
             }
