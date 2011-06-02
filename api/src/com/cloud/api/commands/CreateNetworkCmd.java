@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -42,10 +44,10 @@ public class CreateNetworkCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the network")   
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the network")
     private String name;
     
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network")   
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network")
     private String displayText;
     
     @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, required=true, description="the network offering id")
@@ -76,13 +78,16 @@ public class CreateNetworkCmd extends BaseCmd {
     private Long domainId;
     
     @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network is shared across accounts in the Zone")
-    private Boolean isShared; 
+    private Boolean isShared;
     
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
     private Boolean isDefault;
     
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
+    
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the network")
+    private List<String> tag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

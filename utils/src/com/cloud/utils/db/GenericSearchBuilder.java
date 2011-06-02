@@ -97,9 +97,14 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
+//    public GenericSearchBuilder<T, K> selectField(String joinName, Object... entityFields) {
+//        JoinBuilder<GenericSearchBuilder<?, ?>> jb = _joins.get(joinName);
+//
+//    }
+    
     /**
      * Specifies the field to select.
-     *  
+     * 
      * @param fieldName The field name of the result object to put the value of the field selected.  This can be null if you're selecting only one field and the result is not a complex object.
      * @param func function to place.
      * @param useless column to select.  Call this with this.entity() method.
@@ -137,6 +142,10 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
+//    public GenericSearchBuilder<T, K> select(String joinName, String fieldName, Func func, Object useless, Object... params) {
+//
+//    }
+    
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
         String name = method.getName();
@@ -157,7 +166,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
                 }
             }
             assert false : "Perhaps you need to make the method start with get or is?";
-        } 
+        }
         return methodProxy.invokeSuper(object, args);
     }
     

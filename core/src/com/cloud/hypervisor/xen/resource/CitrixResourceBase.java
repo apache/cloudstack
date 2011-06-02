@@ -32,12 +32,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -182,7 +184,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.resource.StoragePoolResource;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
@@ -222,14 +223,21 @@ import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
 
 /**
- * Encapsulates the interface to the XenServer API.
+ * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
+ * to perform the required functionalities for CloudStack.
+ * 
+ * ==============>  READ THIS  <==============
+ * Because the XenServer objects can expire when the session expires, we cannot
+ * keep any of the actual XenServer objects in this class.  The only
+ * thing that is constant is the UUID of the XenServer objects but not the
+ * objects themselves!  This is very important before you do any changes in
+ * this code here.
  * 
  */
 @Local(value = ServerResource.class)
 public abstract class CitrixResourceBase implements ServerResource, HypervisorResource {
     private static final Logger s_logger = Logger.getLogger(CitrixResourceBase.class);
     protected static final XenServerConnectionPool _connPool = XenServerConnectionPool.getInstance();
-    protected static final int MB = 1024 * 1024;
     protected String _name;
     protected String _username;
     protected Queue<String> _password=new LinkedList<String>();
@@ -247,38 +255,43 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _guestNetworkName;
     protected int _wait;
     protected String _instance; //instance name (default is usually "VM")
+    static final Random _rand = new Random(System.currentTimeMillis());
 
     protected IAgentControl _agentControl;
 
     final int _maxWeight = 256;
 
-    protected final XenServerHost _host = new XenServerHost();
+    protected final XsHost _host = new XsHost();
 
     // Guest and Host Performance Statistics
-    protected boolean _collectHostStats = false;
     protected String _consolidationFunction = "AVERAGE";
     protected int _pollingIntervalInSeconds = 60;
 
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
-    protected HashMap<StoragePoolType, StoragePoolResource> _pools = new HashMap<StoragePoolType, StoragePoolResource>(5);
+    protected String _localGateway;
 
     public enum SRType {
         NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA;
+        
+        String _str;
+        
+        private SRType() {
+            _str = super.toString().toLowerCase();
+        }
 
         @Override
         public String toString() {
-            return super.toString().toLowerCase();
+            return _str;
         }
 
         public boolean equals(String type) {
-            return super.toString().equalsIgnoreCase(type);
+            return _str.equalsIgnoreCase(type);
         }
     }
 
     protected static HashMap<Types.VmPowerState, State> s_statesTable;
-    protected String _localGateway;
     static {
         s_statesTable = new HashMap<Types.VmPowerState, State>();
         s_statesTable.put(Types.VmPowerState.HALTED, State.Stopped);
@@ -320,25 +333,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public void disconnected() {
     }
 
-    protected Pair<VM, VM.Record> getVmByNameLabel(Connection conn, Host host, String nameLabel, boolean getRecord) throws XmlRpcException, XenAPIException {
-        Set<VM> vms = host.getResidentVMs(conn);
-        for (VM vm : vms) {
-            VM.Record rec = null;
-            String name = null;
-            if (getRecord) {
-                rec = vm.getRecord(conn);
-                name = rec.nameLabel;
-            } else {
-                name = vm.getNameLabel(conn);
-            }
-            if (name.equals(nameLabel)) {
-                return new Pair<VM, VM.Record>(vm, rec);
-            }
-        }
-
-        return null;
-    }
-
     protected boolean pingdomr(Connection conn, String host, String port) {
         String status;
         status = callHostPlugin(conn, "vmops", "pingdomr", "host", host, "port", port);
@@ -351,7 +345,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
     
-    protected boolean pingxenserver() {
+    protected boolean pingXenServer() {
         Session slaveSession = null;
         Connection slaveConn = null;
         try {
@@ -499,27 +493,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
     
-    Pair<Network, String> getNativeNetworkForTraffic(Connection conn, TrafficType type, String tag) throws XenAPIException, XmlRpcException {
+    protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String tag) throws XenAPIException, XmlRpcException {
         if (tag != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Looking for network named " + tag);
             }
-            Network network = getNetworkByName(conn, tag);
+            return getNetworkByName(conn, tag);
         }
         
         if (type == TrafficType.Guest) {
-            return new Pair<Network, String>(Network.getByUuid(conn, _host.guestNetwork), _host.guestPif);
+            return new XsLocalNetwork(Network.getByUuid(conn, _host.guestNetwork), null, PIF.getByUuid(conn, _host.guestPif), null);
         } else if (type == TrafficType.Control) {
             setupLinkLocalNetwork(conn);
-            return new Pair<Network, String>(Network.getByUuid(conn, _host.linkLocalNetwork), null);
+            return new XsLocalNetwork(Network.getByUuid(conn, _host.linkLocalNetwork));
         } else if (type == TrafficType.Management) {
-            return new Pair<Network, String>(Network.getByUuid(conn, _host.privateNetwork), _host.privatePif);
+            return new XsLocalNetwork(Network.getByUuid(conn, _host.privateNetwork), null, PIF.getByUuid(conn, _host.privatePif), null);
         } else if (type == TrafficType.Public) {
-            return new Pair<Network, String>(Network.getByUuid(conn, _host.publicNetwork), _host.publicPif);
+            return new XsLocalNetwork(Network.getByUuid(conn, _host.publicNetwork), null, PIF.getByUuid(conn, _host.publicPif), null);
         } else if (type == TrafficType.Storage) {
-            return new Pair<Network, String>(Network.getByUuid(conn, _host.storageNetwork1), _host.storagePif1);
-        } else if (type == TrafficType.Vpn) {
-            return new Pair<Network, String>(Network.getByUuid(conn, _host.publicNetwork), _host.publicPif);
+            return new XsLocalNetwork(Network.getByUuid(conn, _host.storageNetwork1), null, PIF.getByUuid(conn, _host.storagePif1), null);
         }
         
         throw new CloudRuntimeException("Unsupported network type: " + type);
@@ -579,8 +571,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 					vswitchNw = networks.iterator().next();
 				}
 
-				enableXenServerNetwork(conn, vswitchNw, "vswitch",
-						"vswicth network");
+				enableXenServerNetwork(conn, vswitchNw, "vswitch", "vswicth network");
 				_host.vswitchNetwork = vswitchNw;
 			}
 			return _host.vswitchNetwork;
@@ -617,16 +608,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     protected Network getNetwork(Connection conn, NicTO nic) throws XenAPIException, XmlRpcException {
         String[] tags = nic.getTags();
-        Pair<Network, String> network = getNativeNetworkForTraffic(conn, nic.getType(), tags != null && tags.length > 0 ? tags[0] : null);
+        XsLocalNetwork network = getNativeNetworkForTraffic(conn, nic.getType(), tags != null && tags.length > 0 ? tags[0] : null);
         if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
-            return network.first();
+            return network.getNetwork();
         } else if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
             URI broadcastUri = nic.getBroadcastUri();
             assert broadcastUri.getScheme().equals(BroadcastDomainType.Vlan.scheme());
             long vlan = Long.parseLong(broadcastUri.getHost());
-            return enableVlanNetwork(conn, vlan, network.first(), network.second());
+            return enableVlanNetwork(conn, vlan, network);
         } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
-            return network.first();
+            return network.getNetwork();
         } else if (nic.getBroadcastType() == BroadcastDomainType.Vswitch) {
             String broadcastUri = nic.getBroadcastUri().toString();
             String header = broadcastUri.substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length());
@@ -1588,7 +1579,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected CheckHealthAnswer execute(CheckHealthCommand cmd) {
-        boolean result = pingxenserver();
+        boolean result = pingXenServer();
         return new CheckHealthAnswer(cmd, result);
     }
 
@@ -3279,7 +3270,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return true;
     }
 
-    protected Nic getManageMentNetwork(Connection conn) throws XmlRpcException, XenAPIException {
+    protected XsLocalNetwork getManagementNetwork(Connection conn) throws XmlRpcException, XenAPIException {
         PIF mgmtPif = null;
         PIF.Record mgmtPifRec = null;
         Host host = Host.getByUuid(conn, _host.uuid);
@@ -3315,30 +3306,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         Network nk =  mgmtPifRec.network;
         Network.Record nkRec = nk.getRecord(conn);
-        return new Nic(nk, nkRec, mgmtPif, mgmtPifRec);
+        return new XsLocalNetwork(nk, nkRec, mgmtPif, mgmtPifRec);
     }
     
     
-    protected Nic getLocalNetwork(Connection conn, String name) throws XmlRpcException, XenAPIException {
-        Set<Network> networks = Network.getByNameLabel(conn, name);
-        for (Network network : networks) {
-            Network.Record nr = network.getRecord(conn);
-            for (PIF pif : nr.PIFs) {
-                PIF.Record pr = pif.getRecord(conn);
-                if (_host.uuid.equals(pr.host.getUuid(conn))) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found a network called " + name + " on host=" + _host.ip + ";  Network="
-                                + nr.uuid + "; pif=" + pr.uuid);
-                    }
-                    return new Nic(network, nr, pif, pr);
-                }
-            }
-        }
-
-        return null;
-    }
-
-
     protected VIF getCorrectVif(Connection conn, VM router, String vlanId) {
         try {
             Set<VIF> routerVIFs = router.getVIFs(conn);
@@ -3397,89 +3368,185 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return getVDIbyUuid(conn, volumePath);
     }
     
-    protected Network getNetworkByName(Connection conn, String name) throws BadServerResponse, XenAPIException, XmlRpcException {
-        Set<Network> networks = Network.getByNameLabel(conn, name);
-        if (networks.size() > 0) {
-            assert networks.size() == 1 : "How did we find more than one network with this name label" + name + "?  Strange....";
-            return networks.iterator().next(); // Found it.
-        }
-
-        return null;
-    }
-
-    protected synchronized Network getNetworkByName(Connection conn, String name, boolean lookForPif) throws XenAPIException, XmlRpcException {
-        Network found = null;
+    /**
+     * getNetworkByName() retrieves what the server thinks is the actual
+     * network used by the XenServer host.  This method should always be
+     * used to talk to retrieve a network by the name.  The reason is
+     * because of the problems in using the name label as the way to find
+     * the Network.
+     * 
+     * To see how we are working around these problems, take a look at
+     * enableVlanNetwork().  The following description assumes you have looked
+     * at the description on that method.
+     * 
+     * In order to understand this, we have to see what type of networks are
+     * within a XenServer that's under CloudStack control.
+     * 
+     *   - Native Networks: these are networks that are untagged on the
+     *     XenServer and are used to crate VLAN networks on.  These are
+     *     created by the user and is assumed to be one per cluster.
+     *   - VLAN Networks: these are dynamically created by CloudStack and can
+     *     have problems with duplicated names.
+     *   - LinkLocal Networks: these are dynamically created by CloudStack and
+     *     can also have problems with duplicated names but these don't have
+     *     actual PIFs.
+     * 
+     *  In order to speed to retrieval of a network, we do the following:
+     *    - We retrieve by the name.  If only one network is retrieved, we
+     *      assume we retrieved the right network.
+     *    - If more than one network is retrieved, we check to see which one
+     *      has the pif for the local host and use that.
+     *    - If a pif is not found, then we look at the tags and find the
+     *      one with the lowest timestamp. (See enableVlanNetwork())
+     * 
+     * @param conn Xapi connection
+     * @param name name of the network
+     * @return XsNic an object that contains network, network record, pif, and pif record.
+     * @throws XenAPIException
+     * @throws XmlRpcException
+     * 
+     * @see enableVlanNetwork
+     */
+    protected XsLocalNetwork getNetworkByName(Connection conn, String name) throws XenAPIException, XmlRpcException {
         Set<Network> networks = Network.getByNameLabel(conn, name);
         if (networks.size() == 1) {
-            found = networks.iterator().next();
-        } else if (networks.size() > 1) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found more than one network with the name " + name);
+            return new XsLocalNetwork(networks.iterator().next(), null, null, null);
+        }
+        
+        if (networks.size() == 0) {
+            return null;
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Found more than one network with the name " + name);
+        }
+        Network earliestNetwork = null;
+        Network.Record earliestNetworkRecord = null;
+        long earliestTimestamp = Long.MAX_VALUE;
+        int earliestRandom = Integer.MAX_VALUE;
+        for (Network network : networks) {
+            XsLocalNetwork nic = new XsLocalNetwork(network);
+            
+            if (nic.getPif(conn) != null) {
+                return nic;
             }
-            for (Network network : networks) {
-                if (!lookForPif) {
-                    found = network;
-                    break;
-                }
-                
-                Network.Record netr = network.getRecord(conn);
-                s_logger.debug("Checking network " + netr.uuid);
-                if (netr.PIFs.size() == 0) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Network " + netr.uuid + " has no pifs so skipping that.");
+
+            Network.Record record = network.getRecord(conn);
+            if (record.tags != null) {
+                for (String tag : record.tags) {
+                    Pair<Long, Integer> stamp = parseTimestamp(tag);
+                    if (stamp == null) {
+                        continue;
                     }
-                } else {
-                    for (PIF pif : netr.PIFs) {
-                        PIF.Record pifr = pif.getRecord(conn);
-                        if (_host.uuid.equals(pifr.host.getUuid(conn))) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Network " + netr.uuid + " has a pif " + pifr.uuid + " for our host ");
-                            }
-                            found = network;
-                            break;
-                        }
+                    
+                    if (stamp.first() < earliestTimestamp || (stamp.first() == earliestTimestamp && stamp.second() < earliestRandom)) {
+                        earliestTimestamp = stamp.first();
+                        earliestRandom = stamp.second();
+                        earliestNetwork = network;
+                        earliestNetworkRecord = record;
                     }
                 }
             }
         }
 
-        return found;
+        return earliestNetwork != null ? new XsLocalNetwork(earliestNetwork, earliestNetworkRecord, null, null) : null;
     }
     
-    protected Network enableVlanNetwork(Connection conn, long tag, Network network, String pifUuid) throws XenAPIException, XmlRpcException {
-        // In XenServer, vlan is added by
-        // 1. creating a network.
-        // 2. creating a vlan associating network with the pif.
-        // We always create
-        // 1. a network with VLAN[vlan id in decimal]
-        // 2. a vlan associating the network created with the pif to private
-        // network.
-
+    protected String generateTimeStamp() {
+        return new StringBuilder("CsCreateTime-").append(System.currentTimeMillis()).append("-").append(_rand.nextInt()).toString();
+    }
+    
+    protected Pair<Long, Integer> parseTimestamp(String timeStampStr) {
+        String[] tokens = timeStampStr.split("-");
+        assert(tokens.length == 3) : "It's our timestamp but it doesn't fit our format: " + timeStampStr;
+        if (!tokens[0].equals("CsCreateTime-")) {
+            return null;
+        }
+        return new Pair<Long, Integer>(Long.parseLong(tokens[1]), Integer.parseInt(tokens[2]));
+    }
+    
+    /**
+     * enableVlanNetwork creates a Network object, Vlan object, and thereby
+     * a tagged PIF object in Xapi.
+     * 
+     * In XenServer, VLAN is added by
+     *   - Create a network, which is unique cluster wide.
+     *   - Find the PIF that you want to create the VLAN on.
+     *   - Create a VLAN using the network and the PIF.  As a result of this
+     *     operation, a tagged PIF object is also created.
+     * 
+     * Here is a list of problems with clustered Xapi implementation that
+     * we are trying to circumvent.
+     *   - There can be multiple Networks with the same name-label so searching
+     *     using name-label is not unique.
+     *   - There are no other ways to search for Networks other than listing
+     *     all of them which is not efficient in our implementation because
+     *     we can have over 4000 VLAN networks.
+     *   - In a clustered situation, it's possible for both hosts to detect
+     *     that the Network is missing and both creates it.  This causes a
+     *     lot of problems as one host may be using one Network and another
+     *     may be using a different network for their VMs.  This causes
+     *     problems in migration because the VMs are logically attached
+     *     to different networks in Xapi's database but in reality, they
+     *     are attached to the same network.
+     * 
+     * To work around these problems, we do the following.
+     * 
+     *   - When creating the VLAN network, we name it as VLAN-UUID of the
+     *     Network it is created on-VLAN Tag.  Because VLAN tags is unique with
+     *     one particular network, this is a unique name-label to quickly
+     *     retrieve the the VLAN network with when we need it again.
+     *   - When we create the VLAN network, we add a timestamp and a random
+     *     number as a tag into the network.  Then instead of creating
+     *     VLAN on that network, we actually retrieve the Network again
+     *     and this time uses the VLAN network with lowest timestamp or
+     *     lowest random number as the VLAN network.  This allows VLAN creation
+     *     to happen on multiple hosts concurrently but even if two VLAN
+     *     networks were created with the same name, only one of them is used.
+     * 
+     * One cavaet about this approach is that it relies on the timestamp to
+     * be relatively accurate among different hosts.
+     * 
+     * @param conn Xapi Connection
+     * @param tag VLAN tag
+     * @param network network on this host to create the VLAN on.
+     * @return VLAN Network created.
+     * @throws XenAPIException
+     * @throws XmlRpcException
+     */
+    protected Network enableVlanNetwork(Connection conn, long tag, XsLocalNetwork network) throws XenAPIException, XmlRpcException {
         Network vlanNetwork = null;
-        String name = "VLAN" + Long.toString(tag);
-
-        vlanNetwork = getNetworkByName(conn, name, true);
-        if (vlanNetwork == null) { // Can't find it, then create it.
+        String oldName = "VLAN" + Long.toString(tag);
+        String newName = "VLAN-" + network.getNetworkRecord(conn).uuid + "-" + tag;
+        XsLocalNetwork vlanNic = getNetworkByName(conn, newName);
+        if (vlanNic == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Couldn't find vlan network with the new name so trying old name: " + oldName);
+            }
+            vlanNic = getNetworkByName(conn, oldName);
+            if (vlanNic != null) {
+                s_logger.info("Renaming VLAN with old name " + oldName + " to " + newName);
+                vlanNic.getNetwork().setNameLabel(conn, newName);
+            }
+        }
+        if (vlanNic == null) { // Can't find it, then create it.
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating VLAN network for " + tag + " on host " + _host.ip);
             }
             Network.Record nwr = new Network.Record();
-            nwr.nameLabel = name;
-            nwr.bridge = name;
+            nwr.nameLabel = newName;
+            nwr.tags = new HashSet<String>();
+            nwr.tags.add(generateTimeStamp());
             vlanNetwork = Network.create(conn, nwr);
+            vlanNic = getNetworkByName(conn, newName);
         }
 
-        PIF nPif = PIF.getByUuid(conn, pifUuid);
-        PIF.Record nPifr = nPif.getRecord(conn);
-
-        Network.Record vlanNetworkr = vlanNetwork.getRecord(conn);
-        if (vlanNetworkr.PIFs != null) {
-            for (PIF pif : vlanNetworkr.PIFs) {
-                PIF.Record pifr = pif.getRecord(conn);
-                if (pifr.device.equals(nPifr.device) && pifr.host.equals(nPifr.host)) {
-                    return vlanNetwork;
-                }
-            }
+        PIF nPif = network.getPif(conn);
+        PIF.Record nPifr = network.getPifRecord(conn);
+        
+        vlanNetwork = vlanNic.getNetwork();
+        if (vlanNic.getPif(conn) != null) {
+            return vlanNetwork;
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -3571,9 +3638,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public PingCommand getCurrentStatus(long id) {
         try {
             Connection conn = getConnection();
-            if (!pingxenserver()) {
+            if (!pingXenServer()) {
                 Thread.sleep(1000);
-                if (!pingxenserver()) {
+                if (!pingXenServer()) {
                     s_logger.warn(" can not ping xenserver " + _host.uuid);
                     return null;
                 }
@@ -3634,18 +3701,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 _host.speed = hc.getSpeed(conn).intValue();
                 break;
             }
-            Nic privateNic = getManageMentNetwork(conn);
-            _privateNetworkName = privateNic.nr.nameLabel;
-            _host.privatePif = privateNic.pr.uuid;
-            _host.privateNetwork = privateNic.nr.uuid;
+            XsLocalNetwork privateNic = getManagementNetwork(conn);
+            _privateNetworkName = privateNic.getNetworkRecord(conn).nameLabel;
+            _host.privatePif = privateNic.getPifRecord(conn).uuid;
+            _host.privateNetwork = privateNic.getNetworkRecord(conn).uuid;
             
             _canBridgeFirewall = can_bridge_firewall(conn);
             
             _host.systemvmisouuid = null;
             
-            Nic guestNic = null;
+            XsLocalNetwork guestNic = null;
             if (_guestNetworkName != null && !_guestNetworkName.equals(_privateNetworkName)) {
-            	guestNic = getLocalNetwork(conn, _guestNetworkName);
+            	guestNic = getNetworkByName(conn, _guestNetworkName);
             	if (guestNic == null) {
             		s_logger.warn("Unable to find guest network " + _guestNetworkName);
             		throw new IllegalArgumentException("Unable to find guest network " + _guestNetworkName + " for host " + _host.ip);
@@ -3654,12 +3721,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             	guestNic = privateNic;
             	_guestNetworkName = _privateNetworkName;
             }
-            _host.guestNetwork = guestNic.nr.uuid;
-            _host.guestPif = guestNic.pr.uuid;
+            _host.guestNetwork = guestNic.getNetworkRecord(conn).uuid;
+            _host.guestPif = guestNic.getPifRecord(conn).uuid;
 
-            Nic publicNic = null;
+            XsLocalNetwork publicNic = null;
             if (_publicNetworkName != null && !_publicNetworkName.equals(_guestNetworkName)) {
-                publicNic = getLocalNetwork(conn, _publicNetworkName);
+                publicNic = getNetworkByName(conn, _publicNetworkName);
                 if (publicNic == null) {
                     s_logger.warn("Unable to find public network " + _publicNetworkName + " for host " + _host.ip);
                     throw new IllegalArgumentException("Unable to find public network " + _publicNetworkName + " for host " + _host.ip);
@@ -3668,30 +3735,30 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 publicNic = guestNic;
                 _publicNetworkName = _guestNetworkName;
             }
-            _host.publicPif = publicNic.pr.uuid;
-            _host.publicNetwork = publicNic.nr.uuid;
+            _host.publicPif = publicNic.getPifRecord(conn).uuid;
+            _host.publicNetwork = publicNic.getNetworkRecord(conn).uuid;
 
-            Nic storageNic1 = null;
+            XsLocalNetwork storageNic1 = null;
             if (_storageNetworkName1 != null && !_storageNetworkName1.equals(_guestNetworkName)) {
-                storageNic1 = getLocalNetwork(conn, _storageNetworkName1);
+                storageNic1 = getNetworkByName(conn, _storageNetworkName1);
             }
             if (storageNic1 == null) {
                 storageNic1 = guestNic;
                 _storageNetworkName1 = _guestNetworkName;
             }
-            _host.storageNetwork1 = storageNic1.nr.uuid;
-            _host.storagePif1 = storageNic1.pr.uuid;
+            _host.storageNetwork1 = storageNic1.getNetworkRecord(conn).uuid;
+            _host.storagePif1 = storageNic1.getPifRecord(conn).uuid;
 
-            Nic storageNic2 = null;
+            XsLocalNetwork storageNic2 = null;
             if (_storageNetworkName2 != null && !_storageNetworkName2.equals(_guestNetworkName)) {
-                storageNic2 = getLocalNetwork(conn, _storageNetworkName2);
+                storageNic2 = getNetworkByName(conn, _storageNetworkName2);
             }
             if (storageNic2 == null) {
                 storageNic2 = guestNic;
                 _storageNetworkName2 = _guestNetworkName;
             }
-            _host.storageNetwork2 = storageNic2.nr.uuid;
-            _host.storagePif2 = storageNic2.pr.uuid;
+            _host.storageNetwork2 = storageNic2.getNetworkRecord(conn).uuid;
+            _host.storagePif2 = storageNic2.getPifRecord(conn).uuid;
                        
             s_logger.info("Private Network is " + _privateNetworkName + " for host " + _host.ip);
             s_logger.info("Guest Network is " + _guestNetworkName + " for host " + _host.ip);
@@ -5640,16 +5707,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         if (uri != null) {
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-
-            if (secondaryStorageMountPath == null) {
-                details = "Couldn't delete snapshot because the URL passed: " + secondaryStoragePoolURL
-                        + " is invalid.";
-            } else {
-                details = deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID);
-                success = (details != null && details.equals("1"));
-                if (success) {
-                    s_logger.debug("Successfully deleted snapshot backup " + backupUUID);
-                }
+     
+            details = deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID);
+            success = (details != null && details.equals("1"));
+            if (success) {
+                s_logger.debug("Successfully deleted snapshot backup " + backupUUID);
             }
         }
         return new DeleteSnapshotBackupAnswer(cmd, true, details);
@@ -5699,14 +5761,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (uri != null) {
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
 
-            if (secondaryStorageMountPath == null) {
-                details = "Couldn't delete snapshotsDir because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
-            } else {
-                details = deleteSnapshotsDir(conn, dcId, accountId, volumeId, secondaryStorageMountPath);
-                success = (details != null && details.equals("1"));
-                if (success) {
-                    s_logger.debug("Successfully deleted snapshotsDir for volume: " + volumeId);
-                }
+            details = deleteSnapshotsDir(conn, dcId, accountId, volumeId, secondaryStorageMountPath);
+            success = (details != null && details.equals("1"));
+            if (success) {
+                s_logger.debug("Successfully deleted snapshotsDir for volume: " + volumeId);
             }
         }
 
@@ -6053,24 +6111,71 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     
 
-    protected class Nic {
-        public Network n;
-        public Network.Record nr;
-        public PIF p;
-        public PIF.Record pr;
+    /**
+     * XsNic represents a network and the host's specific PIF.
+     */
+    protected class XsLocalNetwork {
+        private Network _n;
+        private Network.Record _nr;
+        private PIF _p;
+        private PIF.Record _pr;
 
-        public Nic(Network n, Network.Record nr, PIF p, PIF.Record pr) {
-            this.n = n;
-            this.nr = nr;
-            this.p = p;
-            this.pr = pr;
+        public XsLocalNetwork(Network n) {
+            this(n, null, null, null);
+        }
+        
+        public XsLocalNetwork(Network n, Network.Record nr, PIF p, PIF.Record pr) {
+            _n = n;
+            _nr = nr;
+            _p = p;
+            _pr = pr;
+        }
+        
+        public Network getNetwork() {
+            return _n;
+        }
+        
+        public Network.Record getNetworkRecord(Connection conn) throws XenAPIException, XmlRpcException {
+            if (_nr == null) {
+                _nr = _n.getRecord(conn);
+            }
+            
+            return _nr;
+        }
+        
+        public PIF getPif(Connection conn) throws XenAPIException, XmlRpcException {
+            if (_p == null) {
+                Network.Record nr = getNetworkRecord(conn);
+                for (PIF pif : nr.PIFs) {
+                    PIF.Record pr = pif.getRecord(conn);
+                    if (_host.uuid.equals(pr.host.getUuid(conn))) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Found a network called " + nr.nameLabel + " on host=" + _host.ip + ";  Network=" + nr.uuid + "; pif=" + pr.uuid);
+                        }
+                        _p = pif;
+                        _pr = pr;
+                        break;
+                    }
+                }
+            }
+            return _p;
+        }
+        
+        public PIF.Record getPifRecord(Connection conn) throws XenAPIException, XmlRpcException {
+            if (_pr == null) {
+                PIF p = getPif(conn);
+                if (_pr == null) {
+                    _pr = p.getRecord(conn);
+                }
+            }
+            return _pr;
         }
     }
 
     // A list of UUIDs that are gathered from the XenServer when
     // the resource first connects to XenServer. These UUIDs do
     // not change over time.
-    protected class XenServerHost {
+    protected class XsHost {
         public String systemvmisouuid;
         public String uuid;
         public String ip;
