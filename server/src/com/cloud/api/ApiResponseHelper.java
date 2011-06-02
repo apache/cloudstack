@@ -1340,6 +1340,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                         vmResponse.setPublicIp(singleNicProfile.getIp4Address());
                         vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
+                        vmResponse.setGateway(singleNicProfile.getGateway());
                     } else if (network.getTrafficType() == TrafficType.Management) {
                         vmResponse.setPrivateIp(singleNicProfile.getIp4Address());
                         vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
