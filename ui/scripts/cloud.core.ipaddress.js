@@ -1508,13 +1508,17 @@ function ipClearPortForwardingTab() {
 
 function portForwardingJsonToTemplate(jsonObj, $template) {				        
     $template.attr("id", "portForwarding_" + fromdb(jsonObj.id)).data("portForwardingId", fromdb(jsonObj.id));	
-    		     
-    $template.find("#public_port").text(fromdb(jsonObj.publicport));
-    $template.find("#public_end_port").text(fromdb(jsonObj.publicendport));
     
-    $template.find("#private_port").text(fromdb(jsonObj.privateport));
-    $template.find("#private_end_port").text(fromdb(jsonObj.privateendport));
-   
+    var publicPort = fromdb(jsonObj.publicport);
+    if(jsonObj.publicendport != null && jsonObj.publicendport.length > 0)
+    	publicPort += (" - " + fromdb(jsonObj.publicendport));    
+    $template.find("#public_port").text(publicPort);
+                
+    var privatePort = fromdb(jsonObj.privateport);
+    if(jsonObj.privateendport != null && jsonObj.privateendport.length > 0)
+    	privatePort += (" - " + fromdb(jsonObj.privateendport));    
+    $template.find("#private_port").text(privatePort);
+    
     $template.find("#protocol").text(fromdb(jsonObj.protocol));
        
     var vmName = getVmName(jsonObj.virtualmachinename, jsonObj.virtualmachinedisplayname); 
@@ -1589,7 +1593,9 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 function refreshCreatePortForwardingRow() {       
     var $createPortForwardingRow = $("#create_port_forwarding_row");      
     $createPortForwardingRow.find("#public_port").val("");
+    $createPortForwardingRow.find("#public_end_port").val("");
     $createPortForwardingRow.find("#private_port").val("");
+    $createPortForwardingRow.find("#private_end_port").val("");
     
     var $vmSelect = $createPortForwardingRow.find("#vm").empty();		
     ipPopulateVMDropdown($vmSelect);
