@@ -298,7 +298,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
     protected float _overProvisioningFactor = 1;
-    private int _maxVolumeSizeInGb;
+    private long _maxVolumeSizeInGb;
     private long _serverId;
 
     private int _snapshotTimeout;
@@ -851,7 +851,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
-        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+        _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
 
         HostTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
         HostTemplateStatesSearch.and("id", HostTemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -1611,7 +1611,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             diskOfferingId = cmd.getDiskOfferingId();
-            size = cmd.getSize() * 1024 * 1024 * 1024; // user specify size in GB
+            size = cmd.getSize();
+            if ( size != null ) {
+                if ( size > 0 ) {
+                    size = size * 1024 * 1024 * 1024; // user specify size in GB
+                } else {
+                    throw new InvalidParameterValueException("Disk size must be larger than 0");
+                }
+            }
             if (diskOfferingId == null) {
                 throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
             }
@@ -2439,8 +2446,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     private boolean validateVolumeSizeRange(long size) {
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > _maxVolumeSizeInGb) {
-            throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+        } else if (size > (_maxVolumeSizeInGb * 1024 * 1024 * 1024) ) {
+            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
         }
 
         return true;
