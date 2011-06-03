@@ -65,11 +65,11 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
     }
     
     @Override
-    public List<HostVO> getHostsToRebalance(long msId, long avLoad) {
+    public List<HostVO> getHostsToRebalance(long msId, int avLoad) {
         List<HostVO> allHosts = _hostDao.listByManagementServer(msId);
  
         if (allHosts.size() <= avLoad) {
-            s_logger.debug("Agent load for management server " + msId + " doesn't exceed av load " + avLoad + "; so it doesn't participate in agent rebalancing process");
+            s_logger.debug("Agent load = " + allHosts.size() + " for management server " + msId + " doesn't exceed average system agent load = " + avLoad + "; so it doesn't participate in agent rebalancing process");
             return null;
         }
         
@@ -96,9 +96,9 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
         
         hostToClusterMap = sortByClusterSize(hostToClusterMap);
         
-        long hostsToGive = allHosts.size() - avLoad;
-        long hostsLeftToGive = hostsToGive;
-        long hostsLeft = directHosts.size();
+        int hostsToGive = allHosts.size() - avLoad;
+        int hostsLeftToGive = hostsToGive;
+        int hostsLeft = directHosts.size();
         List<HostVO> hostsToReturn = new ArrayList<HostVO>();
         int count = 0;
         

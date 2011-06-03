@@ -33,7 +33,7 @@ public enum Status {
     Maintenance(false, false, false),
     Alert(true, true, true),
     Removed(true, false, true),
-    Rebalance(false, false, false);
+    Rebalancing(false, false, false);
     
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;
@@ -137,7 +137,7 @@ public enum Status {
         s_fsm.addTransition(Status.Up, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Up, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Up, Event.ManagementServerDown, Status.Disconnected);
-        s_fsm.addTransition(Status.Up, Event.StartAgentRebalance, Status.Rebalance);
+        s_fsm.addTransition(Status.Up, Event.StartAgentRebalance, Status.Rebalancing);
         s_fsm.addTransition(Status.Updating, Event.PingTimeout, Status.Alert);
         s_fsm.addTransition(Status.Updating, Event.Ping, Status.Updating);
         s_fsm.addTransition(Status.Updating, Event.AgentConnected, Status.Connecting);
@@ -183,8 +183,8 @@ public enum Status {
         s_fsm.addTransition(Status.Alert, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Alert, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Alert, Event.ManagementServerDown, Status.Alert);
-        s_fsm.addTransition(Status.Rebalance, Event.RebalanceFailed, Status.Alert);
-        s_fsm.addTransition(Status.Rebalance, Event.RebalanceCompleted, Status.Connecting);
+        s_fsm.addTransition(Status.Rebalancing, Event.RebalanceFailed, Status.Alert);
+        s_fsm.addTransition(Status.Rebalancing, Event.RebalanceCompleted, Status.Connecting);
     }
 
     public static void main(String[] args) {

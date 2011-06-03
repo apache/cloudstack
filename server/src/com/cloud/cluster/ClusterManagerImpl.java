@@ -574,14 +574,11 @@ public class ClusterManagerImpl implements ClusterManager {
                     Connection conn = getHeartbeatConnection();
                     _mshostDao.update(conn, _mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
 
-                    // for cluster in Starting state check if there are any agents being transfered
                     if (_state == State.Starting) {
                         synchronized (stateLock) {
-                            if (isClusterReadyToStart()) {
-                                _mshostDao.update(conn, _mshostId, getCurrentRunId(), State.Up, DateUtil.currentGMTTime());
-                                _state = State.Up;
-                                stateLock.notifyAll();
-                            }
+                            _mshostDao.update(conn, _mshostId, getCurrentRunId(), State.Up, DateUtil.currentGMTTime());
+                            _state = State.Up;
+                            stateLock.notifyAll();
                         }
                     }
 
@@ -617,45 +614,6 @@ public class ClusterManagerImpl implements ClusterManager {
 
                     s_logger.error("Problem with the cluster heartbeat!", e);
                 }
-            }
-            
-            private boolean isClusterReadyToStart() {
-                if (!_agentLBEnabled) {
-                    return true;
-                }
-                boolean isReady = false;
-                int transferCount = _hostTransferDao.listHostsJoiningCluster(_msId).size();
-                if (transferCount == 0) {
-                    //Check how many servers got transfered successfully
-                    List<HostTransferMapVO> rebalancedHosts = _hostTransferDao.listBy(_msId, HostTransferState.TransferCompleted);
-                    
-                    if (!rebalancedHosts.isEmpty() && s_logger.isDebugEnabled()) {
-                        s_logger.debug(rebalancedHosts.size() + " hosts joined the cluster " + _msId + " as a result of rebalance process");
-
-                    }
-                    
-                    for (HostTransferMapVO host : rebalancedHosts) {
-                        _hostTransferDao.remove(host.getId());
-                    }     
-                    
-                    //Check how many servers failed to transfer
-                    List<HostTransferMapVO> failedToRebalanceHosts = _hostTransferDao.listBy(_msId, HostTransferState.TransferFailed);
-                    if (!failedToRebalanceHosts.isEmpty() && s_logger.isDebugEnabled()) {
-                        s_logger.debug(failedToRebalanceHosts.size() + " hosts failed to join the cluster " + _msId + " as a result of rebalance process");
-                    }
-                    
-                    for (HostTransferMapVO host : failedToRebalanceHosts) {
-                        _hostTransferDao.remove(host.getId());
-                    }
-                    
-                    s_logger.debug("There are no hosts currently joining cluser msid=" + _msId + ", so management server is ready to start");
-                    isReady = true;
-                } else if (s_logger.isDebugEnabled()) {
-                    //TODO : change to trace mode later
-                    s_logger.debug("There are " + transferCount + " agents currently joinging the cluster " + _msId);
-                }
-                
-                return isReady;
             }
         };  
     }
@@ -952,15 +910,15 @@ public class ClusterManagerImpl implements ClusterManager {
                 s_logger.info("Management server (host id : " + _mshostId + ") is being started at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
             }
             
-            // use seperate thread for heartbeat updates
-            _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
-            _notificationExecutor.submit(getNotificationTask());
-            
-            // Do agent rebalancing
+            // Initiate agent rebalancing
             if (_agentLBEnabled) {
                 s_logger.debug("Management server " + _msId + " is asking other peers to rebalance their agents");
                 _rebalanceService.startRebalanceAgents();
             }
+                    
+            // use seperate thread for heartbeat updates
+            _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
+            _notificationExecutor.submit(getNotificationTask());
 
              //wait here for heartbeat task to update the host state
              try {

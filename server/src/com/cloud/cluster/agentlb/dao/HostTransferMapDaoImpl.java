@@ -51,7 +51,7 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
         
         IntermediateStateSearch = createSearchBuilder();
         IntermediateStateSearch.and("futureOwner", IntermediateStateSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
-        IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.NOTIN);
+        IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.IN);
         IntermediateStateSearch.done();
         
         InactiveSearch = createSearchBuilder();
@@ -72,10 +72,10 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
     }
 
     @Override
-    public List<HostTransferMapVO> listHostsJoiningCluster(long clusterId) {
+    public List<HostTransferMapVO> listHostsJoiningCluster(long futureOwnerId) {
         SearchCriteria<HostTransferMapVO> sc = IntermediateStateSearch.create();
-        sc.setParameters("futureOwner", clusterId);
-        sc.setParameters("state", HostTransferState.TransferRequested, HostTransferState.TransferStarted);
+        sc.setParameters("futureOwner", futureOwnerId);
+        sc.setParameters("state", HostTransferState.TransferRequested);
         return listBy(sc);
     }
     
@@ -88,14 +88,8 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
     }
 
     @Override
-    public boolean completeAgentTransfering(long hostId, boolean success) {
-        HostTransferMapVO transfer = findById(hostId);
-        if (success) {
-            transfer.setState(HostTransferState.TransferCompleted);
-        } else {
-            transfer.setState(HostTransferState.TransferFailed);
-        }
-        return update(hostId, transfer);
+    public boolean completeAgentTransfer(long hostId) {
+        return remove(hostId);
     }
     
     @Override
@@ -108,18 +102,24 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
     }
     
     @Override
-    public boolean isActive(long hostId, Date cutTime) {
+    public boolean isNotActive(long hostId, Date cutTime) {
         SearchCriteria<HostTransferMapVO> sc = InactiveSearch.create();
         sc.setParameters("id", hostId);
         sc.setParameters("state", HostTransferState.TransferRequested);
         sc.setParameters("created", cutTime);
         
-
         if (listBy(sc).isEmpty()) {
-            return true;
-        } else {
             return false;
+        } else {
+            return true;
         }
+    }
+    
+    @Override
+    public boolean startAgentTransfer(long hostId) {
+        HostTransferMapVO transfer = findById(hostId);
+        transfer.setState(HostTransferState.TransferStarted);
+        return update(hostId, transfer);
     }
     
 }

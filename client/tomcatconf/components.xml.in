@@ -93,7 +93,7 @@
         <adapters key="com.cloud.acl.SecurityChecker">
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
-        <adapters key="com.cloud.cluster.agentlb">
+        <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
         </adapters>
 

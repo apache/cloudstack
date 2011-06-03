@@ -29,13 +29,15 @@ public interface HostTransferMapDao extends GenericDao<HostTransferMapVO, Long> 
 
     List<HostTransferMapVO> listHostsLeavingCluster(long clusterId);
 
-    List<HostTransferMapVO> listHostsJoiningCluster(long clusterId);
+    List<HostTransferMapVO> listHostsJoiningCluster(long futureOwnerId);
 
     HostTransferMapVO startAgentTransfering(long hostId, long currentOwner, long futureOwner);
 
-    boolean completeAgentTransfering(long hostId, boolean success);
+    boolean completeAgentTransfer(long hostId);
     
     List<HostTransferMapVO> listBy(long futureOwnerId, HostTransferState state);
     
-    boolean isActive(long hostId, Date cutTime);
+    boolean isNotActive(long hostId, Date cutTime);
+    
+    boolean startAgentTransfer(long hostId);
 }
