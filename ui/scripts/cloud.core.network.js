@@ -724,13 +724,13 @@ function bindAddExternalFirewallButton() {
 				
 				var array1 = [];
 			
-				array1.push("&zoneid=" + zoneObj.id);
+				array1.push("&zoneid=" + todb(zoneObj.id));
 											
 				var username = $thisDialog.find("#username").val();
-				array1.push("&username="+username);
+				array1.push("&username=" + todb(username));
 				
 				var password = $thisDialog.find("#password").val();
-				array1.push("&password="+password);
+				array1.push("&password=" + todb(password));
 				
 				//*** construct URL (begin)	***	
 				var url = [];
@@ -904,13 +904,13 @@ function bindAddLoadBalancerButton() {
 				
 				var array1 = [];
 			
-				array1.push("&zoneid=" + zoneObj.id);
+				array1.push("&zoneid=" + todb(zoneObj.id));
 											
 				var username = $thisDialog.find("#username").val();
-				array1.push("&username="+username);
+				array1.push("&username=" + todb(username));
 				
 				var password = $thisDialog.find("#password").val();
-				array1.push("&password="+password);
+				array1.push("&password=" + todb(password));
 				
 				//*** construct URL (begin)	***	
 				var url = [];
