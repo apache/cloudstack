@@ -316,12 +316,22 @@ dictionary = {
 	            </div>
 	            <div class="grid_rows even" id="create_port_forwarding_row">
 	                <div class="grid_row_cell" style="width: 15%; ">
-	                    <input id="public_port" class="text" style="width: 70%; " type="text" />
+	                    <input id="public_port" class="text" style="width: 30%; " type="text" />
 	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                    
+	                    <span style="float:left;padding-left:10px"> - </span>
+	                    
+	                    <input id="public_end_port" class="text" style="width: 30%; " type="text" />
+	                    <div id="public_end_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>	                    
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <input id="private_port" class="text" style="width: 70%; " type="text" />
+                        <input id="private_port" class="text" style="width: 30%; " type="text" />
 	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                    
+	                    <span style="float:left;padding-left:10px"> - </span>
+	                    
+	                    <input id="private_end_port" class="text" style="width: 30%; " type="text" />
+	                    <div id="private_end_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>	 
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%; ">  
 	                   <select class="select" id="protocol" style="width:70%;">	                    
