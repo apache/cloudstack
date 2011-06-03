@@ -255,7 +255,28 @@ function afterLoadIpJSP() {
    
     //*** Port Forwarding tab (begin) ***
     var $createPortForwardingRow = $("#tab_content_port_forwarding").find("#create_port_forwarding_row");     
-    
+     
+    // If public end port gets filled, disable private ports and copy public ports over to private ports
+    $createPortForwardingRow.find("#public_end_port").bind("keyup", function(event) {
+       	if($(this).val() != null && $(this).val().length > 0) {    		
+       		$createPortForwardingRow.find("#private_port").attr("readonly", true); 
+       		$createPortForwardingRow.find("#private_end_port").attr("readonly", true); 
+       		
+       		$createPortForwardingRow.find("#private_port").val($createPortForwardingRow.find("#public_port").val());
+       		$createPortForwardingRow.find("#private_end_port").val($(this).val());
+       	}
+       	else {    		
+       		$createPortForwardingRow.find("#private_port").removeAttr("readonly");    
+       		$createPortForwardingRow.find("#private_end_port").removeAttr("readonly");  
+       	}       	
+       	return true;
+    });           
+    $createPortForwardingRow.find("#public_port").bind("keyup", function(event) {
+        if($createPortForwardingRow.find("#private_port").attr("readonly") == true)
+        	$createPortForwardingRow.find("#private_port").val($(this).val());       	
+       	return true;
+    });    
+        
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;		
 		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
