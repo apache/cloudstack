@@ -15,7 +15,7 @@ def fix_default_db():
     database.update(statement % ('http://nfs1.lab.vmops.com/templates/dummy/systemvm.ova', 'routing-8'))
 
     database.update(statement % ('http://nfs1.lab.vmops.com/templates/dummy/builtin.vhd', 'centos53-x86_64'))
-    database.update(statement % ('http://nfs1.lab.vmops.com/templates/dummy/builtin.qcow2', 'centos55-x86_64'))
+    database.update(statement % ('http://nfs1.lab.vmops.com/templates/rightscale/RightImage_CentOS_5.4_x64_v5.6.32.qcow2.bz2', 'centos55-x86_64'))
     database.update(statement % ('http://nfs1.lab.vmops.com/templates/dummy/builtin.ova', 'centos53-x64'))
     statement="""UPDATE vm_template SET checksum=NULL"""
     database.update(statement)

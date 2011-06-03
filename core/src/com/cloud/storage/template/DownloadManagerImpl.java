@@ -608,6 +608,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
     private List<String> listTemplates(String rootdir) {
         List<String> result = new ArrayList<String>();
+        
         Script script = new Script(listTmpltScr, s_logger);
         script.add("-r", rootdir);
         ZfsPathParser zpp = new ZfsPathParser(rootdir);
@@ -621,6 +622,11 @@ public class DownloadManagerImpl implements DownloadManager {
     public Map<String, TemplateInfo> gatherTemplateInfo(String rootDir) {
         Map<String, TemplateInfo> result = new HashMap<String, TemplateInfo>();
         String templateDir = rootDir + File.separator + _templateDir;
+        
+        if (! _storage.exists(templateDir)) {
+            _storage.mkdirs(templateDir);
+        }
+        
         List<String> publicTmplts = listTemplates(templateDir);
         for (String tmplt : publicTmplts) {
             String path = tmplt.substring(0, tmplt.lastIndexOf(File.separator));
