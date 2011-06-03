@@ -2400,7 +2400,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sshPublicKey = pair.getPublicKey();
         }
 
-        _accountMgr.checkAccess(caller, template);
+       // _accountMgr.checkAccess(caller, template);
 
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
