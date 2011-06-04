@@ -34,6 +34,5 @@
 	<classpathentry exported="true" kind="lib" path="cloud-xstream-1.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="jetty-6.1.26.jar"/>
 	<classpathentry exported="true" kind="lib" path="jetty-util-6.1.26.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-manageontap.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
