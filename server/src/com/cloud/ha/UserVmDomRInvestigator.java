@@ -172,7 +172,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         		|| vm.getHypervisorType() == HypervisorType.KVM){
         	otherHosts.add(router.getHostId());
         }else{
-        	otherHosts = findHostByPod(router.getPodId(), null);
+        	otherHosts = findHostByPod(router.getPodIdToDeployIn(), null);
         }
         for (Long hostId : otherHosts) {
             try {

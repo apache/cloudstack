@@ -840,6 +840,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   `type` varchar(32) NOT NULL COMMENT 'type of vm it is',
+  `vm_type` varchar(32) NOT NULL COMMENT 'vm type',
   `account_id` bigint unsigned NOT NULL COMMENT 'user id of owner',
   `domain_id` bigint unsigned NOT NULL,
   `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',

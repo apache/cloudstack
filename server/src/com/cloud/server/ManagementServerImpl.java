@@ -771,7 +771,7 @@ public class ManagementServerImpl implements ManagementServer {
                     DataCenterVO dc = iter.next();
                     boolean found = false;
                     for (DomainRouterVO router : routers) {
-                        if (dc.getId() == router.getDataCenterId()) {
+                        if (dc.getId() == router.getDataCenterIdToDeployIn()) {
                             found = true;
                             break;
                         }
@@ -2194,8 +2194,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
 
         if ((accountId == null) && (domainId != null)) {
@@ -2754,7 +2754,7 @@ public class ManagementServerImpl implements ManagementServer {
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = this.findVMInstanceById(vmId);
         if (vm != null) {
-            ConsoleProxyInfo proxy = getConsoleProxy(vm.getDataCenterId(), vmId);
+            ConsoleProxyInfo proxy = getConsoleProxy(vm.getDataCenterIdToDeployIn(), vmId);
             if (proxy != null) {
                 return proxy.getProxyImageUrl();
             }
@@ -3923,8 +3923,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);

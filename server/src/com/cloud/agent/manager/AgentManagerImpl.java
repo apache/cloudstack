@@ -82,6 +82,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.StackMaid;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -274,6 +275,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _pingTimeout = (long) (multiplier * _pingInterval);
 
         s_logger.info("Ping Timeout is " + _pingTimeout);
+        
+        value = configs.get(Config.DirectAgentLoadSize.key());
+        int threads = NumbersUtil.parseInt(value, 16);
 
         _instance = configs.get("instance.name");
         if (_instance == null) {
@@ -287,7 +291,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _monitor = new AgentMonitor(_nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);
 
-        _executor = new ThreadPoolExecutor(16, 100, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
+        _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
         _connection = new NioServer("AgentManager", _port, workers + 10, this);
 

@@ -2465,7 +2465,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } else {
             size = (size * 1024 * 1024 * 1024);
         }
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size);
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), size);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -2496,15 +2496,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
         sc.setParameters("id", template.getId());
         sc.setParameters("state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        sc.setJoinParameters("host", "dcId", vm.getDataCenterId());
+        sc.setJoinParameters("host", "dcId", vm.getDataCenterIdToDeployIn());
 
         List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
         if (sss.size() == 0) {
-            throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterId());
+            throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterIdToDeployIn());
         }
         VMTemplateHostVO ss = sss.get(0);
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), ss.getSize());
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), ss.getSize());
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -2554,7 +2554,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
             if (userVM.getIsoId() != null) {
-                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterId());
+                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterIdToDeployIn());
                 if (isoPathPair != null) {
                     String isoPath = isoPathPair.first();
                     VolumeTO iso = new VolumeTO(vm.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, null, null, isoPath, 0, null, null);

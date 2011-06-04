@@ -93,15 +93,15 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected Long lastHostId;
 
     @Column(name="pod_id", updatable=true, nullable=false)
-    protected Long podId;
+    protected Long podIdToDeployIn;
 
     @Column(name="private_mac_address", updatable=true, nullable=true)
     protected String privateMacAddress;
 
     @Column(name="data_center_id", updatable=true, nullable=false)
-    protected long dataCenterId;
+    protected long dataCenterIdToDeployIn;
 
-    @Column(name="type", updatable=false, nullable=false, length=32)
+    @Column(name="vm_type", updatable=false, nullable=false, length=32)
     @Enumerated(value=EnumType.STRING)
     protected Type type;
 
@@ -137,7 +137,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected String reservationId;
     
     @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING) 
+    @Enumerated(value=EnumType.STRING)
     protected HypervisorType hypervisorType;
     
     public VMInstanceVO(long id,
@@ -166,7 +166,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
-        this.limitCpuUse = false;        
+        this.limitCpuUse = false;
     }
 
     public VMInstanceVO(long id,
@@ -231,8 +231,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	}
 	
 	@Override
-    public long getDataCenterId() {
-	    return dataCenterId;
+    public long getDataCenterIdToDeployIn() {
+	    return dataCenterIdToDeployIn;
 	}
 	
 	@Override
@@ -335,7 +335,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 		return lastHostId;
 	}
 	
-	@Override
     public void setLastHostId(Long lastHostId) {
 		this.lastHostId = lastHostId;
 	}
@@ -352,7 +351,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
     public boolean limitCpuUse() {
         return limitCpuUse;
-    }    
+    }
     
     @Override
     public String getPrivateMacAddress() {
@@ -360,12 +359,12 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     @Override
-    public Long getPodId() {
-        return podId;
+    public Long getPodIdToDeployIn() {
+        return podIdToDeployIn;
     }
     
     public void setPodId(long podId) {
-        this.podId = podId;
+        this.podIdToDeployIn = podId;
     }
 
     public void setPrivateMacAddress(String privateMacAddress) {
@@ -373,7 +372,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public void setDataCenterId(long dataCenterId) {
-        this.dataCenterId = dataCenterId;
+        this.dataCenterIdToDeployIn = dataCenterId;
     }
     
     public boolean isRemoved() {

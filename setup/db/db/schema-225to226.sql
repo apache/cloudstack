@@ -110,4 +110,5 @@ CREATE TABLE `cloud`.`swift` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `vm_type` varchar(32) NOT NULL;
+UPDATE vm_instance set vm_type=type;

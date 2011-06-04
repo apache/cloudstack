@@ -1059,9 +1059,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             // Data Center Info
-            DataCenter zone = dataCenters.get(userVm.getDataCenterId());
+            DataCenter zone = dataCenters.get(userVm.getDataCenterIdToDeployIn());
             if (zone == null) {
-                zone = ApiDBUtils.findZoneById(userVm.getDataCenterId());
+                zone = ApiDBUtils.findZoneById(userVm.getDataCenterIdToDeployIn());
                 dataCenters.put(zone.getId(), zone);
             }
 
@@ -1228,9 +1228,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     	
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getId());
-        routerResponse.setZoneId(router.getDataCenterId());
+        routerResponse.setZoneId(router.getDataCenterIdToDeployIn());
         routerResponse.setName(router.getHostName());
-        routerResponse.setPodId(router.getPodId());
+        routerResponse.setPodId(router.getPodIdToDeployIn());
         routerResponse.setTemplateId(router.getTemplateId());
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
@@ -1281,7 +1281,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
         }
-        DataCenter zone = ApiDBUtils.findZoneById(router.getDataCenterId());
+        DataCenter zone = ApiDBUtils.findZoneById(router.getDataCenterIdToDeployIn());
         if (zone != null) {
             routerResponse.setZoneName(zone.getName());
             routerResponse.setDns1(zone.getDns1());
@@ -1300,10 +1300,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             vmResponse.setId(vm.getId());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
-            vmResponse.setZoneId(vm.getDataCenterId());
+            vmResponse.setZoneId(vm.getDataCenterIdToDeployIn());
 
             vmResponse.setName(vm.getHostName());
-            vmResponse.setPodId(vm.getPodId());
+            vmResponse.setPodId(vm.getPodIdToDeployIn());
             vmResponse.setTemplateId(vm.getTemplateId());
             vmResponse.setCreated(vm.getCreated());
 
@@ -1322,7 +1322,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setActiveViewerSessions(proxy.getActiveSession());
             }
 
-            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterId());
+            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterIdToDeployIn());
             if (zone != null) {
                 vmResponse.setZoneName(zone.getName());
                 vmResponse.setDns1(zone.getDns1());

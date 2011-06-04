@@ -97,12 +97,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         
         AccountPodSearch = createSearchBuilder();
         AccountPodSearch.and("account", AccountPodSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountPodSearch.and("pod", AccountPodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        AccountPodSearch.and("pod", AccountPodSearch.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         AccountPodSearch.done();
 
         AccountDataCenterSearch = createSearchBuilder();
         AccountDataCenterSearch.and("account", AccountDataCenterSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountDataCenterSearch.and("dc", AccountDataCenterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AccountDataCenterSearch.and("dc", AccountDataCenterSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
         AccountDataCenterSearch.done();
 
         StateChangeSearch = createSearchBuilder();
@@ -125,7 +125,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         CountByAccountPod = createSearchBuilder(Long.class);
         CountByAccountPod.select(null, Func.COUNT, null);
         CountByAccountPod.and("account", CountByAccountPod.entity().getAccountId(), SearchCriteria.Op.EQ);
-        CountByAccountPod.and("pod", CountByAccountPod.entity().getPodId(), SearchCriteria.Op.EQ);
+        CountByAccountPod.and("pod", CountByAccountPod.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         CountByAccountPod.done();
 
         _updateTimeAttr = _allAttributes.get("updateTime");
@@ -211,7 +211,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
             AccountDataCenterVirtualSearch = createSearchBuilder();
             AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-            AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+            AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
             AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             AccountDataCenterVirtualSearch.done();
         }

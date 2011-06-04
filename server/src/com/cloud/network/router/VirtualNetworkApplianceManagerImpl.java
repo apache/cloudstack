@@ -430,7 +430,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         final Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            final UserStatisticsVO userStats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
+            final UserStatisticsVO userStats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterIdToDeployIn(), router.getNetworkId(), null, router.getId(), router.getType().toString());
             if (userStats != null) {
                 final RebootAnswer sa = (RebootAnswer) answer;
                 final Long received = sa.getBytesReceived();
@@ -463,7 +463,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 _userStatsDao.update(userStats.getId(), userStats);
                 s_logger.debug("Successfully updated user statistics as a part of domR " + router + " reboot/stop");
             } else {
-                s_logger.warn("User stats were not created for account " + router.getAccountId() + " and dc " + router.getDataCenterId());
+                s_logger.warn("User stats were not created for account " + router.getAccountId() + " and dc " + router.getDataCenterIdToDeployIn());
             }
             txn.commit();
         } catch (final Exception e) {
@@ -509,7 +509,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         // Can reboot domain router only in Running state
         if (router == null || router.getState() != State.Running) {
             s_logger.warn("Unable to reboot, virtual router is not in the right state " + router.getState());
-            throw new ResourceUnavailableException("Unable to reboot domR, it is not in right state " + router.getState(), DataCenter.class, router.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to reboot domR, it is not in right state " + router.getState(), DataCenter.class, router.getDataCenterIdToDeployIn());
         }
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
@@ -651,7 +651,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                 continue;
                             }
                             txn.start();
-                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), router.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
+                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), router.getDataCenterIdToDeployIn(), router.getNetworkId(), null, router.getId(), router.getType().toString());
                             if (stats == null) {
                                 s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                 continue;
@@ -1042,7 +1042,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
             long networkId = router.getNetworkId();
             long ownerId = router.getAccountId();
-            long zoneId = router.getDataCenterId();
+            long zoneId = router.getDataCenterIdToDeployIn();
 
             final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, null, null);
             List<PublicIpAddress> publicIps = new ArrayList<PublicIpAddress>();
@@ -1176,17 +1176,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         Answer answer = cmds.getAnswer("users");
         if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
                     + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: "
+                    + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
         }
         answer = cmds.getAnswer("startVpn");
         if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
+            s_logger.error("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
                     + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
-                    + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+                    + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
         }
         return true;
     }
@@ -1291,19 +1291,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         Answer answer = cmds.getAnswer("dhcp");
         if (!answer.getResult()) {
             s_logger.error("Unable to set dhcp entry for " + profile + " on domR: " + router.getHostName() + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
         }
 
         answer = cmds.getAnswer("password");
         if (answer != null && !answer.getResult()) {
             s_logger.error("Unable to set password for " + profile + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to set password due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to set password due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
         }
 
         answer = cmds.getAnswer("vmdata");
         if (answer != null && !answer.getResult()) {
             s_logger.error("Unable to set VM data for " + profile + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to set VM data due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to set VM data due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
         }
         return router;
     }
@@ -1386,10 +1386,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         Account owner = _accountMgr.getAccount(router.getAccountId());
 
         // Check if all networks are implemented for the domR; if not - implement them
-        DataCenter dc = _dcDao.findById(router.getDataCenterId());
+        DataCenter dc = _dcDao.findById(router.getDataCenterIdToDeployIn());
         HostPodVO pod = null;
-        if (router.getPodId() != null) {
-            pod = _podDao.findById(router.getPodId());
+        if (router.getPodIdToDeployIn() != null) {
+            pod = _podDao.findById(router.getPodIdToDeployIn());
         }
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
 
@@ -1560,7 +1560,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (nic != null) {
                     s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
                     String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
-                    String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
+                    String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
                     cmds.addCommand("vmdata",
                             generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(), vm.getId(), null));
                 }

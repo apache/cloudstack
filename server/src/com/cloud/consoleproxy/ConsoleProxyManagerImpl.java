@@ -571,7 +571,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         Map<String, Object> context = new HashMap<String, Object>();
         context.put("dc", dc);
-        HostPodVO pod = _podDao.findById(proxy.getPodId());
+        HostPodVO pod = _podDao.findById(proxy.getPodIdToDeployIn());
         context.put("pod", pod);
         context.put("proxyVmId", proxy.getId());
 
@@ -1116,7 +1116,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
-                        new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterId(), proxy.getId(), proxy, null));
+                        new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterIdToDeployIn(), proxy.getId(), proxy, null));
 
                 return true;
             } else {
@@ -1325,7 +1325,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (externalDhcp) {
             buf.append(" bootproto=dhcp");
         }
-        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
+        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterIdToDeployIn());
         buf.append(" internaldns1=").append(dc.getInternalDns1());
         if (dc.getInternalDns2() != null) {
             buf.append(" internaldns2=").append(dc.getInternalDns2());

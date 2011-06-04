@@ -570,7 +570,7 @@ public class Db20to21MigrationUtil {
 	private void migrateSystemVmGuestMacAndState(long zoneId) {
 		// for console proxy VMs
 		SearchBuilder<ConsoleProxyVO> sb = _consoleProxyDao.createSearchBuilder();
-		sb.and("zoneId", sb.entity().getDataCenterId(), Op.EQ);
+		sb.and("zoneId", sb.entity().getDataCenterIdToDeployIn(), Op.EQ);
 		sb.done();
 		
 		SearchCriteria<ConsoleProxyVO> sc = sb.create();
@@ -586,7 +586,7 @@ public class Db20to21MigrationUtil {
 				proxy.setState(State.Stopping);
 			}
 			
-			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(proxy.getDataCenterId(), proxy.getPodId(), proxy.getId(), null);
+			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(proxy.getDataCenterIdToDeployIn(), proxy.getPodIdToDeployIn(), proxy.getId(), null);
 			
 			System.out.println("Assign link loal address to proxy " + proxy.getHostName() + ", link local address: " + guestIpAddress);
 			_consoleProxyDao.update(proxy.getId(), proxy);
@@ -594,7 +594,7 @@ public class Db20to21MigrationUtil {
 		
 		// for secondary storage VMs
 		SearchBuilder<SecondaryStorageVmVO> sb2 = _secStorageVmDao.createSearchBuilder();
-		sb2.and("zoneId", sb2.entity().getDataCenterId(), Op.EQ);
+		sb2.and("zoneId", sb2.entity().getDataCenterIdToDeployIn(), Op.EQ);
 		sb2.done();
 		
 		SearchCriteria<SecondaryStorageVmVO> sc2 = sb2.create();
@@ -610,7 +610,7 @@ public class Db20to21MigrationUtil {
 				secStorageVm.setState(State.Stopping);
 			}
 			
-			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(secStorageVm.getDataCenterId(), secStorageVm.getPodId(), secStorageVm.getId(), null);
+			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(secStorageVm.getDataCenterIdToDeployIn(), secStorageVm.getPodIdToDeployIn(), secStorageVm.getId(), null);
 			
 			System.out.println("Assign link loal address to secondary storage VM " + secStorageVm.getHostName() + ", link local address: " + guestIpAddress);
 			_secStorageVmDao.update(secStorageVm.getId(), secStorageVm);
@@ -619,7 +619,7 @@ public class Db20to21MigrationUtil {
 		// for Domain Router VMs
 		// Although we can list those we are interested, but just too lazy, list all of them and check their states. 
 		SearchBuilder<DomainRouterVO> sb3 = _routerDao.createSearchBuilder();
-		sb3.and("zoneId", sb3.entity().getDataCenterId(), Op.EQ);
+		sb3.and("zoneId", sb3.entity().getDataCenterIdToDeployIn(), Op.EQ);
 		sb3.done();
 		
 		SearchCriteria<DomainRouterVO> sc3 = sb3.create();
@@ -637,8 +637,8 @@ public class Db20to21MigrationUtil {
 	
 	private void migrateVmInstanceLastHostId(long zoneId, long podId) {
 		SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
-		sb.and("zoneId", sb.entity().getDataCenterId(), Op.EQ);
-		sb.and("podId", sb.entity().getPodId(), Op.EQ);
+		sb.and("zoneId", sb.entity().getDataCenterIdToDeployIn(), Op.EQ);
+		sb.and("podId", sb.entity().getPodIdToDeployIn(), Op.EQ);
 		sb.done();
 		
 		Random rand = new Random();

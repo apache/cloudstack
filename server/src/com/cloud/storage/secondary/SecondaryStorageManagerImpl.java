@@ -380,7 +380,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand();
         thiscpc.addPortConfig(thisSecStorageVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
         for (SecondaryStorageVmVO ssVm : alreadyRunning) {
-            if ( ssVm.getDataCenterId() == zoneId ) {
+            if ( ssVm.getDataCenterIdToDeployIn() == zoneId ) {
                 continue;
             }
             if (ssVm.getPublicIpAddress() != null) {
@@ -868,7 +868,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
-                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterId(), secStorageVm.getId(), secStorageVm, null));
+                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterIdToDeployIn(), secStorageVm.getId(), secStorageVm, null));
 
                 return true;
             } else {
@@ -995,7 +995,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             buf.append(" bootproto=dhcp");
         }
 
-        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
+        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterIdToDeployIn());
         buf.append(" internaldns1=").append(dc.getInternalDns1());
         if (dc.getInternalDns2() != null) {
             buf.append(" internaldns2=").append(dc.getInternalDns2());

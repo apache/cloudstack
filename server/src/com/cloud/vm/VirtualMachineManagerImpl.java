@@ -586,7 +586,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null);
         if(planToDeploy != null){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using that plan to deploy");
@@ -1318,7 +1318,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     ConcurrentOperationException, ResourceUnavailableException {
         T rebootedVm = null;
 
-        DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
+        DataCenter dc = _configMgr.getZone(vm.getDataCenterIdToDeployIn());
         Host host = _hostDao.findById(vm.getHostId());
         Cluster cluster = null;
         if (host != null) {
@@ -1446,12 +1446,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
             }
 
-            HostPodVO podVO = _podDao.findById(vm.getPodId());
-            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
+            HostPodVO podVO = _podDao.findById(vm.getPodIdToDeployIn());
+            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
             HostVO hostVO = _hostDao.findById(vm.getHostId());
 
             String hostDesc = "name: " + hostVO.getName() + " (id:" + hostVO.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure",
+            _alertMgr.sendAlert(alertType, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure",
                     "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
 

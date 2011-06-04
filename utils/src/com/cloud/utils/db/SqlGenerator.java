@@ -147,6 +147,9 @@ public class SqlGenerator {
 
     protected void findEcAttributes() {
         for (Attribute attr : _attributes) {
+            if (attr.field == null) {
+                continue;
+            }
             ElementCollection ec = attr.field.getAnnotation(ElementCollection.class);
             if (ec != null) {
                 Attribute idAttr = _ids.get(attr.table).get(0);

@@ -26,7 +26,7 @@ import com.cloud.utils.fsm.StateObject;
 
 
 /**
- * VirtualMachine describes the properties held by a virtual machine 
+ * VirtualMachine describes the properties held by a virtual machine
  *
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject<VirtualMachine.State> {
@@ -40,7 +40,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
         Migrating(true, "VM is being migrated.  host id holds to from host"),
         Error(false, "VM is in error"),
         Unknown(false, "VM state is unknown."),
-        Shutdowned(false, "VM is shutdowned from inside"); 
+        Shutdowned(false, "VM is shutdowned from inside");
 
         
         private final boolean _transitional;
@@ -71,20 +71,20 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Error);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-            s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped);
             s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
@@ -96,7 +96,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportRunning, State.Running);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping);
-            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
@@ -166,7 +166,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
     /**
      * @return The name of the vm instance used by the cloud stack to uniquely
      * reference this VM.  You can build names that starts with this name and it
-     * guarantees uniqueness for things related to the VM. 
+     * guarantees uniqueness for things related to the VM.
      */
     public String getInstanceName();
     
@@ -176,7 +176,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
     public long getId();
     
     /**
-     * @return the host name of the virtual machine.  If the user did not 
+     * @return the host name of the virtual machine.  If the user did not
      * specify the host name when creating the virtual machine then it is
      * defaults to the instance name.
      */
@@ -216,12 +216,12 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
     /**
      * @return pod id.
      */
-    public Long getPodId();
+    public Long getPodIdToDeployIn();
     
     /**
      * @return data center id.
      */
-    public long getDataCenterId();
+    public long getDataCenterIdToDeployIn();
     
     /**
      * @return id of the host it was assigned last time.
@@ -230,8 +230,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
     @Override
     public Long getHostId();
     
-    public void setLastHostId(Long lastHostId);
-    
     /**
      * @return should HA be enabled for this machine?
      */
@@ -239,8 +237,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
 
     /**
      * @return should limit CPU usage to the service offering?
-     */    
-    public boolean limitCpuUse();    
+     */
+    public boolean limitCpuUse();
 	/**
      * @return date when machine was created
      */
