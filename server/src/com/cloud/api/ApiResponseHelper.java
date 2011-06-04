@@ -17,6 +17,7 @@
  */
 package com.cloud.api;
 
+import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -219,7 +220,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
         AccountResponse accountResponse = new AccountResponse();
         accountResponse.setId(account.getId());
-        accountResponse.setName(account.getAccountName());
+        accountResponse.setName(encodeParam(account.getAccountName()));
         accountResponse.setAccountType(account.getType());
         accountResponse.setDomainId(account.getDomainId());
         accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
@@ -316,20 +317,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<UserResponse> userResponseList = new ArrayList<UserResponse>();
         for (UserVO user : usersForAccount) {
             UserResponse userResponse = new UserResponse();
-            userResponse.setAccountName(account.getAccountName());
+            userResponse.setAccountName(encodeParam(account.getAccountName()));
             userResponse.setAccountType(account.getType());
             userResponse.setApiKey(user.getApiKey());
             userResponse.setCreated(user.getCreated());
             userResponse.setDomainId(account.getDomainId());
             userResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-            userResponse.setEmail(user.getEmail());
+            userResponse.setEmail(encodeParam(user.getEmail()));
             userResponse.setFirstname(user.getFirstname());
             userResponse.setId(user.getId());
             userResponse.setSecretKey(user.getSecretKey());
             userResponse.setLastname(user.getLastname());
             userResponse.setState(user.getState().toString());
             userResponse.setTimezone(user.getTimezone());
-            userResponse.setUsername(user.getUsername());
+            userResponse.setUsername(encodeParam(user.getUsername()));
 
             userResponseList.add(userResponse);
         }
@@ -2526,4 +2527,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             return sg.getId();
         }
     }
+    
+    private String encodeParam(String value) {
+		try {
+			return URLEncoder.encode(value, "UTF-8").replaceAll("\\+", "%20");
+		} catch (Exception e) {
+			s_logger.warn("Unable to encode: " + value);
+		}
+		return value;
+	}
 }
