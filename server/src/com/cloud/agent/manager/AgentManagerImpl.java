@@ -348,7 +348,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 				_podDao, this, _alertMgr, _pingTimeout);
 		registerForHostEvents(_monitor, true, true, false);
 
-		_executor = new ThreadPoolExecutor(16, 100, 60l, TimeUnit.SECONDS,
+        value = configs.get(Config.DirectAgentLoadSize.key());
+        int threads = NumbersUtil.parseInt(value, 16);
+
+        _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS,
 				new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
 						"AgentTaskPool"));
 
