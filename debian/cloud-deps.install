@@ -19,6 +19,5 @@
 /usr/share/java/cloud-jstl-*.jar
 /usr/share/java/cloud-axis.jar
 /usr/share/java/cloud-commons-discovery.jar
-/usr/share/java/cloud-iControl.jar
 /usr/share/java/cloud-wsdl4j.jar
 /usr/share/java/cloud-premium/*.jar

@@ -18,7 +18,6 @@
 	<classpathentry exported="true" kind="lib" path="cloud-email.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-gson.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-httpcore-4.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-iControl.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jna.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jsch-0.1.42.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jstl-1.2.jar"/>
@@ -33,22 +32,6 @@
 	<classpathentry exported="true" kind="lib" path="cloud-xmlrpc-client-3.1.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-xmlrpc-common-3.1.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-xstream-1.3.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-apputils.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-credstore.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-activation.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxen-core.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxen-jdom.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-jaxrpc.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-jdom.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-mailapi.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-saxpath.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-smtp.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-wbem.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-xalan.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-xerces.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-lib-xml-apis.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-vim.jar"/>
-	<classpathentry exported="true" kind="lib" path="vmware-vim25.jar"/>
 	<classpathentry exported="true" kind="lib" path="jetty-6.1.26.jar"/>
 	<classpathentry exported="true" kind="lib" path="jetty-util-6.1.26.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-manageontap.jar"/>
