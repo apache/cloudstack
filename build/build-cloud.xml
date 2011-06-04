@@ -275,7 +275,6 @@
     <copy todir="${jar.dir}">
       <fileset dir="${deps.dir}">
 		<include name="cloud-*.jar"/>
-		<include name="vmware-*.jar"/>
       </fileset>
     </copy>
 
