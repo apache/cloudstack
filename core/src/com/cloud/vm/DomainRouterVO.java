@@ -90,8 +90,8 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     }
 
     @Override
-    public long getDataCenterId() {
-        return dataCenterId;
+    public long getDataCenterIdToDeployIn() {
+        return dataCenterIdToDeployIn;
     }
     
     public String getPublicNetmask() {
@@ -123,6 +123,10 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 		this.role = role;
 	}
 
+	@Override
+	public long getServiceOfferingId() {
+	    return serviceOfferingId;
+	}
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }

@@ -255,12 +255,37 @@ function afterLoadIpJSP() {
    
     //*** Port Forwarding tab (begin) ***
     var $createPortForwardingRow = $("#tab_content_port_forwarding").find("#create_port_forwarding_row");     
-    
+     
+    // If public end port gets filled, disable private ports and copy public ports over to private ports
+    $createPortForwardingRow.find("#public_end_port").bind("keyup", function(event) {
+       	if($(this).val() != null && $(this).val().length > 0) {    		
+       		$createPortForwardingRow.find("#private_port").attr("readonly", true); 
+       		$createPortForwardingRow.find("#private_end_port").attr("readonly", true); 
+       		
+       		$createPortForwardingRow.find("#private_port").val($createPortForwardingRow.find("#public_port").val());
+       		$createPortForwardingRow.find("#private_end_port").val($(this).val());
+       	}
+       	else {    		
+       		$createPortForwardingRow.find("#private_port").removeAttr("readonly");    
+       		$createPortForwardingRow.find("#private_end_port").removeAttr("readonly");  
+       	}       	
+       	return true;
+    });           
+    $createPortForwardingRow.find("#public_port").bind("keyup", function(event) {
+        if($createPortForwardingRow.find("#private_port").attr("readonly") == true)
+        	$createPortForwardingRow.find("#private_port").val($(this).val());       	
+       	return true;
+    });    
+        
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;		
-		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));				
-		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535);
-		isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535);				
+		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
+		
+		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535, false); //required
+		isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
+		
+		isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535, false); //required		
+		isValid &= validateInteger("Private End Port", $createPortForwardingRow.find("#private_end_port"), $createPortForwardingRow.find("#private_end_port_errormsg"), 1, 65535, true); //optional				
 		if (!isValid) 
 		    return;			
 	    
@@ -273,17 +298,26 @@ function afterLoadIpJSP() {
 	    	    
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
         var ipObj = $midmenuItem1.data("jsonObj");            	        
-				
-	    var publicPort = $createPortForwardingRow.find("#public_port").val();
-	    var privatePort = $createPortForwardingRow.find("#private_port").val();
-	    var protocol = $createPortForwardingRow.find("#protocol").val();
-	    var virtualMachineId = $createPortForwardingRow.find("#vm").val();		   
-	    		    
-	    var array1 = [];
+			
+        var array1 = [];
         array1.push("&ipaddressid="+ipObj.id);           
-        array1.push("&publicport="+publicPort);
-        array1.push("&privateport="+privatePort);
-        array1.push("&protocol="+protocol);
+        
+	    var publicPort = $createPortForwardingRow.find("#public_port").val();
+	    array1.push("&publicport="+publicPort);	    
+	    var publicEndPort = $createPortForwardingRow.find("#public_end_port").val();
+	    if(publicEndPort != null && publicEndPort.length > 0)
+	    	array1.push("&publicendport="+publicEndPort);
+	    
+	    var privatePort = $createPortForwardingRow.find("#private_port").val();
+	    array1.push("&privateport="+privatePort);	    
+	    var privateEndPort = $createPortForwardingRow.find("#private_end_port").val();
+	    if(privateEndPort != null && privateEndPort.length > 0)
+	    	array1.push("&privateendport="+privateEndPort);
+	    
+	    var protocol = $createPortForwardingRow.find("#protocol").val();
+	    array1.push("&protocol="+protocol);
+	    
+	    var virtualMachineId = $createPortForwardingRow.find("#vm").val();	
         array1.push("&virtualmachineid=" + virtualMachineId);
         
         $.ajax({
@@ -1222,22 +1256,26 @@ function ipJsonToDetailsTab() {
 function ipFindNetworkServiceByName(pName, networkObj) {    
     if(networkObj == null)
         return null;
-    for(var i=0; i<networkObj.service.length; i++) {
-        var networkServiceObj = networkObj.service[i];
-        if(networkServiceObj.name == pName)
-            return networkServiceObj;
-    }
+    if(networkObj.service != null) {
+	    for(var i=0; i<networkObj.service.length; i++) {
+	        var networkServiceObj = networkObj.service[i];
+	        if(networkServiceObj.name == pName)
+	            return networkServiceObj;
+	    }
+    }    
     return null;
 }
 
 function ipFindCapabilityByName(pName, networkServiceObj) {  
     if(networkServiceObj == null)
         return null;  
-    for(var i=0; i<networkServiceObj.capability.length; i++) {
-        var capabilityObj = networkServiceObj.capability[i];
-        if(capabilityObj.name == pName)
-            return capabilityObj;
-    }
+    if(networkServiceObj.capability != null) {
+	    for(var i=0; i<networkServiceObj.capability.length; i++) {
+	        var capabilityObj = networkServiceObj.capability[i];
+	        if(capabilityObj.name == pName)
+	            return capabilityObj;
+	    }
+    }    
     return null;
 }
 
@@ -1491,21 +1529,24 @@ function ipClearPortForwardingTab() {
 
 function portForwardingJsonToTemplate(jsonObj, $template) {				        
     $template.attr("id", "portForwarding_" + fromdb(jsonObj.id)).data("portForwardingId", fromdb(jsonObj.id));	
-    		     
-    $template.find("#row_container #public_port").text(fromdb(jsonObj.publicport));
-    $template.find("#row_container_edit #public_port").text(fromdb(jsonObj.publicport));
     
-    $template.find("#row_container #private_port").text(fromdb(jsonObj.privateport));
-    $template.find("#row_container_edit #private_port").val(fromdb(jsonObj.privateport));
+    var publicPort = fromdb(jsonObj.publicport);
+    if(jsonObj.publicendport != null && jsonObj.publicendport.length > 0)
+    	publicPort += (" - " + fromdb(jsonObj.publicendport));    
+    $template.find("#public_port").text(publicPort);
+                
+    var privatePort = fromdb(jsonObj.privateport);
+    if(jsonObj.privateendport != null && jsonObj.privateendport.length > 0)
+    	privatePort += (" - " + fromdb(jsonObj.privateendport));    
+    $template.find("#private_port").text(privatePort);
     
-    $template.find("#row_container #protocol").text(fromdb(jsonObj.protocol));
-    $template.find("#row_container_edit #protocol").text(fromdb(jsonObj.protocol));
+    $template.find("#protocol").text(fromdb(jsonObj.protocol));
        
     var vmName = getVmName(jsonObj.virtualmachinename, jsonObj.virtualmachinedisplayname); 
-    $template.find("#row_container #vm_name").text(vmName);		    
+    $template.find("#vm_name").text(vmName);		    
     var virtualMachineId = fromdb(jsonObj.virtualmachineid);
    
-    ipSetRuleState(fromdb(jsonObj.state), $template.find("#row_container #state"));
+    ipSetRuleState(fromdb(jsonObj.state), $template.find("#state"));
     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -1513,17 +1554,10 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     var ipObj = $midmenuItem1.data("jsonObj");
     if(ipObj == null)
         return;    
-    var ipAddress = fromdb(ipObj.ipaddress);  
-   
-    var $vmSelect = $template.find("#row_container_edit #vm").empty();			    
-    ipPopulateVMDropdown($vmSelect);
-    $vmSelect.val(virtualMachineId);    
-   	   	    	   
-    var $rowContainer = $template.find("#row_container");      
-    var $rowContainerEdit = $template.find("#row_container_edit");    
-    		    
+    var ipAddress = fromdb(ipObj.ipaddress);   
+        		    
     $template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
-        var $spinningWheel = $rowContainer.find("#spinning_wheel");		
+        var $spinningWheel = $template.find("#spinning_wheel");		
         $spinningWheel.find("#description").text(g_dictionary["label.deleting.processing"]);	
         $spinningWheel.show();   
              
@@ -1580,7 +1614,9 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 function refreshCreatePortForwardingRow() {       
     var $createPortForwardingRow = $("#create_port_forwarding_row");      
     $createPortForwardingRow.find("#public_port").val("");
+    $createPortForwardingRow.find("#public_end_port").val("");
     $createPortForwardingRow.find("#private_port").val("");
+    $createPortForwardingRow.find("#private_end_port").val("");
     
     var $vmSelect = $createPortForwardingRow.find("#vm").empty();		
     ipPopulateVMDropdown($vmSelect);

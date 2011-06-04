@@ -298,7 +298,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
     protected float _overProvisioningFactor = 1;
-    private int _maxVolumeSizeInGb;
+    private long _maxVolumeSizeInGb;
     private long _serverId;
 
     private int _snapshotTimeout;
@@ -352,6 +352,23 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } else {
             return true;
         }
+    }
+    
+    @Override
+    public List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type) {
+        List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(datacenterId);
+        List<StoragePoolVO> retPools = new ArrayList<StoragePoolVO>();
+        for (StoragePoolVO pool : pools ) {
+            if( pool.getStatus() != StoragePoolStatus.Up) {
+                continue;
+            }
+            ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
+            if( type == cluster.getHypervisorType()) {
+                retPools.add(pool);
+            }
+        }
+        Collections.shuffle(retPools);
+        return retPools;
     }
 
     @Override
@@ -834,7 +851,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
-        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+        _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
 
         HostTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
         HostTemplateStatesSearch.and("id", HostTemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -969,6 +986,18 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Random rn = new Random();
         int index = rn.nextInt(size);
         return hosts.get(index);
+    }
+    
+    @Override
+    public List<HostVO> getSecondaryStorageHosts(long zoneId) {
+        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        if( hosts == null || hosts.size() == 0) {
+            hosts = _hostDao.listLocalSecondaryStorageHosts(zoneId);
+            if (hosts.isEmpty()) {
+                return new ArrayList<HostVO>();
+            }
+        }
+        return hosts;
     }
 
     @Override
@@ -1582,7 +1611,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             diskOfferingId = cmd.getDiskOfferingId();
-            size = cmd.getSize() * 1024 * 1024 * 1024; // user specify size in GB
+            size = cmd.getSize();
+            if ( size != null ) {
+                if ( size > 0 ) {
+                    size = size * 1024 * 1024 * 1024; // user specify size in GB
+                } else {
+                    throw new InvalidParameterValueException("Disk size must be larger than 0");
+                }
+            }
             if (diskOfferingId == null) {
                 throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
             }
@@ -2410,8 +2446,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     private boolean validateVolumeSizeRange(long size) {
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > _maxVolumeSizeInGb) {
-            throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+        } else if (size > (_maxVolumeSizeInGb * 1024 * 1024 * 1024) ) {
+            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
         }
 
         return true;
@@ -2429,7 +2465,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } else {
             size = (size * 1024 * 1024 * 1024);
         }
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size);
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), size);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -2460,15 +2496,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
         sc.setParameters("id", template.getId());
         sc.setParameters("state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        sc.setJoinParameters("host", "dcId", vm.getDataCenterId());
+        sc.setJoinParameters("host", "dcId", vm.getDataCenterIdToDeployIn());
 
         List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
         if (sss.size() == 0) {
-            throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterId());
+            throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterIdToDeployIn());
         }
         VMTemplateHostVO ss = sss.get(0);
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), ss.getSize());
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), ss.getSize());
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -2518,7 +2554,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
             if (userVM.getIsoId() != null) {
-                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterId());
+                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterIdToDeployIn());
                 if (isoPathPair != null) {
                     String isoPath = isoPathPair.first();
                     VolumeTO iso = new VolumeTO(vm.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, null, null, isoPath, 0, null, null);

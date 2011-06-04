@@ -771,7 +771,7 @@ public class ManagementServerImpl implements ManagementServer {
                     DataCenterVO dc = iter.next();
                     boolean found = false;
                     for (DomainRouterVO router : routers) {
-                        if (dc.getId() == router.getDataCenterId()) {
+                        if (dc.getId() == router.getDataCenterIdToDeployIn()) {
                             found = true;
                             break;
                         }
@@ -1011,12 +1011,18 @@ public class ManagementServerImpl implements ManagementServer {
         // if a domainId is provided, we just return the so associated with this domain
         if (domainId != null) {
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                if (account.getDomainId() != 1 && issystem){ //NON ROOT admin
+                    throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+                }
                 return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, issystem);// no perm check
             } else {
+                if (issystem){
+                    throw new InvalidParameterValueException("Non root users cannot access system's offering");
+                }
                 // check if the user's domain == so's domain || user's domain is a child of so's domain
                 if (isPermissible(account.getDomainId(), domainId)) {
                     // perm check succeeded
-                    return _offeringsDao.findServiceOfferingByDomainId(domainId);
+                    return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, false);
                 } else {
                     throw new PermissionDeniedException("The account:" + account.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
                 }
@@ -1025,10 +1031,17 @@ public class ManagementServerImpl implements ManagementServer {
 
         // For non-root users
         if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            if (issystem){
+                throw new InvalidParameterValueException("Only root admins can access system's offering");
+            }
             return searchServiceOfferingsInternal(account, name, id, vmId, keyword, searchFilter);
         }
 
         // for root users, the existing flow
+        if (account.getDomainId() != 1 && issystem){ //NON ROOT admin
+            throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+        }
+
         if (keyword != null) {
             SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1061,7 +1074,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
+        sc.addAnd("systemUse", SearchCriteria.Op.EQ, issystem);
 
         return _offeringsDao.search(sc, searchFilter);
 
@@ -1307,7 +1320,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
         if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.LIKE, "%" + type + "%");
+            sc.addAnd("type", SearchCriteria.Op.LIKE, "%" + type);
         }
         if (state != null) {
             sc.addAnd("status", SearchCriteria.Op.EQ, state);
@@ -1611,7 +1624,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                isAccountSpecific, true);
+                isAccountSpecific, true, cmd.listInReadyState());
     }
 
     @Override
@@ -1633,11 +1646,11 @@ public class ManagementServerImpl implements ManagementServer {
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                isAccountSpecific, showDomr);
+                isAccountSpecific, showDomr, cmd.listInReadyState());
     }
 
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize,
-            Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr) {
+            Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr, boolean onlyReady) {
 
         Account caller = UserContext.current().getCaller();
         VMTemplateVO template = null;
@@ -1655,10 +1668,6 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the template id " + templateId);
             }
         }
-
-        // Show only those that are downloaded.
-        boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
-        || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
 
         Account account = null;
         DomainVO domain = null;
@@ -2185,8 +2194,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
 
         if ((accountId == null) && (domainId != null)) {
@@ -2745,7 +2754,7 @@ public class ManagementServerImpl implements ManagementServer {
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = this.findVMInstanceById(vmId);
         if (vm != null) {
-            ConsoleProxyInfo proxy = getConsoleProxy(vm.getDataCenterId(), vmId);
+            ConsoleProxyInfo proxy = getConsoleProxy(vm.getDataCenterIdToDeployIn(), vmId);
             if (proxy != null) {
                 return proxy.getProxyImageUrl();
             }
@@ -3914,8 +3923,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("nulltype", sb.entity().getType(), SearchCriteria.Op.IN);

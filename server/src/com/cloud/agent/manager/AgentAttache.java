@@ -17,11 +17,13 @@
  */
 package com.cloud.agent.manager;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -238,8 +240,25 @@ public abstract class AgentAttache {
         return _requests.size();
     }
     
-    public int getListenersSize() {
-        return _waitForList.size();
+    public int getNonRecurringListenersSize() {
+        List<Listener> nonRecurringListenersList = new ArrayList<Listener>();
+        if (_waitForList.isEmpty()) {
+            return 0;
+        } else {
+            final Set<Map.Entry<Long, Listener>> entries = _waitForList.entrySet();
+            final Iterator<Map.Entry<Long, Listener>> it = entries.iterator();
+            while (it.hasNext()) {
+                final Map.Entry<Long, Listener> entry = it.next();
+                final Listener monitor = entry.getValue();
+                if (!monitor.isRecurring()) {
+                    //TODO - remove this debug statement later
+                    s_logger.debug("Listener is " + entry.getValue() + " waiting on " + entry.getKey());
+                    nonRecurringListenersList.add(monitor);
+                }
+           }
+        }
+
+        return nonRecurringListenersList.size();
     }
 
     public boolean processAnswers(final long seq, final Response resp) {

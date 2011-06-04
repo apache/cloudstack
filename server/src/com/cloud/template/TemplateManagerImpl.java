@@ -262,12 +262,20 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	}
         }
 
-        HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+        List<HostVO> sservers = _storageMgr.getSecondaryStorageHosts(zoneId);
+
         VMTemplateHostVO tmpltHostRef = null;
-        if (secondaryStorageHost != null) {
-            tmpltHostRef = _tmpltHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-            if (tmpltHostRef != null && tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
+        if (sservers != null) {
+            for(HostVO secondaryStorageHost: sservers){
+                tmpltHostRef = _tmpltHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
+                if (tmpltHostRef != null){
+                    if (tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                        throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
+                    }
+                    else {
+                        break;
+                    }
+                }
             }
         }
         
@@ -819,7 +827,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
              vm.setIsoId(iso.getId());
             _userVmDao.update(vmId, vm);
         } 
-        if ( !attach ) {
+        if ( success && !attach ) {
             vm.setIsoId(null);
             _userVmDao.update(vmId, vm);
         }    

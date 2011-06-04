@@ -148,7 +148,7 @@ function afterLoadTemplateJSP() {
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 												
 				$.ajax({
-				    data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+todb(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+"&response=json"),
+				    data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+todb(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+""),
 					dataType: "json",
 					success: function(json) {	
 						var items = json.registertemplateresponse.template;				       
@@ -233,7 +233,7 @@ function afterLoadTemplateJSP() {
     //zone dropdown (end)		
     
     $.ajax({
-	    data: createURL("command=listOsTypes&response=json"),
+	    data: createURL("command=listOsTypes"),
 		dataType: "json",
 		async: false,
 		success: function(json) {
@@ -253,7 +253,7 @@ function afterLoadTemplateJSP() {
 	});
 	
 	$.ajax({
-	    data: createURL("command=listServiceOfferings&response=json"),
+	    data: createURL("command=listServiceOfferings&issystem=false"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
@@ -266,7 +266,7 @@ function afterLoadTemplateJSP() {
 	});		
 	
 	$.ajax({
-	    data: createURL("command=listDiskOfferings&response=json"),
+	    data: createURL("command=listDiskOfferings"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;

@@ -117,6 +117,10 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             getIp(nic, dest.getPod(), vm, network);
             nic.setStrategy(ReservationStrategy.Create);
         }
+        
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        nic.setDns1(dc.getDns1());
+        nic.setDns2(dc.getDns2());
     }
 
     protected void getIp(NicProfile nic, Pod pod, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,

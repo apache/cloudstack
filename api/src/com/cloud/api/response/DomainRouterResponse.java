@@ -113,6 +113,12 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
     
+    @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
+    private Long serviceOfferingId;
+
+    @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
+    private String serviceOfferingName;
+    
 
     
     
@@ -353,4 +359,19 @@ public class DomainRouterResponse extends BaseResponse {
         this.linkLocalNetworkId = linkLocalNetworkId;
     }
     
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
+
+    public void setServiceOfferingName(String serviceOfferingName) {
+        this.serviceOfferingName = serviceOfferingName;
+    }
 }

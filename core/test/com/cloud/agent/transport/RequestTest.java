@@ -42,8 +42,13 @@ public class RequestTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(RequestTest.class);
 
     public void testSerDeser() {
+        s_logger.info("Testing serializing and deserializing works as expected");
+        
+        s_logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
         UpdateHostPasswordCommand cmd1 = new UpdateHostPasswordCommand("abc", "def");
+        s_logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
         SecStorageFirewallCfgCommand cmd2 = new SecStorageFirewallCfgCommand();
+        s_logger.info("GetHostStatsCommand should not show up at all in debug level");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         cmd2.addPortConfig("abc", "24", true, "eth0");
         cmd2.addPortConfig("127.0.0.1", "44", false, "eth1");
@@ -113,6 +118,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testDownload() {
+        s_logger.info("Testing Download answer");
         VMTemplateVO template = new VMTemplateVO(1, "templatename", ImageFormat.QCOW2, true, true, true, TemplateType.USER, "url", true, 32, 1, "chksum", "displayText", true, 30, true,
                 HypervisorType.KVM);
         DownloadCommand cmd = new DownloadCommand("secUrl", template, 30000000l);
@@ -128,6 +134,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testLogging() {
+        s_logger.info("Testing Logging");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         Request sreq = new Request(2, 3, new Command[] { cmd3 }, true, true);
         sreq.setSequence(1);

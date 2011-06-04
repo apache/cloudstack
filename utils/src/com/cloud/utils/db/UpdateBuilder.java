@@ -29,11 +29,12 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UpdateBuilder implements MethodInterceptor {
-    protected final Map<String, Attribute> _attrs;
     protected Map<String, Ternary<Attribute, Boolean, Object>> _changes;
+    protected HashMap<Attribute, Object> _collectionChanges;
+    protected GenericDaoBase<?, ?> _dao;
     
-    protected UpdateBuilder(Map<String, Attribute> attrs) {
-        _attrs = attrs;
+    protected UpdateBuilder(GenericDaoBase<?, ?> dao) {
+        _dao = dao;
         _changes = new HashMap<String, Ternary<Attribute, Boolean, Object>>();
     }
     
@@ -47,7 +48,7 @@ public class UpdateBuilder implements MethodInterceptor {
         	makeIncrChange(name, args);
         } else if (name.startsWith("decr")) {
         	makeDecrChange(name, args);
-        } 
+        }
         return methodProxy.invokeSuper(object, args);
     }
     
@@ -58,25 +59,32 @@ public class UpdateBuilder implements MethodInterceptor {
     }
     
     protected Attribute makeChange(String field, Object value) {
-        Attribute attr = _attrs.get(field);
+        Attribute attr = _dao._allAttributes.get(field);
         
         assert (attr == null || attr.isUpdatable()) : "Updating an attribute that's not updatable: " + field;
         if (attr != null) {
-            _changes.put(field, new Ternary<Attribute, Boolean, Object>(attr, null, value));
+            if (attr.attache == null) {
+                _changes.put(field, new Ternary<Attribute, Boolean, Object>(attr, null, value));
+            } else {
+                if (_collectionChanges == null) {
+                    _collectionChanges = new HashMap<Attribute, Object>();
+                }
+                _collectionChanges.put(attr, value);
+            }
         }
         return attr;
     }
     
     protected void makeIncrChange(String method, Object[] args) {
     	String field = methodToField(method, 4);
-    	Attribute attr = _attrs.get(field);
+    	Attribute attr = _dao._allAttributes.get(field);
         assert (attr != null && attr.isUpdatable()) : "Updating an attribute that's not updatable: " + field;
     	incr(attr, args == null || args.length == 0 ? 1 : args[0]);
     }
     
     protected void makeDecrChange(String method, Object[] args) {
     	String field = methodToField(method, 4);
-    	Attribute attr = _attrs.get(field);
+    	Attribute attr = _dao._allAttributes.get(field);
         assert (attr != null && attr.isUpdatable()) : "Updating an attribute that's not updatable: " + field;
     	decr(attr, args == null || args.length == 0 ? 1 : args[0]);
     }
@@ -107,19 +115,23 @@ public class UpdateBuilder implements MethodInterceptor {
     }
     
     public boolean hasChanges() {
-        return _changes.size() != 0;
+        return (_changes.size() + (_collectionChanges != null ? _collectionChanges.size() : 0)) != 0;
     }
     
     public boolean has(String name) {
         return _changes.containsKey(name);
     }
     
-    public Object get(String name) {
-    	return _changes.get(name).second();
+    public Map<Attribute, Object> getCollectionChanges() {
+        return _collectionChanges;
     }
     
     protected void clear() {
         _changes.clear();
+        if (_collectionChanges != null) {
+            _collectionChanges.clear();
+            _collectionChanges = null;
+        }
     }
     
     public StringBuilder toSql(String tables) {

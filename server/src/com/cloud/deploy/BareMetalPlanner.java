@@ -87,7 +87,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 			}
 		}
 		
-		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.BareMetal.toString());
+		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterIdToDeployIn(), HypervisorType.BareMetal.toString());
 		if (clusters.size() != 1) {
 			throw new CloudRuntimeException("Invaild baremetal cluster number " + clusters.size());
 		}

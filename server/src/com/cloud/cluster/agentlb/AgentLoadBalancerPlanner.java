@@ -26,6 +26,6 @@ import com.cloud.utils.component.Adapter;
 
 public interface AgentLoadBalancerPlanner extends Adapter{
     
-    List<HostVO> getHostsToRebalance(long msId, long avLoad);
+    List<HostVO> getHostsToRebalance(long msId, int avLoad);
 
 }

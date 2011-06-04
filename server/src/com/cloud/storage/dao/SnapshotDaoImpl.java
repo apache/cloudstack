@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Snapshot.Type;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -47,6 +48,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private final SearchBuilder<SnapshotVO> ParentIdSearch;
     private final SearchBuilder<SnapshotVO> backupUuidSearch;   
     private final SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
+    private final SearchBuilder<SnapshotVO> HostIdSearch;
     
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {
@@ -86,6 +88,19 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
+    public List<SnapshotVO> listByHostId(long hostId) {
+        return listByHostId(null, hostId);
+    }
+    
+    @Override
+    public List<SnapshotVO> listByHostId(Filter filter, long hostId ) {
+        SearchCriteria<SnapshotVO> sc = HostIdSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("status", Status.DOWNLOADED);
+        return listBy(sc, filter);
+    }
+    
+    @Override
     public List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId) {
         SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
@@ -110,6 +125,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
+        
+        HostIdSearch = createSearchBuilder();
+        HostIdSearch.and("hostId", HostIdSearch.entity().getSecHostId(), SearchCriteria.Op.EQ);
+        HostIdSearch.and("status", HostIdSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        HostIdSearch.done();
         
         VolumeIdTypeSearch = createSearchBuilder();
         VolumeIdTypeSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);

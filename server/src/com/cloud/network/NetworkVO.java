@@ -22,11 +22,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
@@ -34,7 +38,6 @@ import javax.persistence.Transient;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -73,7 +76,7 @@ public class NetworkVO implements Network {
     String displayText;;
 
     @Column(name="broadcast_uri")
-    URI broadcastUri; 
+    URI broadcastUri;
 
     @Column(name="gateway")
     String gateway;
@@ -132,7 +135,7 @@ public class NetworkVO implements Network {
     Date created;
 
     @Column(name="reservation_id")
-    String reservationId;  
+    String reservationId;
 
     @Column(name="is_default")
     boolean isDefault;
@@ -140,7 +143,9 @@ public class NetworkVO implements Network {
     @Column(name="is_security_group_enabled")
     boolean securityGroupEnabled;
 
-    @Transient
+    @ElementCollection(targetClass = String.class, fetch=FetchType.EAGER)
+    @Column(name="tag")
+    @CollectionTable(name="network_tags", joinColumns=@JoinColumn(name="network_id"))
     List<String> tags;
 
     public NetworkVO() {
@@ -408,7 +413,7 @@ public class NetworkVO implements Network {
         return isDefault;
     }
 
-    @Override 
+    @Override
     public boolean isSecurityGroupEnabled() {
         return securityGroupEnabled;
     }
@@ -464,10 +469,4 @@ public class NetworkVO implements Network {
         buf.append(id).append("|").append(trafficType.toString()).append("|").append(networkOfferingId).append("]");
         return buf.toString();
     }
-
-    private static NetworkDao _networkDao = null;
-    static void init(NetworkDao networkDao) {
-        _networkDao = networkDao;
-    }
-
 }

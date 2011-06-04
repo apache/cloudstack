@@ -130,6 +130,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -937,8 +938,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 selectSql += " AND taken IS NOT NULL";
             }
 
-            if (tableName.equals("host_pod_ref")) {
+            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")) {
                 selectSql += " AND removed is NULL";
+            }
+            
+            if (tableName.equals("vm_instance")) {
+                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
             }
 
             Transaction txn = Transaction.currentTxn();
@@ -1060,11 +1065,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         List<NetworkVO> networks = _networkDao.listByZoneIncludingRemoved(zoneId);
         if (networks != null && !networks.isEmpty()) {
             for (NetworkVO network : networks) {
-                _networkDao.expunge(network.getId());
+                _networkDao.remove(network.getId());
             }
         }
-
-        success = _zoneDao.expunge(zoneId);
+        success = _zoneDao.remove(zoneId);
 
         txn.commit();
 
@@ -1367,7 +1371,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, isNetworkDefault, false, null);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, isNetworkDefault, false, null, null);
             }
         }
     }

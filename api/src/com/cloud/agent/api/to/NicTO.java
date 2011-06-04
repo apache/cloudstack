@@ -27,7 +27,6 @@ public class NicTO extends NetworkTO {
     Integer networkRateMulticastMbps;
     boolean defaultNic;
 
-
     public NicTO() {
         super();
     }

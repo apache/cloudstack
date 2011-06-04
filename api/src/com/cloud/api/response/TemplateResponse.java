@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 import com.google.gson.annotations.SerializedName;
@@ -112,6 +113,12 @@ public class TemplateResponse extends BaseResponse {
     
     @SerializedName("sourcetemplateid") @Param(description="the template ID of the parent template if present")
     private Long sourcetemplateId;    
+    
+    @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the secondary storage host for the template")
+    private Long hostId;
+
+    @SerializedName("hostname") @Param(description="the name of the secondary storage host for the template")
+    private String hostName;
     
     public Long getObjectId() {
     	return getId();
@@ -348,4 +355,20 @@ public class TemplateResponse extends BaseResponse {
     public void setSourceTemplateId(Long sourcetemplateId) {
         this.sourcetemplateId = sourcetemplateId;
     }    
+    
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
 }

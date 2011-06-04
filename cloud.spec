@@ -221,7 +221,6 @@ Requires: jpackage-utils
 Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
-Requires: jnetpcap
 Group:     System Environment/Libraries
 
 %package baremetal-agent
@@ -304,6 +303,7 @@ The Cloud.com command line tools contain a few Python modules that can call clou
 %package premium-agent
 Summary: Cloud.com premium agent
 Requires: cloud-agent
+Requires: jnetpcap
 Group:     System Environment/Libraries
 %description premium-agent
 The Cloud.com premium agent

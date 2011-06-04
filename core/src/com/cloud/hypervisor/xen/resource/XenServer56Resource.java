@@ -416,7 +416,7 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     @Override
     public StartupCommand[] initialize() {
-        pingxenserver();
+        pingXenServer();
         StartupCommand[] cmds = super.initialize();
         Connection conn = getConnection();       
         if (!setIptables(conn)) {

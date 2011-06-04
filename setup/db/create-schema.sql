@@ -185,7 +185,7 @@ CREATE TABLE `cloud`.`networks` (
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
-  CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
   CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
@@ -197,7 +197,7 @@ CREATE TABLE `cloud`.`network_tags` (
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
   `tag` varchar(255) NOT NULL COMMENT 'tag',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   UNIQUE KEY(`network_id`, `tag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -280,7 +280,7 @@ CREATE TABLE `cloud`.`cluster` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this cluster enabled for allocation for new resources',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`),
+  CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
   UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`),
   INDEX `i_cluster__allocation_state`(`allocation_state`)
@@ -490,6 +490,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this data center enabled for allocation for new resources',
   `zone_token` varchar(255),
+  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
   INDEX `i_data_center__domain_id`(`domain_id`),
@@ -839,6 +840,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   `type` varchar(32) NOT NULL COMMENT 'type of vm it is',
+  `vm_type` varchar(32) NOT NULL COMMENT 'vm type',
   `account_id` bigint unsigned NOT NULL COMMENT 'user id of owner',
   `domain_id` bigint unsigned NOT NULL,
   `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',

@@ -395,7 +395,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		long hostId = dest.getHost().getId();
 		long accountId = instance.getAccountId();
 		List<UserVmVO>vms = _userVmDao.listByAccountId(accountId);
-		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterId());
+		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
 		List<VMInstanceVO>ins = new ArrayList<VMInstanceVO>();
 		ins.addAll(vms);
 		ins.add(router);
@@ -538,7 +538,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 		
 		long accountId = instance.getAccountId();
-		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterId());
+		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
 		if (router == null) {
 			return;
 		}
@@ -639,7 +639,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 		
 		if (tellRouter && instance.getType() != VirtualMachine.Type.DomainRouter) {
-			DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterId());
+			DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
 			if (router != null) {
 				affectedVms.add(new Long(router.getId()));
 			}

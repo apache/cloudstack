@@ -159,7 +159,7 @@ function initAddServiceOfferingDialog() {
 	            }            
 								
 				$.ajax({
-				  data: createURL("command=createServiceOffering"+array1.join("")),
+				  data: createURL("command=createServiceOffering&issystem=false"+array1.join("")),
 					dataType: "json",
 					success: function(json) {					    				
 						var item = json.createserviceofferingresponse.serviceoffering;							
@@ -363,6 +363,7 @@ function serviceOfferingClearDetailsTab() {
     $thisTab.find("#memory").text("");    
     $thisTab.find("#offerha").text("");
     $thisTab.find("#offerha_edit").val("");    
+    $thisTab.find("#limitcpuuse").text("");
     $thisTab.find("#tags").text("");  
     $thisTab.find("#domain").text(""); 
     $thisTab.find("#domain_edit").val("");   

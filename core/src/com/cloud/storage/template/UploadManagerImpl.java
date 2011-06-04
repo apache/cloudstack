@@ -373,11 +373,10 @@ public class UploadManagerImpl implements UploadManager {
     	}
 
         
-        // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata 
-        cmd.getInstallPath();
+        // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("ln -sf " + extractMountPoint + File.separator + cmd.getInstallPath() + " " + extractDir + uuid);
+        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + uuid);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result; 

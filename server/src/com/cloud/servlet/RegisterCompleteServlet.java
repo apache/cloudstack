@@ -18,6 +18,7 @@
 
 package com.cloud.servlet;
 
+import java.net.URLEncoder;
 import java.util.List;
 
 import javax.servlet.ServletContextEvent;
@@ -86,6 +87,7 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 			statusCode = 503;
 			responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"errortext\" : \"Missing token\" } }";
 		} else {
+			s_logger.info("Attempting to register user account with token = "+registrationToken);
 			User resourceAdminUser = _accountSvc.getActiveUserByRegistrationToken(registrationToken);
 			if (resourceAdminUser != null) {
 				if(!resourceAdminUser.isRegistered()){
@@ -101,12 +103,12 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 				Configuration config = _configDao.findByName("endpointe.url");
 				
 				StringBuffer sb = new StringBuffer();
-		        sb.append("{ \"registration_info\" : { \"endpoint_url\" : \""+config.getValue()+"\", ");
+		        sb.append("{ \"registration_info\" : { \"endpoint_url\" : \""+encodeParam(config.getValue())+"\", ");
 		        sb.append("\"domain_id\" : \""+resourceAdminAccount.getDomainId()+"\", ");
-		        sb.append("\"admin_account\" : \""+resourceAdminUser.getUsername()+"\", ");
+		        sb.append("\"admin_account\" : \""+encodeParam(resourceAdminUser.getUsername())+"\", ");
 		        sb.append("\"admin_account_api_key\" : \""+resourceAdminUser.getApiKey()+"\", ");
 		        sb.append("\"admin_account_secret_key\" : \""+resourceAdminUser.getSecretKey()+"\", ");
-		        sb.append("\"user_account\" : \""+rsUser.getUsername()+"\", ");
+		        sb.append("\"user_account\" : \""+encodeParam(rsUser.getUsername())+"\", ");
 		        sb.append("\"user_account_api_key\" : \""+rsUser.getApiKey()+"\", ");
 		        sb.append("\"user_account_secret_key\" : \""+rsUser.getSecretKey()+"\" ");
 		        sb.append("} }");
@@ -124,5 +126,14 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
         } catch (Exception ex) {
         	s_logger.error("unknown exception writing register complete response", ex);
         }
+	}
+	
+	private String encodeParam(String value) {
+		try {
+			return URLEncoder.encode(value, "UTF-8").replaceAll("\\+", "%20");
+		} catch (Exception e) {
+			s_logger.warn("Unable to encode: " + value);
+		}
+		return value;
 	}
 }

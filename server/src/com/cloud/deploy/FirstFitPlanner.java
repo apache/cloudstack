@@ -110,7 +110,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
  	    String _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
 		VirtualMachine vm = vmProfile.getVirtualMachine();
 		ServiceOffering offering = vmProfile.getServiceOffering();
-		DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+		DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
 		int cpu_requested = offering.getCpu() * offering.getSpeed();
 		long ram_requested = offering.getRamSize() * 1024L * 1024L;
 		

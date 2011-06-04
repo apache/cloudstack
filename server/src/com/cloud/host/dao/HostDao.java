@@ -171,7 +171,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     
     List<HostVO> listManagedDirectAgents();
     
-    List<HostVO> listManagedAgents();
+    List<HostVO> listManagedRoutingAgents();
 
     HostVO findTrafficMonitorHost();
 

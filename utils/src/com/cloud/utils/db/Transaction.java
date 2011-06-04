@@ -109,7 +109,7 @@ public class Transaction {
     // Usage of this transaction setup should be limited, it will always open a new transaction context regardless of whether or not there is other
     // transaction context in the stack. It is used in special use cases that we want to control DB connection explicitly and in the mean time utilize
     // the existing DAO features
-    // 
+    //
     public static Transaction openNew(final String name, Connection conn) {
     	assert(conn != null);
         Transaction txn = new Transaction(name, false, CONNECTED_DB);
@@ -191,7 +191,7 @@ public class Transaction {
             s_logger.warn("Unexpected exception: ", e);
             return null;
         }
-    } 
+    }
     
     protected void attach(TransactionAttachment value) {
         _stack.push(new StackElement(ATTACHMENT, value));
@@ -452,7 +452,6 @@ public class Transaction {
      * @throws SQLException
      */
     public Connection getConnection() throws SQLException {
-    	closePreviousStatement();
         if (_conn == null) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("conn: Creating a DB connection with " + (_txn ? " txn: " : " no txn: ")  + buildName());
@@ -653,8 +652,9 @@ public class Transaction {
 
         try {
             s_logger.trace("conn: Closing DB connection");
-            if(this._dbId != CONNECTED_DB)
-            	_conn.close();
+            if(this._dbId != CONNECTED_DB) {
+                _conn.close();
+            }
             
             _conn = null;
         } catch (final SQLException e) {

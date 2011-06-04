@@ -525,7 +525,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
         if (Host.Type.SecondaryStorage.equals(host.getType())) {
-            return _secondaryStorageMgr.destroySecStorageVm(hostId);
+            _secondaryStorageMgr.deleteHost(hostId);
+            return true;
         } else {
             return _agentMgr.deleteHost(hostId, isForced, caller);
         }

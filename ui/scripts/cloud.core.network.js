@@ -89,8 +89,8 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     networkPopulateMiddleMenu($leftmenuItem1);  
     bindAddNetworkButton();     
     
-    $readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext");
-    $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit");    
+    $readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext, #tags");
+    $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit, #tags_edit");    
 }
 
 function networkPopulateMiddleMenu($leftmenuItem1) {
@@ -724,13 +724,13 @@ function bindAddExternalFirewallButton() {
 				
 				var array1 = [];
 			
-				array1.push("&zoneid=" + zoneObj.id);
+				array1.push("&zoneid=" + todb(zoneObj.id));
 											
 				var username = $thisDialog.find("#username").val();
-				array1.push("&username="+username);
+				array1.push("&username=" + todb(username));
 				
 				var password = $thisDialog.find("#password").val();
-				array1.push("&password="+password);
+				array1.push("&password=" + todb(password));
 				
 				//*** construct URL (begin)	***	
 				var url = [];
@@ -904,13 +904,13 @@ function bindAddLoadBalancerButton() {
 				
 				var array1 = [];
 			
-				array1.push("&zoneid=" + zoneObj.id);
+				array1.push("&zoneid=" + todb(zoneObj.id));
 											
 				var username = $thisDialog.find("#username").val();
-				array1.push("&username="+username);
+				array1.push("&username=" + todb(username));
 				
 				var password = $thisDialog.find("#password").val();
-				array1.push("&password="+password);
+				array1.push("&password=" + todb(password));
 				
 				//*** construct URL (begin)	***	
 				var url = [];
@@ -1070,7 +1070,8 @@ function directNetworkJsonToDetailsTab() {
     $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
     $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));
-        
+    $thisTab.find("#tags").text(fromdb(jsonObj.tags));
+	$thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));    
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      //might be null
     $thisTab.find("#account").text(fromdb(jsonObj.account));    //might be null
         
@@ -1079,7 +1080,8 @@ function directNetworkJsonToDetailsTab() {
     bindActionLink($actionLink);
         
     var $actionMenu = $actionLink.find("#action_menu");
-    $actionMenu.find("#action_list").empty();    
+    $actionMenu.find("#action_list").empty();   
+
     buildActionLinkForTab("label.action.edit.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	   
     buildActionLinkForTab("label.action.delete.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	      
         
@@ -1092,11 +1094,15 @@ function directNetworkJsonClearDetailsTab() {
 	$thisTab.find("#grid_header_title").text("");			
 	$thisTab.find("#id").text("");				
 	$thisTab.find("#name").text("");	
+	$thisTab.find("#name_edit").val("");
 	$thisTab.find("#displaytext").text("");	 
+	$thisTab.find("#displaytext_edit").val("");	 
 	$thisTab.find("#default").text(""); 	 	
     $thisTab.find("#vlan").text("");
     $thisTab.find("#gateway").text("");
-    $thisTab.find("#netmask").text("");        
+    $thisTab.find("#netmask").text("");  
+    $thisTab.find("#tags").text("");	
+	$thisTab.find("#tags_edit").val("");    
     $thisTab.find("#domain").text("");      
     $thisTab.find("#account").text("");       
        
@@ -1253,7 +1259,8 @@ function bindAddNetworkButton() {
 				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
-				
+				isValid &= validateString("Tags", $thisDialog.find("#tags"), $thisDialog.find("#tags_errormsg"), true); //optional
+							
 				if($thisDialog.find("#domain_container").css("display") != "none") {
 				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
 				    var domainName = $thisDialog.find("#domain").val();
@@ -1285,13 +1292,23 @@ function bindAddNetworkButton() {
 				    				
 				$thisDialog.find("#spinning_wheel").show()
 				
+				var array1 = [];
+				array1.push("&zoneId="+zoneObj.id);
+				
+				var name = todb($thisDialog.find("#add_publicip_vlan_network_name").val());
+				array1.push("&name="+name);
+				
+				var desc = todb($thisDialog.find("#add_publicip_vlan_network_desc").val());
+				array1.push("&displayText="+desc);
+								
 				var vlan = trim($thisDialog.find("#add_publicip_vlan_vlan").val());
 				if (isTagged) {
 					vlan = "&vlan="+vlan;
 				} else {
 					vlan = "&vlan=untagged";
 				}
-								
+				array1.push(vlan);
+				
 				var scopeParams = "";
 				if($thisDialog.find("#domain_container").css("display") != "none") {
 					if ($thisDialog.find("#add_publicip_vlan_account_container").css("display") != "none") {
@@ -1301,17 +1318,28 @@ function bindAddNetworkButton() {
 					}
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
-				}
+				}				
+				array1.push(scopeParams);
 				
-				var isDefault = trim($thisDialog.find("#add_publicip_vlan_default").val());
-				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
-				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
-				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
-				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
-										
-				// Creating network for the direct networking
-				var name = todb($thisDialog.find("#add_publicip_vlan_network_name").val());
-				var desc = todb($thisDialog.find("#add_publicip_vlan_network_desc").val());
+				var isDefault = $thisDialog.find("#add_publicip_vlan_default").val();
+				array1.push("isDefault="+isDefault);
+								
+				var gateway = $thisDialog.find("#add_publicip_vlan_gateway").val();
+				array1.push("&gateway="+todb(gateway));
+				
+				var netmask = $thisDialog.find("#add_publicip_vlan_netmask").val();
+				array1.push("&netmask="+todb(netmask));
+				
+				var startip = $thisDialog.find("#add_publicip_vlan_startip").val();
+				array1.push("&startip="+todb(startip));
+				
+				var endip = $thisDialog.find("#add_publicip_vlan_endip").val();
+				array1.push("&endip="+todb(endip));
+				
+				var tags = $thisDialog.find("#add_publicip_vlan_endip").val();
+				array1.push("&tags="+todb(tags));
+				
+				// Creating network for the direct networking				
 				$.ajax({
 					data: createURL("command=listNetworkOfferings&guestiptype=Direct"),
 					dataType: "json",
@@ -1321,9 +1349,11 @@ function bindAddNetworkButton() {
 						if (networkOfferings != null && networkOfferings.length > 0) {
 							for (var i = 0; i < networkOfferings.length; i++) {
 								if (networkOfferings[i].isdefault) {
+									array1.push("&networkOfferingId="+networkOfferings[i].id);
+									
 									// Create a network from this.
 									$.ajax({
-										data: createURL("command=createNetwork&isDefault="+isDefault+"&name="+name+"&displayText="+desc+"&networkOfferingId="+networkOfferings[i].id+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
+										data: createURL("command=createNetwork"+array1.join("")),
 										dataType: "json",
 										success: function(json) {	
 											$thisDialog.find("#spinning_wheel").hide();
@@ -1501,7 +1531,10 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
     
     var displaytext = $detailsTab.find("#displaytext_edit").val();
     array1.push("&displayText="+todb(displaytext));
-		
+	
+    var tags = $detailsTab.find("#tags_edit").val();
+    array1.push("&tags="+todb(tags));
+    
 	$.ajax({
 	    data: createURL("command=updateNetwork&id="+id+array1.join("")),
 		dataType: "json",

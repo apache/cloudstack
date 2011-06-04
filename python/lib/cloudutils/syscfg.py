@@ -72,8 +72,12 @@ class sysConfigAgent(sysConfig):
             return True
 
         if os.geteuid() != 0:
-            raise CloudInternalException("Need to execute with root permission")
+            raise CloudInternalException("Need to execute with root permission\n")
         
+        hostname = bash("hostname -f")
+        if not hostname.isSuccess():
+            raise CloudInternalException("Checking hostname ... [Failed]\nPlease edit /etc/hosts, add a Fully Qualified Domain Name as your hostname\n")
+
         kvmEnabled = self.svo.isKVMEnabled()
         if not kvmEnabled:
             raise CloudInternalException("Checking KVM...[Failed]\nPlease enable KVM on this machine\n")
@@ -125,7 +129,7 @@ class sysConfigServer(sysConfig):
             raise CloudInternalException("Need to execute with root permission")
         hostname = bash("hostname -f")
         if not hostname.isSuccess():
-            raise CloudInternalException("Checking hostname ... [Failed]\nNeed to have a Fully Qualified Domain Name as your hostname")
+            raise CloudInternalException("Checking hostname ... [Failed]\nPlease edit /etc/hosts, add a Fully Qualified Domain Name as your hostname\n")
         return True
         
 class sysConfigServerRedhat(sysConfigServer):

@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericDao;
 public class HostTransferMapVO {
 
     public enum HostTransferState {
-        TransferRequested, TransferStarted, TransferCompleted, TransferFailed;
+        TransferRequested, TransferStarted;
     }
 
     @Id

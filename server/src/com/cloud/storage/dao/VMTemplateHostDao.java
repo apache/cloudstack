@@ -56,6 +56,8 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
 
     boolean templateAvailable(long templateId, long hostId);
 
-    List<VMTemplateHostVO> listByZoneTemplate(long dcId, long templateId);
+    List<VMTemplateHostVO> listByZoneTemplate(long dcId, long templateId, boolean readyOnly);
+
+    void deleteByHost(Long hostId);
 	
 }

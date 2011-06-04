@@ -523,7 +523,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // Check that the VM and the volume are in the same zone
-        if (vm.getDataCenterId() != volume.getDataCenterId()) {
+        if (vm.getDataCenterIdToDeployIn() != volume.getDataCenterId()) {
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
 
@@ -561,8 +561,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (volume.getState().equals(Volume.State.Allocated)) {
             /* Need to create the volume */
             VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
-            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
-            HostPodVO pod = _podDao.findById(vm.getPodId());
+            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+            HostPodVO pod = _podDao.findById(vm.getPodIdToDeployIn());
             StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
             ServiceOfferingVO svo = _serviceOfferingDao.findById(vm.getServiceOfferingId());
             DiskOfferingVO diskVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
@@ -838,7 +838,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (tmplt.getTemplateType() == TemplateType.PERHOST) {
             isoPath = tmplt.getName();
         } else {
-            isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterId());
+            isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterIdToDeployIn());
             if (isoPathPair == null) {
                 s_logger.warn("Couldn't get absolute iso path");
                 return false;
@@ -1105,7 +1105,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
 
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
                 .getHypervisorType().toString());
         _usageEventDao.persist(usageEvent);
         txn.commit();
@@ -1456,11 +1456,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 volumeId = snapshot.getVolumeId();
 
                 String origTemplateInstallPath = null;
-                List<StoragePoolVO> storagePools = _storagePoolDao.listByDataCenterId(zoneId);
-                if (storagePools == null || storagePools.size() == 0) {
+                List<StoragePoolVO> pools = _storageMgr.ListByDataCenterHypervisor(zoneId, snapshot.getHypervisorType());
+                if (pools == null ||  pools.size() == 0 ) {
                     throw new CloudRuntimeException("Unable to find storage pools in zone " + zoneId);
                 }
-                pool = storagePools.get(0);
+                pool = pools.get(0);
                 if (snapshot.getVersion() != null && snapshot.getVersion().equalsIgnoreCase("2.1")) {
                     VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
                     if (volume == null) {
@@ -1625,7 +1625,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         s_logger.warn("Unable to delete volume:" + volume.getId() + " for vm:" + vmId + " whilst transitioning to error state");
                     }
                 }
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName());
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName());
                 _usageEventDao.persist(usageEvent);
             }
         }
@@ -2192,7 +2192,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (virtualNetworks.isEmpty()) {
                     s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null,
-                            zone.getId(), null, null, null, null, owner, false, null);
+                            zone.getId(), null, null, null, null, owner, false, null, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + owner + "; please specify networkIds");
@@ -2205,7 +2205,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     if (defaultVirtualOffering.get(0).getAvailability() == Availability.Optional) {
                         s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
                         Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null,
-                                zone.getId(), null, null, null, null, owner, false, null);
+                                zone.getId(), null, null, null, null, owner, false, null, null);
                         defaultNetwork = _networkDao.findById(newNetwork.getId());
                     } else {
                         throw new InvalidParameterValueException("Unable to find default networks for account " + owner);
@@ -2400,7 +2400,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sshPublicKey = pair.getPublicKey();
         }
 
-        _accountMgr.checkAccess(caller, template);
+       // _accountMgr.checkAccess(caller, template);
 
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
@@ -2569,7 +2569,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             DataCenterDeployment plan = null;
             if (destinationHost != null) {
                 s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-                plan = new DataCenterDeployment(vm.getDataCenterId(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null);
+                plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null);
             }
 
             vm = _itMgr.start(vm, params, caller, owner, plan);
@@ -2604,7 +2604,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         if (template != null && template.getFormat() == ImageFormat.ISO && vm.getIsoId() != null) {
             String isoPath = null;
-            Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vm.getDataCenterId());
+            Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vm.getDataCenterIdToDeployIn());
             if (isoPathPair == null) {
                 s_logger.warn("Couldn't get absolute iso path");
                 return false;
@@ -2656,7 +2656,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
         UserVmVO vm = profile.getVirtualMachine();
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
                 .getHypervisorType().toString());
         _usageEventDao.persist(usageEvent);
         Answer startAnswer = cmds.getAnswer(StartAnswer.class);
@@ -2677,7 +2677,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(), null, isDefault);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(), null, isDefault);
             _usageEventDao.persist(usageEvent);
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIp4Address();
@@ -2698,7 +2698,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         if (ipChanged) {
-            DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
+            DataCenterVO dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
             UserVmVO userVm = profile.getVirtualMachine();
             if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){
                 _nicDao.update(guestNic.getId(), guestNic);
@@ -2769,13 +2769,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
         VMInstanceVO vm = profile.getVirtualMachine();
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName());
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName());
         _usageEventDao.persist(usageEvent);
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, network.getNetworkOfferingId(), null, 0L);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), null, network.getNetworkOfferingId(), null, 0L);
             _usageEventDao.persist(usageEvent);
         }
     }
@@ -2853,7 +2853,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     _usageEventDao.persist(usageEvent);
                 }
             }
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName());
             _usageEventDao.persist(usageEvent);
 
             if (vmState != State.Error) {
@@ -2990,8 +2990,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);

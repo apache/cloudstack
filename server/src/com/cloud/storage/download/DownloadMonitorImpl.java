@@ -535,11 +535,11 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             if( tmplt.isPublicTemplate() || tmplt.isFeatured() ) {
                 continue;
             }
-            List<VMTemplateHostVO> tmpltHosts = _vmTemplateHostDao.listByZoneTemplate(dcId, tmplt.getId());
+            List<VMTemplateHostVO> tmpltHosts = _vmTemplateHostDao.listByZoneTemplate(dcId, tmplt.getId(), false);
             for ( VMTemplateHostVO tmpltHost : tmpltHosts ) {
                if ( tmpltHost.getDownloadState() == Status.DOWNLOADED || tmpltHost.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                    iter.remove();
-                   continue;
+                   break;
                }
             }
         }
@@ -659,6 +659,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		if (toBeDownloaded.size() > 0) {
 			/*Only download templates whose hypervirsor type is in the zone*/
 			List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(ssHost.getDataCenterId());
+			if (availHypers.isEmpty()) {
+			    /*This is for cloudzone, local secondary storage resource started before cluster created*/
+			    availHypers.add(HypervisorType.KVM);
+			}
 			/* Baremetal need not to download any template */
 			availHypers.remove(HypervisorType.BareMetal);
 			availHypers.add(HypervisorType.None); //bug 9809: resume ISO download.

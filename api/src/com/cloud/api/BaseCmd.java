@@ -550,4 +550,7 @@ public abstract class BaseCmd {
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
+    public static boolean isRootAdmin(short accountType) {
+        return ((accountType == Account.ACCOUNT_TYPE_ADMIN));
+    }
 }

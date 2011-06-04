@@ -478,18 +478,13 @@ public class ApiDBUtils {
         return _volumeDao.getHypervisorType(volumeId);
     }
 
-    public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {
+    public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId, boolean readyOnly) {
         if (zoneId != null) {
             VMTemplateVO vmTemplate = findTemplateById(templateId);
             if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
                 return _templateHostDao.listByTemplateId(templateId);
             } else {
-                HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-                if (secondaryStorageHost == null) {
-                    return new ArrayList<VMTemplateHostVO>();
-                } else {
-                    return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
-                }
+                return _templateHostDao.listByZoneTemplate(zoneId, templateId, readyOnly);
             }
         } else {
             return _templateHostDao.listByOnlyTemplateId(templateId);

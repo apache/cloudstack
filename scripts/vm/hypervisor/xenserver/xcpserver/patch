@@ -4,8 +4,7 @@
 # [Name of file]=[source path],[file permission],[destination path]
 # [destination path] is required.
 # If [file permission] is missing, 755 is assumed.
-# If [source path] is missing, it looks in the same
-# directory as the patch file.
+# If [source path] is missing, it looks in the same directory as the patch file.
 # If [source path] starts with '/', then it is absolute path.
 # If [source path] starts with '~', then it is path relative to management server home directory.
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 

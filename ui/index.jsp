@@ -44,7 +44,8 @@
     <script type="text/javascript" src="scripts/cloud.core.router.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.domain.js?t=<%=now%>"></script>    
-    <script type="text/javascript" src="scripts/cloud.core.serviceoffering.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.serviceoffering.js?t=<%=now%>"></script>    
+    <script type="text/javascript" src="scripts/cloud.core.systemserviceoffering.js?t=<%=now%>"></script>    
     <script type="text/javascript" src="scripts/cloud.core.diskoffering.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.networkoffering.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=now%>"></script>
@@ -718,6 +719,20 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" style="border-bottom: 1px dashed b4c8d6;" id="leftmenu_system_service_offering">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    </div>
+                                    
+                                    <fmt:message key="label.menu.system.service.offerings"/>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_disk_offering">
                                 <div class="leftmenu_secondindent">

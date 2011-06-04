@@ -75,7 +75,8 @@ function routerGetSearchParams() {
 }
 
 function afterLoadRouterJSP() {
-    
+	// dialogs    
+    initDialog("dialog_change_system_service_offering", 600);  
 }
 
 function routerToMidmenu(jsonObj, $midmenuItem1) {
@@ -177,6 +178,7 @@ function routerJsonToDetailsTab() {
     $thisTab.find("#privateip").text(fromdb(jsonObj.linklocalip));
     $thisTab.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
     $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
+    $thisTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));	
     $thisTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));  
     $thisTab.find("#account").text(fromdb(jsonObj.account));  
@@ -199,10 +201,12 @@ function routerBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
     if (jsonObj.state == 'Running') {   
         buildActionLinkForTab("label.action.stop.router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         buildActionLinkForTab("label.action.reboot.router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+        buildActionLinkForTab("label.action.change.service", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
         buildActionLinkForTab("label.action.start.router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        buildActionLinkForTab("label.action.change.service", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;
     }  
     
@@ -223,6 +227,7 @@ function routerClearDetailsTab() {
     $thisTab.find("#privateip").text("");
     $thisTab.find("#guestipaddress").text("");
     $thisTab.find("#hostname").text("");
+    $thisTab.find("#serviceOfferingName").text("");	
     $thisTab.find("#networkdomain").text("");
     $thisTab.find("#domain").text("");  
     $thisTab.find("#account").text("");  
@@ -291,6 +296,64 @@ function doRebootRouter($actionLink, $detailsTab, $midmenuItem1) {
     }).dialog("open");
 }     
   
+function doChangeSystemServiceOffering($actionLink, $detailsTab, $midmenuItem1) {    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+	
+	if (jsonObj.state != 'Stopped') {
+		$("#dialog_info")
+			.text(dictionary['message.action.change.service.warning.for.router'])    
+			.dialog('option', 'buttons', { 	
+			"OK": function() { 
+				$(this).dialog("close"); 
+			}	 
+		}).dialog("open");
+		return;
+	}
+	
+	$.ajax({	   
+	    data: createURL("command=listServiceOfferings&issystem=true"), 
+		dataType: "json",
+		async: false,
+		success: function(json) {
+			var offerings = json.listserviceofferingsresponse.serviceoffering;
+			var offeringSelect = $("#dialog_change_system_service_offering #change_service_offerings").empty();
+			
+			if (offerings != null && offerings.length > 0) {
+				for (var i = 0; i < offerings.length; i++) {
+					var option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>").data("name", fromdb(offerings[i].name));
+					offeringSelect.append(option); 
+				}
+			} 
+		}
+	});
+	
+	$("#dialog_change_system_service_offering")
+	.dialog('option', 'buttons', { 						
+		"OK": function() { 
+		    var $thisDialog = $(this);
+		    		   
+		    var isValid = true;				
+			isValid &= validateDropDownBox("Service Offering", $thisDialog.find("#change_service_offerings"), $thisDialog.find("#change_service_offerings_errormsg"));	
+			if (!isValid) 
+			    return;
+		    
+			$thisDialog.dialog("close"); 
+			var serviceOfferingId = $thisDialog.find("#change_service_offerings").val();
+						
+			if(jsonObj.state != "Stopped") {				    
+		        $midmenuItem1.find("#info_icon").addClass("error").show();
+                $midmenuItem1.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: virtual instance needs to be stopped before you can change its service."));  
+	        }
+            var apiCommand = "command=changeServiceForRouter&id="+id+"&serviceofferingid="+serviceOfferingId;	     
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 			
+		} 
+	}).dialog("open");
+}
+
 var routerActionMap = {      
     "label.action.start.router": {        
         isAsyncJob: true,
@@ -320,6 +383,15 @@ var routerActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             var item = json.queryasyncjobresultresponse.jobresult.domainrouter;    
             routerToMidmenu(item, $midmenuItem1);              
+        }
+    },
+    "label.action.change.service": {
+        isAsyncJob: false,        
+        inProcessText: "label.action.change.service",
+        dialogBeforeActionFn : doChangeSystemServiceOffering,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
+            var jsonObj = json.changeserviceforrouterresponse.domainrouter;       
+            vmToMidmenu(jsonObj, $midmenuItem1);           
         }
     }
 }   

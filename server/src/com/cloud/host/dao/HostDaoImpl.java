@@ -91,7 +91,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     protected final SearchBuilder<HostVO> DirectConnectSearch;
     protected final SearchBuilder<HostVO> ManagedDirectConnectSearch;
-    protected final SearchBuilder<HostVO> ManagedConnectSearch;
+    protected final SearchBuilder<HostVO> ManagedRoutingServersSearch;
 
     protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
     protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
@@ -264,9 +264,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ManagedDirectConnectSearch.and("server", ManagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
         ManagedDirectConnectSearch.done();
 
-        ManagedConnectSearch = createSearchBuilder();
-        ManagedConnectSearch.and("server", ManagedConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NNULL);
-        ManagedConnectSearch.done();
+        ManagedRoutingServersSearch = createSearchBuilder();
+        ManagedRoutingServersSearch.and("server", ManagedRoutingServersSearch.entity().getManagementServerId(), SearchCriteria.Op.NNULL);
+        ManagedRoutingServersSearch.and("type", ManagedRoutingServersSearch.entity().getType(), SearchCriteria.Op.EQ);
+        ManagedRoutingServersSearch.done();
 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -868,8 +869,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<HostVO> listManagedAgents() {
-        SearchCriteria<HostVO> sc = ManagedConnectSearch.create();
+    public List<HostVO> listManagedRoutingAgents() {
+        SearchCriteria<HostVO> sc = ManagedRoutingServersSearch.create();
+        sc.setParameters("type", Type.Routing);
         return listBy(sc);
     }
     

@@ -9,7 +9,7 @@ class globalEnv:
         #debug
         self.debug = False
         #management server IP
-        self.mgtSvr = None
+        self.mgtSvr = "myagent.cloud.com"
         #zone id or zone name
         self.zone = None
         #pod id or pod name

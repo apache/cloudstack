@@ -161,7 +161,7 @@ public interface ResponseGenerator {
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
     void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin,
-            Account account);
+            Account account, boolean readyOnly);
 
     ListResponse<TemplateResponse> createTemplateResponse2(VirtualMachineTemplate template, Long zoneId);
 
@@ -187,7 +187,7 @@ public interface ResponseGenerator {
 
     EventResponse createEventResponse(Event event);
 
-    ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean onlyReady, Account account, Boolean isBootable);
+    ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean onlyReady, Account account, Boolean isBootable, boolean readyOnly);
 
     TemplateResponse createIsoResponse(VirtualMachineTemplate result);
 

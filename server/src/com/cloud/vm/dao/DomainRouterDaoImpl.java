@@ -29,9 +29,9 @@ import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
@@ -49,7 +49,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
 
     protected DomainRouterDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
+        AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterIdToDeployIn(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("role", AllFieldsSearch.entity().getRole(), Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), Op.EQ);
@@ -57,7 +57,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch.and("lastHost", AllFieldsSearch.entity().getLastHostId(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
-        AllFieldsSearch.and("podId", AllFieldsSearch.entity().getPodId(), Op.EQ);
+        AllFieldsSearch.and("podId", AllFieldsSearch.entity().getPodIdToDeployIn(), Op.EQ);
         AllFieldsSearch.done();
 
         IdStatesSearch = createSearchBuilder();
@@ -83,7 +83,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         router.setPublicIpAddress(null);
         UpdateBuilder ub = getUpdateBuilder(router);
         ub.set(router, "state", State.Destroyed);
-        update(id, ub);
+        update(id, ub, router);
 
         boolean result = super.remove(id);
         txn.commit();

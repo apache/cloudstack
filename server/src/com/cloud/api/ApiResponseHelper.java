@@ -17,6 +17,7 @@
  */
 package com.cloud.api;
 
+import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -219,7 +220,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
         AccountResponse accountResponse = new AccountResponse();
         accountResponse.setId(account.getId());
-        accountResponse.setName(account.getAccountName());
+        accountResponse.setName(encodeParam(account.getAccountName()));
         accountResponse.setAccountType(account.getType());
         accountResponse.setDomainId(account.getDomainId());
         accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
@@ -316,20 +317,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<UserResponse> userResponseList = new ArrayList<UserResponse>();
         for (UserVO user : usersForAccount) {
             UserResponse userResponse = new UserResponse();
-            userResponse.setAccountName(account.getAccountName());
+            userResponse.setAccountName(encodeParam(account.getAccountName()));
             userResponse.setAccountType(account.getType());
             userResponse.setApiKey(user.getApiKey());
             userResponse.setCreated(user.getCreated());
             userResponse.setDomainId(account.getDomainId());
             userResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-            userResponse.setEmail(user.getEmail());
+            userResponse.setEmail(encodeParam(user.getEmail()));
             userResponse.setFirstname(user.getFirstname());
             userResponse.setId(user.getId());
             userResponse.setSecretKey(user.getSecretKey());
             userResponse.setLastname(user.getLastname());
             userResponse.setState(user.getState().toString());
             userResponse.setTimezone(user.getTimezone());
-            userResponse.setUsername(user.getUsername());
+            userResponse.setUsername(encodeParam(user.getUsername()));
 
             userResponseList.add(userResponse);
         }
@@ -1058,9 +1059,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             // Data Center Info
-            DataCenter zone = dataCenters.get(userVm.getDataCenterId());
+            DataCenter zone = dataCenters.get(userVm.getDataCenterIdToDeployIn());
             if (zone == null) {
-                zone = ApiDBUtils.findZoneById(userVm.getDataCenterId());
+                zone = ApiDBUtils.findZoneById(userVm.getDataCenterIdToDeployIn());
                 dataCenters.put(zone.getId(), zone);
             }
 
@@ -1223,11 +1224,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
+    	Map<Long, ServiceOffering> serviceOfferings = new HashMap<Long, ServiceOffering>();
+    	
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getId());
-        routerResponse.setZoneId(router.getDataCenterId());
+        routerResponse.setZoneId(router.getDataCenterIdToDeployIn());
         routerResponse.setName(router.getHostName());
-        routerResponse.setPodId(router.getPodId());
+        routerResponse.setPodId(router.getPodIdToDeployIn());
         routerResponse.setTemplateId(router.getTemplateId());
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
@@ -1236,7 +1239,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             routerResponse.setHostId(router.getHostId());
             routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
         }
+          
+        // Service Offering Info
+        ServiceOffering offering = serviceOfferings.get(router.getServiceOfferingId());
 
+        if (offering == null) {
+            offering = ApiDBUtils.findServiceOfferingById(router.getServiceOfferingId());
+            serviceOfferings.put(offering.getId(), offering);
+        }
+        routerResponse.setServiceOfferingId(offering.getId());
+        routerResponse.setServiceOfferingName(offering.getName());
+              
         Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
         if (accountTemp != null) {
             routerResponse.setAccountName(accountTemp.getAccountName());
@@ -1268,7 +1281,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
         }
-        DataCenter zone = ApiDBUtils.findZoneById(router.getDataCenterId());
+        DataCenter zone = ApiDBUtils.findZoneById(router.getDataCenterIdToDeployIn());
         if (zone != null) {
             routerResponse.setZoneName(zone.getName());
             routerResponse.setDns1(zone.getDns1());
@@ -1287,10 +1300,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             vmResponse.setId(vm.getId());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
-            vmResponse.setZoneId(vm.getDataCenterId());
+            vmResponse.setZoneId(vm.getDataCenterIdToDeployIn());
 
             vmResponse.setName(vm.getHostName());
-            vmResponse.setPodId(vm.getPodId());
+            vmResponse.setPodId(vm.getPodIdToDeployIn());
             vmResponse.setTemplateId(vm.getTemplateId());
             vmResponse.setCreated(vm.getCreated());
 
@@ -1309,7 +1322,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setActiveViewerSessions(proxy.getActiveSession());
             }
 
-            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterId());
+            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterIdToDeployIn());
             if (zone != null) {
                 vmResponse.setZoneName(zone.getName());
                 vmResponse.setDns1(zone.getDns1());
@@ -1328,6 +1341,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                         vmResponse.setPublicIp(singleNicProfile.getIp4Address());
                         vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
+                        vmResponse.setGateway(singleNicProfile.getGateway());
                     } else if (network.getTrafficType() == TrafficType.Management) {
                         vmResponse.setPrivateIp(singleNicProfile.getIp4Address());
                         vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
@@ -1437,12 +1451,21 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin, Account account) {
-        List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(templateZonePair.first(), templateZonePair.second());
+    public void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin, Account account, boolean readyOnly) {
+        List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(templateZonePair.first(), templateZonePair.second(), readyOnly);
         VMTemplateVO template = ApiDBUtils.findTemplateById(templateZonePair.first());
 
         for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
-
+            if (readyOnly) {
+                if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
+                    continue;
+                }
+                for (TemplateResponse res : responses) {
+                    if (res.getId() == templateHostRef.getTemplateId()) {
+                        continue;
+                    }
+                }
+            }
             TemplateResponse templateResponse = new TemplateResponse();
             templateResponse.setId(template.getId());
             templateResponse.setName(template.getName());
@@ -1479,8 +1502,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             HostVO host = ApiDBUtils.findHostById(templateHostRef.getHostId());
+            templateResponse.setHostId(host.getId());
+            templateResponse.setHostName(host.getName());
+            
             DataCenterVO datacenter = ApiDBUtils.findZoneById(host.getDataCenterId());
-
+            
             // Add the zone ID
             templateResponse.setZoneId(host.getDataCenterId());
             templateResponse.setZoneName(datacenter.getName());
@@ -1974,7 +2000,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long, Long>> isoZonePairSet, boolean isAdmin, Account account, Boolean isBootable) {
+    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long, Long>> isoZonePairSet, boolean isAdmin, Account account, Boolean isBootable, boolean readyOnly) {
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
@@ -2010,7 +2036,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second());
+            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second(), readyOnly);
             for (VMTemplateHostVO isoHost : isoHosts) {
                 TemplateResponse isoResponse = new TemplateResponse();
                 isoResponse.setId(iso.getId());
@@ -2501,4 +2527,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             return sg.getId();
         }
     }
+    
+    private String encodeParam(String value) {
+		try {
+			return URLEncoder.encode(value, "UTF-8").replaceAll("\\+", "%20");
+		} catch (Exception e) {
+			s_logger.warn("Unable to encode: " + value);
+		}
+		return value;
+	}
 }

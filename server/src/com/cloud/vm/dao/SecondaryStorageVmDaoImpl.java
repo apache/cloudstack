@@ -54,7 +54,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     
     public SecondaryStorageVmDaoImpl() {
         DataCenterStatusSearch = createSearchBuilder();
-        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.and("states", DataCenterStatusSearch.entity().getState(), SearchCriteria.Op.IN);
         DataCenterStatusSearch.and("role", DataCenterStatusSearch.entity().getRole(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.done();
@@ -86,7 +86,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         HostUpSearch.done();
         
         ZoneSearch = createSearchBuilder();
-        ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
         ZoneSearch.and("role", ZoneSearch.entity().getRole(), SearchCriteria.Op.EQ);
         ZoneSearch.done();
         
@@ -113,7 +113,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         UpdateBuilder ub = getUpdateBuilder(proxy);
         ub.set(proxy, "state", State.Destroyed);
         ub.set(proxy, "privateIpAddress", null);
-        update(id, ub);
+        update(id, ub, proxy);
         
         boolean result = super.remove(id);
         txn.commit();
@@ -125,8 +125,9 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         SearchCriteria<SecondaryStorageVmVO> sc = DataCenterStatusSearch.create();
         sc.setParameters("states", (Object[])states);
         sc.setParameters("dc", dataCenterId);
-        if(role != null)
-        	sc.setParameters("role", role);
+        if(role != null) {
+            sc.setParameters("role", role);
+        }
         return listBy(sc);
     }
 
@@ -134,8 +135,9 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     public List<SecondaryStorageVmVO> getSecStorageVmListInStates(SecondaryStorageVm.Role role, State... states) {
         SearchCriteria<SecondaryStorageVmVO> sc = StateSearch.create();
         sc.setParameters("states", (Object[])states);
-        if(role != null)
-        	sc.setParameters("role", role);
+        if(role != null) {
+            sc.setParameters("role", role);
+        }
         
         return listBy(sc);
     }
@@ -144,8 +146,9 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     public List<SecondaryStorageVmVO> listByHostId(SecondaryStorageVm.Role role, long hostId) {
         SearchCriteria<SecondaryStorageVmVO> sc = HostSearch.create();
         sc.setParameters("host", hostId);
-        if(role != null)
-        	sc.setParameters("role", role);
+        if(role != null) {
+            sc.setParameters("role", role);
+        }
         return listBy(sc);
     }
     
@@ -153,9 +156,10 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     public List<SecondaryStorageVmVO> listUpByHostId(SecondaryStorageVm.Role role, long hostId) {
         SearchCriteria<SecondaryStorageVmVO> sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});        
-        if(role != null)
-        	sc.setParameters("role", role);
+        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
+        if(role != null) {
+            sc.setParameters("role", role);
+        }
         return listBy(sc);
     }
     
@@ -166,12 +170,13 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         PreparedStatement pstmt = null;
         try {
         	String sql;
-        	if(role == null)
-        		sql = "SELECT s.id FROM secondary_storage_vm s, vm_instance v, host h " +
+        	if(role == null) {
+                sql = "SELECT s.id FROM secondary_storage_vm s, vm_instance v, host h " +
         			"WHERE s.id=v.id AND v.state='Running' AND v.host_id=h.id AND h.mgmt_server_id=?";
-        	else
-        		sql = "SELECT s.id FROM secondary_storage_vm s, vm_instance v, host h " +
+            } else {
+                sql = "SELECT s.id FROM secondary_storage_vm s, vm_instance v, host h " +
     				"WHERE s.id=v.id AND v.state='Running' AND s.role=? AND v.host_id=h.id AND h.mgmt_server_id=?";
+            }
         	
             pstmt = txn.prepareAutoCloseStatement(sql);
             
@@ -209,8 +214,9 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
 	public List<SecondaryStorageVmVO> listByZoneId(SecondaryStorageVm.Role role, long zoneId) {
 		SearchCriteria<SecondaryStorageVmVO> sc = ZoneSearch.create();
         sc.setParameters("zone", zoneId);
-        if(role != null)
-        	sc.setParameters("role", role);
+        if(role != null) {
+            sc.setParameters("role", role);
+        }
         return listBy(sc);
 	}
 
@@ -219,8 +225,9 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
 		SearchCriteria<SecondaryStorageVmVO> sc = LastHostSearch.create();
 		sc.setParameters("lastHost", hostId);
 		sc.setParameters("state", State.Stopped);
-        if(role != null)
-        	sc.setParameters("role", role);
+        if(role != null) {
+            sc.setParameters("role", role);
+        }
 		
 		return listBy(sc);
 	}
@@ -233,10 +240,11 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         PreparedStatement pstmt = null;
         try {
         	String sql;
-        	if(role == null)
-        		sql = "SELECT s.id, count(l.id) as count FROM secondary_storage_vm s INNER JOIN vm_instance v ON s.id=v.id LEFT JOIN cmd_exec_log l ON s.id=l.instance_id WHERE v.state='Running' AND v.data_center_id=? GROUP BY s.id ORDER BY count";
-        	else
-        		sql = "SELECT s.id, count(l.id) as count FROM secondary_storage_vm s INNER JOIN vm_instance v ON s.id=v.id LEFT JOIN cmd_exec_log l ON s.id=l.instance_id WHERE v.state='Running' AND v.data_center_id=? AND s.role=? GROUP BY s.id ORDER BY count";
+        	if(role == null) {
+                sql = "SELECT s.id, count(l.id) as count FROM secondary_storage_vm s INNER JOIN vm_instance v ON s.id=v.id LEFT JOIN cmd_exec_log l ON s.id=l.instance_id WHERE v.state='Running' AND v.data_center_id=? GROUP BY s.id ORDER BY count";
+            } else {
+                sql = "SELECT s.id, count(l.id) as count FROM secondary_storage_vm s INNER JOIN vm_instance v ON s.id=v.id LEFT JOIN cmd_exec_log l ON s.id=l.instance_id WHERE v.state='Running' AND v.data_center_id=? AND s.role=? GROUP BY s.id ORDER BY count";
+            }
         	
             pstmt = txn.prepareAutoCloseStatement(sql);
             

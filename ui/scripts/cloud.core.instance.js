@@ -399,7 +399,7 @@ function initVMWizard() {
 		});		
 		
 	    $.ajax({
-		    data: createURL("command=listServiceOfferings"),
+		    data: createURL("command=listServiceOfferings&issystem=false"),
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {
@@ -1665,7 +1665,7 @@ function doChangeService($actionLink, $detailsTab, $midmenuItem1) {
 	
 	if (jsonObj.state != 'Stopped') {
 		$("#dialog_info")
-			.text(dictionary['message.action.change.service.warning'])    
+			.text(dictionary['message.action.change.service.warning.for.instance'])    
 			.dialog('option', 'buttons', { 	
 			"OK": function() { 
 				$(this).dialog("close"); 

@@ -198,8 +198,8 @@ public class Request {
         _agentId = agentId;
     }
 
-    public void setVia(long agentId) {
-        _via = agentId;
+    public void setVia(long viaId) {
+        _via = viaId;
     }
 
     public boolean executeInSequence() {
@@ -238,8 +238,8 @@ public class Request {
         buffer.putLong(_seq);
         buffer.putInt(contentSize);
         buffer.putLong(_mgmtId);
-        buffer.putLong(_via);
         buffer.putLong(_agentId);
+        buffer.putLong(_via);
         buffer.flip();
 
         return buffer;
@@ -300,6 +300,11 @@ public class Request {
                 s_logger.debug(log);
             }
         }
+    }
+    
+    @Override
+    public String toString() {
+        return log("", true, Level.DEBUG);
     }
 
     protected String log(String msg, boolean logContent, Level level) {
@@ -373,8 +378,8 @@ public class Request {
         final long seq = buff.getLong();
         final int size = buff.getInt();
         final long mgmtId = buff.getLong();
-        final long via = buff.getLong();
         final long agentId = buff.getLong();
+        final long via = buff.getLong();
 
         byte[] command = null;
         int offset = 0;
@@ -421,9 +426,13 @@ public class Request {
     }
 
     public static long getAgentId(final byte[] bytes) {
-        return NumbersUtil.bytesToLong(bytes, 24);
+        return NumbersUtil.bytesToLong(bytes, 28);
     }
 
+    public static long getViaAgentId(final byte[] bytes) {
+        return NumbersUtil.bytesToLong(bytes, 24);
+    }
+    
     public static boolean fromServer(final byte[] bytes) {
         return (bytes[3] & FLAG_FROM_SERVER) > 0;
     }

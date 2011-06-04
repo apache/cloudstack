@@ -328,7 +328,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	public List<ManagementServerHostVO> listBy(ManagementServerHost.State...states) {
 	    SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
 
-        sc.setParameters("status", (Object[]) states);
+        sc.setParameters("state", (Object[]) states);
         
         return listBy(sc);
 	}
