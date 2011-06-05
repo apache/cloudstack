@@ -75,16 +75,17 @@ public class RequestTest extends TestCase {
         assert (!log.contains("password"));
 
         logger.setLevel(Level.INFO);
-        sreq.log("Info", true, Level.INFO);
-        assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
-        assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
-        assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
-        assert (!log.contains("username"));
-        assert (!log.contains("password"));
+        log = sreq.log("Info", true, Level.INFO);
+        assert (log == null);
 
         logger.setLevel(level);
 
         byte[] bytes = sreq.getBytes();
+        
+        assert Request.getSequence(bytes) == 1;
+        assert Request.getManagementServerId(bytes) == 3;
+        assert Request.getAgentId(bytes) == 2;
+        assert Request.getViaAgentId(bytes) == 2;
         Request creq = null;
         try {
             creq = Request.parse(bytes);
