@@ -596,7 +596,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 final byte[] data = task.getData();
                 Version ver = Request.getVersion(data);
-                if (ver.ordinal() < Version.v3.ordinal()) {
+                if (ver.ordinal() != Version.v1.ordinal()) {
+                    s_logger.warn("Wrong version for clustered agent request");
                     super.doTask(task);
                     return;
                 }
