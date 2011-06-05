@@ -804,6 +804,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
 
         Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
+        req.setSequence(agent.getNextSequence());
         Answer[] answers = agent.send(req, timeout);
         notifyAnswersToMonitors(hostId, req.getSequence(), answers);
         commands.setAnswers(answers);
@@ -818,6 +819,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         try {
             Request req = new Request(hostId, _nodeId, new CheckHealthCommand(), true);
+            req.setSequence(agent.getNextSequence());
             Answer[] answers = agent.send(req, 50 * 1000);
             if (answers != null && answers[0] != null) {
                 Status status = answers[0].getResult() ? Status.Up : Status.Down;
@@ -863,6 +865,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return -1;
         }
         Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
+        req.setSequence(agent.getNextSequence());
         agent.send(req, listener);
         return req.getSequence();
     }

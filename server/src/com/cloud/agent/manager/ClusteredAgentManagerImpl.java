@@ -85,7 +85,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public final static int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
     public long _loadSize = 100;
     protected Set<Long> _agentToTransferIds = new HashSet<Long>();
-    private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list 
+    private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list
 
     @Inject
     protected ClusterManager _clusterMgr = null;
@@ -596,7 +596,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 final byte[] data = task.getData();
                 Version ver = Request.getVersion(data);
-                if (ver.ordinal() != Version.v1.ordinal()) {
+                if (ver.ordinal() != Version.v1.ordinal() && ver.ordinal() != Version.v3.ordinal()) {
                     s_logger.warn("Wrong version for clustered agent request");
                     super.doTask(task);
                     return;
@@ -718,7 +718,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             return setToWaitForRebalance(agentId);
         } else if (event == Event.StartAgentRebalance) {
             return rebalanceHost(agentId);
-        } 
+        }
 
         return true;
     }
@@ -907,7 +907,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
                 if (result) {
                     s_logger.debug("Got host id=" + hostId + " from management server " + map.getFutureOwner());
-                } 
+                }
                 
             } else {
                 s_logger.warn("Unable to find agent " + hostId + " on management server " + _nodeId);
@@ -935,10 +935,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         if (map.getInitialOwner() != _nodeId) {
             s_logger.warn("Why finish rebalance called not by initial host owner???");
             return false;
-        }  
+        }
 
         boolean success = (event == Event.RebalanceCompleted) ? true : false;
-        if (s_logger.isDebugEnabled()) { 
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Finishing rebalancing for the agent " + hostId + " with result " + success);
         }
         
