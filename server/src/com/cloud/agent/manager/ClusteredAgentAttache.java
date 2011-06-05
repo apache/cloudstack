@@ -10,6 +10,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
+import javax.net.ssl.SSLEngine;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -126,6 +128,11 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                     }
                     continue;
                 }
+                
+                SSLEngine sslEngine = s_clusteredAgentMgr.getSSLEngine(peerName);
+                if (sslEngine == null) {
+                    throw new AgentUnavailableException("Unable to get SSLEngine of peer " + peerName, _id);
+                }
 
                 try {
                     if (s_logger.isDebugEnabled()) {
@@ -135,7 +142,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                         SynchronousListener synchronous = (SynchronousListener)listener;
                         synchronous.setPeer(peerName);
                     }
-                    Link.write(ch, req.toBytes());
+                    Link.write(ch, req.toBytes(), sslEngine);
                     error = false;
                     return;
                 } catch (IOException e) {

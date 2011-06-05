@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
@@ -89,6 +91,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected ClusterManager _clusterMgr = null;
 
     protected HashMap<String, SocketChannel> _peers;
+    protected HashMap<String, SSLEngine> _sslEngines;
     private final Timer _timer = new Timer("ClusteredAgentManager Timer");
 
     @Inject
@@ -106,6 +109,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
         _peers = new HashMap<String, SocketChannel>(7);
+        _sslEngines = new HashMap<String, SSLEngine>(7);
         _nodeId = _clusterMgr.getManagementNodeId();
 
         ConfigurationDao configDao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
@@ -406,6 +410,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public boolean routeToPeer(String peer, byte[] bytes) {
         int i = 0;
         SocketChannel ch = null;
+        SSLEngine sslEngine = null;
         while (i++ < 5) {
             ch = connectToPeer(peer, ch);
             if (ch == null) {
@@ -415,11 +420,16 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
                 return false;
             }
+            sslEngine = getSSLEngine(peer);
+            if (sslEngine == null) {
+                logD(bytes, "Unable to get SSLEngine of peer: " + peer);
+                return false;
+            }
             try {
                 if (s_logger.isDebugEnabled()) {
                     logD(bytes, "Routing to peer");
                 }
-                Link.write(ch, new ByteBuffer[] { ByteBuffer.wrap(bytes) });
+                Link.write(ch, new ByteBuffer[] { ByteBuffer.wrap(bytes) }, sslEngine);
                 return true;
             } catch (IOException e) {
                 try {
@@ -433,6 +443,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     public String findPeer(long hostId) {
         return _clusterMgr.getPeerName(hostId);
+    }
+    
+    public SSLEngine getSSLEngine(String peerName) {
+        return _sslEngines.get(peerName);
     }
 
     public void cancel(String peerName, long hostId, long sequence, String reason) {
@@ -453,12 +467,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
             }
             _peers.remove(peerName);
+            _sslEngines.remove(peerName);
         }
     }
 
     public SocketChannel connectToPeer(String peerName, SocketChannel prevCh) {
         synchronized (_peers) {
             SocketChannel ch = _peers.get(peerName);
+            SSLEngine sslEngine = null;
             if (prevCh != null) {
                 try {
                     prevCh.close();
@@ -483,10 +499,21 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     ch.configureBlocking(true); // make sure we are working at blocking mode
                     ch.socket().setKeepAlive(true);
                     ch.socket().setSoTimeout(60 * 1000);
+                    try {
+                        SSLContext sslContext = Link.initSSLContext(true);
+                        sslEngine = sslContext.createSSLEngine(ip, _port);
+                        sslEngine.setUseClientMode(true);
+
+                        Link.doHandshake(ch, sslEngine, true);
+                        s_logger.info("SSL: Handshake done");
+                    } catch (Exception e) {
+                        throw new IOException("SSL: Fail to init SSL! " + e);
+                    }
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Connection to peer opened: " + peerName + ", ip: " + ip);
                     }
                     _peers.put(peerName, ch);
+                    _sslEngines.put(peerName, sslEngine);
                 } catch (IOException e) {
                     s_logger.warn("Unable to connect to peer management server: " + peerName + ", ip: " + ip + " due to " + e.getMessage(), e);
                     return null;
