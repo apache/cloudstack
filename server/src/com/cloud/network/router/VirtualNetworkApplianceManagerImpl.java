@@ -725,18 +725,24 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
                     if (answer != null) {
-                        router.setIsMaster(answer.getIsMaster());
-                        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-                        try {
-                            txn.start();
-                            _routerDao.update(router.getId(), router);
-                            txn.commit();
-                        } catch (Exception e) {
-                            txn.rollback();
-                            s_logger.warn("Unable to update router status for account: " + router.getAccountId());
-                        } finally {
-                            txn.close();
+                        if (answer.getResult()) {
+                            router.setIsMaster(answer.getIsMaster());
+                        } else {
+                            router.setIsMaster(false);
                         }
+                    } else {
+                        router.setIsMaster(false);
+                    }
+                    Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                    try {
+                        txn.start();
+                        _routerDao.update(router.getId(), router);
+                        txn.commit();
+                    } catch (Exception e) {
+                        txn.rollback();
+                        s_logger.warn("Unable to update router status for account: " + router.getAccountId());
+                    } finally {
+                        txn.close();
                     }
                 }
             }
