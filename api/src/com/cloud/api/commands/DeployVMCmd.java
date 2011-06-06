@@ -147,8 +147,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     public List<Long> getSecurityGroupIdList() {
         if (securityGroupNameList != null && securityGroupIdList != null) {
             throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
-        } else if (securityGroupNameList == null && securityGroupIdList == null) {
-            throw new InvalidParameterValueException("securitygroupids or securitygroupnames must be specified");
         }
         
        //transform group names to ids here
