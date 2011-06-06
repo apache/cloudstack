@@ -1166,7 +1166,7 @@ CREATE TABLE  `cloud`.`storage_pool` (
   `cluster_id` bigint unsigned COMMENT 'foreign key to cluster',
   `available_bytes` bigint unsigned,
   `capacity_bytes` bigint unsigned,
-  `host_address` char(40) NOT NULL COMMENT 'FQDN or IP of storage server',
+  `host_address` varchar(255) NOT NULL COMMENT 'FQDN or IP of storage server',
   `path` varchar(255) NOT NULL COMMENT 'Filesystem path that is shared',
   `created` datetime COMMENT 'date the pool created',
   `removed` datetime COMMENT 'date removed if not null',
