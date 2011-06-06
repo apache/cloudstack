@@ -804,6 +804,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
 
         Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
+        req.setSequence(agent.getNextSequence());
         Answer[] answers = agent.send(req, timeout);
         notifyAnswersToMonitors(hostId, req.getSequence(), answers);
         commands.setAnswers(answers);
@@ -818,6 +819,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         try {
             Request req = new Request(hostId, _nodeId, new CheckHealthCommand(), true);
+            req.setSequence(agent.getNextSequence());
             Answer[] answers = agent.send(req, 50 * 1000);
             if (answers != null && answers[0] != null) {
                 Status status = answers[0].getResult() ? Status.Up : Status.Down;
@@ -863,6 +865,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return -1;
         }
         Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
+        req.setSequence(agent.getNextSequence());
         agent.send(req, listener);
         return req.getSequence();
     }
@@ -1133,12 +1136,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public void startDirectlyConnectedHosts() {
         List<HostVO> hosts = _hostDao.findDirectlyConnectedHosts();
         for (HostVO host : hosts) {
-            loadDirectlyConnectedHost(host);
+            loadDirectlyConnectedHost(host, false);
         }
     }
 
     @SuppressWarnings("rawtypes")
-    protected void loadDirectlyConnectedHost(HostVO host) {
+    protected boolean loadDirectlyConnectedHost(HostVO host, boolean executeNow) {
         String resourceName = host.getResource();
         ServerResource resource = null;
         try {
@@ -1147,25 +1150,25 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             resource = (ServerResource) constructor.newInstance();
         } catch (ClassNotFoundException e) {
             s_logger.warn("Unable to find class " + host.getResource(), e);
-            return;
+            return false;
         } catch (InstantiationException e) {
             s_logger.warn("Unablet to instantiate class " + host.getResource(), e);
-            return;
+            return false;
         } catch (IllegalAccessException e) {
             s_logger.warn("Illegal access " + host.getResource(), e);
-            return;
+            return false;
         } catch (SecurityException e) {
             s_logger.warn("Security error on " + host.getResource(), e);
-            return;
+            return false;
         } catch (NoSuchMethodException e) {
             s_logger.warn("NoSuchMethodException error on " + host.getResource(), e);
-            return;
+            return false;
         } catch (IllegalArgumentException e) {
             s_logger.warn("IllegalArgumentException error on " + host.getResource(), e);
-            return;
+            return false;
         } catch (InvocationTargetException e) {
             s_logger.warn("InvocationTargetException error on " + host.getResource(), e);
-            return;
+            return false;
         }
 
         _hostDao.loadDetails(host);
@@ -1201,14 +1204,25 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         } catch (ConfigurationException e) {
             e.printStackTrace();
             s_logger.warn("Unable to configure resource due to ", e);
-            return;
+            return false; 
         }
 
         if (!resource.start()) {
             s_logger.warn("Unable to start the resource");
-            return;
+            return false;
         }
-        _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
+        
+        if (executeNow) {
+            AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null);
+            if (attache == null) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
+            return true;
+        }
     }
 
     @Override

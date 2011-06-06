@@ -329,9 +329,8 @@ public abstract class AgentAttache {
     public void send(Request req, final Listener listener) throws AgentUnavailableException {
         checkAvailability(req.getCommands());
 
-        long seq = getNextSequence();
-        req.setSequence(seq);
-
+        long seq = req.getSequence();
+        
         if (listener != null) {
             registerListener(seq, listener);
         } else if (s_logger.isDebugEnabled()) {
@@ -376,9 +375,8 @@ public abstract class AgentAttache {
 
     public Answer[] send(Request req, int wait) throws AgentUnavailableException, OperationTimedoutException {
         SynchronousListener sl = new SynchronousListener(null);
-        long seq = getNextSequence();
-        req.setSequence(seq);
 
+        long seq = req.getSequence();
         send(req, sl);
 
         try {

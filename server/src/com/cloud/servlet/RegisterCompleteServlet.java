@@ -80,6 +80,7 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 	@Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 		String registrationToken = req.getParameter("token");
+		String expires = req.getParameter("expires");
 		int statusCode = HttpServletResponse.SC_OK;
 		String responseMessage = null;
 		
@@ -90,29 +91,34 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 			s_logger.info("Attempting to register user account with token = "+registrationToken);
 			User resourceAdminUser = _accountSvc.getActiveUserByRegistrationToken(registrationToken);
 			if (resourceAdminUser != null) {
-				if(!resourceAdminUser.isRegistered()){
-					_accountSvc.markUserRegistered(resourceAdminUser.getId());
+				if(resourceAdminUser.isRegistered()) {
+					statusCode = 503;
+					responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"errortext\" : \"Expired token = " + registrationToken + "\" } }";
+				} else {
+					if(expires != null && expires.toLowerCase().equals("true")){
+						_accountSvc.markUserRegistered(resourceAdminUser.getId());
+					}
+					
+					Account resourceAdminAccount = _accountSvc.getActiveAccount(resourceAdminUser.getAccountId());
+					Account rsUserAccount = _accountSvc.getActiveAccount(resourceAdminAccount.getAccountName()+"-user", resourceAdminAccount.getDomainId());
+					
+					List<UserVO> users =  _userDao.listByAccount(rsUserAccount.getId());
+					User rsUser = users.get(0);
+					
+					Configuration config = _configDao.findByName("endpointe.url");
+					
+					StringBuffer sb = new StringBuffer();
+			        sb.append("{ \"registration_info\" : { \"endpoint_url\" : \""+encodeParam(config.getValue())+"\", ");
+			        sb.append("\"domain_id\" : \""+resourceAdminAccount.getDomainId()+"\", ");
+			        sb.append("\"admin_account\" : \""+encodeParam(resourceAdminUser.getUsername())+"\", ");
+			        sb.append("\"admin_account_api_key\" : \""+resourceAdminUser.getApiKey()+"\", ");
+			        sb.append("\"admin_account_secret_key\" : \""+resourceAdminUser.getSecretKey()+"\", ");
+			        sb.append("\"user_account\" : \""+encodeParam(rsUser.getUsername())+"\", ");
+			        sb.append("\"user_account_api_key\" : \""+rsUser.getApiKey()+"\", ");
+			        sb.append("\"user_account_secret_key\" : \""+rsUser.getSecretKey()+"\" ");
+			        sb.append("} }");
+			        responseMessage = sb.toString();
 				}
-				
-				Account resourceAdminAccount = _accountSvc.getActiveAccount(resourceAdminUser.getAccountId());
-				Account rsUserAccount = _accountSvc.getActiveAccount(resourceAdminAccount.getAccountName()+"-user", resourceAdminAccount.getDomainId());
-				
-				List<UserVO> users =  _userDao.listByAccount(rsUserAccount.getId());
-				User rsUser = users.get(0);
-				
-				Configuration config = _configDao.findByName("endpointe.url");
-				
-				StringBuffer sb = new StringBuffer();
-		        sb.append("{ \"registration_info\" : { \"endpoint_url\" : \""+encodeParam(config.getValue())+"\", ");
-		        sb.append("\"domain_id\" : \""+resourceAdminAccount.getDomainId()+"\", ");
-		        sb.append("\"admin_account\" : \""+encodeParam(resourceAdminUser.getUsername())+"\", ");
-		        sb.append("\"admin_account_api_key\" : \""+resourceAdminUser.getApiKey()+"\", ");
-		        sb.append("\"admin_account_secret_key\" : \""+resourceAdminUser.getSecretKey()+"\", ");
-		        sb.append("\"user_account\" : \""+encodeParam(rsUser.getUsername())+"\", ");
-		        sb.append("\"user_account_api_key\" : \""+rsUser.getApiKey()+"\", ");
-		        sb.append("\"user_account_secret_key\" : \""+rsUser.getSecretKey()+"\" ");
-		        sb.append("} }");
-		        responseMessage = sb.toString();
 			} else {
 				statusCode = 503;
 				responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"errortext\" : \"Invalid token = " + registrationToken + "\" } }";

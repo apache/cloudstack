@@ -53,7 +53,7 @@ public class RequestTest extends TestCase {
         cmd2.addPortConfig("abc", "24", true, "eth0");
         cmd2.addPortConfig("127.0.0.1", "44", false, "eth1");
         Request sreq = new Request(2, 3, new Command[] { cmd1, cmd2, cmd3 }, true, true);
-        sreq.setSequence(1);
+        sreq.setSequence(892403717);
 
         Logger logger = Logger.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
@@ -75,16 +75,17 @@ public class RequestTest extends TestCase {
         assert (!log.contains("password"));
 
         logger.setLevel(Level.INFO);
-        sreq.log("Info", true, Level.INFO);
-        assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
-        assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
-        assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
-        assert (!log.contains("username"));
-        assert (!log.contains("password"));
+        log = sreq.log("Info", true, Level.INFO);
+        assert (log == null);
 
         logger.setLevel(level);
 
         byte[] bytes = sreq.getBytes();
+        
+        assert Request.getSequence(bytes) == 892403717;
+        assert Request.getManagementServerId(bytes) == 3;
+        assert Request.getAgentId(bytes) == 2;
+        assert Request.getViaAgentId(bytes) == 2;
         Request creq = null;
         try {
             creq = Request.parse(bytes);

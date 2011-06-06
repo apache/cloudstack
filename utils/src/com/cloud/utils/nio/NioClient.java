@@ -71,11 +71,11 @@ public class NioClient extends NioConnection {
         	// Begin SSL handshake in BLOCKING mode
         	sch.configureBlocking(true);
 
-        	SSLContext sslContext = initSSLContext(true);
+        	SSLContext sslContext = Link.initSSLContext(true);
         	sslEngine = sslContext.createSSLEngine(_host, _port);
         	sslEngine.setUseClientMode(true);
 
-        	doHandshake(sch, sslEngine, true);
+        	Link.doHandshake(sch, sslEngine, true);
         	s_logger.info("SSL: Handshake done");
         } catch (Exception e) {
         	throw new IOException("SSL: Fail to init SSL! " + e);

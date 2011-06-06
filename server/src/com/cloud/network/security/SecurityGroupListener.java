@@ -69,7 +69,7 @@ public class SecurityGroupListener implements Listener {
 
 	@Override
 	public boolean isRecurring() {
-		return false;
+		return true;
 	}
 
 

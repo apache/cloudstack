@@ -32,6 +32,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
+import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -48,6 +51,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -155,6 +159,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
+            EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assignbed Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
@@ -166,7 +171,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         if (network.getCidr() != null) {
             implemented.setCidr(network.getCidr());
         }
-
         return implemented;
     }
 
@@ -261,6 +265,8 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
         if (profile.getBroadcastUri() != null) {
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getAccountId(), profile.getReservationId());
+            EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
+                    +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
             profile.setBroadcastUri(null);
         }
     }

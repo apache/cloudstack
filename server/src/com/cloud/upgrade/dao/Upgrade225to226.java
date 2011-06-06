@@ -19,32 +19,42 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.component.Inject;
+import org.apache.log4j.Logger;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade225to226 implements DbUpgrade {
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
-    protected HostDao _hostDao;
-    @Inject
-    protected DataCenterDao _dcDao;
-    @Inject
-    protected DiskOfferingDao _diskOfferingDao;
+    final static Logger s_logger = Logger.getLogger(Upgrade225to226.class);
+
+    @Override
+    public File[] getPrepareScripts() {
+        String file = Script.findScript("", "db/schema-225to226.sql");
+        if (file == null) {
+            throw new CloudRuntimeException("Unable to find the upgrade script, schema-225to226.sql");
+        }
+
+        return new File[] { new File(file) };
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+        dropKeysIfExist(conn);
+        dropTableColumnsIfExist(conn);
+    }
+
+    @Override
+    public File[] getCleanupScripts() {
+        return null;
+    }
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"2.2.5"};
+        return new String[] { "2.2.5", "2.2.5" };
     }
 
     @Override
@@ -54,38 +64,46 @@ public class Upgrade225to226 implements DbUpgrade {
 
     @Override
     public boolean supportsRollingUpgrade() {
-        return true;
+        return false;
     }
 
-    @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-225to226.sql");
-        if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-224to225.sql");
-        }
-        
-        return new File[] { new File(script) };
-    }
+    private void dropTableColumnsIfExist(Connection conn) {
+        HashMap<String, List<String>> tablesToModify = new HashMap<String, List<String>>();
 
-    @Override
-    public void performDataMigration(Connection conn) {
-        List<DataCenterVO> dcs = _dcDao.listAll();
-        for ( DataCenterVO dc : dcs ) {
-            HostVO host = _hostDao.findSecondaryStorageHost(dc.getId());
-            _snapshotDao.updateSnapshotSecHost(dc.getId(), host.getId());           
-        }
-        List<DiskOfferingVO> offerings = _diskOfferingDao.listAll();
-        for ( DiskOfferingVO offering : offerings ) {
-            if( offering.getDiskSize() <= 2 * 1024 * 1024) { // the unit is MB
-                offering.setDiskSize(offering.getDiskSize() * 1024 * 1024);
-                _diskOfferingDao.update(offering.getId(), offering);
-            }
+        // domain router table
+        List<String> columns = new ArrayList<String>();
+        columns.add("account_id");
+        columns.add("domain_id");
+        tablesToModify.put("domain_router", columns);
+
+        s_logger.debug("Dropping columns that don't exist in 2.2.6 version of the DB...");
+        for (String tableName : tablesToModify.keySet()) {
+            DbUpgradeUtils.dropTableColumnsIfExist(conn, tableName, tablesToModify.get(tableName));
         }
     }
 
-    @Override
-    public File[] getCleanupScripts() {
-        return null;
+    private void dropKeysIfExist(Connection conn) {
+        HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
+        HashMap<String, List<String>> indexes = new HashMap<String, List<String>>();
+
+        // domain router table
+        List<String> keys = new ArrayList<String>();
+        keys.add("fk_domain_router__account_id");
+        foreignKeys.put("domain_router", keys);
+
+        keys = new ArrayList<String>();
+        keys.add("i_domain_router__account_id");
+        indexes.put("domain_router", keys);
+
+        // drop all foreign keys first
+        s_logger.debug("Dropping keys that don't exist in 2.2.6 version of the DB...");
+        for (String tableName : foreignKeys.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
+        }
+
+        // drop indexes now
+        for (String tableName : indexes.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
+        }
     }
-    
 }

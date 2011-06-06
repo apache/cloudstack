@@ -129,9 +129,17 @@ public class StatsCollector {
 		 storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);
 		 volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), -1L);
 
-		_executor.scheduleWithFixedDelay(new HostCollector(), 15000L, hostStatsInterval, TimeUnit.MILLISECONDS);
-		_executor.scheduleWithFixedDelay(new VmStatsCollector(), 15000L, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
-		_executor.scheduleWithFixedDelay(new StorageCollector(), 15000L, storageStatsInterval, TimeUnit.MILLISECONDS);
+		 if (hostStatsInterval > 0) {
+		     _executor.scheduleWithFixedDelay(new HostCollector(), 15000L, hostStatsInterval, TimeUnit.MILLISECONDS);
+		 }
+		 
+		 if (hostAndVmStatsInterval > 0) {
+		     _executor.scheduleWithFixedDelay(new VmStatsCollector(), 15000L, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
+		 }
+		 
+		 if (storageStatsInterval > 0) {
+		     _executor.scheduleWithFixedDelay(new StorageCollector(), 15000L, storageStatsInterval, TimeUnit.MILLISECONDS);
+		 }
 		
 		// -1 means we don't even start this thread to pick up any data.
 		if (volumeStatsInterval > 0) {
@@ -199,7 +207,7 @@ public class StatsCollector {
 						vmIds.add(vm.getId());
 					}
 					
-					try 
+					try
 					{
 							HashMap<Long, VmStatsEntry> vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
 							
@@ -250,7 +258,7 @@ public class StatsCollector {
 	class StorageCollector implements Runnable {
 		@Override
         public void run() {
-			try {               
+			try {
                 List<HostVO> hosts = _hostDao.listSecondaryStorageHosts();
                 ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
                 for (HostVO host : hosts) {
@@ -260,13 +268,13 @@ public class StatsCollector {
                     if (answer != null && answer.getResult()) {
                         storageStats.put(hostId, (StorageStats)answer);
                         //Seems like we have dynamically updated the sec. storage as prev. size and the current do not match
-                        if (_storageStats.get(hostId)!=null && 
-                        		_storageStats.get(hostId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){	                       	
+                        if (_storageStats.get(hostId)!=null &&
+                        		_storageStats.get(hostId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){
 	                       	host.setTotalSize(((StorageStats)answer).getCapacityBytes());
 	                       	_hostDao.update(hostId, host);
-	                    }  
+	                    }
                     }
-                }				
+                }
                 _storageStats = storageStats;
 				ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
@@ -279,11 +287,11 @@ public class StatsCollector {
     					if (answer != null && answer.getResult()) {
     						storagePoolStats.put(pool.getId(), (StorageStats)answer);
     
-    						// Seems like we have dynamically updated the pool size since the prev. size and the current do not match 
+    						// Seems like we have dynamically updated the pool size since the prev. size and the current do not match
     						if (_storagePoolStats.get(poolId)!= null &&
-    								_storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){	                        
-    		                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());	                    
-    		                    _storagePoolDao.update(pool.getId(), pool);                         
+    								_storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){
+    		                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+    		                    _storagePoolDao.update(pool.getId(), pool);
     	                    }
     					}
                     } catch (StorageUnavailableException e) {
@@ -291,7 +299,7 @@ public class StatsCollector {
                     } catch (Exception e) {
                         s_logger.warn("Unable to get stats for " + pool);
                     }
-				}                               
+				}
                 _storagePoolStats = storagePoolStats;
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);

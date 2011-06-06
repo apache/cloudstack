@@ -213,7 +213,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
             }
             boolean result = false;
             try {
-                result = manager.rebalanceAgent(cmd.getAgentId(), cmd.getEvent());
+                result = manager.rebalanceAgent(cmd.getAgentId(), cmd.getEvent(), cmd.getCurrentOwner(), cmd.getFutureOwner());
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Result is " + result);
                 }

@@ -44,7 +44,7 @@ public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
 
     ServerResource _resource;
-    static ScheduledExecutorService s_executor = new ScheduledThreadPoolExecutor(100, new NamedThreadFactory("DirectAgent"));
+    static ScheduledExecutorService s_executor = new ScheduledThreadPoolExecutor(500, new NamedThreadFactory("DirectAgent"));
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     AgentManagerImpl _mgr;
     long _seq = 0;

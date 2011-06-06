@@ -167,7 +167,7 @@ public class DummyClusterManagerImpl implements ClusterManager {
 	}
 	
 	@Override
-	public boolean rebalanceAgent(long agentId, Event event) throws AgentUnavailableException, OperationTimedoutException {
+	public boolean rebalanceAgent(long agentId, Event event, long currentOwnerId, long futureOwnerId) throws AgentUnavailableException, OperationTimedoutException {
 	    return false;
 	}
 	

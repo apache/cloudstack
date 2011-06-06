@@ -27,7 +27,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface HostTransferMapDao extends GenericDao<HostTransferMapVO, Long> {
 
-    List<HostTransferMapVO> listHostsLeavingCluster(long clusterId);
+    List<HostTransferMapVO> listHostsLeavingCluster(long currentOwnerId);
 
     List<HostTransferMapVO> listHostsJoiningCluster(long futureOwnerId);
 
@@ -40,4 +40,8 @@ public interface HostTransferMapDao extends GenericDao<HostTransferMapVO, Long> 
     boolean isNotActive(long hostId, Date cutTime);
     
     boolean startAgentTransfer(long hostId);
+    
+    HostTransferMapVO findByIdAndFutureOwnerId(long id, long futureOwnerId);
+    
+    HostTransferMapVO findByIdAndCurrentOwnerId(long id, long currentOwnerId);
 }

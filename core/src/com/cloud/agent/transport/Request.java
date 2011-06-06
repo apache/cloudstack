@@ -324,7 +324,7 @@ public class Request {
                 assert false : "More gson errors on " + buff.toString();
                 return "";
             }
-            if (content.length() <= 4) {
+            if (content.length() <= (1 + _cmds.length * 3)) {
                 return null;
             }
         } else {
@@ -368,7 +368,7 @@ public class Request {
         final ByteBuffer buff = ByteBuffer.wrap(bytes);
         final byte ver = buff.get();
         final Version version = Version.get(ver);
-        if (version.ordinal() != Version.v1.ordinal()) {
+        if (version.ordinal() != Version.v1.ordinal() && version.ordinal() != Version.v3.ordinal()) {
             throw new UnsupportedVersionException("This version is no longer supported: " + version.toString(), UnsupportedVersionException.IncompatibleVersion);
         }
         final byte reserved = buff.get(); // tossed away for now.
@@ -379,7 +379,12 @@ public class Request {
         final int size = buff.getInt();
         final long mgmtId = buff.getLong();
         final long agentId = buff.getLong();
-        final long via = buff.getLong();
+        long via;
+        if (version.ordinal() == Version.v1.ordinal()) {
+            via = buff.getLong();
+        } else {
+            via = agentId;
+        }
 
         byte[] command = null;
         int offset = 0;
@@ -426,11 +431,11 @@ public class Request {
     }
 
     public static long getAgentId(final byte[] bytes) {
-        return NumbersUtil.bytesToLong(bytes, 28);
+        return NumbersUtil.bytesToLong(bytes, 24);
     }
 
     public static long getViaAgentId(final byte[] bytes) {
-        return NumbersUtil.bytesToLong(bytes, 24);
+        return NumbersUtil.bytesToLong(bytes, 32);
     }
     
     public static boolean fromServer(final byte[] bytes) {

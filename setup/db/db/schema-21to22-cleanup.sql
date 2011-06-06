@@ -26,9 +26,6 @@ ALTER TABLE `cloud`.`user_vm` DROP COLUMN `service_offering_id`;
 ALTER TABLE `cloud`.`user_vm` DROP COLUMN `account_id`;
 ALTER TABLE `cloud`.`user_vm` DROP COLUMN `domain_id`;
 
-ALTER TABLE `cloud`.`domain_router` DROP FOREIGN KEY `fk_domain_router__account_id`;
-ALTER TABLE `cloud`.`domain_router` DROP INDEX `i_domain_router__account_id`;
-
 #ALTER TABLE `cloud`.`secondary_storage_vm` DROP COLUMN `guid`;
 
 #ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__network_id` FOREIGN KEY `fk_vlan__network_id`(`network_id`) REFERENCES `networks`(`id`);

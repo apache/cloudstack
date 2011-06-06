@@ -4261,10 +4261,12 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-        boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-        if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are allowed
-            // to extract
-            throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
+        if (volume.getVolumeType() != Volume.Type.DATADISK){ //Datadisk dont have any template dependence.
+            boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+            if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are allowed
+                // to extract
+                throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
+            }
         }
 
         Upload.Mode extractMode;
@@ -4274,19 +4276,7 @@ public class ManagementServerImpl implements ManagementServer {
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
 
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (volume.getAccountId() != account.getId()) {
-                    throw new PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-                }
-            } else {
-                Account userAccount = _accountDao.findById(volume.getAccountId());
-                if ((userAccount == null) || !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-                    throw new PermissionDeniedException("Unable to extract volume:" + volumeId + " - permission denied.");
-                }
-            }
-        }
-
+        _accountMgr.checkAccess(account, volume);
         // If mode is upload perform extra checks on url and also see if there is an ongoing upload on the same.
         if (extractMode == Upload.Mode.FTP_UPLOAD) {
             URI uri = new URI(url);

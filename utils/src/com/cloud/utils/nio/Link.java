@@ -18,6 +18,8 @@
 package com.cloud.utils.nio;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -26,11 +28,16 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
+import java.security.KeyStore;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import org.apache.log4j.Logger;
@@ -82,13 +89,14 @@ public class Link {
     }
 
     /**
+     * No user, so comment it out.
+     * 
      * Static methods for reading from a channel in case
      * you need to add a client that doesn't require nio.
      * @param ch channel to read from.
      * @param bytebuffer to use.
      * @return bytes read
      * @throws IOException if not read to completion.
-     */
     public static byte[] read(SocketChannel ch, ByteBuffer buff) throws IOException {
     	synchronized(buff) {
 	    	buff.clear();
@@ -121,7 +129,44 @@ public class Link {
 	        return output.toByteArray();
     	}
     }
-    	
+    */
+    
+    private static void doWrite(SocketChannel ch, ByteBuffer[] buffers, SSLEngine sslEngine) throws IOException {
+        ByteBuffer pkgBuf;
+        SSLSession sslSession = sslEngine.getSession();
+        SSLEngineResult engResult;
+
+        ByteBuffer headBuf = ByteBuffer.allocate(4);
+
+        pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+        engResult = sslEngine.wrap(buffers, pkgBuf);
+        if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
+                engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
+                engResult.getStatus() != SSLEngineResult.Status.OK) {
+            throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+        }
+
+        int dataRemaining = pkgBuf.position();
+        int headRemaining = 4;
+        pkgBuf.flip();
+        headBuf.putInt(dataRemaining);
+        headBuf.flip();
+
+        while (headRemaining > 0) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Writing Header " + headRemaining);
+            }
+            long count = ch.write(headBuf);
+            headRemaining -= count;
+        }
+        while (dataRemaining > 0) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Writing Data " + dataRemaining);
+            }
+            long count = ch.write(pkgBuf);
+            dataRemaining -= count;
+        }
+    }
     
     /**
      * write method to write to a socket.  This method writes to completion so
@@ -132,26 +177,10 @@ public class Link {
      * @param buffers buffers to write.
      * @throws IOException if unable to write to completion.
      */
-    public static void write(SocketChannel ch, ByteBuffer[] buffers) throws IOException {
+    public static void write(SocketChannel ch, ByteBuffer[] buffers, SSLEngine sslEngine) throws IOException {
         synchronized(ch) {
-    		int length = 0;
-    		ByteBuffer[] buff = new ByteBuffer[buffers.length + 1];
-    		for (int i = 0; i < buffers.length; i++) {
-    			length += buffers[i].remaining();
-    			buff[i + 1] = buffers[i];
-    		}
-    		buff[0] = ByteBuffer.allocate(4);
-    		buff[0].putInt(length);
-    		buff[0].flip();
-    		long count = 0;
-    		while (count < length + 4) {
-    			long written = ch.write(buff);
-    			if (written < 0) {
-    				throw new IOException("Unable to write after " + count);
-    			}
-    			count += written;
-    		}
-        }
+            doWrite(ch, buffers, sslEngine);
+        } 
     }
     
     public byte[] read(SocketChannel ch) throws IOException {
@@ -285,42 +314,10 @@ public class Link {
                 return true;
             }
 
-            ByteBuffer pkgBuf;
-            SSLSession sslSession = _sslEngine.getSession();
-            SSLEngineResult engResult;
-
-            ByteBuffer headBuf = ByteBuffer.allocate(4);
             ByteBuffer[] raw_data = new ByteBuffer[data.length - 1];
             System.arraycopy(data, 1, raw_data, 0, data.length - 1);
 
-            pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
-            engResult = _sslEngine.wrap(raw_data, pkgBuf);
-            if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
-                    engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                    engResult.getStatus() != SSLEngineResult.Status.OK) {
-                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
-            }
-
-            int dataRemaining = pkgBuf.position();
-            int headRemaining = 4;
-            pkgBuf.flip();
-            headBuf.putInt(dataRemaining);
-            headBuf.flip();
-
-            while (headRemaining > 0) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Writing Header " + headRemaining);
-                }
-                long count = ch.write(headBuf);
-                headRemaining -= count;
-            }
-            while (dataRemaining > 0) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Writing Data " + dataRemaining);
-                }
-                long count = ch.write(pkgBuf);
-                dataRemaining -= count;
-            }
+            doWrite(ch, raw_data, _sslEngine);
         }
         return false;
     }
@@ -343,4 +340,132 @@ public class Link {
         }
         _connection.scheduleTask(task);
     }
+    
+    public static SSLContext initSSLContext(boolean isClient) throws Exception {
+        SSLContext sslContext = null;
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        KeyStore ks = KeyStore.getInstance("JKS");
+        TrustManager[] tms;
+        
+        if (!isClient) {
+        	char[] passphrase = "vmops.com".toCharArray();
+        	String keystorePath = "/etc/cloud/management/cloud.keystore";
+        	if (new File(keystorePath).exists()) {
+        		ks.load(new FileInputStream(keystorePath), passphrase);
+        	} else {
+        		s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
+        		ks.load(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
+        	}
+        	kmf.init(ks, passphrase);
+        	tmf.init(ks);
+        	tms = tmf.getTrustManagers();
+        } else {
+        	ks.load(null, null);
+        	kmf.init(ks, null);
+        	tms = new TrustManager[1];
+        	tms[0] = new TrustAllManager();
+        }
+        
+        sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(kmf.getKeyManagers(), tms, null);
+        s_logger.info("SSL: SSLcontext has been initialized");
+
+        return sslContext;
+    }
+
+    public static void doHandshake(SocketChannel ch, SSLEngine sslEngine,
+                               boolean isClient) throws IOException {
+        s_logger.info("SSL: begin Handshake, isClient: " + isClient);
+
+        SSLEngineResult engResult;
+        SSLSession sslSession = sslEngine.getSession();
+        HandshakeStatus hsStatus;
+        ByteBuffer in_pkgBuf =
+            ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+        ByteBuffer in_appBuf =
+            ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
+        ByteBuffer out_pkgBuf =
+            ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+        ByteBuffer out_appBuf =
+            ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
+        int count;
+
+        if (isClient) {
+            hsStatus = SSLEngineResult.HandshakeStatus.NEED_WRAP;
+        } else {
+            hsStatus = SSLEngineResult.HandshakeStatus.NEED_UNWRAP;
+        }
+
+        while (hsStatus != SSLEngineResult.HandshakeStatus.FINISHED) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.info("SSL: Handshake status " + hsStatus);
+            }
+            engResult = null;
+            if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+                out_pkgBuf.clear();
+                out_appBuf.clear();
+                out_appBuf.put("Hello".getBytes());
+                engResult = sslEngine.wrap(out_appBuf, out_pkgBuf);
+                out_pkgBuf.flip();
+                int remain = out_pkgBuf.limit();
+                while (remain != 0) {
+                    remain -= ch.write(out_pkgBuf);
+                    if (remain < 0) {
+                        throw new IOException("Too much bytes sent?");
+                    }
+                }
+            } else if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP) {
+                in_appBuf.clear();
+                // One packet may contained multiply operation
+                if (in_pkgBuf.position() == 0 || !in_pkgBuf.hasRemaining()) {
+                    in_pkgBuf.clear();
+                    count = ch.read(in_pkgBuf);
+                    if (count == -1) {
+                        throw new IOException("Connection closed with -1 on reading size.");
+                    }
+                    in_pkgBuf.flip();
+                }
+                engResult = sslEngine.unwrap(in_pkgBuf, in_appBuf);
+                ByteBuffer tmp_pkgBuf =
+                    ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+                while (engResult.getStatus() == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
+                    // We need more packets to complete this operation
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.info("SSL: Buffer overflowed, getting more packets");
+                    }
+                    tmp_pkgBuf.clear();
+                    count = ch.read(tmp_pkgBuf);
+                    tmp_pkgBuf.flip();
+                    
+                    in_pkgBuf.mark();
+                    in_pkgBuf.position(in_pkgBuf.limit());
+                    in_pkgBuf.limit(in_pkgBuf.limit() + tmp_pkgBuf.limit());
+                    in_pkgBuf.put(tmp_pkgBuf);
+                    in_pkgBuf.reset();
+                    
+                    in_appBuf.clear();
+                    engResult = sslEngine.unwrap(in_pkgBuf, in_appBuf);
+                }
+            } else if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+                Runnable run;
+                while ((run = sslEngine.getDelegatedTask()) != null) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.info("SSL: Running delegated task!");
+                    }
+                    run.run();
+                }
+            } else if (hsStatus == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+                throw new IOException("NOT a handshaking!");
+            }
+            if (engResult != null && engResult.getStatus() != SSLEngineResult.Status.OK) {
+                throw new IOException("Fail to handshake! " + engResult.getStatus());
+            }
+            if (engResult != null)
+                hsStatus = engResult.getHandshakeStatus();
+            else
+                hsStatus = sslEngine.getHandshakeStatus();
+        }
+    }
+
 }

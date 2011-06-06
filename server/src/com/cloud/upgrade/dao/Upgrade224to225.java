@@ -209,32 +209,7 @@ public class Upgrade224to225 implements DbUpgrade {
 
         s_logger.debug("Dropping columns that don't exist in 2.2.5 version of the DB...");
         for (String tableName : tablesToModify.keySet()) {
-            dropTableColumnsIfExist(conn, tableName, tablesToModify.get(tableName));
-        }
-    }
-
-    private void dropTableColumnsIfExist(Connection conn, String tableName, List<String> columns) {
-        PreparedStatement pstmt = null;
-        try {
-            for (String column : columns) {
-                try {
-                    pstmt = conn.prepareStatement("SELECT " + column + " FROM " + tableName);
-                    pstmt.executeQuery();
-
-                } catch (SQLException e) {
-                    // if there is an exception, it means that field doesn't exist, so do nothing here
-                    s_logger.trace("Field " + column + " doesn't exist in " + tableName);
-                    continue;
-                }
-
-                pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + column);
-                pstmt.executeUpdate();
-                s_logger.debug("Column " + column + " is dropped successfully from the table " + tableName);
-                pstmt.close();
-            }
-        } catch (SQLException e) {
-            s_logger.warn("Unable to drop columns using query " + pstmt + " due to exception", e);
-            throw new CloudRuntimeException("Unable to drop columns due to ", e);
+            DbUpgradeUtils.dropTableColumnsIfExist(conn, tableName, tablesToModify.get(tableName));
         }
     }
 
@@ -303,31 +278,12 @@ public class Upgrade224to225 implements DbUpgrade {
         // drop all foreign keys first
         s_logger.debug("Dropping keys that don't exist in 2.2.5 version of the DB...");
         for (String tableName : foreignKeys.keySet()) {
-            dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
         }
 
         // drop indexes now
         for (String tableName : indexes.keySet()) {
-            dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
-        }
-    }
-
-    private void dropKeysIfExist(Connection conn, String tableName, List<String> keys, boolean isForeignKey) {
-        for (String key : keys) {
-            try {
-                PreparedStatement pstmt = null;
-                if (isForeignKey) {
-                    pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + key);
-                } else {
-                    pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP KEY " + key);
-                }
-                pstmt.executeUpdate();
-                s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
-                pstmt.close();
-            } catch (SQLException e) {
-                // do nothing here
-                continue;
-            }
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
         }
     }
 
