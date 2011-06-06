@@ -370,6 +370,16 @@ public class CheckPointManagerTest extends TestCase {
         
         protected MockClusterManager() {
         }
+        
+        @Override
+        public boolean rebalanceAgent(long agentId, Event event, long currentOwnerId, long futureOwnerId) throws AgentUnavailableException, OperationTimedoutException {
+            return false;
+        }
+        
+        @Override
+        public boolean isAgentRebalanceEnabled() {
+            return false;
+        }
     }
     
 }
