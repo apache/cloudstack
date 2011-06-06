@@ -18,7 +18,7 @@ class sysConfigAgentFactory:
         distribution = DistributionDetector().getVersion()
         if distribution == "Ubuntu":
             return sysConfigAgentUbuntu(glbEnv)
-        elif distribution == "Fedora":
+        elif distribution == "Fedora" or distribution == "RHEL6":
             return sysConfigRedhat6(glbEnv)
         elif distribution == "CentOS" or distribution == "RHEL5":
             return sysConfigRedhat5(glbEnv)
