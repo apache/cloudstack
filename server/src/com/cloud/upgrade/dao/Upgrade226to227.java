@@ -32,7 +32,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade225to226 implements DbUpgrade {
+public class Upgrade226to227 implements DbUpgrade {
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
@@ -59,9 +59,9 @@ public class Upgrade225to226 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-225to226.sql");
+        String script = Script.findScript("", "db/schema-226to227.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-224to225.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-226to227.sql");
         }
         
         return new File[] { new File(script) };
