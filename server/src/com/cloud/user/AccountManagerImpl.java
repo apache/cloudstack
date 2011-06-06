@@ -1800,7 +1800,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	public void markUserRegistered(long userId) {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setRegistered(true);
-        userForUpdate.setRegistrationToken(null);
         _userDao.update(Long.valueOf(userId), userForUpdate);		
 	}
 }
