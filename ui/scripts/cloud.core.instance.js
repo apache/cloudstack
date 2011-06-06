@@ -690,7 +690,7 @@ function initVMWizard() {
                async: false,
                success: function(json) {            
                    var items = json.listhypervisorsresponse.hypervisor;
-                   var $hypervisorDropdown = $("#vmiso_in_vmwizard").find("#hypervisor_select");
+                   var $hypervisorDropdown = $("#vmiso_in_vmwizard").find("#hypervisor_select").empty();
                    var $hypervisorSpan = $("#vmiso_in_vmwizard").find("#hypervisor_span");
                    if(items != null && items.length > 0) {    
                        if(items.length == 1) {
