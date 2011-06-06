@@ -223,18 +223,6 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Group:     System Environment/Libraries
 
-%package baremetal-agent
-Summary: Cloud.com baremetal agent
-Requires: PING
-Requires: tftp-server
-Requires: xinetd
-Requires: syslinux
-Requires: chkconfig
-Requires: dhcp
-Group:     System Environment/Libraries
-%description baremetal-agent
-The Cloud.com baremetal agent
-
 %if 0%{?rhel} >= 6
 Requires: cloud-kvm
 %else
@@ -265,6 +253,18 @@ Group:     System Environment/Libraries
 The Cloud.com agent is in charge of managing shared computing resources in
 a Cloud.com Stack-powered cloud.  Install this package if this computer
 will participate in your cloud.
+
+%package baremetal-agent
+Summary: Cloud.com baremetal agent
+Requires: PING
+Requires: tftp-server
+Requires: xinetd
+Requires: syslinux
+Requires: chkconfig
+Requires: dhcp
+Group:     System Environment/Libraries
+%description baremetal-agent
+The Cloud.com baremetal agent
 
 %package console-proxy
 Summary:   Cloud.com console proxy
