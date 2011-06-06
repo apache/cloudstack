@@ -22,13 +22,15 @@ import com.cloud.host.Status.Event;
 public class TransferAgentCommand extends Command {
     protected long agentId;
     protected long futureOwner;
+    protected long currentOwner;
     Event event;
     
     protected TransferAgentCommand() {
     }
     
-    public TransferAgentCommand(long agentId, long futureOwner, Event event) {
+    public TransferAgentCommand(long agentId, long currentOwner, long futureOwner, Event event) {
         this.agentId = agentId;
+        this.currentOwner = currentOwner;
         this.futureOwner = futureOwner;
         this.event = event;
     }
@@ -43,6 +45,10 @@ public class TransferAgentCommand extends Command {
 
     public Event getEvent() {
         return event;
+    }
+
+    public long getCurrentOwner() {
+        return currentOwner;
     }
 
     @Override

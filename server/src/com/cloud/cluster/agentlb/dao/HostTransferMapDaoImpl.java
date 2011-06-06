@@ -63,10 +63,9 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
     }
 
     @Override
-    public List<HostTransferMapVO> listHostsLeavingCluster(long clusterId) {
+    public List<HostTransferMapVO> listHostsLeavingCluster(long currentOwnerId) {
         SearchCriteria<HostTransferMapVO> sc = IntermediateStateSearch.create();
-        sc.setParameters("initialOwner", clusterId);
-        sc.setParameters("state", HostTransferState.TransferRequested, HostTransferState.TransferStarted);
+        sc.setParameters("initialOwner", currentOwnerId);
 
         return listBy(sc);
     }
@@ -75,12 +74,10 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
     public List<HostTransferMapVO> listHostsJoiningCluster(long futureOwnerId) {
         SearchCriteria<HostTransferMapVO> sc = IntermediateStateSearch.create();
         sc.setParameters("futureOwner", futureOwnerId);
-        sc.setParameters("state", HostTransferState.TransferRequested);
+
         return listBy(sc);
     }
     
-    
-
     @Override
     public HostTransferMapVO startAgentTransfering(long hostId, long initialOwner, long futureOwner) {
         HostTransferMapVO transfer = new HostTransferMapVO(hostId, initialOwner, futureOwner);
@@ -120,6 +117,26 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
         HostTransferMapVO transfer = findById(hostId);
         transfer.setState(HostTransferState.TransferStarted);
         return update(hostId, transfer);
+    }
+    
+    
+    @Override
+    public HostTransferMapVO findByIdAndFutureOwnerId(long id, long futureOwnerId) {
+        SearchCriteria<HostTransferMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("futureOwner", futureOwnerId);
+        sc.setParameters("id", id);
+
+        return findOneBy(sc);
+    }
+    
+    
+    @Override
+    public HostTransferMapVO findByIdAndCurrentOwnerId(long id, long currentOwnerId) {
+        SearchCriteria<HostTransferMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("initialOwner", currentOwnerId);
+        sc.setParameters("id", id);
+
+        return findOneBy(sc);
     }
     
 }

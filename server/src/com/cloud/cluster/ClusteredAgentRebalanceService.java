@@ -9,6 +9,6 @@ public interface ClusteredAgentRebalanceService {
 
     void startRebalanceAgents();
 
-    boolean executeRebalanceRequest(long agentId, Event event) throws AgentUnavailableException, OperationTimedoutException;
+    boolean executeRebalanceRequest(long agentId, long currentOwnerId, long futureOwnerId, Event event) throws AgentUnavailableException, OperationTimedoutException;
 
 }

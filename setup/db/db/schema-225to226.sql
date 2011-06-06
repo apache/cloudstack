@@ -90,7 +90,7 @@ CREATE TABLE `cloud`.`op_host_transfer` (
   `state` varchar(32) NOT NULL COMMENT 'the transfer state of the host',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_op_host_transfer__id` FOREIGN KEY `fk_op_host_transfer__id` (`id`) REFERENCES `host` (`id`),
+  CONSTRAINT `fk_op_host_transfer__id` FOREIGN KEY `fk_op_host_transfer__id` (`id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_op_host_transfer__initial_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__initial_mgmt_server_id`(`initial_mgmt_server_id`) REFERENCES `mshost`(`msid`),
   CONSTRAINT `fk_op_host_transfer__future_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__future_mgmt_server_id`(`future_mgmt_server_id`) REFERENCES `mshost`(`msid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

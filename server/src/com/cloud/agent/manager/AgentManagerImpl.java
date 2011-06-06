@@ -1136,12 +1136,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public void startDirectlyConnectedHosts() {
         List<HostVO> hosts = _hostDao.findDirectlyConnectedHosts();
         for (HostVO host : hosts) {
-            loadDirectlyConnectedHost(host);
+            loadDirectlyConnectedHost(host, false);
         }
     }
 
     @SuppressWarnings("rawtypes")
-    protected void loadDirectlyConnectedHost(HostVO host) {
+    protected boolean loadDirectlyConnectedHost(HostVO host, boolean executeNow) {
         String resourceName = host.getResource();
         ServerResource resource = null;
         try {
@@ -1150,25 +1150,25 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             resource = (ServerResource) constructor.newInstance();
         } catch (ClassNotFoundException e) {
             s_logger.warn("Unable to find class " + host.getResource(), e);
-            return;
+            return false;
         } catch (InstantiationException e) {
             s_logger.warn("Unablet to instantiate class " + host.getResource(), e);
-            return;
+            return false;
         } catch (IllegalAccessException e) {
             s_logger.warn("Illegal access " + host.getResource(), e);
-            return;
+            return false;
         } catch (SecurityException e) {
             s_logger.warn("Security error on " + host.getResource(), e);
-            return;
+            return false;
         } catch (NoSuchMethodException e) {
             s_logger.warn("NoSuchMethodException error on " + host.getResource(), e);
-            return;
+            return false;
         } catch (IllegalArgumentException e) {
             s_logger.warn("IllegalArgumentException error on " + host.getResource(), e);
-            return;
+            return false;
         } catch (InvocationTargetException e) {
             s_logger.warn("InvocationTargetException error on " + host.getResource(), e);
-            return;
+            return false;
         }
 
         _hostDao.loadDetails(host);
@@ -1204,14 +1204,25 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         } catch (ConfigurationException e) {
             e.printStackTrace();
             s_logger.warn("Unable to configure resource due to ", e);
-            return;
+            return false; 
         }
 
         if (!resource.start()) {
             s_logger.warn("Unable to start the resource");
-            return;
+            return false;
         }
-        _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
+        
+        if (executeNow) {
+            AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null);
+            if (attache == null) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
+            return true;
+        }
     }
 
     @Override

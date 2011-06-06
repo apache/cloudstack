@@ -183,7 +183,7 @@ public enum Status {
         s_fsm.addTransition(Status.Alert, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Alert, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Alert, Event.ManagementServerDown, Status.Alert);
-        s_fsm.addTransition(Status.Rebalancing, Event.RebalanceFailed, Status.Alert);
+        s_fsm.addTransition(Status.Rebalancing, Event.RebalanceFailed, Status.Disconnected);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceCompleted, Status.Connecting);
     }
 

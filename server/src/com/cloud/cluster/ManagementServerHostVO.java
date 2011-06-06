@@ -175,4 +175,9 @@ public class ManagementServerHostVO implements ManagementServerHost{
 	public void setAlertCount(int count) {
 		alertCount = count;
 	}
+	
+	@Override
+    public String toString() {
+        return new StringBuilder("ManagementServer[").append("-").append(id).append("-").append(msid).append("-").append(state).append("]").toString();
+    }
 }

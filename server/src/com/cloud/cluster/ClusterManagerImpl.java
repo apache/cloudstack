@@ -928,9 +928,7 @@ public class ClusterManagerImpl implements ClusterManager {
                      }
                  }
              } catch (final InterruptedException e) {
-             } finally {
-                 s_logger.debug("Agent rebalancing is completed, management server " + _mshostId + " is ready");
-             }
+             } 
 
         } catch (Throwable e) {
             s_logger.error("Unexpected exception : ", e);
@@ -1169,8 +1167,8 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     @Override
-    public boolean rebalanceAgent(long agentId, Event event) throws AgentUnavailableException, OperationTimedoutException {
-        return _rebalanceService.executeRebalanceRequest(agentId, event);
+    public boolean rebalanceAgent(long agentId, Event event, long currentOwnerId, long futureOwnerId) throws AgentUnavailableException, OperationTimedoutException {
+        return _rebalanceService.executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event);
     }
     
     @Override
