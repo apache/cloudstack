@@ -17,11 +17,6 @@
  */
 package com.cloud.network.guru;
 
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
-
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -54,7 +49,6 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -79,7 +73,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
     String _defaultGateway;
     String _defaultCidr;
-    Random _rand = new Random(System.currentTimeMillis());
 
     protected GuestNetworkGuru() {
         super();
@@ -191,7 +184,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIsolationUri(network.getBroadcastUri());
             nic.setGateway(network.getGateway());
 
-            String guestIp = acquireGuestIpAddress(network);
+            String guestIp = _networkMgr.acquireGuestIpAddress(network);
             if (guestIp == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to acquire guest IP address for network " + network, DataCenter.class, dc.getId());
             }
@@ -223,30 +216,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             profile.setDns1(dc.getDns1());
             profile.setDns2(dc.getDns2());
         }
-    }
-
-    @DB
-    protected String acquireGuestIpAddress(Network network) {
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        String[] cidr = network.getCidr().split("/");
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
-        Set<Long> usedIps = new TreeSet<Long>();
-        for (String ip : ips) {
-            usedIps.add(NetUtils.ip2Long(ip));
-        }
-        if (usedIps.size() != 0) {
-            allPossibleIps.removeAll(usedIps);
-        }
-        if (allPossibleIps.isEmpty()) {
-            return null;
-        }
-        Long[] array = allPossibleIps.toArray(new Long[allPossibleIps.size()]);
-        String result;
-        String[] splits;
-        do {
-            result = NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
-        } while (result.split("\\.")[3].equals("1"));
-        return result;
     }
 
     @Override

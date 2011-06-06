@@ -17,21 +17,12 @@
  */
 package com.cloud.network.router;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -753,27 +744,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN));
     }
 
-    Random _rand = new Random(System.currentTimeMillis());
-    
-    @DB /*FIXME: Duplicate function*/
-    private String acquireGuestIpAddress(Network network) {
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        String[] cidr = network.getCidr().split("/");
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
-        Set<Long> usedIps = new TreeSet<Long>();
-        for (String ip : ips) {
-            usedIps.add(NetUtils.ip2Long(ip));
-        }
-        if (usedIps.size() != 0) {
-            allPossibleIps.removeAll(usedIps);
-        }
-        if (allPossibleIps.isEmpty()) {
-            return null;
-        }
-        Long[] array = allPossibleIps.toArray(new Long[allPossibleIps.size()]);
-        return NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
-    }
-
     @Override
     @DB
     public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
@@ -841,7 +811,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     NicProfile gatewayNic = new NicProfile();
                     /* For redundant router */
                     if (offering.isRedundantRouterEnabled()) {
-                        gatewayNic.setIp4Address(acquireGuestIpAddress(guestNetwork));
+                        gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork));
                         gatewayNic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(guestNetwork.getId()));
                     } else {
                         gatewayNic.setIp4Address(guestNetwork.getGateway());

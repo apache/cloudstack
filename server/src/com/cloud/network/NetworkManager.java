@@ -203,4 +203,6 @@ public interface NetworkManager extends NetworkService {
     List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault);
 
     IPAddressVO markIpAsUnavailable(long addrId);
+    
+    public String acquireGuestIpAddress(Network network);
 }

@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -2900,5 +2903,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
     }
-
+    
+    Random _rand = new Random(System.currentTimeMillis());
+    
+    @DB
+    public String acquireGuestIpAddress(Network network) {
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        String[] cidr = network.getCidr().split("/");
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
+        Set<Long> usedIps = new TreeSet<Long>();
+        for (String ip : ips) {
+            usedIps.add(NetUtils.ip2Long(ip));
+        }
+        if (usedIps.size() != 0) {
+            allPossibleIps.removeAll(usedIps);
+        }
+        if (allPossibleIps.isEmpty()) {
+            return null;
+        }
+        Long[] array = allPossibleIps.toArray(new Long[allPossibleIps.size()]);
+        String result;
+        do {
+            result = NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
+        } while (result.split("\\.")[3].equals("1"));
+        return result;
+    }
 }

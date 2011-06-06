@@ -645,7 +645,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
             ExcludeList avoids = new ExcludeList();
             if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
-                List<DomainRouterVO> routers = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterId());
+                List<DomainRouterVO> routers = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn());
                 for (DomainRouterVO router : routers) {
                     if (router.hostId != null) {
                         avoids.addHost(router.hostId);
