@@ -20,6 +20,9 @@
   <property name="unittest.dir" location="${base.dir}/unittest"/>
   <property name="unittest.target.dir" location="${unittest.dir}/classes"/>
   <property name="unittest.jar.dir" location="${unittest.dir}/jar"/>
+  
+  <!-- directories for api doc -->
+  <property name="api.docs.dir" location="${dist.dir}/apidocs" />
 	
   <condition property="jmxport" value="${jmxport.override}" else="45219">
     <isset property="jmxport.override" />
@@ -338,5 +341,26 @@
     </junitreport>
     <fail if="junit.failure" message="Unit test(s) failed.  See reports!"/>
   </target>
+  
+  
+  <target name="build-apidocs" description="Generate api documentation">
+      <property name="commands.file" location="${tomcat.home}/conf/commands.properties" /> 
+	  <property name="commands.ext.file" location="${tomcat.home}/conf/commands-ext.properties" />
+  
+	<echo message="build-apidocs" />
+    <exec dir="${apidoc.scripts.dir}" executable="bash">
+      <arg value="build-apidoc.sh" />
+      <arg value="-f ${commands.file},${commands.ext.file}" />
+      <arg value="-d ${dist.dir}" />
+      <env key="CATALINA_HOME" value="${tomcat.home}"/>
+    </exec>
+    
+    <chmod perm="666">
+      <fileset dir="${apidoc.scripts.dir}">
+        <include name="**/*"/>
+      </fileset>
+    </chmod>
+  </target>
+  
 </project>
 
