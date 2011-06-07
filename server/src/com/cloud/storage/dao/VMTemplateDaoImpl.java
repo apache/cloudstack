@@ -308,6 +308,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	
         	String guestOSJoin = "";  
         	StringBuilder templateHostRefJoin = new StringBuilder();
+        	String dataCenterJoin = "";
 
         	if (isIso && !hyperType.equals(HypervisorType.None)) { 
         		guestOSJoin = " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ";
@@ -316,12 +317,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		templateHostRefJoin.append(" INNER JOIN  template_host_ref thr on (t.id = thr.template_id) INNER JOIN host h on (thr.host_id = h.id)");
         		sql = SELECT_TEMPLATE_HOST_REF;
         	}
+        	if (templateFilter == TemplateFilter.featured) {
+        	    dataCenterJoin = " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
+        	}
         	
-        	sql +=  guestOSJoin + templateHostRefJoin;
+        	sql +=  guestOSJoin + templateHostRefJoin + dataCenterJoin;
         	String whereClause = "";        	
         	
             if (templateFilter == TemplateFilter.featured) {
             	whereClause += " WHERE t.public = 1 AND t.featured = 1";
+            	if (account != null) {
+            	    //FIXME, needs to lookup all the subdomain of this account
+            	    whereClause += " AND (dc.domain_id = " + account.getDomainId() + " OR dc.domain_id is NULL)";
+            	}
             } else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && accountType != Account.ACCOUNT_TYPE_ADMIN) {
             	if (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             		whereClause += " INNER JOIN account a on (t.account_id = a.id) INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
