@@ -1857,6 +1857,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
 
                 if (isShared == null || isShared) {
+                    /*FIXME
                     List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
                     for (NetworkVO network : allNetworks) {
                         NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -1865,7 +1866,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         } else {
                             allowedSharedNetworks.add(network.getId());
                         }
-                    }
+                    }*/
                 }
 
             } else if (isShared != null) {
