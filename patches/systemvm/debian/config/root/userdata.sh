@@ -89,15 +89,15 @@ done
 [ "$vmIp" == "" ]  || [ "$folder" == "" ] || [ "$file" == "" ] && usage 
 [ "$folder" != "userdata" ] && [ "$folder" != "metadata" ] && usage
 
-if [ "$dataFile" != "" ]
-then
-  create_htaccess $vmIp $folder $file
-  
-  if [ $? -gt 0 ]
+create_htaccess $vmIp $folder $file
+
+if [ $? -gt 0 ]
   then
     exit 1
-  fi
-  
+fi
+
+if [ "$dataFile" != "" ]
+then
   copy_vm_data_file $vmIp $folder $file $dataFile
 else
   delete_vm_data_file $vmIp $folder $file
