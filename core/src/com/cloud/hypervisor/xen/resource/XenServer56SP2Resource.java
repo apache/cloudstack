@@ -28,17 +28,18 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
+
 @Local(value=ServerResource.class)
-public class XenServer56FP1Resource extends XenServer56Resource {
-    private static final Logger s_logger = Logger.getLogger(XenServer56FP1Resource.class);
+public class XenServer56SP2Resource extends XenServer56Resource {
+    private static final Logger s_logger = Logger.getLogger(XenServer56SP2Resource.class);
     
-    public XenServer56FP1Resource() {
+    public XenServer56SP2Resource() {
         super();
     }
     
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-    	return CitrixHelper.getXenServer56FP1GuestOsType(stdType);
+    	return CitrixHelper.getXenServer56FP2GuestOsType(stdType);
     }
    
     @Override
@@ -53,6 +54,5 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         files.add(file);
         return files;
     }
-
 
 }

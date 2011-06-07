@@ -62,6 +62,7 @@ import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
 import com.cloud.hypervisor.xen.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xen.resource.XenServer56Resource;
+import com.cloud.hypervisor.xen.resource.XenServer56SP2Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -390,10 +391,16 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
         	return new XenServer56Resource();
         
-        if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) 
-            return new XenServer56FP1Resource();
+        if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
+            String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
+            if("5.6 SP2".equals(prodVersionTextShort)) {
+                return new XenServer56SP2Resource();
+            } else if("5.6 FP1".equals(prodVersionTextShort)) {
+                return new XenServer56FP1Resource();
+            }
+        }
         
-        String msg = "Only support XCP 0.1.1, XenServer 5.6 and XenServer 5.6 FP1 , but this one is " + prodBrand + " " + prodVersion;
+        String msg = "Only support XCP 0.1.1, XenServer 5.6,  XenServer 5.6 FP1 and XenServer 5.6 SP2, but this one is " + prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);

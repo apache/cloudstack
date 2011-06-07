@@ -31,6 +31,7 @@ public class CitrixHelper {
 	 private static final HashMap<String, String> _xcpGuestOsMap = new HashMap<String, String>(70);
 	 private static final HashMap<String, String> _xenServerGuestOsMap = new HashMap<String, String>(70);
 	 private static final HashMap<String, String> _xenServer56FP1GuestOsMap = new HashMap<String, String>(70);
+	 private static final HashMap<String, String> _xenServer56FP2GuestOsMap = new HashMap<String, String>(70);
 	 private static final ArrayList<String> _guestOsList = new ArrayList<String>(70);
 
 
@@ -232,14 +233,89 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMap.put("Windows 2000 SP4 (32-bit)", "Windows 2000 SP4 (32-bit)");
         _xenServer56FP1GuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
         _xenServer56FP1GuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
-        _xenServer56FP1GuestOsMap.put("Ubuntu Lucid Lynx 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
-        _xenServer56FP1GuestOsMap.put("Ubuntu Lucid Lynx 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
+        _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
+        _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
         _xenServer56FP1GuestOsMap.put("Other install media", "Other install media");
         _xenServer56FP1GuestOsMap.put("Other PV (32-bit)", "CentOS 5.5 (32-bit)");
         _xenServer56FP1GuestOsMap.put("Other PV (64-bit)", "CentOS 5.5 (64-bit)");
-//        _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (32-bit)", "CentOS 5 (32-bit)");
-//        _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (64-bit)", "CentOS 5 (64-bit)");
     }
+    
+    
+    
+    static {
+        _xenServer56FP2GuestOsMap.put("CentOS 4.5 (32-bit)", "CentOS 4.5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 4.6 (32-bit)", "CentOS 4.6 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 4.7 (32-bit)", "CentOS 4.7 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 4.8 (32-bit)", "CentOS 4.8 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.0 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.0 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.1 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.1 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.2 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.2 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.3 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.5 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("CentOS 5.5 (64-bit)", "CentOS 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Debian GNU/Linux 5.0 (32-bit)", "Debian Lenny 5.0 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Debian GNU/Linux 6(32-bit)", "Debian Squeeze 6.0 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Debian GNU/Linux 6(64-bit)", "Debian Squeeze 6.0 (64-bit) (experimental)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.1 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.2 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.2 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.3 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.3 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.4 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.4 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.5 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Oracle Enterprise Linux 5.5 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.1 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.5 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 5.5 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", "SUSE Linux Enterprise Server 9 SP4 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", "SUSE Linux Enterprise Server 10 SP2 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", "SUSE Linux Enterprise Server 10 SP2 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", "SUSE Linux Enterprise Server 10 SP3 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 11 (32-bit)", "SUSE Linux Enterprise Server 11 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("SUSE Linux Enterprise Server 11 (64-bit)", "SUSE Linux Enterprise Server 11 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows 7 (32-bit)", "Windows 7 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows 7 (64-bit)", "Windows 7 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows Server 2003 (32-bit)", "Windows Server 2003 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows Server 2003 (64-bit)", "Windows Server 2003 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows Server 2008 (32-bit)", "Windows Server 2008 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows Server 2008 (64-bit)", "Windows Server 2008 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
+        _xenServer56FP2GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
+        _xenServer56FP2GuestOsMap.put("Other install media", "Other install media");
+        _xenServer56FP2GuestOsMap.put("Other PV (32-bit)", "CentOS 5.5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Other PV (64-bit)", "CentOS 5.5 (64-bit)");
+    }
+    
     
     public static String getXcpGuestOsType(String stdType) {
         String guestOS =  _xcpGuestOsMap.get(stdType);
@@ -263,6 +339,15 @@ public class CitrixHelper {
         String guestOS =  _xenServer56FP1GuestOsMap.get(stdType);
         if (guestOS == null) {
             s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
+            guestOS = "Other install media";
+        }
+        return guestOS;
+    }
+    
+    public static String getXenServer56FP2GuestOsType(String stdType) {
+        String guestOS =  _xenServer56FP2GuestOsMap.get(stdType);
+        if (guestOS == null) {
+            s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP2 guestOS type, start it as HVM guest");
             guestOS = "Other install media";
         }
         return guestOS;
