@@ -956,7 +956,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         FirewallRuleResponse response = new FirewallRuleResponse();
         response.setId(fwRule.getId());
         response.setPrivateStartPort(Integer.toString(fwRule.getDestinationPortStart()));
-        response.setPrivateEndPort(Integer.toString(fwRule.getDestinationPortEnd()));        
+        response.setPrivateEndPort(Integer.toString(fwRule.getDestinationPortEnd()));
         response.setProtocol(fwRule.getProtocol());
         response.setPublicStartPort(Integer.toString(fwRule.getSourcePortStart()));
         response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
@@ -2488,6 +2488,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns2(profile.getDns2());
 
         response.setIsSecurityGroupEnabled(network.isSecurityGroupEnabled());
+        response.setTags(network.getTags());
 
         // populate capability
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(networkOffering.getId(), network.getDataCenterId());

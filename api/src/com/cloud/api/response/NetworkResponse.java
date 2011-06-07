@@ -116,6 +116,9 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is enabled, false otherwise")
     private Boolean isSecurityGroupEnabled;
     
+    @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
+    private String tags;
+    
     public Long getId() {
         return id;
     }
@@ -354,6 +357,19 @@ public class NetworkResponse extends BaseResponse{
     
     public void setIsSecurityGroupEnabled(Boolean sgEnabled) {
         this.isSecurityGroupEnabled = sgEnabled;
+    }
+    
+    public void setTags(List<String> tags) {
+        if (tags == null || tags.size() == 0) {
+            return;
+        }
+        
+        StringBuilder buf = new StringBuilder();
+        for (String tag : tags) {
+            buf.append(tag).append(",");
+        }
+        
+        this.tags = buf.delete(buf.length()-1, buf.length()).toString();
     }
     
 }
