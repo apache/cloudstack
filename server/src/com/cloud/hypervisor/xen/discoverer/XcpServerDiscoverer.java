@@ -21,7 +21,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -97,12 +96,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected boolean _checkHvm;
     protected String _guestNic;
     protected boolean _setupMultipath;
-    private String _minProductVersion;
-    private String _minXapiVersion;
-    private String _minXenVersion;
-    private String _maxProductVersion;
-    private String _maxXapiVersion;
-    private String _maxXenVersion;
     protected String _instance;
 
     @Inject protected AlertManager _alertMgr;
@@ -406,26 +399,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         throw new RuntimeException(msg);
     }
     
-    protected void serverConfig() {
-        _minXenVersion = _params.get(Config.XenMinVersion.key());
-        if (_minXenVersion == null) {
-            _minXenVersion = "3.3.1";
-        }
-        
-        _minProductVersion = _params.get(Config.XenProductMinVersion.key());
-        if (_minProductVersion == null) {
-            _minProductVersion = "5.5.0";
-        }
-        
-        _minXapiVersion = _params.get(Config.XenXapiMinVersion.key());
-        if (_minXapiVersion == null) {
-            _minXapiVersion = "1.3";
-        }
-   
-        _maxXenVersion = _params.get(Config.XenMaxVersion.key());
-        _maxProductVersion = _params.get(Config.XenProductMaxVersion.key());
-        _maxXapiVersion = _params.get(Config.XenXapiMaxVersion.key());
-        
+    protected void serverConfig() {      
         String value = _params.get(Config.XenSetupMultipath.key());
         _setupMultipath = Boolean.parseBoolean(value);
     }
