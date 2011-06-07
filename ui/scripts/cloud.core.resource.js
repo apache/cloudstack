@@ -1161,11 +1161,9 @@ function initAddZoneWizard() {
                 return true;
                 break;
                 
-            case "Advanced":  //create VLAN in zone-level  
-                $thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").click(); //check the 1st radio button under Insolation Mode
-                                
-                $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").show();  
-                                
+            case "Advanced":  //create VLAN in zone-level             	
+            	if($thisWizard.find("#step1").find("input[name=isolation_mode]:checked").length == 0)            	
+                    $thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").click(); //check the 1st radio button under Isolation Mode                              
                 return true;
                 break;
             
@@ -1176,7 +1174,10 @@ function initAddZoneWizard() {
                 $thisWizard.find("#step4").find("#create_virtual_vlan").show();                 
 		        $addZoneWizard.find("#step4").find("#create_virtual_vlan").find("#add_publicip_vlan_scope").change(); 	
 		        $thisWizard.find("#step4").find("#create_direct_vlan").hide();	
-		        
+		        		       
+		        if($thisWizard.find("#step1").find("input[name=basic_advanced]:checked").val() != "Advanced") 
+		        	$thisWizard.find("#step1").find("input[name=basic_advanced]:eq(1)").attr("checked", true); //set to "Advanced" radio button
+		        	       
                 return true;
                 break;
             
@@ -1189,6 +1190,9 @@ function initAddZoneWizard() {
                 
                 $thisWizard.find("#step4").find("#create_virtual_vlan").hide();     
                 
+                if($thisWizard.find("#step1").find("input[name=basic_advanced]:checked").val() != "Advanced") 
+		        	$thisWizard.find("#step1").find("input[name=basic_advanced]:eq(1)").attr("checked", true); //set to "Advanced" radio button
+		        	                       
                 return true;
                 break;    
             
