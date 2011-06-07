@@ -190,7 +190,7 @@ function afterLoadTemplateJSP() {
 	    
 	    var strCmd;
 	    if($(this).val() == -1) 	
-	        strCmd = "command=listHypervisors";	 
+	        strCmd = "command=listHypervisors&zoneid=-1";	 
 	    else	  
 	        strCmd = "command=listHypervisors&zoneid="+$(this).val();	  	    
 	    
