@@ -807,6 +807,20 @@ dictionary = {
                 <div id="host_baremetal_mac_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
+            <li input_group="Ovm" style="display: none;">
+                <label>
+                    Agent Username:</label>
+                <input class="text" type="text" id="agent_username" value="oracle" />
+                <div id="agent_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+			<li input_group="Ovm" style="display: none;">
+                <label>
+                    Agent Password:</label>
+                <input class="text" type="password" id="agent_password" />
+                <div id="agent_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>          
 			<li>
                 <label input_group="general">
                     Tags:</label>

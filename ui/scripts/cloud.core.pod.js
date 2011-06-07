@@ -531,61 +531,72 @@ function bindAddClusterButton($leftmenuItem1) {
 function bindAddHostButton($leftmenuItem1) {     
     var $button = $("#add_host_button");   
     
-    var dialogAddHost = $("#dialog_add_host");   
-    dialogAddHost.find("#cluster_select").change(function() {        
+    var $dialogAddHost = $("#dialog_add_host");   
+    $dialogAddHost.find("#cluster_select").change(function() {        
         var clusterId = $(this).val();
         if(clusterId == null)
             return;        
         var clusterObj = clustersUnderOnePod[clusterId];                    
     	if(clusterObj.hypervisortype == "VMware") {
-    		$('li[input_group="vmware"]', dialogAddHost).show();
-    		$('li[input_group="general"]', dialogAddHost).hide();
-			$('li[input_group="baremetal"]', dialogAddHost).hide();
-    	} else if (clusterObj.hypervisortype == "BareMetal") {
-			$('li[input_group="vmware"]', dialogAddHost).hide();
-    		$('li[input_group="general"]', dialogAddHost).show();
-			$('li[input_group="baremetal"]', dialogAddHost).show();
-		} else {
-    		$('li[input_group="vmware"]', dialogAddHost).hide();
-    		$('li[input_group="general"]', dialogAddHost).show();
-			$('li[input_group="baremetal"]', dialogAddHost).hide();
+    		$('li[input_group="vmware"]', $dialogAddHost).show();
+    		$('li[input_group="general"]', $dialogAddHost).hide();
+			$('li[input_group="baremetal"]', $dialogAddHost).hide();
+			$('li[input_group="Ovm"]', $dialogAddHost).hide();
+    	} 
+    	else if (clusterObj.hypervisortype == "BareMetal") {
+    		$('li[input_group="baremetal"]', $dialogAddHost).show();
+    		$('li[input_group="general"]', $dialogAddHost).show();
+			$('li[input_group="vmware"]', $dialogAddHost).hide();
+			$('li[input_group="Ovm"]', $dialogAddHost).hide();			
+		} 
+    	else if (clusterObj.hypervisortype == "Ovm") {
+    		$('li[input_group="Ovm"]', $dialogAddHost).show();
+    		$('li[input_group="general"]', $dialogAddHost).show();    		
+			$('li[input_group="vmware"]', $dialogAddHost).hide();    		
+			$('li[input_group="baremetal"]', $dialogAddHost).hide();			
+		} 
+    	else {    		
+    		$('li[input_group="general"]', $dialogAddHost).show();
+    		$('li[input_group="vmware"]', $dialogAddHost).hide();
+			$('li[input_group="baremetal"]', $dialogAddHost).hide();
+			$('li[input_group="Ovm"]', $dialogAddHost).hide();	
     	}  
     });
     
     $button.unbind("click").bind("click", function(event) {             
-        dialogAddHost.find("#info_container").hide();    
-        dialogAddHost.find("#new_cluster_name").val("");
+        $dialogAddHost.find("#info_container").hide();    
+        $dialogAddHost.find("#new_cluster_name").val("");
        
         var zoneId, podId, clusterId;                   
         if(currentRightPanelJSP == "jsp/pod.jsp") {        
             var podObj = $leftmenuItem1.data("jsonObj");   
             zoneId = podObj.zoneid;
             podId = podObj.id;
-            dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
-            dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
+            $dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
+            $dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
         }
         else if(currentRightPanelJSP == "jsp/cluster.jsp") {
             var clusterObj = $leftmenuItem1.data("jsonObj");   
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
             clusterId = clusterObj.id;  
-            dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
-            dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
+            $dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
+            $dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }
         else if(currentRightPanelJSP == "jsp/host.jsp") {            
             var clusterObj = $leftmenuItem1.data("clusterObj");  
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
             clusterId = clusterObj.id;    
-            dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
-            dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
+            $dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
+            $dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }       
         
-        refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId); 
+        refreshClsuterFieldInAddHostDialog($dialogAddHost, podId, clusterId); 
         
-        dialogAddHost.find("#cluster_select").change();
+        $dialogAddHost.find("#cluster_select").change();
                         
-        dialogAddHost
+        $dialogAddHost
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
@@ -605,17 +616,24 @@ function bindAddHostButton($leftmenuItem1) {
 			            isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
 			            isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
 			            isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
-		            } else {
+		            } 
+				    else {	
+				    	//general
+						isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+						isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+						isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+						
 						if (hypervisor == "BareMetal") {
 							isValid &= validateString("CPU Cores", $thisDialog.find("#host_baremetal_cpucores"), $thisDialog.find("#host_baremetal_cpucores_errormsg"));
 							isValid &= validateString("CPU", $thisDialog.find("#host_baremetal_cpu"), $thisDialog.find("#host_baremetal_cpu_errormsg"));
 							isValid &= validateString("Memory", $thisDialog.find("#host_baremetal_memory"), $thisDialog.find("#host_baremetal_memory_errormsg"));
 							isValid &= validateString("MAC", $thisDialog.find("#host_baremetal_mac"), $thisDialog.find("#host_baremetal_mac_errormsg"));	
 						} 
-						isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
-						isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
-						isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
-					}			
+						else if(hypervisor == "Ovm") {
+							isValid &= validateString("Agent Username", $thisDialog.find("#agent_username"), $thisDialog.find("#agent_username_errormsg"), true);  //optional
+							isValid &= validateString("Agent Password", $thisDialog.find("#agent_password"), $thisDialog.find("#agent_password_errormsg"), false); //required	
+						}
+		            }			
 		        }    	
 		        if (!isValid) 
 		            return;
@@ -648,20 +666,8 @@ function bindAddHostButton($leftmenuItem1) {
 			        else
 			            url = hostname;
 			        array1.push("&url="+todb(url));
-			    } else {
-					if (hypervisor == "BareMetal") {
-						var cpuCores = trim($thisDialog.find("#host_baremetal_cpucores").val());
-						array1.push("&cpunumber="+todb(cpuCores));
-						
-						var cpuSpeed = trim($thisDialog.find("#host_baremetal_cpu").val());
-						array1.push("&cpuspeed="+todb(cpuSpeed));
-						
-						var memory = trim($thisDialog.find("#host_baremetal_memory").val());
-						array1.push("&memory="+todb(memory));
-						
-						var mac = trim($thisDialog.find("#host_baremetal_mac").val());
-						array1.push("&hostmac="+todb(mac));
-					}
+			    } 
+			    else {					
 			        var username = trim($thisDialog.find("#host_username").val());
 			        array1.push("&username="+todb(username));
 					
@@ -675,6 +681,27 @@ function bindAddHostButton($leftmenuItem1) {
 			        else
 			            url = hostname;
 			        array1.push("&url="+todb(url));
+			        
+			        if (hypervisor == "BareMetal") {
+						var cpuCores = trim($thisDialog.find("#host_baremetal_cpucores").val());
+						array1.push("&cpunumber="+todb(cpuCores));
+						
+						var cpuSpeed = trim($thisDialog.find("#host_baremetal_cpu").val());
+						array1.push("&cpuspeed="+todb(cpuSpeed));
+						
+						var memory = trim($thisDialog.find("#host_baremetal_memory").val());
+						array1.push("&memory="+todb(memory));
+						
+						var mac = trim($thisDialog.find("#host_baremetal_mac").val());
+						array1.push("&hostmac="+todb(mac));
+					}			       
+			        else if(hypervisor == "Ovm") {
+			        	var agentUsername = $thisDialog.find("#agent_username").val();
+			        	array1.push("&agentusername="+todb(agentUsername)); 
+							
+					    var agentPassword = $thisDialog.find("#agent_password").val();
+					    array1.push("&agentpassword="+todb(agentPassword));			        	
+					}
 			    }			
 		                
 		        $.ajax({
@@ -700,7 +727,7 @@ function bindAddHostButton($leftmenuItem1) {
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
-							//refreshClsuterFieldInAddHostDialog($thisDialog, podId, clusterId, dialogAddHost.find("#host_hypervisor").val());                                
+							//refreshClsuterFieldInAddHostDialog($thisDialog, podId, clusterId, $dialogAddHost.find("#host_hypervisor").val());                                
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);								
 						});
                     }				

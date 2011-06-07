@@ -838,19 +838,31 @@ function initAddHostShortcut() {
         if(clusterId == null)
             return;        
         var clusterObj = clustersUnderOnePod[clusterId];                        
-    	if(clusterObj.hypervisortype == "VMware") {
+    	
+        if(clusterObj.hypervisortype == "VMware") {
     		$('li[input_group="vmware"]', $dialogAddHost).show();
     		$('li[input_group="general"]', $dialogAddHost).hide();
 			$('li[input_group="baremetal"]', $dialogAddHost).hide();
-    	} else if (clusterObj.hypervisortype == "BareMetal") {
+			$('li[input_group="Ovm"]', $dialogAddHost).hide();
+    	} 
+    	else if (clusterObj.hypervisortype == "BareMetal") {
+    		$('li[input_group="baremetal"]', $dialogAddHost).show();
+    		$('li[input_group="general"]', $dialogAddHost).show();
 			$('li[input_group="vmware"]', $dialogAddHost).hide();
+			$('li[input_group="Ovm"]', $dialogAddHost).hide();			
+		} 
+    	else if (clusterObj.hypervisortype == "Ovm") {
+    		$('li[input_group="Ovm"]', $dialogAddHost).show();
+    		$('li[input_group="general"]', $dialogAddHost).show();    		
+			$('li[input_group="vmware"]', $dialogAddHost).hide();    		
+			$('li[input_group="baremetal"]', $dialogAddHost).hide();			
+		} 
+    	else {    		
     		$('li[input_group="general"]', $dialogAddHost).show();
-			$('li[input_group="baremetal"]', $dialogAddHost).show();
-		} else {
     		$('li[input_group="vmware"]', $dialogAddHost).hide();
-    		$('li[input_group="general"]', $dialogAddHost).show();
 			$('li[input_group="baremetal"]', $dialogAddHost).hide();
-    	}  
+			$('li[input_group="Ovm"]', $dialogAddHost).hide();	
+    	}      
     });
         
     $("#add_host_shortcut").unbind("click").bind("click", function(event) {               
@@ -880,16 +892,22 @@ function initAddHostShortcut() {
 			            isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
 			            isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
 			            isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
-		            } else {
+		            } 
+		            else {						
+						isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+						isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+						isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+						
 						if (hypervisor == "BareMetal") {
 							isValid &= validateString("CPU Cores", $thisDialog.find("#host_baremetal_cpucores"), $thisDialog.find("#host_baremetal_cpucores_errormsg"));
 							isValid &= validateString("CPU", $thisDialog.find("#host_baremetal_cpu"), $thisDialog.find("#host_baremetal_cpu_errormsg"));
 							isValid &= validateString("Memory", $thisDialog.find("#host_baremetal_memory"), $thisDialog.find("#host_baremetal_memory_errormsg"));
 							isValid &= validateString("MAC", $thisDialog.find("#host_baremetal_mac"), $thisDialog.find("#host_baremetal_mac_errormsg"));	
 						} 
-						isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
-						isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
-						isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+						else if(hypervisor == "Ovm") {
+							isValid &= validateString("Agent Username", $thisDialog.find("#agent_username"), $thisDialog.find("#agent_username_errormsg"), true);  //optional
+							isValid &= validateString("Agent Password", $thisDialog.find("#agent_password"), $thisDialog.find("#agent_password_errormsg"), false); //required	
+						}
 					}
 		        }        
 		        if (!isValid) 
@@ -936,20 +954,8 @@ function initAddHostShortcut() {
 			            url = hostname;
 			        array1.push("&url="+todb(url));
 			    	
-			    } else {
-					if (hypervisor == "BareMetal") {
-						var cpuCores = trim($thisDialog.find("#host_baremetal_cpucores").val());
-						array1.push("&cpunumber="+todb(cpuCores));
-						
-						var cpuSpeed = trim($thisDialog.find("#host_baremetal_cpu").val());
-						array1.push("&cpuspeed="+todb(cpuSpeed));
-						
-						var memory = trim($thisDialog.find("#host_baremetal_memory").val());
-						array1.push("&memory="+todb(memory));
-						
-						var mac = trim($thisDialog.find("#host_baremetal_mac").val());
-						array1.push("&hostmac="+todb(mac));
-					}
+			    } 
+			    else {					
 			        var username = trim($thisDialog.find("#host_username").val());
 			        array1.push("&username="+todb(username));
 					
@@ -963,6 +969,27 @@ function initAddHostShortcut() {
 			        else
 			            url = hostname;
 			        array1.push("&url="+todb(url));
+			        
+			        if (hypervisor == "BareMetal") {
+						var cpuCores = trim($thisDialog.find("#host_baremetal_cpucores").val());
+						array1.push("&cpunumber="+todb(cpuCores));
+						
+						var cpuSpeed = trim($thisDialog.find("#host_baremetal_cpu").val());
+						array1.push("&cpuspeed="+todb(cpuSpeed));
+						
+						var memory = trim($thisDialog.find("#host_baremetal_memory").val());
+						array1.push("&memory="+todb(memory));
+						
+						var mac = trim($thisDialog.find("#host_baremetal_mac").val());
+						array1.push("&hostmac="+todb(mac));
+					}
+			        else if(hypervisor == "Ovm") {
+			        	var agentUsername = $thisDialog.find("#agent_username").val();
+			        	array1.push("&agentusername="+todb(agentUsername)); 
+							
+					    var agentPassword = $thisDialog.find("#agent_password").val();
+					    array1.push("&agentpassword="+todb(agentPassword));			        	
+					}
 			    }
 				      
 		        $.ajax({
