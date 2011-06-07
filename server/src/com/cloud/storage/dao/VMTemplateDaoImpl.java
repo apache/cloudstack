@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.Host;
@@ -333,7 +334,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             }
             
            //for now, defaulting pageSize to a large val if null; may need to revisit post 2.2RC2 
-           if(isIso && templateZonePairList.size() < (pageSize != null ? pageSize : 500) && templateFilter != TemplateFilter.community){
+           if(isIso && templateZonePairList.size() < (pageSize != null ? pageSize : 500) 
+                   && templateFilter != TemplateFilter.community 
+                   && !(templateFilter == TemplateFilter.self && !BaseCmd.isRootAdmin(account.getType())) ){ //evaluates to true If root admin and filter=self
             	List<VMTemplateVO> publicIsos = publicIsoSearch();            	
             	for( int i=0; i < publicIsos.size(); i++){
             		templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
