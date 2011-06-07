@@ -149,7 +149,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 					String name = c.key();
 					
 					// If the value is already in the table, don't reinsert it
-					if (_configDao.getValue(name) != null) {
+					if (_configDao.findByName(name) != null) {
 						continue;
 					}
 					
