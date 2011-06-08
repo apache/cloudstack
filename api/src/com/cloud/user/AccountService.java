@@ -18,6 +18,7 @@
 package com.cloud.user;
 
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.api.commands.CreateAccountCmd;
 import com.cloud.api.commands.CreateUserCmd;
@@ -179,5 +180,9 @@ public interface AccountService {
 	User getActiveUserByRegistrationToken(String registrationToken);
 	
 	void markUserRegistered(long userId);
+	
+	Set<Long> getDomainParentIds(long domainId);
+	
+	Set<Long> getDomainChildrenIds(String parentDomainPath);
 
 }

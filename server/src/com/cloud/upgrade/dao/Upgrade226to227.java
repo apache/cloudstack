@@ -19,7 +19,13 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -33,6 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade226to227 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade226to227.class);
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
@@ -81,11 +88,49 @@ public class Upgrade226to227 implements DbUpgrade {
                 _diskOfferingDao.update(offering.getId(), offering);
             }
         }
+        
+        updateDomainLevelNetworks(conn);
     }
 
     @Override
     public File[] getCleanupScripts() {
         return null;
+    }
+    
+    private void updateDomainLevelNetworks(Connection conn) {
+        s_logger.debug("Updating domain level specific networks...");
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT n.id FROM networks n, network_offerings o WHERE n.shared=1 AND o.system_only=0 AND o.id=n.network_offering_id");
+            ResultSet rs = pstmt.executeQuery();
+            ArrayList<Object[]> networks = new ArrayList<Object[]>();
+            while (rs.next()) {
+                Object[] network = new Object[10];
+                network[0] = rs.getLong(1); // networkId
+                networks.add(network);
+            }
+            rs.close();
+            pstmt.close();
+            
+            for (Object[] network : networks) {
+                Long networkId = (Long) network[0];
+                pstmt = conn.prepareStatement("SELECT * from domain_network_ref where network_id=?");
+                pstmt.setLong(0, networkId);
+                rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    s_logger.debug("Setting network id=" + networkId + " as domain specific shared network");
+                    pstmt = conn.prepareStatement("UPDATE networks set is_domain_specific=1 where id=?");
+                    pstmt.setLong(0, networkId);
+                    pstmt.executeUpdate();
+                }
+                rs.close();
+                pstmt.close();
+            }
+            
+            s_logger.debug("Successfully updated domain level specific networks");
+        } catch (SQLException e) {
+            s_logger.error("Failed to set domain specific shared networks due to ", e);
+            throw new CloudRuntimeException("Failed to set domain specific shared networks due to ", e);
+        }
     }
     
 }

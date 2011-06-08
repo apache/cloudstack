@@ -20,8 +20,10 @@ package com.cloud.user;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -1801,5 +1803,34 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setRegistered(true);
         _userDao.update(Long.valueOf(userId), userForUpdate);		
+	}
+	
+	@Override
+	public Set<Long> getDomainParentIds(long domainId) {
+	    Set<Long> parentDomains = new HashSet<Long>();
+	    Domain domain = _domainDao.findById(domainId);
+	    parentDomains.add(domain.getId());
+	    
+        while (domain.getParent() != null) {
+            domain = _domainDao.findById(domain.getParent());
+            parentDomains.add(domain.getId());
+        }
+        
+        return parentDomains;
+	}
+	
+	@Override
+	public Set<Long> getDomainChildrenIds(String parentDomainPath) {
+	    Set<Long> childDomains = new HashSet<Long>();
+	    SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+	    sc.addAnd("path", SearchCriteria.Op.LIKE, parentDomainPath + "%");
+	    
+	    List<DomainVO> domains = _domainDao.search(sc, null);
+	    
+	    for (DomainVO domain : domains) {
+	        childDomains.add(domain.getId());
+	    }
+	    
+	    return childDomains;
 	}
 }

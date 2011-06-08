@@ -17,6 +17,7 @@
  */
 package com.cloud.network.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -57,5 +58,16 @@ public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> 
         sc.setParameters("networkId", networkId);
         
         return listBy(sc);
+    }
+    
+    @Override
+    public List<Long> listNetworkIdsByDomain(long domainId) {
+        List<Long> networkIdsToReturn = new ArrayList<Long>();
+        List<NetworkDomainVO> maps = listDomainNetworkMapByDomain(domainId);
+        for (NetworkDomainVO map : maps) {
+            networkIdsToReturn.add(map.getNetworkId());
+        }
+        
+        return networkIdsToReturn;
     }
 }

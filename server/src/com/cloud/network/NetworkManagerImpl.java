@@ -24,9 +24,11 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +67,6 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -223,8 +224,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     int _networkGcInterval;
     String _networkDomain;
     int _cidrLimit;
+    boolean _allowSubdomainNetworkAccess;
 
     private Map<String, String> _configs;
+    
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
@@ -785,6 +788,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NicForTrafficTypeSearch.done();
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Network-Scavenger"));
+        
+        _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
 
         s_logger.info("Network Manager is configured.");
 
@@ -896,7 +901,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault,
-                        predefined.isSecurityGroupEnabled());
+                        predefined.isSecurityGroupEnabled(), (domainId != null));
                 vo.setTags(tags);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() != null));
 
@@ -1740,10 +1745,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) {
-        Object id = cmd.getId();
-        Object keyword = cmd.getKeyword();
+        Long id = cmd.getId();
+        String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String type = cmd.getType();
@@ -1753,10 +1758,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean isDefault = cmd.isDefault();
         Long accountId = null;
         String path = null;
-        List<Long> avoidNetworks = new ArrayList<Long>();
-        List<Long> allowedSharedNetworks = new ArrayList<Long>();
-
-        if (isSystem == null && id == null) {
+        Long sharedNetworkDomainId = null;
+        
+        //1) default is system to false if not specified
+        //2) reset parameter to false if it's specified by the regular user
+        if (isSystem == null || caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             isSystem = false;
         }
 
@@ -1765,37 +1771,41 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
         }
 
-        if (_accountMgr.isAdmin(account.getType())) {
+        if (_accountMgr.isAdmin(caller.getType())) {
             if (domainId != null) {
                 DomainVO domain = _domainDao.findById(domainId);
                 if (domain == null) {
                     throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist in the system");
                 }
 
-                _accountMgr.checkAccess(account, domain);
+                _accountMgr.checkAccess(caller, domain);
 
                 if (accountName != null) {
-                    account = _accountMgr.getActiveAccount(accountName, domainId);
-                    if (account == null) {
+                    Account owner = _accountMgr.getActiveAccount(accountName, domainId);
+                    if (owner == null) {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
-                    accountId = account.getId();
+                    accountId = owner.getId();
                 }
-            } else {
-                accountId = account.getId();
             }
 
-            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                DomainVO domain = _domainDao.findById(account.getDomainId());
+            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                DomainVO domain = _domainDao.findById(caller.getDomainId());
                 if (domain != null) {
                     path = domain.getPath();
                 }
             }
         } else {
-            accountName = account.getAccountName();
-            domainId = account.getDomainId();
-            accountId = account.getId();
+            accountId = caller.getId();
         }
+        
+        if (!isSystem && (isShared == null || isShared)) {
+            if (domainId == null) {
+                sharedNetworkDomainId = caller.getDomainId();
+            } else {
+                sharedNetworkDomainId = domainId;
+            }
+        } 
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
@@ -1803,7 +1813,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Don't display networks created of system network offerings
         SearchBuilder<NetworkOfferingVO> networkOfferingSearch = _networkOfferingDao.createSearchBuilder();
         networkOfferingSearch.and("systemOnly", networkOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
-        if (isSystem != null && isSystem) {
+        if (isSystem) {
             networkOfferingSearch.and("trafficType", networkOfferingSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
         }
         sb.join("networkOfferingSearch", networkOfferingSearch, sb.entity().getNetworkOfferingId(), networkOfferingSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -1811,21 +1821,38 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         SearchBuilder<DataCenterVO> zoneSearch = _dcDao.createSearchBuilder();
         zoneSearch.and("networkType", zoneSearch.entity().getNetworkType(), SearchCriteria.Op.EQ);
         sb.join("zoneSearch", zoneSearch, sb.entity().getDataCenterId(), zoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-
-        if (path != null) {
-            // for domain admin we should show only subdomains information
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        
+        //domain level networks
+        if (sharedNetworkDomainId != null) {
+            SearchBuilder<NetworkDomainVO> domainNetworkSearch = _networkDomainDao.createSearchBuilder();
+            sb.join("domainNetworkSearch", domainNetworkSearch, sb.entity().getId(), domainNetworkSearch.entity().getNetworkId(), JoinBuilder.JoinType.LEFTOUTER);
         }
 
         sb.and("removed", sb.entity().getRemoved(), Op.NULL);
 
-        SearchCriteria<NetworkVO> sc = sb.create();
-
-        if (isSystem != null) {
-            sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
+        if (isSystem == null || !isSystem) {
+          //Get domain level + account/zone level networks
+            List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
+       
+            if (sharedNetworkDomainId != null) {
+                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, sharedNetworkDomainId));
+            }
+            
+            //if domain id is specified - list only domain level networks
+            if (accountId != null || (domainId == null && accountName == null)) {
+                networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, accountId, path));
+            }
+            
+            return networksToReturn;
+            
+        } else {
+            return _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter);
         }
+    }
+    
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, boolean isSystem, Long zoneId, String type, Boolean isDefault, String trafficType, Boolean isShared) {
+        SearchCriteria<NetworkVO> sc = sb.create();
+        sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
 
         if (keyword != null) {
             SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
@@ -1844,71 +1871,64 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (type != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
-
-        if (isSystem != null && !isSystem) {
-            if (accountName != null && domainId != null) {
-                if (isShared == null) {
-                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                    // sc.addOr("isShared", SearchCriteria.Op.EQ, true);
-                } else if (!isShared) {
-                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                } else {
-                    sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
-                }
-
-                if (isShared == null || isShared) {
-                    List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
-                    for (NetworkVO network : allNetworks) {
-                        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-                        if (!isNetworkAvailableInDomain(network.getId(), domainId) || offering.isSystemOnly()) {
-                            avoidNetworks.add(network.getId());
-                        } else {
-                            allowedSharedNetworks.add(network.getId());
-                        }
-                    }
-                }
-
-            } else if (isShared != null) {
-                sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
-            }
-        }
-
-        // find list of shared networks to avoid
-        if (domainId != null && accountName == null) {
-            List<NetworkVO> allNetworks = _networksDao.listNetworksBy(true);
-            for (NetworkVO network : allNetworks) {
-
-                if (!isNetworkAvailableInDomain(network.getId(), domainId)) {
-                    avoidNetworks.add(network.getId());
-                }
-            }
-            sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
-        }
-
-        for (Long avoidNetwork : avoidNetworks) {
-            sc.addAnd("id", SearchCriteria.Op.NOTIN, avoidNetwork);
-        }
-
-        for (Long allowerdSharedNetwork : allowedSharedNetworks) {
-            sc.addOr("id", SearchCriteria.Op.IN, allowerdSharedNetwork);
-        }
-
         if (isDefault != null) {
             sc.addAnd("isDefault", SearchCriteria.Op.EQ, isDefault);
         }
-
+        
         if (trafficType != null) {
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
+        
+        if (isShared != null) {
+            sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
+        }
+        
+        return sc;
+    }
 
-        if (isSystem != null && !isSystem && path != null && (isShared == null || !isShared)) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
+    
+    private List<NetworkVO> listDomainLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, long domainId) {
+        
+        Set<Long> allowedDomains = new HashSet<Long>();
+        if (_allowSubdomainNetworkAccess) {
+            allowedDomains = _accountMgr.getDomainParentIds(domainId);
+        } else {
+            allowedDomains.add(domainId);
         }
 
-        List<NetworkVO> networks = _networksDao.search(sc, searchFilter);
+        sc.addJoinAnd("domainNetworkSearch", "domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
+        return _networksDao.search(sc, searchFilter);
+    } 
+    
+    private List<NetworkVO> listAccountSpecificAndZoneLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, Long accountId, String path) {
+       
 
-        return networks;
-    }
+        SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
+        
+        //account level networks
+        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
+        if (accountId != null) {
+            accountSC.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+        
+        accountSC.addAnd("isShared", SearchCriteria.Op.EQ, false);
+        if (path != null) {
+            Set<Long> allowedDomains = _accountMgr.getDomainChildrenIds(path);
+            accountSC.addAnd("domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
+        }
+        
+        ssc.addOr("id", SearchCriteria.Op.SC, accountSC);
+        
+        //zone level networks
+        SearchCriteria<NetworkVO> zoneSC = _networksDao.createSearchCriteria();
+        zoneSC.addAnd("isDomainSpecific", SearchCriteria.Op.EQ, false);
+        zoneSC.addAnd("isShared", SearchCriteria.Op.EQ, true);
+        ssc.addOr("id", SearchCriteria.Op.SC, zoneSC);
+        
+        sc.addAnd("id", SearchCriteria.Op.SC, ssc);
+        
+        return _networksDao.search(sc, searchFilter);
+    } 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_DELETE, eventDescription = "deleting network", async = true)
@@ -2791,7 +2811,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
-        boolean result = false;
+        
+        
         Long networkDomainId = null;
         Network network = getNetwork(networkId);
         if (!network.getIsShared()) {
@@ -2806,20 +2827,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             networkDomainId = networkDomainMap.get(0).getDomainId();
         }
-
+        
         if (domainId == networkDomainId.longValue()) {
             return true;
         }
-
-        Domain domain = _domainDao.findById(domainId);
-        while (domain.getParent() != null) {
-            if (domain.getParent().longValue() == networkDomainId) {
+        
+        if (_allowSubdomainNetworkAccess) {
+            Set<Long> parentDomains = _accountMgr.getDomainParentIds(domainId);
+            
+            if (parentDomains.contains(domainId)) {
                 return true;
             }
-            domain = _domainDao.findById(domain.getParent());
         }
-
-        return result;
+        
+        return false;
     }
 
     @Override

@@ -112,3 +112,6 @@ CREATE TABLE `cloud`.`swift` (
 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `vm_type` varchar(32) NOT NULL;
 UPDATE vm_instance set vm_type=type;
+
+ALTER TABLE `cloud`.`networks` ADD COLUMN `is_domain_specific` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is domain specific, 0 false otherwise';
+INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'allow.subdomain.network.access', 'true', 'Allow subdomains to use networks dedicated to their parent domain(s)'); 
