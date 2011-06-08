@@ -389,7 +389,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
-        if (routers.isEmpty()) {
+        if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable save password, router doesn't exist in network " + network.getId());
             throw new CloudRuntimeException("Unable to save password to router");
         }
@@ -894,15 +894,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             DataCenterDeployment plan = null;
             DataCenter dc = _dcDao.findById(dcId);
             DomainRouterVO router = null;
+            List<DomainRouterVO> routers = null;
             Long podId = dest.getPod().getId();
 
             // In Basic zone and Guest network we have to start domR per pod, not per network
             if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
-                router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId).get(0);
+                routers = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
                 plan = new DataCenterDeployment(dcId, podId, null, null, null);
             } else {
-                router = _routerDao.findByNetwork(guestNetwork.getId()).get(0);
+                routers = _routerDao.findByNetwork(guestNetwork.getId());
                 plan = new DataCenterDeployment(dcId);
+            }
+
+            if (routers != null && !routers.isEmpty()) {
+                router = routers.get(0);
             }
 
             if (router == null) {
@@ -1422,7 +1427,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
-        if (routers.size() == 0) {
+        if (routers == null || routers.isEmpty()) {
             s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
         }
@@ -1726,7 +1731,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean associateIP(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
-        if (routers.isEmpty()) {
+        if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to associate ip addresses, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to assign ip addresses", DataCenter.class, network.getDataCenterId());
         }
@@ -1750,7 +1755,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
-        if (routers.isEmpty()) {
+        if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
