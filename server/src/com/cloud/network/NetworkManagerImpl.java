@@ -1597,7 +1597,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             domainId = cmd.getDomainId();
         }
 
-        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId, null);
+        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags);
 
         // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
@@ -1805,7 +1805,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 sharedNetworkDomainId = domainId;
             }
-        } 
+        }
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
@@ -1898,7 +1898,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         sc.addJoinAnd("domainNetworkSearch", "domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
         return _networksDao.search(sc, searchFilter);
-    } 
+    }
     
     private List<NetworkVO> listAccountSpecificAndZoneLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, Long accountId, String path) {
        
@@ -1928,7 +1928,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         sc.addAnd("id", SearchCriteria.Op.SC, ssc);
         
         return _networksDao.search(sc, searchFilter);
-    } 
+    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_DELETE, eventDescription = "deleting network", async = true)
@@ -2920,5 +2920,4 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
     }
-
 }

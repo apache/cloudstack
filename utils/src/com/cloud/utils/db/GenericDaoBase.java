@@ -1218,15 +1218,18 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     }
                 }
             }
-            HashMap<Attribute, Object> ecAttributes = new HashMap<Attribute, Object>();
-            for (Attribute attr : _ecAttributes) {
-                Object ec = attr.field.get(entity);
-                if (ec != null) {
-                    ecAttributes.put(attr, ec);
-                }
-            }
             
-            insertElementCollection(entity, _idAttributes.get(_table)[0], id, ecAttributes);
+            if (_ecAttributes != null && _ecAttributes.size() > 0) {
+                HashMap<Attribute, Object> ecAttributes = new HashMap<Attribute, Object>();
+                for (Attribute attr : _ecAttributes) {
+                    Object ec = attr.field.get(entity);
+                    if (ec != null) {
+                        ecAttributes.put(attr, ec);
+                    }
+                }
+                
+                insertElementCollection(entity, _idAttributes.get(_table)[0], id, ecAttributes);
+            }
             txn.commit();
         } catch (final SQLException e) {
             if (e.getSQLState().equals("23000") && e.getErrorCode() == 1062) {

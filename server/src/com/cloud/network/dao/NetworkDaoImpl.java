@@ -55,7 +55,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
-    NetworkTagDaoImpl _tagDao = ComponentLocator.inject(NetworkTagDaoImpl.class);
 
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
@@ -180,9 +179,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         addAccountToNetwork(network.getId(), network.getAccountId(), true);
         NetworkOpVO op = new NetworkOpVO(network.getId(), gc);
         _opDao.persist(op);
-        for (String tag : network.getTags()) {
-            _tagDao.persist(new NetworkTagVO(network.getId(), tag));
-        }
         txn.commit();
         newNetwork.setTags(network.getTags());
         return newNetwork;
