@@ -395,11 +395,10 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		long hostId = dest.getHost().getId();
 		long accountId = instance.getAccountId();
 		List<UserVmVO>vms = _userVmDao.listByAccountId(accountId);
-		/* FIXME: Redundant virtual router doesn't support OVS */
-		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn()).get(0);
+		List<DomainRouterVO> routers = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
 		List<VMInstanceVO>ins = new ArrayList<VMInstanceVO>();
 		ins.addAll(vms);
-		ins.add(router);
+		ins.addAll(routers);
 		List<Long>toHostIds = new ArrayList<Long>();
 		List<Long>fromHostIds = new ArrayList<Long>();
 		
@@ -539,9 +538,8 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 		
 		long accountId = instance.getAccountId();
-		/* FIXME: Redundant virtual router doesn't support OVS */
-		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn()).get(0);
-		if (router == null) {
+		List<DomainRouterVO> routers = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
+		if (routers.size() == 0) {
 			return;
 		}
 		
@@ -549,18 +547,20 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			return;
 		}
 		
-		try {
-			long hostId = router.getHostId();
-			String tag = Long.toString(_vlanMappingDao.findByAccountIdAndHostId(accountId, hostId).getVlan());
-			VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(), instance.getHostName());
-			String vlans = getVlanInPortMapping(accountId, hostId);
-			s_logger.debug("ask router " + router.getHostName() + " on host "
-					+ hostId + " update vlan map to " + vlans);
-			Commands cmds = new Commands(new OvsSetTagAndFlowCommand(
-					router.getHostName(), tag, vlans, Long.toString(log.getLogsequence()), instance.getId()));
-			_agentMgr.send(router.getHostId(), cmds, _ovsListener);
-		} catch (Exception e) {
-			s_logger.warn("apply flow to router failed", e);
+		for (DomainRouterVO router : routers) {
+		    try {
+		        long hostId = router.getHostId();
+		        String tag = Long.toString(_vlanMappingDao.findByAccountIdAndHostId(accountId, hostId).getVlan());
+		        VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(), instance.getHostName());
+		        String vlans = getVlanInPortMapping(accountId, hostId);
+		        s_logger.debug("ask router " + router.getHostName() + " on host "
+		                + hostId + " update vlan map to " + vlans);
+		        Commands cmds = new Commands(new OvsSetTagAndFlowCommand(
+		                router.getHostName(), tag, vlans, Long.toString(log.getLogsequence()), instance.getId()));
+		        _agentMgr.send(router.getHostId(), cmds, _ovsListener);
+		    } catch (Exception e) {
+		        s_logger.warn("apply flow to router failed", e);
+		    }
 		}
 	}
 	
@@ -641,10 +641,11 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 		
 		if (tellRouter && instance.getType() != VirtualMachine.Type.DomainRouter) {
-		    /* FIXME: Redundant virtual router doesn't support OVS */
-			DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn()).get(0);
-			if (router != null) {
-				affectedVms.add(new Long(router.getId()));
+			List<DomainRouterVO> routers = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
+			for (DomainRouterVO router : routers) {
+			    if (router != null) {
+			        affectedVms.add(new Long(router.getId()));
+			    }
 			}
 		}
 		return affectedVms;
