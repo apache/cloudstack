@@ -340,31 +340,33 @@ public class StatsCollector {
 				ConcurrentHashMap<Long, VolumeStats> volumeStats = new ConcurrentHashMap<Long, VolumeStats>();
 				for (Iterator<Long> iter = commandsByPool.keySet().iterator(); iter.hasNext();) {
 					Long poolId = iter.next();
-					List<VolumeCommand> commandsList = commandsByPool.get(poolId);
-					
-					long[] volumeIdArray = new long[commandsList.size()];
-					Commands commands = new Commands(OnError.Continue);
-					for (int i = 0; i < commandsList.size(); i++) {
-						VolumeCommand vCommand = commandsList.get(i);
-						volumeIdArray[i] = vCommand.volumeId;
-						commands.addCommand(vCommand.command);
+					if(poolId != null) {
+						List<VolumeCommand> commandsList = commandsByPool.get(poolId);
+						
+						long[] volumeIdArray = new long[commandsList.size()];
+						Commands commands = new Commands(OnError.Continue);
+						for (int i = 0; i < commandsList.size(); i++) {
+							VolumeCommand vCommand = commandsList.get(i);
+							volumeIdArray[i] = vCommand.volumeId;
+							commands.addCommand(vCommand.command);
+						}
+						
+			            List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
+			            for(StoragePoolHostVO poolhost : poolhosts) {
+	    					Answer[] answers = _agentMgr.send(poolhost.getHostId(), commands);
+	    					if (answers != null) {
+	    					    long totalBytes = 0L;
+	    						for (int i = 0; i < answers.length; i++) {
+	    							if (answers[i].getResult()) {
+	    							    VolumeStats vStats = (VolumeStats)answers[i];
+	    								volumeStats.put(volumeIdArray[i], vStats);
+	    								totalBytes += vStats.getBytesUsed();
+	    							}
+	    						}
+	    						break;
+	                        }
+			            }
 					}
-					
-		            List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
-		            for(StoragePoolHostVO poolhost : poolhosts) {
-    					Answer[] answers = _agentMgr.send(poolhost.getHostId(), commands);
-    					if (answers != null) {
-    					    long totalBytes = 0L;
-    						for (int i = 0; i < answers.length; i++) {
-    							if (answers[i].getResult()) {
-    							    VolumeStats vStats = (VolumeStats)answers[i];
-    								volumeStats.put(volumeIdArray[i], vStats);
-    								totalBytes += vStats.getBytesUsed();
-    							}
-    						}
-    						break;
-                        }
-		            }
 				}
 
 				// We replace the existing volumeStats so that it does not grow with no bounds
