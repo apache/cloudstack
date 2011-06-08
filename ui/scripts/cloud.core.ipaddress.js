@@ -257,6 +257,7 @@ function afterLoadIpJSP() {
     var $createPortForwardingRow = $("#tab_content_port_forwarding").find("#create_port_forwarding_row");     
      
     // If public end port gets filled, disable private ports and copy public ports over to private ports
+    /*
     $createPortForwardingRow.find("#public_end_port").bind("keyup", function(event) {
        	if($(this).val() != null && $(this).val().length > 0) {    		
        		$createPortForwardingRow.find("#private_port").attr("readonly", true); 
@@ -276,7 +277,8 @@ function afterLoadIpJSP() {
         	$createPortForwardingRow.find("#private_port").val($(this).val());       	
        	return true;
     });    
-        
+    */
+    
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;		
 		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
