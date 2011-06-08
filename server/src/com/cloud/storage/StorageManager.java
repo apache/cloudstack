@@ -79,7 +79,7 @@ public interface StorageManager extends Manager {
 	 * @param zoneId
 	 * @return secondary storage host
 	 */
-    public VMTemplateHostVO findVmTemplateHost(long templateId, long dcId, Long podId);
+    public VMTemplateHostVO findVmTemplateHost(long templateId, StoragePool pool);
 
 	/**
 	 * Moves a volume from its current storage pool to a storage pool with enough capacity in the specified zone, pod, or cluster
