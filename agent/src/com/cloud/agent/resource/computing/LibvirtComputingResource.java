@@ -2393,12 +2393,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		    }
 		    
 		    DiskDef disk = new DiskDef();
-	        String guestOSType = getGuestType(conn, vmName);
-	        if (isGuestPVEnabled(guestOSType)) {
-	            disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
-	        } else {
-	            disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.SCSI, DiskDef.diskFmtType.QCOW2);
-	        }
+
+	        disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
+	        
 	        String xml = disk.toString();
 	        return attachOrDetachDevice(conn, attach, vmName, xml);
 		} finally {
