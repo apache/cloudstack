@@ -228,7 +228,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		if ((template != null) && !tmpinstalled) {
 		    // If the template that was passed into this allocator is not installed in the storage pool,
 		    // add 3 * (template size on secondary storage) to the running total
-		    VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(template.getId(), plan.getDataCenterId(), plan.getPodId());
+		    VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(template.getId(), pool);
 
 		    if (templateHostVO == null) {
 		        s_logger.info("Did not find template downloaded on secondary hosts in zone " + plan.getDataCenterId());

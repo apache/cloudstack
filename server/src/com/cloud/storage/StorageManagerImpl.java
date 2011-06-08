@@ -182,6 +182,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import java.util.Random;
 
 @Local(value = { StorageManager.class, StorageService.class })
@@ -2964,7 +2965,21 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
-    public VMTemplateHostVO findVmTemplateHost(long templateId, long dcId, Long podId) {
+    public VMTemplateHostVO findVmTemplateHost(long templateId, StoragePool pool) {
+        long dcId = pool.getDataCenterId();
+        Long podId = pool.getPodId();
+        
+        //FIXME, for cloudzone, the local secondary storoge
+        if (pool.isLocal() && pool.getPoolType() == StoragePoolType.Filesystem) {
+            List<StoragePoolHostVO> sphs = _storagePoolHostDao.listByPoolId(pool.getId());
+            if (!sphs.isEmpty()) {
+                StoragePoolHostVO localStoragePoolHost = sphs.get(0);
+                return _templateHostDao.findLocalSecondaryStorageByHostTemplate(localStoragePoolHost.getHostId(), templateId);
+            } else {
+                return null;
+            }
+        }
+        
         List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
         if (secHosts.size() == 1) {
             VMTemplateHostVO templateHostVO = _templateHostDao.findByHostTemplate(secHosts.get(0).getId(), templateId);

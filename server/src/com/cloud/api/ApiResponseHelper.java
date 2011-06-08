@@ -1456,16 +1456,28 @@ public class ApiResponseHelper implements ResponseGenerator {
         VMTemplateVO template = ApiDBUtils.findTemplateById(templateZonePair.first());
 
         for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
+           
             if (readyOnly) {
                 if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
                     continue;
                 }
+                boolean foundTheSameTemplate = false;
                 for (TemplateResponse res : responses) {
                     if (res.getId() == templateHostRef.getTemplateId()) {
+                        foundTheSameTemplate = true;
                         continue;
                     }
                 }
+                if (foundTheSameTemplate) {
+                    continue;
+                }
             }
+            
+            HostVO host = ApiDBUtils.findHostById(templateHostRef.getHostId());
+            if (host.getType() == Host.Type.LocalSecondaryStorage && host.getStatus() != com.cloud.host.Status.Up) {
+                continue;
+            }
+            
             TemplateResponse templateResponse = new TemplateResponse();
             templateResponse.setId(template.getId());
             templateResponse.setName(template.getName());
@@ -1501,7 +1513,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
             }
 
-            HostVO host = ApiDBUtils.findHostById(templateHostRef.getHostId());
             templateResponse.setHostId(host.getId());
             templateResponse.setHostName(host.getName());
             

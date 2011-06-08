@@ -350,7 +350,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	        }
         }
         
-        templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool.getDataCenterId(), pool.getPodId());
+        templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool);
         
         if (templateHostRef == null) {
             s_logger.debug("Unable to find a secondary storage host who has completely downloaded the template.");
