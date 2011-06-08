@@ -1249,67 +1249,70 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-
-        /*FIXME: Not support redundant virtual router */
-        DomainRouterVO router = _routerDao.findByNetwork(network.getId()).get(0);
-        
-        if (router == null) {
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers.size() == 0) {
             s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
             throw new ResourceUnavailableException("Failed to start remote access VPN: no router found for account and zone", DataCenter.class, network.getDataCenterId());
         }
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to start remote access VPN: router not in right state " + router.getState());
-            throw new ResourceUnavailableException("Failed to start remote access VPN: router not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
-        }
+        
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != State.Running) {
+                s_logger.warn("Failed to start remote access VPN: router not in right state " + router.getState());
+                throw new ResourceUnavailableException("Failed to start remote access VPN: router not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+            }
 
-        Commands cmds = new Commands(OnError.Stop);
-
-        createApplyVpnCommands(vpn, router, cmds);
-
-        try {
-            _agentMgr.send(router.getHostId(), cmds);
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Failed to start remote access VPN: ", e);
-            throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
-        }
-        Answer answer = cmds.getAnswer("users");
-        if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
-                    + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
-        }
-        answer = cmds.getAnswer("startVpn");
-        if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
-                    + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
-                    + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
+            Commands cmds = new Commands(OnError.Stop);
+            createApplyVpnCommands(vpn, router, cmds);
+            
+            try {
+                _agentMgr.send(router.getHostId(), cmds);
+            } catch (OperationTimedoutException e) {
+                s_logger.debug("Failed to start remote access VPN: ", e);
+                throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
+            }
+            Answer answer = cmds.getAnswer("users");
+            if (!answer.getResult()) {
+                s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+                        + " due to " + answer.getDetails());
+                throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: "
+                        + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
+            }
+            answer = cmds.getAnswer("startVpn");
+            if (!answer.getResult()) {
+                s_logger.error("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
+                        + answer.getDetails());
+                throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+                        + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
+            }
         }
         return true;
     }
 
     @Override
     public boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        /* FIXME VPN of redundant router */
-        DomainRouterVO router = getRouters(vpn.getAccountId(), network.getDataCenterId()).get(0);
-        if (router == null) {
+        List<DomainRouterVO> routers = getRouters(vpn.getAccountId(), network.getDataCenterId());
+        if (routers.size() == 0) {
             s_logger.warn("Failed to delete remote access VPN: no router found for account and zone");
             throw new ResourceUnavailableException("Failed to delete remote access VPN", DataCenter.class, network.getDataCenterId());
         }
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to delete remote access VPN: domR is not in right state " + router.getState());
-            throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+        
+        boolean result = true;
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != State.Running) {
+                s_logger.warn("Failed to delete remote access VPN: domR is not in right state " + router.getState());
+                throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+            }
+            Commands cmds = new Commands(OnError.Continue);
+            IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
+
+            RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            cmds.addCommand(removeVpnCmd);
+
+            result = result && sendCommandsToRouter(router, cmds);
         }
-        Commands cmds = new Commands(OnError.Continue);
-        IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
-
-        RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
-        removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-        removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        cmds.addCommand(removeVpnCmd);
-
-        return sendCommandsToRouter(router, cmds);
+        return result;
     }
 
     private DomainRouterVO start(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
@@ -1418,43 +1421,46 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException {
-        /*FIXME: VPN for redundant virtual routers */
-        DomainRouterVO router = _routerDao.findByNetwork(network.getId()).get(0);
-        if (router == null) {
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers.size() == 0) {
             s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
         }
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to add/remove VPN users: router not in running state");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
-        }
-
-        Commands cmds = new Commands(OnError.Continue);
-        List<VpnUser> addUsers = new ArrayList<VpnUser>();
-        List<VpnUser> removeUsers = new ArrayList<VpnUser>();
-        for (VpnUser user : users) {
-            if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
-                addUsers.add(user);
-            } else if (user.getState() == VpnUser.State.Revoke) {
-                removeUsers.add(user);
+        boolean agentResults = true;
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != State.Running) {
+                s_logger.warn("Failed to add/remove VPN users: router not in running state");
+                throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
             }
+
+            Commands cmds = new Commands(OnError.Continue);
+            List<VpnUser> addUsers = new ArrayList<VpnUser>();
+            List<VpnUser> removeUsers = new ArrayList<VpnUser>();
+            for (VpnUser user : users) {
+                if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
+                    addUsers.add(user);
+                } else if (user.getState() == VpnUser.State.Revoke) {
+                    removeUsers.add(user);
+                }
+            }
+
+            VpnUsersCfgCommand cmd = new VpnUsersCfgCommand(addUsers, removeUsers);
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            cmds.addCommand(cmd);
+
+            // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
+            // results accordingly
+            boolean agentResult = sendCommandsToRouter(router, cmds);
+            agentResults = agentResults && agentResult;
         }
-
-        VpnUsersCfgCommand cmd = new VpnUsersCfgCommand(addUsers, removeUsers);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        cmds.addCommand(cmd);
-
-        // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
-        // results accordingly
-        boolean agentResult = sendCommandsToRouter(router, cmds);
-        ;
+        
         String[] result = new String[users.size()];
         for (int i = 0; i < result.length; i++) {
-            if (agentResult) {
+            if (agentResults) {
                 result[i] = null;
             } else {
-                result[i] = String.valueOf(agentResult);
+                result[i] = String.valueOf(agentResults);
             }
         }
 
