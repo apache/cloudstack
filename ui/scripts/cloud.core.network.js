@@ -1336,7 +1336,7 @@ function bindAddNetworkButton() {
 				var endip = $thisDialog.find("#add_publicip_vlan_endip").val();
 				array1.push("&endip="+todb(endip));
 				
-				var tags = $thisDialog.find("#add_publicip_vlan_endip").val();
+				var tags = $thisDialog.find("#tags").val();
 				array1.push("&tags="+todb(tags));
 				
 				// Creating network for the direct networking				
