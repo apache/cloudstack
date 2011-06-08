@@ -815,7 +815,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             allocationState = Host.HostAllocationState.Enabled.toString();
         }
 
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, bareMetalParams, allocationState);
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), allocationState);
     }
 
     @Override

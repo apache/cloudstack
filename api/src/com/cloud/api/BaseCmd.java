@@ -89,7 +89,8 @@ public abstract class BaseCmd {
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     
     private Object _responseObject = null;
-
+    private Map<String, String> fullUrlParams;
+    
     @Parameter(name="response", type=CommandType.STRING)
     private String responseType;
 
@@ -112,7 +113,7 @@ public abstract class BaseCmd {
     public static LoadBalancingRulesService _lbService;
     public static RemoteAccessVpnService _ravService;
     public static BareMetalVmService _bareMetalVmService;
-   
+    
     
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -547,4 +548,12 @@ public abstract class BaseCmd {
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
+    
+    public void setFullUrlParams(Map<String, String> map) {
+    	this.fullUrlParams = map;
+    }
+    
+    public Map<String, String> getFullUrlParams() {
+    	return this.fullUrlParams;
+    }
 }
