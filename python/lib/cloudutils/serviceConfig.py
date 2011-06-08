@@ -545,7 +545,7 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.save()
             
             self.syscfg.svo.stopService("cloud-agent")
-            self.syscfg.svo.startService("cloud-agent")
+            self.syscfg.svo.enableService("cloud-agent")
             return True
         except:
             raise
@@ -568,7 +568,7 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.save()
             
             self.syscfg.svo.stopService("cloud-agent")
-            self.syscfg.svo.startService("cloud-agent")
+            self.syscfg.svo.enableService("cloud-agent")
             return True
         except:
             raise
@@ -589,7 +589,7 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.save()
             
             self.syscfg.svo.stopService("cloud-agent")
-            self.syscfg.svo.startService("cloud-agent")
+            self.syscfg.svo.enableService("cloud-agent")
             return True
         except:
             raise
