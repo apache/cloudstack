@@ -44,7 +44,6 @@ public class NetworkDaoTest extends TestCase {
         retrievedTags = retrieved.getTags();
         assert(retrievedTags.size() == 2 && retrievedTags.contains("e") && retrievedTags.contains("f"));
         
-        
         dao.expunge(1001l);
     }
     
