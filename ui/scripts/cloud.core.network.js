@@ -1322,7 +1322,7 @@ function bindAddNetworkButton() {
 				array1.push(scopeParams);
 				
 				var isDefault = $thisDialog.find("#add_publicip_vlan_default").val();
-				array1.push("isDefault="+isDefault);
+				array1.push("&isDefault="+isDefault);
 								
 				var gateway = $thisDialog.find("#add_publicip_vlan_gateway").val();
 				array1.push("&gateway="+todb(gateway));
