@@ -168,7 +168,7 @@ class serviceOpsUbuntu(serviceOps):
 
     def enableService(self, servicename,forcestart=False):
         bash("update-rc.d -f " + servicename + " remove")
-        bash("update-rc.d -f " + servicename + " start 2 3 4 5 .")
+        bash("update-rc.d -f " + servicename + " defaults")
         return self.startService(servicename,force=forcestart)
 
     def isKVMEnabled(self):
