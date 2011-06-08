@@ -997,3 +997,6 @@ ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__data_c
 INSERT INTO configuration (category, instance, component, name, value, description)
     VALUES ('Advanced', 'DEFAULT', 'management-server', 'hypervisor.list', 'KVM,XenServer,VMware', 'The list of hypervisors that this deployment will use.');
 
+DELETE FROM load_balancer_vm_map WHERE load_balancer_id NOT IN (SELECT id FROM load_balancer);
+DELETE FROM vm_instance WHERE type='User' AND id NOT IN (SELECT id FROM user_vm);
+
