@@ -124,6 +124,9 @@ public class NetworkVO implements Network {
 
     @Column(name="shared")
     boolean isShared;
+    
+    @Column(name="is_domain_specific")
+    boolean isDomainSpecific;
 
     @Column(name="network_domain")
     String networkDomain;
@@ -175,8 +178,8 @@ public class NetworkVO implements Network {
         this.guestType = guestType;
     }
 
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled) {
-        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared, isDefault);
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific) {
+        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared, isDefault, isDomainSpecific);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -203,8 +206,9 @@ public class NetworkVO implements Network {
      * @param displayText
      * @param isShared
      * @param isDefault
+     * @param isDomainSpecific
      */
-    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault) {
+    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isDomainSpecific) {
         this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId, State.Allocated);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -214,6 +218,7 @@ public class NetworkVO implements Network {
         this.displayText = displayText;
         this.isShared = isShared;
         this.isDefault = isDefault;
+        this.isDomainSpecific = isDomainSpecific;
     }
 
     @Override
@@ -440,6 +445,10 @@ public class NetworkVO implements Network {
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public boolean isDomainSpecific() {
+        return isDomainSpecific;
     }
 
     @Override

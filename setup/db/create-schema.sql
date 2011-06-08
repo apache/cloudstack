@@ -177,6 +177,7 @@ CREATE TABLE `cloud`.`networks` (
   `set_fields` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'which fields are set already',
   `guest_type` char(32) COMMENT 'type of guest network',
   `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
+  `is_domain_specific` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is domain specific, 0 false otherwise',
   `network_domain` varchar(255) COMMENT 'domain',
   `reservation_id` char(40) COMMENT 'reservation id',
   `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
