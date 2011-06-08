@@ -397,12 +397,14 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
             cfo.save()
             
-            cfgline = "cgroup_controllers = [ \"cpu\" ]\n" \
-                      "security_driver = \"none\"\n"
             filename = "/etc/libvirt/qemu.conf"
         
             cfo = configFileOps(filename, self)
-            cfo.add_lines(cfgline)
+            cfo.addEntry("cgroup_controllers", "[\"cpu\"]")
+            cfo.addEntry("security_driver", "\"none\"")
+            cfo.addEntry("user", "\"root\"")
+            cfo.addEntry("group", "\"root\"")
+            cfo.save()
             
             self.syscfg.svo.stopService("libvirtd")
             if not self.syscfg.svo.startService("libvirtd"):
@@ -439,11 +441,13 @@ class libvirtConfigUbuntu(serviceCfgBase):
         try:
             self.setupLiveMigration()
             
-            cfgline = "security_driver = \"none\"\n"
             filename = "/etc/libvirt/qemu.conf"
     
             cfo = configFileOps(filename, self)
-            cfo.add_lines(cfgline)
+            cfo.addEntry("security_driver", "\"none\"")
+            cfo.addEntry("user", "\"root\"")
+            cfo.addEntry("group", "\"root\"")
+            cfo.save()
 
             self.syscfg.svo.stopService("libvirt-bin")
             self.syscfg.svo.enableService("libvirt-bin")
