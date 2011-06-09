@@ -45,6 +45,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="name")
     String name;
     
+    @Column(name="unique_name")
+    private String uniqueName;
+    
     @Column(name="display_text")
     String displayText;
     
@@ -316,6 +319,15 @@ public class NetworkOfferingVO implements NetworkOffering {
     public void setGuestType(GuestIpType guestType) {
         this.guestType = guestType;
     }
+    
+    @Override
+    public String getUniqueName() {
+        return uniqueName;
+    }
+
+    public void setUniqueName(String uniqueName) {
+        this.uniqueName = uniqueName;
+    }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType) {
         this.name = name;
@@ -336,6 +348,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.lbService = lbService;
         this.vpnService = vpnService;
         this.guestType = guestIpType;
+        this.uniqueName = name;
     }
     
     /**

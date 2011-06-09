@@ -99,4 +99,6 @@ public interface NetworkOffering {
     boolean isSharedSourceNatService();
 
     GuestIpType getGuestType();
+
+    String getUniqueName();
 }
