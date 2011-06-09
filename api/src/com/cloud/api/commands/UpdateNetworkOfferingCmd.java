@@ -41,9 +41,6 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the network offering")
     private Long id;
-
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the network offering")
-    private String networkOfferingName;
     
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the network offering")
     private String displayText;
@@ -55,10 +52,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     
-    public String getNetworkOfferingName() {
-        return networkOfferingName;
-    }
-    
+  
     public String getDisplayText() {
         return displayText;
     }
