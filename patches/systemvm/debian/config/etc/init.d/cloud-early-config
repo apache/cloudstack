@@ -163,6 +163,7 @@ setup_interface() {
 }
 
 enable_fwding() {
+  local enabled=$1
   log_it "cloud: enable_fwding = $1"
   log_it "enable_fwding = $1"
   echo "$1" > /proc/sys/net/ipv4/ip_forward
