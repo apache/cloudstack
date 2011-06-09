@@ -227,6 +227,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         }
         
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
+        UserContext.current().setEventDetails("Id: " +id+ " name: " + name);
 		return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic,
 				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, accountName, domainId, accountId, chksum, true);
 	}

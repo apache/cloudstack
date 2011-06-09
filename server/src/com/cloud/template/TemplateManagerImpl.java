@@ -180,6 +180,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
     
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating iso")
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
     	TemplateAdapter adapter = getAdapter(HypervisorType.None);
     	TemplateProfile profile = adapter.prepare(cmd);
@@ -187,6 +188,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template")
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
     	TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
     	TemplateProfile profile = adapter.prepare(cmd);
