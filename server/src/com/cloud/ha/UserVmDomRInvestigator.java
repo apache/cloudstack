@@ -78,16 +78,22 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
                 continue;
             }
 
-            /* Any active domR should able to do so */
-            VirtualRouter router = _vnaMgr.getRoutersForNetwork(nic.getNetworkId()).get(0);
-            if (router == null) {
+            List<VirtualRouter> routers = _vnaMgr.getRoutersForNetwork(nic.getNetworkId());
+            if (routers == null || routers.isEmpty()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find a router in network " + nic.getNetworkId() + " to ping " + vm);
                 }
                 continue;
             }
 
-            Boolean result = testUserVM(vm, nic, router);
+            Boolean result = null;
+            for (VirtualRouter router : routers) {
+                result = testUserVM(vm, nic, router);
+                if (result != null) {
+                    break;
+                }
+            }
+
             if (result == null) {
                 continue;
             }
