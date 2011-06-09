@@ -81,4 +81,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
 	List<DomainRouterVO> findByNetwork(long networkId);
 
 	List<DomainRouterVO> findByNetworkAndPod(long networkId, long podId);
+
+    List<DomainRouterVO> listActive(long networkId);
 }

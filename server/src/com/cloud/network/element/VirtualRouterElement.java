@@ -257,9 +257,12 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         //Set capabilities for vpn
         Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
         vpnCapabilities.put(Capability.SupportedVpnTypes, "pptp,l2tp,ipsec");
-        
         capabilities.put(Service.Vpn, vpnCapabilities);
-        capabilities.put(Service.Dns, null);
+        
+        Map<Capability, String> dnsCapabilities = new HashMap<Capability, String>();
+        dnsCapabilities.put(Capability.AllowDnsSuffixModification, "true");
+        capabilities.put(Service.Dns, dnsCapabilities);
+        
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
         capabilities.put(Service.Gateway, null);

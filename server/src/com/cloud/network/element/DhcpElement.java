@@ -179,7 +179,10 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
         
-        capabilities.put(Service.Dns, null);
+        Map<Capability, String> dnsCapabilities = new HashMap<Capability, String>();
+        dnsCapabilities.put(Capability.AllowDnsSuffixModification, "true");
+        capabilities.put(Service.Dns, dnsCapabilities);  
+        
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
         

@@ -2484,7 +2484,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(network.getTags());
 
         // populate capability
-        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId());
+        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(networkOffering.getId(), network.getDataCenterId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         if (serviceCapabilitiesMap != null) {
             for (Service service : serviceCapabilitiesMap.keySet()) {

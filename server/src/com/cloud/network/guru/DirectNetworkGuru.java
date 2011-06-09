@@ -122,6 +122,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             if (userSpecified.getBroadcastDomainType() != null) {
                 config.setBroadcastDomainType(userSpecified.getBroadcastDomainType());
             }
+            
         }
 
         if (config.isSecurityGroupEnabled()) {
