@@ -3,6 +3,7 @@ package com.cloud.network.dao;
 import java.util.ArrayList;
 import java.util.List;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import com.cloud.network.Network.GuestIpType;
@@ -18,7 +19,7 @@ public class NetworkDaoTest extends TestCase {
         NetworkDaoImpl dao = ComponentLocator.inject(NetworkDaoImpl.class);
         
         dao.expunge(1001l);
-        NetworkVO network = new NetworkVO(1001, TrafficType.Control, GuestIpType.Direct, Mode.Dhcp, BroadcastDomainType.Native, 1, 1, 1, 1, 1001, "Name", "DisplayText", false, true, null);
+        NetworkVO network = new NetworkVO(1001, TrafficType.Control, GuestIpType.Direct, Mode.Dhcp, BroadcastDomainType.Native, 1, 1, 1, 1, 1001, "Name", "DisplayText", false, true, true);
         network.setGuruName("guru_name");
         List<String> tags = new ArrayList<String>();
 
@@ -28,11 +29,11 @@ public class NetworkDaoTest extends TestCase {
 
         network = dao.persist(network);
         List<String> saveTags = network.getTags();
-        assert(saveTags.size() == 2 && saveTags.contains("a") && saveTags.contains("b"));
+        Assert.assertTrue(saveTags.size() == 2 && saveTags.contains("a") && saveTags.contains("b"));
 
         NetworkVO retrieved = dao.findById(1001l);
         List<String> retrievedTags = retrieved.getTags();
-        assert(retrievedTags.size() == 2 && retrievedTags.contains("a") && retrievedTags.contains("b"));
+        Assert.assertTrue(retrievedTags.size() == 2 && retrievedTags.contains("a") && retrievedTags.contains("b"));
         
         List<String> updateTags = new ArrayList<String>();
         updateTags.add("e");
@@ -42,7 +43,7 @@ public class NetworkDaoTest extends TestCase {
         
         retrieved = dao.findById(1001l);
         retrievedTags = retrieved.getTags();
-        assert(retrievedTags.size() == 2 && retrievedTags.contains("e") && retrievedTags.contains("f"));
+        Assert.assertTrue("Unable to retrieve back the data updated", retrievedTags.size() == 2 && retrievedTags.contains("e") && retrievedTags.contains("f"));
         
         dao.expunge(1001l);
     }
