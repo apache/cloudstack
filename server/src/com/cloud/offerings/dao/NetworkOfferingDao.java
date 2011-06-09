@@ -19,10 +19,10 @@ import com.cloud.utils.db.GenericDao;
 public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> {
     /**
      * Returns the network offering that matches the name.
-     * @param name name
+     * @param uniqueName name
      * @return NetworkOfferingVO
      */
-    NetworkOfferingVO findByName(String name);
+    NetworkOfferingVO findByUniqueName(String uniqueName);
     
     /**
      * Persists the system network offering by checking the name.  If it

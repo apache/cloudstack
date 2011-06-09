@@ -35,6 +35,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameSearch.and("uniqueName", NameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         NameSearch.done();
         
         SystemOfferingSearch = createSearchBuilder();
@@ -54,10 +55,10 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public NetworkOfferingVO findByName(String name) {
+    public NetworkOfferingVO findByUniqueName(String uniqueName) {
         SearchCriteria<NetworkOfferingVO> sc = NameSearch.create();
         
-        sc.setParameters("name", name);
+        sc.setParameters("uniqueName", uniqueName);
         
         return findOneBy(sc);
         
@@ -65,8 +66,8 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     
     @Override
     public NetworkOfferingVO persistDefaultNetworkOffering(NetworkOfferingVO offering) {
-        assert offering.getName() != null : "how are you going to find this later if you don't set it?";
-        NetworkOfferingVO vo = findByName(offering.getName());
+        assert offering.getUniqueName() != null : "how are you going to find this later if you don't set it?";
+        NetworkOfferingVO vo = findByUniqueName(offering.getUniqueName());
         if (vo != null) {
             return vo;
         }
@@ -75,7 +76,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
             return vo;
         } catch (EntityExistsException e) {
             // Assume it's conflict on unique name from two different management servers.
-            return findByName(offering.getName());
+            return findByUniqueName(offering.getName());
         }
     }
     

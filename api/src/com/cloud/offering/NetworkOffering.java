@@ -97,4 +97,6 @@ public interface NetworkOffering {
     boolean isDhcpService();
 
     GuestIpType getGuestType();
+
+    String getUniqueName();
 }

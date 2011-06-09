@@ -2771,6 +2771,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd) {
         String displayText = cmd.getDisplayText();
         Long id = cmd.getId();
+        String name = cmd.getNetworkOfferingName();
         String availabilityStr = cmd.getAvailability();
         Availability availability = null;
 
@@ -2791,6 +2792,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
+
+        if (name != null) {
+            offering.setName(name);
+        }
 
         if (displayText != null) {
             offering.setDisplayText(displayText);
