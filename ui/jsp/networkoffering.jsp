@@ -75,9 +75,7 @@ dictionary = {
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
-	                    </div>                    
-	                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
-	                    <div id="name_edit_errormsg" style="display:none"></div>                       
+	                    </div>         
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">

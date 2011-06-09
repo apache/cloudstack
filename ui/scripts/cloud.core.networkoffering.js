@@ -40,8 +40,8 @@ function networkOfferingGetSearchParams() {
 }
 
 function afterLoadNetworkOfferingJSP() {   
-    $readonlyFields  = $("#tab_content_details").find("#name, #displaytext, #availability");
-    $editFields = $("#tab_content_details").find("#name_edit, #displaytext_edit, #availability_edit");     
+    $readonlyFields  = $("#tab_content_details").find("#displaytext, #availability");
+    $editFields = $("#tab_content_details").find("#displaytext_edit, #availability_edit");     
 }
 
 function doEditNetworkOffering($actionLink, $detailsTab, $midmenuItem1) {       
@@ -64,15 +64,12 @@ function doEditNetworkOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
     var id = jsonObj.id;
     
     // validate values   
-    var isValid = true;					
-    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"), true);		
+    var isValid = true;			
     isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"), true);				
     if (!isValid) 
         return;	
      
-    var array1 = [];    
-    var name = $detailsTab.find("#name_edit").val();
-    array1.push("&name="+todb(name));
+    var array1 = [];       
     
     var displaytext = $detailsTab.find("#displaytext_edit").val();
     array1.push("&displayText="+todb(displaytext));
@@ -156,8 +153,7 @@ function networkOfferingJsonToDetailsTab() {
         
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
-    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
-    
+        
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
      
@@ -192,8 +188,7 @@ function networkOfferingClearDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");     
     $thisTab.find("#id").text("");    
     $thisTab.find("#grid_header_title").text("");
-    $thisTab.find("#name").text("");
-    $thisTab.find("#name_edit").val("");    
+    $thisTab.find("#name").text(""); 
     $thisTab.find("#displaytext").text("");
     $thisTab.find("#displaytext_edit").val("");    
     $thisTab.find("#disksize").text("");
