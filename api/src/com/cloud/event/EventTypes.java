@@ -29,7 +29,8 @@ public class EventTypes {
 	public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
 	public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
 	public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
-
+    public static final String EVENT_VM_MOVE = "VM.MOVE";
+    
 	// Domain Router
 	public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
 	public static final String EVENT_ROUTER_DESTROY = "ROUTER.DESTROY";

@@ -29,6 +29,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.ListVMsCmd;
+import com.cloud.api.commands.MoveUserVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -369,4 +370,6 @@ public interface UserVmService {
      *             if the VM to be migrated is not in Running state
      */
     UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+
+    UserVm moveVMToUser(MoveUserVMCmd moveUserVMCmd)  throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException ;
 }

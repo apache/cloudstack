@@ -139,5 +139,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     public void setDetails(Map<String, String> details) {
         this.details = details;
     }
+    
+    public void setAccountId(long accountId){
+        this.accountId = accountId;
+    }
 	
 }

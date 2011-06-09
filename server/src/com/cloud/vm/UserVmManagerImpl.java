@@ -63,6 +63,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.ListVMsCmd;
+import com.cloud.api.commands.MoveUserVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -3200,5 +3201,46 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO migratedVm = _itMgr.migrate((UserVmVO) vm, srcHostId, dest);
         return migratedVm;
     }
+    
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_MOVE, eventDescription = "move VM to another user", async = false)
+    public UserVm moveVMToUser(MoveUserVMCmd cmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        //verify the two users
+        Account oldOwner = UserContext.current().getCaller();
+        Account newOwner = _accountService.getAccount(cmd.getAccountId());
+        if (newOwner == null) {
+            throw new InvalidParameterValueException("Unable to find account " + newOwner + " in domain " + oldOwner.getDomainId());
+        }
+        //get the VM
+        UserVmVO vm = _vmDao.findById(cmd.getHostId());
+        // update the owner
+        vm.setAccountId(newOwner.getAccountId());
+        
+        DomainVO domain = _domainDao.findById(oldOwner.getDomainId());
+        // check that caller can operate with domain
+        _accountMgr.checkAccess(oldOwner, domain);
+        // check that vm owner can create vm in the domain
+        _accountMgr.checkAccess(newOwner, domain);
+        
+        // check if account/domain is with in resource limits to create a new vm
+        if (_accountMgr.resourceLimitExceeded(newOwner, ResourceType.user_vm)) {
+            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + newOwner.getAccountName() + " has been exceeded.");
+            rae.setResourceType("vm");
+            throw rae;
+        }
+        
+        this.stopVirtualMachine(cmd.getHostId(), true);
+        
+        //update ownership
+        vm.setAccountId(newOwner.getId());
+        
+        _vmDao.persist(vm);
+        
+        this.startVirtualMachine(cmd.getHostId());
+        
+        return vm;
+    }
+
 
 }
