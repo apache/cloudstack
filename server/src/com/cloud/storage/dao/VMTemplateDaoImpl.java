@@ -375,7 +375,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                    && !(templateFilter == TemplateFilter.self && !BaseCmd.isRootAdmin(account.getType())) ){ //evaluates to true If root admin and filter=self
             	List<VMTemplateVO> publicIsos = publicIsoSearch();            	
             	for( int i=0; i < publicIsos.size(); i++){
-            		templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+                    if (keyword != null && publicIsos.get(i).getName().contains(keyword)) {
+                        templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+                        continue;
+                    } else if (name != null && publicIsos.get(i).getName().contains(name)) {
+                        templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+                        continue;
+                    }else if (keyword == null && name == null){
+                        templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+                    }
             	}
             }
         } catch (Exception e) {
