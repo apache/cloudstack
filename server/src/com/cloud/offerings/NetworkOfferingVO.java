@@ -45,6 +45,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="name")
     String name;
     
+    @Column(name="unique_name")
+    private String uniqueName;
+    
     @Column(name="display_text")
     String displayText;
     
@@ -319,6 +322,15 @@ public class NetworkOfferingVO implements NetworkOffering {
     public void setGuestType(GuestIpType guestType) {
         this.guestType = guestType;
     }
+    
+    @Override
+    public String getUniqueName() {
+        return uniqueName;
+    }
+
+    public void setUniqueName(String uniqueName) {
+        this.uniqueName = uniqueName;
+    }
 
     @Override
     public boolean isRedundantRouterEnabled() {
@@ -345,6 +357,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.vpnService = vpnService;
         this.guestType = guestIpType;
         this.redundantRouter = isRedundantRouterEnabled;
+        this.uniqueName = name;
     }
     
     /**

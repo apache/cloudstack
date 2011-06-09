@@ -101,4 +101,6 @@ public interface NetworkOffering {
     boolean isRedundantRouterEnabled();
 
     GuestIpType getGuestType();
+
+    String getUniqueName();
 }
