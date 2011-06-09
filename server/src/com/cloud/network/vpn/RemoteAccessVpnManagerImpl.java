@@ -131,7 +131,8 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
         
         //Verify that vpn service is enabled for the network
-        if (!_networkMgr.isServiceSupported(ipAddr.getAssociatedWithNetworkId(), Service.Vpn)) {
+        Network network = _networkMgr.getNetwork(ipAddr.getAssociatedWithNetworkId());
+        if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Vpn)) {
             throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
         }
 
@@ -149,7 +150,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             throw new InvalidParameterValueException("Invalid ip range " + ipRange);
         }
 
-        Network network = _networkMgr.getNetwork(ipAddr.getAssociatedWithNetworkId());
         Pair<String, Integer> cidr = NetUtils.getCidr(network.getCidr());
 
         // FIXME: This check won't work for the case where the guest ip range

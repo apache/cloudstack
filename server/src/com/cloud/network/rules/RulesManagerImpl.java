@@ -233,13 +233,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Network network = _networkMgr.getNetwork(networkId);
         assert network != null : "Can't create port forwarding rule as network associated with public ip address is null...how is it possible?";
 
-        // verify that firewall service is supported by the network
-        if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {
-            throw new InvalidParameterValueException("Firewall service is not supported in network id=" + networkId);
-        }
-
         // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> firewallCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), Service.Firewall);
+        Map<Network.Capability, String> firewallCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
         String supportedProtocols = firewallCapabilities.get(Capability.SupportedProtocols).toLowerCase();
         if (!supportedProtocols.contains(rule.getProtocol().toLowerCase())) {
             throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
@@ -323,13 +318,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
         String dstIp = guestNic.getIp4Address();
 
-        // verify that firewall service is supported by the network
-        if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {
-            throw new InvalidParameterValueException("Firewall service is not supported in network id=" + networkId);
-        }
-
         // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> firewallCapability = _networkMgr.getServiceCapabilities(network.getDataCenterId(), Service.Firewall);
+        Map<Network.Capability, String> firewallCapability = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
         String supportedProtocols = firewallCapability.get(Capability.SupportedProtocols).toLowerCase();
         if (!supportedProtocols.contains(rule.getProtocol().toLowerCase())) {
             throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
@@ -396,7 +386,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Vm doesn't belong to the network " + networkId);
         }
 
-        if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {
+        Network network = _networkMgr.getNetwork(networkId);
+        if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Firewall)) {
             throw new InvalidParameterValueException("Unable to create static nat rule; Firewall service is not supported in network id=" + networkId);
         }
 

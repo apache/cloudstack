@@ -27,6 +27,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -55,6 +56,9 @@ public class UpdateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="tags for the network")
     private List<String> tags;
     
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
+    private String networkDomain;
+    
   
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -74,6 +78,10 @@ public class UpdateNetworkCmd extends BaseCmd {
     
     public List<String> getTags() {
         return tags;
+    }
+    
+    private String getNetworkDomain() {
+        return networkDomain;
     }
     
     
@@ -99,7 +107,7 @@ public class UpdateNetworkCmd extends BaseCmd {
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         
-        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), tags, UserContext.current().getCaller());
+        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), tags, UserContext.current().getCaller(), getNetworkDomain());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());

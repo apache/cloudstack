@@ -75,13 +75,13 @@ public interface NetworkService {
 
     Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
 
-    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
+    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId);
 
     boolean isNetworkAvailableInDomain(long networkId, long domainId);
 
     Long getDedicatedNetworkDomain(long networkId);
 
-    Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller);
+    Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix);
 
     Integer getNetworkRate(long networkId, Long vmId);
 

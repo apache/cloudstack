@@ -131,6 +131,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -141,6 +142,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -209,6 +211,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     NetworkDomainDao _networkDomainDao;
     @Inject
     VMInstanceDao _vmDao;
+    
+    @Inject DomainRouterDao _routerDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -901,7 +905,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault,
-                        predefined.isSecurityGroupEnabled(), (domainId != null));
+                        predefined.isSecurityGroupEnabled(), (domainId != null), predefined.getNetworkDomain());
                 vo.setTags(tags);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() != null));
 
@@ -1673,14 +1677,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // If networkDomain is not specified, take it from the global configuration
-        if (networkDomain == null) {
-            networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
+        Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(zoneId, networkOfferingId, Service.Dns);
+        String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
+        if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
+            if (networkDomain != null) {
+                throw new InvalidParameterValueException("Domain name change is not supported by network offering id=" + networkOfferingId + " in zone id=" + zoneId);
+            }
         } else {
-            // validate network domain
-            if (!NetUtils.verifyDomainName(networkDomain)) {
-                throw new InvalidParameterValueException(
-                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+            if (networkDomain == null) {
+                networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
+            } else {
+                // validate network domain
+                if (!NetUtils.verifyDomainName(networkDomain)) {
+                    throw new InvalidParameterValueException(
+                            "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                            + "and the hyphen ('-'); can't start or end with \"-\"");
+                }
             }
         }
 
@@ -2417,17 +2429,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {
-        Network network = getNetwork(networkId);
-        if (network == null) {
-            throw new InvalidParameterValueException("Unable to find network by id " + networkId);
-        }
+    public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkOfferingId, long zoneId) {
 
-        Map<Service, Map<Capability, String>> zoneCapabilities = getZoneCapabilities(network.getDataCenterId());
+        Map<Service, Map<Capability, String>> zoneCapabilities = getZoneCapabilities(zoneId);
         Map<Service, Map<Capability, String>> networkCapabilities = new HashMap<Service, Map<Capability, String>>();
 
         for (Service service : zoneCapabilities.keySet()) {
-            if (isServiceSupported(networkId, service)) {
+            if (isServiceSupported(networkOfferingId, service)) {
                 networkCapabilities.put(service, zoneCapabilities.get(service));
             }
         }
@@ -2436,7 +2444,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public Map<Capability, String> getServiceCapabilities(long zoneId, Service service) {
+    public Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service) {
+        
+        if (!isServiceSupported(networkOfferingId, service)) {
+            throw new UnsupportedServiceException("Service " + service.getName() + " is not by the network offering id=" + networkOfferingId);
+        }
+        
         Map<Service, Map<Capability, String>> networkCapabilities = getZoneCapabilities(zoneId);
         if (networkCapabilities.get(service) == null) {
             throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in zone id=" + zoneId);
@@ -2670,9 +2683,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean isServiceSupported(long networkId, Network.Service service) {
-        Network network = getNetwork(networkId);
-        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+    public boolean isServiceSupported(long networkOfferingId, Network.Service service) {
+        NetworkOffering offering = _configMgr.getNetworkOffering(networkOfferingId);
         if (service == Service.Lb) {
             return offering.isLbService();
         } else if (service == Service.Dhcp) {
@@ -2758,7 +2770,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (!no.isSystemOnly()) {
                 if (network.getIsShared() || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
-                    if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault == network.isDefault)) {
+                    if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault.booleanValue() == network.isDefault)) {
                         accountNetworks.add(network);
                     }
                 }
@@ -2855,7 +2867,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = false)
-    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller) {
+    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix) {
 
         // verify input parameters
         NetworkVO network = _networksDao.findById(networkId);
@@ -2871,6 +2883,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (offering.isSystemOnly()) {
             throw new InvalidParameterValueException("Can't update system networks");
+        }
+        
+        //don't allow to modify network domain if the service is not supported
+        if (domainSuffix != null) {
+            Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Dns);
+            String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
+            if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
+                throw new InvalidParameterValueException("Domain name change is not supported for network id=" + network.getNetworkOfferingId() + " in zone id=" + network.getDataCenterId());
+            }
+            
+            List<DomainRouterVO> routers = _routerDao.listActive(networkId);
+            if (!routers.isEmpty()) {
+                throw new CloudRuntimeException("Unable to update network id=" + networkId + " with new network domain as the network has running network elements");
+            }
+            
+            
+            network.setNetworkDomain(domainSuffix);
         }
 
         _accountMgr.checkAccess(caller, network);

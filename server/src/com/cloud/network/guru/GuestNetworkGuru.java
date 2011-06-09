@@ -125,9 +125,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
             }
-            if (userSpecified.getNetworkDomain() != null) {
-                network.setNetworkDomain(userSpecified.getNetworkDomain());
-            }
 
         } else {
             String guestNetworkCidr = dc.getGuestNetworkCidr();

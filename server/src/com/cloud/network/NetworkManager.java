@@ -188,7 +188,7 @@ public interface NetworkManager extends NetworkService {
 
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);
 
-    Map<Capability, String> getServiceCapabilities(long zoneId, Service service);
+    Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service);
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 

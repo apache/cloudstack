@@ -49,6 +49,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -388,7 +389,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         _accountMgr.checkAccess(caller.getCaller(), ipAddr);
 
         // verify that lb service is supported by the network
-        if (!_networkMgr.isServiceSupported(networkId, Service.Lb)) {
+        Network network = _networkMgr.getNetwork(networkId);
+        if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Lb)) {
             throw new InvalidParameterValueException("LB service is not supported in network id=" + networkId);
         }
 

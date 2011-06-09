@@ -43,7 +43,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     private static final Logger s_logger = Logger.getLogger(DomainRouterDaoImpl.class);
 
     protected final SearchBuilder<DomainRouterVO> AllFieldsSearch;
-    protected final SearchBuilder<DomainRouterVO> IdStatesSearch;
+    protected final SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
     NetworkDaoImpl _networksDao = ComponentLocator.inject(NetworkDaoImpl.class);
 
@@ -60,10 +60,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch.and("podId", AllFieldsSearch.entity().getPodIdToDeployIn(), Op.EQ);
         AllFieldsSearch.done();
 
-        IdStatesSearch = createSearchBuilder();
-        IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);
-        IdStatesSearch.and("states", IdStatesSearch.entity().getState(), Op.IN);
-        IdStatesSearch.done();
+        IdNetworkIdStatesSearch = createSearchBuilder();
+        IdNetworkIdStatesSearch.and("id", IdNetworkIdStatesSearch.entity().getId(), Op.EQ);
+        IdNetworkIdStatesSearch.and("network", IdNetworkIdStatesSearch.entity().getNetworkId(), Op.EQ);
+        IdNetworkIdStatesSearch.and("states", IdNetworkIdStatesSearch.entity().getState(), Op.IN);
+        IdNetworkIdStatesSearch.done();
 
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), Op.EQ);
@@ -72,7 +73,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         joinNetwork.and("guestType", joinNetwork.entity().getGuestType(), Op.EQ);
         HostUpSearch.join("network", joinNetwork, joinNetwork.entity().getId(), HostUpSearch.entity().getNetworkId(), JoinType.INNER);
         HostUpSearch.done();
-        
+
     }
 
     @Override
@@ -105,7 +106,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("role", Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
         return findOneBy(sc);
     }
-    
+
     @Override
     public DomainRouterVO findBy(long accountId, long dcId, Role role) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
@@ -128,11 +129,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("host", hostId);
         return listBy(sc);
     }
-    
+
     @Override
     public List<DomainRouterVO> listVirtualUpByHostId(Long hostId) {
         SearchCriteria<DomainRouterVO> sc = HostUpSearch.create();
-        if(hostId != null){
+        if (hostId != null) {
             sc.setParameters("host", hostId);
         }
         sc.setParameters("states", State.Destroyed, State.Stopped, State.Expunging);
@@ -153,20 +154,28 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("network", networkId);
         return findOneBy(sc);
     }
-  
-	@Override
-	public List<DomainRouterVO> listByLastHostId(Long hostId) {
-		SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+
+    @Override
+    public List<DomainRouterVO> listByLastHostId(Long hostId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Stopped);
         return listBy(sc);
-	}
-	
-	@Override
-	public DomainRouterVO findByNetworkAndPod(long networkId, long podId) {
-	    SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+    }
+
+    @Override
+    public DomainRouterVO findByNetworkAndPod(long networkId, long podId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("podId", podId);
         return findOneBy(sc);
-	}
+    }
+
+    @Override
+    public List<DomainRouterVO> listActive(long networkId) {
+        SearchCriteria<DomainRouterVO> sc = IdNetworkIdStatesSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("states", State.Running, State.Migrating, State.Stopping, State.Starting);
+        return listBy(sc);
+    }
 }
