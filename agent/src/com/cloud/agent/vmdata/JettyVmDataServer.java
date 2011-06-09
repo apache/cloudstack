@@ -112,7 +112,7 @@ public class JettyVmDataServer implements VmDataServer {
             resp.setStatus(HttpServletResponse.SC_OK);
             String userData = _vmDataServer.getVmDataItem(requester, USER_DATA);
             if (userData != null){
-                resp.getWriter().println();
+                resp.getWriter().println(userData);
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Request not found");
@@ -185,7 +185,7 @@ public class JettyVmDataServer implements VmDataServer {
                             String line = null; 
                             while (( line = input.readLine()) != null){
                                 if (NetUtils.isValidIp(line)) {
-                                    _ipVmMap.put(line, dir);
+                                    _ipVmMap.put(line, vm);
                                     s_logger.info("Found ip " + line + " for vm " + vm);
                                 } else {
                                     s_logger.info("Invalid ip " + line + " for vm " + vm);
