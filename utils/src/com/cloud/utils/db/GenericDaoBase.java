@@ -718,8 +718,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        int rowsUpdated = update(ub, sc, null);
-        
         try {
             if (ub.getCollectionChanges() != null) {
                 insertElementCollection(entity, _idAttributes.get(_table)[0], id, ub.getCollectionChanges());
@@ -727,6 +725,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to persist element collection", e);
         }
+        
+        int rowsUpdated = update(ub, sc, null);
+        
         txn.commit();
         
         return rowsUpdated;
