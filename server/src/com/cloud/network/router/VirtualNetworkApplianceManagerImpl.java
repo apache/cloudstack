@@ -704,6 +704,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.debug("Found " + routers.size() + " running routers. ");
 
             for (DomainRouterVO router : routers) {
+                if (!router.getIsRedundantRouter()) {
+                    continue;
+                }
                 String privateIP = router.getPrivateIpAddress();
                 HostVO host = _hostDao.findById(router.getHostId());
                 /* Only cover hosts managed by this management server */
