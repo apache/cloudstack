@@ -524,6 +524,8 @@ fi
 %{_javadir}/%{name}-wsdl4j.jar
 %{_javadir}/%{name}-bcprov-jdk16-1.45.jar
 %{_javadir}/%{name}-jsch-0.1.42.jar
+%{_javadir}/%{name}-iControl.jar
+%{_javadir}/%{name}-manageontap.jar
 
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-premium/*.jar
