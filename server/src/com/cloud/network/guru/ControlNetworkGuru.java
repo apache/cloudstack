@@ -26,6 +26,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -119,11 +121,22 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
 
         if (dest.getHost().getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
-            super.reserve(nic, config, vm, dest, context);
-            
-            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-            nic.setMacAddress(mac);
-            return;
+        	if(dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
+	            super.reserve(nic, config, vm, dest, context);
+	            
+	            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+	            nic.setMacAddress(mac);
+	            return;
+        	} else {
+        		// in basic mode and in VMware case, control network will be shared with guest network
+	            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+	            nic.setMacAddress(mac);
+	            nic.setIp4Address("0.0.0.0");
+	            nic.setNetmask("0.0.0.0");
+	            nic.setFormat(AddressFormat.Ip4);
+	            nic.setGateway("0.0.0.0");
+        		return;
+        	}
         }
         
         String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
@@ -139,8 +152,15 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
 
         if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
-        	super.release(nic, vm, reservationId);
-        	return true;
+        	long dcId = vm.getVirtualMachine().getDataCenterId();
+        	DataCenterVO dcVo = _dcDao.findById(dcId);
+        	if(dcVo.getNetworkType() != NetworkType.Basic) {
+	        	super.release(nic, vm, reservationId);
+	        	return true;
+        	} else {
+                nic.deallocate();
+        		return true;
+        	}
         }
         
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);

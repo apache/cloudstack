@@ -26,6 +26,8 @@ public abstract class NetworkElementCommand extends Command {
     
     public static final String ROUTER_NAME = "router.name";
     public static final String ROUTER_IP = "router.ip";
+    public static final String ROUTER_GUEST_IP = "router.guest.ip";
+    public static final String ZONE_NETWORK_TYPE = "zone.network.type";
     
     protected NetworkElementCommand() {
         super();
