@@ -326,7 +326,12 @@ setup_dhcpsrvr() {
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-  setup_sshd $ETH1_IP
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    setup_sshd $ETH0_IP
+  else
+    setup_sshd $ETH1_IP
+  fi
 
   enable_svc dnsmasq 1
   enable_svc haproxy 0
@@ -334,7 +339,12 @@ setup_dhcpsrvr() {
   enable_svc cloud 0
   enable_fwding 0
   chkconfig nfs-common off
-  cp /etc/iptables/iptables-router /etc/iptables/rules
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    sed '/3922/i -A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT' /etc/iptables/iptables-router > /etc/iptables/rules
+  else
+    cp /etc/iptables/iptables-router /etc/iptables/rules
+  fi
 }
 
 setup_secstorage() {
@@ -489,6 +499,9 @@ for i in $CMDLINE
       template)
         TEMPLATE=$VALUE
       	;;
+      sshonguest)
+        SSHONGUEST=$VALUE
+        ;;
       name)
 	NAME=$VALUE
 	;;
