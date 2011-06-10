@@ -178,3 +178,5 @@ DROP TABLE `cloud`.`load_balancer`;
 UPDATE `cloud`.`nics` SET strategy='Create' where reserver_name='DirectNetworkGuru';
 
 UPDATE storage_pool SET cluster_id=(SELECT cluster_id FROM host INNER JOIN storage_pool_host_ref WHERE host.id=storage_pool_host_ref.host_id AND storage_pool_host_ref.pool_id=storage_pool.id) WHERE pool_type='LVM';
+
+UPDATE `cloud`.`service_offering` s, `cloud`.`disk_offering` d SET s.ha_enabled=1 where s.id=d.id and d.system_use=1
