@@ -284,7 +284,7 @@ def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpS
         pass
     
     try:
-        execute("ebtables -t nat -A PREROUTING -i " + vif + " -p IPv4 --ip-protocol tcp --ip-destination-port 80 -j dnat --to-destination " + hostMacAddr)
+        execute("ebtables -t nat -A PREROUTING -i " + vif + " -p IPv4 --ip-protocol tcp --ip-destination-port 80 --ip-dst " + dhcpSvr + " -j dnat --to-destination " + hostMacAddr)
     except:
         pass
     
