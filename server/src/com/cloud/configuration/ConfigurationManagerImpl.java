@@ -3013,9 +3013,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     private boolean allowIpRangeOverlap(VlanVO vlan, boolean forVirtualNetwork, long networkId) {
-        Network vlanNetwork = _networkMgr.getNetwork(vlan.getNetworkId());
-        Network network = _networkMgr.getNetwork(networkId);
-        if (vlan.getVlanType() == VlanType.DirectAttached && !forVirtualNetwork && network.getAccountId() != vlanNetwork.getAccountId()) {
+        //FIXME - delete restriction for virtual network in the future
+        if (vlan.getVlanType() == VlanType.DirectAttached && !forVirtualNetwork) {
             return true;
         } else {
             return false;
