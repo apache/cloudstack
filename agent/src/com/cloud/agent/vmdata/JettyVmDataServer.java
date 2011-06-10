@@ -112,7 +112,7 @@ public class JettyVmDataServer implements VmDataServer {
             resp.setStatus(HttpServletResponse.SC_OK);
             String userData = _vmDataServer.getVmDataItem(requester, USER_DATA);
             if (userData != null){
-                resp.getWriter().println(userData);
+                resp.getWriter().print(userData);
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Request not found");
@@ -128,7 +128,7 @@ public class JettyVmDataServer implements VmDataServer {
             resp.setStatus(HttpServletResponse.SC_OK);
             String metaData = _vmDataServer.getVmDataItem(requester, metadataItem);
             if (metaData != null) {
-                resp.getWriter().println(_vmDataServer.getVmDataItem(requester, metadataItem));
+                resp.getWriter().print(_vmDataServer.getVmDataItem(requester, metadataItem));
             } else {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Request not found");
             }
