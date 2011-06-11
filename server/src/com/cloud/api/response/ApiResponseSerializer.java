@@ -34,11 +34,28 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ResponseObject;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.encoding.URLEncoder;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 public class ApiResponseSerializer {
     private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
+    private static final boolean encodeApiResponse = configure();
+    
+    private static boolean configure() {
+        ComponentLocator locator = ComponentLocator.getCurrentLocator();
+
+        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
+        if (configDao != null) {
+            return Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
+        } else {
+            return true;
+        }
+    }
+    
 
     public static String toSerializedString(ResponseObject result, String responseType) {
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
@@ -193,7 +210,12 @@ public class ApiResponseSerializer {
                         } else if (fieldValue instanceof Date) {
                             sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");
                         } else {
-                            sb.append("<" + serializedName.value() + ">" + escapeSpecialXmlChars(fieldValue.toString()) + "</" + serializedName.value() + ">");
+                            String resultString = escapeSpecialXmlChars(fieldValue.toString());
+                            if (!(obj instanceof ExceptionResponse)) {
+                                resultString = encodeParam(resultString);
+                            }
+                            
+                            sb.append("<" + serializedName.value() + ">" + resultString + "</" + serializedName.value() + ">");
                         }
                     }
                 } catch (IllegalArgumentException e) {
@@ -267,6 +289,20 @@ public class ApiResponseSerializer {
                 resultString.append(singleChar);
             }
         }
+        
         return resultString.toString();
     }
+    
+    private static String encodeParam(String value) {
+        if (!encodeApiResponse) {
+            return value;
+        }
+        try {
+            return new URLEncoder().encode(value).replaceAll("\\+", "%20");
+        } catch (Exception e) {
+            s_logger.warn("Unable to encode: " + value, e);
+        }
+        return value;
+    }
+    
 }
