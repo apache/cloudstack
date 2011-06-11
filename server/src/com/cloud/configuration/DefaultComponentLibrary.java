@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.manager.AgentManagerImpl;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
@@ -290,7 +289,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateManagers() {
         addManager("StackMaidManager", CheckPointManagerImpl.class);
-        addManager("agent manager", AgentManagerImpl.class);
         addManager("account manager", AccountManagerImpl.class);
         addManager("configuration manager", ConfigurationManagerImpl.class);
         addManager("network manager", NetworkManagerImpl.class);
@@ -322,14 +320,13 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
         addManager("Capacity Manager", CapacityManagerImpl.class);
         addManager("Cluster Manager", ClusterManagerImpl.class);
-        addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
         addManager("ResourceManager", ResourceManagerImpl.class);
-
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
+        addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
     }
 
     @Override
