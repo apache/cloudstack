@@ -82,7 +82,7 @@ public class XenServer56Resource extends CitrixResourceBase {
     @Override
     protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
         vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
-    }   
+    }
     
 
     @Override
@@ -108,33 +108,37 @@ public class XenServer56Resource extends CitrixResourceBase {
     @Override
     protected void disableVlanNetwork(Connection conn, Network network) {
         try {
-            if (!network.getNameLabel(conn).startsWith("VLAN")) {
+            Network.Record networkr = network.getRecord(conn);
+            if (!networkr.nameLabel.startsWith("VLAN")) {
                 return;
             }
-            String bridge = network.getBridge(conn).trim();
-            for (PIF pif : network.getPIFs(conn)) {
-                if (pif.getHost(conn).getUuid(conn).equalsIgnoreCase(_host.uuid)) {
-                    VLAN vlan = pif.getVLANMasterOf(conn);
-                    if (vlan != null) {
-                        String vlannum = pif.getVLAN(conn).toString();
-                        String device = pif.getDevice(conn).trim();
-                        if (vlannum.equals("-1")) {
-                            return;
-                        }
-                        try {
-                            vlan.destroy(conn);
-                            Host host = Host.getByUuid(conn, _host.uuid);
-                            host.forgetDataSourceArchives(conn, "pif_" + bridge + "_tx");
-                            host.forgetDataSourceArchives(conn, "pif_" + bridge + "_rx");
-                            host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
-                            host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
-                        } catch (XenAPIException e) {
-                            s_logger.debug("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid
-                                    + " due to "  + e.toString());
-                        }
-                    }
-                    break;
+            String bridge = networkr.bridge.trim();
+            for (PIF pif : networkr.PIFs) {
+                PIF.Record pifr = pif.getRecord(conn);
+                if (!pifr.host.getUuid(conn).equalsIgnoreCase(_host.uuid)) {
+                    continue;
                 }
+                
+                VLAN vlan = pifr.VLANMasterOf;
+                if (vlan != null) {
+                    String vlannum = pifr.VLAN.toString();
+                    String device = pifr.device.trim();
+                    if (vlannum.equals("-1")) {
+                        return;
+                    }
+                    try {
+                        vlan.destroy(conn);
+                        Host host = Host.getByUuid(conn, _host.uuid);
+                        host.forgetDataSourceArchives(conn, "pif_" + bridge + "_tx");
+                        host.forgetDataSourceArchives(conn, "pif_" + bridge + "_rx");
+                        host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
+                        host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
+                    } catch (XenAPIException e) {
+                        s_logger.info("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid
+                                + " due to "  + e.toString());
+                    }
+                }
+                return;
             }
         } catch (XenAPIException e) {
             String msg = "Unable to disable VLAN network due to " + e.toString();
@@ -418,7 +422,7 @@ public class XenServer56Resource extends CitrixResourceBase {
     public StartupCommand[] initialize() {
         pingXenServer();
         StartupCommand[] cmds = super.initialize();
-        Connection conn = getConnection();       
+        Connection conn = getConnection();
         if (!setIptables(conn)) {
             s_logger.warn("set xenserver Iptable failed");
             return null;

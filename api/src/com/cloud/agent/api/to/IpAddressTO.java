@@ -18,6 +18,10 @@
 
 package com.cloud.agent.api.to;
 
+import java.util.List;
+
+import com.cloud.network.Networks.TrafficType;
+
 
 public class IpAddressTO {
     
@@ -32,7 +36,8 @@ public class IpAddressTO {
     private String vifMacAddress;
     private String guestIp;
     private Integer networkRate;
-    
+    private TrafficType trafficType;
+    private String[] networkTags;
     
     public IpAddressTO(String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate) {
         this.publicIp = ipAddress;
@@ -56,6 +61,27 @@ public class IpAddressTO {
 
     public String getPublicIp() {
         return publicIp;
+    }
+    
+    public TrafficType getTrafficType() {
+        return trafficType;
+    }
+    
+    public void setNetworkTags(List<String> tagsList) {
+        if (tagsList == null || tagsList.size() == 0) {
+            networkTags = null;
+        } else {
+            networkTags = tagsList.toArray(new String[tagsList.size()]);
+        }
+    }
+    
+    public String[] getNetworkTags() {
+        return networkTags;
+    }
+    
+    
+    public void setTrafficType(TrafficType trafficType) {
+        this.trafficType = trafficType;
     }
 
     public boolean isAdd() {

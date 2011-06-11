@@ -360,7 +360,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         // check if it is a system service offering, if yes return with error as it cannot be used for user vms
         if (!newServiceOffering.getSystemUse()) {
             throw new InvalidParameterValueException("Cannot upgrade router vm to a non system service offering " + serviceOfferingId);
-        }       
+        }
 
         // Check that the router is stopped
         if (!router.getState().equals(State.Stopped)) {
@@ -372,7 +372,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
         
         // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service
-        // offering      
+        // offering
         if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
             throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getUseLocalStorage() + " is different from "
                     + "curruent local storage status: " + currentServiceOffering.getUseLocalStorage());
@@ -1587,6 +1587,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
             });
 
+            // Get network rate - required for IpAssoc
+            Integer networkRate = _networkMgr.getNetworkRate(ipAddrList.get(0).getNetworkId(), router.getId());
+            Network network = _networkMgr.getNetwork(ipAddrList.get(0).getNetworkId());
+
             IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
             int i = 0;
             boolean firstIP = true;
@@ -1601,10 +1605,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 String vmGuestAddress = null;
 
-                // Get network rate - required for IpAssoc
-                Integer networkRate = _networkMgr.getNetworkRate(ipAddr.getNetworkId(), router.getId());
-
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate);
+                ip.setTrafficType(network.getTrafficType());
+                ip.setNetworkTags(network.getTags());
                 ipsToSend[i++] = ip;
                 firstIP = false;
             }

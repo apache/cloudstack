@@ -507,10 +507,8 @@ public class Request {
         @Override
         public JsonElement serialize(List<PortConfig> src, Type typeOfSrc, JsonSerializationContext context) {
             if (src.size() == 0) {
-                s_logger.info("Returning JsonNull");
                 return new JsonNull();
             }
-            s_logger.debug("Returning gson tree");
             JsonArray array = new JsonArray();
             for (PortConfig pc : src) {
                 array.add(s_gson.toJsonTree(pc));
