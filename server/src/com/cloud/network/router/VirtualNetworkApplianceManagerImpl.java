@@ -1602,7 +1602,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 String vmGuestAddress = null;
 
                 // Get network rate - required for IpAssoc
-                Integer networkRate = _networkMgr.getNetworkRate(ipAddr.getNetworkId(), null);
+                Integer networkRate = _networkMgr.getNetworkRate(ipAddr.getNetworkId(), router.getId());
 
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate);
                 ipsToSend[i++] = ip;
