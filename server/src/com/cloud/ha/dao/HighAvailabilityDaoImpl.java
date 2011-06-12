@@ -47,6 +47,8 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
     private final SearchBuilder<HaWorkVO> PreviousWorkSearch;
     private final SearchBuilder<HaWorkVO> TakenWorkSearch;
     private final SearchBuilder<HaWorkVO> ReleaseSearch;
+    private final SearchBuilder<HaWorkVO> FutureHaWorkSearch;
+    private final SearchBuilder<HaWorkVO> RunningHaWorkSearch;
 
     protected HighAvailabilityDaoImpl() {
         super();
@@ -91,6 +93,39 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         ReleaseSearch.and("step", ReleaseSearch.entity().getStep(), Op.NIN);
         ReleaseSearch.and("taken", ReleaseSearch.entity().getDateTaken(), Op.NNULL);
         ReleaseSearch.done();
+        
+        FutureHaWorkSearch = createSearchBuilder();
+        FutureHaWorkSearch.and("instance", FutureHaWorkSearch.entity().getInstanceId(), Op.EQ);
+        FutureHaWorkSearch.and("type", FutureHaWorkSearch.entity().getType(), Op.EQ);
+        FutureHaWorkSearch.and("id", FutureHaWorkSearch.entity().getId(), Op.GT);
+        FutureHaWorkSearch.done();
+        
+        RunningHaWorkSearch = createSearchBuilder();
+        RunningHaWorkSearch.and("instance", RunningHaWorkSearch.entity().getInstanceId(), Op.EQ);
+        RunningHaWorkSearch.and("type", RunningHaWorkSearch.entity().getType(), Op.EQ);
+        RunningHaWorkSearch.and("taken", RunningHaWorkSearch.entity().getDateTaken(), Op.NNULL);
+        RunningHaWorkSearch.and("step", RunningHaWorkSearch.entity().getStep(), Op.NIN);
+        RunningHaWorkSearch.done();
+    }
+    
+    @Override
+    public List<HaWorkVO> listRunningHaWorkForVm(long vmId) {
+        SearchCriteria<HaWorkVO> sc = RunningHaWorkSearch.create();
+        sc.setParameters("instance", vmId);
+        sc.setParameters("type", WorkType.HA);
+        sc.setParameters("step", Step.Done, Step.Error, Step.Cancelled);
+        
+        return search(sc, null);
+    }
+    
+    @Override
+    public List<HaWorkVO> listFutureHaWorkForVm(long vmId, long workId) {
+        SearchCriteria<HaWorkVO> sc = FutureHaWorkSearch.create();
+        sc.setParameters("instance", vmId);
+        sc.setParameters("type", HighAvailabilityManager.WorkType.HA);
+        sc.setParameters("id", workId);
+        
+        return search(sc, null);
     }
 
     @Override
