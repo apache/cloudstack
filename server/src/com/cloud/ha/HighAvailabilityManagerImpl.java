@@ -293,36 +293,50 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             }
         }
 
-        final List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
+        List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
         int maxRetries = 0;
-        boolean NeedToAddNew = true;
-        for (final HaWorkVO item : items) {
+        for (HaWorkVO item : items) {
             if (maxRetries < item.getTimesTried() && !item.canScheduleNew(_timeBetweenFailures)) {
                 maxRetries = item.getTimesTried();
                 break;
             }
         }
 
-        for (final HaWorkVO item : items) {
-            if (!(item.getStep() == Step.Error || item.getStep() == Step.Done || item.getStep() == Step.Cancelled)) {
-                NeedToAddNew = false;
-            }
-        }
-        if (NeedToAddNew) {
-            final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(), maxRetries + 1, vm.getUpdated());
-            _haDao.persist(work);
-        }
+        HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(), maxRetries + 1, vm.getUpdated());
+        _haDao.persist(work);
 
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Schedule vm for HA:  " + vm.toString());
+            s_logger.info("Schedule vm for HA:  " + vm);
         }
 
         wakeupWorkers();
 
     }
 
-    protected Long restart(final HaWorkVO work) {
-        final long vmId = work.getInstanceId();
+    protected Long restart(HaWorkVO work) {
+        List<HaWorkVO> items = _haDao.listFutureHaWorkForVm(work.getInstanceId(), work.getId());
+        if (items.size() > 0) {
+            StringBuilder str = new StringBuilder("Cancelling this work item because newer ones have been scheduled.  Work Ids = [");
+            for (HaWorkVO item : items) {
+                str.append(item.getId()).append(", ");
+            }
+            str.delete(str.length() - 2, str.length()).append("]");
+            s_logger.info(str.toString());
+            return null;
+        }
+        
+        items = _haDao.listRunningHaWorkForVm(work.getInstanceId());
+        if (items.size() > 0) {
+            StringBuilder str = new StringBuilder("Waiting because there's HA work being executed on an item currently.  Work Ids =[");
+            for (HaWorkVO item : items) {
+                str.append(item.getId()).append(", ");
+            }
+            str.delete(str.length() - 2, str.length()).append("]");
+            s_logger.info(str.toString());
+            return (System.currentTimeMillis() >> 10) + _investigateRetryInterval;
+        }
+        
+        long vmId = work.getInstanceId();
 
         VMInstanceVO vm = _itMgr.findById(work.getType(), work.getInstanceId());
         if (vm == null) {
