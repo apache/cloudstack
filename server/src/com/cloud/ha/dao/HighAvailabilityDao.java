@@ -65,4 +65,21 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
     boolean hasBeenScheduled(long instanceId, WorkType type);
 
     int releaseWorkItems(long nodeId);
+
+    /**
+     * Look for HA work that has been scheduled for a vm since a certain work id.
+     * 
+     * @param vmId virtual machine id.
+     * @param workId work item id.
+     * @return List of work items.
+     */
+    List<HaWorkVO> listFutureHaWorkForVm(long vmId, long workId);
+
+    /**
+     * Look for HA work that is being run right now for a VM.
+     * 
+     * @param vmId virtual machine id
+     * @return List of work items
+     */
+    List<HaWorkVO> listRunningHaWorkForVm(long vmId);
 }
