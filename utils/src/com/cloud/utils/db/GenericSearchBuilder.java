@@ -72,6 +72,11 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
     public T entity() {
         return _entity;
     }
+    
+    protected Attribute getSpecifiedAttribute() {
+        assert(_entity != null && _specifiedAttrs != null && _specifiedAttrs.size() == 1) : "Now now, better specify an attribute or else we can't help you";
+        return _specifiedAttrs.get(0);
+    }
 
     public GenericSearchBuilder<T, K> selectField(Object... useless) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";

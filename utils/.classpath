@@ -5,5 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
+	<classpathentry kind="lib" path="/deps/cloud-log4j.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

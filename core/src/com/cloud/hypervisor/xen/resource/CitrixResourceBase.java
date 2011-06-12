@@ -159,6 +159,7 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -220,8 +221,6 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -375,120 +374,119 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public Answer executeRequest(Command cmd) {
-        Class<? extends Command> clazz = cmd.getClass();
-        if (clazz == CreateCommand.class) {
+        if (cmd instanceof CreateCommand) {
             return execute((CreateCommand) cmd);
-        } else if (clazz == SetPortForwardingRulesCommand.class) {
+        } else if (cmd instanceof SetPortForwardingRulesCommand) {
             return execute((SetPortForwardingRulesCommand) cmd);
-        } else if (clazz == SetStaticNatRulesCommand.class) {
+        } else if (cmd instanceof SetStaticNatRulesCommand) {
             return execute((SetStaticNatRulesCommand) cmd);
-        }  else if (clazz == LoadBalancerConfigCommand.class) {
+        }  else if (cmd instanceof LoadBalancerConfigCommand) {
             return execute((LoadBalancerConfigCommand) cmd);
-        } else if (clazz == IPAssocCommand.class) {
+        } else if (cmd instanceof IPAssocCommand) {
             return execute((IPAssocCommand) cmd);
-        } else if (clazz == CheckConsoleProxyLoadCommand.class) {
+        } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
             return execute((CheckConsoleProxyLoadCommand) cmd);
-        } else if (clazz == WatchConsoleProxyLoadCommand.class) {
+        } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
             return execute((WatchConsoleProxyLoadCommand) cmd);
-        } else if (clazz == SavePasswordCommand.class) {
+        } else if (cmd instanceof SavePasswordCommand) {
             return execute((SavePasswordCommand) cmd);
-        } else if (clazz == DhcpEntryCommand.class) {
+        } else if (cmd instanceof DhcpEntryCommand) {
             return execute((DhcpEntryCommand) cmd);
-        } else if (clazz == VmDataCommand.class) {
+        } else if (cmd instanceof VmDataCommand) {
             return execute((VmDataCommand) cmd);
-        } else if (clazz == ReadyCommand.class) {
+        } else if (cmd instanceof ReadyCommand) {
             return execute((ReadyCommand) cmd);
-        } else if (clazz == GetHostStatsCommand.class) {
+        } else if (cmd instanceof GetHostStatsCommand) {
             return execute((GetHostStatsCommand) cmd);
-        } else if (clazz == GetVmStatsCommand.class) {
+        } else if (cmd instanceof GetVmStatsCommand) {
             return execute((GetVmStatsCommand) cmd);
-        } else if (clazz == CheckHealthCommand.class) {
+        } else if (cmd instanceof CheckHealthCommand) {
             return execute((CheckHealthCommand) cmd);
-        } else if (clazz == StopCommand.class) {
+        } else if (cmd instanceof StopCommand) {
             return execute((StopCommand) cmd);
-        } else if (clazz == RebootRouterCommand.class) {
+        } else if (cmd instanceof RebootRouterCommand) {
             return execute((RebootRouterCommand) cmd);
-        } else if (clazz == RebootCommand.class) {
+        } else if (cmd instanceof RebootCommand) {
             return execute((RebootCommand) cmd);
-        } else if (clazz == CheckVirtualMachineCommand.class) {
+        } else if (cmd instanceof CheckVirtualMachineCommand) {
             return execute((CheckVirtualMachineCommand) cmd);
-        } else if (clazz == PrepareForMigrationCommand.class) {
+        } else if (cmd instanceof PrepareForMigrationCommand) {
             return execute((PrepareForMigrationCommand) cmd);
-        } else if (clazz == MigrateCommand.class) {
+        } else if (cmd instanceof MigrateCommand) {
             return execute((MigrateCommand) cmd);
-        } else if (clazz == DestroyCommand.class) {
+        } else if (cmd instanceof DestroyCommand) {
             return execute((DestroyCommand) cmd);
-        } else if (clazz == CreateStoragePoolCommand.class) {
+        } else if (cmd instanceof CreateStoragePoolCommand) {
             return execute((CreateStoragePoolCommand) cmd);
-        } else if (clazz == ModifyStoragePoolCommand.class) {
+        } else if (cmd instanceof ModifyStoragePoolCommand) {
             return execute((ModifyStoragePoolCommand) cmd);
-        } else if (clazz == DeleteStoragePoolCommand.class) {
+        } else if (cmd instanceof DeleteStoragePoolCommand) {
             return execute((DeleteStoragePoolCommand) cmd);
-        } else if (clazz == CopyVolumeCommand.class) {
+        } else if (cmd instanceof CopyVolumeCommand) {
             return execute((CopyVolumeCommand) cmd);
-        } else if (clazz == AttachVolumeCommand.class) {
+        } else if (cmd instanceof AttachVolumeCommand) {
             return execute((AttachVolumeCommand) cmd);
-        } else if (clazz == AttachIsoCommand.class) {
+        } else if (cmd instanceof AttachIsoCommand) {
             return execute((AttachIsoCommand) cmd);
-        } else if (clazz == ManageSnapshotCommand.class) {
+        } else if (cmd instanceof ManageSnapshotCommand) {
             return execute((ManageSnapshotCommand) cmd);
-        } else if (clazz == BackupSnapshotCommand.class) {
+        } else if (cmd instanceof BackupSnapshotCommand) {
             return execute((BackupSnapshotCommand) cmd);
-        } else if (clazz == DeleteSnapshotBackupCommand.class) {
+        } else if (cmd instanceof DeleteSnapshotBackupCommand) {
             return execute((DeleteSnapshotBackupCommand) cmd);
-        } else if (clazz == CreateVolumeFromSnapshotCommand.class) {
+        } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
             return execute((CreateVolumeFromSnapshotCommand) cmd);
-        } else if (clazz == DeleteSnapshotsDirCommand.class) {
+        } else if (cmd instanceof DeleteSnapshotsDirCommand) {
             return execute((DeleteSnapshotsDirCommand) cmd);
-        } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
+        } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
             return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
-        } else if (clazz == CreatePrivateTemplateFromSnapshotCommand.class) {
+        } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
             return execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
-        } else if (clazz == UpgradeSnapshotCommand.class) {
+        } else if (cmd instanceof UpgradeSnapshotCommand) {
             return execute((UpgradeSnapshotCommand) cmd);
-        } else if (clazz == GetStorageStatsCommand.class) {
+        } else if (cmd instanceof GetStorageStatsCommand) {
             return execute((GetStorageStatsCommand) cmd);
-        } else if (clazz == PrimaryStorageDownloadCommand.class) {
+        } else if (cmd instanceof PrimaryStorageDownloadCommand) {
             return execute((PrimaryStorageDownloadCommand) cmd);
-        } else if (clazz == GetVncPortCommand.class) {
+        } else if (cmd instanceof GetVncPortCommand) {
             return execute((GetVncPortCommand) cmd);
-        } else if (clazz == SetupCommand.class) {
+        } else if (cmd instanceof SetupCommand) {
             return execute((SetupCommand) cmd);
-        } else if (clazz == MaintainCommand.class) {
+        } else if (cmd instanceof MaintainCommand) {
             return execute((MaintainCommand) cmd);
-        } else if (clazz == PingTestCommand.class) {
+        } else if (cmd instanceof PingTestCommand) {
             return execute((PingTestCommand) cmd);
-        } else if (clazz == CheckOnHostCommand.class) {
+        } else if (cmd instanceof CheckOnHostCommand) {
             return execute((CheckOnHostCommand) cmd);
-        } else if (clazz == ModifySshKeysCommand.class) {
+        } else if (cmd instanceof ModifySshKeysCommand) {
             return execute((ModifySshKeysCommand) cmd);
-        } else if (clazz == PoolEjectCommand.class) {
+        } else if (cmd instanceof PoolEjectCommand) {
             return execute((PoolEjectCommand) cmd);
-        } else if (clazz == StartCommand.class) {
+        } else if (cmd instanceof StartCommand) {
             return execute((StartCommand)cmd);
-        } else if (clazz == RemoteAccessVpnCfgCommand.class) {
+        } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
             return execute((RemoteAccessVpnCfgCommand)cmd);
-        } else if (clazz == VpnUsersCfgCommand.class) {
+        } else if (cmd instanceof VpnUsersCfgCommand) {
             return execute((VpnUsersCfgCommand)cmd);
-        } else if (clazz == CheckSshCommand.class) {
+        } else if (cmd instanceof CheckSshCommand) {
             return execute((CheckSshCommand)cmd);
-        } else if (clazz == SecurityIngressRulesCmd.class) {
+        } else if (cmd instanceof SecurityIngressRulesCmd) {
             return execute((SecurityIngressRulesCmd) cmd);
-        } else if (clazz == OvsCreateGreTunnelCommand.class) {
+        } else if (cmd instanceof OvsCreateGreTunnelCommand) {
         	return execute((OvsCreateGreTunnelCommand)cmd);
-        } else if (clazz == OvsSetTagAndFlowCommand.class) {
+        } else if (cmd instanceof OvsSetTagAndFlowCommand) {
         	return execute((OvsSetTagAndFlowCommand)cmd);
-        } else if (clazz == OvsDeleteFlowCommand.class) {
+        } else if (cmd instanceof OvsDeleteFlowCommand) {
         	return execute((OvsDeleteFlowCommand)cmd);
-        } else if (clazz == CleanupNetworkRulesCmd.class){
+        } else if (cmd instanceof CleanupNetworkRulesCmd){
             return execute((CleanupNetworkRulesCmd)cmd);
-        } else if (clazz == NetworkRulesSystemVmCommand.class) {
+        } else if (cmd instanceof NetworkRulesSystemVmCommand) {
             return execute((NetworkRulesSystemVmCommand)cmd);
-        } else if (clazz == OvsCreateTunnelCommand.class) {
+        } else if (cmd instanceof OvsCreateTunnelCommand) {
             return execute((OvsCreateTunnelCommand)cmd);
-        } else if (clazz == OvsDestroyTunnelCommand.class) {
+        } else if (cmd instanceof OvsDestroyTunnelCommand) {
             return execute((OvsDestroyTunnelCommand)cmd);
-        } else if (clazz == UpdateHostPasswordCommand.class) {
+        } else if (cmd instanceof UpdateHostPasswordCommand) {
             return execute((UpdateHostPasswordCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1422,33 +1420,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd);
     }
 
-    protected void assignPublicIpAddress(Connection conn, String vmName, String privateIpAddress, String publicIpAddress, boolean add, boolean firstIP,
-            boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, TrafficType trafficType, String[] tags) throws InternalErrorException {
+    protected void assignPublicIpAddress(Connection conn, final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
+            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, String guestIp, Integer networkRate) throws InternalErrorException {
 
         try {
-            String tag = tags != null && tags.length > 0 ? tags[0] : null;
             VM router = getVM(conn, vmName);
 
-            NicTO nic = new NicTO();
-            nic.setMac(vifMacAddress);
-            nic.setType(trafficType);
-            if (vlanId == null) {
-                nic.setBroadcastType(BroadcastDomainType.Native);
-            } else {
-                nic.setBroadcastType(BroadcastDomainType.Vlan);
-                nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
-            }
-            nic.setDeviceId(0);
-            nic.setNetworkRateMbps(networkRate);
-            if (tags != null) {
-                nic.setTags(Arrays.asList(tags));
-            }
-            
-            Network network = getNetwork(conn, nic);
-            
             // Determine the correct VIF on DomR to associate/disassociate the
             // IP address with
-            VIF correctVif = getCorrectVif(conn, router, network);
+            VIF correctVif = getCorrectVif(conn, router, vlanId);
 
             // If we are associating an IP address and DomR doesn't have a VIF
             // for the specified vlan ID, we need to add a VIF
@@ -1470,7 +1450,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     throw new InternalErrorException("There were no more available slots for a new VIF on router: " + router.getNameLabel(conn));
                 }
                 
+                NicTO nic = new NicTO();
+                nic.setMac(vifMacAddress);
+                nic.setType(TrafficType.Public);
+                if (vlanId == null) {
+                    nic.setBroadcastType(BroadcastDomainType.Native);
+                } else {
+                    nic.setBroadcastType(BroadcastDomainType.Vlan);
+                    nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
+                }
                 nic.setDeviceId(Integer.parseInt(vifDeviceNum));
+                nic.setNetworkRateMbps(networkRate);
                 
                 correctVif = createVif(conn, vmName, router, nic);
                 correctVif.plug(conn);
@@ -1513,7 +1503,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             if (removeVif) {
-                network = correctVif.getNetwork(conn);
+                Network network = correctVif.getNetwork(conn);
 
                 // Mark this vif to be removed from network usage
                 networkUsage(conn, privateIpAddress, "deleteVif", "eth" + correctVif.getDevice(conn));
@@ -1556,7 +1546,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (IpAddressTO ip : ips) {
                 
                 assignPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(),
-                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp(), ip.getNetworkRate(), ip.getTrafficType(), ip.getNetworkTags());
+                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp(), ip.getNetworkRate());
                 results[i++] = ip.getPublicIp() + " - success";
             }
         } catch (InternalErrorException e) {
@@ -3320,13 +3310,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
     
     
-    protected VIF getCorrectVif(Connection conn, VM router, Network network) throws XmlRpcException, XenAPIException {
-        Set<VIF> routerVIFs = router.getVIFs(conn);
-        for (VIF vif : routerVIFs) {
-            Network vifNetwork = vif.getNetwork(conn);
-            if (vifNetwork.getUuid(conn).equals(network.getUuid(conn))) {
-                return vif;
+    protected VIF getCorrectVif(Connection conn, VM router, String vlanId) {
+        try {
+            Set<VIF> routerVIFs = router.getVIFs(conn);
+            for (VIF vif : routerVIFs) {
+                Network vifNetwork = vif.getNetwork(conn);
+                if (vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+                    if (vifNetwork.getUuid(conn).equals(_host.publicNetwork)) {
+                        return vif;
+                    }
+                } else {
+                    if (vifNetwork.getNameLabel(conn).equals("VLAN" + vlanId)) {
+                        return vif;
+                    }
+                }
             }
+        } catch (XmlRpcException e) {
+            String msg = "Caught XmlRpcException: " + e.getMessage();
+            s_logger.warn(msg, e);
+        } catch (XenAPIException e) {
+            String msg = "Caught XenAPIException: " + e.toString();
+            s_logger.warn(msg, e);
         }
 
         return null;
@@ -5036,7 +5040,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Set<VDI> snapshots = vdi.getSnapshots(conn);
             for( VDI snapshot: snapshots ) {
                 snapshot.destroy(conn);
-            }
+            }           
             vdi.destroy(conn);
         } catch (Exception e) {
             String msg = "VDI destroy for " + volumeUUID + " failed due to " + e.toString();
