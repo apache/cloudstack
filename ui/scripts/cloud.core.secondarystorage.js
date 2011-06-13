@@ -168,10 +168,14 @@ var secondaryStorageActionMap = {
         isAsyncJob: false,   
         dialogBeforeActionFn: doDeleteSecondaryStorage,       
         inProcessText: "label.action.delete.secondary.storage.processing",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {                             
-            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                secondaryStorageClearRightPanel();   
-            }
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+			$midmenuItem1.slideUp("slow", function() {
+		        $(this).remove();                
+		        if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+		            clearRightPanel();
+		            secondaryStorageClearRightPanel();
+		        }
+		    });   
         }
     } 
 }
