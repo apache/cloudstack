@@ -16,16 +16,23 @@
  * 
  */
 
+
+/**
+ * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
+ */
+
+
 package com.cloud.api;
 
 import com.google.gson.GsonBuilder;
 
-public class ApiGsonHelper {
+public class ApiResponseGsonHelper {
     private static final GsonBuilder s_gBuilder;
     static {
         s_gBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         s_gBuilder.setVersion(1.3);
         s_gBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
+        s_gBuilder.registerTypeAdapter(String.class, new EncodedStringTypeAdapter());
     }
 
     public static GsonBuilder getBuilder() {

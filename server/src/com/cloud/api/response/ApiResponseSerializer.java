@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiGsonHelper;
+import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ResponseObject;
 import com.cloud.configuration.Config;
@@ -78,7 +78,7 @@ public class ApiResponseSerializer {
 
     private static String toJSONSerializedString(ResponseObject result) {
         if (result != null) {
-            Gson gson = ApiGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
+            Gson gson = ApiResponseGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
             StringBuilder sb = new StringBuilder();
 
             sb.append("{ \"" + result.getResponseName() + "\" : ");
