@@ -1452,6 +1452,28 @@ dictionary = {
     </div>
 </div>
 <!-- Create template of disk volume dialog (end) -->
+
+<!-- Confirm to stop VM (begin) -->
+<div id="dialog_confirmation_stop_vm" title='<fmt:message key="label.confirmation"/>' style="display: none">
+ 	<p> 
+		<fmt:message key="message.action.stop.instance" />
+	</p> 		
+    <div class="dialog_formcontent" id="force_stop_instance_container" style="display:none">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li style="padding-top:10px">
+                <input type="checkbox" class="checkbox" id="force_stop_instance" /> 
+                <p style="color:red"><fmt:message key="force.stop.instance" /></p>		
+            </li>
+            <li>
+                <p style="color:red"><fmt:message key="force.stop.instance.warning" /></p>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Confirm to stop VM (end) -->
+
 <!--  ***** Dialogs (end) ***** -->
 
 <div id="hidden_container">
