@@ -163,6 +163,7 @@ listZones=com.cloud.api.commands.ListZonesByCmd;15
 
 #### events commands
 listEvents=com.cloud.api.commands.ListEventsCmd;15
+listEventTypes=com.cloud.api.commands.ListEventTypesCmd;15
 
 #### alerts commands
 listAlerts=com.cloud.api.commands.ListAlertsCmd;3

@@ -497,5 +497,7 @@ public interface ManagementService {
      * @return Pair<List<? extends Host>, List<Long>> List of all Hosts in VM's cluster and list of HostIds with enough capacity
      */
     Pair<List<? extends Host>, List<Long>> listHostsForMigrationOfVM(UserVm vm, Long startIndex, Long pageSize);
+
+    String[] listEventTypes();
     
 }
