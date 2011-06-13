@@ -59,6 +59,7 @@ import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupResultObject;
 import com.cloud.api.response.ServiceOfferingResponse;
@@ -82,6 +83,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -394,6 +396,28 @@ public class ApiResponseHelper implements ResponseGenerator {
         resourceLimitResponse.setObjectName("resourcelimit");
 
         return resourceLimitResponse;
+    }
+
+    @Override
+    public ResourceCountResponse createResourceCountResponse(ResourceCount resourceCount) {
+    	ResourceCountResponse resourceCountResponse = new ResourceCountResponse();
+
+        if (resourceCount.getAccountId() != null) {
+            Account accountTemp = ApiDBUtils.findAccountById(resourceCount.getAccountId());
+            if (accountTemp != null) {
+            	resourceCountResponse.setAccountName(accountTemp.getAccountName());
+            	resourceCountResponse.setDomainId(accountTemp.getDomainId());
+            	resourceCountResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+            }
+        } else if (resourceCount.getDomainId() != null) {
+        	resourceCountResponse.setDomainId(resourceCount.getDomainId());
+        	resourceCountResponse.setDomainName(ApiDBUtils.findDomainById(resourceCount.getDomainId()).getName());
+        }
+
+        resourceCountResponse.setResourceType(Integer.valueOf(resourceCount.getType().ordinal()).toString());
+        resourceCountResponse.setResourceCount(resourceCount.getCount());
+        resourceCountResponse.setObjectName("resourcecount");
+        return resourceCountResponse;
     }
 
     @Override

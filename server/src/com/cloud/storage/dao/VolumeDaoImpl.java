@@ -45,6 +45,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value=VolumeDao.class) @DB(txn=false)
 public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
@@ -55,7 +57,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
-    
+    protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected final Attribute _stateAttr;
     
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
@@ -73,7 +75,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByAccount(long accountId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("notDestroyed", Volume.State.Destroy);
+        sc.setParameters("state", Volume.State.Ready);
         return listBy(sc);
     }
     
@@ -305,6 +307,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         InstanceStatesSearch.and("states", InstanceStatesSearch.entity().getState(), Op.IN);
         InstanceStatesSearch.done();
 
+        CountByAccount = createSearchBuilder(Long.class);
+        CountByAccount.select(null, Func.COUNT, null);
+        CountByAccount.and("account", CountByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);        
+        CountByAccount.done();
+
         _stateAttr = _allAttributes.get("state");
         assert _stateAttr != null : "Couldn't get the state attribute";
 	}
@@ -317,7 +325,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SumCount sumCount = results.get(0);
         return new Pair<Long, Long>(sumCount.count, sumCount.sum);
 	}
-	
+
+    @Override
+	public Long countAllocatedVolumesForAccount(long accountId) {
+	  	SearchCriteria<Long> sc = CountByAccount.create();
+        sc.setParameters("account", accountId);
+		sc.setParameters("state", new Object[] {Volume.State.Destroy, State.Expunging});
+        return customSearch(sc, null).get(0);		
+	}
+
 	public static class SumCount {
 	    public long sum;
 	    public long count;

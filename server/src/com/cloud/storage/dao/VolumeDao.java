@@ -44,7 +44,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     List<VolumeVO> findByPoolId(long poolId);
 	List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);
     List<VolumeVO> findUsableVolumesForInstance(long instanceId);
-    
+    Long countAllocatedVolumesForAccount(long accountId); 
     /**
      * Updates the volume only if the state in memory matches the state in the database.
      * @param vol Volume to be updated.

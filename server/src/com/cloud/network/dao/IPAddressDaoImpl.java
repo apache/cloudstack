@@ -40,6 +40,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value = { IPAddressDao.class })
 @DB
@@ -52,7 +53,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCountForDashboard;
-    
+    protected final GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;    
 
     
     
@@ -98,7 +99,12 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCountForDashboard.and("dc", AllocatedIpCountForDashboard.entity().getDataCenterId(), Op.EQ);
         AllocatedIpCountForDashboard.and("allocated", AllocatedIpCountForDashboard.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpCountForDashboard.done();
-        
+
+        AllocatedIpCountForAccount = createSearchBuilder(Long.class);
+        AllocatedIpCountForAccount.select(null, Func.COUNT, AllocatedIpCountForAccount.entity().getAddress());
+        AllocatedIpCountForAccount.and("account", AllocatedIpCountForAccount.entity().getAllocatedToAccountId(), Op.EQ);
+        AllocatedIpCountForAccount.and("allocated", AllocatedIpCountForAccount.entity().getAllocatedTime(), Op.NNULL);
+        AllocatedIpCountForAccount.done();
     }
 
     @Override
@@ -278,5 +284,11 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         
         return findOneBy(sc);
     }
-    
+
+    @Override
+    public long countAllocatedIPsForAccount(long accountId) {
+    	SearchCriteria<Long> sc = AllocatedIpCountForAccount.create();
+        sc.setParameters("account", accountId);
+        return customSearch(sc, null).get(0);
+    }    
 }

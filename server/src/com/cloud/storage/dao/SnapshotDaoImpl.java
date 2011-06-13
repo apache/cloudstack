@@ -31,9 +31,14 @@ import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local (value={SnapshotDao.class})
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
@@ -49,7 +54,9 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private final SearchBuilder<SnapshotVO> backupUuidSearch;   
     private final SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
     private final SearchBuilder<SnapshotVO> HostIdSearch;
-    
+    private final SearchBuilder<SnapshotVO> AccountIdSearch;
+    private final GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {
         SearchCriteria<SnapshotVO> sc = ParentIdSearch.create();
@@ -99,7 +106,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("status", Status.DOWNLOADED);
         return listBy(sc, filter);
     }
-    
+        
     @Override
     public List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId) {
         SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
@@ -148,7 +155,16 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         backupUuidSearch = createSearchBuilder();
         backupUuidSearch.and("backupUuid", backupUuidSearch.entity().getBackupSnapshotId(), SearchCriteria.Op.EQ);
         backupUuidSearch.done();
-       
+
+        AccountIdSearch = createSearchBuilder();
+        AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountIdSearch.done();
+        
+        CountSnapshotsByAccount = createSearchBuilder(Long.class);
+        CountSnapshotsByAccount.select(null, Func.COUNT, null);        
+        CountSnapshotsByAccount.and("account", CountSnapshotsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountSnapshotsByAccount.and("removed", CountSnapshotsByAccount.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        CountSnapshotsByAccount.done();
     }
     
     @Override 
@@ -220,5 +236,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
             s_logger.error("error set secondary storage host id", ex);
         }
         return 0;
+    }
+
+    @Override
+    public Long countSnapshotsForAccount(long accountId) {
+    	SearchCriteria<Long> sc = CountSnapshotsByAccount.create();
+        sc.setParameters("account", accountId);
+        return customSearch(sc, null).get(0);
     }
 }

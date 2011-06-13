@@ -32,6 +32,7 @@ getCloudIdentifier=com.cloud.api.commands.GetCloudIdentifierCmd;15
 
 #### Limit commands
 updateResourceLimit=com.cloud.api.commands.UpdateResourceLimitCmd;7
+updateResourceCount=com.cloud.api.commands.UpdateResourceCountCmd;7
 listResourceLimits=com.cloud.api.commands.ListResourceLimitsCmd;15
 
 #### VM commands

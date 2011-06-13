@@ -80,6 +80,34 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 	}
 
 	@Override
+	public void setAccountCount(long accountId, ResourceType type, long count) {
+		ResourceCountVO resourceCountVO = findByAccountIdAndType(accountId, type);
+		if (resourceCountVO == null) {
+			if (count != 0) {
+			    resourceCountVO = new ResourceCountVO(accountId, null, type, count);
+			    persist(resourceCountVO);
+			}
+		} else {
+			resourceCountVO.setCount(count);
+			update(resourceCountVO.getId(), resourceCountVO);
+		}
+	}
+
+	@Override
+	public void setDomainCount(long domainId, ResourceType type, long count) {
+		ResourceCountVO resourceCountVO = findByDomainIdAndType(domainId, type);
+		if (resourceCountVO == null) {
+			if (count != 0) {
+			    resourceCountVO = new ResourceCountVO(null, domainId, type, count);
+			    persist(resourceCountVO);
+		    }
+		} else {
+			resourceCountVO.setCount(count);
+			update(resourceCountVO.getId(), resourceCountVO);
+		}
+	}
+
+	@Override
 	public void updateAccountCount(long accountId, ResourceType type, boolean increment, long delta) {
         delta = increment ? delta : delta * -1;
 

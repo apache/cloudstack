@@ -39,5 +39,5 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long> {
     long updateSnapshotSecHost(long dcId, long secHostId);
     List<SnapshotVO> listByHostId(Filter filter, long hostId);
     List<SnapshotVO> listByHostId(long hostId);
-
+    public Long countSnapshotsForAccount(long accountId);
 }

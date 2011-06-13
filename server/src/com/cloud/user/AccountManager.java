@@ -64,6 +64,19 @@ public interface AccountManager extends AccountService {
     public long findCorrectResourceLimit(DomainVO domain, ResourceType type);
 
     /**
+	 * Updates the resource count of an account to reflect current usage by account
+	 * @param accountId
+	 * @param type
+	 */
+	public long updateAccountResourceCount(long accountId, ResourceType type);
+
+    /**
+	 * Updates the resource count of the domain to reflect current usage in the domain
+	 * @param domainId
+	 * @param type
+	 */
+	public long updateDomainResourceCount(long domainId, ResourceType type);
+    /**
 	 * Increments the resource count
 	 * @param accountId
 	 * @param type

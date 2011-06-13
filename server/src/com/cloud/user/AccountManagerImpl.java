@@ -47,12 +47,15 @@ import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
+import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
@@ -67,6 +70,7 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -75,6 +79,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
@@ -86,6 +91,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -113,6 +119,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -151,6 +158,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private SecurityGroupDao _securityGroupDao;
     @Inject
     private VMInstanceDao _vmDao;
+    @Inject
+    private IPAddressDao _ipAddressDao;
+    @Inject
+    protected SnapshotDao _snapshotDao;
+    @Inject
+    protected VMTemplateDao _vmTemplateDao;
 
     @Inject
     private SecurityGroupManager _networkGroupMgr;
@@ -730,6 +743,130 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
+    @Override
+    public long updateAccountResourceCount(long accountId, ResourceType type) {
+        long count=0;
+
+        // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template
+        // table as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
+        if (m_resourceCountLock.lock(120)) { // 2 minutes
+            try {
+                switch (type) {
+                case user_vm:
+                    count = _userVmDao.countAllocatedVMsForAccount(accountId);
+                    break;
+                case volume:
+                    count = _volumeDao.countAllocatedVolumesForAccount(accountId);
+                    long virtualRouterCount = _vmDao.countAllocatedVirtualRoutersForAccount(accountId);
+                    count = count - virtualRouterCount;  // don't count the volumes of virtual router
+                    break;
+                case snapshot:
+                    count = _snapshotDao.countSnapshotsForAccount(accountId);
+                    break;
+                case public_ip:
+                    count = _ipAddressDao.countAllocatedIPsForAccount(accountId);
+                    break;
+                case template:
+                    count = _vmTemplateDao.countTemplatesForAccount(accountId);
+                    break;
+                }
+                _resourceCountDao.setAccountCount(accountId, type, count);
+            } catch (Exception e) {
+                throw new CloudRuntimeException("Failed to update resource count for account with Id" + accountId);
+            } finally {
+                m_resourceCountLock.unlock();
+            }
+        }
+
+        return count;
+    }
+
+    @Override
+    public long updateDomainResourceCount(long domainId, ResourceType type) {
+        long count=0;
+        Domain domain =_domainDao.findById(domainId);
+
+        if (m_resourceCountLock.lock(120)) { // 2 minutes
+            try {
+                List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domain.getId());
+                // for each child domain update the resource count
+                for (DomainVO domainChild : domainChildren) {
+                    long domainCount = updateDomainResourceCount(domainChild.getId(), type);
+                    count = count + domainCount; // add the child domain count to parent domain count
+
+                    List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainChild.getId());
+                    for (AccountVO account : accounts) {
+                        long accountCount = updateAccountResourceCount(account.getId(), type);
+                        count = count + accountCount; // add account's resource count to parent domain count
+                    }
+                }
+                _resourceCountDao.setDomainCount(domainId, type, count);
+           } catch (Exception e) {
+               throw new CloudRuntimeException("Failed to update resource count for domain with Id " + domainId);
+           } finally {
+              m_resourceCountLock.unlock();
+           }
+       }
+
+       return count;
+    }
+    
+    @Override
+    public ResourceCountVO updateResourceCount(UpdateResourceCountCmd cmd) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException{
+        Account currentAccount = UserContext.current().getCaller();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        long count=0;
+
+        ResourceType resourceType;
+        Integer type = cmd.getResourceType();
+        try {
+            resourceType = ResourceType.values()[type];
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new InvalidParameterValueException("Please specify a valid resource type.");
+        }
+
+        // Either a domainId or an account name with domainId must be passed in
+        if ((domainId == null) && (accountName == null)) {
+            throw new InvalidParameterValueException("Either a domainId or account name with domainId must be passed in.");
+        }
+
+        if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+        	if (domain == null) {
+                throw new InvalidParameterValueException("Please specify a valid domain ID.");
+            } else if (domain.getRemoved() != null) {
+                throw new InvalidParameterValueException("Please specify an active domain.");
+            }
+            checkAccess(currentAccount, domain);
+        }
+
+        if (accountName != null) {
+            if (domainId == null) {
+                throw new InvalidParameterValueException("domainId parameter is required if account name is specified");
+            }
+            Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+            if (userAccount == null) {
+                throw new InvalidParameterValueException("unable to find account by name " + accountName + " in domain with id " + domainId);
+            }
+            accountId = userAccount.getId();
+            checkAccess(currentAccount, userAccount);
+        }
+
+        try {
+            if (accountId != null) {
+                count = updateAccountResourceCount(accountId, resourceType);
+            } else {
+                count = updateDomainResourceCount(domainId, resourceType);
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e.getMessage());
+        }
+
+        return new ResourceCountVO(accountId, domainId, resourceType, count);
+    }
+    
     @Override
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {
@@ -1655,6 +1792,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
         checkAccess(UserContext.current().getCaller(), _accountDao.findById(user.getAccountId()));
         return _userDao.remove(id);
+    }
+
+
+    public class ResourceCountCalculateTask implements Runnable {
+        @Override
+        public void run() {
+            
+        }
     }
 
     protected class AccountCleanupTask implements Runnable {

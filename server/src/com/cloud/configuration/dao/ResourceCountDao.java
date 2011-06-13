@@ -41,6 +41,22 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
 	public long getDomainCount(long domainId, ResourceType type);
 
 	/**
+	 * Set the count of in use resources for an account by type
+	 * @param accountId the id of the account to set the resource count
+	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
+	 * @param the count of resources in use for the given type and account
+	 */
+	public void setAccountCount(long accountId, ResourceType type, long count);
+
+	/**
+	 * Get the count of in use resources for a domain by type
+	 * @param domainId the id of the domain to set the resource count
+	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
+	 * @param the count of resources in use for the given type and domain
+	 */
+	public void setDomainCount(long domainId, ResourceType type, long count);
+	
+	/**
 	 * Update the count of resources in use for the given account and given resource type
 	 * @param accountId the id of the account to update resource count
 	 * @param type the type of resource (e.g. user_vm, public_ip, volume)

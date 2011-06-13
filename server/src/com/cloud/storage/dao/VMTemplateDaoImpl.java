@@ -46,6 +46,7 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
@@ -56,10 +57,12 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Func;
 
 @Local(value={VMTemplateDao.class})
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
@@ -90,7 +93,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> PublicSearch;
     private SearchBuilder<VMTemplateVO> NameAccountIdSearch;
     private SearchBuilder<VMTemplateVO> PublicIsoSearch;
-    
+    private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
+
     private String routerTmpltName;
     private String consoleProxyTmpltName;
     
@@ -278,7 +282,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		TmpltsInZoneSearch.join("tmpltzone", tmpltZoneSearch, tmpltZoneSearch.entity().getTemplateId(), TmpltsInZoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 		tmpltZoneSearch.done();
 		TmpltsInZoneSearch.done();
-			
+
+		CountTemplatesByAccount = createSearchBuilder(Long.class);
+		CountTemplatesByAccount.select(null, Func.COUNT, null);        
+		CountTemplatesByAccount.and("account", CountTemplatesByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+		CountTemplatesByAccount.and("removed", CountTemplatesByAccount.entity().getRemoved(), SearchCriteria.Op.NNULL);
+		CountTemplatesByAccount.done();
+
 		return result;
 	}
 
@@ -535,4 +545,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             return null;
         }
 	}
+
+    @Override
+    public Long countTemplatesForAccount(long accountId) {
+    	SearchCriteria<Long> sc = CountTemplatesByAccount.create();
+        sc.setParameters("account", accountId);
+        return customSearch(sc, null).get(0);
+    }
 }
