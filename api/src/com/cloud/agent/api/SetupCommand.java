@@ -23,10 +23,20 @@ public class SetupCommand extends Command {
 
     HostEnvironment env;
     boolean multipath;
+    boolean needSetup;
     
+    public boolean needSetup() {
+        return needSetup;
+    }
+
+    public void setNeedSetup(boolean setup) {
+        this.needSetup = setup;
+    }
+
     public SetupCommand(HostEnvironment env) {
         this.env = env;
         this.multipath = false;
+        this.needSetup = false;
     }
     
     public HostEnvironment getEnvironment() {
