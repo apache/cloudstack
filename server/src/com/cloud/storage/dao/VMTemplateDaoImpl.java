@@ -286,7 +286,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		CountTemplatesByAccount = createSearchBuilder(Long.class);
 		CountTemplatesByAccount.select(null, Func.COUNT, null);        
 		CountTemplatesByAccount.and("account", CountTemplatesByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
-		CountTemplatesByAccount.and("removed", CountTemplatesByAccount.entity().getRemoved(), SearchCriteria.Op.NNULL);
+		CountTemplatesByAccount.and("removed", CountTemplatesByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
 		CountTemplatesByAccount.done();
 
 		return result;
