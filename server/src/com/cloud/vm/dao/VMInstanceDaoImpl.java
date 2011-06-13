@@ -28,10 +28,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -54,7 +57,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final SearchBuilder<VMInstanceVO> HostIdTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostUpSearch;
-    
+    protected final GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
+
     protected final Attribute _updateTimeAttr;
 
     protected VMInstanceDaoImpl() {
@@ -119,7 +123,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostUpSearch.and("states", HostUpSearch.entity().getState(), Op.IN);
         HostUpSearch.done();
         
-        
+        CountVirtualRoutersByAccount = createSearchBuilder(Long.class);
+        CountVirtualRoutersByAccount.select(null, Func.COUNT, null);
+        CountVirtualRoutersByAccount.and("account", CountVirtualRoutersByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountVirtualRoutersByAccount.and("type", CountVirtualRoutersByAccount.entity().getType(), SearchCriteria.Op.EQ);
+        CountVirtualRoutersByAccount.and("state", CountVirtualRoutersByAccount.entity().getState(), SearchCriteria.Op.NIN);        
+        CountVirtualRoutersByAccount.done();
+
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }
@@ -290,4 +300,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 		sc.setParameters("state", State.Stopped);
 		return listBy(sc);
 	}
+    
+    @Override
+    public Long countAllocatedVirtualRoutersForAccount(long accountId) {
+    	SearchCriteria<Long> sc = CountVirtualRoutersByAccount.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("type", VirtualMachine.Type.DomainRouter);
+		sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        return customSearch(sc, null).get(0);
+    }
 }

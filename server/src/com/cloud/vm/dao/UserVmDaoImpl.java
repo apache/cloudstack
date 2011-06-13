@@ -41,6 +41,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={UserVmDao.class})
@@ -60,6 +61,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
+    protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
     
     protected SearchBuilder<UserVmVO> UserVmSearch;
@@ -127,6 +129,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         CountByAccountPod.and("account", CountByAccountPod.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountByAccountPod.and("pod", CountByAccountPod.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         CountByAccountPod.done();
+
+        CountByAccount = createSearchBuilder(Long.class);
+        CountByAccount.select(null, Func.COUNT, null);
+        CountByAccount.and("account", CountByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountByAccount.and("type", CountByAccount.entity().getType(), SearchCriteria.Op.EQ);
+        CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);        
+        CountByAccount.done();
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -296,5 +305,14 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
         }
+    }
+
+    @Override
+    public Long countAllocatedVMsForAccount(long accountId) {
+    	SearchCriteria<Long> sc = CountByAccount.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("type", VirtualMachine.Type.User);
+		sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        return customSearch(sc, null).get(0);
     }
 }

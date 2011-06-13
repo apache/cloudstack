@@ -21,13 +21,13 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ResourceCountResponse extends BaseResponse {
-    @SerializedName("account") @Param(description="the account of the resource count")
+    @SerializedName("account") @Param(description="the account for which resource count's are updated")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the resource count")
+    @SerializedName("domainid") @Param(description="the domain ID for which resource count's are updated")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name of the resource count")
+    @SerializedName("domain") @Param(description="the domain name for which resource count's are updated")
     private String domainName;
 
     @SerializedName("resourcetype") @Param(description="resource type. Values include 0, 1, 2, 3, 4. See the resourceType parameter for more information on these values.")

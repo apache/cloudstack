@@ -50,6 +50,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     
     protected final SearchBuilder<AccountVO> AccountNameSearch;
     protected final SearchBuilder<AccountVO> AccountTypeSearch;
+    protected final SearchBuilder<AccountVO> DomainAccountsSearch;
 
     protected final SearchBuilder<AccountVO> CleanupSearch;
     
@@ -62,6 +63,11 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         AccountTypeSearch.and("domainId", AccountTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         AccountTypeSearch.and("type", AccountTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
         AccountTypeSearch.done();
+
+        DomainAccountsSearch = createSearchBuilder();
+        DomainAccountsSearch.and("domainId", DomainAccountsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        DomainAccountsSearch.and("removed", DomainAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        DomainAccountsSearch.done();
         
         CleanupSearch = createSearchBuilder();
         CleanupSearch.and("cleanup", CleanupSearch.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
@@ -189,6 +195,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         sc.addAnd("domainId", Op.EQ,  domain);
         sc.addAnd("type", Op.IN, Account.ACCOUNT_TYPE_ADMIN, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, Account.ACCOUNT_TYPE_READ_ONLY_ADMIN, Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
 		return null;
+	}
+
+	@Override
+	public List<AccountVO> findActiveAccountsForDomain(Long domain) {
+        SearchCriteria<AccountVO> sc = DomainAccountsSearch.create();
+        sc.addAnd("domainId", Op.EQ,  domain);
+		return listBy(sc);
 	}
 	
 	@Override

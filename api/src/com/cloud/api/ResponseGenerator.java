@@ -45,6 +45,7 @@ import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
@@ -63,6 +64,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
@@ -107,6 +109,8 @@ public interface ResponseGenerator {
     DiskOfferingResponse createDiskOfferingResponse(DiskOffering offering);
 
     ResourceLimitResponse createResourceLimitResponse(ResourceLimit limit);
+
+    ResourceCountResponse createResourceCountResponse(ResourceCount resourceCount);
 
     ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering);
 

@@ -32,8 +32,10 @@ import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
+import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -141,6 +143,16 @@ public interface AccountService {
      */
     ResourceLimit updateResourceLimit(UpdateResourceLimitCmd cmd);
 
+
+    /**
+     * Updates an existing resource count details for the account/domain
+     * 
+     * @param cmd
+     *            the command that wraps the domainId, accountId, resource type  parameters
+     * @return the updated/created resource count
+     */
+    ResourceCount updateResourceCount(UpdateResourceCountCmd cmd);
+    
     /**
      * Search for resource limits for the given id and/or account and/or type and/or domain.
      * 
