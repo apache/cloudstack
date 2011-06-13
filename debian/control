@@ -17,6 +17,18 @@ Description: Cloud.com library dependencies
  not shipped by distributions, required to run the Cloud.com
  Cloud Stack.
 
+Package: cloud-agent-deps
+Provides: cloud-agent-deps
+Conflicts: cloud-agent-deps
+Replaces: cloud-agent-deps
+Architecture: any
+Depends: openjdk-6-jre
+Description: Cloud.com agent library dependencies
+ This package contains a number of third-party dependencies
+ not shipped by distributions, required to run the Cloud.com
+ Cloud Stack.
+
+
 Package: cloud-utils
 Provides: vmops-utils
 Conflicts: vmops-utils
@@ -86,7 +98,7 @@ Provides: vmops-core
 Conflicts: vmops-core
 Replaces: vmops-core
 Architecture: any
-Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version})
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version})
 Description: Cloud.com core library
  The Cloud.com core libraries provide a set of Java classes used
  in the Cloud.com Cloud Stack.
@@ -131,7 +143,7 @@ Description: Cloud.com Python library
 
 Package: cloud-agent-libs
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java
 Description: Cloud.com agent libraries
  The Cloud.com agent libraries are used by the Cloud Agent and the Cloud
  Console Proxy.
@@ -141,7 +153,7 @@ Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin,  uuid-runtime, rsync, grep, iproute, jnetpcap, ebtables, vlan
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin,  uuid-runtime, rsync, grep, iproute, jnetpcap, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java
 Description: Cloud.com agent
  The Cloud.com agent is in charge of managing shared computing resources in
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
@@ -149,7 +161,7 @@ Description: Cloud.com agent
 
 Package: cloud-agent-premium
 Architecture: any
-Depends: cloud-agent
+Depends: cloud-agent, libjetty-java
 Description: Cloud.com agent premium
  The Cloud.com agent is in charge of managing shared computing resources in
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
