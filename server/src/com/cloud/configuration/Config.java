@@ -237,7 +237,7 @@ public enum Config {
 	
 	AgentLbEnable("Advanced", ClusterManager.class, Boolean.class, "agent.lb.enabled", "true", "If agent load balancing enabled in cluster setup", null),
 	SubDomainNetworkAccess("Advanced", NetworkManager.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
-	EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "true", "Do UTF-8 encoding for the api response, true by default", null);
+	EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do UTF-8 encoding for the api response, false by default", null);
 
 	
 	private final String _category;
