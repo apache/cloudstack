@@ -197,7 +197,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = HostIdUpTypesSearch.create();
         sc.setParameters("hostid", hostid);
         sc.setParameters("types", (Object[]) types);
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging}); 
+        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
         return listBy(sc);
     }
     
@@ -242,8 +242,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updateState(State oldState, Event event,
-    		State newState, VirtualMachine vm, Long hostId) {
+    public boolean updateState(State oldState, Event event,	State newState, VirtualMachine vm, Long hostId) {
     	if (newState == null) {
     		if (s_logger.isDebugEnabled()) {
     			s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
@@ -253,6 +252,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     	
     	VMInstanceVO vmi = (VMInstanceVO)vm;
     	Long oldHostId = vmi.getHostId();
+    	Long oldUpdated = vmi.getUpdated();
+    	Date oldUpdateDate = vmi.getUpdateTime();
     	
     	SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
     	sc.setParameters("id", vmi.getId());
@@ -269,15 +270,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     	int result = update(vmi, sc);
     	if (result == 0 && s_logger.isDebugEnabled()) {
-    	    /*update builder will change the state/hostid/updated, even update is failed*/
-    	    vmi.setState(oldState);
-    	    vmi.setHostId(oldHostId);
-    	    vmi.decrUpdated();
-    	    
     		VMInstanceVO vo = findById(vm.getId());
     		StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-    		str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-    		str.append("} Stale Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vmi.getUpdated()).append("}");
+    		str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated()).append("; time=").append(vo.getUpdateTime());
+    		str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vmi.getUpdated()).append("; time=").append(vo.getUpdateTime());
+    		str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState).append("; updated=").append(oldUpdated).append("; time=").append(oldUpdateDate).append("}");
     		s_logger.debug(str.toString());
     	}
     	return result > 0;

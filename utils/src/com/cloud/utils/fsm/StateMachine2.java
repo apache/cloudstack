@@ -114,12 +114,15 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     	
     	Long oldHostId = vo.getHostId();
     	transitionStatus = dao.updateState(currentState, e, nextState, vo, id);
+    	if (!transitionStatus) {
+    	    return false;
+    	}
     	
     	for (StateListener<S,E, V> listener : _listeners) {
             listener.postStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, oldHostId);
         }
-
-    	return transitionStatus;
+    	
+    	return true;
     }
 
     public boolean registerListener(StateListener<S,E,V> listener) {

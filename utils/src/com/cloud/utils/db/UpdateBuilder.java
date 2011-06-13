@@ -47,7 +47,7 @@ public class UpdateBuilder implements MethodInterceptor {
         	makeIncrChange(name, args);
         } else if (name.startsWith("decr")) {
         	makeDecrChange(name, args);
-        } 
+        }
         return methodProxy.invokeSuper(object, args);
     }
     
@@ -118,7 +118,7 @@ public class UpdateBuilder implements MethodInterceptor {
     	return _changes.get(name).second();
     }
     
-    protected void clear() {
+    public void clear() {
         _changes.clear();
     }
     
