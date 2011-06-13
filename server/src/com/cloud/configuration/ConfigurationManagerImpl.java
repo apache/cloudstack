@@ -319,12 +319,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
     public Configuration updateConfiguration(UpdateCfgCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
-
+        UserContext.current().setEventDetails(" Name: "+name +" New Value: "+((value == null) ? "" : value));
         // check if config value exists
         if (_configDao.findByName(name) == null) {
             throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
