@@ -1235,19 +1235,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String args = routerIp;
+        //String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             //1:1 NAT needs instanceip;publicip;domrip;op
-            args += rule.revoked() ? " -D " : " -A ";
-            args += " -l " + rule.getSrcIp();
-            args += " -r " + rule.getDstIp();
-            args += " -P " + rule.getProtocol().toLowerCase();
-            args += " -d " + rule.getStringSrcPortRange();
-            args += " -G " ;
+            StringBuilder args = new StringBuilder();
+            args.append(routerIp);
+            args.append(rule.revoked() ? " -D " : " -A ");
+            args.append(" -l ").append(rule.getSrcIp());
+            args.append(" -r ").append(rule.getDstIp());
+            args.append(" -P ").append(rule.getProtocol().toLowerCase());
+            args.append(" -d ").append(rule.getStringSrcPortRange());
+            args.append(" -G ");
            
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
+            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
             results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
         }
 
