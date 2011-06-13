@@ -1947,27 +1947,13 @@ function sanitizeXSS(val) {
 function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)
         return fromdb(p_vmName);
-    var vmName = null;
-	
+    
+    var vmName = null;	
 	if (p_vmDisplayname != p_vmName) {
-		vmName = p_vmName + "(" + fromdb(p_vmDisplayname) + ")";
+		vmName = fromdb(p_vmName) + "(" + fromdb(p_vmDisplayname) + ")";
 	} else {
-		vmName = p_vmName;
-	}	
-	
-	/*
-	if (isAdmin()) {
-		if (p_vmDisplayname != p_vmName) {
-			vmName = p_vmName + "(" + fromdb(p_vmDisplayname) + ")";
-		} else {
-			vmName = p_vmName;
-		}
-	} else {
-		vmName = fromdb(p_vmDisplayname);
-	}
-	*/
-	
-	
+		vmName = fromdb(p_vmName);
+	}		
 	return vmName;
 }
 
