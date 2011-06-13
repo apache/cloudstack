@@ -73,16 +73,20 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
         return entry.nextStates.keySet();
     }
     
-    public S getNextState(S s, E e) {
+    public S getNextState(S s, E e) throws NoTransitionException {
         StateEntry entry = null;
         if (s == null) {
             entry = _initialStateEntry;
         } else {
             entry = _states.get(s);
-            assert entry != null : "Cannot retrieve transitions for state " + s.toString();
+            assert entry != null : "Cannot retrieve transitions for state " + s;
         }
         
-        return entry.nextStates.get(e);
+        S ns = entry.nextStates.get(e);
+        if (ns == null) {
+            throw new NoTransitionException("Unable to transition to a new state from " + s + " via " + e);
+        }
+        return ns;
     }
     
     public List<S> getFromStates(S s, E e) {
@@ -95,7 +99,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     }
     
  
-    public boolean transitTo(V vo, E e, Long id, StateDao<S,E,V> dao) {
+    public boolean transitTo(V vo, E e, Long id, StateDao<S,E,V> dao) throws NoTransitionException {
     	S currentState = vo.getState();
     	S nextState = getNextState(currentState, e);
 
