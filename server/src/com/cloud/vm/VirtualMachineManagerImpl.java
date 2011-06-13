@@ -588,36 +588,35 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         try {
             Journal journal = start.second().getJournal();
 
-            // edit plan if this vm's ROOT volume is in READY state already
-            List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
-
-            for (VolumeVO vol : vols) {
-                // make sure if the templateId is unchanged. If it is changed, let planner
-                // reassign pool for the volume even if it ready.
-                Long volTemplateId = vol.getTemplateId();
-                if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
-                    }
-                    continue;
-                }
-
-                StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
-                if (!pool.isInMaintenance()) {
-                    long rootVolDcId = pool.getDataCenterId();
-                    Long rootVolPodId = pool.getPodId();
-                    Long rootVolClusterId = pool.getClusterId();
-                    plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(vol + " is ready, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
-                    }
-                }
-            }
-
             ExcludeList avoids = new ExcludeList();
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
+                // edit plan if this vm's ROOT volume is in READY state already
+                List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
 
+                for (VolumeVO vol : vols) {
+                    // make sure if the templateId is unchanged. If it is changed, let planner
+                    // reassign pool for the volume even if it ready.
+                    Long volTemplateId = vol.getTemplateId();
+                    if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
+                        }
+                        continue;
+                    }
+
+                    StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+                    if (!pool.isInMaintenance()) {
+                        long rootVolDcId = pool.getDataCenterId();
+                        Long rootVolPodId = pool.getPodId();
+                        Long rootVolClusterId = pool.getClusterId();
+                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(vol + " is ready, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
+                        }
+                    }
+                }
+                
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
