@@ -1776,7 +1776,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
-        if (isSystem == null || caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+        if ((isSystem == null || caller.getType() == Account.ACCOUNT_TYPE_NORMAL) && id == null) {
             isSystem = false;
         }
 
@@ -1813,7 +1813,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             accountId = caller.getId();
         }
         
-        if (!isSystem && (isShared == null || isShared)) {
+        if ((isSystem == null || !isSystem) && (isShared == null || isShared)) {
             if (domainId == null) {
                 sharedNetworkDomainId = caller.getDomainId();
             } else {
@@ -1827,7 +1827,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Don't display networks created of system network offerings
         SearchBuilder<NetworkOfferingVO> networkOfferingSearch = _networkOfferingDao.createSearchBuilder();
         networkOfferingSearch.and("systemOnly", networkOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
-        if (isSystem) {
+        if (isSystem != null && isSystem) {
             networkOfferingSearch.and("trafficType", networkOfferingSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
         }
         sb.join("networkOfferingSearch", networkOfferingSearch, sb.entity().getNetworkOfferingId(), networkOfferingSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -1864,9 +1864,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, boolean isSystem, Long zoneId, String type, Boolean isDefault, String trafficType, Boolean isShared) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String type, Boolean isDefault, String trafficType, Boolean isShared) {
         SearchCriteria<NetworkVO> sc = sb.create();
-        sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
+        
+        if (isSystem != null) {
+            sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
+        }
 
         if (keyword != null) {
             SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
