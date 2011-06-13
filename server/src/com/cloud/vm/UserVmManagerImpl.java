@@ -200,8 +200,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -326,7 +326,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected SSHKeyPairDao _sshKeyPairDao;
     @Inject
     protected UserVmDetailsDao _vmDetailsDao;
-    @Inject 
+    @Inject
     protected SecurityGroupDao _securityGroupDao;
 
     protected ScheduledExecutorService _executor = null;
@@ -1080,8 +1080,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
 
-        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
-            s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
+        try {
+            if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
+                s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
+                throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
+            }
+        } catch (NoTransitionException e) {
             throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
         }
 
@@ -1611,7 +1615,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm != null) {
             if (vm.getState().equals(State.Stopped)) {
-                _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
+                try {
+                    _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
+                } catch (NoTransitionException e1) {
+                    s_logger.warn(e1.getMessage());
+                }
                 // destroy associated volumes for vm in error state
                 List<VolumeVO> volumesForThisVm = _volsDao.findByInstance(vm.getId());
                 for (VolumeVO volume : volumesForThisVm) {
@@ -2048,7 +2056,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
                                     diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller);
     }
 
@@ -2159,7 +2167,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, 
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
                 diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller);
     }
 
@@ -3269,7 +3277,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _volsDao.persist(volume);
         }
         
-        // update the network 
+        // update the network
       
                 
         return vm;

@@ -41,6 +41,7 @@ import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.fsm.NoTransitionException;
 
 /**
  * Manages allocating resources to vms.
@@ -86,7 +87,7 @@ public interface VirtualMachineManager extends Manager {
 
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
 
-    boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId);
+    boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
     <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
