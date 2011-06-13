@@ -43,10 +43,10 @@ public class MoveUserVMCmd extends BaseAsyncCmd  {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the system VM to be moved")
-    private Long hostId;
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the vm ID of the user VM to be moved")
+    private Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, description="the accopunt id of the new owner account")
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG,required=true, description="the accopunt id of the new owner account")
     private Long accountId;
 
 
@@ -54,8 +54,8 @@ public class MoveUserVMCmd extends BaseAsyncCmd  {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getHostId() {
-        return hostId;
+    public Long getVmId() {
+        return virtualMachineId;
     }
 
     public Long getAccountId() {
@@ -89,7 +89,7 @@ public class MoveUserVMCmd extends BaseAsyncCmd  {
 
     @Override
     public long getEntityOwnerId() {
-        UserVm vm = _responseGenerator.findUserVmById(getHostId());
+        UserVm vm = _responseGenerator.findUserVmById(getVmId());
         if (vm != null) {
             return vm.getAccountId();
         }
@@ -99,7 +99,7 @@ public class MoveUserVMCmd extends BaseAsyncCmd  {
 
     @Override
     public String getEventDescription() {
-        return  "moving user vm: " + getHostId();
+        return  "moving user vm: " + getVmId();
     }
 
     @Override

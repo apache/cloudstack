@@ -201,6 +201,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -3206,39 +3207,71 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MOVE, eventDescription = "move VM to another user", async = false)
     public UserVm moveVMToUser(MoveUserVMCmd cmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        //verify the two users
+        // VERIFICATIONS and VALIDATIONS
+        
+        //VV 1: verify the two users
         Account oldOwner = UserContext.current().getCaller();
         Account newOwner = _accountService.getAccount(cmd.getAccountId());
         if (newOwner == null) {
             throw new InvalidParameterValueException("Unable to find account " + newOwner + " in domain " + oldOwner.getDomainId());
         }
-        //get the VM
-        UserVmVO vm = _vmDao.findById(cmd.getHostId());
-        // update the owner
-        vm.setAccountId(newOwner.getAccountId());
-        
-        DomainVO domain = _domainDao.findById(oldOwner.getDomainId());
-        // check that caller can operate with domain
-        _accountMgr.checkAccess(oldOwner, domain);
-        // check that vm owner can create vm in the domain
-        _accountMgr.checkAccess(newOwner, domain);
-        
-        // check if account/domain is with in resource limits to create a new vm
+
+        //VV 2: check if account/domain is with in resource limits to create a new vm
         if (_accountMgr.resourceLimitExceeded(newOwner, ResourceType.user_vm)) {
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + newOwner.getAccountName() + " has been exceeded.");
             rae.setResourceType("vm");
             throw rae;
         }
+
+        //get the VM
+        UserVmVO vm = _vmDao.findById(cmd.getVmId());
+
+        // VV 3: check if vm is running
+        if (vm.getState() == State.Running) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("VM is Running, unable to move the vm " + vm);
+            }
+            throw new InvalidParameterValueException("VM is Running, unable to move the vm " + vm);
+        }
         
-        this.stopVirtualMachine(cmd.getHostId(), true);
+        // VV 4: Check if new owner can use the vm template
+        VirtualMachineTemplate template = _templateDao.findById(vm.getTemplateId());
+        if (!template.isPublicTemplate()) {
+            Account templateOwner = _accountMgr.getAccount(template.getAccountId());
+            _accountMgr.checkAccess(newOwner, templateOwner);
+        }
+
+        // VV 5: check that vm owner can create vm in the domain
+        DomainVO domain = _domainDao.findById(oldOwner.getDomainId());
+        _accountMgr.checkAccess(newOwner, domain);
         
-        //update ownership
+        // remove the resources used by the moving vm
+        try {
+            if (!_itMgr.advanceStop(vm, false, _userDao.findById(UserContext.current().getCallerUserId()), oldOwner)) {
+                s_logger.debug("Unable to stop " + vm);
+                return null;
+            }
+        } catch (OperationTimedoutException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+      
+        
+        // OWNERSHIP STEP 1: update the vm owner
+        vm.setAccountId(newOwner.getAccountId());
         vm.setAccountId(newOwner.getId());
-        
         _vmDao.persist(vm);
         
-        this.startVirtualMachine(cmd.getHostId());
+        // update volume
+        List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
+        for (VolumeVO volume : volumes) {
+            volume.setAccountId(cmd.getAccountId());
+            _volsDao.persist(volume);
+        }
         
+        // update the network 
+      
+                
         return vm;
     }
 
