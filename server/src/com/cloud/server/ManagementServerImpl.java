@@ -17,6 +17,7 @@
  */
 package com.cloud.server;
 
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -4761,4 +4762,23 @@ public class ManagementServerImpl implements ManagementServer {
         return true;
     }
 
+    @Override
+    public String[] listEventTypes(){
+        Object eventObj = new EventTypes(); 
+        Class<EventTypes> c = EventTypes.class;
+        Field[] fields = c.getDeclaredFields();
+        String[] eventTypes = new String[fields.length];
+        try {
+            int i = 0;
+            for(Field field : fields){
+                eventTypes[i++] = field.get(eventObj).toString();
+            }
+            return eventTypes;
+        } catch (IllegalArgumentException e) {
+            s_logger.error("Error while listing Event Types", e);
+        } catch (IllegalAccessException e) {
+            s_logger.error("Error while listing Event Types", e);
+        }
+        return null;
+    }
 }
