@@ -515,9 +515,37 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
-        if (host.isSetup()) {
-            return;
+        String resource = null;
+        Map<String, String> details = startup.getHostDetails();
+        String prodBrand = details.get("product_brand").trim();
+        String prodVersion = details.get("product_version").trim();
+        
+        if(prodBrand.equals("XenCloudPlatform") && prodVersion.equals("0.1.1")) {
+            resource = XcpServerResource.class.getName();
+        } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) {
+            resource = XenServer56Resource.class.getName();
+        } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
+            String prodVersionTextShort = details.get("product_version_text_short").trim();
+            if("5.6 SP2".equals(prodVersionTextShort)) {
+                resource = XenServer56SP2Resource.class.getName();
+            } else if("5.6 FP1".equals(prodVersionTextShort)) {
+                resource = XenServer56FP1Resource.class.getName();
+            }
         }
+        if( resource == null ){
+            String msg = "Only support XCP 0.1.1, XenServer 5.6,  XenServer 5.6 FP1 and XenServer 5.6 SP2, but this one is " + prodBrand + " " + prodVersion;
+            s_logger.debug(msg);
+            throw new RuntimeException(msg);
+        }
+        if (! resource.equals(host.getResource()) ) {
+            host.setResource(resource);
+            host.setSetup(false);
+            _hostDao.update(agentId, host);
+            String msg = "host " + host.getPrivateIpAddress() + " changed from " + host.getResource() + " to " + resource;
+            s_logger.debug(msg);
+            throw new RuntimeException(msg);
+        }
+        
         
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Setting up host " + agentId);
@@ -528,6 +556,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if (_setupMultipath) {
             setup.setMultipathOn();
         }
+        if (!host.isSetup()) {
+            setup.setNeedSetup(true);
+        }
+        
         try {
             SetupAnswer answer = (SetupAnswer)_agentMgr.send(agentId, setup);
             if (answer != null && answer.getResult()) {

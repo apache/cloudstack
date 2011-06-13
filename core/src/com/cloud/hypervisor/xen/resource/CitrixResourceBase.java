@@ -261,7 +261,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected IAgentControl _agentControl;
 
     final int _maxWeight = 256;
-
+    protected int _heartbeatInterval = 60;
     protected final XsHost _host = new XsHost();
 
     // Guest and Host Performance Statistics
@@ -1203,10 +1203,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn("Unable to put server in maintainence mode", e);
             return new MaintainAnswer(cmd, false, e.getMessage());
         }
-    }
-
-    protected SetupAnswer execute(SetupCommand cmd) {
-        return new SetupAnswer(cmd, false);
     }
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
@@ -3700,10 +3696,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             XsLocalNetwork privateNic = getManagementNetwork(conn);
             _privateNetworkName = privateNic.getNetworkRecord(conn).nameLabel;
             _host.privatePif = privateNic.getPifRecord(conn).uuid;
-            _host.privateNetwork = privateNic.getNetworkRecord(conn).uuid;
-            
-            _canBridgeFirewall = can_bridge_firewall(conn);
-            
+            _host.privateNetwork = privateNic.getNetworkRecord(conn).uuid;           
             _host.systemvmisouuid = null;
             
             XsLocalNetwork guestNic = null;
@@ -3877,7 +3870,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public StartupCommand[] initialize() throws IllegalArgumentException{
         Connection conn = getConnection();
-        setupServer(conn);
         if (!getHostInfo(conn)) {
             s_logger.warn("Unable to get host information for " + _host.ip);
             return null;
@@ -3903,9 +3895,170 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         return new StartupCommand[] { cmd };
     }
+    
+    private void cleanupTemplateSR(Connection conn) {
+        Set<PBD> pbds = null;
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            pbds = host.getPBDs(conn);
+        } catch (XenAPIException e) {
+            s_logger.warn("Unable to get the SRs " + e.toString(), e);
+            throw new CloudRuntimeException("Unable to get SRs " + e.toString(), e);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to get SRs " + e.getMessage(), e);
+        }
+        for (PBD pbd : pbds) {
+            SR sr = null;
+            SR.Record srRec = null;
+            try {
+                sr = pbd.getSR(conn);
+                srRec = sr.getRecord(conn);
+            } catch (Exception e) {
+                s_logger.warn("pbd.getSR get Exception due to " + e.toString());
+                continue;
+            }
+            String type = srRec.type;
+            if (srRec.shared) {
+                continue;
+            }
+            if (SRType.NFS.equals(type) || (SRType.ISO.equals(type) && srRec.nameDescription.contains("template"))) {
+                try {
+                    pbd.unplug(conn);
+                    pbd.destroy(conn);
+                    sr.forget(conn);
+                } catch (Exception e) {
+                    s_logger.warn("forget SR catch Exception due to " + e.toString());
+                }
+            }
+        }
+    }
+    
+    protected SetupAnswer execute(SetupCommand cmd) {
+        Connection conn = getConnection();
+        setupServer(conn);
+        try {
+            if (!setIptables(conn)) {
+                s_logger.warn("set xenserver Iptable failed");
+                return null;
+            }
+            _canBridgeFirewall = can_bridge_firewall(conn);
+            
+            String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
+                    .toString(_heartbeatInterval));
+            if (result == null || !result.contains("> DONE <")) {
+                s_logger.warn("Unable to launch the heartbeat process on " + _host.ip);
+                return null;
+            }
+            cleanupTemplateSR(conn);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            try {
+                if (cmd.useMultipath()) {
+                    // the config value is set to true
+                    host.addToOtherConfig(conn, "multipathing", "true");
+                    host.addToOtherConfig(conn, "multipathhandle", "dmp");
+                }
 
-    protected void setupServer(Connection conn) {
-        String version = CitrixResourceBase.class.getPackage().getImplementationVersion();
+            } catch (Types.MapDuplicateKey e) {
+                s_logger.debug("multipath is already set");
+            }
+            if (cmd.needSetup() ) {
+                result = callHostPlugin(conn, "vmops", "setup_iscsi", "uuid", _host.uuid);
+                if (!result.contains("> DONE <")) {
+                    s_logger.warn("Unable to setup iscsi: " + result);
+                    return new SetupAnswer(cmd, result);
+                }
+    
+                Pair<PIF, PIF.Record> mgmtPif = null;
+                Set<PIF> hostPifs = host.getPIFs(conn);
+                for (PIF pif : hostPifs) {
+                    PIF.Record rec = pif.getRecord(conn);
+                    if (rec.management) {
+                        if (rec.VLAN != null && rec.VLAN != -1) {
+                            String msg = new StringBuilder(
+                                    "Unsupported configuration.  Management network is on a VLAN.  host=").append(
+                                    _host.uuid).append("; pif=").append(rec.uuid).append("; vlan=").append(rec.VLAN)
+                                    .toString();
+                            s_logger.warn(msg);
+                            return new SetupAnswer(cmd, msg);
+                        }
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Management network is on pif=" + rec.uuid);
+                        }
+                        mgmtPif = new Pair<PIF, PIF.Record>(pif, rec);
+                        break;
+                    }
+                }
+    
+                if (mgmtPif == null) {
+                    String msg = "Unable to find management network for " + _host.uuid;
+                    s_logger.warn(msg);
+                    return new SetupAnswer(cmd, msg);
+                }
+    
+                Map<Network, Network.Record> networks = Network.getAllRecords(conn);
+                for (Network.Record network : networks.values()) {
+                    if (network.nameLabel.equals("cloud-private")) {
+                        for (PIF pif : network.PIFs) {
+                            PIF.Record pr = pif.getRecord(conn);
+                            if (_host.uuid.equals(pr.host.getUuid(conn))) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Found a network called cloud-private. host=" + _host.uuid
+                                            + ";  Network=" + network.uuid + "; pif=" + pr.uuid);
+                                }
+                                if (pr.VLAN != null && pr.VLAN != -1) {
+                                    String msg = new StringBuilder(
+                                            "Unsupported configuration.  Network cloud-private is on a VLAN.  Network=")
+                                            .append(network.uuid).append(" ; pif=").append(pr.uuid).toString();
+                                    s_logger.warn(msg);
+                                    return new SetupAnswer(cmd, msg);
+                                }
+                                if (!pr.management && pr.bondMasterOf != null && pr.bondMasterOf.size() > 0) {
+                                    if (pr.bondMasterOf.size() > 1) {
+                                        String msg = new StringBuilder(
+                                                "Unsupported configuration.  Network cloud-private has more than one bond.  Network=")
+                                                .append(network.uuid).append("; pif=").append(pr.uuid).toString();
+                                        s_logger.warn(msg);
+                                        return new SetupAnswer(cmd, msg);
+                                    }
+                                    Bond bond = pr.bondMasterOf.iterator().next();
+                                    Set<PIF> slaves = bond.getSlaves(conn);
+                                    for (PIF slave : slaves) {
+                                        PIF.Record spr = slave.getRecord(conn);
+                                        if (spr.management) {
+                                            if (!transferManagementNetwork(conn, host, slave, spr, pif)) {
+                                                String msg = new StringBuilder(
+                                                        "Unable to transfer management network.  slave=" + spr.uuid
+                                                                + "; master=" + pr.uuid + "; host=" + _host.uuid)
+                                                        .toString();
+                                                s_logger.warn(msg);
+                                                return new SetupAnswer(cmd, msg);
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return new SetupAnswer(cmd, false);
+
+        } catch (XmlRpcException e) {
+            s_logger.warn("Unable to setup", e);
+            return new SetupAnswer(cmd, e.getMessage());
+        } catch (XenAPIException e) {
+            s_logger.warn("Unable to setup", e);
+            return new SetupAnswer(cmd, e.getMessage());
+        } catch (Exception e) {
+            s_logger.warn("Unable to setup", e);
+            return new SetupAnswer(cmd, e.getMessage());
+        }
+    }
+
+    /* return : if setup is needed */
+    protected boolean setupServer(Connection conn) {
+        String version = this.getClass().getName() + "-" + CitrixResourceBase.class.getPackage().getImplementationVersion();
 
         try {
             Host host = Host.getByUuid(conn, _host.uuid);
@@ -3921,7 +4074,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (tag.startsWith("vmops-version-")) {
                     if (tag.contains(version)) {
                         s_logger.info(logX(host, "Host " + hr.address + " is already setup."));
-                        return;
+                        return false;
                     } else {
                         it.remove();
                     }
@@ -3995,6 +4148,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             hr.tags.add("vmops-version-" + version);
             host.setTags(conn, hr.tags);
+            return true;
         } catch (XenAPIException e) {
             String msg = "Xen setup failed due to " + e.toString();
             s_logger.warn(msg, e);
@@ -4471,6 +4625,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (details == null) {
                 details = new HashMap<String, String>();
             }
+            details.put("product_brand", hr.softwareVersion.get("product_brand"));
+            details.put("product_version", hr.softwareVersion.get("product_version"));
+            if( hr.softwareVersion.get("product_version_text_short") != null ) {
+                details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
+            }
             if (_privateNetworkName != null) {
             details.put("private.network.device", _privateNetworkName);
             }
@@ -4600,6 +4759,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         _storageNetworkName1 = (String) params.get("storage.network.device1");
         _storageNetworkName2 = (String) params.get("storage.network.device2");
 
+        _heartbeatInterval = NumbersUtil.parseInt((String) params.get("xen.heartbeat.interval"), 60);
+        
         String value = (String) params.get("wait");
         _wait = NumbersUtil.parseInt(value, 600);
 
