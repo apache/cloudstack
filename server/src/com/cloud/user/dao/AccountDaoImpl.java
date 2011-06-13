@@ -66,7 +66,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 
         DomainAccountsSearch = createSearchBuilder();
         DomainAccountsSearch.and("domainId", DomainAccountsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        DomainAccountsSearch.and("removed", DomainAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        DomainAccountsSearch.and("removed", DomainAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         DomainAccountsSearch.done();
         
         CleanupSearch = createSearchBuilder();

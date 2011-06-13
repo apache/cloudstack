@@ -793,13 +793,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 for (DomainVO domainChild : domainChildren) {
                     long domainCount = updateDomainResourceCount(domainChild.getId(), type);
                     count = count + domainCount; // add the child domain count to parent domain count
-
-                    List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainChild.getId());
-                    for (AccountVO account : accounts) {
-                        long accountCount = updateAccountResourceCount(account.getId(), type);
-                        count = count + accountCount; // add account's resource count to parent domain count
-                    }
                 }
+
+                List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domain.getId());
+                for (AccountVO account : accounts) {
+                    long accountCount = updateAccountResourceCount(account.getId(), type);
+                    count = count + accountCount; // add account's resource count to parent domain count
+                }
+
                 _resourceCountDao.setDomainCount(domainId, type, count);
            } catch (Exception e) {
                throw new CloudRuntimeException("Failed to update resource count for domain with Id " + domainId);
