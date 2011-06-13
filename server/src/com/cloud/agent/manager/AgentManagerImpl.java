@@ -851,9 +851,30 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
 
         if (clusterId != null) {
-            if (_clusterDao.findById(clusterId) == null) {
+        	ClusterVO cluster = _clusterDao.findById(clusterId);
+            if (cluster == null) {
                 throw new InvalidParameterValueException("Can't find cluster by id " + clusterId);
             }
+            
+            // VMware only allows adding host to an existing cluster, as we already have a lot of information
+            // in cluster object, to simplify user input, we will construct neccessary information here
+            Map<String, String> clusterDetails = this._clusterDetailsDao.findDetails(clusterId);
+            username = clusterDetails.get("username");
+            assert(username != null);
+            
+            password = clusterDetails.get("password");
+            assert(password != null);
+            
+            try {
+                uri = new URI(UriUtils.encodeURIComponent(url));
+                
+                url = clusterDetails.get("url") + "/" + uri.getHost();
+            } catch (URISyntaxException e) {
+                throw new InvalidParameterValueException(url + " is not a valid uri");
+            }
+        } else {
+        	if(hypervisorType.equalsIgnoreCase(HypervisorType.VMware.toString()))
+        		throw new InvalidParameterValueException("Expecting cluster id in parameter, VMware only allows adding host to an existing cluster");
         }
 
         if (clusterName != null) {
@@ -872,6 +893,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
         try {
             uri = new URI(UriUtils.encodeURIComponent(url));
+            
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {

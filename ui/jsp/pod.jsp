@@ -308,6 +308,8 @@ dictionary = {
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
+
+<!-- 
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_address">
                     <fmt:message key="label.vcenter.host"/>:</label>
@@ -336,6 +338,7 @@ dictionary = {
                 <div id="host_vcenter_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
+-->            
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_host">
                     <fmt:message key="label.esx.host"/>:</label>

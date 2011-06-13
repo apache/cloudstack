@@ -515,10 +515,14 @@ function bindAddHostButton($leftmenuItem1) {
 				    clusterObj = clustersUnderOnePod[clusterId];    
                     hypervisor = clusterObj.hypervisortype;                     
 				    if(hypervisor == "VMware") {
+
+				    	// for VMware, we can only add host to existing cluster, only host address is needed as of now
+/*
 			            isValid &= validateString("vCenter Address", $thisDialog.find("#host_vcenter_address"), $thisDialog.find("#host_vcenter_address_errormsg"));
 			            isValid &= validateString("vCenter User", $thisDialog.find("#host_vcenter_username"), $thisDialog.find("#host_vcenter_username_errormsg"));
 			            isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
 			            isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
+*/
 			            isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
 		            } else {
 			            isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
@@ -540,6 +544,7 @@ function bindAddHostButton($leftmenuItem1) {
                 array1.push("&clustertype=" + clustertype);	
 		        	
 			    if(hypervisor == "VMware") {
+/*			    	
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());
 			        array1.push("&username="+todb(username));
 					
@@ -549,7 +554,11 @@ function bindAddHostButton($leftmenuItem1) {
 			        var hostname = trim($thisDialog.find("#host_vcenter_address").val());
 			        hostname += "/" + todb(trim($thisDialog.find("#host_vcenter_dc").val()));
 			        hostname += "/" + todb(trim($thisDialog.find("#host_vcenter_host").val()));
-			        
+*/
+			        array1.push("&username=");
+			        array1.push("&password=");
+			        var hostname = trim($thisDialog.find("#host_vcenter_host").val());
+			    	
 			        var url;					
 			        if(hostname.indexOf("http://")==-1)
 			            url = "http://" + hostname;
