@@ -7,6 +7,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
@@ -23,6 +25,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -105,12 +108,12 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	        if (bootable == null) {
 	        	bootable = Boolean.TRUE;
 	        }
-	        
-	        if ((guestOSId == null || guestOSId == 138L) && bootable == true){
+	        GuestOS noneGuestOs = ApiDBUtils.findGuestOSByDisplayName(ApiConstants.ISO_GUEST_OS_NONE);
+	        if ((guestOSId == null || guestOSId == noneGuestOs.getId()) && bootable == true){
 	        	throw new InvalidParameterValueException("Please pass a valid GuestOS Id");
 	        }
 	        if (bootable == false){
-	        	guestOSId = 138L; //Guest os id of None.
+	        	guestOSId = noneGuestOs.getId(); //Guest os id of None.
 	        }
 		} else {
 			if (bits == null) {

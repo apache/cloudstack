@@ -355,6 +355,10 @@ public class ApiDBUtils {
         return _guestOSDao.findByIdIncludingRemoved(id);
     }
 
+    public static GuestOS findGuestOSByDisplayName(String displayName) {
+        return _guestOSDao.listByDisplayName(displayName);
+    }
+    
     public static HostVO findHostById(Long hostId) {
         return _hostDao.findByIdIncludingRemoved(hostId);
     }
