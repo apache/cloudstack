@@ -105,6 +105,7 @@ public abstract class NioConnection implements Runnable {
     	return _isStartup;
     }
     
+    @Override
     public void run() {
     	synchronized(_thread) {
     		try {
@@ -238,7 +239,7 @@ public abstract class NioConnection implements Runnable {
             Task task = _factory.create(Task.Type.DATA, link, data);
             _executor.execute(task);
         } catch (Exception e) {
-            logTrace(e, key, 1);
+            logDebug(e, key, 1);
             terminate(key);
         }
     }
@@ -257,6 +258,20 @@ public abstract class NioConnection implements Runnable {
         }
     }
 
+    protected void logDebug(Exception e, SelectionKey key, int loc) {
+        if (s_logger.isDebugEnabled()) {
+            Socket socket = null;
+            if (key != null) {
+                SocketChannel ch = (SocketChannel)key.channel();
+                if (ch != null) {
+                    socket = ch.socket();
+                }
+            }
+            
+            s_logger.debug("Location " + loc + ": Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
+        }
+    }
+    
     protected void processTodos() {
         List<ChangeRequest> todos;
         if (_todos.size() == 0) {
@@ -338,8 +353,8 @@ public abstract class NioConnection implements Runnable {
             if (!socket.getKeepAlive()) {
             	socket.setKeepAlive(true);
             }
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Connected to " + socket);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Connected to " + socket);
             }
             Link link = new Link((InetSocketAddress)socket.getRemoteSocketAddress(), this);
             link.setKey(key);
@@ -370,7 +385,7 @@ public abstract class NioConnection implements Runnable {
                 key.interestOps(SelectionKey.OP_READ);
             }
         } catch (Exception e) {
-            logTrace(e, key, 3);
+            logDebug(e, key, 3);
             terminate(key);
         }
     }
@@ -381,8 +396,8 @@ public abstract class NioConnection implements Runnable {
             key.cancel();
             try {
                 if (channel != null) {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Closing socket " + channel.socket());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Closing socket " + channel.socket());
                     }
                     channel.close();
                 }
