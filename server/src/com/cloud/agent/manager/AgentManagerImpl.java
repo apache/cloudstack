@@ -858,14 +858,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             
             // VMware only allows adding host to an existing cluster, as we already have a lot of information
             // in cluster object, to simplify user input, we will construct neccessary information here
-            Map<String, String> clusterDetails = this._clusterDetailsDao.findDetails(clusterId);
-            username = clusterDetails.get("username");
-            assert(username != null);
-            
-            password = clusterDetails.get("password");
-            assert(password != null);
-            
             if(hypervisorType.equalsIgnoreCase(HypervisorType.VMware.toString())) {
+                Map<String, String> clusterDetails = this._clusterDetailsDao.findDetails(clusterId);
+                username = clusterDetails.get("username");
+                assert(username != null);
+            
+                password = clusterDetails.get("password");
+                assert(password != null);
+            
                 try {
                     uri = new URI(UriUtils.encodeURIComponent(url));
                 
