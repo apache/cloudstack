@@ -32,7 +32,7 @@ SIZE=2000
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
 CLOUDSTACK_RELEASE=2.2
-
+offset=4096
 baseimage() {
   mkdir -p $LOCATION
   #dd if=/dev/zero of=$IMAGELOC bs=1M  count=$SIZE
@@ -40,17 +40,17 @@ baseimage() {
   loopdev=$(losetup -f)
   losetup $loopdev $IMAGELOC
   parted $loopdev -s 'mklabel msdos'
-  parted $loopdev -s 'mkpart primary ext3 512B -1'
+  parted $loopdev -s 'mkpart primary ext3 4096B -1'
   sleep 2 
   losetup -d $loopdev
-  loopdev=$(losetup --show -o 512 -f $IMAGELOC )
+  loopdev=$(losetup --show -o $offset -f $IMAGELOC )
   mkfs.ext3  -L ROOT $loopdev
   mkdir -p $MOUNTPOINT
   tune2fs -c 100 -i 0 $loopdev
   sleep 2 
   losetup -d $loopdev
   
-  mount -o loop,offset=512 $IMAGELOC  $MOUNTPOINT
+  mount -o loop,offset=$offset $IMAGELOC  $MOUNTPOINT
   
   #debootstrap --variant=minbase --keyring=/usr/share/keyrings/debian-archive-keyring.gpg squeeze $MOUNTPOINT http://${APT_PROXY}${DEBIAN_MIRROR}
   debootstrap --variant=minbase --arch=i386 squeeze $MOUNTPOINT http://${APT_PROXY}${DEBIAN_MIRROR}
