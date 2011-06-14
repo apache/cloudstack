@@ -882,10 +882,12 @@ function initAddHostShortcut() {
 				    clusterObj = clustersUnderOnePod[clusterId];    
                     hypervisor = clusterObj.hypervisortype;  		        
 		            if(hypervisor == "VMware") {
+/*		            	
 			            isValid &= validateString("vCenter Address", $thisDialog.find("#host_vcenter_address"), $thisDialog.find("#host_vcenter_address_errormsg"));
 			            isValid &= validateString("vCenter User", $thisDialog.find("#host_vcenter_username"), $thisDialog.find("#host_vcenter_username_errormsg"));
 			            isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
 			            isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
+*/	
 			            isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
 		            } else {
 						if (hypervisor == "BareMetal") {
@@ -926,6 +928,7 @@ function initAddHostShortcut() {
 				array1.push("&hosttags=" + todb(trim($thisDialog.find("#host_tags").val())));
 
 			    if(hypervisor == "VMware") {
+/*			    	
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());
 			        array1.push("&username="+todb(username));
 					
@@ -935,7 +938,11 @@ function initAddHostShortcut() {
 			        var hostname = trim($thisDialog.find("#host_vcenter_address").val());
 			        hostname += "/" + trim($thisDialog.find("#host_vcenter_dc").val());
 			        hostname += "/" + trim($thisDialog.find("#host_vcenter_host").val());
-			        
+*/			        
+			        array1.push("&username=");
+			        array1.push("&password=");
+			        var hostname = trim($thisDialog.find("#host_vcenter_host").val());
+			    	
 			        var url;					
 			        if(hostname.indexOf("http://")==-1)
 			            url = "http://" + todb(hostname);

@@ -475,7 +475,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return attache;
     }
 
-
     @Override
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
@@ -505,6 +504,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
         return null;
     }
+    
 
     @Override
     public long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
