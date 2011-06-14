@@ -167,6 +167,12 @@ Description: Cloud.com agent premium
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
  will participate in your cloud.
 
+Package: cloud-system-iso
+Architecture: any
+Description: Cloud.com system iso
+ The Cloud.com agent is in charge of managing shared computing resources in
+ a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
+ will participate in your cloud.
 
 Package: cloud-console-proxy
 Architecture: any
