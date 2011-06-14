@@ -23,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -90,6 +91,7 @@ public class Upgrade226to227 implements DbUpgrade {
         }
         
         updateDomainLevelNetworks(conn);
+        dropKeysIfExist(conn);
     }
 
     @Override
@@ -130,6 +132,22 @@ public class Upgrade226to227 implements DbUpgrade {
         } catch (SQLException e) {
             s_logger.error("Failed to set domain specific shared networks due to ", e);
             throw new CloudRuntimeException("Failed to set domain specific shared networks due to ", e);
+        }
+    }
+    
+    private void dropKeysIfExist(Connection conn) {
+        HashMap<String, List<String>> indexes = new HashMap<String, List<String>>();
+
+        // domain router table
+        List<String> keys = new ArrayList<String>();
+        keys.add("unique_name");
+        indexes.put("network_offerings", keys);
+
+        s_logger.debug("Dropping keys that don't exist in 2.2.7 version of the DB...");
+
+        // drop indexes now
+        for (String tableName : indexes.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
         }
     }
     
