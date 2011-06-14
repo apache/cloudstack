@@ -375,7 +375,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         String url = cmd.getUrl();
         return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, null);
     }
-
+    
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
             Map<String, String> params, String allocationState) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         URI uri = null;
