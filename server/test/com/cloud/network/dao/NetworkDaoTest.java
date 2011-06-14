@@ -19,7 +19,7 @@ public class NetworkDaoTest extends TestCase {
         NetworkDaoImpl dao = ComponentLocator.inject(NetworkDaoImpl.class);
         
         dao.expunge(1001l);
-        NetworkVO network = new NetworkVO(1001, TrafficType.Control, GuestIpType.Direct, Mode.Dhcp, BroadcastDomainType.Native, 1, 1, 1, 1, 1001, "Name", "DisplayText", false, true, true);
+        NetworkVO network = new NetworkVO(1001, TrafficType.Control, GuestIpType.Direct, Mode.Dhcp, BroadcastDomainType.Native, 1, 1, 1, 1, 1001, "Name", "DisplayText", false, true, true, null);
         network.setGuruName("guru_name");
         List<String> tags = new ArrayList<String>();
 
