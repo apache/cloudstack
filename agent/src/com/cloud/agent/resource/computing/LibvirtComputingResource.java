@@ -622,7 +622,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
  				}
  			}
  			if (_sysvmISOPath == null) {
- 				throw new ConfigurationException("Can't find system vm ISO");
+ 				s_logger.debug("Can't find system vm ISO");
  			}
  		}
 		
@@ -2263,7 +2263,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		
 		if (vmSpec.getType() != VirtualMachine.Type.User) {
 			DiskDef iso = new DiskDef();
-			iso.defISODisk(_sysvmISOPath);
+			if (_sysvmISOPath != null)
+			    iso.defISODisk(_sysvmISOPath);
 			vm.getDevices().addDevice(iso);
 			
 			createPatchVbd(conn, vmName, vm, vmSpec);
