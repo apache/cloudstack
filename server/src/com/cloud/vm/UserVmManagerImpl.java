@@ -2508,14 +2508,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, template.getName(), null, null, 0, null);
             iso.setDeviceId(3);
             profile.addDisk(iso);
-            
-            if (template != null) {
-				if (template.isRequiresHvm()) {
-					profile.setBootLoaderType(BootloaderType.HVM);
-				} else {
-					profile.setBootLoaderType(BootloaderType.PyGrub);
-				}
-            }
         }
         
         return true;
