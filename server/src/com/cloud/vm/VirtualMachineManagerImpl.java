@@ -137,6 +137,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
@@ -363,8 +364,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         }
 
-        if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
+        try {
+            if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
+                s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
+                return false;
+            }
+        } catch (NoTransitionException e) {
+            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
             return false;
         }
 
@@ -494,16 +500,20 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             Transaction txn = Transaction.currentTxn();
             txn.start();
             try {
-                if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
+                try {
+                    if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
 
-                    Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
-                    work = _workDao.persist(work);
-                    ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
+                        Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
+                        work = _workDao.persist(work);
+                        ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
+                        }
+                        return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
                     }
-                    return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
+                } catch (NoTransitionException e) {
+                    throw new CloudRuntimeException(e.getMessage());
                 }
 
                 if (s_logger.isDebugEnabled()) {
@@ -544,7 +554,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
     @DB
-    protected <T extends VMInstanceVO> boolean changeState(T vm, Event event, Long hostId, ItWorkVO work, Step step) {
+    protected <T extends VMInstanceVO> boolean changeState(T vm, Event event, Long hostId, ItWorkVO work, Step step) throws NoTransitionException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         if (!stateTransitTo(vm, event, hostId)) {
@@ -667,8 +677,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
                 long destHostId = dest.getHost().getId();
 
-                if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
-                    throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine");
+                try {
+                    if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
+                        throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine");
+                    }
+                } catch (NoTransitionException e1) {
+                    throw new ConcurrentOperationException(e1.getMessage());
                 }
 
                 try {
@@ -764,7 +778,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
                 }
                 if (canRetry) {
-                    changeState(vm, Event.OperationFailed, null, work, Step.Done);
+                    try {
+                        changeState(vm, Event.OperationFailed, null, work, Step.Done);
+                    } catch (NoTransitionException e) {
+                        throw new ConcurrentOperationException(e.getMessage());
+                    }
                 }
             }
         }
@@ -884,7 +902,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
 
-        if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
+        try {
+            if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
+                throw new ConcurrentOperationException("VM is being operated on.");
+            }
+        } catch (NoTransitionException e1) {
             if (!forced) {
                 throw new ConcurrentOperationException("VM is being operated on by someone else.");
             }
@@ -903,7 +925,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
             if (work != null) {
                 if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.StopRequested, forced, user, account)) {
-                    return stateTransitTo(vm, Event.AgentReportStopped, null);
+                    try {
+                        return stateTransitTo(vm, Event.AgentReportStopped, null);
+                    } catch (NoTransitionException e) {
+                        s_logger.warn("Unable to cleanup " + vm);
+                        return false;
+                    }
                 }
             }
         }
@@ -930,7 +957,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 if (!stopped) {
                     if (!forced) {
                         s_logger.warn("Unable to stop vm " + vm);
-                        stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                        try {
+                            stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                        } catch (NoTransitionException e) {
+                            s_logger.warn("Unable to transition the state " + vm);
+                        }
                         return false;
                     } else {
                         s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
@@ -962,20 +993,25 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         vm.setReservationId(null);
 
-        return stateTransitTo(vm, Event.OperationSucceeded, null);
+        try {
+            return stateTransitTo(vm, Event.OperationSucceeded, null);
+        } catch (NoTransitionException e) {
+            s_logger.warn(e.getMessage());
+            return false;
+        }
     }
 
     private void setStateMachine() {
         _stateMachine = VirtualMachine.State.getStateMachine();
     }
 
-    protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) {
+    protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) throws NoTransitionException {
         vm.setReservationId(reservationId);
         return _stateMachine.transitTo(vm, e, hostId, _vmDao);
     }
 
     @Override
-    public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) {
+    public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException {
         State oldState = vm.getState();
         if (oldState == State.Starting) {
             if (e == Event.OperationSucceeded) {
@@ -1001,7 +1037,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Override
     public <T extends VMInstanceVO> boolean destroy(T vm, User user, Account caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying vm " + vm.toString());
+            s_logger.debug("Destroying vm " + vm);
         }
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
@@ -1015,8 +1051,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             return false;
         }
 
-        if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
+        try {
+            if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+                s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
+                return false;
+            }
+        } catch (NoTransitionException e) {
+            s_logger.debug(e.getMessage());
             return false;
         }
 
@@ -1106,9 +1147,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         vm.setLastHostId(srcHostId);
-        if (vm == null || vm.getHostId() == null || vm.getHostId() != srcHostId || !changeState(vm, Event.MigrationRequested, dstHostId, work, Step.Migrating)) {
-            s_logger.info("Migration cancelled because state has changed: " + vm);
-            throw new ConcurrentOperationException("Migration cancelled because state has changed: " + vm);
+        try {
+            if (vm == null || vm.getHostId() == null || vm.getHostId() != srcHostId || !changeState(vm, Event.MigrationRequested, dstHostId, work, Step.Migrating)) {
+                s_logger.info("Migration cancelled because state has changed: " + vm);
+                throw new ConcurrentOperationException("Migration cancelled because state has changed: " + vm);
+            }
+        } catch (NoTransitionException e1) {
+            s_logger.info("Migration cancelled because " + e1.getMessage());
+            throw new ConcurrentOperationException("Migration cancelled because " + e1.getMessage());
         }
 
         boolean migrated = false;
@@ -1129,7 +1175,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 throw new AgentUnavailableException("Operation timed out on migrating " + vm, dstHostId);
             }
 
-            changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Started);
+            try {
+                if (!changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Started)) {
+                    throw new ConcurrentOperationException("Unable to change the state for " + vm);
+                }
+            } catch (NoTransitionException e1) {
+                throw new ConcurrentOperationException("Unable to change state due to " + e1.getMessage());
+            }
 
             try {
                 if (!checkVmOnHost(vm, dstHostId)) {
@@ -1159,7 +1211,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     s_logger.info("Looks like the destination Host is unavailable for cleanup");
                 }
 
-                stateTransitTo(vm, Event.OperationFailed, srcHostId);
+                try {
+                    stateTransitTo(vm, Event.OperationFailed, srcHostId);
+                } catch (NoTransitionException e) {
+                    s_logger.warn(e.getMessage());
+                }
             }
 
             work.setStep(Step.Done);
@@ -1456,7 +1512,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         // if (serverState == State.Migrating) {
-        // s_logger.debug("Skipping vm in migrating state: " + vm.toString());
+        // s_logger.debug("Skipping vm in migrating state: " + vm);
         // return null;
         // }
 
@@ -1466,7 +1522,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             assert (agentState == State.Stopped || agentState == State.Running) : "If the states we send up is changed, this must be changed.";
             if (agentState == State.Running) {
-                stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+                try {
+                    stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+                } catch (NoTransitionException e) {
+                    s_logger.warn(e.getMessage());
+                }
                 // FIXME: What if someone comes in and sets it to stopping? Then what?
                 return null;
             }
@@ -1513,7 +1573,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 if (fullSync) {
                     s_logger.debug("VM state is starting on full sync so updating it to running");
                     vm = findById(vm.getType(), vm.getId());
-                    stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
+                    try {
+                        stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
+                    } catch (NoTransitionException e1) {
+                        s_logger.warn(e1.getMessage());
+                    }
                     s_logger.debug("VM's " + vm + " state is starting on full sync so updating it to Running");
                     vm = vmGuru.findById(vm.getId());
 
@@ -1542,7 +1606,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         }
 
                         if (vmGuru.finalizeStart(profile, vm.getHostId(), cmds, null)) {
-                            stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
+                            try {
+                                stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
+                            } catch (NoTransitionException e) {
+                                s_logger.warn(e.getMessage());
+                            }
                         } else {
                             s_logger.error("Exception during update for running vm: " + vm);
                             return null;

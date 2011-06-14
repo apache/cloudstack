@@ -67,6 +67,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -254,12 +255,16 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     }
 
     @Override
-    public void scheduleRestart(VMInstanceVO vm, final boolean investigate) {
-        Long hostId = vm.getHostId();
-        if (hostId == null) {
-            _itMgr.stateTransitTo(vm, Event.OperationFailed, null);
-            return;
-        }
+    public void scheduleRestart(VMInstanceVO vm, boolean investigate) {
+    	Long hostId = vm.getHostId();
+    	if (hostId == null) {
+    	    try {
+    	        s_logger.debug("Found a vm that is scheduled to be restarted but has no host id: " + vm);
+    	        _itMgr.stateTransitTo(vm, Event.OperationFailed, null);
+    	    } catch (NoTransitionException e) {
+    	    }
+    	    return;
+    	}
         if (!investigate) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM does not require investigation so I'm marking it as Stopped: " + vm.toString());
