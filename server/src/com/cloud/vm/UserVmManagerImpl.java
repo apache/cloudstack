@@ -1637,6 +1637,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName());
                 _usageEventDao.persist(usageEvent);
+                String msg = "Failed to deploy Vm with Id: " + vmId;
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), msg, msg);
             }
         }
     }
