@@ -865,12 +865,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             password = clusterDetails.get("password");
             assert(password != null);
             
-            try {
-                uri = new URI(UriUtils.encodeURIComponent(url));
+            if(hypervisorType.equalsIgnoreCase(HypervisorType.VMware.toString())) {
+                try {
+                    uri = new URI(UriUtils.encodeURIComponent(url));
                 
-                url = clusterDetails.get("url") + "/" + uri.getHost();
-            } catch (URISyntaxException e) {
-                throw new InvalidParameterValueException(url + " is not a valid uri");
+                    url = clusterDetails.get("url") + "/" + uri.getHost();
+                } catch (URISyntaxException e) {
+                    throw new InvalidParameterValueException(url + " is not a valid uri");
+                }
             }
         } else {
         	if(hypervisorType.equalsIgnoreCase(HypervisorType.VMware.toString()))
