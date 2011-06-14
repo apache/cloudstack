@@ -65,6 +65,8 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
@@ -490,6 +492,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((OvsDestroyTunnelCommand)cmd);
         } else if (clazz == UpdateHostPasswordCommand.class) {
             return execute((UpdateHostPasswordCommand)cmd);
+        } else if (cmd instanceof CheckRouterCommand) {
+            return execute((CheckRouterCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1160,6 +1164,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new Answer(cmd, false, "PingTestCommand failed");
         }
         return new Answer(cmd);
+    }
+
+    private CheckRouterAnswer execute(CheckRouterCommand cmd) {
+        Connection conn = getConnection();
+        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "checkRouter", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
+        }
+        return new CheckRouterAnswer(cmd, result.equals("Status: MASTER"), result);
     }
 
     protected MaintainAnswer execute(MaintainCommand cmd) {

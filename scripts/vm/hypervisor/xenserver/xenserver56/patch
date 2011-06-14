@@ -43,3 +43,4 @@ InterfaceReconfigure.py=.,0755,/opt/xensource/bin
 fsimage.so=..,0755,/usr/lib/fs/ext2fs-lib
 create_privatetemplate_from_snapshot.sh=..,0755,/opt/xensource/bin
 upgrade_snapshot.sh=..,0755,/opt/xensource/bin
+getRouterStatus.sh=../../../../network/domr/,0755,/opt/xensource/bin
