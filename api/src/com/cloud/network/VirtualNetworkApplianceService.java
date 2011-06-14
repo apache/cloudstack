@@ -17,6 +17,7 @@
  */
 package com.cloud.network;
 
+import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -49,5 +50,7 @@ public interface VirtualNetworkApplianceService{
      * @throws ConcurrentOperationException 
      */
     VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException, ConcurrentOperationException;
+
+    VirtualRouter startRouter(StartRouterCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
     
 }

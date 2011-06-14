@@ -58,6 +58,7 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.dao.CapacityDao;
@@ -76,6 +77,8 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -407,7 +410,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return sendCommandsToRouter(router, cmds);
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_STOP, eventDescription = "stopping router Vm", async = true)
     public VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
         Account account = context.getCaller();
@@ -492,7 +495,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return true;
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
     public VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Account caller = UserContext.current().getCaller();
 
@@ -1400,6 +1403,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return _routerDao.findById(VirtualMachineName.getRouterId(name));
     }
 
+    @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "starting router Vm", async = true)
+    public VirtualRouter startRouter(StartRouterCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException{
+        return startRouter(cmd.getId(), true);
+    }
+    
     @Override
     public VirtualRouter startRouter(long routerId, boolean restartNetwork) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         Account account = UserContext.current().getCaller();

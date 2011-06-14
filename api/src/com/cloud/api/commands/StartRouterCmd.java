@@ -34,6 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 
 @Implementation(responseObject=DomainRouterResponse.class, description="Starts a router.")
@@ -100,7 +101,8 @@ public class StartRouterCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        VirtualRouter result = _routerService.startRouter(this.getId(), true);
+        UserContext.current().setEventDetails("Router Id: "+getId());
+        VirtualRouter result = _routerService.startRouter(this);
         if (result != null){
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
             routerResponse.setResponseName(getCommandName());

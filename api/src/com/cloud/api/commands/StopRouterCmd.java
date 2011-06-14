@@ -33,6 +33,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description = "Stops a router.", responseObject = DomainRouterResponse.class)
 public class StopRouterCmd extends BaseAsyncCmd {
@@ -102,6 +103,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
+        UserContext.current().setEventDetails("Router Id: "+getId());
         VirtualRouter result = _routerService.stopRouter(getId(), isForced());
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
