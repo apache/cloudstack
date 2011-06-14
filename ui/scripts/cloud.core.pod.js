@@ -749,7 +749,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
         $dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
     }
                                          
-    populateClusterFieldInAddPoolDialog($dialogAddPool, podId);   
+    populateClusterFieldInAddPoolDialog($dialogAddPool, podId, sourceClusterId);   
         		 
     $button.unbind("click").bind("click", function(event) {           
         $dialogAddPool.find("#info_container").hide();	        

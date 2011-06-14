@@ -1678,7 +1678,7 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 
 var clustersUnderPod = {};
 
-function populateClusterFieldInAddPoolDialog($dialog, podId) {   
+function populateClusterFieldInAddPoolDialog($dialog, podId, clusterId) {   
     if(podId == null) {
         var $clusterSelect = $dialog.find("#pool_cluster").empty();	
         $clusterSelect.change();		
@@ -1696,7 +1696,11 @@ function populateClusterFieldInAddPoolDialog($dialog, podId) {
             if(items != null && items.length > 0) {			                
                 for(var i=0; i<items.length; i++) {
                 	clustersUnderPod["cluster_"+items[i].id] = items[i];
-                    $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
+                	                	
+                	if(clusterId != null && items[i].id == clusterId)
+                        $clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
+                    else               
+                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
                 }                  
             }     
             $clusterSelect.change();	                     
@@ -1731,7 +1735,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 
     $dialogAddPool.find("#pod_dropdown").bind("change", function(event) {			   
         var podId = $(this).val();              
-        populateClusterFieldInAddPoolDialog($dialogAddPool, podId);       
+        populateClusterFieldInAddPoolDialog($dialogAddPool, podId, null);       
     });        
        
     $("#add_primarystorage_shortcut").unbind("click").bind("click", function(event) { 
