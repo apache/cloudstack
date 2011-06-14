@@ -101,7 +101,6 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
@@ -610,49 +609,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         try {
             Journal journal = start.second().getJournal();
 
-            // edit plan if this vm's ROOT volume is in READY state already
-            List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
-
-            for (VolumeVO vol : vols) {
-                // make sure if the templateId is unchanged. If it is changed, let planner
-                // reassign pool for the volume even if it ready.
-                Long volTemplateId = vol.getTemplateId();
-                if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
-                    }
-                    continue;
-                }
-
-                StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
-                if (!pool.isInMaintenance()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Root volume is ready, need to place VM in volume's cluster");
-                    }
-                    long rootVolDcId = pool.getDataCenterId();
-                    Long rootVolPodId = pool.getPodId();
-                    Long rootVolClusterId = pool.getClusterId();
-                    if(planToDeploy != null){
-                        Long clusterIdSpecified = planToDeploy.getClusterId();
-                        if(clusterIdSpecified != null && rootVolClusterId != null){
-                            if(rootVolClusterId.longValue() != clusterIdSpecified.longValue()){
-                                //cannot satisfy the plan passed in to the planner
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Cannot satisfy the deployment plan passed in since the ready Root volume is in different cluster. volume's cluster: "+rootVolClusterId + ", cluster specified: "+clusterIdSpecified);
-                                }
-                                throw new ResourceUnavailableException("Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for " + vm, Cluster.class, clusterIdSpecified);
-                            }
-                        }
-                        plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId());
-                    }else{
-                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
-                        }
-                    }
-                }
-            }
-
             ExcludeList avoids = new ExcludeList();
             if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
                 List<DomainRouterVO> routers = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn());
@@ -665,7 +621,50 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
+                // edit plan if this vm's ROOT volume is in READY state already
+                // edit plan if this vm's ROOT volume is in READY state already
+                List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
 
+                for (VolumeVO vol : vols) {
+                    // make sure if the templateId is unchanged. If it is changed, let planner
+                    // reassign pool for the volume even if it ready.
+                    Long volTemplateId = vol.getTemplateId();
+                    if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
+                        }
+                        continue;
+                    }
+
+                    StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+                    if (!pool.isInMaintenance()) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Root volume is ready, need to place VM in volume's cluster");
+                        }
+                        long rootVolDcId = pool.getDataCenterId();
+                        Long rootVolPodId = pool.getPodId();
+                        Long rootVolClusterId = pool.getClusterId();
+                        if(planToDeploy != null){
+                            Long clusterIdSpecified = planToDeploy.getClusterId();
+                            if(clusterIdSpecified != null && rootVolClusterId != null){
+                                if(rootVolClusterId.longValue() != clusterIdSpecified.longValue()){
+                                    //cannot satisfy the plan passed in to the planner
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Cannot satisfy the deployment plan passed in since the ready Root volume is in different cluster. volume's cluster: "+rootVolClusterId + ", cluster specified: "+clusterIdSpecified);
+                                    }
+                                    throw new ResourceUnavailableException("Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for " + vm, Cluster.class, clusterIdSpecified);
+                                }
+                            }
+                            plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId());
+                        }else{
+                            plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
+                            }
+                        }
+                    }
+                }
+                
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
@@ -699,8 +698,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             }
                         }
                     }
-                    if (dest == null)
+                    if (dest == null) {
                         throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+                    }
                 }
 
                 long destHostId = dest.getHost().getId();
