@@ -360,6 +360,8 @@ packages() {
 
   #basic stuff
   chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
+  #fix hostname in openssh-server generated keys
+  sed -i "s/root@\(.*\)$/root@systemvm/g" etc/ssh/ssh_host_*.pub
 
   #sysstat
   chroot . echo 'sysstat sysstat/enable boolean true' | chroot . debconf-set-selections
