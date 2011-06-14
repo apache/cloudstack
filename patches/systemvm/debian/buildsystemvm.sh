@@ -19,8 +19,7 @@
   # along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #
  
-
-
+set -e
 set -x
 
 IMAGENAME=systemvm
@@ -147,12 +146,12 @@ install_kernel() {
   DEBIAN_PRIORITY=critical
   export DEBIAN_FRONTEND DEBIAN_PRIORITY
 
-  chroot . apt-get -qq -y --force-yes install grub &&
+  chroot . apt-get -qq -y --force-yes install grub-legacy &&
   cp -av usr/lib/grub/i386-pc boot/grub
   #for some reason apt-get install grub does not install grub/stage1 etc
-  loopd=$(losetup -f --show $1)
-  grub-install $loopd --root-directory=$MOUNTPOINT
-  losetup -d $loopd
+  #loopd=$(losetup -f --show $1)
+  #grub-install $loopd --root-directory=$MOUNTPOINT
+  #losetup -d $loopd
   grub  << EOF &&
 device (hd0) $1
 root (hd0,0)
@@ -165,6 +164,7 @@ do_symlinks = yes
 link_in_boot = yes
 do_initrd = yes
 EOF
+  touch /mnt/systemvm/boot/grub/default
   chroot . apt-get install -qq -y --force-yes linux-image-686-bigmem
   cat >> etc/kernel-img.conf << EOF
 postinst_hook = /usr/sbin/update-grub
@@ -359,7 +359,7 @@ packages() {
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
   #basic stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
 
   #sysstat
   chroot . echo 'sysstat sysstat/enable boolean true' | chroot . debconf-set-selections
@@ -448,6 +448,15 @@ signature() {
   md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > ${MOUNTPOINT}/etc/cloudstack-release
 }
+
+#check grub version
+
+grub --version | grep "0.9" > /dev/null
+if [ $? -ne 0 ]
+then
+    echo You need grub 0.9x\(grub-legacy\) to use this script!
+    exit 1
+fi
 
 mkdir -p $IMAGENAME
 mkdir -p $LOCATION
