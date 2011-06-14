@@ -764,8 +764,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setState(Volume.State.Destroy);
             _volsDao.persist(volume);
             _volsDao.remove(volume.getId());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
+            _usageEventDao.persist(usageEvent);
             volume = null;
-
         } else {
             volume.setFolder(pool.getPath());
             volume.setPath(created.getPath());
