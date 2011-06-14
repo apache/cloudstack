@@ -222,18 +222,6 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         assert (index < 0) : "How can we get index again? " + index + ":" + req.toString();
         _transferRequests.add(-index - 1, req);
     }
-
-
-    @Override
-    //need separate method in order to cancel transfer requests
-    protected synchronized int findRequest(long seq) {
-        int result = Collections.binarySearch(_transferRequests, seq, s_seqComparator);
-        if (result < 0) {
-            return Collections.binarySearch(_requests, seq, s_seqComparator);
-        }
-        
-        return result;
-    }
     
     protected synchronized int findTransferRequest(Request req) {
         return Collections.binarySearch(_transferRequests, req, s_reqComparator);
