@@ -1463,7 +1463,7 @@ dictionary = {
         <ol>
             <li style="padding-top:10px">
                 <input type="checkbox" class="checkbox" id="force_stop_instance" /> 
-                <p style="color:red"><fmt:message key="force.stop.instance" /></p>		
+                <p style="color:red"><fmt:message key="force.stop" /></p>		
             </li>
             <li>
                 <p style="color:red"><fmt:message key="force.stop.instance.warning" /></p>
