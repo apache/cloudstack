@@ -126,9 +126,7 @@ public class ClusterManagerImpl implements ClusterManager {
     private String _name;
     private String _clusterNodeIP = "127.0.0.1";
     private boolean _agentLBEnabled = false;
-    private State _state = State.Starting;
-    private final Object stateLock = new Object();
-
+    
     public ClusterManagerImpl() {
         clusterPeers = new HashMap<String, ClusterService>();
         asyncCalls = new HashMap<String, Listener>();
@@ -572,14 +570,6 @@ public class ClusterManagerImpl implements ClusterManager {
                     Connection conn = getHeartbeatConnection();
                     _mshostDao.update(conn, _mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
 
-                    if (_state == State.Starting) {
-                        synchronized (stateLock) {
-                            _mshostDao.update(conn, _mshostId, getCurrentRunId(), State.Up, DateUtil.currentGMTTime());
-                            _state = State.Up;
-                            stateLock.notifyAll();
-                        }
-                    }
-
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
                     }
@@ -887,7 +877,7 @@ public class ClusterManagerImpl implements ClusterManager {
                 mshost.setLastUpdateTime(DateUtil.currentGMTTime());
                 mshost.setRemoved(null);
                 mshost.setAlertCount(0);
-                mshost.setState(ManagementServerHost.State.Starting);
+                mshost.setState(ManagementServerHost.State.Up);
                 _mshostDao.persist(mshost);
 
                 if (s_logger.isInfoEnabled()) {
@@ -907,26 +897,15 @@ public class ClusterManagerImpl implements ClusterManager {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Management server (host id : " + _mshostId + ") is being started at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
             }
-            
-            // Initiate agent rebalancing
-            if (_agentLBEnabled) {
-                s_logger.debug("Management server " + _msId + " is asking other peers to rebalance their agents");
-                _rebalanceService.startRebalanceAgents();
-            }
                     
             // use seperate thread for heartbeat updates
             _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
             _notificationExecutor.submit(getNotificationTask());
-
-             //wait here for heartbeat task to update the host state
-             try {
-                 synchronized (stateLock) {
-                     while (_state != State.Up) {
-                         stateLock.wait();
-                     }
-                 }
-             } catch (final InterruptedException e) {
-             } 
+             
+             //Initiate agent rebalancing after the host is in UP state
+             if (_agentLBEnabled) {
+                 _rebalanceService.scheduleRebalanceAgents();
+             }
 
         } catch (Throwable e) {
             s_logger.error("Unexpected exception : ", e);
