@@ -183,7 +183,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             pstmt.setInt(4, servicePort);
             pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(6, runid);
-            pstmt.setString(7, State.Starting.toString());
+            pstmt.setString(7, ManagementServerHost.State.Up.toString());
             pstmt.setLong(8, id);
             
             pstmt.executeUpdate();
