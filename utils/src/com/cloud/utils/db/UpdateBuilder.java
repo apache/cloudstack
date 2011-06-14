@@ -126,7 +126,7 @@ public class UpdateBuilder implements MethodInterceptor {
         return _collectionChanges;
     }
     
-    protected void clear() {
+    public void clear() {
         _changes.clear();
         if (_collectionChanges != null) {
             _collectionChanges.clear();

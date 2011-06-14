@@ -912,7 +912,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-        long vmId = vm.getId();
         State state = vm.getState();
         if (state == State.Stopped) {
             if (s_logger.isDebugEnabled()) {
@@ -927,25 +926,25 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             return true;
         }
+        
+        Long hostId = vm.getHostId();
+        if (hostId == null) {
+            try {
+                stateTransitTo(vm, Event.AgentReportStopped, null, null);
+            } catch (NoTransitionException e) {
+                s_logger.warn(e.getMessage());
+            }
+            return true;
+        }
 
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
 
         try {
-            if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
+            if (!stateTransitTo(vm, forced ? Event.AgentReportStopped : Event.StopRequested, vm.getHostId(), null)) {
                 throw new ConcurrentOperationException("VM is being operated on.");
             }
         } catch (NoTransitionException e1) {
-            if (!forced) {
-                throw new ConcurrentOperationException("VM is being operated on by someone else.");
-            }
-
-            vm = vmGuru.findById(vmId);
-            if (vm == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find VM " + vmId);
-                }
-                return true;
-            }
+            throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
         }
 
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
