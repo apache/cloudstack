@@ -82,6 +82,7 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -124,6 +125,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
@@ -2196,7 +2198,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             // If it's 0, and there are no default direct networks, create default Guest Virtual network
 
             List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeAndGuestType(false, TrafficType.Guest, GuestIpType.Virtual);
-
             if (defaultVirtualOffering.get(0).getAvailability() == Availability.Required) {
                 // get Virtual netowrks
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), GuestIpType.Virtual, true);
@@ -2330,7 +2331,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
             }
         }
-
+        
         // check if we have available pools for vm deployment
         List<StoragePoolVO> availablePools = _storagePoolDao.listPoolsByStatus(StoragePoolStatus.Up);
 
@@ -3220,15 +3221,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // VERIFICATIONS and VALIDATIONS
         
         //VV 1: verify the two users
-        Account oldOwner = UserContext.current().getCaller();
-        Account newOwner = _accountService.getAccount(cmd.getAccountId());
-        if (newOwner == null) {
-            throw new InvalidParameterValueException("Unable to find account " + newOwner + " in domain " + oldOwner.getDomainId());
+        Account oldAccount = UserContext.current().getCaller();
+        Account newAccount = _accountService.getAccount(cmd.getAccountId());
+        if (newAccount == null) {
+            throw new InvalidParameterValueException("Unable to find account " + newAccount + " in domain " + oldAccount.getDomainId());
         }
 
         //VV 2: check if account/domain is with in resource limits to create a new vm
-        if (_accountMgr.resourceLimitExceeded(newOwner, ResourceType.user_vm)) {
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + newOwner.getAccountName() + " has been exceeded.");
+        if (_accountMgr.resourceLimitExceeded(newAccount, ResourceType.user_vm)) {
+            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + newAccount.getAccountName() + " has been exceeded.");
             rae.setResourceType("vm");
             throw rae;
         }
@@ -3248,39 +3249,79 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VirtualMachineTemplate template = _templateDao.findById(vm.getTemplateId());
         if (!template.isPublicTemplate()) {
             Account templateOwner = _accountMgr.getAccount(template.getAccountId());
-            _accountMgr.checkAccess(newOwner, templateOwner);
+            _accountMgr.checkAccess(newAccount, templateOwner);
         }
 
         // VV 5: check that vm owner can create vm in the domain
-        DomainVO domain = _domainDao.findById(oldOwner.getDomainId());
-        _accountMgr.checkAccess(newOwner, domain);
+        DomainVO domain = _domainDao.findById(oldAccount.getDomainId());
+        _accountMgr.checkAccess(newAccount, domain);
+       
+        DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+        VMInstanceVO vmoi = _itMgr.findById(vm.getType(), vm.getId());
+        VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmoi);
+        List<NetworkVO> oldNetwork = _networkMgr.listNetworksForAccount(oldAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
+        long networkOffering =  oldNetwork.get(0).getNetworkOfferingId();     
         
         // remove the resources used by the moving vm
-        try {
-            if (!_itMgr.advanceStop(vm, false, _userDao.findById(UserContext.current().getCallerUserId()), oldOwner)) {
-                s_logger.debug("Unable to stop " + vm);
-                return null;
-            }
-        } catch (OperationTimedoutException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-      
+
+        //cleanup the network for the oldOwner
         
+        _networkMgr.cleanupNics(vmOldProfile);
+        _networkMgr.expungeNics(vmOldProfile);
+
         // OWNERSHIP STEP 1: update the vm owner
-        vm.setAccountId(newOwner.getAccountId());
-        vm.setAccountId(newOwner.getId());
+        vm.setAccountId(newAccount.getAccountId());
+        vm.setAccountId(newAccount.getId());
         _vmDao.persist(vm);
         
-        // update volume
+        // OS 2: update volume
         List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
         for (VolumeVO volume : volumes) {
             volume.setAccountId(cmd.getAccountId());
             _volsDao.persist(volume);
         }
         
-        // update the network
-      
+        // OS 3: update the network
+        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        NetworkVO defaultNetwork = null;
+        s_logger.warn("Old network offering " + networkOffering);
+        if (zone.getNetworkType() == NetworkType.Basic) {
+            s_logger.warn("Basic network type");
+        }
+        else {
+            s_logger.warn("Advanced network type for zone = " + zone);
+            List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
+            if (virtualNetworks.isEmpty()) {
+                s_logger.warn("Creating default Virtual network for account " + newAccount + " as a part of deployVM process");
+                Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", false, null,
+                        vm.getDataCenterIdToDeployIn(), null, null, null, null, newAccount, false, null, null);
+                s_logger.warn("New network " +  newNetwork);
+                defaultNetwork = _networkDao.findById(newNetwork.getId());
+            } else if (virtualNetworks.size() > 1) {
+                throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + newAccount + "; please specify networkIds");
+            } else {
+                defaultNetwork = virtualNetworks.get(0);
+                s_logger.warn("Virtaul networks " + virtualNetworks.get(0));
+            }
+            
+        }
+        networkList.add(defaultNetwork);
+        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        short defaultNetworkNumber = 0;
+        for (NetworkVO network : networkList) {
+
+            if (network.isDefault()) {
+                defaultNetworkNumber++;
+            }
+
+            networks.add(new Pair<NetworkVO, NicProfile>(network, null));
+        }
+        
+        VMInstanceVO vmi = _itMgr.findById(vm.getType(), vm.getId());
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
+        _networkMgr.allocate(vmProfile, networks);
+        s_logger.warn("Saved the network profile ");
+
                 
         return vm;
     }
