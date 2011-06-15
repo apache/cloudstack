@@ -2644,7 +2644,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to zone:" + zone.getId());
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_CREATE, eventDescription = "creating network offering")
     public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getNetworkOfferingName();
@@ -2722,6 +2722,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 gatewayService, firewallService, lbService, vpnService, guestIpType, false);
 
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
+            UserContext.current().setEventDetails(" Id: "+offering.getId()+" Name: "+name);
             return offering;
         } else {
             return null;
@@ -2809,10 +2810,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return _networkOfferingDao.search(sc, searchFilter);
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_DELETE, eventDescription = "deleting network offering")
     public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) {
         Long offeringId = cmd.getId();
-
+        UserContext.current().setEventDetails(" Id: "+offeringId);
+        
         // Verify network offering id
         NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);
         if (offering == null) {
@@ -2833,14 +2835,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_EDIT, eventDescription = "updating network offering")
     public NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd) {
         String displayText = cmd.getDisplayText();
         Long id = cmd.getId();
         String name = cmd.getNetworkOfferingName();
         String availabilityStr = cmd.getAvailability();
         Availability availability = null;
-
+        UserContext.current().setEventDetails(" Id: "+id);
+        
         // Verify input parameters
         NetworkOfferingVO offeringToUpdate = _networkOfferingDao.findById(id);
         if (offeringToUpdate == null) {
