@@ -724,23 +724,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
-                    if (answer != null) {
-                        if (answer.getResult()) {
-                            if (answer.getIsMaster()) {
-                                router.setRedundantState(RedundantState.MASTER);
-                            } else {
-                                if (answer.getDetails() != null && answer.getDetails().equals("Status: BACKUP")) {
-                                    router.setRedundantState(RedundantState.BACKUP);
-                                } else {
-                                    router.setRedundantState(RedundantState.FAULT);
+                    RedundantState state = RedundantState.UNKNOWN;
+                    if (answer != null && answer.getResult()) {
+                        if (answer.getIsMaster()) {
+                            state = RedundantState.MASTER;
+                        } else {
+                            if (answer.getDetails() != null) {
+                                if (answer.getDetails().equals("Status: BACKUP")) {
+                                    state = RedundantState.BACKUP;
+                                } else if (answer.getDetails().startsWith("Status: FAULT")) {
+                                    state = RedundantState.FAULT;
                                 }
                             }
-                        } else {
-                            router.setRedundantState(RedundantState.UNKNOWN);
                         }
-                    } else {
-                        router.setRedundantState(RedundantState.UNKNOWN);
                     }
+                    router.setRedundantState(state);
                     Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                     try {
                         txn.start();
