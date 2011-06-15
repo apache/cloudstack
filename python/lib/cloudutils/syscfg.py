@@ -1,4 +1,4 @@
-from utilities import DistributionDetector, serviceOpsRedhat,serviceOpsUbuntu
+from utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu
 from serviceConfig import *
 class sysConfigFactory:
     @staticmethod
@@ -15,7 +15,8 @@ class sysConfigFactory:
 class sysConfigAgentFactory:
     @staticmethod
     def getAgent(glbEnv):
-        distribution = DistributionDetector().getVersion()
+        glbEnv.distribution = Distribution()
+        distribution = glbEnv.distribution.getVersion()
         if distribution == "Ubuntu":
             return sysConfigAgentUbuntu(glbEnv)
         elif distribution == "Fedora" or distribution == "RHEL6":
@@ -29,7 +30,8 @@ class sysConfigAgentFactory:
 class sysConfigServerFactory:
     @staticmethod
     def getServer(glbEnv):
-        distribution = DistributionDetector().getVersion()
+        glbEnv.distribution = Distribution()
+        distribution = glbEnv.distribution.getVersion()
         if distribution == "Ubuntu":
             return sysConfigServerUbuntu(glbEnv)
         elif distribution != "Unknown":
@@ -70,6 +72,35 @@ class sysConfigAgent(sysConfig):
     def check(self):
         if self.env.debug:
             return True
+ 
+        if self.env.agentMode == "myCloud":
+            if self.env.distribution.getVersion() != "Ubuntu":
+                raise CloudInternalException("Need to run myCloud agent on an Ubuntu machine\n")
+            elif self.env.distribution.getRelease() != "10.04":
+                raise CloudInternalException("Need to run myCloud agent on an Ubuntu 10.04\n")
+            elif self.env.distribution.getArch() != "x86_64":
+                raise CloudInternalException("Need to run myCloud agent on an 64bit machine\n")
+            #check free disk space on the local disk 
+            if os.path.exists("/var/lib/libvirt/images"):
+                size = -1
+                try:
+                    size = int(bash("df -P /var/lib/libvirt/images | tail -1 |awk '{print $4}'").getStdout())
+                except:
+                   pass
+
+                if size != -1 and size < (30 * 1024 * 1024):
+                    raise  CloudRuntimeException("Need at least 30G free disk space under /var/lib/libvirt/images")
+
+            #check memory
+            mem = -1
+            try:
+                mem = int(bash("free -g|grep Mem|awk '{print $2}'").getStdout())
+            except:
+                pass
+
+            if mem != -1 and mem < 1:
+                raise  CloudRuntimeException("Need at least 1G memory")
+
 
         if os.geteuid() != 0:
             raise CloudInternalException("Need to execute with root permission\n")

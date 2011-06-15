@@ -80,9 +80,10 @@ def writeProgressBar(msg, result):
     sys.stdout.write(output)
     sys.stdout.flush()
  
-class DistributionDetector:
+class Distribution:
     def __init__(self):
         self.distro = "Unknown"
+        self.release = "Unknown"
 
         if os.path.exists("/etc/fedora-release"):
             self.distro = "Fedora"
@@ -98,11 +99,21 @@ class DistributionDetector:
                 self.distro = "RHEL5"
         elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1):
             self.distro = "Ubuntu"
+            kernel = bash("uname -r").getStdout()
+            if kernel.find("2.6.32") != -1:
+                self.release = "10.04"
+            self.arch = bash("uname -m").getStdout()
+            
         else: 
             self.distro = "Unknown" 
 
     def getVersion(self):
         return self.distro 
+    def getRelease(self):
+        return self.release
+    def getArch(self):
+        return self.arch
+        
  
 class serviceOps:
     pass
