@@ -672,7 +672,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 if (dest == null) {
-                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile + " due to lack of VLAN available.", DataCenter.class, plan.getDataCenterId());
                 }
 
                 long destHostId = dest.getHost().getId();
