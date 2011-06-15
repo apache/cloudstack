@@ -853,6 +853,26 @@ dictionary = {
     </div>
 </div>
 
+<!-- Confirm to remove host (begin) -->
+<div id="dialog_confirmation_remove_host" title='<fmt:message key="label.confirmation"/>' style="display: none">
+ 	<p> 
+		<fmt:message key="message.action.remove.host" />
+	</p> 		
+    <div class="dialog_formcontent" id="force_remove_host_container" style="display:none">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li style="padding-top:10px">
+                <input type="checkbox" class="checkbox" id="force_remove_host" /> 
+                <p style="color:red"><fmt:message key="force.remove" /></p>		
+            </li>
+            <li>
+                <p style="color:red"><fmt:message key="force.remove.host.warning" /></p>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Confirm to remove host (end) -->
 
 <div id="hidden_container">
     <!-- advanced search popup (begin) -->
