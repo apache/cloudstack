@@ -139,6 +139,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 		this.role = role;
 	}
     
+	@Override
 	public boolean getIsRedundantRouter() {
 	    return this.isRedundantRouter;
  	}

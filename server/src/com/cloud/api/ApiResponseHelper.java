@@ -1257,6 +1257,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         routerResponse.setTemplateId(router.getTemplateId());
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
+        routerResponse.setIsRedundantRouter(router.getIsRedundantRouter());
         routerResponse.setRedundantState(router.getRedundantState().toString());
 
         if (router.getHostId() != null) {
