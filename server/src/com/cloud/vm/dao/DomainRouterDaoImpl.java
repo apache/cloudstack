@@ -45,6 +45,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> AllFieldsSearch;
     protected final SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
+    protected final SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
     NetworkDaoImpl _networksDao = ComponentLocator.inject(NetworkDaoImpl.class);
 
     protected DomainRouterDaoImpl() {
@@ -73,6 +74,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         joinNetwork.and("guestType", joinNetwork.entity().getGuestType(), Op.EQ);
         HostUpSearch.join("network", joinNetwork, joinNetwork.entity().getId(), HostUpSearch.entity().getNetworkId(), JoinType.INNER);
         HostUpSearch.done();
+        
+        StateNetworkTypeSearch = createSearchBuilder();
+        StateNetworkTypeSearch.and("state", StateNetworkTypeSearch.entity().getState(), Op.EQ);
+        SearchBuilder<NetworkVO> joinStateNetwork = _networksDao.createSearchBuilder();
+        joinStateNetwork.and("guestType", joinStateNetwork.entity().getGuestType(), Op.EQ);
+        StateNetworkTypeSearch.join("network", joinStateNetwork, joinStateNetwork.entity().getId(), StateNetworkTypeSearch.entity().getNetworkId(), JoinType.INNER);
+        StateNetworkTypeSearch.done();
 
     }
 
@@ -176,6 +184,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         SearchCriteria<DomainRouterVO> sc = IdNetworkIdStatesSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("states", State.Running, State.Migrating, State.Stopping, State.Starting);
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType) {
+        SearchCriteria<DomainRouterVO> sc = StateNetworkTypeSearch.create();
+        sc.setParameters("state", state);
+        sc.setJoinParameters("network", "guestType", ipType);
         return listBy(sc);
     }
 }
