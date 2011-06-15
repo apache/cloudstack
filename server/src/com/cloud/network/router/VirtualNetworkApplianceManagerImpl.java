@@ -652,7 +652,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         @Override
         public void run() {
             
-            final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
+            final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, GuestIpType.Virtual);
             s_logger.debug("Found " + routers.size() + " running routers. ");
 
             for (DomainRouterVO router : routers) {

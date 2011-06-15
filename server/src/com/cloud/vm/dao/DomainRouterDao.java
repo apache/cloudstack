@@ -19,9 +19,11 @@ package com.cloud.vm.dao;
 
 import java.util.List;
 
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.VirtualMachine.State;
 
 /**
  *
@@ -83,4 +85,10 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
 	List<DomainRouterVO> findByNetworkAndPod(long networkId, long podId);
 
     List<DomainRouterVO> listActive(long networkId);
+
+    /**
+     * List domain routers by state and network type
+     * @return
+     */    
+    List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType);
 }
