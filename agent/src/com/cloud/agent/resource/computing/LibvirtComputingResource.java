@@ -1988,12 +1988,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
         	Connect conn = LibvirtConnection.getConnection();
         	
-        	String macAddress = null;
-        	if (vmName.startsWith("i-")) {
-        	    List<InterfaceDef> nics = getInterfaces(conn, vmName);
-        	    macAddress = nics.get(0).getMacAddress();
-        	}
-        	
         	destroy_network_rules_for_vm(conn, vmName);
             String result = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
             
