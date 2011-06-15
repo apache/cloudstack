@@ -110,6 +110,21 @@ dictionary = {
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
+	                        <fmt:message key="label.redundant.router"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="redundantrouter">
+	                    </div>
+	                    <select class="select" id="redundantrouter_edit" style="width: 202px; display: none;">
+	                        <option value="false"><fmt:message key="label.no"/></option>
+							<option value="true"><fmt:message key="label.yes"/></option>
+	                    </select>
+	                </div>
+	            </div>
+	            	            
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
 	                        <fmt:message key="label.is.default"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
@@ -118,7 +133,7 @@ dictionary = {
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.specify.vlan"/>:</div>
@@ -129,7 +144,7 @@ dictionary = {
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.network.rate"/>:</div>
@@ -140,7 +155,7 @@ dictionary = {
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.traffic.type"/>:</div>
