@@ -527,7 +527,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         return null;
     }
     
-    private List<VMTemplateVO> listAllInZone(long dcId){
+    private List<VMTemplateVO> listAllInZone(long dcId, HostVO ssHost){
         List<VMTemplateVO> tmplts = _templateDao.listAllInZone(dcId);
         Iterator<VMTemplateVO> iter = tmplts.iterator();
         while ( iter.hasNext() ) {
@@ -538,8 +538,15 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             List<VMTemplateHostVO> tmpltHosts = _vmTemplateHostDao.listByZoneTemplate(dcId, tmplt.getId(), false);
             for ( VMTemplateHostVO tmpltHost : tmpltHosts ) {
                if ( tmpltHost.getDownloadState() == Status.DOWNLOADED || tmpltHost.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-                   iter.remove();
-                   break;
+                   if (ssHost.getType() == Host.Type.LocalSecondaryStorage) {
+                       if (tmpltHost.getHostId() == ssHost.getId()) {
+                           iter.remove();
+                           break;
+                       }
+                   } else {
+                       iter.remove();
+                       break;
+                   }
                }
             }
         }
@@ -564,7 +571,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		long zoneId = ssHost.getDataCenterId();
 
 		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-		List<VMTemplateVO> allTemplates = listAllInZone(ssHost.getDataCenterId());
+		List<VMTemplateVO> allTemplates = listAllInZone(ssHost.getDataCenterId(), ssHost);
 		List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
 		List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 		
