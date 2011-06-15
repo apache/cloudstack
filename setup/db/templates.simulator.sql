@@ -1,7 +1,7 @@
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (1, 'routing', 'SystemVM Template (Simulator)', 0, now(), 'SYSTEM', 0, 64, 1, '', '', 0, 'SystemVM Template (Simulator)', 'VHD', 15, 0, 1, 'Simulator');
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (2, 'centos53-x86_64', 'CentOS 5.3(64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, '', '', 0, 'CentOS 5.3(64-bit) no GUI (XenServer)', 'VHD', 12, 1, 1, 'Simulator', 1);
+    VALUES (2, 'centos53-x86_64', 'CentOS 5.3(64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, '', '', 0, 'CentOS 5.3(64-bit) no GUI (Simulator)', 'VHD', 12, 1, 1, 'Simulator', 1);
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (3, 'win2003sp2', 'Windows 2003 SP2 (64-bit) (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, '', '', 0, 'Windows 2003 SP2 (64-bit) (Simulator)', 'VHD', 51, 1, 1, 'Simulator', 1);
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
