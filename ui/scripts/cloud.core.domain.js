@@ -107,12 +107,15 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
 function afterLoadDomainJSP() {
     hideMiddleMenu();   
 	clearMiddleMenu();
-	   
+	 
+	initDialog("dialog_confirmation_delete_domain"); 
+		
     if(isAdmin()) {        
 	    var $topButtonContainer = clearButtonsOnTop();			    	       
 	    $("#top_buttons").appendTo($topButtonContainer); 	
 	    $("#top_buttons").find("#add_domain_button").show();	
-        initAddDomainDialog();
+        initAddDomainDialog();        
+        $("#dialog_confirmation_delete_domain").find("#force_delete_domain_container").show();		 
     }
     
     //switch between different tabs 
@@ -672,12 +675,12 @@ function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 		
-	$("#dialog_confirmation")
-	.text(dictionary["message.action.delete.domain"])
+	$("#dialog_confirmation_delete_domain")	
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
-			$(this).dialog("close");	
-			var apiCommand = "command=deleteDomain&id="+id;
+			$(this).dialog("close");
+			var isForced = $("#dialog_confirmation_delete_domain").find("#force_delete_domain").attr("checked").toString();
+			var apiCommand = "command=deleteDomain&id="+id+"&cleanup="+isForced;       
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
 		}, 
 		"Cancel": function() { 

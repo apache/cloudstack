@@ -372,3 +372,24 @@ dictionary = {
 	</div>
 </div>
 <!-- Add Domain Dialog (end) -->
+
+<!-- Confirm to delete domain (begin) -->
+<div id="dialog_confirmation_delete_domain" title='<fmt:message key="label.confirmation"/>' style="display: none">
+ 	<p> 
+		<fmt:message key="message.action.delete.domain" />
+	</p> 		
+    <div class="dialog_formcontent" id="force_delete_domain_container" style="display:none">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li style="padding-top:10px">
+                <input type="checkbox" class="checkbox" id="force_delete_domain" /> 
+                <p style="color:red"><fmt:message key="force.delete" /></p>		
+            </li>
+            <li>
+                <p style="color:red"><fmt:message key="force.delete.domain.warning" /></p>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Confirm to delete domain (end) -->
