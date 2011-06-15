@@ -57,8 +57,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="priority")
     int priority;
     
-    @Column(name="is_master")
-    boolean isMaster;
+    @Column(name="redundant_state")
+    @Enumerated(EnumType.STRING)
+    private RedundantState redundantState;
     
     @Column(name="role")
     @Enumerated(EnumType.STRING)
@@ -75,13 +76,13 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long networkId,
             boolean isRedundantRouter,
             int priority,
-            boolean isMaster,
+            RedundantState redundantState,
             boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
-        this.isMaster = isMaster;
+        this.redundantState = redundantState;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
@@ -159,12 +160,12 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 	    this.priority = priority;
 	}
 
-	public boolean getIsMaster() {
-	    return this.isMaster;
+	public RedundantState getRedundantState() {
+	    return this.redundantState;
 	}
 	
-	public void setIsMaster(boolean isMaster) {
-	    this.isMaster = isMaster;
+	public void setRedundantState(RedundantState redundantState) {
+	    this.redundantState = redundantState;
 	}
 	
     public void setServiceOfferingId(long serviceOfferingId) {

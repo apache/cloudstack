@@ -122,6 +122,7 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -730,12 +731,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
                     if (answer != null) {
                         if (answer.getResult()) {
-                            router.setIsMaster(answer.getIsMaster());
+                            if (answer.getIsMaster()) {
+                                router.setRedundantState(RedundantState.MASTER);
+                            } else {
+                                router.setRedundantState(RedundantState.BACKUP);
+                            }
                         } else {
-                            router.setIsMaster(false);
+                            router.setRedundantState(RedundantState.UNKNOWN);
                         }
                     } else {
-                        router.setIsMaster(false);
+                        router.setRedundantState(RedundantState.UNKNOWN);
                     }
                     Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                     try {
@@ -849,7 +854,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         priority = 100 - routers.size() * 20;
                     }
                     router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                            owner.getDomainId(), owner.getId(), guestNetwork.getId(), offering.isRedundantRouterEnabled(), priority, false, _offering.getOfferHA());
+                            owner.getDomainId(), owner.getId(), guestNetwork.getId(), offering.isRedundantRouterEnabled(), priority, RedundantState.UNKNOWN, _offering.getOfferHA());
                     router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
                     routers.add(router);
                 }
@@ -943,7 +948,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
 
                 router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, _offering.getOfferHA());
+                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, RedundantState.UNKNOWN, _offering.getOfferHA());
                 router.setRole(Role.DHCP_USERDATA);
                 router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
             }
