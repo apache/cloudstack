@@ -62,6 +62,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
@@ -419,6 +420,25 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         if (clusterId != null) {
             if (_clusterDao.findById(clusterId) == null) {
                 throw new InvalidParameterValueException("Can't find cluster by id " + clusterId);
+            }
+            
+            if(hypervisorType.equalsIgnoreCase(HypervisorType.VMware.toString())) {
+	            // VMware only allows adding host to an existing cluster, as we already have a lot of information
+	            // in cluster object, to simplify user input, we will construct neccessary information here
+	            Map<String, String> clusterDetails = this._clusterDetailsDao.findDetails(clusterId);
+	            username = clusterDetails.get("username");
+	            assert(username != null);
+	            
+	            password = clusterDetails.get("password");
+	            assert(password != null);
+	            
+                try {
+                    uri = new URI(UriUtils.encodeURIComponent(url));
+                
+                    url = clusterDetails.get("url") + "/" + uri.getHost();
+                } catch (URISyntaxException e) {
+                    throw new InvalidParameterValueException(url + " is not a valid uri");
+                }
             }
         }
 
