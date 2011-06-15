@@ -599,10 +599,6 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
 
-%files premium-agent
-%{_javadir}/cloud-agent-extras.jar
-%attr(0755,root,root) %{_bindir}/mycloud-setup-agent
-
 %files console-proxy
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-console*.jar
@@ -625,6 +621,10 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-setup-baremetal
 
 %if %{_premium}
+
+%files premium-agent
+%{_javadir}/cloud-agent-extras.jar
+%attr(0755,root,root) %{_bindir}/mycloud-setup-agent
 
 %files test
 %defattr(0644,root,root,0755)
