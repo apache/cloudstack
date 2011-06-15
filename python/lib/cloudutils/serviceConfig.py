@@ -548,8 +548,8 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.addEntry("resource", "com.cloud.storage.resource.LocalSecondaryStorageResource|com.cloud.agent.resource.computing.CloudZonesComputingResource")
             cfo.save()
             
-            self.syscfg.svo.stopService("cloud-agent")
-            self.syscfg.svo.enableService("cloud-agent")
+            #self.syscfg.svo.stopService("cloud-agent")
+            #self.syscfg.svo.enableService("cloud-agent")
             return True
         except:
             raise
