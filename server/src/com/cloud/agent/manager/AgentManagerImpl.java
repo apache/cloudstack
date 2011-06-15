@@ -591,9 +591,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 Status currentState = host.getStatus();
                 Status nextState = currentState.getNextStatus(Status.Event.Remove);
                 if (nextState == null) {
-                    if (!(attache instanceof DirectAgentAttache)) {
-                        return false;
-                    }
                     s_logger.debug("There is no transition from state " + currentState.toString() + " to state " + Status.Event.Remove.toString());
                     return false;
                 }
