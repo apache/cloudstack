@@ -755,18 +755,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             s_logger.debug("Retrying the create because it failed on pool " + pool);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         if (created == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to create a volume for " + volume);
-            }
-            volume.setState(Volume.State.Destroy);
-            _volsDao.persist(volume);
-            _volsDao.remove(volume.getId());
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
-            _usageEventDao.persist(usageEvent);
-            volume = null;
+           return null;
         } else {
             volume.setFolder(pool.getPath());
             volume.setPath(created.getPath());
@@ -775,10 +765,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setPoolId(pool.getId());
             volume.setPodId(pod.getId());
             volume.setState(Volume.State.Ready);
-            _volsDao.persist(volume);
+            return _volsDao.persist(volume);
         }
-        txn.commit();
-        return volume;
     }
 
     public Long chooseHostForStoragePool(StoragePoolVO poolVO, List<Long> avoidHosts, boolean sendToVmResidesOn, Long vmId) {
