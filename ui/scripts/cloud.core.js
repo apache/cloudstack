@@ -829,7 +829,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	    $midmenuItem1.find("#first_row").text(g_dictionary["label.adding.failed"]);	
 	    
 	    if(secondRowText != null)
-	        $midmenuItem1.find("#second_row").text(secondRowText);	
+	        $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));	
 	    
 	    $midmenuItem1.find("#close_icon").show().bind("click", function(event) {	        
 	        $midmenuItem1.slideUp("slow", function() {	            
@@ -840,7 +840,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	}
 	
 	if(secondRowText != null) {
-	    $midmenuItem1.find("#second_row").text(secondRowText);  	 
+	    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength)); 	 
 	}
 }
 
@@ -1944,13 +1944,16 @@ function sanitizeXSS(val) {
     return unescape(val);
 }
 
+var midMenuFirstRowLength = 26;
+var midMenuSecondRowLength = 33;
+
 function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)
         return fromdb(p_vmName);
     
     var vmName = null;	
 	if (p_vmDisplayname != p_vmName) {
-		vmName = fromdb(p_vmName) + "(" + fromdb(p_vmDisplayname) + ")";
+		vmName = fromdb(p_vmName) + " (" + fromdb(p_vmDisplayname) + ")";
 	} else {
 		vmName = fromdb(p_vmName);
 	}		
