@@ -23,9 +23,9 @@ then
 fi
 
 echo To backup called >> /root/keepalived.log
-/root/redundant_router/disable_pubip.sh
+/root/redundant_router/disable_pubip.sh 2>1&>> /root/keepalived.log
 echo Disable public ip $? >> /root/keepalived.log
-/root/redundant_router/primary-backup.sh backup
+/root/redundant_router/primary-backup.sh backup 2>1&>> /root/keepalived.log
 echo Switch conntrackd mode backup $? >> /root/keepalived.log
 echo Status: BACKUP >> /root/keepalived.log
 

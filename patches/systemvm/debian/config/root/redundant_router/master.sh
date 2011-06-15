@@ -23,9 +23,9 @@ then
 fi
 
 echo To master called >> /root/keepalived.log
-/root/redundant_router/enable_pubip.sh
+/root/redundant_router/enable_pubip.sh 2>1&>> /root/keepalived.log
 echo Enable public ip $? >> /root/keepalived.log
-/root/redundant_router/primary-backup.sh primary
+/root/redundant_router/primary-backup.sh primary 2>1&>> /root/keepalived.log
 echo Switch conntrackd mode primary $? >> /root/keepalived.log
 echo Status: MASTER >> /root/keepalived.log
 
