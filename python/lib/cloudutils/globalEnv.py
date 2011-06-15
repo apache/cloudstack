@@ -22,3 +22,5 @@ class globalEnv:
         self.uuid = None
         #default private network
         self.privateNet = "cloudbr0"
+        #distribution
+        self.distribution = None
