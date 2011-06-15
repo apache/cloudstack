@@ -708,12 +708,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         public CheckRouterTask() {
         }
 
-        @Override
-        public void run() {
-            
-            final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
-            s_logger.debug("Found " + routers.size() + " running routers. ");
-
+        private void updateRoutersRedundantState(List<DomainRouterVO> routers) {
             for (DomainRouterVO router : routers) {
                 if (!router.getIsRedundantRouter()) {
                     continue;
@@ -759,6 +754,38 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     }
                 }
             }
+        }
+        
+        private void checkDuplicateMaster(List <DomainRouterVO> routers) {
+            Map<Long, DomainRouterVO> networkRouterMaps = new HashMap<Long, DomainRouterVO>();
+            for (DomainRouterVO router : routers) {
+                if (router.getRedundantState() == RedundantState.MASTER) {
+                    if (networkRouterMaps.containsKey(router.getNetworkId())) {
+                        DomainRouterVO dupRouter = networkRouterMaps.get(router.getNetworkId());
+                        String title = "More than one redundant virtual router is in MASTER state! Router " + router.getHostName() + " and router " + dupRouter.getHostName();
+                        String context =  "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: "
+                            + dupRouter.getHostName() + ", id: " + router.getId() + ") are both in MASTER state! If the problem persist, restart both of routers. ";
+                            
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, dupRouter.getDataCenterIdToDeployIn(), dupRouter.getPodIdToDeployIn(), title, context);
+                    } else {
+                        networkRouterMaps.put(router.getNetworkId(), router);
+                    } 
+                }
+            }
+        }
+        
+        @Override
+        public void run() {
+            
+            final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
+            s_logger.debug("Found " + routers.size() + " running routers. ");
+
+            updateRoutersRedundantState(routers);
+            
+            /* FIXME assumed the a pair of redundant routers managed by same mgmt server,
+             * then the update above can get the latest status */
+            checkDuplicateMaster(routers);
         }
     }
 
