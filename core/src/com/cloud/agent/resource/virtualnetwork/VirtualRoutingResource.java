@@ -364,11 +364,10 @@ public class VirtualRoutingResource implements Manager {
 	    final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
 	    final String result = getRouterStatus(routerPrivateIPAddress);
-	    CheckRouterAnswer answer = new CheckRouterAnswer(cmd, false, "Router return: " + result);
-	    if (result != null) {
-	        answer.setIsMaster(result.equals("Status: MASTER"));
+	    if (result == null || result.isEmpty()) {
+	        return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
 	    }
-	    return answer;
+	    return new CheckRouterAnswer(cmd, result.equals("Status: MASTER"), result);
 	}
 	
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {

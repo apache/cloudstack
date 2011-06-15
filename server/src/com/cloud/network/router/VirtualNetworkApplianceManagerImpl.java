@@ -734,7 +734,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             if (answer.getIsMaster()) {
                                 router.setRedundantState(RedundantState.MASTER);
                             } else {
-                                router.setRedundantState(RedundantState.BACKUP);
+                                if (answer.getDetails() != null && answer.getDetails().equals("Status: BACKUP")) {
+                                    router.setRedundantState(RedundantState.BACKUP);
+                                } else {
+                                    router.setRedundantState(RedundantState.FAULT);
+                                }
                             }
                         } else {
                             router.setRedundantState(RedundantState.UNKNOWN);
