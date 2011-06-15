@@ -119,8 +119,8 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
     
-
-    
+    @SerializedName("redundantstate") @Param(description="the state of redundant virtual router")
+    private String redundantState;
     
     @Override
     public Long getObjectId() {
@@ -373,5 +373,13 @@ public class DomainRouterResponse extends BaseResponse {
 
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
+    }
+    
+    public String getRedundantState() {
+        return redundantState;
+    }
+
+    public void setRedundantState(String redundantState) {
+        this.redundantState = redundantState;
     }
 }

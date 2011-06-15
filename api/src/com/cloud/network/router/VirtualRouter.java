@@ -30,8 +30,9 @@ public interface VirtualRouter extends VirtualMachine {
 	}
     Role getRole();
     public enum RedundantState {
+        UNKNOWN,
         MASTER,
-        BACKUP,
-        UNKNOWN
+        BACKUP
     }
+    RedundantState getRedundantState();
 }

@@ -160,6 +160,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 	    this.priority = priority;
 	}
 
+	@Override
 	public RedundantState getRedundantState() {
 	    return this.redundantState;
 	}
