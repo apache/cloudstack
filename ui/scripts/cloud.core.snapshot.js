@@ -168,9 +168,9 @@ function snapshotJsonToDetailsTab() {
     });        
      
     $thisTab.find("#id").text(fromdb(jsonObj.id));
-    $thisTab.find("#name").text(fromdb(jsonObj.name));
-    $thisTab.find("#state").text(fromdb(jsonObj.state));    
+    $thisTab.find("#name").text(fromdb(jsonObj.name));     
     $thisTab.find("#volume_name").text(fromdb(jsonObj.volumename));
+    $thisTab.find("#state").text(fromdb(jsonObj.state));   
     $thisTab.find("#interval_type").text(fromdb(jsonObj.intervaltype));
     $thisTab.find("#account").text(fromdb(jsonObj.account));
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      

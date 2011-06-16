@@ -518,7 +518,8 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
     template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
     template.find("#id").text(fromdb(jsonObj.id));
     template.find("#name").text(fromdb(jsonObj.name));			      
-    template.find("#volumename").text(fromdb(jsonObj.volumename));	
+    template.find("#volumename").text(fromdb(jsonObj.volumename));	    
+    template.find("#state").text(fromdb(jsonObj.state));       
     template.find("#intervaltype").text(fromdb(jsonObj.intervaltype));	    		   
     template.find("#account").text(fromdb(jsonObj.account));
     template.find("#domain").text(fromdb(jsonObj.domain));    
@@ -526,23 +527,15 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
 	
 	var $actionLink = template.find("#action_link");		
 	bindActionLink($actionLink);
-	/*
-	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {
-        $(this).find("#action_menu").hide();    
-        return false;
-    });		
-	*/
 	
 	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
     
-    buildActionLinkForSubgridItem("label.action.create.volume", volumeSnapshotActionMap, $actionMenu, template);	
+    if(jsonObj.state == "BackedUp") {
+	    buildActionLinkForSubgridItem("label.action.create.volume", volumeSnapshotActionMap, $actionMenu, template);		    
+	    buildActionLinkForSubgridItem("label.action.create.template", volumeSnapshotActionMap, $actionMenu, template);	
+    }
     buildActionLinkForSubgridItem("label.action.delete.snapshot", volumeSnapshotActionMap, $actionMenu, template);	
-    buildActionLinkForSubgridItem("label.action.create.template", volumeSnapshotActionMap, $actionMenu, template);	
 } 
  
 function volumeClearRightPanel() {       
