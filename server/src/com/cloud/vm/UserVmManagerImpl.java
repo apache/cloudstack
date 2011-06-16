@@ -2413,15 +2413,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sshPublicKey = pair.getPublicKey();
         }
 
-       // _accountMgr.checkAccess(caller, template);
-
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-
-        s_logger.debug("Allocating in the DB for vm");
 
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
         short defaultNetworkNumber = 0;
         for (NetworkVO network : networkList) {
+            
+            if (network.getDataCenterId() != zone.getId()) {
+                throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
+            }
 
             if (network.isDefault()) {
                 defaultNetworkNumber++;
@@ -2469,6 +2469,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (isIso) {
             vm.setIsoId(template.getId());
         }
+        
+        s_logger.debug("Allocating in the DB for vm");
 
         if (_itMgr.allocate(vm, _templateDao.findById(template.getId()), offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, hypervisorType, owner) == null) {
             return null;
