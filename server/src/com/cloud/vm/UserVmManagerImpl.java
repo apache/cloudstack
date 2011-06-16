@@ -2225,7 +2225,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
 
                 } else if (defaultNetworks.size() > 1) {
-                    throw new InvalidParameterValueException("More than 1 default network is found for accoun " + owner);
+                    throw new InvalidParameterValueException("More than 1 default network is found for account " + owner);
                 } else {
                     defaultNetwork = defaultNetworks.get(0);
                 }
@@ -3259,16 +3259,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
         VMInstanceVO vmoi = _itMgr.findById(vm.getType(), vm.getId());
         VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmoi);
-        List<NetworkVO> oldNetwork = _networkMgr.listNetworksForAccount(oldAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
-        long networkOffering =  oldNetwork.get(0).getNetworkOfferingId();     
         
-        // remove the resources used by the moving vm
-
-        //cleanup the network for the oldOwner
-        
-        _networkMgr.cleanupNics(vmOldProfile);
-        _networkMgr.expungeNics(vmOldProfile);
-
+       
         // OWNERSHIP STEP 1: update the vm owner
         vm.setAccountId(newAccount.getAccountId());
         vm.setAccountId(newAccount.getId());
@@ -3282,14 +3274,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         // OS 3: update the network
-        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
-        NetworkVO defaultNetwork = null;
-        s_logger.warn("Old network offering " + networkOffering);
+        s_logger.warn("zone.getNetworkType() = " + zone.getNetworkType());
         if (zone.getNetworkType() == NetworkType.Basic) {
             s_logger.warn("Basic network type");
         }
         else {
-            s_logger.warn("Advanced network type for zone = " + zone);
+            //cleanup the network for the oldOwner
+            _networkMgr.cleanupNics(vmOldProfile);
+            _networkMgr.expungeNics(vmOldProfile);
+            s_logger.warn("Nics expunged ");
+
+            // add the new nics
+            List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+            NetworkVO defaultNetwork = null; 
+            List<NetworkVO> oldNetwork = _networkMgr.listNetworksForAccount(oldAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
+            long networkOffering =  oldNetwork.get(0).getNetworkOfferingId();   
+            s_logger.warn("Old network offering " + networkOffering); 
             List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
             if (virtualNetworks.isEmpty()) {
                 s_logger.warn("Creating default Virtual network for account " + newAccount + " as a part of deployVM process");
@@ -3303,25 +3303,25 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 defaultNetwork = virtualNetworks.get(0);
                 s_logger.warn("Virtaul networks " + virtualNetworks.get(0));
             }
+
+            networkList.add(defaultNetwork);
+            List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+            short defaultNetworkNumber = 0;
+            for (NetworkVO network : networkList) {
+
+                if (network.isDefault()) {
+                    defaultNetworkNumber++;
+                }
+
+                networks.add(new Pair<NetworkVO, NicProfile>(network, null));
+            }
+            
+            VMInstanceVO vmi = _itMgr.findById(vm.getType(), vm.getId());
+            VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
+            _networkMgr.allocate(vmProfile, networks);
+            s_logger.warn("Saved the network profile ");
             
         }
-        networkList.add(defaultNetwork);
-        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
-        short defaultNetworkNumber = 0;
-        for (NetworkVO network : networkList) {
-
-            if (network.isDefault()) {
-                defaultNetworkNumber++;
-            }
-
-            networks.add(new Pair<NetworkVO, NicProfile>(network, null));
-        }
-        
-        VMInstanceVO vmi = _itMgr.findById(vm.getType(), vm.getId());
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
-        _networkMgr.allocate(vmProfile, networks);
-        s_logger.warn("Saved the network profile ");
-
                 
         return vm;
     }
