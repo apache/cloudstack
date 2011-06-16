@@ -19,16 +19,19 @@
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
-
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Implementation(description="Recalculate and update resource count for an account or domain.", responseObject=ResourceCountResponse.class)
 public class UpdateResourceCountCmd extends BaseCmd {
@@ -44,10 +47,11 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Update resource count for a specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Update resource counts for all accounts & child domains in specified domain. If used with the account parameter, updates resource counts for a specified account in specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="If account parameter specified then updates resource counts for a specified account in this domain else update resource counts for all accounts & child domains in specified domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, required=true, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 - Instance. Number of instances a user can create. " +
+    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, description=  "Type of resource to update. If specifies valid values are 0, 1, 2, 3, and 4. If not specified will update all resource counts" +
+    																					"0 - Instance. Number of instances a user can create. " +
     																					"1 - IP. Number of public IP addresses a user can own. " +
     																					"2 - Volume. Number of disk volumes a user can create." +
     																					"3 - Snapshot. Number of snapshots a user can create." +
@@ -100,9 +104,19 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        ResourceCount result = _accountService.updateResourceCount(this);
-        if (result != null){
-            ResourceCountResponse response = _responseGenerator.createResourceCountResponse(result);
+    	List<? extends ResourceCount> result = _accountService.updateResourceCount(this);
+
+        if ((result != null) && (result.size()>0)){
+            ListResponse<ResourceCountResponse> response = new ListResponse<ResourceCountResponse>();
+            List<ResourceCountResponse> countResponses = new ArrayList<ResourceCountResponse>();
+
+            for (ResourceCount count : result) {
+                ResourceCountResponse resourceCountResponse = _responseGenerator.createResourceCountResponse(count);
+                resourceCountResponse.setObjectName("resourcecount");
+                countResponses.add(resourceCountResponse);
+            }
+
+            response.setResponses(countResponses);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

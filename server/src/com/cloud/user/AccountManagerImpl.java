@@ -19,6 +19,7 @@
 package com.cloud.user;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -745,10 +746,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public long updateAccountResourceCount(long accountId, ResourceType type) {
-        long count=0;
+        Long count=null;
 
-        // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template
-        // table as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
+        // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template table 
+        // as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
         if (m_resourceCountLock.lock(120)) { // 2 minutes
             try {
                 switch (type) {
@@ -770,7 +771,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     count = _vmTemplateDao.countTemplatesForAccount(accountId);
                     break;
                 }
-                _resourceCountDao.setAccountCount(accountId, type, count);
+                _resourceCountDao.setAccountCount(accountId, type, (count == null) ? 0 : count.longValue());
             } catch (Exception e) {
                 throw new CloudRuntimeException("Failed to update resource count for account with Id" + accountId);
             } finally {
@@ -778,24 +779,23 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
         }
 
-        return count;
+        return (count==null)?0:count.longValue();
     }
 
     @Override
     public long updateDomainResourceCount(long domainId, ResourceType type) {
         long count=0;
-        Domain domain =_domainDao.findById(domainId);
 
         if (m_resourceCountLock.lock(120)) { // 2 minutes
             try {
-                List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domain.getId());
+                List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
                 // for each child domain update the resource count
                 for (DomainVO domainChild : domainChildren) {
                     long domainCount = updateDomainResourceCount(domainChild.getId(), type);
                     count = count + domainCount; // add the child domain count to parent domain count
                 }
 
-                List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domain.getId());
+                List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
                 for (AccountVO account : accounts) {
                     long accountCount = updateAccountResourceCount(account.getId(), type);
                     count = count + accountCount; // add account's resource count to parent domain count
@@ -811,63 +811,65 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
        return count;
     }
-    
+
     @Override
-    public ResourceCountVO updateResourceCount(UpdateResourceCountCmd cmd) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException{
-        Account currentAccount = UserContext.current().getCaller();
+    public List<ResourceCountVO> updateResourceCount(UpdateResourceCountCmd cmd) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException{
+        Account callerAccount = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long accountId = null;
         long count=0;
+        List<ResourceCountVO> counts = new ArrayList<ResourceCountVO>();
+        List<ResourceType> resourceTypes = new ArrayList<ResourceType>();
 
-        ResourceType resourceType;
-        Integer type = cmd.getResourceType();
-        try {
-            resourceType = ResourceType.values()[type];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new InvalidParameterValueException("Please specify a valid resource type.");
-        }
+        ResourceType resourceType=null;
+        Integer typeId = cmd.getResourceType();
 
-        // Either a domainId or an account name with domainId must be passed in
-        if ((domainId == null) && (accountName == null)) {
-            throw new InvalidParameterValueException("Either a domainId or account name with domainId must be passed in.");
-        }
-
-        if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-        	if (domain == null) {
-                throw new InvalidParameterValueException("Please specify a valid domain ID.");
-            } else if (domain.getRemoved() != null) {
-                throw new InvalidParameterValueException("Please specify an active domain.");
+        if (typeId != null) {
+            try {
+                resourceType = ResourceType.values()[typeId];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw new InvalidParameterValueException("Please specify a valid resource type.");
             }
-            checkAccess(currentAccount, domain);
         }
+
+        DomainVO domain = _domainDao.findById(domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException("Please specify a valid domain ID.");
+        }
+        checkAccess(callerAccount, domain);
 
         if (accountName != null) {
-            if (domainId == null) {
-                throw new InvalidParameterValueException("domainId parameter is required if account name is specified");
-            }
             Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
             if (userAccount == null) {
                 throw new InvalidParameterValueException("unable to find account by name " + accountName + " in domain with id " + domainId);
             }
             accountId = userAccount.getId();
-            checkAccess(currentAccount, userAccount);
         }
 
         try {
-            if (accountId != null) {
-                count = updateAccountResourceCount(accountId, resourceType);
+            if (resourceType != null) {
+            	resourceTypes.add(resourceType);
             } else {
-                count = updateDomainResourceCount(domainId, resourceType);
+            	resourceTypes = Arrays.asList(ResourceType.values());
+            }
+
+            for (ResourceType type : resourceTypes) {
+                if (accountId != null) {
+                    count = updateAccountResourceCount(accountId, type);
+                    counts.add(new ResourceCountVO(accountId, domainId, type, count));
+                } else {
+                    count = updateDomainResourceCount(domainId, type);
+                    counts.add(new ResourceCountVO(accountId, domainId, type, count));
+                }
             }
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        return new ResourceCountVO(accountId, domainId, resourceType, count);
+        return counts;
     }
-    
+
     @Override
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {

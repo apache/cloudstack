@@ -88,8 +88,10 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 			    persist(resourceCountVO);
 			}
 		} else {
-			resourceCountVO.setCount(count);
-			update(resourceCountVO.getId(), resourceCountVO);
+			if (count != resourceCountVO.getCount()) {
+				resourceCountVO.setCount(count);
+				update(resourceCountVO.getId(), resourceCountVO);
+			}
 		}
 	}
 
@@ -102,8 +104,10 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 			    persist(resourceCountVO);
 		    }
 		} else {
-			resourceCountVO.setCount(count);
-			update(resourceCountVO.getId(), resourceCountVO);
+			if (count != resourceCountVO.getCount()) {
+				resourceCountVO.setCount(count);
+				update(resourceCountVO.getId(), resourceCountVO);
+			}
 		}
 	}
 

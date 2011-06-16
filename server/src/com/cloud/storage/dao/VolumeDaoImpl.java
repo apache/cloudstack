@@ -330,7 +330,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public Long countAllocatedVolumesForAccount(long accountId) {
 	  	SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
-		sc.setParameters("state", new Object[] {Volume.State.Destroy, State.Expunging});
+		sc.setParameters("state", Volume.State.Destroy);
         return customSearch(sc, null).get(0);		
 	}
 
