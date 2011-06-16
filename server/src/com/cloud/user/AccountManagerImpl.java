@@ -1400,8 +1400,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String secretKey = cmd.getSecretKey();
         String timeZone = cmd.getTimezone();
         String userName = cmd.getUsername();
-        
-        long callerUserId = UserContext.current().getCallerUserId();
 
         // Input validation
         UserVO user = _userDao.getUser(id);
@@ -1409,24 +1407,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (user == null) {
             throw new InvalidParameterValueException("unable to find user by id");
         }
-        
-        if (apiKey != null) {
-            Long apiKeyOwnerId = null;
-            Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
-            if (apiKeyOwner != null) {
-                apiKeyOwnerId = apiKeyOwner.first().getId();
-            }
-            
-            if ((apiKeyOwnerId == null || callerUserId != apiKeyOwnerId) && secretKey == null) {
-                throw new InvalidParameterValueException("Please provide an api key/secret key pair");
-            } else if (apiKeyOwnerId != null && callerUserId == apiKeyOwnerId && id != callerUserId) {
-                // No need to update api key if provided api key belongs to the caller and caller updates api key for someone else
-                apiKey = null;
-            }
-        }
 
-        if (apiKey == null && secretKey != null) {
-            throw new InvalidParameterValueException("Please provide an api key/secret key pair");
+        if ((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null)) {
+            throw new InvalidParameterValueException("Please provide an userApiKey/userSecretKey pair");
         }
 
         // If the account is an admin type, return an error. We do not allow this

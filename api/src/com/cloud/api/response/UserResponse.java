@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -59,10 +60,10 @@ public class UserResponse extends BaseResponse {
     @SerializedName("timezone") @Param(description="the timezone user was created in")
     private String timezone;
 
-    @SerializedName("apikey") @Param(description="the api key of the user")
+    @SerializedName(ApiConstants.API_KEY) @Param(description="the api key of the user")
     private String apiKey;
 
-    @SerializedName("secretkey") @Param(description="the secret key of the user")
+    @SerializedName(ApiConstants.SECRET_KEY) @Param(description="the secret key of the user")
     private String secretKey;
 
     public Long getId() {
