@@ -55,7 +55,7 @@ import com.thoughtworks.xstream.XStream;
 public class ApiXmlDocWriter {
     public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
 
-    private static final short DOMAIN_ADMIN_COMMAND = 2;
+    private static final short DOMAIN_ADMIN_COMMAND = 4;
     private static final short USER_COMMAND = 8;
     private static LinkedHashMap<Object, String> all_api_commands = new LinkedHashMap<Object, String>();
     private static LinkedHashMap<Object, String> domain_admin_api_commands = new LinkedHashMap<Object, String>();
