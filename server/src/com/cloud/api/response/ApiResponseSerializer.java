@@ -38,6 +38,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.encoding.URLEncoder;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
@@ -180,50 +181,46 @@ public class ApiResponseSerializer {
                 continue; // skip fields w/o serialized name
             }
 
-            String propName = field.getName();
-            Method method = getGetMethod(obj, propName);
-            if (method != null) {
-                try {
-                    Object fieldValue = method.invoke(obj);
-                    if (fieldValue != null) {
-                        if (fieldValue instanceof ResponseObject) {
-                            ResponseObject subObj = (ResponseObject) fieldValue;
-                            if (isAsync) {
-                                sb.append("<jobresult>");
+            field.setAccessible(true);
+            Object fieldValue = null;
+            try {
+                fieldValue = field.get(obj);
+            } catch (IllegalArgumentException e) {
+                throw new CloudRuntimeException("how illegal is it?", e);
+            } catch (IllegalAccessException e) {
+                throw new CloudRuntimeException("come on...we set accessible already", e);
+            }
+            if (fieldValue != null) {
+                if (fieldValue instanceof ResponseObject) {
+                    ResponseObject subObj = (ResponseObject) fieldValue;
+                    if (isAsync) {
+                        sb.append("<jobresult>");
+                    }
+                    serializeResponseObjXML(sb, subObj);
+                    if (isAsync) {
+                        sb.append("</jobresult>");
+                    }
+                } else if (fieldValue instanceof List<?>) {
+                    List<?> subResponseList = (List<Object>) fieldValue;
+                    for (Object value : subResponseList) {
+                        if (value instanceof ResponseObject) {
+                            ResponseObject subObj = (ResponseObject) value;
+                            if (serializedName != null) {
+                                subObj.setObjectName(serializedName.value());
                             }
                             serializeResponseObjXML(sb, subObj);
-                            if (isAsync) {
-                                sb.append("</jobresult>");
-                            }
-                        } else if (fieldValue instanceof List<?>) {
-                            List<?> subResponseList = (List<Object>) fieldValue;
-                            for (Object value : subResponseList) {
-                                if (value instanceof ResponseObject) {
-                                    ResponseObject subObj = (ResponseObject) value;
-                                    if (serializedName != null) {
-                                        subObj.setObjectName(serializedName.value());
-                                    }
-                                    serializeResponseObjXML(sb, subObj);
-                                }
-                            }
-
-                        } else if (fieldValue instanceof Date) {
-                            sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");
-                        } else {
-                            String resultString = escapeSpecialXmlChars(fieldValue.toString());
-                            if (!(obj instanceof ExceptionResponse)) {
-                                resultString = encodeParam(resultString);
-                            }
-                            
-                            sb.append("<" + serializedName.value() + ">" + resultString + "</" + serializedName.value() + ">");
                         }
                     }
-                } catch (IllegalArgumentException e) {
-                    s_logger.error("Illegal argument exception when calling ResponseObject " + obj.getClass().getName() + " get method for property: " + propName);
-                } catch (IllegalAccessException e) {
-                    s_logger.error("Illegal access exception when calling ResponseObject " + obj.getClass().getName() + " get method for property: " + propName);
-                } catch (InvocationTargetException e) {
-                    s_logger.error("Invocation target exception when calling ResponseObject " + obj.getClass().getName() + " get method for property: " + propName);
+
+                } else if (fieldValue instanceof Date) {
+                    sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");
+                } else {
+                    String resultString = escapeSpecialXmlChars(fieldValue.toString());
+                    if (!(obj instanceof ExceptionResponse)) {
+                        resultString = encodeParam(resultString);
+                    }
+                    
+                    sb.append("<" + serializedName.value() + ">" + resultString + "</" + serializedName.value() + ">");
                 }
             }
         }
