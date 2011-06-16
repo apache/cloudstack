@@ -48,7 +48,7 @@ public interface Network extends ControlledEntity {
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnTypes);
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
-        public static final Service Gateway = new Service("Gateway");
+        public static final Service Gateway = new Service("Gateway", Capability.Redundancy);
         public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat, Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
         public static final Service UserData = new Service("UserData");
@@ -118,6 +118,7 @@ public interface Network extends ControlledEntity {
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
+        public static final Capability Redundancy = new Capability("Redundancy");
 
         private String name;
 

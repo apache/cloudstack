@@ -100,7 +100,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params);
+        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params, offering.getRedundantRouter());
         
         return true;
     }
@@ -115,7 +115,8 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters());
+            NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters(), offering.getRedundantRouter());
             List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);
             return (rets != null) && (!rets.isEmpty());
         } else {
@@ -266,7 +267,10 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
-        capabilities.put(Service.Gateway, null);
+        
+        Map<Capability, String> gatewayCapabilities = new HashMap<Capability, String>();
+        gatewayCapabilities.put(Capability.Redundancy, "true");
+        capabilities.put(Service.Gateway, gatewayCapabilities);
         
         return capabilities;
     }

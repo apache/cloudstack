@@ -80,6 +80,7 @@ import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -1134,6 +1135,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            // Check if we can provide the required capability
+            if (offering.getRedundantRouter()) {
+                DataCenter dc = dest.getDataCenter();
+                Map<Service, Map<Capability, String>> capabilities = getZoneCapabilities(dc.getId());
+                Map<Capability, String> gatewayCap = capabilities.get(Service.Gateway);
+                if (!gatewayCap.get(Capability.Redundancy).equalsIgnoreCase("true")) {
+                    throw new InsufficientNetworkCapacityException("Zone lacks the feature that required by NetworkOffering: Redundant Virtual Router", dc.getClass(), dc.getId());
+                }
+            }
+
             network.setReservationId(context.getReservationId());
             network.setState(Network.State.Implementing);
 

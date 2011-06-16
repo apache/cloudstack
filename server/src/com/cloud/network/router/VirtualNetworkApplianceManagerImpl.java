@@ -792,7 +792,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     @DB
-    protected List<DomainRouterVO> findOrCreateVirtualRouters(Network guestNetwork, DeployDestination dest, Account owner) throws ConcurrentOperationException, InsufficientCapacityException {
+    protected List<DomainRouterVO> findOrCreateVirtualRouters(Network guestNetwork, DeployDestination dest, Account owner, boolean isRedundant) throws ConcurrentOperationException, InsufficientCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
@@ -807,8 +807,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<DomainRouterVO> routers = _routerDao.findByNetwork(guestNetwork.getId());
         
         int routerCount = 1;
-        NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
-        if (offering.getRedundantRouter()) {
+        if (isRedundant) {
             routerCount = 2;
         }
         
@@ -846,8 +845,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
             NicProfile gatewayNic = new NicProfile();
-            /* For redundant router */
-            if (offering.getRedundantRouter()) {
+            if (isRedundant) {
                 gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork));
                 gatewayNic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(guestNetwork.getId()));
             } else {
@@ -869,11 +867,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.error("Too much redundant routers!");
             }
             int priority = 0;
-            if (offering.getRedundantRouter()) {
+            if (isRedundant) {
                 priority = 100 - routers.size() * 20;
             }
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), offering.getRedundantRouter(), priority, RedundantState.UNKNOWN, _offering.getOfferHA());
+                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, priority, RedundantState.UNKNOWN, _offering.getOfferHA());
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
             // Creating stats entry for router
             UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
@@ -892,7 +890,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
+    public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting a router for " + guestNetwork + " in " + dest);
@@ -902,7 +900,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 + guestNetwork;
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
-        List<DomainRouterVO> routers = findOrCreateVirtualRouters(guestNetwork, dest, owner);
+        List<DomainRouterVO> routers = findOrCreateVirtualRouters(guestNetwork, dest, owner, isRedundant);
 
         for (DomainRouterVO router : routers) {
             State state = router.getState();
