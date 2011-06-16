@@ -114,11 +114,7 @@ dictionary = {
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="redundantrouter">
-	                    </div>
-	                    <select class="select" id="redundantrouter_edit" style="width: 202px; display: none;">
-	                        <option value="false"><fmt:message key="label.no"/></option>
-							<option value="true"><fmt:message key="label.yes"/></option>
-	                    </select>
+	                    </div>	                   
 	                </div>
 	            </div>
 	            	            

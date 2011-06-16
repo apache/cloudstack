@@ -40,8 +40,8 @@ function networkOfferingGetSearchParams() {
 }
 
 function afterLoadNetworkOfferingJSP() {   
-    $readonlyFields  = $("#tab_content_details").find("#displaytext, #availability, #redundantrouter");
-    $editFields = $("#tab_content_details").find("#displaytext_edit, #availability_edit, #redundantrouter_edit");     
+    $readonlyFields  = $("#tab_content_details").find("#displaytext, #availability");
+    $editFields = $("#tab_content_details").find("#displaytext_edit, #availability_edit");     
 }
 
 function doEditNetworkOffering($actionLink, $detailsTab, $midmenuItem1) {       
@@ -76,10 +76,7 @@ function doEditNetworkOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	
 	var availability = $detailsTab.find("#availability_edit").val();
     array1.push("&availability="+todb(availability));	
-	
-    var redundantrouter = $detailsTab.find("#redundantrouter_edit").val();     
-	array1.push("&redundantrouter="+redundantrouter);	
-    
+	    
 	$.ajax({
 	    data: createURL("command=updateNetworkOffering&id="+id+array1.join("")),
 		dataType: "json",
@@ -163,9 +160,7 @@ function networkOfferingJsonToDetailsTab() {
     $thisTab.find("#availability").text(fromdb(jsonObj.availability));     
     $thisTab.find("#availability_edit").val(fromdb(jsonObj.availability)); 
          
-    setBooleanReadField(jsonObj.redundantrouter, $thisTab.find("#redundantrouter"));	
-    setBooleanEditField(jsonObj.redundantrouter, $thisTab.find("#redundantrouter_edit"));
-    
+    setBooleanReadField(jsonObj.redundantrouter, $thisTab.find("#redundantrouter"));	    
     setBooleanReadField(jsonObj.isdefault, $thisTab.find("#isdefault"));
     setBooleanReadField(jsonObj.specifyvlan, $thisTab.find("#specifyvlan"));
       
