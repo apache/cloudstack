@@ -333,8 +333,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean isRedundantRouterEnabled() {
+    public boolean getRedundantRouter() {
         return this.redundantRouter;
+    }
+    
+    public void setRedundantRouter(boolean redundantRouter) {
+        this.redundantRouter = redundantRouter;
     }
     
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType, boolean isRedundantRouterEnabled) {

@@ -98,9 +98,9 @@ public interface NetworkOffering {
     
     boolean isSharedSourceNatService();
     
-    boolean isRedundantRouterEnabled();
-
     GuestIpType getGuestType();
 
     String getUniqueName();
+
+    boolean getRedundantRouter();
 }

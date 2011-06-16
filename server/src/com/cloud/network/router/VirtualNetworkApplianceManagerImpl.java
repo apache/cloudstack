@@ -821,7 +821,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             
             int router_nr = 1;
             NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
-            if (offering.isRedundantRouterEnabled()) {
+            if (offering.getRedundantRouter()) {
                 router_nr = 2;
             }
             
@@ -857,7 +857,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
                     NicProfile gatewayNic = new NicProfile();
                     /* For redundant router */
-                    if (offering.isRedundantRouterEnabled()) {
+                    if (offering.getRedundantRouter()) {
                         gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork));
                         gatewayNic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(guestNetwork.getId()));
                     } else {
@@ -879,11 +879,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         s_logger.error("Too much redundant routers!");
                     }
                     int priority = 0;
-                    if (offering.isRedundantRouterEnabled()) {
+                    if (offering.getRedundantRouter()) {
                         priority = 100 - routers.size() * 20;
                     }
                     router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                            owner.getDomainId(), owner.getId(), guestNetwork.getId(), offering.isRedundantRouterEnabled(), priority, RedundantState.UNKNOWN, _offering.getOfferHA());
+                            owner.getDomainId(), owner.getId(), guestNetwork.getId(), offering.getRedundantRouter(), priority, RedundantState.UNKNOWN, _offering.getOfferHA());
                     router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
                     routers.add(router);
                 }
@@ -1033,7 +1033,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         buf.append(" name=").append(profile.getHostName());
 
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (offering.isRedundantRouterEnabled()) {
+        if (offering.getRedundantRouter()) {
             buf.append(" redundant_router=1");
         }
         NicProfile controlNic = null;
@@ -1088,7 +1088,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
 
                 controlNic = nic;
-            } else if (nic.getTrafficType() == TrafficType.Guest && offering.isRedundantRouterEnabled()) {
+            } else if (nic.getTrafficType() == TrafficType.Guest && offering.getRedundantRouter()) {
                 Network net = _networkMgr.getNetwork(nic.getNetworkId());
                 buf.append(" guestgw=").append(net.getGateway());
                 String brd = NetUtils.long2Ip(NetUtils.ip2Long(nic.getIp4Address()) | ~NetUtils.ip2Long(nic.getNetmask()));
