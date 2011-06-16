@@ -1428,9 +1428,9 @@ function bindAddIpRangeToDirectNetworkButton($midmenuItem1) {
 				    var vlanId = $thisDialog.find("#vlan_id").val();
 				    array1.push("&vlan="+todb(vlanId)); 
 				}
-				else {
-				    array1.push("&vlan=untagged");
-				}
+				//else {   //Bug 8950 (don't have to specify "vlan" parameter when Adding Ip Range to Direct Network)
+				//    array1.push("&vlan=untagged");
+				//}
 				 
 				    			    
 				if($thisDialog.find("#gateway_container").css("display") != "none") {
