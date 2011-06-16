@@ -52,4 +52,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
 		return to;
 	}
+	
+	@Override
+    public boolean trackVmHostChange() {
+    	return false;
+    }
 }

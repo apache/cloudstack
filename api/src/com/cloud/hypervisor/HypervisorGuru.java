@@ -43,4 +43,11 @@ public interface HypervisorGuru extends Adapter {
      * @return delegated host id if the command will be delegated
      */
     long getCommandHostDelegation(long hostId, Command cmd);
+    
+    /**
+     *  @return true if VM can be migrated independently with CloudStack, and therefore CloudStack needs to track and reflect host change
+     *  into CloudStack database, false if CloudStack enforces VM sync logic
+     *  
+     */
+    boolean trackVmHostChange();
 }

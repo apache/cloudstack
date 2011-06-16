@@ -1444,8 +1444,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Map<Long, AgentVmInfo> states = convertToInfos(newStates);
         Commands commands = new Commands(OnError.Continue);
 
-        boolean nativeHA = _agentMgr.isHostNativeHAEnabled(hostId);
-
         for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
             AgentVmInfo info = entry.getValue();
 
@@ -1453,7 +1451,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
             Command command = null;
             if (vm != null) {
-                command = compareState(vm, info, false, nativeHA);
+                HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+                command = compareState(vm, info, false, hvGuru.trackVmHostChange());
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cleaning up a VM that is no longer found: " + info.name);
@@ -1666,8 +1665,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
 
-        boolean nativeHA = _agentMgr.isHostNativeHAEnabled(hostId);
-
         for (VMInstanceVO vm : vms) {
             AgentVmInfo info = infos.remove(vm.getId());
 
@@ -1678,30 +1675,33 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             } else {
                 castedVm = info.vm;
             }
+            
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
 
-            Command command = compareState(castedVm, info, true, nativeHA);
+            Command command = compareState(castedVm, info, true, hvGuru.trackVmHostChange());
             if (command != null) {
                 commands.addCommand(command);
             }
         }
 
         for (final AgentVmInfo left : infos.values()) {
-            if (nativeHA) {
-                for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : _vmGurus.values()) {
-                    VMInstanceVO vm = vmGuru.findByName(left.name);
-                    if (vm == null) {
+            for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : _vmGurus.values()) {
+                VMInstanceVO vm = vmGuru.findByName(left.name);
+                if (vm == null) {
+                    s_logger.warn("Stopping a VM that we have no record of: " + left.name);
+                    commands.addCommand(cleanup(left.name));
+                } else {
+                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+                    if(hvGuru.trackVmHostChange()) {
+	                    Command command = compareState(vm, left, true, true);
+	                    if (command != null) {
+	                        commands.addCommand(command);
+	                    }
+                    } else {
                         s_logger.warn("Stopping a VM that we have no record of: " + left.name);
                         commands.addCommand(cleanup(left.name));
-                    } else {
-                        Command command = compareState(vm, left, true, nativeHA);
-                        if (command != null) {
-                            commands.addCommand(command);
-                        }
                     }
                 }
-            } else {
-                s_logger.warn("Stopping a VM that we have no record of: " + left.name);
-                commands.addCommand(cleanup(left.name));
             }
         }
 
