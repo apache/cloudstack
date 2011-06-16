@@ -7,7 +7,7 @@ SYSTEMJARS="@SYSTEMJARS@"
 SCP=$(build-classpath $SYSTEMJARS) ; if [ $? != 0 ] ; then SCP="@SYSTEMCLASSPATH@" ; fi
 DCP="@DEPSCLASSPATH@"
 ACP="@AGENTCLASSPATH@"
-export CLASSPATH=/usr/share/java/'*':$SCP:$DCP:$ACP:@AGENTSYSCONFDIR@
+export CLASSPATH=$SCP:$DCP:$ACP:@AGENTSYSCONFDIR@
 for jarfile in "@PREMIUMJAVADIR@"/* ; do
 	if [ ! -e "$jarfile" ] ; then continue ; fi
 	CLASSPATH=$jarfile:$CLASSPATH

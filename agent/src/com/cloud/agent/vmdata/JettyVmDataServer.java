@@ -60,6 +60,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.script.Script;
 
 /**
  * Serves vm data using embedded Jetty server
@@ -283,14 +284,9 @@ public class JettyVmDataServer implements VmDataServer {
     @Override
     public Answer handleVmDataCommand(VmDataCommand cmd) {
         String vmDataDir = _vmDataDir + File.separator + cmd.getVmName();
-        try {
-            _fs.cleanup(vmDataDir, _vmDataDir);
-            _fs.mkdirs(vmDataDir);
-        } catch (IOException e1) {
-            s_logger.warn("Failed to cleanup vm data dir " + vmDataDir,  e1);
-           return new Answer(cmd, false, "Failed to cleanup or create directory " + vmDataDir);
-        }
-       
+
+        Script.runSimpleBashScript("rm -rf " + vmDataDir);
+        _fs.mkdirs(vmDataDir);
         
         for (String [] item : cmd.getVmData()) {
             try {
@@ -346,13 +342,7 @@ public class JettyVmDataServer implements VmDataServer {
     @Override
     public void handleVmStopped(String vmName) {
         String vmDataDir = _vmDataDir + File.separator + vmName;
-        try {
-            _fs.cleanup(vmDataDir, _vmDataDir);
-            _fs.mkdirs(vmDataDir);
-        } catch (IOException e1) {
-            s_logger.warn("Failed to cleanup vm data dir " + vmDataDir,  e1);
-        }
-
+        Script.runSimpleBashScript("rm -rf " + vmDataDir);
     }
 
 }
