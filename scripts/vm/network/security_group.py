@@ -88,7 +88,7 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         vmchain_default =  '-'.join(vm_name.split('-')[:-1]) + "-def"
 
-    destroy_ebtables_rules(vmchain)
+    destroy_ebtables_rules(vmchain, vif)
     
     try:
         if vmchain_default != None: 
@@ -129,10 +129,28 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     
     return 'true'
 
-def destroy_ebtables_rules(vm_name):
-    delcmd = "ebtables-save | grep ROUTING | grep " +  vm_name + " | sed 's/-A/-D/'"
-    delcmds = execute(delcmd).split('\n')
-    delcmds.pop()
+def destroy_ebtables_rules(vm_name, vif):
+    if vif is None:
+        return
+    delcmd = "ebtables -t nat -L PREROUTING | grep " + vif
+    delcmds = []
+    try:
+        delcmds = execute(delcmd).split('\n')
+        delcmds.pop()
+        delcmds = ["-D PREROUTING " + x for x in delcmds ]
+    except:
+        pass
+    postcmds = []
+    try:
+        postcmd = "ebtables -t nat -L POSTROUTING | grep " + vif
+        postcmds = execute(postcmd).split('\n')
+        postcmds.pop()
+        postcmds = ["-D POSTROUTING " + x for x in postcmds]
+    except:
+        pass
+
+    delcmds += postcmds
+
     for cmd in delcmds:
         try:
             execute("ebtables -t nat " +  cmd)
@@ -231,7 +249,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
     vmchain = vm_name
     vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
     
-    destroy_ebtables_rules(vmName)
+    destroy_ebtables_rules(vmName, vif)
 
     try:
         execute("iptables -N " + vmchain)
@@ -284,7 +302,7 @@ def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpS
         pass
     
     try:
-        execute("ebtables -t nat -A PREROUTING -i " + vif + " -p IPv4 --ip-protocol tcp --ip-destination-port 80 --ip-dst " + dhcpSvr + " -j dnat --to-destination " + hostMacAddr)
+        execute("ebtables -t nat -I " + vmchain_in + " -p IPv4 --ip-protocol tcp --ip-destination-port 80 --ip-dst " + dhcpSvr + " -j dnat --to-destination " + hostMacAddr)
     except:
         pass
     

@@ -590,7 +590,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 // Check if host is ready for removal
                 Status currentState = host.getStatus();
                 Status nextState = currentState.getNextStatus(Status.Event.Remove);
-                if (nextState == null) {
+                if (nextState == null && !isForced) {
                     s_logger.debug("There is no transition from state " + currentState.toString() + " to state " + Status.Event.Remove.toString());
                     return false;
                 }
