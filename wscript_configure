@@ -67,6 +67,7 @@ systemjars = {
         "jetty-sslengine.jar",
         "jetty-start.jar",
         "slf4j-log4j12.jar",
+        "jna.jar",
 		#"catalina.jar",
 	),
 	'Windows':
