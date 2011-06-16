@@ -107,7 +107,7 @@ dictionary = {
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <fmt:message key="label.tags"/>:</div>
+	                        <fmt:message key="label.storage.tags"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="tags">
@@ -179,7 +179,7 @@ dictionary = {
 				</li>				
 				<li id="add_disk_tags_container">
                     <label for="add_disk_tags">
-                        <fmt:message key="label.tags"/>:</label>
+                        <fmt:message key="label.storage.tags"/>:</label>
                     <input class="text" type="text" id="add_disk_tags" />
                     <div id="add_disk_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
