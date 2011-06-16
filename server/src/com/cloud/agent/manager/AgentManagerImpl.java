@@ -582,7 +582,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         AgentAttache attache = findAttache(hostId);
         // Get storage pool host mappings here because they can be removed as a part of handleDisconnect later
-        List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostId(hostId);
+        List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
 
         try {
 

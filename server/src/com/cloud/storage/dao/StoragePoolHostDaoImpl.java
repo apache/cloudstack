@@ -78,10 +78,17 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     }
 
     @Override
-    public List<StoragePoolHostVO> listByHostId(long hostId) {
+    public List<StoragePoolHostVO> listByHostIdIncludingRemoved(long hostId) {
         SearchCriteria<StoragePoolHostVO> sc = HostSearch.create();
         sc.setParameters("host_id", hostId);
         return listIncludingRemovedBy(sc);
+    }
+    
+    @Override
+    public List<StoragePoolHostVO> listByHostId(long hostId) {
+        SearchCriteria<StoragePoolHostVO> sc = HostSearch.create();
+        sc.setParameters("host_id", hostId);
+        return listBy(sc);
     }
 
     @Override
