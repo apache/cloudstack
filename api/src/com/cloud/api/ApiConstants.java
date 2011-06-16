@@ -24,7 +24,7 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ALGORITHM = "algorithm";
     public static final String ALLOCATED_ONLY = "allocatedonly";
-    public static final String API_KEY = "apikey";
+    public static final String API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String AVAILABLE = "available";
     public static final String BITS = "bits";
@@ -144,7 +144,7 @@ public class ApiConstants {
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
-    public static final String SECRET_KEY = "secretkey";
+    public static final String SECRET_KEY = "usersecretkey";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
