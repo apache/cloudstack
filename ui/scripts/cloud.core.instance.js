@@ -392,7 +392,8 @@ function initVMWizard() {
 				var $securityGroupDropdown = $vmPopup.find("#security_group_dropdown").empty();	
 				if (items != null && items.length > 0) {
 					for (var i = 0; i < items.length; i++) {
-					    $securityGroupDropdown.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>"); 
+						if(items[i].name != "default") //exclude default security group because it is always applied
+						    $securityGroupDropdown.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>"); 
 					}
 				}					    
 			}
