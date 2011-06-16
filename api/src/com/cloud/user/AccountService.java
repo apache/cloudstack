@@ -149,9 +149,9 @@ public interface AccountService {
      * 
      * @param cmd
      *            the command that wraps the domainId, accountId, resource type  parameters
-     * @return the updated/created resource count
+     * @return the updated/created resource counts
      */
-    ResourceCount updateResourceCount(UpdateResourceCountCmd cmd);
+    List<? extends ResourceCount> updateResourceCount(UpdateResourceCountCmd cmd);
     
     /**
      * Search for resource limits for the given id and/or account and/or type and/or domain.
