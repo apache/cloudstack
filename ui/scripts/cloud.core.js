@@ -651,21 +651,37 @@ function todb(val) {
 var midmenuItemCount = 20;
 
 function setBooleanReadField(value, $field) {
+	if(value == "true" || value == true)
+        $field.text("Yes");
+    else if(value == "false" || value == false)
+        $field.text("No");	
+    else
+        $field.text("");
+	
+	/*
     if(value == "true" || value == true)
         $field.text("Yes").show();
     else if(value == "false" || value == false)
         $field.text("No").show();	
     else
         $field.hide();
+    */
 }
 
 function setBooleanEditField(value, $field) {
+	if(value == "true" || value == true)
+        $field.val("true");
+    else if(value == "false" || value == false)
+        $field.val("false");	
+   	
+	/*
     if(value == "true" || value == true)
         $field.val("true");
     else if(value == "false" || value == false)
         $field.val("false");	
     else
         $field.hide();
+    */
 }
 
  var LeftMenuAdvancedSearchMap = {

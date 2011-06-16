@@ -2254,8 +2254,7 @@ function vmJsonClearDetailsTab(){
 	$thisTab.find("#group").text("");	
 	$thisTab.find("#group_edit").val("");		
 	$thisTab.find("#created").text("");		
-	$thisTab.find("#haenable").text("");	
-	$thisTab.find("#haenable_edit").text("");	
+	$thisTab.find("#haenable").text("");		
 	$thisTab.find("#iso").text("");	
 		  
 	//actions ***
