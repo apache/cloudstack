@@ -4174,7 +4174,7 @@ public class ManagementServerImpl implements ManagementServer {
     public boolean checkIfMaintenable(long hostId) {
 
         // get the poolhostref record
-        List<StoragePoolHostVO> poolHostRecordSet = _poolHostDao.listByHostId(hostId);
+        List<StoragePoolHostVO> poolHostRecordSet = _poolHostDao.listByHostIdIncludingRemoved(hostId);
 
         if (poolHostRecordSet != null) {
             // the above list has only 1 record

@@ -1446,7 +1446,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public boolean delPoolFromHost(long hostId) {
-        List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostId(hostId);
+        List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostIdIncludingRemoved(hostId);
         for (StoragePoolHostVO poolHost : poolHosts) {
             s_logger.debug("Deleting pool " + poolHost.getPoolId() + " from  host " + hostId);
             _poolHostDao.remove(poolHost.getId());

@@ -28,7 +28,7 @@ import com.cloud.utils.db.GenericDao;
 public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> {
     public List<StoragePoolHostVO> listByPoolId(long id);
 
-    public List<StoragePoolHostVO> listByHostId(long hostId);
+    public List<StoragePoolHostVO> listByHostIdIncludingRemoved(long hostId);
 
     public StoragePoolHostVO findByPoolHost(long poolId, long hostId);
 
@@ -39,4 +39,6 @@ public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> 
     public void deletePrimaryRecordsForHost(long hostId);
 
     public void deleteStoragePoolHostDetails(long hostId, long poolId);
+
+    List<StoragePoolHostVO> listByHostId(long hostId);
 }
