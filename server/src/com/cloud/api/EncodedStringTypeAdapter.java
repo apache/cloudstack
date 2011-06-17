@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.encoding.URLEncoder;
 import com.google.gson.JsonElement;
@@ -31,12 +32,12 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-public class EncodedStringTypeAdapter implements JsonSerializer<String> {
+public class EncodedStringTypeAdapter implements JsonSerializer<String>{
     public static final Logger s_logger = Logger.getLogger(EncodedStringTypeAdapter.class.getName());
     private static final boolean encodeApiResponse = configure();
     
     private static boolean configure() {
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
 
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         if (configDao != null) {
