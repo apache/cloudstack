@@ -276,6 +276,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     	
     	ub.set(vmi, "state", newState);
     	ub.set(vmi, "hostId", hostId);
+    	ub.set(vmi, "podIdToDeployIn", vmi.getPodIdToDeployIn());
     	ub.set(vmi, _updateTimeAttr, new Date());
 
     	int result = update(vmi, sc);
