@@ -384,8 +384,20 @@ dictionary = {
 	                        <div class="row_celltitles" id="netmask">
 	                        </div>
 	                    </div>
-	                </div>	 
+	                </div>	
 	                <div class="grid_rows even">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <fmt:message key="label.network.domain"/>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="networkdomain">
+	                        </div>	                        
+	                        <input class="text" id="tags_edit" style="width: 200px; display: none;" type="text" />
+	                    	<div id="networkdomain_edit_errormsg" style="display:none"></div>  	                        
+	                    </div>
+	                </div>	                
+	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            <fmt:message key="label.tags"/>:</div>
@@ -397,7 +409,7 @@ dictionary = {
 	                    	<div id="tags_edit_errormsg" style="display:none"></div>  	                        
 	                    </div>
 	                </div>
-	                <div class="grid_rows odd">
+	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            <fmt:message key="label.domain"/>:</div>
@@ -407,7 +419,7 @@ dictionary = {
 	                        </div>
 	                    </div>
 	                </div>
-	                <div class="grid_rows even">
+	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            <fmt:message key="label.account"/>:</div>
@@ -1320,7 +1332,14 @@ dictionary = {
                 </div>
                 <div id="add_publicip_vlan_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
-            </li>            
+            </li>   
+            <li>
+                <label>
+                    <fmt:message key="label.network.domain"/>:</label>
+                <input class="text" type="text" id="networkdomain" />
+                <div id="networkdomain_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
             <li>
                 <label>
                     <fmt:message key="label.tags"/>:</label>

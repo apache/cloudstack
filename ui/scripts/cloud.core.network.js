@@ -1070,6 +1070,8 @@ function directNetworkJsonToDetailsTab() {
     $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
     $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));
+    $thisTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
+	$thisTab.find("#networkdomain_edit").val(fromdb(jsonObj.networkdomain));       
     $thisTab.find("#tags").text(fromdb(jsonObj.tags));
 	$thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));    
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      //might be null
@@ -1101,6 +1103,8 @@ function directNetworkJsonClearDetailsTab() {
     $thisTab.find("#vlan").text("");
     $thisTab.find("#gateway").text("");
     $thisTab.find("#netmask").text("");  
+    $thisTab.find("#networkdomain").text("");
+	$thisTab.find("#networkdomain_edit").val("");      
     $thisTab.find("#tags").text("");	
 	$thisTab.find("#tags_edit").val("");    
     $thisTab.find("#domain").text("");      
@@ -1259,6 +1263,7 @@ function bindAddNetworkButton() {
 				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
+				isValid &= validateString("Network Domain", $thisDialog.find("#networkdomain"), $thisDialog.find("#networkdomain_errormsg"), true); //optional
 				isValid &= validateString("Tags", $thisDialog.find("#tags"), $thisDialog.find("#tags_errormsg"), true); //optional
 							
 				if($thisDialog.find("#domain_container").css("display") != "none") {
@@ -1335,9 +1340,14 @@ function bindAddNetworkButton() {
 				
 				var endip = $thisDialog.find("#add_publicip_vlan_endip").val();
 				array1.push("&endip="+todb(endip));
-				
+								
+				var networkdomain = $thisDialog.find("#networkdomain").val();
+				if(networkdomain != null && networkdomain.length > 0)
+				    array1.push("&networkdomain="+todb(networkdomain));
+								
 				var tags = $thisDialog.find("#tags").val();
-				array1.push("&tags="+todb(tags));
+				if(tags != null && tags.length > 0)
+				    array1.push("&tags="+todb(tags));
 				
 				// Creating network for the direct networking				
 				$.ajax({
