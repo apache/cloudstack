@@ -393,7 +393,7 @@ dictionary = {
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="networkdomain">
 	                        </div>	                        
-	                        <input class="text" id="tags_edit" style="width: 200px; display: none;" type="text" />
+	                        <input class="text" id="networkdomain_edit" style="width: 200px; display: none;" type="text" />
 	                    	<div id="networkdomain_edit_errormsg" style="display:none"></div>  	                        
 	                    </div>
 	                </div>	                
