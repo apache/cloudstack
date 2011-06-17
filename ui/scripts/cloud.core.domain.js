@@ -307,13 +307,14 @@ function domainJsonToDetailsTab() {
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
     var noAvailableActions = true;
-    if(domainId != 1 && isAdmin()) { //"ROOT" domain is not allowed to edit or delete
-        buildActionLinkForTab("label.action.edit.domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
-        buildActionLinkForTab("label.action.delete.domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);          
-        noAvailableActions = false; 
-    } 
-    
-    buildActionLinkForTab("label.action.update.resource.count", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+    if(isAdmin()) { 
+    	if(domainId != 1) { //"ROOT" domain is not allowed to edit or delete
+	        buildActionLinkForTab("label.action.edit.domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	        buildActionLinkForTab("label.action.delete.domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);          
+	        noAvailableActions = false; 
+    	}    	
+    }   
+	buildActionLinkForTab("label.action.update.resource.count", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
     noAvailableActions = false; 
     
     // no available actions 
@@ -675,7 +676,7 @@ function doEditDomain2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields,
     $("#save_button, #cancel_button").hide();  		  
 }
 
-function doUpdateResourceCount($actionLink, $detailsTab, $midmenuItem1) {      
+function doUpdateResourceCountForDomain($actionLink, $detailsTab, $midmenuItem1) {      
 	var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;			
 	var apiCommand = "command=updateResourceCount&domainid="+id;
@@ -706,7 +707,7 @@ var domainActionMap = {
     },   
     "label.action.update.resource.count": {   
     	isAsyncJob: false,   
-    	dialogBeforeActionFn : doUpdateResourceCount,                     
+    	dialogBeforeActionFn : doUpdateResourceCountForDomain,                     
         inProcessText: "label.action.update.resource.count.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}           
     },    
