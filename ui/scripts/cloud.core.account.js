@@ -436,6 +436,8 @@ function accountJsonToDetailsTab() {
             noAvailableActions = false;	            
         }  
     }
+    buildActionLinkForTab("label.action.update.resource.count", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+    noAvailableActions = false;	    
     
     // no available actions 
 	if(noAvailableActions == true) {
@@ -564,7 +566,13 @@ function accountUserJSONToTemplate(jsonObj, $template) {
 var accountActionMap = {  
     "label.action.edit.account": {
         dialogBeforeActionFn: doEditAccount  
-    },
+    }, 
+    "label.action.update.resource.count": {   
+    	isAsyncJob: false,   
+    	dialogBeforeActionFn : doUpdateResourceCountForAccount,                     
+        inProcessText: "label.action.update.resource.count.processing",
+        afterActionSeccessFn: function(json, $midmenuItem1, id){}           
+    },   
     "label.action.resource.limits": {                 
         dialogBeforeActionFn : doResourceLimitsForAccount 
     } 
@@ -662,6 +670,15 @@ function doEditAccount2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields
             $("#save_button, #cancel_button").hide();       	  		
 		}
 	});
+}
+
+function doUpdateResourceCountForAccount($actionLink, $detailsTab, $midmenuItem1) {      
+	var jsonObj = $midmenuItem1.data("jsonObj");
+    var id = jsonObj.id;
+	var domainid=jsonObj.domainid;
+	var account = jsonObj.name;			
+	var apiCommand = "command=updateResourceCount&domainid="+domainid+"&account="+account;
+	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);			
 }
 
 function updateResourceLimitForAccount(domainId, account, type, max) {
