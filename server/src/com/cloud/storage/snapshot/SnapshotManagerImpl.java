@@ -857,6 +857,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 }
             } else if ((account != null) && ((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN))) {
                 domainId = account.getDomainId();
+                isRecursive = true;
             }
 
             if (domainId != null && accountName != null) {
