@@ -67,16 +67,24 @@ public class KVMHAMonitor extends KVMHABase implements Runnable{
 		public void run() {
 			synchronized (_storagePool) {
 				for (NfsStoragePool primaryStoragePool : _storagePool.values()) {
+					String result = null;
+					for (int i = 0; i < 5; i++) {
+					    Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
+					    cmd.add("-i", primaryStoragePool._poolIp);
+					    cmd.add("-p", primaryStoragePool._poolMountSourcePath);
+					    cmd.add("-m", primaryStoragePool._mountDestPath);
+					    cmd.add("-h", _hostIP);
+					    result = cmd.execute();
+					    if (result != null) {
+					        s_logger.debug("write heartbeat failed: " + result + ", retry: " + i);
+					    } else {
+					        break;
+					    }
+					}
 					
-					Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
-					cmd.add("-i", primaryStoragePool._poolIp);
-					cmd.add("-p", primaryStoragePool._poolMountSourcePath);
-					cmd.add("-m", primaryStoragePool._mountDestPath);
-					cmd.add("-h", _hostIP);
-					String result = cmd.execute();
 					if (result != null) {
-						s_logger.debug("write heartbeat failed: " + result + "; destroy all the vms on this host");
-						cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
+						s_logger.debug("write heartbeat failed: " + result + "; reboot the host");
+						Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
 						cmd.add("-i", primaryStoragePool._poolIp);
 						cmd.add("-p", primaryStoragePool._poolMountSourcePath);
 						cmd.add("-m", primaryStoragePool._mountDestPath);
