@@ -60,10 +60,10 @@ public class UserResponse extends BaseResponse {
     @SerializedName("timezone") @Param(description="the timezone user was created in")
     private String timezone;
 
-    @SerializedName(ApiConstants.API_KEY) @Param(description="the api key of the user")
+    @SerializedName("apikey") @Param(description="the api key of the user")
     private String apiKey;
 
-    @SerializedName(ApiConstants.SECRET_KEY) @Param(description="the secret key of the user")
+    @SerializedName("secretkey") @Param(description="the secret key of the user")
     private String secretKey;
 
     public Long getId() {
