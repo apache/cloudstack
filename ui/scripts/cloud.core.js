@@ -1460,6 +1460,31 @@ function showAfterActionInfoOnTop(isSuccessful, afterActionInfo) {
 }
 
 
+function ipFindNetworkServiceByName(pName, networkObj) {    
+    if(networkObj == null)
+        return null;
+    if(networkObj.service != null) {
+	    for(var i=0; i<networkObj.service.length; i++) {
+	        var networkServiceObj = networkObj.service[i];
+	        if(networkServiceObj.name == pName)
+	            return networkServiceObj;
+	    }
+    }    
+    return null;
+}
+
+function ipFindCapabilityByName(pName, networkServiceObj) {  
+    if(networkServiceObj == null)
+        return null;  
+    if(networkServiceObj.capability != null) {
+	    for(var i=0; i<networkServiceObj.capability.length; i++) {
+	        var capabilityObj = networkServiceObj.capability[i];
+	        if(capabilityObj.name == pName)
+	            return capabilityObj;
+	    }
+    }    
+    return null;
+}
 
 
 

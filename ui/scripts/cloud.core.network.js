@@ -87,10 +87,7 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     initDialog("dialog_add_iprange_to_directnetwork");    
      
     networkPopulateMiddleMenu($leftmenuItem1);  
-    bindAddNetworkButton();     
-    
-    $readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext, #tags");
-    $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit, #tags_edit");    
+    bindAddNetworkButton();         
 }
 
 function networkPopulateMiddleMenu($leftmenuItem1) {
@@ -1509,7 +1506,23 @@ var directNetworkActionMap = {
     }    
 }  
 
-function doEditDirectNetwork($actionLink, $detailsTab, $midmenuItem1) {       
+function doEditDirectNetwork($actionLink, $detailsTab, $midmenuItem1) {     
+	var networkObj = $midmenuItem1.data("jsonObj");
+	
+	$readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext, #tags");
+    $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit, #tags_edit");    
+	
+    var serviceObj = ipFindNetworkServiceByName("Dns", networkObj);
+    if(serviceObj != null) {
+        var capabilityObj = ipFindCapabilityByName("AllowDnsSuffixModification", serviceObj);
+        if(capabilityObj != null) {
+            if(capabilityObj.value == "true") {
+            	$readonlyFields  = $("#direct_network_page").find("#tab_content_details").find("#name, #displaytext, #tags, #networkdomain");
+                $editFields = $("#direct_network_page").find("#tab_content_details").find("#name_edit, #displaytext_edit, #tags_edit, #networkdomain_edit");    		                
+            }
+        }
+    }	
+ 	
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
@@ -1541,7 +1554,10 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
     
     var displaytext = $detailsTab.find("#displaytext_edit").val();
     array1.push("&displayText="+todb(displaytext));
-	
+	    
+    var networkdomain = $detailsTab.find("#networkdomain_edit").val();
+    array1.push("&networkdomain="+todb(networkdomain));
+        
     var tags = $detailsTab.find("#tags_edit").val();
     array1.push("&tags="+todb(tags));
     
