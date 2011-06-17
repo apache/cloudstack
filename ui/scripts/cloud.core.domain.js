@@ -312,6 +312,10 @@ function domainJsonToDetailsTab() {
         buildActionLinkForTab("label.action.delete.domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);          
         noAvailableActions = false; 
     } 
+    
+    buildActionLinkForTab("label.action.update.resource.count", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+    noAvailableActions = false; 
+    
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
@@ -671,6 +675,13 @@ function doEditDomain2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields,
     $("#save_button, #cancel_button").hide();  		  
 }
 
+function doUpdateResourceCount($actionLink, $detailsTab, $midmenuItem1) {      
+	var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;			
+	var apiCommand = "command=updateResourceCount&domainid="+id;
+	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);			
+}
+
 function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
@@ -692,7 +703,13 @@ function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {
 var domainActionMap = {        
     "label.action.edit.domain": {
         dialogBeforeActionFn: doEditDomain
-    },
+    },   
+    "label.action.update.resource.count": {   
+    	isAsyncJob: false,   
+    	dialogBeforeActionFn : doUpdateResourceCount,                     
+        inProcessText: "label.action.update.resource.count.processing",
+        afterActionSeccessFn: function(json, $midmenuItem1, id){}           
+    },    
     "label.action.delete.domain": {           
         isAsyncJob: true,
         dialogBeforeActionFn : doDeleteDomain,          

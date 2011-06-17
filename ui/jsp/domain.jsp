@@ -8,6 +8,8 @@
 <script language="javascript">
 dictionary = { 	
 	'label.action.edit.domain' : '<fmt:message key="label.action.edit.domain"/>',
+	'label.action.update.resource.count' : '<fmt:message key="label.action.update.resource.count"/>',
+	'label.action.update.resource.count.processing' : '<fmt:message key="label.action.update.resource.count.processing"/>',	
 	'label.action.delete.domain' : '<fmt:message key="label.action.delete.domain"/>',
 	'label.action.delete.domain.processing' : '<fmt:message key="label.action.delete.domain.processing"/>',
 	'message.action.delete.domain' : '<fmt:message key="message.action.delete.domain"/>',
