@@ -2256,10 +2256,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 		
 		if (vmSpec.getType() != VirtualMachine.Type.User) {
-			DiskDef iso = new DiskDef();
-			if (_sysvmISOPath != null)
-			    iso.defISODisk(_sysvmISOPath);
-			vm.getDevices().addDevice(iso);
+		    if (_sysvmISOPath != null) {
+		        DiskDef iso = new DiskDef();
+		        iso.defISODisk(_sysvmISOPath);
+		        vm.getDevices().addDevice(iso);
+		    }
 			
 			createPatchVbd(conn, vmName, vm, vmSpec);
 		}
