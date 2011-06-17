@@ -696,9 +696,76 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public static boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN));
     }
+    
+    @DB
+    protected DomainRouterVO findOrCreateVirtualRouter(Network guestNetwork, DataCenterDeployment plan, HypervisorType type, Account owner) throws ConcurrentOperationException, InsufficientCapacityException {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        if (network == null) {
+            throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
+        }
+        
+        DomainRouterVO router = _routerDao.findByNetwork(guestNetwork.getId());
+        if (router != null) {
+            return router;
+        }
+        long id = _routerDao.getNextInSequence(Long.class, "id");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating the router " + id);
+        }
+
+        PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
+
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
+        NetworkOfferingVO controlOffering = offerings.get(0);
+        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
+
+        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
+        NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
+        List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
+        NicProfile defaultNic = new NicProfile();
+        defaultNic.setDefaultNic(true);
+        defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
+        defaultNic.setGateway(sourceNatIp.getGateway());
+        defaultNic.setNetmask(sourceNatIp.getNetmask());
+        defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+        defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+        defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+        defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+        defaultNic.setDeviceId(2);
+        networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
+        NicProfile gatewayNic = new NicProfile();
+        gatewayNic.setIp4Address(guestNetwork.getGateway());
+        gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
+        gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
+        gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
+        gatewayNic.setMode(guestNetwork.getMode());
+
+        String gatewayCidr = guestNetwork.getCidr();
+        gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+        networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+
+        /* Before starting router, already know the hypervisor type */
+        VMTemplateVO template = _templateDao.findRoutingTemplate(type);
+        router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
+        router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+        // Creating stats entry for router
+        UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), plan.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
+        if (stats == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
+            }
+            stats = new UserStatisticsVO(owner.getId(), plan.getDataCenterId(), null, router.getId(), router.getType().toString(), guestNetwork.getId());
+            _userStatsDao.persist(stats);
+        }
+        txn.commit();
+        return router;
+    }
 
     @Override
-    @DB
     public DomainRouterVO deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         long dcId = dest.getDataCenter().getId();
@@ -707,172 +774,109 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.debug("Starting a router for network configurations: virtual=" + guestNetwork + " in " + dest);
         }
 
-        // lock guest network
-        Long guestNetworkId = guestNetwork.getId();
-        guestNetwork = _networkDao.acquireInLockTable(guestNetworkId);
+        assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
+                + guestNetwork;
+        assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
-        if (guestNetwork == null) {
-            throw new ConcurrentOperationException("Unable to acquire network configuration: " + guestNetworkId);
+        DataCenterDeployment plan = new DataCenterDeployment(dcId);
+
+        DomainRouterVO router = findOrCreateVirtualRouter(guestNetwork, plan, dest.getCluster().getHypervisorType(), owner);
+        
+        State state = router.getState();
+        if (state != State.Running) {
+            router = start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
         }
 
-        try {
+        return router;
+    }
 
-            assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
-                    + guestNetwork;
-            assert guestNetwork.getTrafficType() == TrafficType.Guest;
+    @DB
+    protected DomainRouterVO findOrCreateDhcpServer(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException, ConcurrentOperationException {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        if (network == null) {
+            throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
+        }
+        
+        DataCenterDeployment plan = null;
 
-            DataCenterDeployment plan = new DataCenterDeployment(dcId);
+        long dcId = dest.getDataCenter().getId();
+        
+        DataCenter dc = dest.getDataCenter();
+        DomainRouterVO router = null;
+        Long podId = dest.getPod().getId();
 
-            DomainRouterVO router = _routerDao.findByNetwork(guestNetwork.getId());
-            if (router == null) {
-                long id = _routerDao.getNextInSequence(Long.class, "id");
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating the router " + id);
-                }
+        // In Basic zone and Guest network we have to start domR per pod, not per network
+        if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
+            router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
+            plan = new DataCenterDeployment(dcId, podId, null, null, null);
+        } else {
+            router = _routerDao.findByNetwork(guestNetwork.getId());
+            plan = new DataCenterDeployment(dcId);
+        }
 
-                PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
-
-                List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
-                NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
-
-                List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
-                NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-                List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
-                NicProfile defaultNic = new NicProfile();
-                defaultNic.setDefaultNic(true);
-                defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-                defaultNic.setGateway(sourceNatIp.getGateway());
-                defaultNic.setNetmask(sourceNatIp.getNetmask());
-                defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setDeviceId(2);
-                networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
-                NicProfile gatewayNic = new NicProfile();
-                gatewayNic.setIp4Address(guestNetwork.getGateway());
-                gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
-                gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
-                gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
-                gatewayNic.setMode(guestNetwork.getMode());
-
-                String gatewayCidr = guestNetwork.getCidr();
-                gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
-                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
-                networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
-
-                /* Before starting router, already know the hypervisor type */
-                VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
-                router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
-                router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
-            }
-
-            State state = router.getState();
-            if (state != State.Running) {
-                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
-            }
-
-            // Creating stats entry for router
-            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
-            if (stats == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
-                }
-                stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
-                _userStatsDao.persist(stats);
-            }
+        if (router != null) {
             return router;
-        } finally {
-            _networkDao.releaseFromLockTable(guestNetworkId);
         }
+        
+        long id = _routerDao.getNextInSequence(Long.class, "id");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating the router " + id);
+        }
+
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
+        NetworkOfferingVO controlOffering = offerings.get(0);
+        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
+
+        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
+        NicProfile gatewayNic = new NicProfile();
+        gatewayNic.setDefaultNic(true);
+        networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+
+        /* Before starting router, already know the hypervisor type */
+        VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
+
+        router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
+        router.setRole(Role.DHCP_USERDATA);
+        router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+        // Creating stats entry for router
+        UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
+        if (stats == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
+            }
+            stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
+            _userStatsDao.persist(stats);
+        }
+        txn.commit();
+        return router;
     }
 
     @Override
-    @DB
     public DomainRouterVO deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException, StorageUnavailableException,
             ConcurrentOperationException, ResourceUnavailableException {
-        long dcId = dest.getDataCenter().getId();
 
-        // lock guest network
-        Long guestNetworkId = guestNetwork.getId();
-        guestNetwork = _networkDao.acquireInLockTable(guestNetworkId);
-
-        if (guestNetwork == null) {
-            throw new ConcurrentOperationException("Unable to acquire network configuration: " + guestNetworkId);
+        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
+        if (offering.isSystemOnly() || guestNetwork.getIsShared()) {
+            owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
 
-        try {
-
-            NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-            if (offering.isSystemOnly() || guestNetwork.getIsShared()) {
-                owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Starting a dhcp for network configurations: dhcp=" + guestNetwork + " in " + dest);
-            }
-            assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
-                    + guestNetwork;
-
-            DataCenterDeployment plan = null;
-            DataCenter dc = _dcDao.findById(dcId);
-            DomainRouterVO router = null;
-            Long podId = dest.getPod().getId();
-
-            // In Basic zone and Guest network we have to start domR per pod, not per network
-            if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
-                router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
-                plan = new DataCenterDeployment(dcId, podId, null, null, null);
-            } else {
-                router = _routerDao.findByNetwork(guestNetwork.getId());
-                plan = new DataCenterDeployment(dcId);
-            }
-
-            if (router == null) {
-                long id = _routerDao.getNextInSequence(Long.class, "id");
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating the router " + id);
-                }
-
-                List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
-                NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
-
-                List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
-                NicProfile gatewayNic = new NicProfile();
-                gatewayNic.setDefaultNic(true);
-                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
-                networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
-
-                /* Before starting router, already know the hypervisor type */
-                VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
-
-                router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
-                router.setRole(Role.DHCP_USERDATA);
-                router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
-            }
-
-            State state = router.getState();
-            if (state != State.Running) {
-                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
-            }
-            // Creating stats entry for router
-            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
-            if (stats == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
-                }
-                stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
-                _userStatsDao.persist(stats);
-            }
-
-            return router;
-        } finally {
-            _networkDao.releaseFromLockTable(guestNetworkId);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Starting a dhcp for network configurations: dhcp=" + guestNetwork + " in " + dest);
         }
+        assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
+                + guestNetwork;
+
+        DomainRouterVO router = findOrCreateDhcpServer(guestNetwork, dest, owner);
+        State state = router.getState();
+        if (state != State.Running) {
+            router = start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+        }
+
+        return router;
     }
 
     @Override
