@@ -611,9 +611,9 @@ def deb(context):
 	if Options.options.VERNUM:
 		VERSION = Options.options.VERNUM
     else:
-        VERSION = "2.2"
+		VERSION = "2.2"
 
-    version = ["--ser-envvar=PACKAGEVERSION=%s"%VERSION]
+	version = ["--ser-envvar=PACKAGEVERSION=%s"%VERSION]
 
 	if Options.options.PRERELEASE:
 		if not buildnumber:
