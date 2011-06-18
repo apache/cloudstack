@@ -613,7 +613,7 @@ def deb(context):
 	else:
 		VERSION = "2.2"
 
-	version = ["--ser-envvar=PACKAGEVERSION=%s"%VERSION]
+	version = ["--set-envvar=PACKAGEVERSION=%s"%VERSION]
 
 	if Options.options.PRERELEASE:
 		if not buildnumber:
