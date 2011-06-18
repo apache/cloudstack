@@ -610,7 +610,7 @@ def deb(context):
 	
 	if Options.options.VERNUM:
 		VERSION = Options.options.VERNUM
-    else:
+	else:
 		VERSION = "2.2"
 
 	version = ["--ser-envvar=PACKAGEVERSION=%s"%VERSION]
