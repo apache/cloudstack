@@ -610,6 +610,10 @@ def deb(context):
 	
 	if Options.options.VERNUM:
 		VERSION = Options.options.VERNUM
+    else:
+        VERSION = "2.2"
+
+    version = ["--ser-envvar=PACKAGEVERSION=%s"%VERSION]
 
 	if Options.options.PRERELEASE:
 		if not buildnumber:
@@ -658,7 +662,7 @@ def deb(context):
 		f.close()
 	
 	checkdeps = lambda: c(["dpkg-checkbuilddeps"],srcdir)
-	dodeb = lambda: c(["debuild",'-e','WAFCACHE','--no-lintian', '--no-tgz-check']+buildnumber+["-us","-uc"],srcdir)
+	dodeb = lambda: c(["debuild",'-e','WAFCACHE','--no-lintian', '--no-tgz-check']+buildnumber+version+["-us","-uc"],srcdir)
 	try: checkdeps()
 	except (CalledProcessError,OSError),e:
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
