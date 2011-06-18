@@ -513,7 +513,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
                     }
                 } catch (NoTransitionException e) {
-                    throw new CloudRuntimeException(e.getMessage());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to transition into Starting state due to " + e.getMessage());
+                    }
                 }
 
                 if (s_logger.isDebugEnabled()) {
