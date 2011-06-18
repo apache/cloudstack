@@ -194,7 +194,9 @@ public enum Config {
     VmwarePrivateNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.private.vswitch", null, "Specify the vSwitch on host for private network", null),
     VmwarePublicNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.public.vswitch", null, "Specify the vSwitch on host for public network", null),
     VmwareGuestNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.guest.vswitch", null, "Specify the vSwitch on host for guest network", null),
-    VmwareServiceConsole("Advanced", ManagementServer.class, String.class, "vmware.service.console", "Service Console", "Specify the service console network name (ESX host only)", null),
+    VmwareServiceConsole("Advanced", ManagementServer.class, String.class, "vmware.service.console", "Service Console", "Specify the service console/management network name", null),
+    VmwareAdditionalVncPortRangeStart("Advanced", ManagementServer.class, Integer.class, "vmware.additional.vnc.portrange.start", "59000", "Start port number of additional VNC port range", null),
+    VmwareAdditionalVncPortRangeSize("Advanced", ManagementServer.class, Integer.class, "vmware.additional.vnc.portrange.size", "1000", "Start port number of additional VNC port range", null),
     
     // KVM
     KvmPublicNetwork("Advanced", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
