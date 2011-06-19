@@ -62,6 +62,7 @@ public class Transaction {
     private static final Logger s_logger = Logger.getLogger(Transaction.class.getName() + "." + "Transaction");
     private static final Logger s_stmtLogger = Logger.getLogger(Transaction.class.getName() + "." + "Statement");
     private static final Logger s_lockLogger = Logger.getLogger(Transaction.class.getName() + "." + "Lock");
+    private static final Logger s_connLogger = Logger.getLogger(Transaction.class.getName() + "." + "Connection");
 
     private static final ThreadLocal<Transaction> tls = new ThreadLocal<Transaction>();
     private static final String START_TXN = "start_txn";
@@ -172,12 +173,20 @@ public class Transaction {
     }
     
     public static Connection getStandaloneConnectionWithException() throws SQLException {
-		return s_ds.getConnection();
+        Connection conn = s_ds.getConnection();
+        if (s_connLogger.isTraceEnabled()) {
+            s_logger.trace("Retrieving a standalone connection: " + conn);
+        }
+		return conn;
     }
     
     public static Connection getStandaloneConnection() {
     	try {
-			return s_ds.getConnection();
+            Connection conn = s_ds.getConnection();
+            if (s_connLogger.isTraceEnabled()) {
+                s_logger.trace("Retrieving a standalone connection: " + conn);
+            }
+            return conn;
 		} catch (SQLException e) {
 			s_logger.warn("Unexpected exception: ", e);
 			return null;
@@ -186,7 +195,11 @@ public class Transaction {
     
     public static Connection getStandaloneUsageConnection() {
         try {
-            return s_usageDS.getConnection();
+            Connection conn = s_usageDS.getConnection();
+            if (s_connLogger.isTraceEnabled()) {
+                s_logger.trace("Retrieving a standalone connection for usage: " + conn);
+            }
+            return conn;
         } catch (SQLException e) {
             s_logger.warn("Unexpected exception: ", e);
             return null;
@@ -453,9 +466,6 @@ public class Transaction {
      */
     public Connection getConnection() throws SQLException {
         if (_conn == null) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("conn: Creating a DB connection with " + (_txn ? " txn: " : " no txn: ")  + buildName());
-            }
             switch (_dbId) {
             case CLOUD_DB:
             	if(s_ds != null) {
@@ -485,6 +495,9 @@ public class Transaction {
             //
             _conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             _stack.push(new StackElement(CREATE_CONN, null));
+            if (s_connLogger.isTraceEnabled()) {
+                s_connLogger.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": " + _conn  + buildName());
+            }
         } else {
             s_logger.trace("conn: Using existing DB connection");
         }
@@ -651,7 +664,9 @@ public class Transaction {
         }
 
         try {
-            s_logger.trace("conn: Closing DB connection");
+            if (s_connLogger.isTraceEnabled()) {
+                s_logger.trace("Closing DB connection: " + _conn);
+            }
             if(this._dbId != CONNECTED_DB) {
                 _conn.close();
             }
