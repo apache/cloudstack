@@ -1727,6 +1727,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         } else if (offering.getRemoved() != null) {
             throw new InvalidParameterValueException("unable to find service offering " + offeringId);
         }
+        
+        if(offering.getDefaultUse()){
+            throw new InvalidParameterValueException("Default service offerings cannot be deleted");
+        }
 
         if (_serviceOfferingDao.remove(offeringId)) {
             UserContext.current().setEventDetails("Service offering id=" + offeringId);
