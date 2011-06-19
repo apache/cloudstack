@@ -69,6 +69,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_SYSTEM_OFFERING) @Param(description="is this a system vm offering")
     private Boolean isSystem;
 
+    @SerializedName(ApiConstants.IS_DEFAULT_USE) @Param(description="is this a  default system vm offering")
+    private Boolean defaultUse;
+
 
     public Long getId() {
         return id;
@@ -92,6 +95,15 @@ public class ServiceOfferingResponse extends BaseResponse {
     
     public void setIsSystemOffering(Boolean isSystem) {
         this.isSystem = isSystem;
+    }
+
+
+    public Boolean getDefaultUse() {
+        return defaultUse;
+    }
+    
+    public void setDefaultUse(Boolean defaultUse) {
+        this.defaultUse = defaultUse;
     }
 
 

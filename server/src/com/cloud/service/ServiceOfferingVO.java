@@ -56,12 +56,15 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     
     @Column(name="host_tag")
     private String hostTag;
+
+    @Column(name="default_use")
+    private boolean default_use;
     
     protected ServiceOfferingVO() {
         super();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, boolean defaultUse) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -69,7 +72,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.limitCpuUse = false;        
+        this.limitCpuUse = false; 
+        this.default_use = defaultUse;
     }
 
     public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId) {
@@ -80,7 +84,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.limitCpuUse = limitCpuUse;        
+        this.limitCpuUse = limitCpuUse;  
+        this.default_use = false;      
     }
 
     public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitResourceUse, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId, String hostTag) {
@@ -105,6 +110,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 	public void setLimitResourceUse(boolean limitCpuUse) {
 		this.limitCpuUse = limitCpuUse;
 	}
+	
+	@Override 
+    public boolean getDefaultUse() {
+        return default_use;
+    }
 	
 	@Override
     @Transient

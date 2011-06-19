@@ -560,7 +560,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, useLocalStorage, true, null, true);
+        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, useLocalStorage, true, null, true, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
 

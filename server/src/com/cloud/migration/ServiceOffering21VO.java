@@ -165,5 +165,10 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	
 	public String getHostTag() {
 		return hostTag;
-	}	
+	}
+
+    @Override
+    public boolean getDefaultUse() {
+        return false;
+    }	
 }

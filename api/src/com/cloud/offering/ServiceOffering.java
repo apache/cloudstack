@@ -89,4 +89,6 @@ public interface ServiceOffering {
      * @return tag that should be present on the host needed, optional parameter
      */
     String getHostTag();
+
+    boolean getDefaultUse();
 }
