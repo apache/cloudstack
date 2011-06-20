@@ -27,6 +27,7 @@ import javax.persistence.Transient;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.vm.VirtualMachine;
 
 @Entity
 @Table(name="service_offering")
@@ -59,12 +60,15 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     @Column(name="default_use")
     private boolean default_use;
+
+    @Column(name="vm_type")
+    private String vm_type;
     
     protected ServiceOfferingVO() {
         super();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, boolean defaultUse) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, boolean defaultUse) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -74,9 +78,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.offerHA = offerHA;
         this.limitCpuUse = false; 
         this.default_use = defaultUse;
+        this.vm_type = vm_type == null ? null : vm_type.toString().toLowerCase();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true, domainId);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -85,11 +90,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
         this.limitCpuUse = limitCpuUse;  
-        this.default_use = false;      
+        this.vm_type = vm_type == null ? null : vm_type.toString().toLowerCase();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitResourceUse, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId, String hostTag) {
-        this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, displayText, useLocalStorage, recreatable, tags, systemUse, domainId);
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitResourceUse, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId, String hostTag) {
+        this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, displayText, useLocalStorage, recreatable, tags, systemUse, vm_type, domainId);
         this.hostTag = hostTag;
     }    
 
@@ -178,5 +183,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 	
 	public String getHostTag() {
 		return hostTag;
-	}	
+	}
+	
+	public String getSystemVmType(){
+	    return vm_type;
+	}
+	
 }

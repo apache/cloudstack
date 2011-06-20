@@ -1150,6 +1150,7 @@ CREATE TABLE  `cloud`.`service_offering` (
   `limit_cpu_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Limit the CPU usage to service offering',
   `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
   `default_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'is this offering a default system offering',
+  `vm_type` varchar(32) COMMENT 'type of offering specified for system offerings',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_service_offering__id` FOREIGN KEY (`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

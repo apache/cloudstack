@@ -91,4 +91,6 @@ public interface ServiceOffering {
     String getHostTag();
 
     boolean getDefaultUse();
+    
+    String getSystemVmType();
 }

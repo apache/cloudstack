@@ -37,7 +37,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
-    protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdAndUseSystemSearch;
+    protected final SearchBuilder<ServiceOfferingVO> SystemServiceOffering;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
     
@@ -53,10 +53,11 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         ServiceOfferingsByDomainIdSearch.and("domainId", ServiceOfferingsByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ServiceOfferingsByDomainIdSearch.done();
         
-        ServiceOfferingsByDomainIdAndUseSystemSearch = createSearchBuilder();
-        ServiceOfferingsByDomainIdAndUseSystemSearch.and("domainId", ServiceOfferingsByDomainIdAndUseSystemSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        ServiceOfferingsByDomainIdAndUseSystemSearch.and("system", ServiceOfferingsByDomainIdAndUseSystemSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
-        ServiceOfferingsByDomainIdAndUseSystemSearch.done();
+        SystemServiceOffering = createSearchBuilder();
+        SystemServiceOffering.and("domainId", SystemServiceOffering.entity().getDomainId(), SearchCriteria.Op.EQ);
+        SystemServiceOffering.and("system", SystemServiceOffering.entity().getSystemUse(), SearchCriteria.Op.EQ);
+        SystemServiceOffering.and("vm_type", SystemServiceOffering.entity().getSpeed(), SearchCriteria.Op.EQ);
+        SystemServiceOffering.done();
         
         
         PublicServiceOfferingSearch = createSearchBuilder();
@@ -112,10 +113,11 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     
 
     @Override
-    public List<ServiceOfferingVO> findServiceOfferingByDomainIdAndIsSystem(Long domainId, Boolean isSystem){
-        SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdAndUseSystemSearch.create();
+    public List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vm_type){
+        SearchCriteria<ServiceOfferingVO> sc = SystemServiceOffering.create();
         sc.setParameters("domainId", domainId);
         sc.setParameters("system", isSystem);
+        sc.setParameters("vm_type", vm_type);
         return listBy(sc);      
     }
     
