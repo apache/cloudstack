@@ -79,6 +79,7 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -2970,6 +2971,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
             }
         } else {
+            //regular user can't specify any other domain rather than his own
+            if (domainId != null && domainId.longValue() != caller.getDomainId()) {
+                throw new PermissionDeniedException("Caller is not authorised to see domain id=" + domainId + " entries");
+            }
             accountId = caller.getId();
         }
 
