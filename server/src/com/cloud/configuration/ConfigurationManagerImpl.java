@@ -2072,6 +2072,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // being added
         // 3. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has a different gateway than the
         // new VLAN
+        // 4. If VLAN is untagged and Virtual, and there is existing UNTAGGED vlan with different subnet 
         List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
         for (VlanVO vlan : vlans) {
             String otherVlanGateway = vlan.getVlanGateway();
@@ -2083,9 +2084,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 otherVlanEndIP = otherVlanIpRange[1];
             }
 
-            if (!vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet) && !allowIpRangeOverlap(vlan, forVirtualNetwork, networkId)) {
+            if (forVirtualNetwork && !vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet) && !allowIpRangeOverlap(vlan, forVirtualNetwork, networkId)) {
                 throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " in zone " + zone.getName()
                         + " has the same subnet. Please specify a different gateway/netmask.");
+            }
+            
+            boolean vlansUntaggedAndVirtual = (vlanId.equals(Vlan.UNTAGGED) && vlanId.equals(vlan.getVlanTag()) && forVirtualNetwork && vlan.getVlanType() == VlanType.VirtualNetwork);
+            
+            if (vlansUntaggedAndVirtual && !newVlanSubnet.equals(otherVlanSubnet)) {
+                throw new InvalidParameterValueException("The Untagged ip range with different subnet already exists in zone " + zone.getId());
             }
 
             if (vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet)) {
