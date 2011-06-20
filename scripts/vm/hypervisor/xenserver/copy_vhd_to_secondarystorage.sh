@@ -52,13 +52,13 @@ localmp=/var/run/cloud_mount/$(uuidgen -r)
 
 mkdir -p $localmp
 if [ $? -ne 0 ]; then
-  echo "5#cann't make dir $localmp"
+  echo "5#can't make dir $localmp"
   exit 0
 fi
 
 mount $mountpoint $localmp
 if [ $? -ne 0 ]; then
-  echo "6#cann't mounbt $mountpoint to $localmp"
+  echo "6#can't mount $mountpoint to $localmp"
   exit 0
 fi
 
@@ -74,7 +74,7 @@ if [ $type == "nfs" ]; then
 elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
   lvchange -ay /dev/VG_XenStorage-$sruuid/VHD-$vdiuuid
   if [ $? -ne 0 ]; then
-    echo "9#lvm can not make VDI $vdiuuid  visiable"
+    echo "9#lvm can not make VDI $vdiuuid  visible"
     cleanup
     exit 0
   fi
