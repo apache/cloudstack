@@ -33,21 +33,6 @@ public interface UserDao extends GenericDao<UserVO, Long>{
 	UserVO getUser(long userId);
 	List<UserVO> findUsersLike(String username);
 	
-	/**
-	 * updates a user with the new username, password, firstname, lastname, email,accountId, timezone
-	 * @param id
-	 * @param username
-	 * @param password
-	 * @param firstname
-	 * @param lastname
-	 * @param email
-	 * @param accountId
-	 * @param timezone
-	 * @param apikey
-	 * @param secretkey
-	 */
-	void update(long id, String username, String password, String firstname, String lastname, String email, Long accountId, String timezone, String apiKey, String secretKey);
-	
 	List<UserVO> listByAccount(long accountId);
 
 	/**

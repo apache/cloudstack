@@ -26,7 +26,6 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Implementation of the UserDao
@@ -116,29 +115,6 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         SearchCriteria<UserVO> sc = SecretKeySearch.create();
         sc.setParameters("secretKey", secretKey);
         return findOneBy(sc);
-    }
-    
-    @Override
-    public void update(long id, String username, String password, String firstname, String lastname, String email, Long accountId, String timezone, String apiKey, String secretKey)
-    {
-        UserVO dbUser = getUser(username);
-        if ((dbUser == null) || (dbUser.getId() == id)) {
-            UserVO ub = createForUpdate();
-            ub.setUsername(username);
-            ub.setPassword(password);
-            ub.setFirstname(firstname);
-            ub.setLastname(lastname);
-            ub.setEmail(email);
-            ub.setAccountId(accountId);
-            ub.setTimezone(timezone);
-            ub.setApiKey(apiKey);
-            ub.setSecretKey(secretKey);
-            update(id, ub);
-        }
-        else
-        {
-            throw new CloudRuntimeException("unable to update user -- a user with that name exists");
-        }
     }
 
 	@Override
