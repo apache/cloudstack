@@ -80,9 +80,9 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -125,7 +125,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
@@ -2923,6 +2922,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
             }
         } else {
+            //regular user can't specify any other domain rather than his own
+            if (domainId != null && domainId.longValue() != caller.getDomainId()) {
+                throw new PermissionDeniedException("Caller is not authorised to see domain id=" + domainId + " entries");
+            }
             accountId = caller.getId();
         }
 
