@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.ServiceOffering;
@@ -52,9 +53,11 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the service offering")
     private Long domainId;
 
-
     @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
     private Boolean isSystem;
+
+    @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
+    private String systemVmType;
 
     
     /////////////////////////////////////////////////////
@@ -79,6 +82,10 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     
     public Boolean getIsSystem() {
         return isSystem == null ? false : isSystem;
+    }
+    
+    public String getSystemVmType(){
+        return systemVmType;
     }
 
     /////////////////////////////////////////////////////

@@ -40,6 +40,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * ConfigurationManager handles adding pods/zones, changing IP ranges, enabling external firewalls, and editing configuration values
@@ -70,7 +71,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param hostTag
 	 * @return ID
 	 */
-	ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag);
+	ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag);
 	
 	/**
 	 * Creates a new disk offering

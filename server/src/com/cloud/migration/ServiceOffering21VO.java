@@ -171,4 +171,9 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     public boolean getDefaultUse() {
         return false;
     }	
+    
+    @Override
+    public String getSystemVmType() {
+        return null;
+    }   
 }

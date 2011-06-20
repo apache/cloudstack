@@ -1496,17 +1496,33 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (limitCpuUse == null) {
             limitCpuUse = false;
         }
-
-        return createServiceOffering(userId, cmd.getIsSystem(), cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
+        String vm_type_string = cmd.getSystemVmType();
+        VirtualMachine.Type vm_type = null;
+        if (cmd.getIsSystem() && vm_type_string == null){
+            vm_type = VirtualMachine.Type.DomainRouter;
+        }
+        else {
+            if (VirtualMachine.Type.ConsoleProxy.toString().toLowerCase().equals(vm_type_string)){
+                vm_type = VirtualMachine.Type.ConsoleProxy;
+            }
+            else if (VirtualMachine.Type.SecondaryStorageVm.toString().toLowerCase().equals(vm_type_string)){
+                vm_type = VirtualMachine.Type.SecondaryStorageVm;
+            }
+            else if (VirtualMachine.Type.DomainRouter.toString().toLowerCase().equals(vm_type_string)){
+                vm_type = VirtualMachine.Type.DomainRouter;
+            }
+        }
+        
+        return createServiceOffering(userId, cmd.getIsSystem(), vm_type, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
                 limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
-    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags,
-            Long domainId, String hostTag) {
+    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, 
+            boolean offerHA, boolean limitResourceUse, String tags,  Long domainId, String hostTag) {
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, domainId, hostTag);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, vm_type, domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());

@@ -805,7 +805,7 @@ public class DatabaseConfig {
         	useLocalStorage = false;
         }
         
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, false);
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
         ServiceOfferingDaoImpl dao = ComponentLocator.inject(ServiceOfferingDaoImpl.class);
         try {
             dao.persist(serviceOffering);

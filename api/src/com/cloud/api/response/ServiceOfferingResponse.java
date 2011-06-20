@@ -72,6 +72,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_DEFAULT_USE) @Param(description="is this a  default system vm offering")
     private Boolean defaultUse;
 
+    @SerializedName(ApiConstants.SYSTEM_VM_TYPE) @Param(description="is this a the systemvm type for system vm offering")
+    private String vm_type;
+
 
     public Long getId() {
         return id;
@@ -104,6 +107,15 @@ public class ServiceOfferingResponse extends BaseResponse {
     
     public void setDefaultUse(Boolean defaultUse) {
         this.defaultUse = defaultUse;
+    }
+    
+
+    public String getSystemVmType() {
+        return vm_type;
+    }
+    
+    public void setSystemVmType(String vmtype) {
+        this.vm_type = vmtype;
     }
 
 

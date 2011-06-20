@@ -427,6 +427,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         offeringResponse.setName(offering.getName());
         offeringResponse.setIsSystemOffering(offering.getSystemUse());
         offeringResponse.setDefaultUse(offering.getDefaultUse());
+        offeringResponse.setSystemVmType(offering.getSystemVmType());
         offeringResponse.setDisplayText(offering.getDisplayText());
         offeringResponse.setCpuNumber(offering.getCpu());
         offeringResponse.setCpuSpeed(offering.getSpeed());

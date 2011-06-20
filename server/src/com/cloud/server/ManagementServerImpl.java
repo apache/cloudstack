@@ -1007,6 +1007,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long vmId = cmd.getVirtualMachineId();
         Long domainId = cmd.getDomainId();
         Boolean issystem = cmd.getIsSystem();
+        String vm_type_str = cmd.getSystemVmType();
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this domain
@@ -1015,7 +1016,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (account.getDomainId() != 1 && issystem){ //NON ROOT admin
                     throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
                 }
-                return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, issystem);// no perm check
+                return _offeringsDao.findSystemOffering(domainId, issystem, vm_type_str);// no perm check
             } else {
                 if (issystem){
                     throw new InvalidParameterValueException("Non root users cannot access system's offering");
@@ -1023,7 +1024,7 @@ public class ManagementServerImpl implements ManagementServer {
                 // check if the user's domain == so's domain || user's domain is a child of so's domain
                 if (isPermissible(account.getDomainId(), domainId)) {
                     // perm check succeeded
-                    return _offeringsDao.findServiceOfferingByDomainIdAndIsSystem(domainId, false);
+                    return _offeringsDao.findSystemOffering(domainId, false, vm_type_str);
                 } else {
                     throw new PermissionDeniedException("The account:" + account.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
                 }
@@ -1067,7 +1068,6 @@ public class ManagementServerImpl implements ManagementServer {
             // sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
             sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
         }
-
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
@@ -1075,8 +1075,10 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
+        if (vm_type_str != null){
+            sc.addAnd("vm_type", SearchCriteria.Op.EQ, vm_type_str);
+        }
         sc.addAnd("systemUse", SearchCriteria.Op.EQ, issystem);
-
         return _offeringsDao.search(sc, searchFilter);
 
     }
