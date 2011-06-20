@@ -509,14 +509,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
                     }
-                    return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
+                    Ternary<T, ReservationContext, ItWorkVO> result = new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
+                    txn.commit();
+                    return result;
                 }
             } catch (NoTransitionException e) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to transition into Starting state due to " + e.getMessage());
                 }
-            } finally {
-                txn.commit();
             }
 
             VMInstanceVO instance = _vmDao.findById(vmId);
