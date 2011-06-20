@@ -175,7 +175,7 @@ public class Transaction {
     public static Connection getStandaloneConnectionWithException() throws SQLException {
         Connection conn = s_ds.getConnection();
         if (s_connLogger.isTraceEnabled()) {
-            s_logger.trace("Retrieving a standalone connection: " + conn);
+            s_logger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
         }
 		return conn;
     }
@@ -184,7 +184,7 @@ public class Transaction {
     	try {
             Connection conn = s_ds.getConnection();
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Retrieving a standalone connection: " + conn);
+                s_logger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
             }
             return conn;
 		} catch (SQLException e) {
@@ -197,7 +197,7 @@ public class Transaction {
         try {
             Connection conn = s_usageDS.getConnection();
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Retrieving a standalone connection for usage: " + conn);
+                s_logger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
             }
             return conn;
         } catch (SQLException e) {
@@ -496,7 +496,7 @@ public class Transaction {
             _conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             _stack.push(new StackElement(CREATE_CONN, null));
             if (s_connLogger.isTraceEnabled()) {
-                s_connLogger.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": " + _conn  + buildName());
+                s_connLogger.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": dbconn" + System.identityHashCode(_conn) + ". Stack: " + buildName());
             }
         } else {
             s_logger.trace("conn: Using existing DB connection");
@@ -665,7 +665,7 @@ public class Transaction {
 
         try {
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Closing DB connection: " + _conn);
+                s_logger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
             }
             if(this._dbId != CONNECTED_DB) {
                 _conn.close();

@@ -500,55 +500,53 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             Transaction txn = Transaction.currentTxn();
             txn.start();
             try {
-                try {
-                    if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
+                if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
 
-                        Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
-                        work = _workDao.persist(work);
-                        ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
+                    Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
+                    work = _workDao.persist(work);
+                    ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
 
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
-                        }
-                        return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
-                    }
-                } catch (NoTransitionException e) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to transition into Starting state due to " + e.getMessage());
+                        s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
                     }
+                    return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
                 }
-
+            } catch (NoTransitionException e) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Determining why we're unable to update the state to Starting for " + vm);
-                }
-
-                VMInstanceVO instance = _vmDao.findById(vmId);
-                if (instance == null) {
-                    throw new ConcurrentOperationException("Unable to acquire lock on " + vm);
-                }
-
-                State state = instance.getState();
-                if (state == State.Running) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM is already started: " + vm);
-                    }
-                    return null;
-                }
-
-                if (state.isTransitional()) {
-                    if (!checkWorkItems(vm, state)) {
-                        throw new ConcurrentOperationException("There are concurrent operations on the VM " + vm);
-                    } else {
-                        continue;
-                    }
-                }
-
-                if (state != State.Stopped) {
-                    s_logger.debug("VM " + vm + " is not in a state to be started: " + state);
-                    return null;
+                    s_logger.debug("Unable to transition into Starting state due to " + e.getMessage());
                 }
             } finally {
                 txn.commit();
+            }
+
+            VMInstanceVO instance = _vmDao.findById(vmId);
+            if (instance == null) {
+                throw new ConcurrentOperationException("Unable to acquire lock on " + vm);
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Determining why we're unable to update the state to Starting for " + instance + ".  Retry=" + retry);
+            }
+
+            State state = instance.getState();
+            if (state == State.Running) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("VM is already started: " + vm);
+                }
+                return null;
+            }
+
+            if (state.isTransitional()) {
+                if (!checkWorkItems(vm, state)) {
+                    throw new ConcurrentOperationException("There are concurrent operations on " + vm);
+                } else {
+                    continue;
+                }
+            }
+
+            if (state != State.Stopped) {
+                s_logger.debug("VM " + vm + " is not in a state to be started: " + state);
+                return null;
             }
         }
 
