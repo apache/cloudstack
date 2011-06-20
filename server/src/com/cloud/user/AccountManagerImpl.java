@@ -1403,32 +1403,42 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         checkAccess(UserContext.current().getCaller(), account);
 
-        if (firstName == null) {
-            firstName = user.getFirstname();
+        if (firstName != null) {
+            user.setFirstname(firstName);
         }
-        if (lastName == null) {
-            lastName = user.getLastname();
+        if (lastName != null) {
+            user.setLastname(lastName);
         }
-        if (userName == null) {
-            userName = user.getUsername();
+        if (userName != null) {
+            //don't allow to have same user names in the same domain
+            List<UserVO> duplicatedUsers = _userDao.findUsersLike(userName);
+            for (UserVO duplicatedUser : duplicatedUsers) {
+                if (duplicatedUser.getId() != user.getId()) {
+                    Account duplicatedUserAccount = _accountDao.findById(duplicatedUser.getAccountId());
+                    if (duplicatedUserAccount.getDomainId() == account.getDomainId()) {
+                        throw new InvalidParameterValueException("User with name " + userName + " already exists in domain " + duplicatedUserAccount.getDomainId());
+                    }
+                }
+            }
+            
+            user.setUsername(userName);
         }
-        if (password == null) {
-            password = user.getPassword();
+        if (password != null) {
+            user.setPassword(password);
         }
-        if (email == null) {
-            email = user.getEmail();
+        if (email != null) {
+            user.setEmail(email);
         }
-        if (timeZone == null) {
-            timeZone = user.getTimezone();
+        if (timeZone != null) {
+            user.setTimezone(timeZone);
         }
-        if (apiKey == null) {
-            apiKey = user.getApiKey();
+        if (apiKey != null) {
+            user.setApiKey(apiKey);
         }
-        if (secretKey == null) {
-            secretKey = user.getSecretKey();
+        if (secretKey != null) {
+            user.setSecretKey(secretKey);
         }
 
-        Long accountId = user.getAccountId();
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("updating user with id: " + id);
@@ -1447,8 +1457,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     }
                 }
             }
-
-            _userDao.update(id, userName, password, firstName, lastName, email, accountId, timeZone, apiKey, secretKey);
+            
+            _userDao.update(id, user);
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
             throw new CloudRuntimeException("Unable to update user " + id);
