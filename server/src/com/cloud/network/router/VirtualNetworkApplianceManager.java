@@ -76,7 +76,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	
 	boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	
-	List<VirtualRouter> addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
+	List<VirtualRouter> addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
     boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     

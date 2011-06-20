@@ -1406,10 +1406,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public List<VirtualRouter> addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, Boolean startDhcp)
+    public List<VirtualRouter> addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        List<DomainRouterVO> routers = startDhcp ? deployDhcp(network, dest, profile.getOwner(), profile.getParameters()) : deployVirtualRouter(network, dest, profile.getOwner(), profile.getParameters());
         List<VirtualRouter> rets = new ArrayList<VirtualRouter>(routers.size());
 
         for (DomainRouterVO router : routers) {
@@ -1484,7 +1483,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             rets.add(router);
         }
-        /* Notice we just return the first router in the list, not all */
         return rets;
     }
 

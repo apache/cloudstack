@@ -115,8 +115,9 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            
-            return _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, false) != null;
+            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters());
+            List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);
+            return (rets != null) && (!rets.isEmpty());
         } else {
             return false;
         }
