@@ -73,7 +73,7 @@ arping_vm() {
 
 # ping the default route
 ping_default_route() {
-  defaultRoute=`grep GATEWAY /etc/sysconfig/network | awk -F"=" '{ print $2 }'`
+  defaultRoute=`route |grep default|awk '{print $2}'`
   ping -c 1 -n -q $defaultRoute > /dev/null
   return $?
 }

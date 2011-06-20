@@ -130,9 +130,8 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     return 'true'
 
 def destroy_ebtables_rules(vm_name, vif):
-    if vif is None:
-        return
-    delcmd = "ebtables -t nat -L PREROUTING | grep " + vif
+
+    delcmd = "ebtables -t nat -L PREROUTING | grep " + vm_name
     delcmds = []
     try:
         delcmds = execute(delcmd).split('\n')
@@ -142,7 +141,7 @@ def destroy_ebtables_rules(vm_name, vif):
         pass
     postcmds = []
     try:
-        postcmd = "ebtables -t nat -L POSTROUTING | grep " + vif
+        postcmd = "ebtables -t nat -L POSTROUTING | grep " + vm_name
         postcmds = execute(postcmd).split('\n')
         postcmds.pop()
         postcmds = ["-D POSTROUTING " + x for x in postcmds]
