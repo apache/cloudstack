@@ -1959,6 +1959,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network == null) {
             throw new InvalidParameterValueException("unable to find network " + networkId);
         }
+        
+        //don't allow to delete system network
+        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+        if (offering.isSystemOnly()) {
+            throw new InvalidParameterValueException("Network id=" + networkId + " is system and can't be removed");
+        }
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
