@@ -1765,27 +1765,38 @@ public class ManagementServerImpl implements ManagementServer {
             List<AccountVO> emptyList = new ArrayList<AccountVO>();
             return emptyList;
         }
+        
+        if (accountId != null) {
+            Account account = _accountDao.findById(accountId);
+            if (account == null) {
+                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
+            }
+
+            _accountMgr.checkAccess(caller, account);
+        }
+        
+        if (domainId != null) {
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+            }
+            _accountMgr.checkAccess(caller, domain);
+
+            if (accountName != null) {
+                Account account = _accountDao.findActiveAccount(accountName, domainId);
+                if (account == null) {
+                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
+                }
+
+                _accountMgr.checkAccess(caller, account);
+            }
+        }
 
         if (isAdmin(caller.getType())) {
             if (domainId == null) {
                 domainId = caller.getDomainId();
                 isRecursive = true;
-            } else {
-                Domain domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-                }
-                _accountMgr.checkAccess(caller, domain);
-
-                if (accountName != null) {
-                    Account account = _accountDao.findActiveAccount(accountName, domainId);
-                    if (account == null) {
-                        throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
-                    }
-
-                    _accountMgr.checkAccess(caller, account);
-                }
-            }
+            } 
         } else {
             // regular user is constraint to only his account
             accountId = caller.getId();
