@@ -346,7 +346,7 @@ public class ApiXmlDocWriter {
 
         // Generate request
         request.add(new Argument("username", "Username", true));
-        request.add(new Argument("password", "Password", true));
+        request.add(new Argument("password", "Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.", true));
         request.add(new Argument("domain", "path of the domain that the user belongs to. Example: domain=/com/cloud/internal.  If no domain is passed in, the ROOT domain is assumed.", false));
         apiCommand.setRequest(request);
 
