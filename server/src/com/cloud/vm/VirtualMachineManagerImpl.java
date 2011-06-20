@@ -489,7 +489,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     }
 
-    @DB
     protected <T extends VMInstanceVO> Ternary<T, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru<T> vmGuru, T vm, User caller, Account account)
     throws ConcurrentOperationException {
         long vmId = vm.getId();
@@ -498,24 +497,28 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         int retry = _lockStateRetry;
         while (retry-- != 0) {
             Transaction txn = Transaction.currentTxn();
+            Ternary<T, ReservationContext, ItWorkVO> result = null;
             txn.start();
             try {
+                Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
+                work = _workDao.persist(work);
+                ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
+
                 if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
-
-                    Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
-                    work = _workDao.persist(work);
-                    ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
-
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
                     }
-                    Ternary<T, ReservationContext, ItWorkVO> result = new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
+                    result = new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
                     txn.commit();
                     return result;
                 }
             } catch (NoTransitionException e) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to transition into Starting state due to " + e.getMessage());
+                }
+            } finally {
+                if (result == null) {
+                    txn.rollback();
                 }
             }
 
@@ -1549,10 +1552,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             assert (agentState == State.Stopped || agentState == State.Running) : "If the states we send up is changed, this must be changed.";
             if (agentState == State.Running) {
                 try {
-                	if(nativeHA)
-                		stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, hostId);
-                	else
-                		stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+                	if(nativeHA) {
+                        stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, hostId);
+                    } else {
+                        stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+                    }
                 } catch (NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
