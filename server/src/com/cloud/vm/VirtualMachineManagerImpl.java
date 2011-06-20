@@ -1424,7 +1424,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             Command command = null;
             if (vm != null) {
                 HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-                command = compareState(vm, info, false, hvGuru.trackVmHostChange());
+                command = compareState(hostId, vm, info, false, hvGuru.trackVmHostChange());
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cleaning up a VM that is no longer found: " + info.name);
@@ -1476,7 +1476,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
      * something should be cleaned up
      * 
      */
-    protected Command compareState(VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean nativeHA) {
+    protected Command compareState(long hostId, VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean nativeHA) {
         State agentState = info.state;
         final String agentName = info.name;
         final State serverState = vm.getState();
@@ -1521,7 +1521,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             assert (agentState == State.Stopped || agentState == State.Running) : "If the states we send up is changed, this must be changed.";
             if (agentState == State.Running) {
                 try {
-                    stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+                	if(nativeHA)
+                		stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, hostId);
+                	else
+                		stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
                 } catch (NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
@@ -1650,7 +1653,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
 
-            Command command = compareState(castedVm, info, true, hvGuru.trackVmHostChange());
+            Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
             if (command != null) {
                 commands.addCommand(command);
             }
@@ -1665,7 +1668,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 } else {
                     HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
                     if(hvGuru.trackVmHostChange()) {
-	                    Command command = compareState(vm, left, true, true);
+	                    Command command = compareState(hostId, vm, left, true, true);
 	                    if (command != null) {
 	                        commands.addCommand(command);
 	                    }
