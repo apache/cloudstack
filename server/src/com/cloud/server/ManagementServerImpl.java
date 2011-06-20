@@ -4089,12 +4089,16 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) {
         Long userId = cmd.getUserId();
+        Account caller = UserContext.current().getCaller();
 
         // verify that user exists
         User user = findUserById(userId);
         if ((user == null) || (user.getRemoved() != null)) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
+        
+        // check permissions
+        _accountMgr.checkAccess(caller, _accountMgr.getAccount(user.getAccountId()));
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
