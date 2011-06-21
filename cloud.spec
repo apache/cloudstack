@@ -501,7 +501,7 @@ fi
 %files deps
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-commons-codec-1.4.jar
-%{_javadir}/%{name}-apache-log4j-extras-1.0.jar
+%{_javadir}/%{name}-log4j-extras.jar
 %{_javadir}/%{name}-backport-util-concurrent-3.0.jar
 %{_javadir}/%{name}-ehcache.jar
 %{_javadir}/%{name}-email.jar
