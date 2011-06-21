@@ -959,7 +959,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (isResourceDomainAdmin(caller.getType())) {
             if (zoneId == null)
                 return getZoneIdForAccount(caller);
-            else if (getZoneIdForAccount(caller) != zoneId)
+            else if (zoneId.compareTo(getZoneIdForAccount(caller)) != 0)
                 throw new PermissionDeniedException("Caller " + caller + "is not allowed to access the zone " + zoneId);
             else
                 return zoneId;
