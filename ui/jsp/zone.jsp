@@ -473,8 +473,8 @@ dictionary = {
                 </div>
             </li>
 			<li>
-                <label input_group="general">
-                    Tags:</label>
+                <label input_group="general">                    
+					<fmt:message key="label.host.tags"/>:</label>
                 <input class="text" type="text" name="host_tags" id="host_tags" />
                 <div id="host_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
