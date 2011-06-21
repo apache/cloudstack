@@ -489,6 +489,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     }
 
+    @DB
     protected <T extends VMInstanceVO> Ternary<T, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru<T> vmGuru, T vm, User caller, Account account)
     throws ConcurrentOperationException {
         long vmId = vm.getId();
