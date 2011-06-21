@@ -30,7 +30,6 @@ usage() {
   printf " %s -D  -l <public-ip-address>  -c <dev> [-f] \n" $(basename $0) >&2
 }
 
-
 add_nat_entry() {
   local pubIp=$1
   logger -t cloud "$(basename $0):Adding nat entry for ip $pubIp on interface $ethDev"
@@ -50,7 +49,7 @@ add_nat_entry() {
      return 1
   fi
   logger -t cloud "$(basename $0):Added nat entry for ip $pubIp on interface $ethDev"
-  if [ $old_state -ne 0 ]
+  if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
       sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
@@ -88,7 +87,7 @@ add_an_ip () {
 
   sudo ip addr add dev $ethDev $pubIp ;
 
-  if [ $old_state -ne 0 ]
+  if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
       sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
@@ -137,6 +136,24 @@ lflag=
 fflag=
 cflag=
 op=""
+
+is_master=0
+is_redundant=0
+if_keep_state=0
+sudo ls /root/keepalived.log > /dev/null 2>&1
+if [ $? -eq 0 ]
+then
+    is_redundant=1
+    sudo /root/checkrouter.sh|grep "Status: MASTER" > /dev/null 2>&1 
+    if [ $? -eq 0 ]
+    then
+        is_master=1
+    fi
+fi
+if [ $is_redundant -eq 1 -a $is_master -ne 1 ]
+then
+    if_keep_state=1
+fi
 
 while getopts 'fADa:l:c:' OPTION
 do
