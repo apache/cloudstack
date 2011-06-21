@@ -47,6 +47,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -95,6 +96,10 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         if (!canHandle(offering, dc)) {
             return null;
         }
+        
+        if (nic != null && nic.getRequestedIp() != null) {
+            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
+        }
        
         if (nic == null) {
             nic = new NicProfile(rsStrategy, null, null, null, null);
@@ -127,7 +132,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             InsufficientAddressCapacityException, ConcurrentOperationException {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId());
+            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setFormat(AddressFormat.Ip4);
             nic.setGateway(ip.getGateway());

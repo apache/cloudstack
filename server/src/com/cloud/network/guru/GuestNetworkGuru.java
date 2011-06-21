@@ -181,7 +181,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIsolationUri(network.getBroadcastUri());
             nic.setGateway(network.getGateway());
 
-            String guestIp = _networkMgr.acquireGuestIpAddress(network);
+            String guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIp());
             if (guestIp == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to acquire guest IP address for network " + network, DataCenter.class, dc.getId());
             }
@@ -192,7 +192,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
             nic.setDns1(dc.getDns1());
             nic.setDns2(dc.getDns2());
-        }
+        } 
 
         nic.setStrategy(ReservationStrategy.Start);
 

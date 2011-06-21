@@ -846,7 +846,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
             NicProfile gatewayNic = new NicProfile();
             if (isRedundant) {
-                gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork));
+                gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
                 gatewayNic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(guestNetwork.getId()));
             } else {
                 gatewayNic.setIp4Address(guestNetwork.getGateway());

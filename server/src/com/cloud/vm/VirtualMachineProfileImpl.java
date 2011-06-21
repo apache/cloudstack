@@ -233,4 +233,6 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 	public void setServiceOffering(ServiceOfferingVO offering) {
 		_offering = offering;
 	}
+	
+	
 }

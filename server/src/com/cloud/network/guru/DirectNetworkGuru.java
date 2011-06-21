@@ -137,10 +137,10 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         super();
     }
 
-    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,
+    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId());
+            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIp);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
@@ -183,7 +183,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setStrategy(ReservationStrategy.Create);
         }
 
-        getIp(nic, dc, vm, network);
+        getIp(nic, dc, vm, network, nic.getRequestedIp());
         nic.setStrategy(ReservationStrategy.Create);
 
         return nic;
@@ -193,7 +193,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            getIp(nic, dest.getDataCenter(), vm, network);
+            getIp(nic, dest.getDataCenter(), vm, network, null);
             nic.setStrategy(ReservationStrategy.Create);
         }
     }

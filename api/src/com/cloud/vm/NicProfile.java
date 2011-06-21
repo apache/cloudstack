@@ -55,6 +55,7 @@ public class NicProfile {
     Integer networkRate;
     boolean isSecurityGroupEnabled;
     List<String> tags;
+    String requestedIp;
 
     public String getDns1() {
         return dns1;
@@ -254,6 +255,10 @@ public class NicProfile {
         this.netmask = netmask;
         this.strategy = strategy;
     }
+    
+    public NicProfile(String requestedIp) {
+        this.requestedIp = requestedIp;
+    }
 
     public NicProfile() {
     }
@@ -276,6 +281,10 @@ public class NicProfile {
 
     public void setSecurityGroupEnabled(boolean enabled) {
         this.isSecurityGroupEnabled = enabled;
+    }
+
+    public String getRequestedIp() {
+        return requestedIp;
     }
 
     public void deallocate() {

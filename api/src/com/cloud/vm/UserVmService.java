@@ -18,6 +18,7 @@
 package com.cloud.vm;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.naming.InsufficientResourcesException;
 
@@ -145,10 +146,6 @@ public interface UserVmService {
      *            - the template for the virtual machine
      * @param securityGroupIdList
      *            - comma separated list of security groups id that going to be applied to the virtual machine
-     * @param accountName
-     *            - an optional account for the virtual machine. Must be used with domainId
-     * @param domainId
-     *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used
      * @param hostName
      *            - host name for the virtual machine
      * @param displayName
@@ -171,7 +168,11 @@ public interface UserVmService {
      *            GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
-     * 
+     * @param requestedIps TODO
+     * @param accountName
+     *            - an optional account for the virtual machine. Must be used with domainId
+     * @param domainId
+     *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used
      * @return UserVm object if successful.
      * 
      * @throws InsufficientCapacityException
@@ -183,7 +184,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -199,10 +200,6 @@ public interface UserVmService {
      *            - list of network ids used by virtual machine
      * @param securityGroupIdList
      *            - comma separated list of security groups id that going to be applied to the virtual machine
-     * @param accountName
-     *            - an optional account for the virtual machine. Must be used with domainId
-     * @param domainId
-     *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used
      * @param hostName
      *            - host name for the virtual machine
      * @param displayName
@@ -225,7 +222,11 @@ public interface UserVmService {
      *            GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
-     * 
+     * @param requestedIps TODO
+     * @param accountName
+     *            - an optional account for the virtual machine. Must be used with domainId
+     * @param domainId
+     *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used
      * @return UserVm object if successful.
      * 
      * @throws InsufficientCapacityException
@@ -237,7 +238,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList,
-            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
+            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -251,10 +252,6 @@ public interface UserVmService {
      *            - the template for the virtual machine
      * @param networkIdList
      *            - list of network ids used by virtual machine
-     * @param accountName
-     *            - an optional account for the virtual machine. Must be used with domainId
-     * @param domainId
-     *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used
      * @param hostName
      *            - host name for the virtual machine
      * @param displayName
@@ -277,7 +274,11 @@ public interface UserVmService {
      *            GET (via querystring), you can send up to 2KB of data after base64 encoding
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
-     * 
+     * @param requestedIps TODO
+     * @param accountName
+     *            - an optional account for the virtual machine. Must be used with domainId
+     * @param domainId
+     *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used
      * @return UserVm object if successful.
      * 
      * @throws InsufficientCapacityException
@@ -289,7 +290,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
