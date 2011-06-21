@@ -33,7 +33,7 @@ public class IpAssocAnswer extends Answer{
         super();
     }
     
-    public IpAssocAnswer(IPAssocCommand cmd, String[] results) {
+    public IpAssocAnswer(IpAssocCommand cmd, String[] results) {
 
         boolean finalResult = true;
         for (String result : results) {

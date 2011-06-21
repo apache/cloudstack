@@ -24,14 +24,14 @@ import com.cloud.agent.api.to.IpAddressTO;
  * @author alena
  *
  */
-public class IPAssocCommand extends NetworkElementCommand {
+public class IpAssocCommand extends NetworkElementCommand {
     
 	IpAddressTO[] ipAddresses;
 
-	protected IPAssocCommand() {
+	protected IpAssocCommand() {
 	}
 	
-	public IPAssocCommand(IpAddressTO[] ips) {
+	public IpAssocCommand(IpAddressTO[] ips) {
 		this.ipAddresses = ips;
 	}
 

@@ -47,7 +47,7 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.IPAssocCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -107,8 +107,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute((SetStaticNatRulesCommand)cmd);
             }else if (cmd instanceof LoadBalancerConfigCommand) {
                 return execute((LoadBalancerConfigCommand)cmd);
-            } else if (cmd instanceof IPAssocCommand) {
-                return execute((IPAssocCommand)cmd);
+            } else if (cmd instanceof IpAssocCommand) {
+                return execute((IpAssocCommand)cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
                 return execute((CheckConsoleProxyLoadCommand)cmd);
             } else if(cmd instanceof WatchConsoleProxyLoadCommand) {
@@ -271,7 +271,7 @@ public class VirtualRoutingResource implements Manager {
         return new Answer(cmd);
     }
 
-    protected Answer execute(final IPAssocCommand cmd) {
+    protected Answer execute(final IpAssocCommand cmd) {
         IpAddressTO[] ips = cmd.getIpAddresses();
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
