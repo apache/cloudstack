@@ -175,7 +175,7 @@ public class Transaction {
     public static Connection getStandaloneConnectionWithException() throws SQLException {
         Connection conn = s_ds.getConnection();
         if (s_connLogger.isTraceEnabled()) {
-            s_logger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
+            s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
         }
 		return conn;
     }
@@ -184,7 +184,7 @@ public class Transaction {
     	try {
             Connection conn = s_ds.getConnection();
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
+                s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
             }
             return conn;
 		} catch (SQLException e) {
@@ -197,7 +197,7 @@ public class Transaction {
         try {
             Connection conn = s_usageDS.getConnection();
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
+                s_connLogger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
             }
             return conn;
         } catch (SQLException e) {
@@ -659,13 +659,13 @@ public class Transaction {
         }
 
         if (_txn) {
-            s_logger.trace("txn: Not closing DB connection because we're still in a transaction.");
+            s_connLogger.trace("txn: Not closing DB connection because we're still in a transaction.");
             return;
         }
 
         try {
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
+                s_connLogger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
             }
             if(this._dbId != CONNECTED_DB) {
                 _conn.close();
