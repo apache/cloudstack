@@ -84,6 +84,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.cluster.StackMaid;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
@@ -114,6 +115,7 @@ public class ApiServer implements HttpRequestHandler {
     public static final short DOMAIN_ADMIN_COMMAND = 4;
     public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
     public static final short USER_COMMAND = 8;
+    public static boolean encodeApiResponse = false;
     private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
@@ -224,6 +226,8 @@ public class ApiServer implements HttpRequestHandler {
             ConfigurationVO apiPortConfig = values.get(0);
             apiPort = Integer.parseInt(apiPortConfig.getValue());
         }
+        
+        encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
 
         ListenerThread listenerThread = new ListenerThread(this, apiPort);
         listenerThread.start();
@@ -886,4 +890,5 @@ public class ApiServer implements HttpRequestHandler {
         }
         return responseText;
     }
+    
 }

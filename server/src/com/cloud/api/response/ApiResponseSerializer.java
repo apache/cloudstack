@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
+import com.cloud.api.ApiServer;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ResponseObject;
 import com.cloud.configuration.Config;
@@ -44,19 +45,6 @@ import com.google.gson.annotations.SerializedName;
 
 public class ApiResponseSerializer {
     private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
-    private static final boolean encodeApiResponse = configure();
-    
-    private static boolean configure() {
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao != null) {
-            return Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
-        } else {
-            return true;
-        }
-    }
-    
 
     public static String toSerializedString(ResponseObject result, String responseType) {
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
@@ -291,7 +279,7 @@ public class ApiResponseSerializer {
     }
     
     private static String encodeParam(String value) {
-        if (!encodeApiResponse) {
+        if (!ApiServer.encodeApiResponse) {
             return value;
         }
         try {
