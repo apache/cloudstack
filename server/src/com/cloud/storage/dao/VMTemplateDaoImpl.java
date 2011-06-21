@@ -36,7 +36,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -74,7 +77,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     ConfigurationDao  _configDao;
     @Inject
     HostDao   _hostDao;
-    
+    @Inject
+    DomainDao _domainDao;
+    @Inject
+    DataCenterDao _dcDao;
+
     private final String SELECT_TEMPLATE_HOST_REF = "SELECT t.id, h.data_center_id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, " +
     								"t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
     
@@ -305,17 +312,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         Set<Pair<Long, Long>> templateZonePairList = new HashSet<Pair<Long, Long>>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
+        StringBuilder relatedDomainIds = new StringBuilder();
         String sql = SELECT_TEMPLATE_ZONE_REF;
+
         try {        	
         	short accountType;
         	String accountId = null;
-        	if (account != null) {
-        		accountType = account.getType();
-        		accountId = Long.toString(account.getId());
-        	} else {
-        		accountType = Account.ACCOUNT_TYPE_ADMIN;
-        	}
-        	
         	String guestOSJoin = "";  
         	StringBuilder templateHostRefJoin = new StringBuilder();
         	String dataCenterJoin = "";
@@ -327,18 +329,47 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		templateHostRefJoin.append(" INNER JOIN  template_host_ref thr on (t.id = thr.template_id) INNER JOIN host h on (thr.host_id = h.id)");
         		sql = SELECT_TEMPLATE_HOST_REF;
         	}
-        	if (templateFilter == TemplateFilter.featured) {
+        	if ((templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.community)) {
         	    dataCenterJoin = " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
         	}
         	
         	sql +=  guestOSJoin + templateHostRefJoin + dataCenterJoin;
         	String whereClause = "";        	
-        	
-            if (templateFilter == TemplateFilter.featured) {
+
+            if (account != null) {
+                accountType = account.getType();
+                accountId = Long.toString(account.getId());
+                DomainVO accountDomain = _domainDao.findById(account.getDomainId());
+
+                // get all parent domain ID's all the way till root domain
+                DomainVO domainTreeNode = accountDomain;
+                while (true) {
+                    relatedDomainIds.append(domainTreeNode.getId());
+                    relatedDomainIds.append(",");
+                    if (domainTreeNode.getParent() != null) {
+                    	domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
+                    } else {
+                        break;
+                    }
+                }
+
+                // get all child domain ID's
+                if ((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) ) {
+                    List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
+                    for (DomainVO childDomain : allChildDomains) {
+                        relatedDomainIds.append(childDomain.getId());
+                        relatedDomainIds.append(",");
+                    }
+                }
+                relatedDomainIds.setLength(relatedDomainIds.length()-1);
+            } else {
+                accountType = Account.ACCOUNT_TYPE_ADMIN;
+            }
+
+        	if (templateFilter == TemplateFilter.featured) {
             	whereClause += " WHERE t.public = 1 AND t.featured = 1";
             	if (account != null) {
-            	    //FIXME, needs to lookup all the subdomain of this account
-            	    whereClause += " AND (dc.domain_id = " + account.getDomainId() + " OR dc.domain_id is NULL)";
+            	    whereClause += " AND (dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
             	}
             } else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && accountType != Account.ACCOUNT_TYPE_ADMIN) {
             	if (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -358,6 +389,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	whereClause += " WHERE (t.public = 1 OR t.account_id = " + accountId + ")";
             } else if (templateFilter == TemplateFilter.community) {
             	whereClause += " WHERE t.public = 1 AND t.featured = 0";
+            	if (account != null) {
+            	    whereClause += " AND (dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
+            	}
             } else if (templateFilter == TemplateFilter.all && accountType == Account.ACCOUNT_TYPE_ADMIN) {
             	whereClause += " WHERE ";
             } else if (accountType != Account.ACCOUNT_TYPE_ADMIN) {
