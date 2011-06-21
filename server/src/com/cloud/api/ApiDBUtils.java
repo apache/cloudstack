@@ -56,10 +56,12 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
@@ -160,6 +162,7 @@ public class ApiDBUtils {
     private static ConfigurationService _configMgr;
     private static ConfigurationDao _configDao;
     private static ConsoleProxyDao _consoleProxyDao;
+    private static FirewallRulesCidrsDao _firewallCidrsDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -204,6 +207,7 @@ public class ApiDBUtils {
         _networkDao = locator.getDao(NetworkDao.class);
         _configDao = locator.getDao(ConfigurationDao.class);
         _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
+        _firewallCidrsDao = locator.getDao(FirewallRulesCidrsDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -582,6 +586,10 @@ public class ApiDBUtils {
 
     public static ConsoleProxyVO findConsoleProxy(long id) {
         return _consoleProxyDao.findById(id);
+    }
+    
+    public static List<String> findPortForwardingSourceCidrs(long id){
+        return _firewallCidrsDao.getSourceCidrs(id);  
     }
 
 }

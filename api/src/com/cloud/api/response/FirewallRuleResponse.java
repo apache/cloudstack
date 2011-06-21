@@ -59,6 +59,11 @@ public class FirewallRuleResponse extends BaseResponse {
     
     @SerializedName("state") @Param(description="the state of the rule")
     private String state;
+
+    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
+    private String cidrList;
+    
+    
     
     public Long getId() {
         return id;
@@ -155,4 +160,13 @@ public class FirewallRuleResponse extends BaseResponse {
     public void setPublicIpAddressId(Long publicIpAddressId) {
         this.publicIpAddressId = publicIpAddressId;
     }
+    
+    public String getCidrList() {
+        return cidrList;
+    }
+
+    public void setCidrList(String cidrs) {
+        this.cidrList = cidrs;
+    }
+    
 }
