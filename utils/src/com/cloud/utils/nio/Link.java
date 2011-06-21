@@ -399,7 +399,7 @@ public class Link {
 
         while (hsStatus != SSLEngineResult.HandshakeStatus.FINISHED) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.info("SSL: Handshake status " + hsStatus);
+                s_logger.trace("SSL: Handshake status " + hsStatus);
             }
             engResult = null;
             if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
@@ -429,13 +429,21 @@ public class Link {
                 engResult = sslEngine.unwrap(in_pkgBuf, in_appBuf);
                 ByteBuffer tmp_pkgBuf =
                     ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+                int loop_count = 0;
                 while (engResult.getStatus() == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
+                    // The client is too slow? Cut it and let it reconnect
+                    if (loop_count > 10) {
+                        throw new IOException("Too many times in SSL BUFFER_UNDERFLOW, disconnect guest.");
+                    }
                     // We need more packets to complete this operation
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.info("SSL: Buffer overflowed, getting more packets");
+                        s_logger.trace("SSL: Buffer overflowed, getting more packets");
                     }
                     tmp_pkgBuf.clear();
                     count = ch.read(tmp_pkgBuf);
+                    if (count == -1) {
+                        throw new IOException("Connection closed with -1 on reading size.");
+                    }
                     tmp_pkgBuf.flip();
                     
                     in_pkgBuf.mark();
@@ -446,12 +454,13 @@ public class Link {
                     
                     in_appBuf.clear();
                     engResult = sslEngine.unwrap(in_pkgBuf, in_appBuf);
+                    loop_count ++;
                 }
             } else if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
                 Runnable run;
                 while ((run = sslEngine.getDelegatedTask()) != null) {
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.info("SSL: Running delegated task!");
+                        s_logger.trace("SSL: Running delegated task!");
                     }
                     run.run();
                 }
