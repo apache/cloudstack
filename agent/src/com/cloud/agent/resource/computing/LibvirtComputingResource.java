@@ -135,7 +135,7 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.IPAssocCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -882,8 +882,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             	return execute((FenceCommand) cmd);
             } else if (cmd instanceof StartCommand ) {
             	return execute((StartCommand) cmd);
-            }  else if (cmd instanceof IPAssocCommand) {
-                return execute((IPAssocCommand)cmd);
+            }  else if (cmd instanceof IpAssocCommand) {
+                return execute((IpAssocCommand)cmd);
             }else if (cmd instanceof NetworkElementCommand) {
             	return _virtRouterResource.executeRequest(cmd);
             } else if (cmd instanceof CheckSshCommand) {
@@ -1031,7 +1031,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.attachDevice(nic.toString());
     }
     
-    public Answer execute(IPAssocCommand cmd) {
+    public Answer execute(IpAssocCommand cmd) {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getIpAddresses().length];
