@@ -690,7 +690,7 @@ dictionary = {
             </li>
             <li id="add_pool_tags_container">
                 <label for="add_pool_tags">
-                    <fmt:message key="label.tags"/>:</label>
+                    <fmt:message key="label.storage.tags"/>:</label>
                 <input class="text" type="text" id="add_pool_tags" />
                 <div id="add_pool_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
