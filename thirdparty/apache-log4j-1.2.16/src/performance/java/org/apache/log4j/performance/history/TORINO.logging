@@ -1,0 +1,217 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-------------- Fri Nov 5 23:52:59 CET 1999 ---------------
+Append based logging
+Each ttcc log operation took about 342.3 microsec.
+Each simple log operation took about 181.9 microsec.
+-------------- Sat Nov 6 13:35:44 CET 1999 ---------------
+Configuration file: 
+LogFile=test
+FileAppend=false
+DefaultPriority=INFO
+RelativeTime=true
+ecCategoriesFile=logging.cat
+
+Defined Categories: 
+A0123456789=INFO
+
+Results: 173 172 168 172 170 171 178 170 169 171 - average 171 (simple)
+Results: 337 332 347 333 335 335 342 333 335 336 - average 336 (ttcc)
+Results: 141 147 145 145 143 144 143 139 145 149 - average 144 (simple)
+Results: 294 291 292 279 294 292 292 293 292 304 - average 292 (ttcc)
+
+APPENDING to construct the log message
+Second result logs to NOPOutputStream
+-------------- Sat Nov 6 18:08:05 CET 1999 ---------------
+Without the cost of evaluating - Buffer optimized
+
+Results:  82  84  85  82  88  83  84  85  83  82 - average  83 (simple)
+Results: 271 273 275 259 271 270 272 272 275 273 - average 271 (ttcc)
+Results:  54  53  58  70  55  56  55  54  57  55 - average  56 (simple)
+Results: 240 236 234 236 233 239 238 236 234 235 - average 236 (ttcc)
+
+Conclusion cost of evaluation about 20 micros
+-------------- Sat Nov 6 13:47:41 CET 1999 ---------------
+Results: 100 100 103 100 102 102 100 100 103 100 - average 101 (simple)
+Results: 300 298 300 300 310 294 307 299 299 304 - average 301 (ttcc)
+Results:  80  79  78  80  78  79  78  79  77  78 - average  78 (simple)
+Results: 259 266 263 267 265 264 263 266 265 269 - average 264 (ttcc)
+
+buffering to construct the log message
+Second result logs to NOPOutputStream
+
+Conclusion buffering saves ~70 microsecs, or about 70% savings.
+-------------- Sat Nov 6 18:19:57 CET 1999 ---------------
+Removed " [" and " ]" from theadStr
+
+
+Results: 266 273 264 260 268 266 263 264 265 266 - average 265 (ttcc)
+Results: 242 242 237 245 242 239 239 245 227 235 - average 239 (ttcc)
+-------------- Sat Nov 6 18:27:09 CET 1999 ---------------
+Results: 266 273 265 265 266 268 265 267 268 266 - average 266 (ttcc)
+Results: 231 221 225 245 234 227 240 225 225 227 - average 230 (ttcc)
+
+Optimized  " [" + thread.getName() + " ]" 
+-------------- Thu Nov 11 00:55:20 CET 1999 ---------------
+Results: 100  84  84  83  85  85  84  84  84  81 - average  85 (simple)
+Results: 206 206 204 209 216 204 199 204 212 206 - average 206 (ttcc)
+Results:  56  55  56  56  56  55  56  56  56  56 - average  55 (simple)
+Results: 179 190 171 184 186 186 185 185 184 170 - average 182 (ttcc)
+
+Using Category class.
+-------------- Fri Nov 12 22:02:16 CET 1999 ---------------
+Starting tests, this make take a few seconds....
+
+StackInfoThreshold=INFO
+
+Results: 3890 3815 3842 3777 3845 
+-------------- Fri Nov 12 22:07:01 CET 1999 ---------------
+StackInfoThreshold=INFO
+
+Results: 3779 3979 3938 3989 3929 3757 3791 3986 3792 3772 - average 3871 (ttcc)
+Results: 3892 3749 3734 3709 3744 3758 3810 3859 3805 3742 - average 3780 (ttcc)
+
+-------------- Fri Nov 12 22:27:24 CET 1999 ---------------
+StackInfoThreshold=INFO
+
+Results: 3178 3201 3175 3183 3363 3205 3397 3206 3213 3212 - average 3233 (ttcc)
+Results: 3204 3232 3105 3183 3127 3236 3221 3124 3138 3182 - average 3175 (ttcc)
+
+Avoiding try and catch. 
+
+Conclusion the try and catch costs a whopping 600 millis or about 1/5
+of total time.
+-------------- Mon Nov 15 22:14:54 CET 1999 ---------------
+StackInfoThreshold=INFO
+
+Results: 1497 1463 1514 1445 1472 1498 1476 1471 1508 1503 - average 1484 (ttcc)
+Results: 1403 1483 1494 1399 1453 1463 1444 1430 1436 1406 - average 1441 (ttcc)
+
+New code based on internal TracerPrintStream class.
+-------------- Mon Nov 15 22:53:34 CET 1999 ---------------
+Results:  84  86  86  85  90  86  86  86  85  85 - average  85 (simple)
+Results: 219 211 203 205 206 202 203 203 215 204 - average 207 (ttcc)
+Results:  58  58  66  58  56  60  64  59  58  57 - average  59 (simple)
+Results: 174 188 177 170 173 185 171 172 171 175 - average 175 (ttcc)
+
+Results:  733  742  745  743  766  744  748  754  750  756 - average  748 (bas)
+Results: 1462 1481 1475 1515 1462 1479 1517 1497 1479 1555 - average 1492 (ttcc)
+Results:  624  628  622  616  618  612  618  605  606  618 - average  616 (bas)
+Results: 1353 1371 1374 1338 1374 1318 1360 1336 1329 1342 - average 1349 (ttcc)
+
+-------------- Mon Dec 13 21:49:49 CET 1999 ---------------
+No Layout indirection in Log. NDC in TTCCLog.
+
+Results: 82 84 86 83 87 87 88 84 84 81 - average 84 (simple)
+Results: 225 221 211 221 220 220 221 221 216 211 - average 218 (ttcc)
+Results: 60 58 60 54 60 56 55 59 55 56 - average 57 (simple)
+Results: 185 183 189 190 190 188 187 189 187 192 - average 188 (ttcc)
+
+Results: 725 723 737 733 731 738 756 728 755 738 - average 736 (simple)
+Results: 1166 1156 1170 1177 1184 1157 1172 1185 1177 1190 - average 1173 (ttcc)
+Results: 607 606 604 616 602 583 602 603 603 605 - average 603 (simple)
+Results: 1050 1021 1014 1023 1050 1019 1038 1034 1025 1012 - average 1028 (ttcc)
+
+-------------- Mon Dec 13 23:30:18 CET 1999 ---------------
+Layout indirection in Log. NDC in TTCCLayout 
+Results: 85 87 86 91 89 86 89 87 84 88 - average 87 (simple)
+Results: 214 221 214 212 219 213 224 222 210 210 - average 215 (ttcc)
+Results: 66 71 70 70 82 70 66 65 64 68 - average 69 (simple)
+Results: 192 193 194 182 195 186 184 193 191 199 - average 190 (ttcc)
+
+Results: 758 761 743 755 750 778 748 758 737 756 - average 754 (simple)
+Results: 1139 1169 1112 1129 1161 1146 1121 1145 1140 1134 - average 1139 (ttcc)
+Results: 667 684 699 699 717 700 681 693 680 692 - average 691 (simple)
+Results: 1115 1119 1103 1127 1106 1116 1100 1121 1096 1131 - average 1113 (ttcc)
+-------------- Tue Dec 28 20:35:17 CET 1999 ---------------
+v 0.7.1 using Suns JDK 1.2.2
+Results: 54 55 55 54 55 55 56 54 55 55 - average 54 (simple)
+Results: 123 123 125 122 128 122 122 123 124 123 - average 123 (ttcc)
+
+Results: 41 41 42 42 41 41 42 41 56 41 - average 42 (simple)
+Results: 102 102 102 102 102 102 102 101 103 102 - average 102 (ttcc)
+
+Results: 496 494 491 491 503 505 497 491 495 496 - average 495 (simple)
+Results: 609 601 613 607 638 606 610 608 610 607 - average 610 (ttcc)
+
+Results: 449 451 452 476 450 450 444 455 446 447 - average 452 (simple)
+Results: 563 548 555 555 556 545 557 551 545 559 - average 553 (ttcc)
+
+-------------- Tue Dec 28 23:44:36 CET 1999 ---------------
+Writer based log4j
+
+Results: 65 65 65 64 64 65 66 67 65 65 - average 65 (simple)
+Results: 122 121 121 121 121 122 122 122 122 121 - average 121 (ttcc)
+
+Results: 18 18 18 18 18 18 18 18 18 18 - average 18 (simple)
+Results: 60 72 59 59 60 60 60 60 60 60 - average 61 (ttcc)
+
+Results: 521 523 518 524 529 526 533 530 524 528 - average 525 (simple)
+Results: 619 629 621 622 626 622 625 624 616 624 - average 622 (ttcc)
+
+Results: 412 405 400 404 417 402 409 399 416 402 - average 406 (simple)
+Results: 496 492 480 488 482 488 487 492 489 488 - average 488 (ttcc)
+-------------- Wed Jan 12 00:05:48 CET 2000 ---------------
+0.7.2 code
+Starting tests, this make take a few seconds....
+
+Logging to a real file.
+Results: 64 63 65 64 63 63 64 64 - average 63 (simple)
+Results: 124 123 122 125 123 126 122 122 - average 123 (ttcc)
+
+Logging to a null (nop) output stream.
+Results: 17 18 17 18 17 18 17 17 - average 17 (simple)
+Results: 60 60 59 59 61 60 60 60 - average 59 (ttcc)
+
+Logging with stack info to a regular file.
+Results: 533 526 535 533 533 534 535 528 - average 532 (simple)
+Results: 633 630 633 628 639 619 638 630 - average 631 (ttcc)
+
+Logging with stack info to a null (nop) output stream.
+Results: 407 406 413 402 404 412 426 415 - average 410 (simple)
+Results: 491 499 494 495 487 504 497 493 - average 495 (ttcc)
+
+-------------- Sun Jul 9 21:55:09 CEST 2000 ---------------
+IBM JDK 1.1.8, log4j 0.8.5 with NDC
+
+NullAppender:
+
+12   SimpleLayout
+21   PatternLayout "%p - %m\n"
+22   PatternLayout "%-5p - %m\n"
+39   TTCCLayout/RELATIVE
+39   PatternLayout "%r [%t] %-5p %c{2} %x - %m\n"
+37   PatternLayout "%r [%t] %-5p %.10c %x - %m\n"
+37   PatternLayout "%r [%t] %-5p %.20c %x - %m\n"
+32   PatternLayout "%r [%t] %-5p %c - %m\n"
+62   TTCCLayout/ISO8601
+69   PatternLayout "%d{ISO8601} [%t] %-5p %c %x - %m\n"
+222  PatternLayout "%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m\n"
+1172 PatternLayout "%l - %m\n"
+1313 PatternLayout "%C.%M.%L - %m\n"
+
+FileAppender:
+
+44  SimpleLayout
+56  PatternLayout "%p - %m\n"
+87  TTCC/RELATIVE
+95  PatternLayout "%r [%t] %-5p %c %x - %m\n"
+126 TTCCLayout/ISO8601
+147 PatternLayout "%d{ISO8601} [%t] %-5p %c %x - %m\n"
+288 PatternLayout "%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m\n"
+447 PatternLayout "%l - %m\n"
+

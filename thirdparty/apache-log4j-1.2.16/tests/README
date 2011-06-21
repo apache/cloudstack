@@ -1,0 +1,53 @@
+
+This directory contains a series of log4j test cases. 
+
+Prerequisites
+=============
+
+Jakarta-ant is used to compile and run the tests. Jakarta-ant version
+1.4.0 was used to compile and run the tests. The optional
+jakarta-ant-1.4-optional.jar file is required to be in the
+$ANT_HOME/lib directory where ANT_HOME envrironment variable point to
+the directory where you installed jakarta-ant.
+
+The tests cases as well running ant require a JAXP compatible
+parser. Such a parser is placed on the classpath by the shell or batch
+script that invokes ant, namely $ANT_HOME/bin/ant on UNIX and
+%ANT_HOME%/bin/ant.bat on Windows.
+
+The test cases are based on Junit version 3.7+.  
+
+IMPORTANT: You need to place junit.jar in your CLASSPATH environment
+variable.
+
+The test cases perform some regular expression based filtering. This
+requires jakarta-oro. Version-2.0.5 was used when writing the
+tests. You need to have jakarta.oro.jar property (found in the
+build.properties file) to point to jakarta-oro.jar. See the file
+build.properties.sample for an example of a build.properties file.
+
+Assuming jakarta-ant is installed properly, depending on your platform
+type $ANT_HOME/bin/ant or %ANT_HOME%/bin/ant.bat to see the available
+commands.
+
+------------------------------------------------------------------------
+NOTE: The compilation and execution of tests must be performed from
+      within the tests/ directory, that is from the directory where
+      this README file is located.
+------------------------------------------------------------------------
+
+Writing a new test case
+=======================
+
+Our test cases are based on junit and you should be familiar with
+junit in order to write new a test case.
+
+Some of the existing test are actually regression tests. They compare
+the output of a test with the output of a previous run, a.k.a a
+witness, which is purported to be correct. Since the ouput of some
+tests vary on time and line numbers, before comparing the output with
+a witness, we transform the output by unifying the result, for example
+by removing date and time information.
+
+To automatically run your test case with the rest of the log4j test
+cases, you need to modify tests/build.xml. 

@@ -1,0 +1,25 @@
+-classpath
+'/home/curta/ls-svn/log4j/target/checkout/target/classes:/home/curta/.m2/repository/org/apache/geronimo/specs/geronimo-jms_1.1_spec/1.0/geronimo-jms_1.1_spec-1.0.jar:/home/curta/.m2/repository/javax/activation/activation/1.1/activation-1.1.jar:/home/curta/.m2/repository/javax/mail/mail/1.4.1/mail-1.4.1.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/home/curta/ls-svn/log4j/target/checkout/src/main/java:/home/curta/ls-svn/log4j/target/checkout/src/main/javadoc'
+-author
+-bottom
+'Copyright &#169; 1999-2010 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved.'
+-charset
+'UTF-8'
+-d
+'/home/curta/ls-svn/log4j/target/checkout/target/site/apidocs'
+-docencoding
+'UTF-8'
+-docfilessubdirs
+-doctitle
+'Apache Log4j 1.2.16 API'
+-link
+'http://java.sun.com/j2se/1.3/docs/api'
+-use
+-version
+-windowtitle
+'Apache Log4j 1.2.16 API'

@@ -1,0 +1,118 @@
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+=============
+
+Preparing log4j releases.
+
+=============
+
+
+This is a detailed instruction to reproduce the log4j distribution
+either to verify that the release is reproducable or to prepare
+a hot-fix.
+
+Apache log4j 1.2.16 was prepared using Ubuntu 9.10.
+
+
+Preparation of environment:
+
+1. Install Sun Java 6:
+
+$> sudo sed  's/restricted/restricted universe multiverse/' -i /etc/apt/sources.list
+$> sudo apt-get update && sudo apt-get -y update
+$> sudo apt-get install sun-java6-jdk
+$> sudo update-java-alternatives -s java-6-sun
+$> export JAVA_HOME=/usr/lib/jvm/java-6-sun
+
+2. Install Maven 2, Subversion, mingw and xemacs21, openssh-server:
+
+$> sudo apt-get install maven2 subversion mingw32 xemacs21 openssh-server
+
+3. Copy Win32 version of jni_md.h for NTEventLogAppender.dll
+
+c:\>cd "\Program Files\Java\jdk_1.6.0_16\include\win32
+c:\>scp jni_md.h username@hostname:
+
+$> export JNI_WIN32_INCLUDE_DIR=/home/username
+
+4. Create a local ssh key with no passphrase to enable 
+"deployment" of site back to the local machine using scp.
+
+$> ssh-keygen
+$> cd ~/.ssh
+$> cat id_rsa.pub >> authorized_keys
+$> ssh localhost
+$> exit
+
+
+From a command prompt:
+
+$ export SVN_EDITOR=xemacs 
+$ svn co https://svn.apache.org/repos/asf/logging/log4j/tags/v1_2_16
+$ cd v1_2_16
+$ mvn site assembly:assembly
+
+
+If you intended to deploy jars to the repo or update the site,
+you need to set up ssh to use private keys to access people.apache.org
+and create or modify ~/.m2/settings.xml to specify user name and key location.
+
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 
+              http://maven.apache.org/xsd/settings-1.0.0.xsd">
+   <servers>
+    <server>
+      <id>logging.repo</id>
+      <username>USERNAME for people.apache.org</username>
+      <privateKey>/home/username/.ssh/id_rsa</privateKey>
+      <passphrase></passphrase>
+    </server>
+   </servers>
+</settings>
+
+You should test your ssh connection to people.apache.org 
+and localhost before attempting a deployment like:
+
+$ ssh -l USERNAME people.apache.org
+$ ssh localhost
+
+The release artifacts were originally built by:
+
+$> svn co http://svn.apache.org/repos/asf/logging/log4j/trunk log4j
+$> cd log4j
+$> mvn package release:prepare
+$> mvn release:perform
+
+
+The release artifacts can be rebuilt by:
+
+$ mvn release:perform -DconnectionUrl=scm:svn:https://svn.apache.org/repos/asf/logging/log4j/tags/v1_2_16
+
+The website content will automatically be staged to the ASF SVN repo by "mvn site-deploy".
+This phase checks out https://svn.apache.org/repos/asf/logging/site/trunk/docs/log4j/1.2 
+into target/site-deploy, copys the generated documentation to that directory using
+scp to localhost and then commits the changed content.  You will be prompted for an
+SVN commit message using the configured SVN_EDITOR.  A commit message must be entered or the
+site commit will be aborted.
+
+The staged content can be tested by opening 
+http://svn.apache.org/repos/asf/logging/site/trunk/docs/1.2/index.html, 
+however some links may be broken due to the staged location.  
+The staged version can be published to the main public site by executing 
+"svn update" in /www/logging.apache.org/log4j/1.2 on people.apache.org.
+
+

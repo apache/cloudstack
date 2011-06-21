@@ -1,0 +1,1861 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+<document>
+  <properties>
+    <title>Apache log4j 1.2</title>
+  </properties>
+  <body>
+
+    <release version="1.2.16" date="2010-04-06" description="Maintenance release">
+       <action issue="43313">log4j 1.2.16 release preparation.</action>
+       <action action="add" issue="42842">Create a public identifier for log4j.dtd ("-//APACHE//DTD LOG4J 1.2//EN")</action>
+       <action action="fix" issue="44108">TelnetAppender misses messages when one of many clients disconnect.</action>
+       <action action="fix" issue="44109">TelnetAppender throws null pointers at log time when socket couldn't be opened.</action>
+       <action action="fix" issue="44032">ThrowableInformation.getThrowableStringRep can return null strings.</action>
+       <action action="fix" issue="43298">log4j.dtd defines class attribute for category element, but not for logger.</action>
+       <action action="fix" issue="43314">SMTPAppender.setSMTPUserName and others missing @since tags.</action>
+       <action action="fix" issue="43618">Request for compile-on-Windows help file in src package.</action>
+       <action action="fix" issue="43599">AsyncAppender failing on changing message objects.</action>
+       <action action="fix" issue="43325">Subst-mechanism in DOMConfigurator broken.</action>
+       <action action="fix" issue="43374">DailyRollingFileAppender may lose messages during failed rollover attempts.</action>
+       <action action="fix" issue="43312">Fix mangled source-repository.html.</action>
+       <action action="fix" issue="43387">Minor documentation changes.</action>
+       <action action="fix" issue="43304">Make javamail, jmx, jms dependencies optional in pom.xml.</action>
+       <action action="add" issue="43874">SocketHubAppender should expose actual port in use to extending classes.</action>
+       <action action="add" issue="44551">SocketHubAppender in the 1.2.16 does not support a scroll back buffer or application property</action>
+       <action action="add" issue="41156">Give log4j threads reasonable names.</action>
+       <action action="fix" issue="44888">LocationInfo can report wrong caller when other class names contain logger class name as substring.</action>
+       <action action="fix" issue="45426">ErrorHandlerTestCase is not run and does not pass.</action>
+       <action action="fix" issue="45485">Agent.java is sole dependency on jmxtools.jar with Java 5+.</action>
+       <action action="fix" issue="44517">Eliminate compile dependency on non-redistributable JMS reference implementation.</action> 
+       <action action="fix" issue="37182">Exception in call to toString of message propagates to caller.</action>
+       <action action="fix" issue="45299">Javadoc class index corrupted by JDBCAppender deprecation warning.</action> 
+       <action action="fix" issue="43867">Improve warning message when log4j is accessed after unload by Tomcat.</action>
+       <action action="fix" issue="45335">NullPointerException in NDC.remove after unload by Tomcat.</action>
+       <action action="fix" issue="36384">Configuring triggering/rolling policies should be supported through properties.</action>
+       <action action="fix" issue="25747">More explanations when hitting WARN No appenders could be found for logger.</action>
+       <action action="fix" issue="45039">Use Throwable.getStackTrace to obtain location when running on JDK 1.4 or later.</action>
+       <action action="fix" issue="44745">AsyncAppender fails on changing Throwable.</action>
+       <action action="fix" issue="44899">Extra NPE error message when using missing appender class with DOMConfigurator.</action>
+       <action action="fix" issue="44555">org.apache.log4j.varia.NullAppender lacks static accessor to static instance.</action>
+       <action action="fix" issue="43849">Javadoc for Appender.getName implies that the return value will be unique and not null.</action>
+       <action action="fix" issue="40888">Weekly rotation problem in Europe.</action>
+       <action action="fix" issue="43282">Add OSGi packaging info.</action>
+       <action action="fix" issue="44157">InterruptedIOException ignored by log4j.</action>
+       <action action="fix" issue="40246">HierarchyDynamicMBean missing unregister MBean</action>
+       <action action="fix" issue="45635">Support -Dm2_repo option on Maven build for non-default Maven repository location.</action>
+       <action action="fix" issue="45636">2 tests for DateLayout are failing because of ill initialized DateFormat.</action>
+       <action action="fix" issue="45659">Incorrect user mailing list URL.</action>
+       <action action="add" issue="44386">NTEventLogAppender.dll for 64-bit editions for Microsoft Windows.</action>
+       <action action="add" issue="45721">Add configuration of ThrowableRenderers and add org.apache.log4j.EnhancedThrowableRenderer.</action>
+       <action action="fix" issue="45969">SMTPAppender does not force evaluation of message at request time</action>
+       <action action="add" issue="25355">Support SSL transport in SMTPAppender</action>
+       <action action="add" issue="45980">SMTPAppender should have a sendOnClose option</action>
+       <action action="fix" issue="45982">Support %X layout specification to output all MDC key-value pairs</action>
+       <action action="add" issue="45990">Add replyTo attribute to SMTPAppender</action>
+       <action action="fix" issue="44644">SMTPAppender does not properly encode subject or content containing non-ASCII characters.</action>
+       <action action="fix" issue="46388">Clarify javadoc of Layout.ignoresThrowable.</action>
+       <action action="fix" issue="46271">SyslogAppender.append throws exception if layout is not set.</action>
+       <action action="fix" issue="46144">QuietWriter.write should check for null argument.</action>
+       <action action="fix" issue="46512">LogFactor5 CategoryPath doesn't replace slashes with dots.</action>
+       <action action="fix" issue="46163">LoggerDynamicMBean needs to handle a null Appender name.</action>
+       <action action="fix" issue="45704">DOMConfigurator.configure(URL) fails on JRE 1.5.0_16.</action>
+       <action action="add" issue="44357">Document system properties used by log4j.</action>
+       <action action="fix" issue="44038">log4j is susceptible to exceptions in Exception.printStackTrace.</action>
+       <action action="fix" issue="46741">Misuse of "it's" in Javadoc for PatternLayout.</action>
+       <action action="add" issue="47142">Add SMTPAppender.formatBody to simplify extension.</action>
+       <action action="fix" issue="46404">Failure when toString() of throwable performs logging in SocketAppender, SocketHubAppender and JDBCAppender.</action>
+       <action action="fix" issue="47465">Reading configuration files from a JAR locks the JAR file</action>
+       <action action="add" issue="38061">PropertyConfigurator does not support configuring ErrorHandler.</action>
+       <action action="fix" issue="47967">log4j.ignoreTCL should apply to the getResource method in addition to the loadClass method of org.apache.log4j.helpers.Loader.</action>
+       <action action="fix" issue="46539">The QuietWriter class does not live up to its published contract.</action>
+       <action action="add" issue="46983">More Debug output for log4j auto-configure requested.</action>
+       <action action="add" issue="47107">Add MDC.clear().</action>
+       <action action="fix" issue="47547">NullPointerException when calling Category.removeAllAppenders().</action>
+       <action action="add" issue="28647">Allow overriding of flush strategy.</action>
+       <action action="fix" issue="47350">Add recommendation to use EnhancedPatternLayout to avoid synchronization issues in PatternLayout</action>
+       <action action="fix" issue="45481">Source contains unnecessary imports.</action>
+       <action action="add" issue="48159">Add LoggingEvent.removeProperty</action>
+       <action action="add" issue="48187">Typo ("two three goals") in log4j FAQ</action>
+       <action action="fix" issue="48531">Unit tests fail for system dates after 2009-12-31</action>
+       <action action="fix" issue="48604">Download page does not have link to KEYS file</action>
+       <action action="add" issue="49812">Add parameterized logging utility classes LogMF and LogSF from extras companion.</action>
+       <action action="add" issue="48927">Add EnhancedPatternLayout from extras companion.</action>
+       <action action="fix" issue="48784">Links to example code broken in the JavaDocs</action>
+       <action action="fix" issue="48953">Unused imports and variables in test code cause gcj compile warnings.</action>
+       <action action="fix" issue="49002">Unit tests fail on Apache Harmony and gcj due to stack trace expectations.</action>
+       <action action="fix" issue="49003">SocketServerTestCase.test8 fails on Apache Harmony.</action>
+       <action action="fix" issue="49004">TestLogMF.testDebugDate fails on gcj.</action>
+       <action action="fix" issue="49005">TelnetAppenderTest.testIt fails on gcj.</action>
+       <action action="fix" issue="49006">Eclipse Java Compiler and gcj do not support -source=1.2.</action>
+       <action action="fix" issue="49007">CachedDateFormatTest fails on Apache Harmony.</action>
+       <action action="add" issue="49010">Add %p{-2} pattern to EnhancedPatternLayout to drop two leading elements from name.</action>
+       <action action="add" issue="48902">Add %throwable{n} and {-n} pattern to EnhancedPatternLayout to print n or drop last n lines.</action>
+    </release>
+
+  
+    <release version="1.2.15" date="2007-08-24" description="SyslogAppender enhancements, NTEventLogAppender and Maven build.">
+	    <action issue="40951">log4j 1.2.15 release preparation.</action>
+        <action action="add" issue="40212">Switch to NOPLoggerRepository if application reloading nulls repositorySelector.</action>
+	    <action action="add" issue="43202">Add 'application' property support to SocketAppender (from 1.3)</action>
+        <action action="fix" issue="43200">Log4JEntityResolver will return null if log4j.dtd can not be found on classpath.</action>
+        <action action="fix" issue="37736">HierarchyEventListener.removeAppenderEvent never called.</action>
+        <action action="fix" issue="37560">XMLLayout does not escape CDATA sections within NDC or throwables.</action>
+       <action action="add" issue="33502">Added test to confirm that DOMConfigurator.configureAndWatch does configure.</action>
+        <action action="fix" issue="32527">Default initialization with XML file halts program if JAXP not available.</action>
+        <action action="add" issue="17531">Add reset option to PropertyConfigurator and DOMConfigurator.</action>
+        <action action="fix" issue="14350">Error message always logged to LogLog when calling close on TelnetAppender.</action>
+       <action action="add" issue="32572">Add configurable triggeringPolicy for SMTPAppender.</action> 
+       <action action="fix" issue="43181">NullPointerException in MDC on Tomcat reload.</action>
+        <action action="fix" issue="34874">Notice to use UTF-8 or UTF-16 encoding added to XML and HTMLLayout javadoc.</action>
+       <action action="fix" issue="34875">XML and HTMLLayout do not always escape special characters.</action>
+       <action action="add" issue="43078">Optionally render MDC content in XMLLayout</action>
+       <action action="fix" issue="42694">Typo in log4j.dtd concerning threshold.</action>
+       <action action="fix" issue="42611">ERFATestCase fails on some JDK's.</action>
+       <action action="fix" issue="42585">SocketNode can leak Sockets.</action>
+	   <action action="fix" issue="37930">Migrate to Maven based build and documentation.</action>
+	   <action action="fix" issue="40604">Prepare Maven release bundles.</action>
+	   <action action="fix" issue="42283">Eclipse compiler warning cleanup.</action>
+	   <action action="fix" issue="42281">JRockit VM and java-gcj fail unit tests.</action>
+	   <action action="fix" issue="21796">SocketAppender does not use FallbackErrorHandler</action>
+	   <action action="add" issue="42257">Enhance DOMConfigurator to delegate unrecognized elements to configured object.</action>
+	   <action action="add" issue="42108">Add LoggingEvent accessors.</action>
+	   <action action="fix" issue="42017">InstanceAlreadyExistsException using MBean.</action>
+	   <action action="fix" issue="29227">Reduce first connection failure severity in SocketAppender</action>
+	   <action action="fix" issue="42087">SyslogAppender does not limit packets to 1024 bytes.</action>
+       <action action="fix" issue="41040">SyslogAppender: Added "header" property which if set to true will cause the appender
+        to produce the HEADER part (timestamp and hostname) of the syslog packet.
+        Default value is false for compatibility with previous behavior.</action>
+       <action action="fix" issue="40161">SyslogAppender also now sends any header from the associated
+        layout when activateOptions is called or first logging event is sent and
+        any footer when the appender is closed.</action>
+    <action action="fix" issue="37282">SyslogAppender leaks descriptors</action>
+    <action action="fix" issue="40502">SyslogAppender assumes all lines start with tab</action>
+	   <action action="fix" issue="42087">SyslogAppender does not limit packet size to 1024 bytes</action>
+
+       <action action="fix" issue="41169">NTEventLogAppender: Updated NTEventLogAppender.dll which corrects missing event messages
+        and which should work with earlier releases of log4j.
+		NTEventLogAppender.dll also now supports registration and unregistration
+		using regsvr32.  If replacing an existing copy of NTEventLogAppender,
+		use "regsvr32 NTDllEventLogAppender.dll" or manually remove the
+		HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/Eventlog/Application/Log4J
+		registry key.</action>
+	  <action action="fix" issue="39437">NTEventLogAppender.dll performs unnecessary code page conversion using code copied from book.</action>
+ <action action="fix" issue="40944">PropertyConfigurator.configure(URL) does not close resource stream.</action>
+ <action action="fix" issue="40937">In Turkish locale level "info" is not equivalent to "INFO"</action>
+ <action action="fix" issue="41339">Javadoc of PatternLayout should use %n in TTCC layout examples</action>
+ <action action="fix" issue="41219">Stacktraces of exceptions disappear occassionally</action>
+ <action action="fix" issue="38680">Incorrect message when specified custom level class does not implement toLevel</action>
+ <action action="fix" issue="41487">Warning when configuring inner-class logger</action>
+ <action action="fix" issue="41186">AsyncAppender in 1.2.14 DiscardSummary events create NullPointerExceptions in layouts</action>
+ <action action="fix" issue="37864">Add target to generate binary and source compatibility report</action>
+ <action action="fix" issue="41708">PropertyPrinter.printOptions breaking signature change in log4j 1.2.9</action>
+ <action action="fix" issue="41735">RollingFileAppender may delete files during rollover</action>
+ <action action="fix" issue="33708">XMLConfiguration of loggerFactory does not work</action>
+ <action action="fix" issue="42087">SyslogAppender does not limit packet size to 1024 bytes</action>
+ <action action="fix" issue="40755">Update source per new ASF Header Policy.</action>
+ <action action="fix" issue="41373">DateLayoutTest fails if default Locale is not en_US.</action>
+ <action action="fix" issue="35324">Stacktrace may choke on null fields.</action>
+ <action action="add" issue="41575">Add projects.apache.org project descriptor.</action>
+</release>
+
+      <release version="1.2.14" date="2006-09-18" description="AsyncAppender rewrite, Syslog and SMTPAppender enhancements.">
+      <action action="fix" issue="38137">Monitor deadlock in AsyncAppender.</action>
+      <action action="fix" issue="28006">AsyncAppender: Dispatcher should run at normal prio.</action>
+      <action action="fix" issue="37904">AsyncAppender wait forever when buffer is full.</action>
+      <action action="add" issue="38982">Add non-blocking option for AsyncAppender.</action>
+      <action action="add" issue="39687">Add SyslogPort option to SyslogAppender.</action>
+      <action action="add" issue="19125">Add cc and bcc addresses to SMTPAppender.</action>
+      <action action="add" issue="24969">Add password authentication to SMTPAppender.</action>
+      <action action="fix" issue="40159"> NullPointerException in org.apache.log4j.NDC.get.</action>
+       <action action="fix" issue="36787"> org.apache.log4j.lf5.util.DateFormatManager.setTimeZone assignment error.</action>
+       <action action="fix" issue="38559"> Monthly logs not generated at midnight with DailyRollingFileAppender.</action>
+       <action action="fix" issue="40145"> PatternLayout specifier %r is not consistent with documentation.</action>
+       <action action="fix" issue="37119"> Space after log level causes default level to be used.</action>
+       <action action="fix" issue="39135"> Bad patterns in ISO8601DateFormat and DateTimeDateFormat.</action>
+       <action action="fix" issue="35743"> SyslogAppender throws NullPointerException upon misconfiguration.</action>
+       <action action="fix" issue="15501"> FallbackErrorHandler throws NullPointerException if no loggers are set.</action>
+       <action action="fix" issue="38564"> Bad documentation for WriterAppender.encoding.</action>
+       <action action="fix" issue="37866"> NTEventLogAppender not build, tested and placed in distribution.</action>
+       <action action="fix" issue="38662"> SMTPAppender does not output newlines between stack trace lines.</action>
+       <action action="fix" issue="30294"> SMTPAppender will not run within sandbox.</action>
+       <action action="fix" issue="16922"> MDC with SMTPAppender doesn't work.</action>
+       <action action="fix" issue="31507"> Misspelling in HierarchyDynamicMBean.</action>
+       <action action="fix" issue="35123"> Additivity not exported by PropertyPrinter.</action>
+       <action action="fix" issue="31003"> RollingFileAppender, if removed, can cause NullPointerExceptions.</action>
+       <action action="fix" issue="23021"> AsyncAppender blocks on thread death.</action>
+	   <action action="fix" issue="40412"> NOTICE file added to distribution and jars.</action>
+	   <action action="fix" issue="40378"> Chainsaw of log4j 1.2 does not show TRACE level.</action>
+	   <action action="fix" issue="40501"> TRACE level missing in short introduction to log4j.</action>
+	   <action action="fix" issue="37960"> Update site generation to velocity 1.4 and remove dependency on logging/site project.</action>
+    </release>
+
+    <release version="1.2.13" date="2005-12-04" description="TRACE level missing info fixed, ConsoleAppender.follow added to make redirection following an optional behavior.">
+        <action action="fix" issue="36800">Location info missing for TRACE level messages.</action>
+        <action action="fix" issue="37122">Console appender now behaves as before to fix
+   compatibility problem with JBoss introduced in 1.2.12 release due to fix
+   for bug 31056.  Can still be configured to detect changes in the System.out
+   and System.err streams as needed by setting the follow property.</action>
+      </release>
+
+      <release version="1.2.12" date="2005-08-29" description="TRACE level introduced, ConsoleAppender modified to follow redirection of System.out">
+          <action action="fix" issue="36262">Removed final qualifiers on member variables
+            in org.apache.log4j.chainsaw.LoggingReceiver which would cause
+            spurious compiler errors with JDK 1.1 and 1.2 javac compilers.</action>
+
+          <action action="fix" issue="36267">Added a jndi.jar property to the build.xml.</action>
+
+          <action action="fix" issue="37268">Added "release" target to build.xml.</action>
+
+          <action action="fix" issue="36213">Removed references to obsolete documentation.</action>
+
+          <action action="fix" issue="35965">Added protected accessors for member variables
+            topicConnection, topicSession, and topicPublisher.</action>
+
+          <action action="fix" issue="34026">SyslogAppender now checks Layout.ignoresThrowable() just
+            like every other appender.</action>
+
+          <action action="fix" issue="35947">DOMConfigurator would call LogLog.error to report
+            XML validation errors that caused no problems in the interpretation of the
+            configuration file.</action>
+
+          <action action="fix" issue="14551">Fixed the JavaDoc links
+            for the XML sample files.</action>
+
+          <action action="fix" issue="35654">Added getNext/setNext methods to org.apache.log4j.spi.Filter and deprecated
+            public "next" field. This mirrors the same change in the upcoming 1.3
+            version and, hence, provides a migration path.</action>
+
+          <action action="fix" issue="35711">Added o.a.log4j.Logger.trace(), o.a.log4j.Logger.isTraceEnabled() and
+            o.a.log4j.Level.TRACE</action>
+
+          <action action="fix" issue="34758">Implemented serialization for Level.</action>
+
+          <action action="fix" issue="31056">o.a.log4j.ConsoleAppender would ignore redirections
+            of System.out and System.err that occurred after configuration.</action>
+
+          <action action="fix" issue="23705">o.a.log4j.xml.DOMConfigurator would not properly
+            interpret relative path names in external entity declarations.</action>
+
+          <action action="fix" issue="35691">o.a.log4j.xml.XmlLayout would not properly escape
+            class names that contained '&lt;' or '&gt;'.</action>
+
+          <action action="fix" issue="35052">Use of String.intern() in o.a.log4j.CategoryKey
+            would cause application to slow down.</action>
+
+          <action action="fix" issue="9150">o.a.log4j.FileAppender would not create log file
+            if parent directory did not exist.</action>
+
+          <action action="fix" issue="23021">o.a.log4j.AsyncAppender would deadlock if a
+            unchecked exception occurred in the attached appender causing the
+            dispatch thread to die.</action>
+
+          <action action="fix" issue="35516">Added jdiff target to build.xml.</action>
+
+          <action action="fix" issue="35831">log4j would not build with a JDK 1.5 javac.</action>
+
+          <action action="fix" issue="35893">Added log4j 1.1 compatibility method
+            to o.a.l.helpers.Loader.</action>
+
+          <action action="fix" issue="34981">Additional null terminating character in Windows
+            nteventlog.cpp code.</action>
+
+          <action action="fix" issue="36332">Broken links to J2SE classes in javadocs.</action>
+
+      </release>
+
+      <release version="1.2.11" date="2005-06-18" description="JMS MessageRenderer fix">
+          <action action="fix" issue="34491">o.a.log4j.or.jms.MessageRenderer
+            would not be compiled in the build.jms target.</action>
+      </release>
+
+      <release version="1.2.10" date="2005-04-28" description="Version 1.2.10 was not released following the accepted rules and process of
+   the log4j project and Logging Services Project and was recalled and removed.
+   Please do not use version 1.2.10, it is not an official log4j release.">
+			<action>Version 1.2.10 was not released following the accepted rules and process of
+   the log4j project and Logging Services Project and was recalled and removed.
+   Please do not use version 1.2.10, it is not an official log4j release.</action>
+      </release>
+
+       <release version="1.2.9" date="2004-11-01" description="Deprecation of obsolete methods">
+            <action>  Log4j version 1.2.9, is identical to version 1.2.8, except that
+  several key methods have been deprecated in preparation for version
+  1.3.0, the next major release of log4j. These changes are intended to
+  enforce the rule that client code should never refer to the Category
+  class directly, but use the Logger class instead. Similarly, client
+  code should not refer to the Priority class but to the Level class
+  instead.
+
+  For a more detailed discussion, refer to the document entitled
+  preparing for log4j 1.3 at:
+
+    http://www.qos.ch/logging/preparingFor13.jsp
+</action>
+       </release>
+
+
+      <release version="1.2.8" date="2003-02-19" description="Fixes to XMLAppender, DOMConfiguration, SocketAppender and JDBCAppender.">
+ <action action="fix" issue="11570">XMLAppender would throw a
+   NullPointerException if the input message was null. Many thanks to
+   David Vandegrift for reporting the bug and to Hendrik Brummermann for
+   supplying the patch.</action>
+
+ <action action="fix" issue="12366">Various versions of Xerces would not parse
+   log4j configuration scripts expressed in XML format.</action>
+   
+ <action action="fix" issue="14827">The "removes" buffer used in the flushBuffer() method
+   of JDBCAppender is now cleared, solving the memory leak.  Thanks to John
+   Landers for reporting the bug and suggesting the fix.</action>
+
+ <action action="fix" issue="15599">SocketAppender now honors ReconnectionDelay of 0.
+   Many thanks to Scott Schram for reporting the bug and providing the fix.</action>
+          </release>
+
+      <release version="1.2.7" date="2002-10-09" description="log4j.xml now checked during default configuration.">
+    <action>Log4j now searches for the file log4j.xml as well as the file
+   log4j.properties during log4j initialization.</action>
+          </release>
+
+
+       <release version="1.2.6" date="2002-07-31" description="LoggingEvent.getLoggerName() added, JMSAppender enhancements.">
+    <action action="add">Add of new options in JMSAppender and new command line arguments in
+   JMSSink.</action>
+
+ <action action="add">Add new method getLoggerName() in LoggingEvent class. The
+   getLoggerName is the preferred way for accessing the logger
+   name. The public access categoryName field should not be accessed
+   directly. Similarly, added the getLevel method which is now the
+   preferred way of accessing the event's level. The public access
+   level field should not be accessed directly.  The javadocs now mark
+   the categoryName and level fields as deprecated.
+     Modified existing appenders to comply with these new directives.</action>
+
+   <action action="fix">Log4j now will check if a system property named "log4j.ignoreTCL"
+   is set. If it is set, then it will ignore the Thread Context
+   ClassLoader when loading classes. This solves the irritating
+   "appender is not assignable to Appender" messages observed when
+   log4j.jar is loaded by multiple class loaders.
+   The error reporting for this problem was also improved.</action>
+
+ <action action="fix" issue="10528">Calling the MDC.get method with a null
+   argument would throw a NullPointerException.</action>
+           </release>
+
+     <release version="1.2.5" date="2002-07-05" description="AsyncAppender.close now closes nested appender.">
+        <action action="fix" issue="10185">Calling an AsyncAppender close method also closes the embedded
+   appender instances.</action>
+     </release>
+
+      <release version="1.2.4" date="2002-06-12" description="XMLLayout now handles embedded CDATA, JDBCAppender deprecated.">
+        <action>The JDBCAppender is marked as slated for replacement. Do not build
+   critical software using it.</action>
+
+ <action action="add">Add LF5 documentation and examples. Further tests are required
+   for full integration.</action>
+
+    <action action="fix">XMLLayout can now output messages which contain embedded CDATA
+   sections.Many thanks to Michael
+   A. McAngus for supplying the relevant patch.</action>
+
+   <action action="fix" issue="9750">The dispatcher thread associated with AsyncAppender is now marked
+   as a deamon thread.</action>
+
+ <action action="add" issue="9606">Add missing NTEventLogAppender.dll</action>
+
+ <action action="fix" issue="9435">log4j.dtd was changed so that
+   &lt;log4j:event&gt; is now made of logger and level attributes instead of
+   category and priority. Changed XMLLayout to conform to the
+   DTD. Chainsaw was changed to adapt to the XMLLayout.</action>
+
+ <action action="add">Add missing LevelRangeFilter file.</action>
+          </release>
+
+      <release version="1.2.3" date="2002-05-24" description="SyslogAppender and stack trace fixes.">
+ <action action="fix" issue="9285">SyslogAppender would incorrectly compute
+   the length of the datagram to send to the remote syslogd host.
+   Reported by Mamoru Kadota.</action>
+
+ <action action="fix" issue="8505">The stack trace of exception would not be
+   properly printed on the Compaq tru64 Unix platform. Initially
+   reported by Fabrice Claes and later by Espen H. Kolstad who also
+   provided the fix.</action>
+          </release>
+
+      <release version="1.2.2" date="2002-05-22"
+               description="NULL added as synonym for INHERITED in Configurators, Thread context loader used preferentially.">
+<action>Log4j configurators take the "NULL" string value as a synonym for
+   "INHERITED". Both of these two strings are legal level values for
+   setting the level of a logger. Both values are case insensitive.</action>
+
+<action issue="9305">When loading component classes, log4j will now first attempt to use
+   the Thread Context Loader and if that fails, it will use
+   Class.forName. In log4j 1.2 and 1.2.1, only Class.forName was used
+   and the TCL was ignored. This change is a response to bug #9305
+   opened by Scott M. Stark.</action>
+       </release>
+
+    <release version="1.2.1" date="2002-05-17"
+             description="Fixed MDC problem when used with AsyncAppender">
+        <action issue="9155" action="fix">
+   LoggingEvent.getMDCCopy() method now sets mdcCopyLookupRequired
+   instead of ndcLookupRequired.  This bug would cause the wrong MDC
+   information to appear on a log server. It could only occur if the
+   client wrapped an AsyncAppender around a SocketAppender or if the
+   server used an AsyncAppender for its logging.</action>
+        </release>
+
+    <release version="1.2" date="2002-05-01" description="Initial release of log4j 1.2">
+
+ <action action="fix" issue="8527">A closed TelnetAppender would continue waiting
+   for connections even if its ServerSocket was closed. This caused
+   the TelnetSocket to sit in a loop and complain about the closed
+   socket.</action>
+
+ <action action="fix" issue="5444">AsyncAppender throws NullPointerException problem. The bug was actually in
+   AppenderSkeleton.</action>
+
+ <action action="add">Add support for recursive variable substiuton as requested by
+   Eric Chastan.</action>
+
+  <action action="fix" issue="3933">SocketNode now used a BufferedInputStream as suggested by Kok Chong</action>
+
+  <action action="fix" issue="7550">Fixed a problem with DailiyRollingAppender which would not
+   correctly compute the rollover period in certain timezones.</action>
+
+ <action action="fix" issue="2726">Fixed documentation bug #2726 in FAQ.html.</action>
+
+ <action action="fix" issue="2383">Added a flush statement in the
+   WriterAppender.writeFooter method.</action>
+   
+ <action action="fix">In XMLLayout, escaped the method attribute. The
+   XMLLayout also outputs each item of a stack trace in a separate
+   line.</action>
+
+ <action action="fix" issue="5932">The
+   LoggingEvent.getMDCCopy method now clones the MDC instead of just
+   referencing it.</action>
+
+  <action>The ANT build script was modified to use jar files specified in
+    the build.properties file instead of the CLASSPATH environment
+    variable. The build.properties file depends on local paths and is
+    supplied by the user. The build.properties.sample file is included
+    in the distribution. The build.sh and build.bat scripts have
+    been removed. This is the way many other jakarta projects build their
+    projects. The jar files in the dist/lib directory were also removed
+    since they are no longer used.</action>
+
+ <action>The DOMConfigurator now interprets the string after the '#'
+   character in the value attribute within the &lt;level&gt; element as
+   the fully qualified class name of a custom Level. This is consistent
+   with the way log4j handles "level" values in other places. The
+   class attribute is still honored.</action>
+
+ <action action="add">Add Oliver Burn's chainsaw tool to the core log4j
+   distribution. Visualisation and dynamic filtering of log events is
+   bound to be a very important area of activity in the future.</action>
+
+ <action action="add">Add the org.apache.log4j.jdbc.JDBCAppender which as the name
+   indicates sends events to a database using the JDBC API. Thanks to
+   Kevin Steppe for supplying the code.</action>
+
+ <action action="add">Add SocketHubAppender class as contributed by Mark Womack. This
+   appender sends LoggingEvent objects to a set of remote a log
+   servers.</action>
+
+ <action>In the Category class, the getChainedPriority method has been
+   replaced with getEffectiveLevel method.</action>
+
+  <action>Replaced the custom class loading based on the thread context class
+    loader with a simple Class.forName() call. This solves two allied
+    but distinct problems encountered when using Ant with JUnit
+    although the bug is more general. In one instance of the
+    problem, log4j would throw java.lang.NoClassDefFoundError for
+    org/apache/log4j/AppenderSkeleton where log4j.jar and related
+    classes were clearly available to the Ant classloader. In another
+    incarnation, log4j would reject a custom appender claiming that it is
+    not assignable to a org.apache.log4j.Appender variable. This would
+    occur when log4j.jar was available to both the Ant classloader and the
+    system classloader.
+    
+    Thanks to Dave Herman for providing detailed scenarios exposing
+    the issues involved. See
+      http://forum.java.sun.com/thread.jsp?forum=38&amp;thread=70946
+      http://forum.java.sun.com/thread.jsp?forum=38&amp;thread=70946#479697
+      http://marc.theaimsgroup.com/?l=ant-user&amp;m=101139178705895&amp;w=2
+    for more details.</action>
+
+ <action>Fixed the complaints the compiler issued when using the
+   Logger.setLevel() method.</action>
+
+ <action>Incorporated the performance enhancements to ISO8601DateFormat and
+   AbsoluteTimeDateFormat classes submitted by Andrew Vajoczki.</action>
+
+ <action>Source code written for log4j 1.1.3.jar will compile fine with
+   log4j 1.2X. However, code compiled for log4j 1.1.3 would previously
+   systematically throw "java.lang.NoSuchMethodError" runtime exceptions
+   when run with log4j 1.2 - prior to beta2. This problem has been
+   corrected in beta2. Pheew, that was a close one.</action>
+
+ <action>Log4j 1.2 is now backward compatible in serialization of
+   LoggingEvents. For example, a 1.1.3 SocketAppedner can write to 1.2
+   SocketServer. Similarly a 1.2 JMSAppender will work with 1.1.3
+   JMSSink. This should ease the move to log4j 1.2, especially in
+   large deployments.</action>
+
+ <action>The src/java/org/apache/log4j/examples/ directory moved under the
+   top-level directory as examples/.</action>
+
+ <action>Fixed the ArrayIndexOutOfBoundsException that was thrown by
+   AsyncAppender if multiple threads were trying to log an event
+   containing an exception near simultaneously. Thanks to Thomas Tuft Muller
+   for reporting this bug.</action>
+
+ <action>Improved error reporting in DOMConfigurator. Thanks to Thomas Tuft
+   Muller for contributing the enhancement.</action>
+	
+  <action>Log4j is now configurable using JMX. JMX support is not of
+   production quality.</action>
+
+ <action action="add">Add support for different encodings in WriterAppender. Thanks to
+   Ben Sandee for submitting the relevant patch.</action>
+
+ <action>Modified SMTPAppender to allow multiple email sessions. Thanks to
+   Jon Skeet for supplying the relevant patch.</action>
+
+ <action>The CategoryFactory class has been replaced by the LoggerFactory
+   class. The makeNewCategoryInstance method has been renamed as
+   makeNewLoggerInstance. This change requires subclasses of Category
+   classes to be modified and recompiled.</action>
+
+ <action>The Level class replaced the Priority class. Priority class now
+   extends Level to preserve backward compatibility.</action>
+
+ <action>The Logger class replaced the Category class. Logger class
+   extends Category to preserve backward compatibility. We proudly
+   mark this change with a single star for 100% compatibility.</action>
+
+ <action>The Category.assert method has been replaced by
+   Category.assertLog.  This change was necessary because assert is a
+   language reserved word in JDK 1.4.</action>
+
+ <action>Removed deprecated methods setOptions and getOptionStrings defined
+   in the org.apache.log4j.spi.OptionHandler interface. This interface
+   is implemented by most log4j appenders and layouts. In particular,
+   all appenders and layouts shipped with log4j contain these
+   deprecated methods. They have become totally redundant after we
+   moved to JavaBeans style configuration in log4j 1.1.</action>
+
+ <action>The disable(Level) methods in Hierarchy have been removed and been
+   replaced by threshold methods.</action>
+
+ <action action="add">Add buffered IO capability to FileAppender and subclasses.</action>
+ 
+ <action>The location information (or stack information) was not correctly
+   transmitted by JMSAppender.</action>
+
+ <action action="add">Add event reporting capability to the Hierarchy class.</action>
+ 
+ <action action="add">Add new system property "log4j.configuratorClass". This property
+   allows the user to specify the custom configurator at the default
+   initialization phase. This property replaces the previous
+   interpretation of the reference part of "log4j.configuration" 
+   as the custom configurator class. This interpretation was sometimes
+   erroneous and caused headaches.</action>
+   
+ <action>Introduced the Mapped Diagnostic Context or MDC class. This class
+   is similar to the NDC except that the diagnostic context is based
+   on a map instead of a stack. Moreover the MDC is automatically
+   inherited by child threads under JDK 1.2 and above.</action>
+
+ <action>Corrected a performance bug in the NDC class as observed by Dan
+   Milstein and independently by Ray Millard.</action>
+
+ <action>Removed deprecated methods disable(Priority), disableAll,
+   disableDebug, disableInfo and enableAll in BasicConfigurator.</action>
+
+ <action action="add">Add supports java.io.Reader objects in the method doConfigure(),
+   instead of only InputStream. Thanks to Mark Womack for submitting
+   the relevant patch.</action>
+
+ <action>Corrected the restart bug in DailyRollingFileAppender. Thanks to
+   Jim Moore for supplying the relevant patch.</action>
+</release>
+
+  <release version="1.1.3" date="2001-06-19" description="Added missing namespace and reduced size of log4j-core.jar.">
+
+ <action action="add">Add a missing namespace declaration in the log4j:configuration
+   element in log4j.dtd. The missing declaration caused the new
+   generation of namespace aware parsers to barf when parsing log4j
+   configuration files.</action>
+
+ <action>Reduced the size of log4j-core.jar to 78KB.</action>
+
+ <action>Minor documentation changes.</action>
+
+  </release>
+
+  <release version="1.1.2" date="2001-06-07" description="Default initialization improvements">
+   <action>Corrected a problem with the static initializer of the Category
+   class which would use the wrong class loader to search for the
+   default configuration file.  The associated search algorithm has
+   been also simplified. Nevertheless, the preferred method to specify
+   the automatic configuration file is by setting the
+   log4j.configuration system property.</action>
+
+ <action>Documentation improvements. Added a new section to the manual
+   explaining the default initialization procedure</action>
+ 
+ <action>Enhancements to the org.apache.log4j.examples.appserver package.</action>
+
+ <action>Corrected a bug in the way the NTEventLogAppender printed
+   exceptions.</action>
+      </release>
+
+      <release version="1.1.1" date="2001-05-20" description="Added custom priority support to PropertyConfigurator, SMTPAppender visibility changes.">
+ <action action="add">Add missing custom priority support in PropertyConfigurator.</action>
+
+<action>Made a number of fields protected instead of default access in
+   SMTPAppender.</action>
+    </release>
+
+    <release version="1.1" date="2001-05-19" description="Minor documentation changes">
+
+ <action>This release has the same code as 1.1b7. It differs only in a few minor
+   documentation changes.</action>
+     </release>
+
+    <release version="1.1b7" date="2001-05-09">
+<action>Made BasicConfigurator disable methods static as they were in log4j
+   1.0.4. Thanks to Francisco Marin for reporting the bug.</action>
+
+ <action issue="1505">Corrected a two related deadlock problems introduced while fixing
+   bug 1505. Thanks to joelr@viair.com for reporting the problem.</action>
+
+ <action issue="1686">The configureAndWatch methods in Configurators did not close the
+   configuration file, preventing its editing.</action>
+
+<action>In DOMConfigurator.setParameter special character conversion now
+   precedes variable substitution. This change was suggested by Steven
+   Velez. The vast majority of users should be oblivious to it.</action>
+
+<action>The TextPaneAppender is no longer maintained and has been
+   removed.  It is still available under the contribs/
+   directory. This change has been discussed in the log4j mailing
+   lists and no one objected to the removal of the TextPaneAppender
+   class.</action>
+        </release>
+
+   <release version="1.1b6" date="2001-04-26">
+<action issue="1505">Aaron Greenhouse from Carnegie Mellon SCS found a series of
+   multi-threading related bugs in Category and AsyncAppender. See bug
+   ids 1505 and 1507 in our bug database for exemplary bug
+   reports. They are worth the detour.</action>
+ 
+ <action>InvalidJarIndexException is only available in JDK 1.3.  Referring
+   to this exception type caused log4j 1.1b5 to break on earlier JDKs.
+   We now avoid referring to it.</action>
+
+ <action action="add">Add PriorityRangeFilter by Simon Kitching. See the Threshold
+   option in AppenderSkeleton for a more convenient alternative.</action>
+     </release>
+
+  <release version="1.1b5" date="2001-04-22">
+<action>In HTMLLayout, the Title option sets the HTML document
+   title (&lt;title&gt;...&lt;title&gt;).</action>
+ 
+<action>Corrected an important performance bug in LocationInfo. Hein Couwet
+   and kr@it-practice.dk have independently identified the bug. This is
+   yet another example of the difference made by the number of eyeballs
+   studying source code.</action>
+
+ <action>Corrected the incorrect value returned by LocationInfo.getClassName
+   method when running under IBM Visual Age. Thanks to Mathias
+   Rupprecht for supplying the relevant patch.</action>
+ 
+ <action>Corrected a bug where the build.sh file in the distribution would be in
+   DOS CRLF format. Thanks to ma.darche@free.fr for reporting the
+   problem.</action>
+
+ <action>Corrected InvalidJarIndexException thrown in applets while
+   searching for the default log4j configuration file. Thanks to
+   Michael Lundahl for reporting this bug.</action>
+  
+ <action action="add">Add missing PropertySetterException class to log4j-core.jar.
+   Thanks to ma.darche@free.fr for reporting this bug.</action>
+   </release>
+
+   <release version="1.1b4" date="2001-04-20">
+<action>Mathias Bogaert observed that in version 1.1b3 the search algorithm
+   for the resource used in automatic log4j configuration was
+   different than in 1.0.x. Beta4 uses a more powerful mechanism which
+   is also compatible with 1.0.x.</action>
+
+ <action>Paul Glezen correctly observed that if log4j is deployed in a
+   client/server mode where multiple log4j clients log to a log4j
+   server, all hosts must be upgraded to version 1.1 in one go because
+   the internal LoggingEvent class used in client/server communication
+   changed in log4j 1.1.</action>
+ </release>
+
+  <release version="1.1b3" date="2001-04-18">
+ <action action="add">Add a RollingFileAppenderBeanInfo class that fakes the
+   maxFileSize JavaBeans property as a String type instead of a long.
+   This allows us to resuscitate setMaxFileSize(long) method that was
+   removed in 1.1b2 breaking 100% backward compatibility. This addition
+   restores 100% backward compatibility.</action>
+   </release>
+
+    <release version="1.1b2" date="2001-04-18">
+
+ <action>The directory structure has changed to better suit Jakarta
+   conventions</action>
+
+ <action action="add">Add a few jar files required at build time to build/lib so that
+   it is now possible to compile log4j out of the box.</action>
+
+ <action>Whenever a priority parameter is expected in a configuration file,
+   one can now use a custom priority class. See OptionConverter.toPriority
+   method for more information. Note that the &lt;priority> element in
+   log4j.dtd remains unaffected by this change.</action>
+
+ <action action="add">Add the setQuietMode(boolean) method to LogLog. In quiet mode
+   LogLog will not output anything even in case of errors.</action>
+
+ <action>Log4j components are now configured as JavaBeans. The setOption and
+   getOptionString methods have been deprecated in OptionHandler
+   interface which is implemented by most log4j components.</action>
+
+ <action>The stack trace of a throwable passed in a logging statement is not
+   parsed into a stack array which is serializable. This allows cascading of
+   log4j servers to properly propagate throwable information.</action>
+
+ <action>In XML configuration files, the &lt;configuration&gt; element has been
+   deprecated and was replaced by the &lt;log4j:configuration&gt; element.</action>
+
+ <action>The "log4j.configDebug" system property has been replaced with the
+   "log4j.debug" system property although it is still available.
+   Similarly, the "configDebug" attribute has been deprecated and
+   replaced with the "debug" attribute in log4j.dtd.</action>
+
+</release>
+
+  <release version="1.1b1" date="2001-02-23">
+ <action>Logging can now be disabled per Hierarchy. It can also be disabled
+   using configuration files using the "disable" directive.  The
+   "disableOverride" directive takes precedence over the "disable"
+   directive.  As a result of this change the disable family of
+   methods in BasicConfigurator has been deprecated and replaced by the same 
+   family of methods in the Hierarchy class.</action>
+
+ <action>The FileAppender has been split into three parts: WriterAppender,
+   ConsoleAppender and FileAppender. ConsoleAppender takes over the
+   console logging functionality of FileAppender. As a result support
+   for stream and console printing has been deprecated in FileAppender.</action>
+
+ <action>The FileAppender now correctly outputs the header and footer of its
+   layout. This problem was reported by too many users to list here.</action>
+
+ <action>Appenders and Layouts now get to see the raw message object in
+   LoggingEvent not just its rendered form. The access modifiers of
+   some LoggingEvent fields were changed so that they can be accessed
+   in less error-prone ways. Thanks to Jim Cakalic and Anders Kristens
+   for their valuable advice.</action>
+
+ <action action="add">Add getLayout(), getErrorHandler(), and getFilter() to the
+   Appender interface.</action>
+
+ <action action="add">Add getOption(key) method to the OptionHandler interface and modified
+   implementations of it as appropriate.</action>
+ 
+ <action action="add">Add the much awaited DailyRollingFileAppender.</action>
+
+ <action>The structure of the distribution changed somewhat. The log4j.jar
+   files can be found under dist/. The javadoc directory has been
+   moved to docs/api/. We are now totally dependent on ANT to perform
+   all the steps involved in creating a release, including
+   compilation, jar file creation, generation of the javadocs, and for
+   the creation of the distribution tar and zip files.</action>
+
+ <action>Removed org/apache/log4j/varia/ResilientFileAppender.java which was
+   bogus to begin with.</action>
+
+ <action>XMLLayout will now mark some output as &lt;![CDATA[ .. ]]&gt; so that it
+   does not get interpreted by the XML parser. This was suggested by
+   Mathias Bogaert like a long list of other fixes.</action>
+
+<action>Corrected a bug in CyclicBuffer.resize method that would not update the
+   next insertion point. Thanks to Ole Bulbuk for accurately reporting
+   the bug.</action>
+	
+<action>The LoggingEvent class now supports serialization of priorities
+   derived from the org.apache.log4j.Priority class.</action>
+ 
+<action>Improved the search method for finding the "log4j.properties" file in
+   the static initializer of Category class. Thanks to Calvin Chan for
+   supplying a better method.</action>
+
+<action>The code handling the FCQN (formerly instanceFQN) parameter was
+   cleaned up. There is now a well-established and simple manner for
+   sub-classes of Category (or wrapper classes) to define the FCQN
+   variable: just define a static variable, say FCQN, consisting of
+   the fully qualified class name of the subclass or wrapper, supply
+   this variable as an argument to forcedLog method if and when
+   the sub-class or wrapper invokes that method.</action>
+
+<action>Made the instanceFCQN an instance variable instead of a class
+   static in Category.java. In related move, the Category constructor
+   now takes an additional argument setting the instanceFCQN. This
+   makes life less miserable for Category subclasses.</action>
+
+<action>Corrected a bug in the OptionConverter.instantiateByClassName
+   method that would not return the defaultValue in case of error. Thanks
+   to Matthieu Verbert for identifying this bug.</action>
+
+<action>Corrected the missing stack trace in e-mails generated by the
+   SMTPAppender when using certain Layouts.</action>
+   		
+<action>Updated the "Adding Conversion Characters to PatternLayout"
+   document to reflect the latest changes to the code. Also added the
+   org/apache/log4j/examples/appserver directory containing the
+   associated example code.</action>
+
+ <action action="add">Add the BufferSize option to the AsyncAppender.</action>
+
+<action>Eliminated the SecurityExceptions thrown in Applets.  Thanks Timur
+   Zambalayev for reporting this bug.</action>
+
+<action>Fixed the erroneously thrown IOInterruptedException when the AsyncAppender
+   was closed. Thanks to Tom Palmer for accurately reporting this bug.</action>
+
+ </release>
+
+<release version="1.0.4" date="2001-01-12">
+
+<action>Corrected a serious bug in Hierarchy.java that would cause a
+   NullPointerException depending on the order of instantiation of
+   categories. Thanks to Wolfram Gewohn for reporting this bug.</action>
+
+<action>Corrected a bug in the getOptionsStrings method of SMTPAppender
+   that omitted to mention the EvaluatorClass option. Thanks to Mark
+   Balster for reporting this bug.</action>
+
+</release>
+<release version="1.0.3" date="2001-01-11">
+
+<action>Fixed a NullPointerException occurring in AsyncAppender after
+   invoking Category.shutdown. Thanks to Frank-Olaf Lohmann for
+   reporting this bug.</action>
+
+<action>Modified the OptionConverter.selectAndConfigure method to take an
+   extra argument of type Hierarchy. This method is used internally
+   and should not affect most users.</action>
+
+ <action action="add">Add the warn method to LogLog which is used internally by log4j
+   to report on itself.</action>
+
+<action>Displaced a number of HTML files under the docs directory. The new
+   structure is compatible with the jakarta site and results in a 
+   more consistent navigation experience.</action>
+
+<action>Made a few improvements in the javadocs.</action>
+
+</release>
+
+<release version="1.0.2" date="2001-01-11">
+ <action action="add">Add the missing build.inc file to the distribution. No code
+   changed.</action>
+</release>
+
+
+<release version="1.0.1" date="2001-01-10">
+
+<action>This version corrects some documentation and build script bugs;
+   code has not changed.</action>
+</release>
+
+<release version="1.0" date="2001-01-08">
+
+<action>Package hierarchy now starts at org.apache.log4j.</action>
+
+ <action action="add">Add the fatal() family of methods to the Category
+   class.  Moreover, the EMERG priority has been removed from the
+   Priority class.  This priority has been replaced by the FATAL
+   priority that is more widely accepted.  This change will
+   require EMERG log statements to be replaced by FATAL log
+   statements.  Assuming EMERG log statements are rare, this should
+   have a small but bearable impact on existing client code.
+ 
+   Moreover, the Unix Syslog priorities ALERT, CRIT and NOTICE are no
+   longer recognized. Support for these priorities was minimal and
+   few users should suffer from these changes.</action>
+
+<action>Removed the methods setRootPriority, getRootPriority as these
+   methods were redundant and had been previously deprecated.</action>
+
+<action>Removed the DOM Level 2 dependency in DOMConfigurator. This makes
+   log4j XML configurable using Sun's parser or Apache's Xerces.</action>
+
+<action>The static initializer of the Category class now takes the
+   log4j.configuration system property to search for its configuration
+   file. The type of the configurator used to parse the configuration
+   file depends on the value of the log4j.configuration system
+   property.</action>
+
+<action>Enhanced the PropertyConfigurator and DOMConfigurator to support
+   customisation of independent Hierarchy instances.  The
+   org.apache.log4j.net.SocketServer has been enhanced to take
+   advantage of this functionality. The old code of SocketServer has
+   been moved to SimpleSocketServer.</action>
+
+<action>Enhanced the PropertyConfigurator to support variable substitution
+   for all options *values* (but not keys!).</action>
+
+<action>Categories are now aware of the Hierarchy they are linked to. This
+   will provide a basis for several performance enhancements planned
+   for the future.</action>
+
+ <action action="add">Add support for object rendering. It is now possible to register
+   an object renderer for a given object type. When the given object
+   needs to be logged log4j will invoke the corresponding renderer to
+   transform the object into a String.
+
+   As a result of this enhancement, all the String forms of all the
+   printing methods such as debug(String), info(String) have been
+   removed as they are no longer necessary. This change should be
+   backward compatible but requires recompilation of old client
+   code. Thanks to Michael Smith for noting the recompilation
+   requirement.</action>
+ 
+ <action action="add">Add support for user defined category factories in the
+   PropertyConfigurator. Thus, it is now possible to configure log4j
+   with a properties file and still use custom Category
+   sub-classes. The DOMConfigurator had already a finer grain
+   support.</action>
+
+ <action action="add">Add the SMTPAppender that in case of an error or fatal event
+   sends an e-mail containing latest N logging events in its buffer,
+   where N is chosen by the user.</action>
+
+ <action action="add">Add the method getInstance(Class) to the Category class.</action>
+
+<action>Corrected a bug in configureAndWatch method of configurators that
+   would configure log4j only after an unnecessary delay.</action>
+</release>
+
+<release version="0.9.1" date="2000-11-30" description="the 19th public release">
+ 
+<action>Corrected a typo making NTEventLogAppender.dll register the wrong
+   category message file. Thanks to Peter Hayes for accurately
+   reporting this bug.</action>
+
+<action>The DOMConfigurator and PropertyConfigurator can now automatically
+   detect modified configuration files and re-read them.</action>
+ 
+ <action action="add">Add AsyncAppender which buffers log requests and serves them
+   at a later time. AsyncAppender can increase logging performance
+   tremendously if logging operations are interspersed with long
+   and blocking non CPU-intensive operations, typically I/O or network
+   access. For CPU intensive applications, using the AsyncAppender
+   will actualy degrade logging performance by 10 to 25 percent.</action>
+
+<action>The log4j.dtd has been modified to allow appenders to refer to
+   other appenders by IDREF.</action>
+  
+<action>The DOMConfigurator has been modified to take advantage of ID/IDREF
+   attributes when referring to appenders. This change requires a
+   DOM Level-2 API compliant parser. DOM Level-2 java bindings are
+   available at 
+   http://www.w3.org/TR/1999/WD-DOM-Level-2-19990923/java-binding.html.</action>
+
+ <action action="add">Add the configure(String filename) method to DOMConfigurator.
+   This method requires the presence of a JAXP compatible parser.
+     At this time, the only DOM2 and JAXP compatible parser seems to be
+   the Apache xerces parser.</action>
+	
+ <action action="add">Add the PriorityMatchFilter allowing filtering by exact priority
+   match. This was a common request by users.</action>
+
+<action>The configuration of a category is now an atomic operation. This
+   ensures that log requests are not lost while configuration is in
+   progress. Anders Kristensen was to first to observe the potential
+   problems in non-atomic configurations.</action>
+</release>
+
+<release version="0.9.0" date="2000-11-20" description="the 18th public release">
+
+<action>The "log4j" element has been renamed to "configuration" in the
+   log4j DTD. This change requires that log4j configuration files
+   written in XML be modified. Since the log4j element figures only
+   once in the XML file, this change should take little time.</action>
+
+<action>ResourceBundles are now category instance specific and no longer
+   class static.  Moreover, like other properties resource bundles
+   are inherited from the category hierarchy.</action>
+
+<action>The jar files log4j.jar and log4j-full.jar now contain versioning
+   information in their respective manifest files.</action>
+
+<action>Corrected an inconsistency in the NTEventLogAppender which broke it.</action>
+
+<action>Fixed a bug where configuration files were not parsed correctely
+   due to trailing spaces in option values as returned by
+   java.util.Properties. Trailing spaces are now removed from option
+   values. This bug was quite disconcerting because the
+   trailing spaces cannot be seen without careful examination of the
+   configuration file.</action>
+
+ <action action="add">Add the XMLLayout.
+  
+   The output of the XMLLayout consists of a series of log4j:event
+   elements. It does not output a complete XML file. The output is designed to 
+   be included as an external entity to form a well-formed XML file.</action>
+
+ <action action="add">Add a new abstract class org.log4j.helpers.DateLayout. The TTCCLayout
+   now extends DateLayout.</action>
+
+<action>Corrected a rather subtle performance bug in the buffer management code
+   in PatternLayout. Thanks to Vladislav Dutov and Constantine
+   A. Plotnikov for for insisting on the correction of this bug.</action>
+
+<action>Created a new package called org.log4j.spi. This new package
+   holds classes that are hidden from the casual user but are needed
+   to extend log4j.</action>
+   
+ <action action="add">Add org.log4j.varia.ExternallyRolledFileAppender to handle
+   externally triggered file rollovers.</action>
+
+ <action action="add">Add support for multiple hierarchy trees.</action>
+
+<action>PatternLayout can now be  subclassed to support new conversion
+   patterns.</action>
+
+<action>Extended the DOMConfigurator and the log4j DTD to properly handle
+   sub-classing of Category and Priority classes.
+   There have been also minor adjustments to other classes to handle
+   sub-classing. These changes should be invisible to users. 
+
+   All categories except the root category can be sub-classed and also
+   assigned priorities sub-classing org.log4j.Priority.
+
+   The root category always exists and CANNOT be subclassed.
+
+   The ProppertyConfigurator remains unchanged. Thus, it does not
+   handle extensions of the Category class.</action>
+
+ <action action="add">Add filter support in appenders. The DOMConfigurator and the
+   log4j.dtd have been enhanced to support filters.</action>
+
+ <action action="add">Add error handling support to appenders. The DOMConfigurator and the
+   log4j.dtd have been enhanced to support filters.</action>
+
+ <action action="add">Add support for correct interpretation of location information in
+   IBM's Visual Age environment. Thanks to Wolf Siberski for supplying
+   the relevant patch.</action>
+
+ <action action="add">Add getAdditivity method to Category. This feature was requested
+   by Constantin Mitran. (mitran at ecircle.de)</action>
+</release>
+
+<release version="0.8.5b" date="2000-08-27">
+
+<action>Corrected multiple bugs in default initialization code of
+   Category class. Thanks to Jeff Turner for identifying and supplying
+   corrective patches.</action>
+</release>
+
+<release version="0.8.5a" date="2000-08-24">
+
+ <action action="add">Add the %n conversion character to PatternLayout so that a line
+   separator can be specified in a platform independent way.</action>
+ 
+<action>In 0.8.5 internal Priority integer values were decoupled from the
+   Unix Syslog values. This broke SyslogAppedder. A new function
+   Priority.toSyslogInt is introduced to solve this bug.</action>
+
+<action>Corrected a bug where the internal priority integer</action>
+</release>
+
+<release version="0.8.5." date="2000-08-23">
+
+<action>All log4j internal output is now prepended with the string
+   "log4j: ". This makes is easier to differentiate log4j internal
+   logs from messages output by other sources.</action>
+
+<action>Sub-classes of Category class must now specify their fully
+   qualified name when constructing logging events. This allows the %C
+   conversion specifier in PatternLayout to work properly even with 
+   sub-classes or wrappers of Category.</action>
+  
+ <action action="add">Add the method disableDebug to BasicConfigurator. This method
+   disables all print requests of debug priority regardless its
+   category. Similar methods disableInfo, disable, disableAll and
+   enableAll have also been added. Disable type methods can be
+   overriden by setting the log4j.disableOverride system property.
+
+   Calling BasicConfigurator.disableInfo is equivalent to the now
+   deprecated flagAsShippedCode method.</action>
+
+<action>Given the above changes, the system property
+   log4j.shippedCodeFlagOverride is no longer honored.</action>
+
+<action>It is now possible to sub-class Category. The sub-classes may
+   continue to adhere to the category hierarchy. This was a frequently
+   requested feature.</action>
+
+<action>Corrected a problem with the additivity flag being ignored in
+   categories without appenders. This bug was discovered by Anders
+   Kristensen.</action>
+
+ <action action="add">Add a method BasicConfigurator.resetConfiguration to reset the
+   log4j environment. This method should be used sparingly.</action>
+
+<action>At the initialization of the Category class, the file
+   log4j.properties will now be searched from the search path used to
+   load classes. If the file can be found, then it is fed to the
+   PropertyConfigurator.configure(java.net.URL) method.</action>
+
+<action>Failing to access system properties within the static initializer
+   of BasicConfigurator class is no longer reported as an error but as
+   a debug message. Thanks to Gilles Schlienger for reporting this
+   problem with applets.</action>
+
+<action>Corrected a bug which caused infinite loops when using conversion
+   patterns with a single element, fortunately under very rare
+   circumstances. This bug was first reported by Igor Potraev, the
+   author of log4p. It was independently reported by Joe Haberl from
+   IBM Global Services.</action>
+ 
+ <action action="add">Add a mechanism to lazily remove references to dead threads in
+   the NDC class. Indeed, in previous versions calling NDC.pop within
+   a thread but forgetting to call to NDC.remove before exiting (that
+   thread) resulted in a memory leak.</action>
+
+<action>Corrected a huge memory leak in SocketAppender. This leak was due
+   to the ObjectOutputStream indefinitely holding a reference for each
+   written to the stream. Thanks to Dan MacDonald for very accurately
+   describing this bug.</action>
+
+<action>The log and l7dlog methods in Category no longer ignore the shipped
+   code flag. This bug was reported by Mario Schomburg.</action>
+
+ <action action="add">Add missing NDC information to LoggingEvent.writeObject
+   method.</action>
+
+<action>Corrected handling of SocketException in SocketNode. Thanks to
+   Gerald Gutierez (ggutierez@emobiledata.com) for reporting this and
+   the previous problem.</action>
+
+<action>Phased out custom shell scripts to build java documentation and jar
+   files in favor of Jakarta's ANT. It was becoming a nuisance to keep
+   the ANT build file in sync with the custom shell scripts.</action>
+
+</release>
+  
+
+<release version="0.8.4d" date="2000-05-11">
+ 
+<action>The NT EventViewer no longer complains about missing message 4096.</action>
+
+<action>Minor corrections in documentation.</action>
+
+ <action action="add">Add missing icons GIFs into the distribution.</action>
+
+<action>SocketNode now attempts to close the socket when exiting. Thanks to
+   Moses Hohman (mmhohman@rainbow.uchicago.edu) for noting this.</action>
+ 
+<action>Removed the com.ibm.log4j from the javadoc directory. This seems to
+   confuse VAJ. Thanks to Steve Ashcroft for reporting this problem.</action>
+</release>
+     
+<release version="0.8.4c" date="2000-05-05">
+
+<action>As a result of the infinite loop problem (see next item), added
+   over 800 new test cases to stress-test the code in CategoryFactory
+   class where category creation occurs.</action>
+ 
+<action>Under certain rare circumstances the Category.getInstance method
+   entered an infinite loop. Thanks to Mario Schomburg from IBM Global
+   Services / Hannover for identifying this problem and proposing a
+   patch.</action>
+
+<action>DOMConfigurator and the log4j.dtd were out of sync on the type of
+   the priority directive. As a result, priority directives all
+   defaulted to DEBUG. Thanks to Peter (petervt@users.sourceforge.net)
+   for accurately reporting this bug.</action>
+ 
+<action>Minor additions to the FAQ.</action>
+
+ <action action="add">Add the NumberCruncher example showing how the NDC class can be
+   used to distinguish output from different clients.</action>
+ 
+ <action action="add">Add the %x conversion specifier to the TTCC_CONVERSION_PATTERN in
+   the PatternLayout class. This is consistent expected output of
+   Trivial.java example. Thanks to Jerome (schrom@users.sourceforge.net)
+   for reporting this bug.</action>
+
+</release>
+
+      <release version="0.8.4b" date="2000-05-03">
+
+<action>The value of the additivity option would not be parsed properly by
+   the ProperytConfigurator if the line containing the option
+   contained trailing spaces.</action>
+</release>
+    
+<release version="0.8.4a" date="2000-05-03">
+
+<action>The localized logging methods (l7dlog) omitted priority based
+   evaluation and erroneously logged all requests. </action>
+
+</release>
+
+      <release version="0.8.4" date="2000-05-01">
+
+<action>The close method was added to the Appender interface allowing
+   appender implementations to release any resources they may have
+   allocated.</action>
+ 
+<action>The package naming scheme of changed from "com.ibm.log4j.*" to
+   "org.log4j.*".  The new naming reflects the open source nature of
+   the project and is consistent with the URL http://www.log4j.org.</action>
+ 
+ <action action="add">Add internationalization support. See the newly introduced l7dlog
+   methods in Category class.</action>
+
+<action>In the FileAppender, the File option now admits variable
+   substitution.  For example, if "java.home" system property is set
+   to /home/xyz and the File option is given the value
+   "%{java.home}/test.log", then File option will be interpreted as
+   "/home/xyz/test.log".
+
+   Thanks to Avy Sharell (sharell@online.fr) for contributing this
+   feature.</action>
+   
+<action>SocketAppender is now officially part of the package. It is capable
+   of sending logging events to a remote SocketNode. The SocketNode
+   logs events according to server (local) policy. For example, a
+   client can log events to a local file and also send them to a
+   remote server (a SocketNode). This server can log the event to any
+   number of files, to the console, to any number of TextPaneAppenders
+   and even re-transmit the event to another server, and so forth.
+
+   This paradigm is common in most logging systems, e.g. Syslog and NT
+   Event Log.  Many thanks to Andrew Harrison for showing a way to
+   actually implement the paradigm.</action>
+ 
+<action>The Category.callAppenders method now accepts a LoggingEvent
+   instead of creating one itself. This was necessary to accommodate
+   events generated at a remote client.</action>
+ 
+<action>LoggingEvent class changed slightly to support remote logging. The
+   category field (a Category) has been replaced by the categoryName
+   field (a String).</action>
+</release>
+
+<release version="0.8.3b" date="2000-04-14">
+
+<action>Corrected a bug in Category.removeAppender(String) which would
+   never remove the desired appender. Thanks to Moses Hohman for
+   reporting this bug.</action>
+</release>
+ 
+ <release version="0.8.3a" date="2000-04-14">
+
+<action>Corrected a bug RollingFileAppender which would throw an uncaught
+   exception in case output file could not be opened for
+   writing. Thanks to Vinay Aggarwal for signaling this problem.</action>
+ </release>
+  
+<release version="0.8.3" date="2000-04-13">
+ 
+<action>The log4j.override key defined in BasicConfigurator has been
+   renamed to log4j.shippedCodeFlagOverride.</action>
+	
+<action>The getCurrentCategories method in the Category class would not
+   return the correct value. Thanks to Timothy Potter
+   (tpotter@agency.com) for reporting this problem.</action>
+ 
+<action>Appenders now admit a priority threshold as an option. All requests
+   with a priority lower than the appender's threshold priority are
+   ignored by the appender.</action>
+ 
+<action>Integrated Christopher Taylor's DOMConfigurator parsing XML
+   configuration files.</action>
+ 
+<action>The jar file log4j-net.jar has been replaced by log4j-full.jar.  It
+   contains DOMConfigurator.class in addition to the com.ibm.log4j.net
+   package.</action>
+ 
+ <action action="add">Add support for the ANT build tool. Thanks to Christopher Taylor
+   for supplying the build.xml file. ANT is available form
+   http://jakarta.apache.org.</action>
+ 
+<action>FileAppender's File option now accepts the values "System.out" or
+   "System.err". If one these values is suppiled in a configuration
+   file then the output is directed to the corresponding stream.
+   Moreover, the default constructor of FileAppender no longer sets
+   System.out as an output target nor does it define a default
+   layout.</action>
+      
+ <action action="add">Add caller class (C), caller file name (F), caller line number
+   (L), caller method name (M) conversion specifiers to the
+   PatternLayout class.  
+
+   The category conversion specifier now takes an optional precision
+   modifier allowing the user to control the number of right most
+   components in the category name that will be printed.
+
+   Corrected a bug occuring when the caller file name and line number
+   information were unavilable due to JIT compilation. In that case,
+   the PatternLayout would not properly use the rest of the available
+   location information.
+
+   The above enhancements and bug-fixes originate from comments by
+   Nelson Minar (nelson@monkey.org).</action>
+</release>
+ 
+<release version="0.8.2" date="2000-03-23">
+  
+<action>The SimpleLayout and TTCCLayout are replaced by the PatternLayout
+   in the log4j.jar file to keep its size small. These two layouts are
+   still part of the package.</action>
+  
+<action>The PatternLayout class is introduced. This new layout is
+   configurable using a conversion pattern which is parsed at
+   runtime. This allows the user to choose the output layout without
+   writing any code and only at a marginal performance cost compared
+   to the dedicated layouts such as SimpleLayout and TTCCLayout. The
+   PatternLayout also allows the user to determine minimum and maximum
+   field lengths.
+
+   The PatternLayout was written by Jim Cakalic
+   (jim_cakalic@na.biomerieux.com).</action>
+
+<action>All internal components now use LoggingEvent instances to specifiy
+   logging information.</action>
+   
+<action>Corrected a problem with a missing variable initialization in
+   SyslogAppender. This caused NullPinterException to be thrown when
+   logging exceptions. 
+
+   Added a default constructor to SyslogAppender. The lack of this
+   constructor caused PropertyConfigurator to throw a
+   java.lang.InstantiationException when the appender type was set to
+   be SyslogAppender.
+
+   Thanks to Yves Bossel (ybossel@opengets.cl) for accurately
+   identifying these bugs.
+
+   Modified some other related option handling code in
+   SyslogAppender.</action>
+      
+<action>Made NDC.get public access instead of default access. Thanks to
+   Y. J. Chun (monac@softonnet.com) for reporting this problem.</action>
+    
+<action>PropertyConfigurator now parses the additivity option for
+   categories.</action>
+ 
+<action>Corrected the value of the ADDITIVITY_PREFIX constant to match the
+   documented value, that is "log4j.additivity".</action>
+ 
+<action>Corrected a really bad bug where System.out would be closed when
+   PropertyConfigurator.configure was called. Thanks to Christopher
+   Taylor (cstaylor@pacbell.net) for tracking and reporting this bug.</action>
+
+<action>The PropertyConfiguator now prints debug messages if the flag
+   "log4j.configDebug" is defined in the configuration
+   file. Previously, only if the system property "log4j.configDebug"
+   was set would debug messages be printed. A question by Shawn
+   Kircher (skircher@vninet.com) induced this change.</action>
+
+<action>In AbsoluteTimeDateFormat, DateTimeDateFormat and ISO8601DateFormat
+   the separator between the seconds and milliseconds has been changed
+   to comma from full stop, in order to be compliant with ISO8601's
+   preferred sign. Thanks to Jim Cakalic
+   (jim_cakalic@na.biomerieux.com) for pointing out this discrepancy
+   with the standard.</action>
+
+<action>Corrected a bug where RollingFileAppender would not work
+   properly on Windows systems. Thanks to Heinz Richter
+   (heinz.richter@ecmwf.int) for noting this problem.</action>
+</release>
+       
+<release version="0.8.1" date="2000-02-19">
+ 
+<action>Core classes are now independent of the format of the options
+   file. Configurable core classes implement the OptionHandler
+   interface. OptionHandlers allows configurators to learn the
+   relevant option names. The configurator feeds option values to the
+   OptionHandler which configures itself.
+
+   As a result of these changes, the Init class has been broken down
+   to two separate classes: the BasicConfigurator and the
+   PropertiesConfigurator.
+
+   An XML configurator for 0.8.0 has been already written by
+   Christopher Taylor (cstaylor@pacbell.net).</action>
+
+ <action action="add">Add multiple appender support per category. The appenders follow
+   the category hierarchy, i.e. a child category inherits the
+   appenders of its parents.</action>
+   
+ <action action="add">Add an assert() method to the Category class.  Steven Marcus
+   (srnm@awaretechnologies.com) requested this addition.</action>
+ 
+<action>Automatic stack printing is no longer supported. This was an unused
+   and unreliable feature which unnecessarily complicated the
+   code.</action>
+
+<action>log4j now emits a single warning message when no appender to write to
+   could be found. This is typically the case when the user forgets
+   to configure the log4j environment.  This change was suggested by
+   Jim Cakalic (jim_cakalic@na.biomerieux.com).</action>
+
+<action>RollingFileAppender adds file roll over capability-implemented by
+   Heinz Richter (heinz.richter@ecmwf.int).</action>
+   
+<action>Corrected a bug where a java.lang.NoClassDefFoundError would be
+   thrown because com.ibm.log4j.helpers.SyslogTracerPrintWriter was
+   not included in log4j.jar. Thanks to Jim Cakalic (jim_cakalic@na.biomerieux.com)
+   for signaling this bug.</action>
+
+</release>
+
+<release version="0.8.0" date="2000-02-09">
+
+<action>There has been an important API changes. The Log, NOPLog and ILog
+   classes have been removed. Their functionality has been migrated to
+   the Category class.
+
+   In this release, instead of writing
+
+        ILog.debug(CAT, "Some message.");
+
+   one will write
+
+        CAT.debug("Some message.");
+
+   Arndt Schoenewald &lt;arndt@ibm23093i821.mc.schoenewald.de&gt; observed that
+   one could use the Category objects directly for logging.</action>
+   
+<action>It is no longer possible to instantiate Category objects directly.
+   Instead, one would use the factory method
+   Category.getInstance(String name). [***]
+
+   There category instantiation code was moved to CateogryFactory
+   class.  This class has package visibility and remains hidden from
+   the user. 
+
+   This stylistic improvement was suggested by Luke Blanshard
+   (luke@quiq.com).</action>
+
+<action>The Init class offers methods to initialize the log4j
+   environment. The Init.flagAsShippedCode method replaces the NOPLog
+   class.</action>
+   
+<action>Changes in the documentation to reflect the API changes.</action>
+
+<action>The NDC.cloneStack and inherit methods now tolerate null-stacks.</action>
+
+</release>
+
+<release version="0.7.5" date="2000-01-29">
+ 
+<action>TTCCLayout now takes a java.text.DateFormat object as a
+   parameter. The task of formatting the date is delegated to this
+   object.
+
+   Added four classes extending the java.text.DateFormat class. These
+   are RelativeTimeDateFormat, AbsoluteTimeDateFormat,
+   DateTimeDateFormat and ISO8601DateFormat classes.
+
+   Thanks to Arndt Schoenewald &lt;arndt@ibm23093i821.mc.schoenewald.de&gt;
+   for suggesting the ISO8601 date format.
+
+   These four classes can be parametrized with a particular
+   TimeZone. The TTCCLayout class now accepts a new configuration file
+   option called "TimeZone".
+
+   These four DateFormats are less malleable than the
+   java.text.SimpleDateFormat but they are also much faster.
+   
+   As a consequence of these changes, the setRelativeTime,
+   setDatePrinting methods in TTCCLayout have been removed along with
+   the associated configuration file options RelativeTime,
+   DatePrinting and TimePrinting.
+
+   The current code is inspired by code contributed by
+   Heinz Richter (heinz.richter@ecmwf.int).</action>
+   
+<action>The Log.emerg method has been deprecated. If you use statements of
+   EMERG priority, please use the Log.log form instead.</action>
+ 
+ <action action="add">Add getDepth and setMaxdepth methods to the NDC class. This makes
+   it easier to manage the nested context depth especially when
+   callees push but forget to pop.</action>
+ 
+<action>Moved the documentation in com/ibm/log4j/package.html to
+   com/ibm/log4j/overview.html. Many users were failing to read the
+   com/ibm/log4j/package.html description due to the unfortunate
+   layout of the text. Hopefully more people will read the package
+   overview in its present location.</action>
+
+ <action action="add">Add the com.ibm.log4j.net package for doing remote logging using
+   TCP sockets. This is still experimental code.</action>
+ 
+ <action action="add">Add new debug, .., emerg methods that do not require a category
+   parameter. They assume the "root" category, that is the decision to
+   whether print or not is made by comparing the statement's priority
+   with the default priority. </action>
+</release>
+    
+<release version="0.7.4" date="2000-01-21">
+ 
+ <action action="add">Add a new ILog.init method accepting an Appender and a
+   configuration file as parameters.</action>
+ 
+<action>FileAppender's setWriter and setFile methods where not instantiating
+   a new tracer.  This caused stack traces to be lost! SyslogAppender
+   had a similar problem.</action>
+
+<action>The FileAppender and SyslogAppender where not calling the layout's
+   readConfig method to set layout specific options. Thanks to Heinz
+   Richter (heinz.richter@ecmwf.int) for reporting this bug.</action>
+ 
+<action>Corrected a bug in Log.log() method where the appender was always
+   called with Priority.DEBUG.  Thanks to Oliver Boehm
+   (Oliver.Boehm@abaxx.de) for reporting this bug.</action>
+ </release>
+    
+<release version="0.7.3" date="2000-01-14">
+
+ <action action="add">Add Syslog compatibility. One can now choose (at runtime) between
+   remote syslog logging or file logging.
+   Syslog logging performance, although not appalling, is significantly
+   slower than file logging.</action>
+
+<action>Priority class was enriched with the previously missing priorities
+   NOTICE, ALERT and CRIT. The internal constants were also aligned with
+   the syslog counterparts.</action>
+
+ <action action="add">Add the Log.log method to support the new priorities.</action>
+   
+<action>TracerPrintWriter is now an independent class instead of being a
+   nested top-level class in Tracer.</action>
+
+<action>A number of writers, namely the SyslogWriter, SyslogQuietWriter,
+   SyslogTracerPrintWriter, were added to the helper package.</action>
+
+<action>Log.force method was removed. The various Appender.doAppend
+   implementations take over its functionality.</action>
+
+<action>FileAppender and SyslogAppender now use QuietWriter. QuietWriter is
+   a FilterWriter which hides exceptions and instead emits a single
+   warning message to System.err.</action>
+     
+<action>The layout is now an initialization parameter to the appender
+   type. Previously, the layout and the appender where independent
+   parameters to the Log constructor.</action>
+       
+<action>Many small improvements and corrections in the documentation.
+   Syslog related documentation remains sparse.</action>
+	
+<action>ILog.init() and ILog.init(String configFile) have been changed to
+   call ILog.init(,,,) with "com.ibm.log4j.Log.class" as the first
+   parameter. This makes it easier for people to get familiar with log4j.</action>
+	
+ <action action="add">Add missing files to the make directory. These files are useful
+   for those wishing to use the log4j make environment. Thanks to "Lee
+   Hall" &lt;LHall@JavaFoundry.com&gt; for reporting this omission.
+   Until recently the make environment failed to compile RMI stubs in
+   a single run. This nagging problem has been corrected thanks to
+   help from Thomas Eirich (IBM Zurich Research Lab).</action>
+ </release>
+	
+<release version="0.7.2" date="2000-01-04">
+ 
+<action>Some users have been rightly complaining about the verbosity
+   TTCCLayout's date output. The full date output is now shortened to
+   "dd MMM YYYY HH:mm:ss.SSS" for example, "06 Nov 1994 08:49:37.459"
+   In addition, users may now choose to print only time information,
+   as in "08:49:37.459".</action>
+	
+<action>The package now uses Writer instead of OutputStream as its output
+   target. This makes the log4j code smaller and easier to
+   understand at the cost of a slight performance degradation. As a
+   result of this change a few method names in FileAppender class were
+   changed.</action>
+
+<action>Preliminary experiments with SyslogAppedner and SyslogLayout show
+   that syslog compatibility is not far away. The difficultly is
+   adding syslog compatibility without making radical changes to the
+   current log4j architecture.</action>
+
+<action>Corrected a bug in the NOPLog.createInstance method which always
+   created a Log singleton even if the system property "log4j.logType"
+   was set to NOPLog.  Thanks to Robert Gottofrey
+   (Robert.Gottofrey@wdr.com) for reporting this bug and the
+   associated test case.</action>
+	
+<action>Removed the inconsistent "Layout" configuration option in
+   Log.readConfig().  This change should be transparent to most
+   users.</action>
+</release>
+	
+<release version="0.7.1" date="1999-12-20">
+ 
+<action>The LogCreationManager class has been removed. Its functionality
+   has been transfered to the createInstance and getInstance methods
+   in the Log and NOPLog classes. The new way of creating instances is
+   both simpler and less error prone although just as flexible.
+
+   As a result of these changes, the init family of methods in the
+   ILog class have been adjusted to the new way of creating the log
+   singleton.</action>
+   
+<action>The Appender interface has been introduced. The method of writing a
+   log statement into an output stream can now be varied by using a
+   different Appender. The new FileAppender offers the same
+   functionality that was previously part of the Log class.</action>
+
+<action>Changed the time format used in TTCCLayout to be of the form "Day,
+   dd MMM YYYY HH:mm:ss.SSS GMT" for example, "Sun, 06 Nov 1994
+   22:49:37.459 GMT". This format is almost the same as the format
+   specified in RFC 1123 and also the format recommended in RFC
+   2616. The only difference is the additional milliseconds
+   information.</action>
+	
+<action>The layout specific options were not read from the configuration
+   file due to a missing instruction. Many thanks to Vikram Sridharan
+   (Vikram.Sridharan@alysis.com) to patiently pointing out this
+   omission to an unbelieving maintainer.</action>
+</release>
+
+<release version="0.7.0" date="1999-12-16">
+
+<action>Version 0.7.0 and above will be distributed under the IBM Public
+   License (IPL). The IPL is an approved open source license (see
+   http://www.opensource.org/licenses/ for a list). It grants similar
+   rights to the previous ALPHAWORKS license agreement, in particular,
+   the right to redistribute and to modify the package.</action>
+
+<action>The Log class can now be parameterized with a Layout object.
+   Layouts determine the format of what is printed, where as the Log
+   class decides when to print and to where.
+
+   As a result of this modularization, the CGULog and NOPCGULog
+   classes no longer exists. CGULog class has been replaced with the
+   TTCCLayout (Time Thread Context Category). This should make it
+   easier to create new log output formats.
+   
+   Some time in the near future, the Log class will be further broken
+   down to allow different strategies for writing to output streams.</action>
+
+<action>Renamed com.ibm.util.log hierarchy to to com.ibm.log4j. I wanted to
+   do this for some time. I feel release 0.7.0 was the last
+   opportunity to do so. I am sorry for the the trouble caused by this
+   change.</action>
+
+<action>New NDC class. This class implements nested diagnostic contexts as
+   suggested by Neil Harrison in the article "Patterns for Logging
+   Diagnostic Messages" part of the book "Pattern Languages of Program
+   Design 3" edited by Martin et al. Nested diagnostic contexts is a
+   nifty feature that was missing up to now.
+
+   The StressNDC test class seems to break JDK 1.2.2 beta on AIX. On
+   Linux and NT using sun's JDK 1.2.2 it seem to work OK. In any case,
+   tests done with StressNDC and associated perl script seem to
+   indicate that the NDC class is bug-free.</action>
+
+<action>Corrected a date formatting bug in CGULog class where on some
+   environments the wrong month was printed. Thanks to Christopher
+   Williams (Christopher_Williams@mail.northgrum.com) for signaling
+   this bug.  Also changed the month format from a number to a three
+   letter abbreviation such as "Jan", "Feb", ..., "Dec". The new
+   format is unambiguous regardless of local date format.</action>
+</release>
+
+<release version="0.6.2" date="1999-12-08">
+ 	
+<action>Clearer documentation with still much room for improvement.</action>
+ 
+<action>Corrected a bug in the Tracer class which always used the Unix line
+   separator instead of the system specific separator. Thanks to
+   Vikram Sridharan (Vikram.Sridharan@alysis.com) for singaling this
+   bug.</action>
+
+<action>Corrected a runaway comment which gulped the CGULog.readConfig
+   method.</action>
+
+ <action action="add">Add the init family of methods to the ILog class to ease the
+   setup of a basic logging environment. Thanks to Mark Donszelmann
+   (Mark.Donszelmann@cern.ch) for this enhancement.</action>
+  
+<action>Just an hour after releasing version 0.6.1 detected and corrected a
+   bug where the Tracer class would correctly print Exception stack
+   trace but not the type of the Exception.  Replaced the
+   distribution on www.zurich.ibm.com without changing the version
+   number. I hope nobody is using the intermediary (and buggy) release
+   of 0.6.1.</action>
+
+</release>
+
+<release version="0.6.1" date="1999-11-16">
+<action>Better documentation with still much room for improvement.</action>
+	 
+<action>For consistence sake, added setDefaultPriority and
+   getDefaultPriority methods to the Category class and deprecated
+   setDefaultPriority in the Log.class.</action>
+
+<action>Corrected a major bug where if two categories were homonyms the
+   second instance would not be properly initialized.</action>
+
+<action>Increased the speed of Exception logging from about 4000
+   microseconds to about 1000. It seems that for some people Exception
+   logging is performance critical. Improved implementation is a
+   variant of Nocolai's (XNH@crisplant.com) implementation.</action>
+</release>
+
+<release version="0.6.0" date="1999-11-09">
+
+<action>Release of log4j 0.6.0 with incomplete documentation.</action>
+
+ <action action="add">Add a stress test program to debug the new Category class. It
+   turns out that the test program was as hard to get right as the
+   Category class. Given the favorable results of the stress test I am
+   quite confident that the new class is now bug free. This assumption
+   has been proven to be wrong. See above.</action>
+	
+<action>Created a new class called Category to manipulate categories
+   instead of plain Strings. The new class is just as easy to use.
+   However, the evaluation of whether to log or not to log is at least
+   10 times faster. The NOP class performance remain unaffected by the
+   change. (You can't improve on the performance of an empty function
+   call.)
+
+   Many thanks to Alex Blewitt "Alex.Blewitt@ioshq.com" for his
+   valuable comments. He was the first to observe that finding Strings
+   in a hash table was an expensive operation.
+		    
+   This change will require some recoding on your part. See the FAQ
+   for more details.</action>
+
+<action>Modified the force in Log and CGULog method to use a byte[] buffer
+   instead of a StringBuffer. The old code was clearer but the new one
+   is at least 25% faster.</action>
+
+ <action action="add">Add regression testing.</action>
+   
+<action>We now enforce a policy where the OutputStream set by
+   setOutputStream is a user managed resource whereas the OutputStream
+   opened using setLogFile is the Log class' responsibility.
+
+   The setLogFile method now closes any previous OutputStream if only
+   if opened through setLogFile. If the previous OutputStream was
+   opened by the user and set through setOutputStream the previous
+   OutputStream is untouched.
+
+   Similarly, setOutputStream will close any previous OutputStream if
+   and only if it was opened using setLogFile.
+</action>
+
+ <action action="add">Add a new method logOutputStreamExists to the Log class allowing
+   the programmer to check if there is already an opened stream before
+   trying to set a new one.  A stream can be opened as a byproduct of
+   reading the configuration file.</action>
+	
+<action>Changed the behavior of the (private) Log.Append method in case of
+   failure to write to the OutputStream.
+
+   Previously, in case of failure, we reverted to System.err.  Now, we
+   emit a warning message and discard all future log messages.  The
+   new behavior is consistent with our current unreliable logging
+   semantics.  The change prevents an otherwise functional program
+   from failing because the terminal is flooded with logging messages.</action>
+
+<action>Renamed the iLog to ILog to remain consistent with our class naming
+   scheme. The initial intention was to add ILog and deprecate
+   iLog. However, I am running CVS on a fat16 partition, causing
+   serious problems when files differ only in case.</action>
+
+<action>Corrected a bug where the LogFileName was not remembered. Thanks to
+   Jens for signaling this bug.</action>
+</release>
+
+<release version="0.5a" date="1999-10-28">
+<action>Now the programmer can choose to truncate the log file instead of
+   always appending to it.  This functionality was first requested and
+   intially implemented by "Jens Uwe Pipka" jens.pipka@gmx.de.</action>
+
+<action>setLogFile now opens the requested file instead of having the
+   Append function open it later. Cleaned up some related code in the
+   Append function.  Although nobody has requested it, there is still
+   no method to close the log file. This is harder to implement
+   reliably than it sounds.</action>
+
+<action>Simplified setLogOutputStream so that it does no longer return the
+   previously set OutputStream.</action>
+
+</release>
+
+<release version="0.5" date="1999-10-27">
+
+<action>Joe Walker (joe@eireneh.com) observed that the
+   LogCreationManager.getSingleton mechanism was cumbersome.  There is
+   now a new class iLog (indirect Log) which hides the need to call
+   getSingleton. Performance testing on my 233Mhz Thinkpad shows that
+   this indirection has small performance impact on non-logged calls
+   in the order of 40 nanoseconds. The impact on logged calls is
+   negligible.</action>
+	
+ <action action="add">Add a jar file to the distribution. The jar file contains only
+   the files you would need to use log but not other classes needed
+   for testing nor examples.</action>
+	
+<action>Corrected a bug where CGUNOPLog was not integrated to the Makefile.</action>
+	
+ <action action="add">Add new public methods isDebugEnabled and isInfoEnabled to allow
+   programmers to check whether a debug/info statement will be logged
+   without incurring the cost of message parameter construction. This
+   addition was suggested by Luke Blanshard Luke@quiq.com.</action>
+
+<action>Renamed the private method evaluate to isEnabled. Also made it
+   final with no apparent speed gains.  In addition, made the
+   Log.force method public.</action>
+	
+<action>New syntactic sugar debug, ..., emerg, methods to log objects.</action>
+
+<action>Modified the interface to deal with Throwables and not just
+   Exceptions.  My thanks to Luke Blanshard for signaling this "bug".</action>
+		
+ <action action="add">Add more tests to the LogPerformance class. In particular, to
+   test the influence of indirect debug calls.</action>
+
+ <action action="add">Add a "make" mini-tutorial for those who want to modify the code.</action>
+	
+<action>License updated to standard alphaWorks license allowing
+   modifications to source code. However, this license explicitly
+   requires that modifications be communicated back to alphaWorks.</action>
+
+</release>
+
+<release date="1999-10-15">
+<action>Initial availability on alphaWorks.  Refer to the FAQ for the lineage of the package.</action>
+</release>
+  </body>
+</document>
