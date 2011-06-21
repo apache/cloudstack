@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="XenServerJava"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="cloud-apache-log4j-extras-1.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-axis.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-backport-util-concurrent-3.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-bcprov-jdk16-1.45.jar"/>
@@ -34,5 +33,6 @@
 	<classpathentry exported="true" kind="lib" path="cloud-xstream-1.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="jetty-6.1.26.jar"/>
 	<classpathentry exported="true" kind="lib" path="jetty-util-6.1.26.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-log4j-extras.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,0 +1,397 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>log4j</groupId>
+  <artifactId>apache-log4j-extras</artifactId>
+  <packaging>bundle</packaging>
+  <version>1.1</version>
+  <name>Apache Extras Companion™ for Apache log4j™.</name>
+  <description>This companion provides additional appenders, filters and
+  other capabilities for version 1.2 of Apache log4j™.  Several of these were backported from
+  the abandoned Apache log4j 1.3 development effort.</description>
+  <url>http://logging.apache.org:80/log4j/companions/extras</url>
+  <issueManagement>
+    <system>Bugzilla</system>
+    <url>http://issues.apache.org/bugzilla/</url>
+  </issueManagement>
+  <ciManagement>
+  		<system>Gump</system>
+  		 <url>http://vmgump.apache.org/gump/public/logging-log4j-extras/logging-log4j-extras/index.html</url>
+  </ciManagement>
+<mailingLists>
+	<mailingList>
+		<name>log4j-user</name>
+		<subscribe>log4j-user-subscribe@logging.apache.org</subscribe>
+		<unsubscribe>log4j-user-unsubscribe@logging.apache.org</unsubscribe>
+		<post>log4j-user@logging.apache.org</post>
+		<archive>http://mail-archives.apache.org/mod_mbox/logging-log4j-user/</archive>
+		<otherArchives>
+			<otherArchive>http://marc.theaimsgroup.com/?l=log4j-user&amp;r=1&amp;w=2</otherArchive>
+		    <otherArchive>http://dir.gmane.org/gmane.comp.jakarta.log4j.user</otherArchive>
+		</otherArchives>
+	</mailingList>
+	<mailingList>
+		<name>log4j-dev</name>
+		<subscribe>log4j-dev-subscribe@logging.apache.org</subscribe>
+		<unsubscribe>log4j-dev-unsubscribe@logging.apache.org</unsubscribe>
+		<post>log4j-dev@logging.apache.org</post>
+		<archive>http://mail-archives.apache.org/mod_mbox/logging-log4j-dev/</archive>
+		<otherArchives>
+		    <otherArchive>http://marc.theaimsgroup.com/?l=log4j-dev&amp;r=1&amp;w=2</otherArchive>
+		    <otherArchive>http://dir.gmane.org/gmane.comp.jakarta.log4j.devel</otherArchive>
+		</otherArchives>
+	</mailingList>
+</mailingLists>
+<licenses>
+	<license>
+		<name>Apache License, Version 2.0</name>
+		<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		<distribution>repo</distribution>
+	</license>
+</licenses>
+<scm>
+	<connection>scm:svn:http://svn.apache.org/repos/asf/logging/log4j/companions/extras/tags/v1_1</connection>
+	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/logging/log4j/companions/extras/tags/v1_1</developerConnection>
+	<url>http://svn.apache.org/viewcvs.cgi/logging/log4j/companions/extras/tags/v1_1</url>
+</scm>
+<organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+</organization>
+<build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <workingDirectory>target</workingDirectory>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <source>1.4</source>
+            <target>1.4</target>
+	    <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+	  <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+                <manifestSections>
+                <manifestSection>
+                    <name>org.apache.log4j</name>
+                    <manifestEntries>
+                        <Implementation-Title>${project.name}</Implementation-Title>
+                        <Implementation-Version>${project.version}</Implementation-Version>
+                        <Implementation-Vendor>Apache Software Foundation</Implementation-Vendor>
+                    </manifestEntries>
+                </manifestSection>
+                </manifestSections>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>site</phase>
+            <id>untag-site</id>
+            <configuration>
+                <tasks>
+                    <taskdef name="replaceregexp" classname="org.apache.tools.ant.taskdefs.optional.ReplaceRegExp" />
+                    <replaceregexp file="target/site/source-repository.html" match="/tags/[^ &quot;'&lt;]*" replace="/trunk" flags="g" />
+                    <replaceregexp match="-- Generated by (.*) on .*--" replace="-- Generated by \1 --" flags="g">
+                           <fileset dir="target/site/apidocs" includes="**/*.html" />
+                     </replaceregexp>
+                </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <phase>post-site</phase>
+            <id>post-site</id>
+            <configuration>
+                <tasks>
+                   <ant target="post-site" />
+                </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <phase>site-deploy</phase>
+            <id>site-deploy</id>
+            <configuration>
+                <tasks>
+                   <ant target="site-deploy" />
+                </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>javadoc.resources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <tasks>
+                <copy todir="${project.build.directory}/apidocs/META-INF">
+                  <fileset dir="${basedir}">
+                    <include name="LICENSE" />
+                    <include name="NOTICE" />
+                  </fileset>
+                </copy>
+              </tasks>
+            </configuration>
+          </execution>
+        </executions>
+       <dependencies>
+          <dependency>
+            <groupId>ant</groupId>
+            <artifactId>ant-nodeps</artifactId>
+            <version>1.6.5</version>
+          </dependency>
+          <dependency>
+            <groupId>ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.6.5</version>
+          </dependency>
+          <dependency>
+            <groupId>ant-contrib</groupId>
+            <artifactId>ant-contrib</artifactId>
+            <version>1.0b2</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+	  <plugin>
+         <artifactId>maven-assembly-plugin</artifactId>
+         <configuration>
+           <descriptors>
+              <descriptor>src/assembly/bin.xml</descriptor>
+           </descriptors>
+           <appendAssemblyId>false</appendAssemblyId>
+           <goals>site:site</goals>
+        </configuration>
+        <executions>
+            <execution>
+                <phase>package</phase>
+                <goals>
+                    <goal>assembly</goal>
+                </goals>
+            </execution>
+        </executions>
+	 </plugin>
+      <plugin>
+        <artifactId>maven-site-plugin</artifactId>
+        <configuration>
+	   <templateFile>${basedir}/src/site/maven-site.vm</templateFile>
+        </configuration>
+        <executions>
+            <execution>
+		<phase>package</phase>		
+                <goals>
+                    <goal>site</goal>
+                </goals>
+            </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <docEncoding>UTF-8</docEncoding>
+        </configuration>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>jar</goal>
+                    <goal>javadoc</goal>
+                </goals>
+            </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>jar</goal>
+                </goals>
+            </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>rat-maven-plugin</artifactId>
+        <version>1.0-alpha-3</version>
+        <configuration>
+            <excludes>
+                <exclude>src/test/resources/org/apache/log4j/**/*.log</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.null</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.throwable</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.0</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.1</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.2</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.3</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.4</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.5</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.6</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.7</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.8</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.9</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.9</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.10</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.11</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.12</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.13</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.14</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.15</exclude>
+                <exclude>src/test/resources/org/apache/log4j/**/*.17</exclude>
+                <exclude>site/**/*-frame.html</exclude>
+                <exclude>site/**/*-summary.html</exclude>
+                <exclude>site/xref*/index.html</exclude>
+                <exclude>site/pmd.xml</exclude>
+                <exclude>site/cpd.xml</exclude>
+                <exclude>site/apidocs/**/*</exclude>
+                <exclude>site/testapidocs/**/*</exclude>
+                <exclude>site/css/maven-theme.css</exclude>
+            </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.1.0</version>
+        <extensions>true</extensions>
+        <configuration>
+            <instructions>
+                <Export-Package>org.apache.log4j.extras;version=1.1,
+			org.apache.log4j.filter;version=1.1,
+			org.apache.log4j.rolling;version=1.1,
+			org.apache.log4j.rule;version=1.1</Export-Package>
+		<Import-Package>!com.ibm.uvm.tools.*,*</Import-Package>
+                <Bundle-DocURL>http://logging.apache.org/log4j/companions/extras/index.html</Bundle-DocURL>
+            </instructions>
+        </configuration>
+      </plugin>
+
+    </plugins>
+</build>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.16</version>
+    </dependency>
+  </dependencies>
+  <reporting>
+
+    <excludeDefaults>true</excludeDefaults>
+    <plugins>
+      <plugin>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <!--  version 2.2 runs into http://jira.codehaus.org/browse/DOXIA-215  -->
+        <version>2.1</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>scm</report>
+              <report>dependencies</report>
+              <report>cim</report>
+              <report>issue-tracking</report>
+              <report>mailing-list</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>jxr-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.0-beta-9</version>
+          <configuration>
+              <goals>package site-deploy assembly:attached deploy</goals>
+          </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-changes-plugin</artifactId>
+      	<reportSets>
+          <reportSet>
+            <reports>
+              <report>changes-report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+        <configuration>
+        	<issueLinkTemplate>%URL%/show_bug.cgi?id=%ISSUE%</issueLinkTemplate>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <bottom><![CDATA[<p>Copyright ]]>© {currentYear} The Apache Software Foundation. Licensed under the <![CDATA[<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></p>
+<p>Apache Extras Companion for Apache log4j, Apache log4j and Apache are trademarks of the Apache Software Foundation.</p>]]></bottom> 
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+ <distributionManagement>
+    <repository>
+      <id>logging.repo</id>
+      <url>scp://people.apache.org/www/people.apache.org/builds/logging/repo/</url>
+    </repository>
+    <site>
+      <id>logging.site</id>
+      <url>scp://localhost/${user.dir}/target/site-deploy</url>
+    </site>
+  </distributionManagement>
+</project>

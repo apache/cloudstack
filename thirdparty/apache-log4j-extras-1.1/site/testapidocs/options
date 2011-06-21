@@ -1,0 +1,24 @@
+-classpath
+'/home/curta/trunk/target/checkout/target/classes:/home/curta/trunk/target/checkout/target/test-classes:/home/curta/.m2/repository/log4j/log4j/1.2.16/log4j-1.2.16.jar:/home/curta/.m2/repository/junit/junit/3.8.1/junit-3.8.1.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/home/curta/trunk/target/checkout/src/test/java'
+-author
+-bottom
+'<p>Copyright © 2010 The Apache Software Foundation. Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></p> <p>Apache Extras Companion for Apache log4j, Apache log4j and Apache are trademarks of the Apache Software Foundation.</p>'
+-charset
+'UTF-8'
+-d
+'/home/curta/trunk/target/checkout/target/site/testapidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'Apache Extras Companion™ for Apache log4j™. 1.1 Test API'
+-link
+'../apidocs'
+-use
+-version
+-windowtitle
+'Apache Extras Companion™ for Apache log4j™. 1.1 Test API'

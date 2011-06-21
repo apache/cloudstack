@@ -1,0 +1,33 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+INFO   (   Server:main      ) systemsunion.LoggingServer.SocketServer2 - Connected to client at RDDSOWE2/129.153.78.195
+INFO   (   Server:main      ) systemsunion.LoggingServer.SocketServer2 - Starting new socket node.
+INFO   (   Server:main      ) systemsunion.LoggingServer.SocketServer2 - Waiting to accept a new client.
+INFO   ( RDDSOWE2:main      ) systemsunion.SSTS.system                 - ClosedownController: starting
+INFO   (   Server:main      ) systemsunion.LoggingServer.SocketServer2 - Connected to client at RDDSOWE2/129.153.78.195
+INFO   (   Server:main      ) systemsunion.LoggingServer.SocketServer2 - Starting new socket node.
+INFO   (   Server:main      ) systemsunion.LoggingServer.SocketServer2 - Waiting to accept a new client.
+INFO   ( RDDSOWE2:main      ) systemsunion.SSTS.system                 - ClosedownController: starting
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing class file d:/SSDev/SSTS/components\Operator\Operator.class for component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing class file d:/SSDev/SSTS/components\Operator\Operator.class for component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing proxy class file d:/SSDev/SSTS/components\Operator\OperatorProxy.class for component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing class file d:/SSDev/SSTS/components\Operator\OperatorProxy.class for component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing test XML page file d:/SSDev/SSTS/components\Operator\Operator.XML for component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing class file d:/SSDev/SSTS/components\Operator\Operator.XML for component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing descriptor file d:/SSDev/SSTS/components\Operator\OperatorDeploymentDescriptor.XML for component Operator
+INFO   ( RDDSOWE2:AWT-EventQueue-0) systemsunion.SSTS.components             - Packing class file d:/SSDev/SSTS/components\Operator\OperatorDeploymentDescriptor.XML for component Operator

@@ -1,0 +1,57 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+GIL is a AMD Duron running at 800 MHz running W2000 and Sun's JDK 1.3.
+
+NullAppender:
+
+ 4  SimpleLayout
+ 4  PatternLayout "%p - %m%n"
+ 4  PatternLayout "%-5p - %m%n"
+ 10 TTCCLayout/RELATIVE
+ 10 PatternLayout "%r [%t] %-5p %c{2} %x - %m%n"
+ 10 PatternLayout "%r [%t] %-5p %.10c %x - %m%n"
+ 10 PatternLayout "%r [%t] %-5p %.20c %x - %m%n"
+ 9  PatternLayout "%r [%t] %-5p %c - %m%n"
+ 25 TTCCLayout/ISO8601
+ 28 PatternLayout "%d{ISO8601} [%t] %-5p %c %x - %m%n"
+ 58 PatternLayout "%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+ 1309 PatternLayout "%l - %m%n"
+ 1379 PatternLayout "%C.%M.%L - %m%n"
+
+FileAppender:
+
+ 26 SimpleLayout
+ 28 PatternLayout "%p - %m%n"
+ 47 TTCC/RELATIVE
+ 46 PatternLayout "%r [%t] %-5p %c %x - %m%n"
+ 70 TTCCLayout/ISO8601
+ 75 PatternLayout "%d{ISO8601} [%t] %-5p %c %x - %m%n"
+ 99 PatternLayout "%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+ 1524 PatternLayout "%l - %m%n"
+
+FileAppender: (ImmediateFlush=false)
+
+ 20 SimpleLayout
+ 21 PatternLayout "%p - %m%n"
+ 38 TTCC/RELATIVE
+ 38 PatternLayout "%r [%t] %-5p %c %x - %m%n"
+ 62 TTCCLayout/ISO8601
+ 67 PatternLayout "%d{ISO8601} [%t] %-5p %c %x - %m%n"
+ 86 PatternLayout "%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+
+Notice the small but noticable performance gain when forgoing
+immediate flush.

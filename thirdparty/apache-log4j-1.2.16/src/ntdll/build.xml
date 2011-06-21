@@ -1,0 +1,180 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+
+<!--
+Usage notes:
+
+To build NTEventLogAppender.dll using MinGW, place mingw\bin on path for Windows or install mingw
+package on other platforms.  Build will execute gcc and windres on Windows and
+i586-mingw32msvc-gcc and i586-mingw32msvc-windres on other platforms.
+
+To build NTEventLogAppender.dll using Microsoft tools, run the appropriate vcvars for the
+target platform and specify msbuild as the target on the ant command line.
+
+-->
+
+
+<project name="ntdll" default="build" basedir=".">
+   <property name="target.dir" value="target"/>
+   <property name="object.dir" value="target/obj"/>
+   <property name="src.dir" location="${basedir}"/>
+   <property name="failonerror" value="false"/>
+   <property name="failifexecutionfails" value="${failonerror}"/>
+   <property name="jni.include.dir" location="${java.home}/../include"/>
+   <property environment="env"/>
+   <condition property="jni.win32.include.dir" value="${jni.include.dir}/win32">
+	<available file="${jni.include.dir}/win32"/>
+   </condition>
+   <property name="jni.win32.include.dir" value="${env.JNI_WIN32_INCLUDE_DIR}"/>
+   <available property="jni_md.h_available" file="${jni.win32.include.dir}/jni_md.h"/>
+  
+   <target name="clean" description="Deletes generated files">
+        <delete dir="${target.dir}"/>
+   </target>
+
+    <!--
+        Regenerates resource files from EventLogCategories.mc.  Avoids
+        need for Microsoft Platform SDK unless you are modifying EventLogCategories.mc
+    -->
+    <target name="mc" description="Update EventLogCategories.rc from .mc">
+        <exec executable="mc">
+            <arg value="-h"/>
+            <arg file="${basedir}"/>
+            <arg value="-r"/>
+            <arg file="${basedir}"/>
+            <arg file="EventLogCategories.mc"/>
+        </exec>
+    </target>
+
+
+
+   <target name="windres">
+       <condition property="mingw-prefix" value="">
+          <os family="windows"/>
+       </condition>
+       <property name="mingw-prefix" value="i586-mingw32msvc-"/>
+        <mkdir dir="${object.dir}"/>
+    	<exec executable="${mingw-prefix}windres"
+	   dir="${src.dir}"
+	   resultproperty="windres_status"
+	   failonerror="${failonerror}"
+	   failifexecutionfails="${failifexecutionfails}">
+      		<arg value="-o"/>
+      		<arg file="${object.dir}/NTEventLogAppender.o"/>
+      		<arg file="${src.dir}/NTEventLogAppender.rc"/>
+    	</exec>
+        <condition property="windres_success">
+	     <equals arg1="${windres_status}" arg2="0"/>
+        </condition>
+        <condition property="do_compile">
+	    <and>
+                <isset property="windres_success"/>
+                <isset property="jni_md.h_available"/>
+            </and>
+        </condition>
+   </target>
+
+   <target name="compile" depends="windres" if="do_compile">
+    <fail unless="classes.dir">-Dclasses.dir=/path/to/log4j/classes must be specified</fail>
+    <javah class="org.apache.log4j.nt.NTEventLogAppender,org.apache.log4j.Priority"
+           destdir="${object.dir}"
+           classpath="${classes.dir}"/>
+    
+    <exec executable="${mingw-prefix}gcc">
+      <arg value="-Wall"/>
+      <arg value="-D_JNI_IMPLEMENTATION_"/>
+      <arg value="-Wl,--kill-at"/>
+      <arg value="-fno-rtti"/>
+      <arg value="-fno-exceptions"/>
+      <arg value="-s"/>
+      <arg value="-I${jni.win32.include.dir}"/>
+      <arg value="-I${jni.include.dir}"/>
+      <arg value="-I${object.dir}"/>
+      <arg value="-shared"/>
+      <arg file="${src.dir}/nteventlog.cpp"/>
+      <arg file="${object.dir}/NTEventLogAppender.o"/>
+      <arg value="-o"/>
+      <arg file="${target.dir}/NTEventLogAppender.dll"/>
+    </exec>
+   </target>
+
+   <target name="windres-echo" depends="windres" unless="windres_success">
+	<echo>${mingw-prefix}windres could not be found or failed, NTEventLogAppender.dll build skipped.</echo>
+   </target>
+
+   <target name="jni_md.h-echo" unless="jni_md.h_available">
+	<echo>${jni.win32.include.dir}/jni_md.h not found, NTEventLogAppender.dll build skipped.</echo>
+   </target>
+
+   <target name="build" depends="compile, windres-echo, jni_md.h-echo" description="Build with MinGW gcc">
+   </target>
+
+    <target name="rc">
+         <exec executable="rc"
+           dir="${src.dir}"
+           resultproperty="rc_status"
+           failonerror="${failonerror}"
+           failifexecutionfails="${failifexecutionfails}">
+               <arg file="${src.dir}/NTEventLogAppender.rc"/>
+         </exec>
+         <condition property="rc_success">
+          <equals arg1="${rc_status}" arg2="0"/>
+         </condition>
+         <condition property="do_cl">
+         <and>
+                 <isset property="rc_success"/>
+                 <isset property="jni_md.h_available"/>
+             </and>
+         </condition>
+    </target>
+
+    <target name="cl" depends="rc" if="do_cl">
+     <fail unless="classes.dir">-Dclasses.dir=/path/to/log4j/classes must be specified</fail>
+     <mkdir dir="${object.dir}"/>
+     <javah class="org.apache.log4j.nt.NTEventLogAppender,org.apache.log4j.Priority"
+            destdir="${object.dir}"
+            classpath="${classes.dir}"/>
+
+     <property name="object.location" location="${object.dir}"/>
+     <exec executable="cl" dir="${target.dir}">
+       <arg value="/MT"/>
+       <arg value="/D_JNI_IMPLEMENTATION_"/>
+       <arg value="/O2"/>
+       <arg value="/GR-"/>
+       <arg value="/LD"/>
+       <arg value="/I${jni.win32.include.dir}"/>
+       <arg value="/I${jni.include.dir}"/>
+       <arg value="/I${object.location}"/>
+       <arg value="/I${src.dir}"/>
+       <arg file="${src.dir}/nteventlog.cpp"/>
+       <arg file="${src.dir}/NTEventLogAppender.res"/>
+       <arg file="${src.dir}/NTEventLogAppender.def"/>
+       <arg value="advapi32.lib"/>
+       <arg value="/FeNTEventLogAppender.dll"/>
+     </exec>
+    </target>
+
+    <target name="rc-echo" depends="rc" unless="rc_success">
+     <echo>rc could not be found or failed, NTEventLogAppender.dll build skipped.</echo>
+    </target>
+
+
+   <target name="msbuild" depends="cl, rc-echo, jni_md.h-echo" description="Build using Microsoft tools">
+   </target>
+
+</project>

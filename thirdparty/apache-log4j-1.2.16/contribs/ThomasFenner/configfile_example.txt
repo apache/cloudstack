@@ -1,0 +1,52 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Here is a Configuration-file example, which can be used with the PropertyConfigurator :
+
+
+
+# Declare a appender variable named JDBC
+log4j.rootCategory=JDBC
+
+# JDBC is a class of JDBCAppender, which writes messages into a database
+log4j.appender.JDBC=JDBCAppender
+
+# 1. Database-options to connect to the database
+log4j.appender.JDBC.url=jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(COMMUNITY=tcp.world)(PROTOCOL=TCP)(Host=LENZI)(Port=1521))(ADDRESS=(COMMUNITY=tcp.world)(PROTOCOL=TCP)(Host=LENZI)(Port=1526)))(CONNECT_DATA=(SID=LENZI)))
+log4j.appender.JDBC.username=mex_pr_dev60
+log4j.appender.JDBC.password=mex_pr_dev60
+
+# 2. Connector-option to specify your own JDBCConnectionHandler
+#log4j.appender.JDBC.connector=MyConnectionHandler
+
+# 3. SQL-option to specify a static sql-statement which will be performed with every occuring message-event
+#log4j.appender.JDBC.sql=INSERT INTO LOGTEST (id, msg, created_on, created_by) VALUES (1, @MSG@, sysdate, 'me')
+
+# 4. Table-option to specify one table contained by the database
+log4j.appender.JDBC.table=logtest
+
+# 5. Columns-option to describe the important columns of the table (Not nullable columns are mandatory to describe!)
+log4j.appender.JDBC.columns=id_seq~EMPTY	id~ID~MyIDHandler	msg~MSG	created_on~TIMESTAMP	created_by~STATIC~Thomas Fenner (t.fenner@klopotek.de)
+
+# 6. Layout-options to define the layout of the messages (optional)
+#log4j.appender.JDBC.layout=org.apache.log4j.PatternLayout
+#log4j.appender.JDBC.layout.ConversionPattern=%m
+
+# 7. Buffer-option to define the size of the message-event-buffer (optional)
+#log4j.appender.JDBC.buffer=1
+
+# 8. Commit-option to define a auto-commitment (optional)
+#log4j.appender.JDBC.commit=Y
+

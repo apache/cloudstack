@@ -1,0 +1,913 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ====================================================
+function stressTest {
+  java org.apache.log4j.StressCategory $*
+  if [ "$?" = "0" ]
+  then
+    echo "Passed category stress test $index."
+    index=$index+1    
+  else
+    echo "Failed stress test with arguments [$*]"
+    exit	
+  fi  	
+}
+# ====================================================
+
+declare -i index
+index=1
+
+stressTest  a b
+stressTest  a a.b
+#
+stressTest  a b c
+stressTest  a b a.c
+stressTest  a b b.c
+stressTest  a a.b c
+stressTest  a a.b a.c
+stressTest  a a.b a.b.c
+#
+stressTest  a b c d
+stressTest  a b c a.d
+stressTest  a b c b.d
+stressTest  a b c c.d
+stressTest  a b a.c d
+stressTest  a b a.c a.d
+stressTest  a b a.c b.d
+stressTest  a b a.c a.c.d
+stressTest  a b b.c d
+stressTest  a b b.c a.d
+stressTest  a b b.c b.d
+stressTest  a b b.c b.c.d
+stressTest  a a.b c d
+stressTest  a a.b c a.d
+stressTest  a a.b c a.b.d
+stressTest  a a.b c c.d
+stressTest  a a.b a.c d
+stressTest  a a.b a.c a.d
+stressTest  a a.b a.c a.b.d
+stressTest  a a.b a.c a.c.d
+stressTest  a a.b a.b.c d
+stressTest  a a.b a.b.c a.d
+stressTest  a a.b a.b.c a.b.d
+stressTest  a a.b a.b.c a.b.c.d
+#
+stressTest  a b c d e
+stressTest  a b c d a.e
+stressTest  a b c d b.e
+stressTest  a b c d c.e
+stressTest  a b c d d.e
+stressTest  a b c a.d e
+stressTest  a b c a.d a.e
+stressTest  a b c a.d b.e
+stressTest  a b c a.d c.e
+stressTest  a b c a.d a.d.e
+stressTest  a b c b.d e
+stressTest  a b c b.d a.e
+stressTest  a b c b.d b.e
+stressTest  a b c b.d c.e
+stressTest  a b c b.d b.d.e
+stressTest  a b c c.d e
+stressTest  a b c c.d a.e
+stressTest  a b c c.d b.e
+stressTest  a b c c.d c.e
+stressTest  a b c c.d c.d.e
+stressTest  a b a.c d e
+stressTest  a b a.c d a.e
+stressTest  a b a.c d b.e
+stressTest  a b a.c d a.c.e
+stressTest  a b a.c d d.e
+stressTest  a b a.c a.d e
+stressTest  a b a.c a.d a.e
+stressTest  a b a.c a.d b.e
+stressTest  a b a.c a.d a.c.e
+stressTest  a b a.c a.d a.d.e
+stressTest  a b a.c b.d e
+stressTest  a b a.c b.d a.e
+stressTest  a b a.c b.d b.e
+stressTest  a b a.c b.d a.c.e
+stressTest  a b a.c b.d b.d.e
+stressTest  a b a.c a.c.d e
+stressTest  a b a.c a.c.d a.e
+stressTest  a b a.c a.c.d b.e
+stressTest  a b a.c a.c.d a.c.e
+stressTest  a b a.c a.c.d a.c.d.e
+stressTest  a b b.c d e
+stressTest  a b b.c d a.e
+stressTest  a b b.c d b.e
+stressTest  a b b.c d b.c.e
+stressTest  a b b.c d d.e
+stressTest  a b b.c a.d e
+stressTest  a b b.c a.d a.e
+stressTest  a b b.c a.d b.e
+stressTest  a b b.c a.d b.c.e
+stressTest  a b b.c a.d a.d.e
+stressTest  a b b.c b.d e
+stressTest  a b b.c b.d a.e
+stressTest  a b b.c b.d b.e
+stressTest  a b b.c b.d b.c.e
+stressTest  a b b.c b.d b.d.e
+stressTest  a b b.c b.c.d e
+stressTest  a b b.c b.c.d a.e
+stressTest  a b b.c b.c.d b.e
+stressTest  a b b.c b.c.d b.c.e
+stressTest  a b b.c b.c.d b.c.d.e
+stressTest  a a.b c d e
+stressTest  a a.b c d a.e
+stressTest  a a.b c d a.b.e
+stressTest  a a.b c d c.e
+stressTest  a a.b c d d.e
+stressTest  a a.b c a.d e
+stressTest  a a.b c a.d a.e
+stressTest  a a.b c a.d a.b.e
+stressTest  a a.b c a.d c.e
+stressTest  a a.b c a.d a.d.e
+stressTest  a a.b c a.b.d e
+stressTest  a a.b c a.b.d a.e
+stressTest  a a.b c a.b.d a.b.e
+stressTest  a a.b c a.b.d c.e
+stressTest  a a.b c a.b.d a.b.d.e
+stressTest  a a.b c c.d e
+stressTest  a a.b c c.d a.e
+stressTest  a a.b c c.d a.b.e
+stressTest  a a.b c c.d c.e
+stressTest  a a.b c c.d c.d.e
+stressTest  a a.b a.c d e
+stressTest  a a.b a.c d a.e
+stressTest  a a.b a.c d a.b.e
+stressTest  a a.b a.c d a.c.e
+stressTest  a a.b a.c d d.e
+stressTest  a a.b a.c a.d e
+stressTest  a a.b a.c a.d a.e
+stressTest  a a.b a.c a.d a.b.e
+stressTest  a a.b a.c a.d a.c.e
+stressTest  a a.b a.c a.d a.d.e
+stressTest  a a.b a.c a.b.d e
+stressTest  a a.b a.c a.b.d a.e
+stressTest  a a.b a.c a.b.d a.b.e
+stressTest  a a.b a.c a.b.d a.c.e
+stressTest  a a.b a.c a.b.d a.b.d.e
+stressTest  a a.b a.c a.c.d e
+stressTest  a a.b a.c a.c.d a.e
+stressTest  a a.b a.c a.c.d a.b.e
+stressTest  a a.b a.c a.c.d a.c.e
+stressTest  a a.b a.c a.c.d a.c.d.e
+stressTest  a a.b a.b.c d e
+stressTest  a a.b a.b.c d a.e
+stressTest  a a.b a.b.c d a.b.e
+stressTest  a a.b a.b.c d a.b.c.e
+stressTest  a a.b a.b.c d d.e
+stressTest  a a.b a.b.c a.d e
+stressTest  a a.b a.b.c a.d a.e
+stressTest  a a.b a.b.c a.d a.b.e
+stressTest  a a.b a.b.c a.d a.b.c.e
+stressTest  a a.b a.b.c a.d a.d.e
+stressTest  a a.b a.b.c a.b.d e
+stressTest  a a.b a.b.c a.b.d a.e
+stressTest  a a.b a.b.c a.b.d a.b.e
+stressTest  a a.b a.b.c a.b.d a.b.c.e
+stressTest  a a.b a.b.c a.b.d a.b.d.e
+stressTest  a a.b a.b.c a.b.c.d e
+stressTest  a a.b a.b.c a.b.c.d a.e
+stressTest  a a.b a.b.c a.b.c.d a.b.e
+stressTest  a a.b a.b.c a.b.c.d a.b.c.e
+stressTest  a a.b a.b.c a.b.c.d a.b.c.d.e
+#
+stressTest  a b c d e f
+stressTest  a b c d e a.f
+stressTest  a b c d e b.f
+stressTest  a b c d e c.f
+stressTest  a b c d e d.f
+stressTest  a b c d e e.f
+stressTest  a b c d a.e f
+stressTest  a b c d a.e a.f
+stressTest  a b c d a.e b.f
+stressTest  a b c d a.e c.f
+stressTest  a b c d a.e d.f
+stressTest  a b c d a.e a.e.f
+stressTest  a b c d b.e f
+stressTest  a b c d b.e a.f
+stressTest  a b c d b.e b.f
+stressTest  a b c d b.e c.f
+stressTest  a b c d b.e d.f
+stressTest  a b c d b.e b.e.f
+stressTest  a b c d c.e f
+stressTest  a b c d c.e a.f
+stressTest  a b c d c.e b.f
+stressTest  a b c d c.e c.f
+stressTest  a b c d c.e d.f
+stressTest  a b c d c.e c.e.f
+stressTest  a b c d d.e f
+stressTest  a b c d d.e a.f
+stressTest  a b c d d.e b.f
+stressTest  a b c d d.e c.f
+stressTest  a b c d d.e d.f
+stressTest  a b c d d.e d.e.f
+stressTest  a b c a.d e f
+stressTest  a b c a.d e a.f
+stressTest  a b c a.d e b.f
+stressTest  a b c a.d e c.f
+stressTest  a b c a.d e a.d.f
+stressTest  a b c a.d e e.f
+stressTest  a b c a.d a.e f
+stressTest  a b c a.d a.e a.f
+stressTest  a b c a.d a.e b.f
+stressTest  a b c a.d a.e c.f
+stressTest  a b c a.d a.e a.d.f
+stressTest  a b c a.d a.e a.e.f
+stressTest  a b c a.d b.e f
+stressTest  a b c a.d b.e a.f
+stressTest  a b c a.d b.e b.f
+stressTest  a b c a.d b.e c.f
+stressTest  a b c a.d b.e a.d.f
+stressTest  a b c a.d b.e b.e.f
+stressTest  a b c a.d c.e f
+stressTest  a b c a.d c.e a.f
+stressTest  a b c a.d c.e b.f
+stressTest  a b c a.d c.e c.f
+stressTest  a b c a.d c.e a.d.f
+stressTest  a b c a.d c.e c.e.f
+stressTest  a b c a.d a.d.e f
+stressTest  a b c a.d a.d.e a.f
+stressTest  a b c a.d a.d.e b.f
+stressTest  a b c a.d a.d.e c.f
+stressTest  a b c a.d a.d.e a.d.f
+stressTest  a b c a.d a.d.e a.d.e.f
+stressTest  a b c b.d e f
+stressTest  a b c b.d e a.f
+stressTest  a b c b.d e b.f
+stressTest  a b c b.d e c.f
+stressTest  a b c b.d e b.d.f
+stressTest  a b c b.d e e.f
+stressTest  a b c b.d a.e f
+stressTest  a b c b.d a.e a.f
+stressTest  a b c b.d a.e b.f
+stressTest  a b c b.d a.e c.f
+stressTest  a b c b.d a.e b.d.f
+stressTest  a b c b.d a.e a.e.f
+stressTest  a b c b.d b.e f
+stressTest  a b c b.d b.e a.f
+stressTest  a b c b.d b.e b.f
+stressTest  a b c b.d b.e c.f
+stressTest  a b c b.d b.e b.d.f
+stressTest  a b c b.d b.e b.e.f
+stressTest  a b c b.d c.e f
+stressTest  a b c b.d c.e a.f
+stressTest  a b c b.d c.e b.f
+stressTest  a b c b.d c.e c.f
+stressTest  a b c b.d c.e b.d.f
+stressTest  a b c b.d c.e c.e.f
+stressTest  a b c b.d b.d.e f
+stressTest  a b c b.d b.d.e a.f
+stressTest  a b c b.d b.d.e b.f
+stressTest  a b c b.d b.d.e c.f
+stressTest  a b c b.d b.d.e b.d.f
+stressTest  a b c b.d b.d.e b.d.e.f
+stressTest  a b c c.d e f
+stressTest  a b c c.d e a.f
+stressTest  a b c c.d e b.f
+stressTest  a b c c.d e c.f
+stressTest  a b c c.d e c.d.f
+stressTest  a b c c.d e e.f
+stressTest  a b c c.d a.e f
+stressTest  a b c c.d a.e a.f
+stressTest  a b c c.d a.e b.f
+stressTest  a b c c.d a.e c.f
+stressTest  a b c c.d a.e c.d.f
+stressTest  a b c c.d a.e a.e.f
+stressTest  a b c c.d b.e f
+stressTest  a b c c.d b.e a.f
+stressTest  a b c c.d b.e b.f
+stressTest  a b c c.d b.e c.f
+stressTest  a b c c.d b.e c.d.f
+stressTest  a b c c.d b.e b.e.f
+stressTest  a b c c.d c.e f
+stressTest  a b c c.d c.e a.f
+stressTest  a b c c.d c.e b.f
+stressTest  a b c c.d c.e c.f
+stressTest  a b c c.d c.e c.d.f
+stressTest  a b c c.d c.e c.e.f
+stressTest  a b c c.d c.d.e f
+stressTest  a b c c.d c.d.e a.f
+stressTest  a b c c.d c.d.e b.f
+stressTest  a b c c.d c.d.e c.f
+stressTest  a b c c.d c.d.e c.d.f
+stressTest  a b c c.d c.d.e c.d.e.f
+stressTest  a b a.c d e f
+stressTest  a b a.c d e a.f
+stressTest  a b a.c d e b.f
+stressTest  a b a.c d e a.c.f
+stressTest  a b a.c d e d.f
+stressTest  a b a.c d e e.f
+stressTest  a b a.c d a.e f
+stressTest  a b a.c d a.e a.f
+stressTest  a b a.c d a.e b.f
+stressTest  a b a.c d a.e a.c.f
+stressTest  a b a.c d a.e d.f
+stressTest  a b a.c d a.e a.e.f
+stressTest  a b a.c d b.e f
+stressTest  a b a.c d b.e a.f
+stressTest  a b a.c d b.e b.f
+stressTest  a b a.c d b.e a.c.f
+stressTest  a b a.c d b.e d.f
+stressTest  a b a.c d b.e b.e.f
+stressTest  a b a.c d a.c.e f
+stressTest  a b a.c d a.c.e a.f
+stressTest  a b a.c d a.c.e b.f
+stressTest  a b a.c d a.c.e a.c.f
+stressTest  a b a.c d a.c.e d.f
+stressTest  a b a.c d a.c.e a.c.e.f
+stressTest  a b a.c d d.e f
+stressTest  a b a.c d d.e a.f
+stressTest  a b a.c d d.e b.f
+stressTest  a b a.c d d.e a.c.f
+stressTest  a b a.c d d.e d.f
+stressTest  a b a.c d d.e d.e.f
+stressTest  a b a.c a.d e f
+stressTest  a b a.c a.d e a.f
+stressTest  a b a.c a.d e b.f
+stressTest  a b a.c a.d e a.c.f
+stressTest  a b a.c a.d e a.d.f
+stressTest  a b a.c a.d e e.f
+stressTest  a b a.c a.d a.e f
+stressTest  a b a.c a.d a.e a.f
+stressTest  a b a.c a.d a.e b.f
+stressTest  a b a.c a.d a.e a.c.f
+stressTest  a b a.c a.d a.e a.d.f
+stressTest  a b a.c a.d a.e a.e.f
+stressTest  a b a.c a.d b.e f
+stressTest  a b a.c a.d b.e a.f
+stressTest  a b a.c a.d b.e b.f
+stressTest  a b a.c a.d b.e a.c.f
+stressTest  a b a.c a.d b.e a.d.f
+stressTest  a b a.c a.d b.e b.e.f
+stressTest  a b a.c a.d a.c.e f
+stressTest  a b a.c a.d a.c.e a.f
+stressTest  a b a.c a.d a.c.e b.f
+stressTest  a b a.c a.d a.c.e a.c.f
+stressTest  a b a.c a.d a.c.e a.d.f
+stressTest  a b a.c a.d a.c.e a.c.e.f
+stressTest  a b a.c a.d a.d.e f
+stressTest  a b a.c a.d a.d.e a.f
+stressTest  a b a.c a.d a.d.e b.f
+stressTest  a b a.c a.d a.d.e a.c.f
+stressTest  a b a.c a.d a.d.e a.d.f
+stressTest  a b a.c a.d a.d.e a.d.e.f
+stressTest  a b a.c b.d e f
+stressTest  a b a.c b.d e a.f
+stressTest  a b a.c b.d e b.f
+stressTest  a b a.c b.d e a.c.f
+stressTest  a b a.c b.d e b.d.f
+stressTest  a b a.c b.d e e.f
+stressTest  a b a.c b.d a.e f
+stressTest  a b a.c b.d a.e a.f
+stressTest  a b a.c b.d a.e b.f
+stressTest  a b a.c b.d a.e a.c.f
+stressTest  a b a.c b.d a.e b.d.f
+stressTest  a b a.c b.d a.e a.e.f
+stressTest  a b a.c b.d b.e f
+stressTest  a b a.c b.d b.e a.f
+stressTest  a b a.c b.d b.e b.f
+stressTest  a b a.c b.d b.e a.c.f
+stressTest  a b a.c b.d b.e b.d.f
+stressTest  a b a.c b.d b.e b.e.f
+stressTest  a b a.c b.d a.c.e f
+stressTest  a b a.c b.d a.c.e a.f
+stressTest  a b a.c b.d a.c.e b.f
+stressTest  a b a.c b.d a.c.e a.c.f
+stressTest  a b a.c b.d a.c.e b.d.f
+stressTest  a b a.c b.d a.c.e a.c.e.f
+stressTest  a b a.c b.d b.d.e f
+stressTest  a b a.c b.d b.d.e a.f
+stressTest  a b a.c b.d b.d.e b.f
+stressTest  a b a.c b.d b.d.e a.c.f
+stressTest  a b a.c b.d b.d.e b.d.f
+stressTest  a b a.c b.d b.d.e b.d.e.f
+stressTest  a b a.c a.c.d e f
+stressTest  a b a.c a.c.d e a.f
+stressTest  a b a.c a.c.d e b.f
+stressTest  a b a.c a.c.d e a.c.f
+stressTest  a b a.c a.c.d e a.c.d.f
+stressTest  a b a.c a.c.d e e.f
+stressTest  a b a.c a.c.d a.e f
+stressTest  a b a.c a.c.d a.e a.f
+stressTest  a b a.c a.c.d a.e b.f
+stressTest  a b a.c a.c.d a.e a.c.f
+stressTest  a b a.c a.c.d a.e a.c.d.f
+stressTest  a b a.c a.c.d a.e a.e.f
+stressTest  a b a.c a.c.d b.e f
+stressTest  a b a.c a.c.d b.e a.f
+stressTest  a b a.c a.c.d b.e b.f
+stressTest  a b a.c a.c.d b.e a.c.f
+stressTest  a b a.c a.c.d b.e a.c.d.f
+stressTest  a b a.c a.c.d b.e b.e.f
+stressTest  a b a.c a.c.d a.c.e f
+stressTest  a b a.c a.c.d a.c.e a.f
+stressTest  a b a.c a.c.d a.c.e b.f
+stressTest  a b a.c a.c.d a.c.e a.c.f
+stressTest  a b a.c a.c.d a.c.e a.c.d.f
+stressTest  a b a.c a.c.d a.c.e a.c.e.f
+stressTest  a b a.c a.c.d a.c.d.e f
+stressTest  a b a.c a.c.d a.c.d.e a.f
+stressTest  a b a.c a.c.d a.c.d.e b.f
+stressTest  a b a.c a.c.d a.c.d.e a.c.f
+stressTest  a b a.c a.c.d a.c.d.e a.c.d.f
+stressTest  a b a.c a.c.d a.c.d.e a.c.d.e.f
+stressTest  a b b.c d e f
+stressTest  a b b.c d e a.f
+stressTest  a b b.c d e b.f
+stressTest  a b b.c d e b.c.f
+stressTest  a b b.c d e d.f
+stressTest  a b b.c d e e.f
+stressTest  a b b.c d a.e f
+stressTest  a b b.c d a.e a.f
+stressTest  a b b.c d a.e b.f
+stressTest  a b b.c d a.e b.c.f
+stressTest  a b b.c d a.e d.f
+stressTest  a b b.c d a.e a.e.f
+stressTest  a b b.c d b.e f
+stressTest  a b b.c d b.e a.f
+stressTest  a b b.c d b.e b.f
+stressTest  a b b.c d b.e b.c.f
+stressTest  a b b.c d b.e d.f
+stressTest  a b b.c d b.e b.e.f
+stressTest  a b b.c d b.c.e f
+stressTest  a b b.c d b.c.e a.f
+stressTest  a b b.c d b.c.e b.f
+stressTest  a b b.c d b.c.e b.c.f
+stressTest  a b b.c d b.c.e d.f
+stressTest  a b b.c d b.c.e b.c.e.f
+stressTest  a b b.c d d.e f
+stressTest  a b b.c d d.e a.f
+stressTest  a b b.c d d.e b.f
+stressTest  a b b.c d d.e b.c.f
+stressTest  a b b.c d d.e d.f
+stressTest  a b b.c d d.e d.e.f
+stressTest  a b b.c a.d e f
+stressTest  a b b.c a.d e a.f
+stressTest  a b b.c a.d e b.f
+stressTest  a b b.c a.d e b.c.f
+stressTest  a b b.c a.d e a.d.f
+stressTest  a b b.c a.d e e.f
+stressTest  a b b.c a.d a.e f
+stressTest  a b b.c a.d a.e a.f
+stressTest  a b b.c a.d a.e b.f
+stressTest  a b b.c a.d a.e b.c.f
+stressTest  a b b.c a.d a.e a.d.f
+stressTest  a b b.c a.d a.e a.e.f
+stressTest  a b b.c a.d b.e f
+stressTest  a b b.c a.d b.e a.f
+stressTest  a b b.c a.d b.e b.f
+stressTest  a b b.c a.d b.e b.c.f
+stressTest  a b b.c a.d b.e a.d.f
+stressTest  a b b.c a.d b.e b.e.f
+stressTest  a b b.c a.d b.c.e f
+stressTest  a b b.c a.d b.c.e a.f
+stressTest  a b b.c a.d b.c.e b.f
+stressTest  a b b.c a.d b.c.e b.c.f
+stressTest  a b b.c a.d b.c.e a.d.f
+stressTest  a b b.c a.d b.c.e b.c.e.f
+stressTest  a b b.c a.d a.d.e f
+stressTest  a b b.c a.d a.d.e a.f
+stressTest  a b b.c a.d a.d.e b.f
+stressTest  a b b.c a.d a.d.e b.c.f
+stressTest  a b b.c a.d a.d.e a.d.f
+stressTest  a b b.c a.d a.d.e a.d.e.f
+stressTest  a b b.c b.d e f
+stressTest  a b b.c b.d e a.f
+stressTest  a b b.c b.d e b.f
+stressTest  a b b.c b.d e b.c.f
+stressTest  a b b.c b.d e b.d.f
+stressTest  a b b.c b.d e e.f
+stressTest  a b b.c b.d a.e f
+stressTest  a b b.c b.d a.e a.f
+stressTest  a b b.c b.d a.e b.f
+stressTest  a b b.c b.d a.e b.c.f
+stressTest  a b b.c b.d a.e b.d.f
+stressTest  a b b.c b.d a.e a.e.f
+stressTest  a b b.c b.d b.e f
+stressTest  a b b.c b.d b.e a.f
+stressTest  a b b.c b.d b.e b.f
+stressTest  a b b.c b.d b.e b.c.f
+stressTest  a b b.c b.d b.e b.d.f
+stressTest  a b b.c b.d b.e b.e.f
+stressTest  a b b.c b.d b.c.e f
+stressTest  a b b.c b.d b.c.e a.f
+stressTest  a b b.c b.d b.c.e b.f
+stressTest  a b b.c b.d b.c.e b.c.f
+stressTest  a b b.c b.d b.c.e b.d.f
+stressTest  a b b.c b.d b.c.e b.c.e.f
+stressTest  a b b.c b.d b.d.e f
+stressTest  a b b.c b.d b.d.e a.f
+stressTest  a b b.c b.d b.d.e b.f
+stressTest  a b b.c b.d b.d.e b.c.f
+stressTest  a b b.c b.d b.d.e b.d.f
+stressTest  a b b.c b.d b.d.e b.d.e.f
+stressTest  a b b.c b.c.d e f
+stressTest  a b b.c b.c.d e a.f
+stressTest  a b b.c b.c.d e b.f
+stressTest  a b b.c b.c.d e b.c.f
+stressTest  a b b.c b.c.d e b.c.d.f
+stressTest  a b b.c b.c.d e e.f
+stressTest  a b b.c b.c.d a.e f
+stressTest  a b b.c b.c.d a.e a.f
+stressTest  a b b.c b.c.d a.e b.f
+stressTest  a b b.c b.c.d a.e b.c.f
+stressTest  a b b.c b.c.d a.e b.c.d.f
+stressTest  a b b.c b.c.d a.e a.e.f
+stressTest  a b b.c b.c.d b.e f
+stressTest  a b b.c b.c.d b.e a.f
+stressTest  a b b.c b.c.d b.e b.f
+stressTest  a b b.c b.c.d b.e b.c.f
+stressTest  a b b.c b.c.d b.e b.c.d.f
+stressTest  a b b.c b.c.d b.e b.e.f
+stressTest  a b b.c b.c.d b.c.e f
+stressTest  a b b.c b.c.d b.c.e a.f
+stressTest  a b b.c b.c.d b.c.e b.f
+stressTest  a b b.c b.c.d b.c.e b.c.f
+stressTest  a b b.c b.c.d b.c.e b.c.d.f
+stressTest  a b b.c b.c.d b.c.e b.c.e.f
+stressTest  a b b.c b.c.d b.c.d.e f
+stressTest  a b b.c b.c.d b.c.d.e a.f
+stressTest  a b b.c b.c.d b.c.d.e b.f
+stressTest  a b b.c b.c.d b.c.d.e b.c.f
+stressTest  a b b.c b.c.d b.c.d.e b.c.d.f
+stressTest  a b b.c b.c.d b.c.d.e b.c.d.e.f
+stressTest  a a.b c d e f
+stressTest  a a.b c d e a.f
+stressTest  a a.b c d e a.b.f
+stressTest  a a.b c d e c.f
+stressTest  a a.b c d e d.f
+stressTest  a a.b c d e e.f
+stressTest  a a.b c d a.e f
+stressTest  a a.b c d a.e a.f
+stressTest  a a.b c d a.e a.b.f
+stressTest  a a.b c d a.e c.f
+stressTest  a a.b c d a.e d.f
+stressTest  a a.b c d a.e a.e.f
+stressTest  a a.b c d a.b.e f
+stressTest  a a.b c d a.b.e a.f
+stressTest  a a.b c d a.b.e a.b.f
+stressTest  a a.b c d a.b.e c.f
+stressTest  a a.b c d a.b.e d.f
+stressTest  a a.b c d a.b.e a.b.e.f
+stressTest  a a.b c d c.e f
+stressTest  a a.b c d c.e a.f
+stressTest  a a.b c d c.e a.b.f
+stressTest  a a.b c d c.e c.f
+stressTest  a a.b c d c.e d.f
+stressTest  a a.b c d c.e c.e.f
+stressTest  a a.b c d d.e f
+stressTest  a a.b c d d.e a.f
+stressTest  a a.b c d d.e a.b.f
+stressTest  a a.b c d d.e c.f
+stressTest  a a.b c d d.e d.f
+stressTest  a a.b c d d.e d.e.f
+stressTest  a a.b c a.d e f
+stressTest  a a.b c a.d e a.f
+stressTest  a a.b c a.d e a.b.f
+stressTest  a a.b c a.d e c.f
+stressTest  a a.b c a.d e a.d.f
+stressTest  a a.b c a.d e e.f
+stressTest  a a.b c a.d a.e f
+stressTest  a a.b c a.d a.e a.f
+stressTest  a a.b c a.d a.e a.b.f
+stressTest  a a.b c a.d a.e c.f
+stressTest  a a.b c a.d a.e a.d.f
+stressTest  a a.b c a.d a.e a.e.f
+stressTest  a a.b c a.d a.b.e f
+stressTest  a a.b c a.d a.b.e a.f
+stressTest  a a.b c a.d a.b.e a.b.f
+stressTest  a a.b c a.d a.b.e c.f
+stressTest  a a.b c a.d a.b.e a.d.f
+stressTest  a a.b c a.d a.b.e a.b.e.f
+stressTest  a a.b c a.d c.e f
+stressTest  a a.b c a.d c.e a.f
+stressTest  a a.b c a.d c.e a.b.f
+stressTest  a a.b c a.d c.e c.f
+stressTest  a a.b c a.d c.e a.d.f
+stressTest  a a.b c a.d c.e c.e.f
+stressTest  a a.b c a.d a.d.e f
+stressTest  a a.b c a.d a.d.e a.f
+stressTest  a a.b c a.d a.d.e a.b.f
+stressTest  a a.b c a.d a.d.e c.f
+stressTest  a a.b c a.d a.d.e a.d.f
+stressTest  a a.b c a.d a.d.e a.d.e.f
+stressTest  a a.b c a.b.d e f
+stressTest  a a.b c a.b.d e a.f
+stressTest  a a.b c a.b.d e a.b.f
+stressTest  a a.b c a.b.d e c.f
+stressTest  a a.b c a.b.d e a.b.d.f
+stressTest  a a.b c a.b.d e e.f
+stressTest  a a.b c a.b.d a.e f
+stressTest  a a.b c a.b.d a.e a.f
+stressTest  a a.b c a.b.d a.e a.b.f
+stressTest  a a.b c a.b.d a.e c.f
+stressTest  a a.b c a.b.d a.e a.b.d.f
+stressTest  a a.b c a.b.d a.e a.e.f
+stressTest  a a.b c a.b.d a.b.e f
+stressTest  a a.b c a.b.d a.b.e a.f
+stressTest  a a.b c a.b.d a.b.e a.b.f
+stressTest  a a.b c a.b.d a.b.e c.f
+stressTest  a a.b c a.b.d a.b.e a.b.d.f
+stressTest  a a.b c a.b.d a.b.e a.b.e.f
+stressTest  a a.b c a.b.d c.e f
+stressTest  a a.b c a.b.d c.e a.f
+stressTest  a a.b c a.b.d c.e a.b.f
+stressTest  a a.b c a.b.d c.e c.f
+stressTest  a a.b c a.b.d c.e a.b.d.f
+stressTest  a a.b c a.b.d c.e c.e.f
+stressTest  a a.b c a.b.d a.b.d.e f
+stressTest  a a.b c a.b.d a.b.d.e a.f
+stressTest  a a.b c a.b.d a.b.d.e a.b.f
+stressTest  a a.b c a.b.d a.b.d.e c.f
+stressTest  a a.b c a.b.d a.b.d.e a.b.d.f
+stressTest  a a.b c a.b.d a.b.d.e a.b.d.e.f
+stressTest  a a.b c c.d e f
+stressTest  a a.b c c.d e a.f
+stressTest  a a.b c c.d e a.b.f
+stressTest  a a.b c c.d e c.f
+stressTest  a a.b c c.d e c.d.f
+stressTest  a a.b c c.d e e.f
+stressTest  a a.b c c.d a.e f
+stressTest  a a.b c c.d a.e a.f
+stressTest  a a.b c c.d a.e a.b.f
+stressTest  a a.b c c.d a.e c.f
+stressTest  a a.b c c.d a.e c.d.f
+stressTest  a a.b c c.d a.e a.e.f
+stressTest  a a.b c c.d a.b.e f
+stressTest  a a.b c c.d a.b.e a.f
+stressTest  a a.b c c.d a.b.e a.b.f
+stressTest  a a.b c c.d a.b.e c.f
+stressTest  a a.b c c.d a.b.e c.d.f
+stressTest  a a.b c c.d a.b.e a.b.e.f
+stressTest  a a.b c c.d c.e f
+stressTest  a a.b c c.d c.e a.f
+stressTest  a a.b c c.d c.e a.b.f
+stressTest  a a.b c c.d c.e c.f
+stressTest  a a.b c c.d c.e c.d.f
+stressTest  a a.b c c.d c.e c.e.f
+stressTest  a a.b c c.d c.d.e f
+stressTest  a a.b c c.d c.d.e a.f
+stressTest  a a.b c c.d c.d.e a.b.f
+stressTest  a a.b c c.d c.d.e c.f
+stressTest  a a.b c c.d c.d.e c.d.f
+stressTest  a a.b c c.d c.d.e c.d.e.f
+stressTest  a a.b a.c d e f
+stressTest  a a.b a.c d e a.f
+stressTest  a a.b a.c d e a.b.f
+stressTest  a a.b a.c d e a.c.f
+stressTest  a a.b a.c d e d.f
+stressTest  a a.b a.c d e e.f
+stressTest  a a.b a.c d a.e f
+stressTest  a a.b a.c d a.e a.f
+stressTest  a a.b a.c d a.e a.b.f
+stressTest  a a.b a.c d a.e a.c.f
+stressTest  a a.b a.c d a.e d.f
+stressTest  a a.b a.c d a.e a.e.f
+stressTest  a a.b a.c d a.b.e f
+stressTest  a a.b a.c d a.b.e a.f
+stressTest  a a.b a.c d a.b.e a.b.f
+stressTest  a a.b a.c d a.b.e a.c.f
+stressTest  a a.b a.c d a.b.e d.f
+stressTest  a a.b a.c d a.b.e a.b.e.f
+stressTest  a a.b a.c d a.c.e f
+stressTest  a a.b a.c d a.c.e a.f
+stressTest  a a.b a.c d a.c.e a.b.f
+stressTest  a a.b a.c d a.c.e a.c.f
+stressTest  a a.b a.c d a.c.e d.f
+stressTest  a a.b a.c d a.c.e a.c.e.f
+stressTest  a a.b a.c d d.e f
+stressTest  a a.b a.c d d.e a.f
+stressTest  a a.b a.c d d.e a.b.f
+stressTest  a a.b a.c d d.e a.c.f
+stressTest  a a.b a.c d d.e d.f
+stressTest  a a.b a.c d d.e d.e.f
+stressTest  a a.b a.c a.d e f
+stressTest  a a.b a.c a.d e a.f
+stressTest  a a.b a.c a.d e a.b.f
+stressTest  a a.b a.c a.d e a.c.f
+stressTest  a a.b a.c a.d e a.d.f
+stressTest  a a.b a.c a.d e e.f
+stressTest  a a.b a.c a.d a.e f
+stressTest  a a.b a.c a.d a.e a.f
+stressTest  a a.b a.c a.d a.e a.b.f
+stressTest  a a.b a.c a.d a.e a.c.f
+stressTest  a a.b a.c a.d a.e a.d.f
+stressTest  a a.b a.c a.d a.e a.e.f
+stressTest  a a.b a.c a.d a.b.e f
+stressTest  a a.b a.c a.d a.b.e a.f
+stressTest  a a.b a.c a.d a.b.e a.b.f
+stressTest  a a.b a.c a.d a.b.e a.c.f
+stressTest  a a.b a.c a.d a.b.e a.d.f
+stressTest  a a.b a.c a.d a.b.e a.b.e.f
+stressTest  a a.b a.c a.d a.c.e f
+stressTest  a a.b a.c a.d a.c.e a.f
+stressTest  a a.b a.c a.d a.c.e a.b.f
+stressTest  a a.b a.c a.d a.c.e a.c.f
+stressTest  a a.b a.c a.d a.c.e a.d.f
+stressTest  a a.b a.c a.d a.c.e a.c.e.f
+stressTest  a a.b a.c a.d a.d.e f
+stressTest  a a.b a.c a.d a.d.e a.f
+stressTest  a a.b a.c a.d a.d.e a.b.f
+stressTest  a a.b a.c a.d a.d.e a.c.f
+stressTest  a a.b a.c a.d a.d.e a.d.f
+stressTest  a a.b a.c a.d a.d.e a.d.e.f
+stressTest  a a.b a.c a.b.d e f
+stressTest  a a.b a.c a.b.d e a.f
+stressTest  a a.b a.c a.b.d e a.b.f
+stressTest  a a.b a.c a.b.d e a.c.f
+stressTest  a a.b a.c a.b.d e a.b.d.f
+stressTest  a a.b a.c a.b.d e e.f
+stressTest  a a.b a.c a.b.d a.e f
+stressTest  a a.b a.c a.b.d a.e a.f
+stressTest  a a.b a.c a.b.d a.e a.b.f
+stressTest  a a.b a.c a.b.d a.e a.c.f
+stressTest  a a.b a.c a.b.d a.e a.b.d.f
+stressTest  a a.b a.c a.b.d a.e a.e.f
+stressTest  a a.b a.c a.b.d a.b.e f
+stressTest  a a.b a.c a.b.d a.b.e a.f
+stressTest  a a.b a.c a.b.d a.b.e a.b.f
+stressTest  a a.b a.c a.b.d a.b.e a.c.f
+stressTest  a a.b a.c a.b.d a.b.e a.b.d.f
+stressTest  a a.b a.c a.b.d a.b.e a.b.e.f
+stressTest  a a.b a.c a.b.d a.c.e f
+stressTest  a a.b a.c a.b.d a.c.e a.f
+stressTest  a a.b a.c a.b.d a.c.e a.b.f
+stressTest  a a.b a.c a.b.d a.c.e a.c.f
+stressTest  a a.b a.c a.b.d a.c.e a.b.d.f
+stressTest  a a.b a.c a.b.d a.c.e a.c.e.f
+stressTest  a a.b a.c a.b.d a.b.d.e f
+stressTest  a a.b a.c a.b.d a.b.d.e a.f
+stressTest  a a.b a.c a.b.d a.b.d.e a.b.f
+stressTest  a a.b a.c a.b.d a.b.d.e a.c.f
+stressTest  a a.b a.c a.b.d a.b.d.e a.b.d.f
+stressTest  a a.b a.c a.b.d a.b.d.e a.b.d.e.f
+stressTest  a a.b a.c a.c.d e f
+stressTest  a a.b a.c a.c.d e a.f
+stressTest  a a.b a.c a.c.d e a.b.f
+stressTest  a a.b a.c a.c.d e a.c.f
+stressTest  a a.b a.c a.c.d e a.c.d.f
+stressTest  a a.b a.c a.c.d e e.f
+stressTest  a a.b a.c a.c.d a.e f
+stressTest  a a.b a.c a.c.d a.e a.f
+stressTest  a a.b a.c a.c.d a.e a.b.f
+stressTest  a a.b a.c a.c.d a.e a.c.f
+stressTest  a a.b a.c a.c.d a.e a.c.d.f
+stressTest  a a.b a.c a.c.d a.e a.e.f
+stressTest  a a.b a.c a.c.d a.b.e f
+stressTest  a a.b a.c a.c.d a.b.e a.f
+stressTest  a a.b a.c a.c.d a.b.e a.b.f
+stressTest  a a.b a.c a.c.d a.b.e a.c.f
+stressTest  a a.b a.c a.c.d a.b.e a.c.d.f
+stressTest  a a.b a.c a.c.d a.b.e a.b.e.f
+stressTest  a a.b a.c a.c.d a.c.e f
+stressTest  a a.b a.c a.c.d a.c.e a.f
+stressTest  a a.b a.c a.c.d a.c.e a.b.f
+stressTest  a a.b a.c a.c.d a.c.e a.c.f
+stressTest  a a.b a.c a.c.d a.c.e a.c.d.f
+stressTest  a a.b a.c a.c.d a.c.e a.c.e.f
+stressTest  a a.b a.c a.c.d a.c.d.e f
+stressTest  a a.b a.c a.c.d a.c.d.e a.f
+stressTest  a a.b a.c a.c.d a.c.d.e a.b.f
+stressTest  a a.b a.c a.c.d a.c.d.e a.c.f
+stressTest  a a.b a.c a.c.d a.c.d.e a.c.d.f
+stressTest  a a.b a.c a.c.d a.c.d.e a.c.d.e.f
+stressTest  a a.b a.b.c d e f
+stressTest  a a.b a.b.c d e a.f
+stressTest  a a.b a.b.c d e a.b.f
+stressTest  a a.b a.b.c d e a.b.c.f
+stressTest  a a.b a.b.c d e d.f
+stressTest  a a.b a.b.c d e e.f
+stressTest  a a.b a.b.c d a.e f
+stressTest  a a.b a.b.c d a.e a.f
+stressTest  a a.b a.b.c d a.e a.b.f
+stressTest  a a.b a.b.c d a.e a.b.c.f
+stressTest  a a.b a.b.c d a.e d.f
+stressTest  a a.b a.b.c d a.e a.e.f
+stressTest  a a.b a.b.c d a.b.e f
+stressTest  a a.b a.b.c d a.b.e a.f
+stressTest  a a.b a.b.c d a.b.e a.b.f
+stressTest  a a.b a.b.c d a.b.e a.b.c.f
+stressTest  a a.b a.b.c d a.b.e d.f
+stressTest  a a.b a.b.c d a.b.e a.b.e.f
+stressTest  a a.b a.b.c d a.b.c.e f
+stressTest  a a.b a.b.c d a.b.c.e a.f
+stressTest  a a.b a.b.c d a.b.c.e a.b.f
+stressTest  a a.b a.b.c d a.b.c.e a.b.c.f
+stressTest  a a.b a.b.c d a.b.c.e d.f
+stressTest  a a.b a.b.c d a.b.c.e a.b.c.e.f
+stressTest  a a.b a.b.c d d.e f
+stressTest  a a.b a.b.c d d.e a.f
+stressTest  a a.b a.b.c d d.e a.b.f
+stressTest  a a.b a.b.c d d.e a.b.c.f
+stressTest  a a.b a.b.c d d.e d.f
+stressTest  a a.b a.b.c d d.e d.e.f
+stressTest  a a.b a.b.c a.d e f
+stressTest  a a.b a.b.c a.d e a.f
+stressTest  a a.b a.b.c a.d e a.b.f
+stressTest  a a.b a.b.c a.d e a.b.c.f
+stressTest  a a.b a.b.c a.d e a.d.f
+stressTest  a a.b a.b.c a.d e e.f
+stressTest  a a.b a.b.c a.d a.e f
+stressTest  a a.b a.b.c a.d a.e a.f
+stressTest  a a.b a.b.c a.d a.e a.b.f
+stressTest  a a.b a.b.c a.d a.e a.b.c.f
+stressTest  a a.b a.b.c a.d a.e a.d.f
+stressTest  a a.b a.b.c a.d a.e a.e.f
+stressTest  a a.b a.b.c a.d a.b.e f
+stressTest  a a.b a.b.c a.d a.b.e a.f
+stressTest  a a.b a.b.c a.d a.b.e a.b.f
+stressTest  a a.b a.b.c a.d a.b.e a.b.c.f
+stressTest  a a.b a.b.c a.d a.b.e a.d.f
+stressTest  a a.b a.b.c a.d a.b.e a.b.e.f
+stressTest  a a.b a.b.c a.d a.b.c.e f
+stressTest  a a.b a.b.c a.d a.b.c.e a.f
+stressTest  a a.b a.b.c a.d a.b.c.e a.b.f
+stressTest  a a.b a.b.c a.d a.b.c.e a.b.c.f
+stressTest  a a.b a.b.c a.d a.b.c.e a.d.f
+stressTest  a a.b a.b.c a.d a.b.c.e a.b.c.e.f
+stressTest  a a.b a.b.c a.d a.d.e f
+stressTest  a a.b a.b.c a.d a.d.e a.f
+stressTest  a a.b a.b.c a.d a.d.e a.b.f
+stressTest  a a.b a.b.c a.d a.d.e a.b.c.f
+stressTest  a a.b a.b.c a.d a.d.e a.d.f
+stressTest  a a.b a.b.c a.d a.d.e a.d.e.f
+stressTest  a a.b a.b.c a.b.d e f
+stressTest  a a.b a.b.c a.b.d e a.f
+stressTest  a a.b a.b.c a.b.d e a.b.f
+stressTest  a a.b a.b.c a.b.d e a.b.c.f
+stressTest  a a.b a.b.c a.b.d e a.b.d.f
+stressTest  a a.b a.b.c a.b.d e e.f
+stressTest  a a.b a.b.c a.b.d a.e f
+stressTest  a a.b a.b.c a.b.d a.e a.f
+stressTest  a a.b a.b.c a.b.d a.e a.b.f
+stressTest  a a.b a.b.c a.b.d a.e a.b.c.f
+stressTest  a a.b a.b.c a.b.d a.e a.b.d.f
+stressTest  a a.b a.b.c a.b.d a.e a.e.f
+stressTest  a a.b a.b.c a.b.d a.b.e f
+stressTest  a a.b a.b.c a.b.d a.b.e a.f
+stressTest  a a.b a.b.c a.b.d a.b.e a.b.f
+stressTest  a a.b a.b.c a.b.d a.b.e a.b.c.f
+stressTest  a a.b a.b.c a.b.d a.b.e a.b.d.f
+stressTest  a a.b a.b.c a.b.d a.b.e a.b.e.f
+stressTest  a a.b a.b.c a.b.d a.b.c.e f
+stressTest  a a.b a.b.c a.b.d a.b.c.e a.f
+stressTest  a a.b a.b.c a.b.d a.b.c.e a.b.f
+stressTest  a a.b a.b.c a.b.d a.b.c.e a.b.c.f
+stressTest  a a.b a.b.c a.b.d a.b.c.e a.b.d.f
+stressTest  a a.b a.b.c a.b.d a.b.c.e a.b.c.e.f
+stressTest  a a.b a.b.c a.b.d a.b.d.e f
+stressTest  a a.b a.b.c a.b.d a.b.d.e a.f
+stressTest  a a.b a.b.c a.b.d a.b.d.e a.b.f
+stressTest  a a.b a.b.c a.b.d a.b.d.e a.b.c.f
+stressTest  a a.b a.b.c a.b.d a.b.d.e a.b.d.f
+stressTest  a a.b a.b.c a.b.d a.b.d.e a.b.d.e.f
+stressTest  a a.b a.b.c a.b.c.d e f
+stressTest  a a.b a.b.c a.b.c.d e a.f
+stressTest  a a.b a.b.c a.b.c.d e a.b.f
+stressTest  a a.b a.b.c a.b.c.d e a.b.c.f
+stressTest  a a.b a.b.c a.b.c.d e a.b.c.d.f
+stressTest  a a.b a.b.c a.b.c.d e e.f
+stressTest  a a.b a.b.c a.b.c.d a.e f
+stressTest  a a.b a.b.c a.b.c.d a.e a.f
+stressTest  a a.b a.b.c a.b.c.d a.e a.b.f
+stressTest  a a.b a.b.c a.b.c.d a.e a.b.c.f
+stressTest  a a.b a.b.c a.b.c.d a.e a.b.c.d.f
+stressTest  a a.b a.b.c a.b.c.d a.e a.e.f
+stressTest  a a.b a.b.c a.b.c.d a.b.e f
+stressTest  a a.b a.b.c a.b.c.d a.b.e a.f
+stressTest  a a.b a.b.c a.b.c.d a.b.e a.b.f
+stressTest  a a.b a.b.c a.b.c.d a.b.e a.b.c.f
+stressTest  a a.b a.b.c a.b.c.d a.b.e a.b.c.d.f
+stressTest  a a.b a.b.c a.b.c.d a.b.e a.b.e.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.e f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.e a.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.e a.b.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.e a.b.c.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.e a.b.c.d.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.e a.b.c.e.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.d.e f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.d.e a.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.d.e a.b.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.d.e a.b.c.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.d.e a.b.c.d.f
+stressTest  a a.b a.b.c a.b.c.d a.b.c.d.e a.b.c.d.e.f
+
+#
+stressTest a a.b  a.b.c1  a.b.c1.d1  a.b.c1.d2  a.b.c1.d3  a.b.c2
+stressTest a a.b  a.b.c  a.b.c.d  a.b.c.d.e  a.b.c.d.e.f a.b.c.d.e.f.g
+
+

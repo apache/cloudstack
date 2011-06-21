@@ -2,6 +2,7 @@
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+   <throwableRenderer class="com.cloud.utils.log.CglibThrowableRenderer"/>
 
    <!-- ================================= -->
    <!-- Preserve messages in a local file -->
@@ -10,7 +11,7 @@
    <!-- A regular appender FIXME implement code that will close/reopen logs on SIGHUP by logrotate FIXME make the paths configurable using the build system -->
    <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
-      <param name="Threshold" value="DEBUG"/>
+      <param name="Threshold" value="TRACE"/>
       <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
         <param name="FileNamePattern" value="@MSLOG@.%d{yyyy-MM-dd}.gz"/>
         <param name="ActiveFileName" value="@MSLOG@"/>

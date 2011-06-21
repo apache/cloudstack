@@ -1,0 +1,559 @@
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+
+
+Delivered-To: urba-cgu@urbanet.ch 
+Mailing-List: contact log4j-user-help@jakarta.apache.org; run by ezmlm 
+List-Post: <mailto:log4j-user@jakarta.apache.org> 
+List-Help: <mailto:log4j-user-help@jakarta.apache.org> 
+List-Unsubscribe: <mailto:log4j-user-unsubscribe@jakarta.apache.org> 
+List-Subscribe: <mailto:log4j-user-subscribe@jakarta.apache.org> 
+Reply-To: "LOG4J Users Mailing List" <log4j-user@jakarta.apache.org> 
+Delivered-To: mailing list log4j-user@jakarta.apache.org 
+Date: Thu, 01 Feb 2001 14:26:34 -0800 
+From: Kevin Steppe <ksteppe@pacbell.net> 
+X-Mailer: Mozilla 4.76 [en] (Windows NT 5.0; U) 
+X-Accept-Language: en 
+To: LOG4J Users Mailing List <log4j-user@jakarta.apache.org> 
+Subject: JDBC Appender 
+X-Spam-Rating: h31.sny.collab.net 1.6.2 0/1000/N 
+
+
+Ok, here it is.  Since there will be differences in database schemas and
+connection/execution methods, I wrote this with the intention that those
+parts would be overriden by subclasses (that's what I'm doing for my
+company), however it will work as is if you have a stored procedure
+spLog @msg.  I'm sure there are optimizations which could be done.
+
+
+The code for org.apache.log4j.varia.JDBCAppender and
+org.apache.log4j.varia.test.JDBCTest follow and files attached.  At the
+bottem is the SQL I used to test this on M$ SQL-Server.
+
+
+I help this proves useful,
+Kevin
+
+
+
+
+package org.apache.log4j.varia;
+
+
+import org.apache.log4j.*;
+import org.apache.log4j.spi.*;
+
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+
+import java.sql.DriverManager;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.SQLException;
+
+
+/**
+ * Contribution from MD Data Direct.
+ *
+ * Implements an ArrayList buffer before storing messages to the DB.
+ * Override getSQL to fit your database schema (or implement spLog msg
+on your DB)
+ * Override executeSQL to modify how DB connection and SQL execution is
+made.
+ *
+ * @author: Kevin Steppe
+ */
+public class JDBCAppender extends org.apache.log4j.AppenderSkeleton
+    implements org.apache.log4j.Appender
+{
+    protected String databaseURL = "jdbc:odbc:myDB";
+    protected String databaseUser = "me";
+    protected String databasePassword = "mypassword";
+
+
+    public static final String URL_OPTION = "URL";
+    public static final String USER_OPTION = "User";
+    public static final String PASSWORD_OPTION = "Password";
+    public static final String BUFFER_OPTION = "Buffer";
+    protected int bufferSize = 1;
+    protected List buffer;
+
+
+    public JDBCAppender()
+    {
+        super();
+        buffer = new ArrayList();
+    }
+
+
+    public void append(LoggingEvent event)
+    {
+        buffer.add(event);
+
+
+        if (buffer.size() >= bufferSize)
+            flushBuffer();
+    }
+
+
+    public void close()
+    {
+        flushBuffer();
+        this.closed = true;
+    }
+
+
+    public void setOption(String key, String value)
+    {
+        super.setOption(key, value);
+
+
+        if (key.equalsIgnoreCase(URL_OPTION))
+            databaseURL = value;
+        else if (key.equalsIgnoreCase(USER_OPTION))
+            databaseUser = value;
+        else if (key.equalsIgnoreCase(PASSWORD_OPTION))
+            databasePassword = value;
+        else if (key.equalsIgnoreCase(BUFFER_OPTION))
+            bufferSize = Integer.parseInt(value);
+    }
+
+
+    /**
+     * Override this to create the SQL needed for your DB schema
+     */
+    protected String getSQL(LoggingEvent event)
+    {
+        String msg = this.layout.format(event);
+        String sql = "spLog '" + msg + "'";
+        return sql;
+    }
+
+
+    /**
+     * Override this to provide  an alertnate method of getting
+connections (such as caching)
+     * This implementation creates a new connection and statement for
+every execution which
+     * is very wastefull.  One method to fix this is to open connections
+at the start of
+     * flushBuffer() and close them at the end.  MD Data uses a
+connection pool outside
+     * of JDBCAppender which is accessed in the override of this method.
+
+
+     */
+    protected void executeSQL(String sql) throws SQLException
+    {
+        Connection con = null;
+        Statement stmt = null;
+
+
+        try {
+            con = DriverManager.getConnection(databaseURL, databaseUser,
+databasePassword);
+            stmt = con.createStatement();
+            stmt.executeUpdate(sql);
+        }
+        catch (SQLException e)
+        {
+            if (con != null)
+                con.close();
+            if (stmt != null)
+                stmt.close();
+
+
+            throw e;
+        }
+        stmt.close();
+        con.close();
+    }
+
+
+    public void flushBuffer()
+    {
+        //Do the actual logging
+        for (Iterator i = buffer.iterator(); i.hasNext();)
+        {
+            try {
+                String sql = getSQL((LoggingEvent)i.next());
+                executeSQL(sql);
+            }
+            catch (SQLException e)
+            {
+                errorHandler.error("Failed to excute sql", e,
+ErrorCode.FLUSH_FAILURE);
+            }
+        }
+        buffer.clear();
+    }
+
+
+    public void finalize()
+    {
+        close();
+    }
+
+
+    public boolean requiresLayout()
+    {
+        return true;
+    }
+
+
+}
+
+
+
+package org.apache.log4j.varia.test;
+
+
+import org.apache.log4j.varia.JDBCAppender;
+import org.apache.log4j.*;
+
+
+public class JDBCTest
+{
+    public static void main (String argv[])
+    {
+        try {
+      Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            System.out.println(e.toString());
+        }
+
+
+     Category rootLog = Category.getRoot();
+        Layout layout = new PatternLayout("%p [%t] %c - %m%n");
+        JDBCAppender appender = new JDBCAppender();
+        appender.setLayout(layout);
+        appender.setOption(JDBCAppender.URL_OPTION, "jdbc:odbc:someDB");
+
+
+        appender.setOption(JDBCAppender.USER_OPTION, "auser");
+        appender.setOption(JDBCAppender.PASSWORD_OPTION, "thepassword");
+
+
+
+        rootLog.addAppender(appender);
+
+
+        try {
+            Category log = Category.getInstance("main");
+            log.debug("Debug 1");
+            Thread.sleep(500);
+            log.info("info 1");
+            Thread.sleep(500);
+            log.warn("warn 1");
+            Thread.sleep(500);
+            log.error("error 1");
+            Thread.sleep(500);
+            log.fatal("fatal 1");
+            Thread.sleep(500);
+
+
+            appender.setOption(JDBCAppender.BUFFER_OPTION, "5");
+            log.debug("Debug 2");
+            Thread.sleep(500);
+            log.info("info 2");
+            Thread.sleep(500);
+            log.warn("warn 2");
+            Thread.sleep(500);
+            log.error("error 2");
+            Thread.sleep(500);
+            log.fatal("fatal 2");
+            Thread.sleep(500);
+
+
+            appender.setOption(JDBCAppender.BUFFER_OPTION, "2");
+            appender.setThreshold(Priority.WARN);
+            log.debug("Debug 3");
+            Thread.sleep(500);
+            log.info("info 3");
+            Thread.sleep(500);
+            log.warn("warn 3");
+            Thread.sleep(500);
+            log.error("error 3");
+            Thread.sleep(500);
+            log.fatal("fatal 3");
+        }
+        catch (InterruptedException e)
+        {
+            System.out.println("Interrupted");
+        }
+    }
+}
+
+
+
+drop table JDBCAppenderTest
+go
+create table JDBCAppenderTest (EventID int identity, entrytime datetime,
+message varchar(255))
+
+
+drop procedure spLog
+go
+create procedure spLog (@msg varchar(255)) as
+ insert into JDBCAppenderTest (message, entrytime) values (@msg,
+getdate())
+
+
+select * from JDBCAppenderTest
+
+
+
+drop table JDBCAppenderTest 
+go
+create table JDBCAppenderTest (EventID int identity, entrytime datetime, message varchar(255))
+
+
+drop procedure spLog
+go
+create procedure spLog (@msg varchar(255)) as
+        insert into JDBCAppenderTest (message, entrytime) values (@msg, getdate())
+
+
+select * from JDBCAppenderTest
+package org.apache.log4j.varia;
+
+
+import org.apache.log4j.*;
+import org.apache.log4j.spi.*;
+
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+
+import java.sql.DriverManager;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.SQLException;
+
+
+/**
+ * Contribution from MD Data Direct.
+ *
+ * Implements an ArrayList buffer before storing messages to the DB.
+ * Override getSQL to fit your database schema (or implement spLog msg on your DB)
+ * Override executeSQL to modify how DB connection and SQL execution is made.
+ *
+ * @author: Kevin Steppe
+ */
+public class JDBCAppender extends org.apache.log4j.AppenderSkeleton 
+    implements org.apache.log4j.Appender
+{
+    protected String databaseURL = "jdbc:odbc:myDB";
+    protected String databaseUser = "me";
+    protected String databasePassword = "mypassword";
+    
+    public static final String URL_OPTION = "URL";
+    public static final String USER_OPTION = "User";
+    public static final String PASSWORD_OPTION = "Password";
+    public static final String BUFFER_OPTION = "Buffer";
+    protected int bufferSize = 1;
+    protected List buffer;
+    
+    public JDBCAppender()
+    {
+        super();
+        buffer = new ArrayList();            
+    }
+    
+    public void append(LoggingEvent event)
+    { 
+        buffer.add(event);
+        
+        if (buffer.size() >= bufferSize)
+            flushBuffer();
+    }
+
+
+    public void close()
+    {
+        flushBuffer(); 
+        this.closed = true;
+    }
+
+
+    public void setOption(String key, String value) 
+    {
+        super.setOption(key, value);
+        
+        if (key.equalsIgnoreCase(URL_OPTION))
+            databaseURL = value;
+        else if (key.equalsIgnoreCase(USER_OPTION))
+            databaseUser = value;
+        else if (key.equalsIgnoreCase(PASSWORD_OPTION))
+            databasePassword = value;
+        else if (key.equalsIgnoreCase(BUFFER_OPTION))
+            bufferSize = Integer.parseInt(value);
+    }
+
+
+    /**
+     * Override this to create the SQL needed for your DB schema
+     */
+    protected String getSQL(LoggingEvent event)
+    {
+        String msg = this.layout.format(event); 
+        String sql = "spLog '" + msg + "'"; 
+        System.out.println(sql); //DEBUG         
+        return sql;
+    }
+    
+    /**
+     * Override this to provide  an alertnate method of getting connections (such as caching)
+     * This implementation creates a new connection and statement for every execution which
+     * is very wastefull.  One method to fix this is to open connections at the start of
+     * flushBuffer() and close them at the end.  MD Data uses a connection pool outside 
+     * of JDBCAppender which is accessed in the override of this method.
+     */
+    protected void executeSQL(String sql) throws SQLException
+    {
+        Connection con = null;
+        Statement stmt = null;
+
+
+        try {
+            con = DriverManager.getConnection(databaseURL, databaseUser, databasePassword);
+            stmt = con.createStatement();
+            stmt.executeUpdate(sql);
+        }
+        catch (SQLException e)
+        {
+            if (con != null)
+                con.close();
+            if (stmt != null)
+                stmt.close();
+                
+            throw e;
+        }
+        stmt.close();
+        con.close();
+    }
+    
+    public void flushBuffer()
+    {
+        //Do the actual logging
+        for (Iterator i = buffer.iterator(); i.hasNext();)
+        {
+            try {
+                String sql = getSQL((LoggingEvent)i.next());
+                executeSQL(sql);
+            }
+            catch (SQLException e)
+            {
+                errorHandler.error("Failed to excute sql", e, ErrorCode.FLUSH_FAILURE);
+            }
+        }
+        buffer.clear();
+    }
+    
+    public void finalize()
+    {
+        close();
+    }
+    
+    public boolean requiresLayout()
+    {
+        return true;
+    }
+
+
+}package org.apache.log4j.varia.test;
+
+
+import org.apache.log4j.varia.JDBCAppender;
+import org.apache.log4j.*;
+
+
+public class JDBCTest
+{
+    public static void main (String argv[])
+    {
+        try {
+                Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");        
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            System.out.println(e.toString());    
+        }
+        
+            Category rootLog = Category.getRoot();
+        Layout layout = new PatternLayout("%p [%t] %c - %m%n");
+        JDBCAppender appender = new JDBCAppender();        
+        appender.setLayout(layout);        
+        appender.setOption(JDBCAppender.URL_OPTION, "jdbc:odbc:someDB");
+        appender.setOption(JDBCAppender.USER_OPTION, "auser");
+        appender.setOption(JDBCAppender.PASSWORD_OPTION, "thepassword");
+        
+        rootLog.addAppender(appender);  
+
+
+        try {
+            Category log = Category.getInstance("main");
+            log.debug("Debug 1");
+            Thread.sleep(500);
+            log.info("info 1");
+            Thread.sleep(500);
+            log.warn("warn 1");
+            Thread.sleep(500);
+            log.error("error 1");
+            Thread.sleep(500);
+            log.fatal("fatal 1");
+            Thread.sleep(500);
+            
+            appender.setOption(JDBCAppender.BUFFER_OPTION, "5");
+            log.debug("Debug 2");
+            Thread.sleep(500);
+            log.info("info 2");
+            Thread.sleep(500);
+            log.warn("warn 2");
+            Thread.sleep(500);
+            log.error("error 2");
+            Thread.sleep(500);
+            log.fatal("fatal 2");
+            Thread.sleep(500);
+
+
+            appender.setOption(JDBCAppender.BUFFER_OPTION, "2");
+            appender.setThreshold(Priority.WARN);
+            log.debug("Debug 3");
+            Thread.sleep(500);
+            log.info("info 3");
+            Thread.sleep(500);
+            log.warn("warn 3");
+            Thread.sleep(500);
+            log.error("error 3");
+            Thread.sleep(500);
+            log.fatal("fatal 3");
+        }
+        catch (InterruptedException e)
+        {
+            System.out.println("Interrupted");
+        }
+    }
+}

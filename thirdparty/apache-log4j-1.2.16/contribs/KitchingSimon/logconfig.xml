@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+<configuration configDebug="true">
+
+	<appender name="STDOUT" class="org.apache.log4j.FileAppender">
+           <param name="File" value="System.out" />	
+           <layout class="org.apache.log4j.PatternLayout">
+             <param name="ConversionPattern"
+		    value="aa:%p#%d#%c#%m%n"/>
+           </layout>	    
+	</appender>
+
+	<appender name="UDPVENUS" class="org.apache.log4j.net.DatagramStringAppender">
+           <param name="DatagramHost" value="Venus" />	
+           <param name="DatagramPort" value="8300" />	
+           <layout class="org.apache.log4j.PatternLayout">
+             <param name="ConversionPattern"
+		    value="%p#%d#%c#%m"/>
+           </layout>	  
+           <filter class="org.apache.log4j.filters.PriorityRangeFilter">
+            <param name="PriorityMin" value="WARN" />
+           </filter>
+	</appender>
+
+	<category name="org.apache.log4j.xml">
+	  <priority value="INFO" />
+	</category>
+	
+	<category name="ch">
+	   <priority value ="DEBUG2" class="ch.orange.log.Priority"/>
+	</category>
+	
+	<category name="script">
+	   <priority value ="DEBUG2" class="ch.orange.log.Priority"/>
+	</category>
+	
+	<root>
+	   <priority value ="DEBUG2" class="ch.orange.log.Priority"/>
+	   <appender-ref ref="STDOUT" /> 
+	   <appender-ref ref="UDPVENUS" /> 
+	</root>
+	
+</configuration>

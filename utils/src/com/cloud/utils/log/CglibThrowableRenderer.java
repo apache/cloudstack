@@ -22,10 +22,13 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.CodeSource;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class CglibThrowableRenderer {
+import org.apache.log4j.spi.ThrowableRenderer;
+
+public final class CglibThrowableRenderer implements ThrowableRenderer {
     /**
      * Throwable.getStackTrace() method.
      */
@@ -52,17 +55,20 @@ public final class CglibThrowableRenderer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String[] doRender(final Throwable throwable) {
         try {
             Object[] noArgs = null;
             Object[] elements = (Object[]) getStackTraceMethod.invoke(throwable, noArgs);
-            String[] lines = new String[elements.length + 1];
-            lines[0] = throwable.toString();
+            ArrayList<String> lines = new ArrayList<String>(elements.length + 1);
+            lines.add(throwable.toString());
             Map classMap = new HashMap();
             for(int i = 0; i < elements.length; i++) {
-                lines[i+1] = formatElement(elements[i], classMap);
+                if (!elements[i].toString().endsWith("(<generated>)")) {
+                    lines.add(formatElement(elements[i], classMap));
+                }
             }
-            return lines;
+            return lines.toArray(new String[lines.size()]);
         } catch(Exception ex) {
             return null;
         }
