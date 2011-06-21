@@ -149,6 +149,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
@@ -986,6 +987,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProtocol(fwRule.getProtocol());
         response.setPublicStartPort(Integer.toString(fwRule.getSourcePortStart()));
         response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
+        List<String> cidrs = ApiDBUtils.findPortForwardingSourceCidrs(fwRule.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
         response.setPublicIpAddressId(ip.getId());
