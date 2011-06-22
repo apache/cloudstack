@@ -82,9 +82,7 @@ public abstract class NioConnection implements Runnable {
             try {
                 _thread.wait();
             } catch (InterruptedException e) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.info("Interrupted start thread ", e);
-                }
+                s_logger.warn("Interrupted start thread ", e);
             }
         }
     }
@@ -115,6 +113,9 @@ public abstract class NioConnection implements Runnable {
     			return;
     		} catch (IOException e) {
     			s_logger.error("Unable to initialize the threads.", e);
+    			return;
+    		} catch (Exception e) {
+    			s_logger.error("Unable to initialize the threads due to unknown exception.", e);
     			return;
     		}
     		_isStartup = true;
@@ -432,7 +433,7 @@ public abstract class NioConnection implements Runnable {
 
     /* Release the resource used by the instance */
     public void cleanUp() throws IOException {
-       if (_selector != null && _selector.isOpen()) {
+       if (_selector != null) {
            _selector.close();
        }
     }
