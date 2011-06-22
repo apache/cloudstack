@@ -46,21 +46,23 @@ public class NioClient extends NioConnection {
     @Override
     protected void init() throws IOException {
         _selector = Selector.open();
+        SocketChannel sch = null;
+        InetSocketAddress addr = null;
         
-        SocketChannel sch = SocketChannel.open();
-        sch.configureBlocking(true);
-        s_logger.info("Connecting to " + _host + ":" + _port);
-
-        if(_bindAddress != null) {
-            s_logger.info("Binding outbound interface at " + _bindAddress);
-            
-            InetSocketAddress addr = new InetSocketAddress(_bindAddress, 0);
-            sch.socket().bind(addr);
-        }
-
-        InetSocketAddress addr = new InetSocketAddress(_host, _port);
         try {
-        	sch.connect(addr);
+            sch = SocketChannel.open();
+            sch.configureBlocking(true);
+            s_logger.info("Connecting to " + _host + ":" + _port);
+
+            if(_bindAddress != null) {
+                s_logger.info("Binding outbound interface at " + _bindAddress);
+
+                addr = new InetSocketAddress(_bindAddress, 0);
+                sch.socket().bind(addr);
+            }
+
+            addr = new InetSocketAddress(_host, _port);
+            sch.connect(addr);
         } catch (IOException e) {
         	_selector.close();
         	throw e;
@@ -82,15 +84,21 @@ public class NioClient extends NioConnection {
         	throw new IOException("SSL: Fail to init SSL! " + e);
         }
         
-        sch.configureBlocking(false);
-        Link link = new Link(addr, this);
-        link.setSSLEngine(sslEngine);
-        SelectionKey key = sch.register(_selector, SelectionKey.OP_READ);
-        link.setKey(key);
-        key.attach(link);
-        // Notice we've already connected due to the handshake, so let's get the
-        // remaining task done
-        Task task = _factory.create(Task.Type.CONNECT, link, null);
+        Task task = null;
+        try {
+            sch.configureBlocking(false);
+            Link link = new Link(addr, this);
+            link.setSSLEngine(sslEngine);
+            SelectionKey key = sch.register(_selector, SelectionKey.OP_READ);
+            link.setKey(key);
+            key.attach(link);
+            // Notice we've already connected due to the handshake, so let's get the
+            // remaining task done
+            task = _factory.create(Task.Type.CONNECT, link, null);
+        } catch (Exception e) {
+        	_selector.close();
+        	throw new IOException("Fail to init NioClient! " + e);
+        }
         _executor.execute(task);
     }
     
