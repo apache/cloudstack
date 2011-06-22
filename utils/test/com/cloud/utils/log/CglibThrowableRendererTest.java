@@ -12,10 +12,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class CglibThrowableRendererTest extends TestCase {
     private final static Logger s_logger = Logger.getLogger(CglibThrowableRendererTest.class);
     public static class Test {
+        @DB
         public void exception1() {
             throw new IllegalArgumentException("What a bad exception");
         }
-        
         public void exception2() {
             try {
                 exception1();
