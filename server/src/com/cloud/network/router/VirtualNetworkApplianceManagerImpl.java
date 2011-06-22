@@ -699,24 +699,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     @DB
     protected DomainRouterVO findOrCreateVirtualRouter(Network guestNetwork, DataCenterDeployment plan, HypervisorType type, Account owner) throws ConcurrentOperationException, InsufficientCapacityException {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
-        if (network == null) {
-            throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
-        }
-        
         DomainRouterVO router = _routerDao.findByNetwork(guestNetwork.getId());
         if (router != null) {
             return router;
         }
-        long id = _routerDao.getNextInSequence(Long.class, "id");
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating the router " + id);
-        }
 
-        PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
-
+        /* Before starting router, already know the hypervisor type */
+        VMTemplateVO template = _templateDao.findRoutingTemplate(type);
+        
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
         NetworkOfferingVO controlOffering = offerings.get(0);
         NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
@@ -724,6 +714,25 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
         NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
         List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        if (network == null) {
+            throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
+        }
+        
+        router = _routerDao.findByNetwork(guestNetwork.getId());
+        if (router != null) {
+            return router;
+        }
+        
+        long id = _routerDao.getNextInSequence(Long.class, "id");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating the router " + id);
+        }
+        PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
+
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
@@ -747,8 +756,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
         networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
-        /* Before starting router, already know the hypervisor type */
-        VMTemplateVO template = _templateDao.findRoutingTemplate(type);
         router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
                 owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
         router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
@@ -792,13 +799,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @DB
     protected DomainRouterVO findOrCreateDhcpServer(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException, ConcurrentOperationException {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
-        if (network == null) {
-            throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
-        }
-        
         DataCenterDeployment plan = null;
 
         long dcId = dest.getDataCenter().getId();
@@ -838,6 +838,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         /* Before starting router, already know the hypervisor type */
         VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        if (network == null) {
+            throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
+        }
+        
+        // In Basic zone and Guest network we have to start domR per pod, not per network
+        if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
+            router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
+            plan = new DataCenterDeployment(dcId, podId, null, null, null);
+        } else {
+            router = _routerDao.findByNetwork(guestNetwork.getId());
+            plan = new DataCenterDeployment(dcId);
+        }
+
+        if (router != null) {
+            return router;
+        }
+        
         router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
                 owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
         router.setRole(Role.DHCP_USERDATA);
