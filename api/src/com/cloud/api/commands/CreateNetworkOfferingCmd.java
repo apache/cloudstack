@@ -66,6 +66,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
 
+    @Parameter(name=ApiConstants.REDUNDANT_ROUTER, type=CommandType.BOOLEAN, description="if network offering supports redundant router.")
+    private Boolean redundantRouter;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +108,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public String getGuestIpType() {
         return guestIpType;
+    }
+    
+    public Boolean getRedundantRouter() {
+        return redundantRouter == null ? false : redundantRouter;
     }
 
     /////////////////////////////////////////////////////

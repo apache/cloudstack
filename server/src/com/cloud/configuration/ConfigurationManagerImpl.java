@@ -2681,6 +2681,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
         String guestIpTypeString = cmd.getGuestIpType();
+        Boolean redundantRouter = cmd.getRedundantRouter();
 
         TrafficType trafficType = null;
         GuestIpType guestIpType = null;
@@ -2721,12 +2722,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         Integer maxConnections = cmd.getMaxconnections();
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, redundantRouter);
     }
 
     @Override
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
-            Availability availability, GuestIpType guestIpType) {
+            Availability availability, GuestIpType guestIpType, boolean redundantRouter) {
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
@@ -2746,7 +2747,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, true, true, true,
-                gatewayService, firewallService, lbService, vpnService, guestIpType, false);
+                gatewayService, firewallService, lbService, vpnService, guestIpType, redundantRouter);
 
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails(" Id: "+offering.getId()+" Name: "+name);
