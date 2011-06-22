@@ -2316,6 +2316,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // check if account/domain is with in resource limits to create a new vm
         if (_accountMgr.resourceLimitExceeded(owner, ResourceType.user_vm)) {
+            UserContext.current().setEventDetails("Maximum number of virtual machines for account: " + owner.getAccountName() + " has been exceeded.");
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + owner.getAccountName() + " has been exceeded.");
             rae.setResourceType("vm");
             throw rae;
