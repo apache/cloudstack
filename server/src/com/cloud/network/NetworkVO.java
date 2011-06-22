@@ -291,6 +291,10 @@ public class NetworkVO implements Network {
         return networkOfferingId;
     }
 
+    public void setNetworkOfferingId(long networkOfferingId) {
+        this.networkOfferingId = networkOfferingId;
+    }
+
     public void setMode(Mode mode) {
         this.mode = mode;
     }

@@ -2360,11 +2360,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         s_logger.debug("Restarting network " + networkId + "...");
 
+        ReservationContext context = new ReservationContextImpl(null, null, null, caller);
         if (restartElements) {
             s_logger.debug("Restarting network elements for the network " + network);
             for (NetworkElement element : _networkElements) {
                 // stop and start the network element
-                if (!element.restart(network, null)) {
+                if (!element.restart(network, context)) {
                     s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
                     success = false;
                 }
@@ -2904,7 +2905,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = false)
-    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix) {
+    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, long networkOfferingId) {
 
         // verify input parameters
         NetworkVO network = _networksDao.findById(networkId);
@@ -2960,8 +2961,43 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (tags != null) {
             network.setTags(tags);
         }
+        
+        long oldNetworkOfferingId = network.getNetworkOfferingId();
+        if (networkOfferingId != 0) {
+            NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
+            if (networkOffering == null || networkOffering.isSystemOnly()) {
+                throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
+            }
+            if (networkOffering.getAvailability() == Availability.Unavailable) {
+                throw new InvalidParameterValueException("Can't update network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability());
+            }
+            network.setNetworkOfferingId(networkOfferingId);
+        }
 
         _networksDao.update(networkId, network);
+        
+        if ((networkOfferingId != 0) && (networkOfferingId != oldNetworkOfferingId)) {
+            s_logger.info("Try to restart the network since the networkofferingID is changed");
+            // Don't allow to restart network if it's not in Implemented/Setup state
+            if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
+                s_logger.warn("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
+            }
+
+            boolean success = true;
+            try {
+                // Restart network - network elements restart is required
+                success = restartNetwork(networkId, true, caller);
+            } catch (Exception e) {
+                s_logger.warn("Fail to restart the network: " + e);
+                success = false;
+            }
+
+            if (success) {
+                s_logger.debug("Network id=" + networkId + " is restarted successfully.");
+            } else {
+                s_logger.warn("Network id=" + networkId + " failed to restart.");
+            }
+        }
 
         return network;
 

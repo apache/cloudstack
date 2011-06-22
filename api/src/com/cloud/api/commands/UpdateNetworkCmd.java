@@ -59,6 +59,8 @@ public class UpdateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
+    @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, description="network offering ID")
+    private Long networkOfferingId;
   
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -84,6 +86,9 @@ public class UpdateNetworkCmd extends BaseCmd {
         return networkDomain;
     }
     
+    private Long getNetworkOfferingId() {
+        return networkOfferingId == null ? 0 : networkOfferingId;
+    }
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -107,7 +112,7 @@ public class UpdateNetworkCmd extends BaseCmd {
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         
-        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), tags, UserContext.current().getCaller(), getNetworkDomain());
+        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), tags, UserContext.current().getCaller(), getNetworkDomain(), getNetworkOfferingId());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());
