@@ -401,6 +401,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             _connection.start();
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         } while (!_connection.isStartup());
+        s_logger.info("Connected to the server");
     }
 
     public void processStartupAnswer(Answer answer, Response response, Link link) {
