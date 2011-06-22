@@ -258,8 +258,19 @@ public class Transaction {
         if (s_logger.isDebugEnabled()) {
             final StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
             final StringBuilder str = new StringBuilder();
-            for (int i = 3, max = stacks.length > 7 ? 7 : stacks.length; i < max; i++) {
+            int i = 3, j = 3;
+            while (j < 7 && j < stacks.length) {
+                StackTraceElement element = stacks[i];
+                String filename = element.getFileName();
+                String method = element.getMethodName();
+                if ((filename != null && filename.equals("<generated>")) || (method != null && method.equals("invokeSuper"))) {
+                    i++;
+                    continue;
+                }
+                
                 str.append("-").append(stacks[i].getClassName().substring(stacks[i].getClassName().lastIndexOf(".") + 1)).append(".").append(stacks[i].getMethodName()).append(":").append(stacks[i].getLineNumber());
+                j++;
+                i++;
             }
             return str.toString();
         }
