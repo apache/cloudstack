@@ -108,12 +108,23 @@ public class JettyVmDataServer implements VmDataServer {
         
         protected void handleUserData(HttpServletRequest req, HttpServletResponse resp) 
                 throws ServletException, IOException {
+            String metadataItem = req.getPathInfo();
             String requester = req.getRemoteAddr();
             resp.setContentType("text/html");
             resp.setStatus(HttpServletResponse.SC_OK);
-            String userData = _vmDataServer.getVmDataItem(requester, USER_DATA);
-            if (userData != null){
-                resp.getWriter().print(userData);
+            String data = null;
+            if (metadataItem != null) {
+                String[] path = metadataItem.split("/");
+                if (path.length > 1) {
+                    metadataItem = path[1];
+                }
+            }
+          
+            if (metadataItem != null)
+                data = _vmDataServer.getVmDataItem(requester, metadataItem);
+           
+            if (data != null){
+                resp.getWriter().print(data);
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Request not found");
@@ -249,8 +260,8 @@ public class JettyVmDataServer implements VmDataServer {
  
         Context root = new Context(_jetty,"/latest",Context.SESSIONS);
         root.setResourceBase(_vmDataDir);
-        root.addServlet(new ServletHolder(new VmDataServlet(this, USER_DATA)), "/user-data");
-        root.addServlet(new ServletHolder(new VmDataServlet(this, META_DATA)), "/meta-data");
+        root.addServlet(new ServletHolder(new VmDataServlet(this, USER_DATA)), "/*");
+       
         
         ResourceHandler resource_handler = new ResourceHandler(); 
         resource_handler.setResourceBase("/var/lib/images/");
@@ -344,5 +355,4 @@ public class JettyVmDataServer implements VmDataServer {
         String vmDataDir = _vmDataDir + File.separator + vmName;
         Script.runSimpleBashScript("rm -rf " + vmDataDir);
     }
-
 }
