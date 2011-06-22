@@ -259,7 +259,7 @@ public class Transaction {
             final StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
             final StringBuilder str = new StringBuilder();
             int i = 3, j = 3;
-            while (j < 7 && j < stacks.length) {
+            while (j < 7 && i < stacks.length) {
                 StackTraceElement element = stacks[i];
                 String filename = element.getFileName();
                 String method = element.getMethodName();
