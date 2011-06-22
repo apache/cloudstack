@@ -67,22 +67,35 @@ public class CglibThrowableRenderer implements ThrowableRenderer {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public String[] doRender(final Throwable throwable) {
+    public String[] doRender(final Throwable th) {
         try {
             Object[] noArgs = null;
-            Object[] elements = (Object[])getStackTraceMethod.invoke(throwable, noArgs);
-            ArrayList<String> lines = new ArrayList<String>(elements.length + 1);
+            ArrayList<String> lines = new ArrayList<String>();
+            Throwable throwable = th;
             lines.add(throwable.toString());
             Map classMap = new HashMap();
-            for (int i = 0; i < elements.length; i++) {
-                if (!(elements[i] instanceof StackTraceElement) || !((StackTraceElement)elements[i]).getFileName().equals("<generated>")) {
+            int start = 0;
+            do {
+                Object[] elements = (Object[])getStackTraceMethod.invoke(throwable, noArgs);
+                for (int i = 0; i < elements.length - start; i++) {
+                    if (elements[i] instanceof StackTraceElement) {
+                        StackTraceElement stack = (StackTraceElement)elements[i];
+                        if (stack.getFileName().equals("<generated>") || stack.getFileName().equals("MethodProxy.java")) {
+                            continue;
+                        }
+                    }
                     lines.add(formatElement(elements[i], classMap));
                 }
-            }
+                if (start != 0) {
+                    lines.add("\t... " + start + " more");
+                }
+                throwable = throwable.getCause();
+                if (throwable != null) {
+                    lines.add("Caused by: " + throwable.toString());
+                    start = elements.length - 1;
+                }
+            } while (throwable != null);
             return lines.toArray(new String[lines.size()]);
         } catch (Exception ex) {
             return null;

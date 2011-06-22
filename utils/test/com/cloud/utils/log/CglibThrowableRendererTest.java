@@ -12,9 +12,24 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class CglibThrowableRendererTest extends TestCase {
     private final static Logger s_logger = Logger.getLogger(CglibThrowableRendererTest.class);
     public static class Test {
+        public void exception1() {
+            throw new IllegalArgumentException("What a bad exception");
+        }
+        
+        public void exception2() {
+            try {
+                exception1();
+            } catch (Exception e) {
+                throw new CloudRuntimeException("exception2", e);
+            }
+        }
         @DB
         public void exception() {
-            throw new CloudRuntimeException("exception");
+            try {
+                exception2();
+            } catch (Exception e) {
+                throw new CloudRuntimeException("exception", e);
+            }
         }
     }
     
@@ -26,5 +41,4 @@ public class CglibThrowableRendererTest extends TestCase {
             s_logger.warn("exception caught", e);
         }
     }
-
 }
