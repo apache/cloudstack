@@ -1,0 +1,23 @@
+<log4j:event logger="org.apache.log4j.xml.XMLLayoutTestCase" timestamp="XXX" level="DEBUG" thread="main">
+<log4j:message><![CDATA[hi]]></log4j:message>
+</log4j:event>
+
+<log4j:event logger="org.apache.log4j.xml.XMLLayoutTestCase" timestamp="XXX" level="DEBUG" thread="main">
+<log4j:message><![CDATA[]]></log4j:message>
+</log4j:event>
+
+<log4j:event logger="org.apache.log4j.xml.XMLLayoutTestCase" timestamp="XXX" level="DEBUG" thread="main">
+<log4j:message><![CDATA[hi]]></log4j:message>
+<log4j:throwable><![CDATA[java.lang.Exception
+	at org.apache.log4j.xml.XMLLayoutTestCase.testNull(XMLLayoutTestCase.java:XXX)
+	at junit.framework.TestCase.runTest(TestCase.java:XXX)
+	at junit.framework.TestCase.runBare(TestCase.java:XXX)
+	at junit.framework.TestResult$1.protect(TestResult.java:XXX)
+	at junit.framework.TestResult.runProtected(TestResult.java:XXX)
+	at junit.framework.TestResult.run(TestResult.java:XXX)
+	at junit.framework.TestCase.run(TestCase.java:XXX)
+	at junit.framework.TestSuite.runTest(TestSuite.java:XXX)
+	at junit.framework.TestSuite.run(TestSuite.java:XXX)
+]]></log4j:throwable>
+</log4j:event>
+

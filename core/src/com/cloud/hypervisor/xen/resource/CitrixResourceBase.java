@@ -131,7 +131,7 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.IPAssocCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -384,8 +384,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((SetStaticNatRulesCommand) cmd);
         }  else if (clazz == LoadBalancerConfigCommand.class) {
             return execute((LoadBalancerConfigCommand) cmd);
-        } else if (clazz == IPAssocCommand.class) {
-            return execute((IPAssocCommand) cmd);
+        } else if (clazz == IpAssocCommand.class) {
+            return execute((IpAssocCommand) cmd);
         } else if (clazz == CheckConsoleProxyLoadCommand.class) {
             return execute((CheckConsoleProxyLoadCommand) cmd);
         } else if (clazz == WatchConsoleProxyLoadCommand.class) {
@@ -1547,7 +1547,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    protected Answer execute(final IPAssocCommand cmd) {
+    protected Answer execute(final IpAssocCommand cmd) {
         Connection conn = getConnection();
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;

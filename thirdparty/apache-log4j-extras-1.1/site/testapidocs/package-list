@@ -1,0 +1,8 @@
+org.apache.log4j
+org.apache.log4j.filter
+org.apache.log4j.pattern
+org.apache.log4j.rolling
+org.apache.log4j.rolling.helper
+org.apache.log4j.rule
+org.apache.log4j.util
+org.apache.log4j.xml

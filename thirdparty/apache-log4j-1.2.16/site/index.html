@@ -1,0 +1,232 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Apache log4j 1.2 - log4j 1.2</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+          </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="../../" id="bannerLeft">
+    
+                                            <img src="images/ls-logo.jpg" alt="" />
+    
+            </a>
+                        <a href=".." id="bannerRight">
+    
+                                            <img src="images/logo.jpg" alt="" />
+    
+            </a>
+            <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-03-30
+                          |   
+                <a href="http://www.apache.org/" class="externalLink">Apache</a>
+                &gt;
+      
+                <a href="../../">Logging Services</a>
+                &gt;
+      
+                <a href="../">log4j</a>
+                &gt;
+      
+                <a href="http://logging.apache.org:80/log4j/1.2/" class="externalLink">1.2</a>
+                          </div>
+            <div class="xright">      
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>Get log4j 1.2</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="license.html">License</a>
+          </li>
+          </ul>
+              <h5>About log4j 1.2</h5>
+            <ul>
+              
+    <li class="none">
+              <strong>What is log4j?</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="roadmap.html">Roadmap</a>
+          </li>
+          </ul>
+              <h5>Community</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="issue-tracking.html">Issue Tracking</a>
+          </li>
+          </ul>
+              <h5>Development</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="source-repository.html">Repository</a>
+          </li>
+              
+    <li class="none">
+                    <a href="jxr.html">Cross Reference</a>
+          </li>
+              
+    <li class="none">
+                    <a href="dependencies.html">Dependencies</a>
+          </li>
+              
+    <li class="none">
+                    <a href="integration.html">Continuous Integration</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="manual.html">Introduction</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">JavaDoc</a>
+          </li>
+              
+    <li class="none">
+                    <a href="publications.html">Publications</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://wiki.apache.org/logging-log4j" class="externalLink">Wiki</a>
+          </li>
+          </ul>
+              <h5>Apache</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="http://www.apache.org" class="externalLink">Home</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://www.apache.org/foundation/sponsorship.html" class="externalLink">Sponsorship</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://www.apache.org/foundation/thanks.html" class="externalLink">Thanks</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://www.apachecon.com" class="externalLink">Conferences</a>
+          </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <p>Inserting log statements into your code is a low-tech method for debugging it. It may also be the only way because debuggers are not always available or applicable. This is often the case for distributed applications.</p>
+<p>On the other hand, some people argue that log statements pollute source code and decrease legibility. (We believe that the contrary is true). In the Java language where a preprocessor is not available, log statements increase the size of the code and reduce its speed, even when logging is turned off. Given that a reasonably sized application may contain thousands of log statements, speed is of particular importance.</p>
+<p>With log4j it is possible to enable logging at runtime without modifying the application binary. The log4j package is designed so that these statements can remain in shipped code without incurring a heavy performance cost. Logging behavior can be controlled by editing a configuration file, without touching the application binary.</p>
+<p>Logging equips the developer with detailed context for application failures. On the other hand, testing provides quality assurance and confidence in the application. Logging and testing should not be confused. They are complementary. When logging is wisely used, it can prove to be an essential tool.</p>
+<p>One of the distinctive features of log4j is the notion of inheritance in loggers. Using a logger hierarchy it is possible to control which log statements are output at arbitrarily fine granularity but also great ease. This helps to reduce the volume of logged output and the cost of logging.</p>
+<p>The target of the log output can be a file, an OutputStream, a java.io.Writer, a remote log4j server, a remote Unix Syslog daemon, or many other output targets.</p>
+<p>On an AMD Duron clocked at 800Mhz running JDK 1.3.1, it costs about 5 nanoseconds to determine if a logging statement should be logged or not. Actual logging is also quite fast, ranging from 21 microseconds using the SimpleLayout, 37 microseconds using the TTCCLayout. The performance of the PatternLayout is almost as good as the dedicated layouts, except that it is much more flexible.</p>
+<p>The package is being constantly improved thanks to input from users and code contributed by authors in the community.</p>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          1999-2010
+    
+          Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

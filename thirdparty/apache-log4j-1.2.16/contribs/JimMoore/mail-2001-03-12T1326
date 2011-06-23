@@ -1,0 +1,56 @@
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+
+
+Copied from:
+http://www.mail-archive.com/log4j-user@jakarta.apache.org/msg00430.html
+
+--------------------------------------------------------------------------------
+diverting System.stderr/stdout into log4j
+--------------------------------------------------------------------------------
+
+From: Joseph Panico 
+Subject: diverting System.stderr/stdout into log4j 
+Date: Mon, 12 Mar 2001 13:26:41 -0800 
+
+--------------------------------------------------------------------------------
+
+Folks,
+
+We use a number of third-party packages that do stderr.print... at various 
+random places in their code. I'm finding it quite useful to divert these 
+messages into our log4j heirarchy. I do this by replacing stderr/stdout with 
+my own PrintStreams that log the lines to a special log4j Category-- as 
+suggested on this list a while back. The only fly-in-the-ointment with this 
+scheme is LogLog. If there is a problem with log4j such that it cannot log 
+for some reason, then log4j internals use LogLog to attempt to print an 
+error message. This obviously leads to an infinite recursion. Has anyone 
+else been bothered by this? Would it make sense to add interface to LogLog 
+which would set the PrintStream it uses to log its error messages to?
+
+thanks for any ideas
+
+joe
+
+_________________________________________________________________
+Get your FREE download of MSN Explorer at http://explorer.msn.com
+
+
+---------------------------------------------------------------------
+To unsubscribe, e-mail: log4j-user-unsubscribe@jakarta.apache.org
+For additional commands, e-mail: log4j-user-help@jakarta.apache.org
+
+

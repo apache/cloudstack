@@ -1,0 +1,104 @@
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+
+===========
+Using log4j
+===========
+	
+1) First untar or unzip the distribution file.
+
+2) Assuming you chose to extract the distribution in to the
+   PATH_OF_YOUR_CHOICE, untarring the distribution file should create
+   a logging-log4j-VERSION directory, where VERSION is the log4j
+   version number, under PATH_OF_YOUR_CHOICE. We will refer to the
+   directory PATH_OF_YOUR_CHOICE/apache-log4j-VERSION/ as $LOG4J_HOME/.
+
+3) Add $LOG4J_HOME/log4j-VERSION.jar to your CLASSPATH,
+   
+4) You can now test your installation by first compiling the following
+   simple program.
+
+    import org.apache.log4j.Logger;
+    import org.apache.log4j.BasicConfigurator;
+    
+    public class Hello {
+    
+      private static final Logger logger = Logger.getLogger(Hello.class);
+    
+      public
+      static
+      void main(String argv[]) {
+    	BasicConfigurator.configure();
+    	logger.debug("Hello world.");
+    	logger.info("What a beatiful day.");
+      }
+    }
+
+
+   After compilation, try it out by issuing the command
+
+      java Hello
+  
+   You should see log statements appearing on the console.
+
+5) Refer to the javadoc documentation and the user manual on how to
+   include log statements in your own code.
+
+=========
+JAR files
+=========
+
+The log4j distribution comes with one jar file: log4j-VERSION.jar
+under the LOG4J_HOME directory.
+
+This jar file contains all the class files of the log4j project,
+except test cases and classes from the "examples" and
+"org.apache.log4j.performance" packages.
+
+
+==============
+Building log4j
+==============
+
+log4j (as of 1.2.15) is built with Maven 2.  To rebuild log4j,
+place Maven 2 on the PATH and execute "mvn package".  The resulting
+jar will be placed in the target subdirectory.
+
+If building with JDK 1.4, one dependency will need to be manually
+installed since its license does not allow it to be placed in the
+online maven repositories.  If not already installed, a build attempt will
+describe where to download and how to install the dependency.  To
+install the dependency:
+
+Download JMX 1.2.1 from http://java.sun.com/products/JavaManagement/download.html.
+
+$ jar xf jmx-1_2_1-ri.zip
+$ mvn install:install-file -DgroupId=com.sun.jmx -DartifactId=jmxri \
+          -Dversion=1.2.1 -Dpackaging=jar -Dfile=jmx-1_2_1-bin/lib/jmxri.jar
+
+
+The build script will attempt to build NTEventLogAppender.dll if
+MinGW is available on the path.  If the unit tests are run on Windows
+without NTEventLogAppender.dll, many warnings of the missing DLL
+will be generated.  An installer for MinGW on Windows is
+available for download at http://sourceforge.net/project/showfiles.php?group_id=2435.
+MinGW is also available through the package managers of many Linux distributions.
+
+In case of problems send an e-mail note to
+log4j-user@logging.apache.org.  Please do not directly e-mail any
+log4j developers. The answer to your question might be useful to other
+users. Moreover, there are many knowledgeable users on the log4j-user
+mailing lists who can quickly answer your questions.

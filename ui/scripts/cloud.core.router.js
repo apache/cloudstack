@@ -312,7 +312,7 @@ function doChangeSystemServiceOffering($actionLink, $detailsTab, $midmenuItem1) 
 	}
 	
 	$.ajax({	   
-	    data: createURL("command=listServiceOfferings&issystem=true"), 
+	    data: createURL("command=listServiceOfferings&issystem=true&systemvmtype=domainrouter"), 
 		dataType: "json",
 		async: false,
 		success: function(json) {
@@ -321,10 +321,10 @@ function doChangeSystemServiceOffering($actionLink, $detailsTab, $midmenuItem1) 
 			
 			if (offerings != null && offerings.length > 0) {
 				for (var i = 0; i < offerings.length; i++) {
-					if(offerings[i].id != jsonObj.serviceofferingid) {
+					//if(offerings[i].id != jsonObj.serviceofferingid) {
 						var option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].name) + "</option>").data("name", fromdb(offerings[i].name));
 						offeringSelect.append(option); 
-					}
+					//}
 				}
 			} 
 		}

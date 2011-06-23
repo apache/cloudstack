@@ -1,0 +1,557 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+
+<!-- This file is an ANT build script. ANT is a Java based build tool. -->
+<!-- It is availale from http://ant.apache.org/                -->
+
+
+<!-- ================================================================= -->
+<!-- NOTE: all directories are relative to jakarta-log4j/tests         -->
+<!-- ================================================================= -->
+<project name="log4j" default="usage" basedir="." >
+
+  <property file="build.properties"/>
+
+  <!--   if a Maven build has been attempted,
+              the Maven repository can provide all the dependencies.  -->
+  <property name="m2_repo" location="${user.home}/.m2/repository"/>
+  <property name="oro.version" value="2.0.8"/>
+  <property name="jakarta.oro.jar" location="${m2_repo}/oro/oro/${oro.version}/oro-${oro.version}.jar"/>
+  <property name="checkstyle.version" value="4.1"/>
+  <property name="checkstyle.jar" location="${m2_repo}/checkstyle/checkstyle/${checkstyle.version}/checkstyle-${checkstyle.version}.jar"/>
+  <property name="javamail.jar" location="${m2_repo}/javax/mail/mail/1.4/mail-1.4.jar"/>
+  <property name="activation.jar" location="${m2_repo}/javax/activation/activation/1.1/activation-1.1.jar"/>
+  <property name="junit.version" value="3.8.1"/>
+  <property name="junit.jar" location="${m2_repo}/junit/junit/${junit.version}/junit-${junit.version}.jar"/>
+
+
+  <!-- Read the system environment variables and stores them in properties, -->
+  <!-- prefixed with "env". -->
+  <property environment="env"/>
+
+  <!-- The base directory relative to which most targets are built -->
+  <property name="base" value="."/>
+ 
+  <!-- The directory where source files are stored. -->
+  <property name="project.source.home" value="../src/main/java/"/>
+  <property name="project.classes.home" value="../dist/classes/"/>
+
+  <property name="tests.source.home" value="./src/java/"/>
+  <property name="excludes" value=""/>
+  
+  <property name="javac.source" value="1.1"/>
+  <property name="javac.target" value="1.1"/>
+
+  <path id="tests.classpath">
+    <pathelement location="${log4j.jar}"/>
+    <pathelement location="${project.source.home}"/>
+    <pathelement location="${project.classes.home}"/>
+    <pathelement location="${tests.source.home}"/>
+    <pathelement location="./classes"/>
+    <pathelement location="./resources"/>
+    <pathelement location="${jakarta.oro.jar}"/>
+    <pathelement location="${jaxp.jaxp.jar}"/>
+    <pathelement location="${jaxp.parser.jar}"/>
+    <pathelement location="${clover.jar}"/>
+    <pathelement location="${junit.jar}"/>
+    <pathelement location="${javamail.jar}"/>
+    <pathelement location="${activation.jar}"/>
+    <pathelement path="${java.class.path}"/>
+  </path>
+
+  <!-- ================================================================= -->
+  <!--                        TARGETS                                    -->
+  <!-- ================================================================= -->
+
+
+
+  <!-- ================================================================= -->
+  <!-- Default target                                                    -->
+  <!-- ================================================================= -->
+  
+  <target name="usage">
+    <echo>
+
+    These are the targets supported by this ANT build scpript:
+
+    build  - compile all project files, if a certain library is missing, 
+         then the compilation of its dependents are skipped.
+
+    regression - Run regression tests which check large parts of log4j.
+
+    runAll     - run all available tests
+
+    Specify the log4j.jar property to test an arbitrary jar,
+        otherwise the parent log4j will be built and tested.
+    </echo>
+  </target>
+
+  <target name="prepare">
+    <!--  if target directory available, use it
+             otherwise assume it is a distribution and jar is in root  -->
+    <available property="project.lib.home" value="../target" file="../target"/>
+    <property name="project.lib.home" value=".."/>
+    <mkdir dir="./classes" />
+    <mkdir dir="./output" />
+    <condition property="is-windows" value="true">
+        <os family="windows"/>
+    </condition>
+  </target>
+
+  <!-- Clean the parent project                                          -->
+  <!-- ================================================================= -->
+  <target name="parentClean" unless="log4j.jar">
+    <ant dir=".." target="clean" inheritRefs="true"/>
+  </target>
+  
+  
+  
+  <!-- ================================================================= -->
+  <!-- Build the parent project                                          -->
+  <!-- ================================================================= -->  
+  <target name="parentBuild" unless="log4j.jar">    
+    <ant dir=".." target="build.core" inheritRefs="true"/>
+    <ant dir=".." target="build.xml" inheritRefs="true"/>
+  </target>
+
+
+  <!-- ================================================================= -->
+  <!-- Compile test cases and related source files.                      -->
+  <!-- ================================================================= -->
+  <target name="build" depends="parentBuild, prepare">
+    <property name="haltonfailure" value="yes"/>
+    <javac srcdir="${tests.source.home}"
+            destdir="./classes"
+           deprecation="${deprecation}"
+           target="${javac.target}"
+           source="${javac.source}"
+           debug="on"
+           excludes="${excludes}">        
+      <classpath refid="tests.classpath"/>
+    </javac>
+  </target>
+
+  <!-- ================================================================= -->
+  <!-- Remove all generated files such as compiled class files and test  -->
+  <!-- case output.                                                     -->
+  <!-- ================================================================= -->
+  <target name="clean">
+    <delete dir="./classes/" />
+    <delete dir="./output/" />
+  </target>
+
+  <!-- ================================================================= -->
+  <!-- Run all tests                                                     -->
+  <!-- ================================================================= -->  
+  <target name="runAll" depends="regression, longUnit"/>
+
+  <!-- ================================================================= -->
+  <!-- Tests multiple parts of log4j. These tests are much more fragile  -->
+  <!-- unit tests. Regression tests compare output with a previously     -->
+  <!-- created witness file.                                             -->
+  <!-- ================================================================= -->  
+  <target name="regression" depends="Core, Minimum, Logger, DOM, CustomLevel,
+                                     CustomLogger,PatternLayout,
+                                     HierarchyThreshold, DefaultInit, SocketServer,
+                                     XMLLayout, AsyncAppender,
+                                     OptionConverter, BoundedFIFO,
+                                     CyclicBuffer, OR,
+                                     LevelMatchFilter, PatternParser, 
+									 ErrorHandler"/>
+
+  <!-- ================================================================= -->
+  <!-- Longer unit tests                                                 -->
+  <!-- ================================================================= -->
+  <target name="longUnit" depends=""/>
+
+  <!-- ================================================================= -->
+  <!-- ============== Regression and Unit Tests follow ================= -->  
+  <!-- ================================================================= -->
+    <target name="Core" depends="build">
+      <junit printsummary="yes" fork="yes" 
+         haltonfailure="${haltonfailure}" dir="${basedir}">
+        <classpath refid="tests.classpath"/>
+        <formatter type="plain" usefile="false"/>
+        <test name="org.apache.log4j.CoreTestSuite" />
+      </junit>
+    </target>
+
+
+  <target name="Minimum" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.MinimumTestCase" />
+    </junit>
+  </target>
+
+  <target name="Logger" depends="build">
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.LoggerTestCase" />
+    </junit>
+  </target>
+
+  <target name="PatternLayout" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.PatternLayoutTestCase" />
+    </junit>
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.EnhancedPatternLayoutTestCase" />
+    </junit>
+  </target>
+
+  <target name="HierarchyThreshold" depends="build">
+    <delete file="output/temp"/>
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.HierarchyThresholdTestCase" />
+    </junit>
+  </target>
+
+  <target name="DOM" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.xml.DOMTestCase" />
+    </junit>
+  </target>
+
+  <target name="CustomLevel" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false" />
+      <test name="org.apache.log4j.xml.CustomLevelTestCase" />
+    </junit>
+  </target>
+
+  <target name="CustomLogger" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false" />
+      <test name="org.apache.log4j.customLogger.XLoggerTestCase" />
+    </junit>
+  </target>
+
+  <target name="DefaultInit" depends="build">
+    <!-- Delete possible cruft from previous runs. -->
+    <delete file="${basedir}/classes/log4j.xml"/>
+    <delete file="${basedir}/classes/log4j.properties"/>
+
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test fork="true" name="org.apache.log4j.defaultInit.TestCase1" />
+    </junit>
+
+    <copy file="${basedir}/input/xml/defaultInit.xml" tofile="${basedir}/classes/log4j.xml"/>
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test fork="true" name="org.apache.log4j.defaultInit.TestCase2" />      
+    </junit>
+    <delete file="${basedir}/classes/log4j.xml"/>
+
+    <!-- test handling of log4j.defaultInitOverride system property -->
+    <copy file="${basedir}/input/xml/defaultInit.xml" tofile="${basedir}/classes/log4j.xml"/>
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <jvmarg value="-Dlog4j.defaultInitOverride=true"/>
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test fork="true" name="org.apache.log4j.defaultInit.TestCase1" />
+    </junit>
+    <delete file="${basedir}/classes/log4j.xml"/>
+
+    <!-- test default initialization from log4j.xml -->
+    <copy file="${basedir}/input/defaultInit3.properties" tofile="${basedir}/classes/log4j.properties"/>
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test fork="true" name="org.apache.log4j.defaultInit.TestCase3" />      
+    </junit>
+    <delete file="${basedir}/classes/log4j.properties"/>
+
+    <!-- test default initialization from log4j.properties -->
+    <copy file="${basedir}/input/xml/defaultInit.xml" tofile="${basedir}/classes/log4j.xml"/>
+    <copy file="${basedir}/input/defaultInit3.properties" tofile="${basedir}/classes/log4j.properties"/>
+    <junit printsummary="yes" fork="yes" 
+         haltonfailure="${haltonfailure}"  dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test fork="true" name="org.apache.log4j.defaultInit.TestCase4" />      
+    </junit>
+    <delete file="${basedir}/classes/log4j.xml"/>
+    <delete file="${basedir}/classes/log4j.properties"/>
+  </target>
+
+  <target name="SocketServer" depends="build">
+    <parallel>
+      <java classname="org.apache.log4j.net.ShortSocketServer" 
+          fork="yes" dir="${basedir}">
+   <arg value="8"/> 
+   <arg value="input/socketServer"/> 
+   <classpath refid="tests.classpath"/>
+      </java>
+      <sequential>
+   <sleep seconds="2"/>
+   <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}" dir="${basedir}">
+     <sysproperty key="testNumber" value="1"/>
+     <classpath refid="tests.classpath"/>
+     <formatter type="plain" usefile="false" />
+     <test name="org.apache.log4j.net.SocketServerTestCase" />
+   </junit>
+      </sequential>
+    </parallel>
+  </target>
+
+  <target name="XMLLayout" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false" />
+      <test name="org.apache.log4j.xml.XMLLayoutTestCase" />
+    </junit>
+  </target>
+
+  <target name="AsyncAppender" depends="build">
+    <junit printsummary="yes" fork="yes" 
+      haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false" />
+      <test name="org.apache.log4j.AsyncAppenderTestCase" />
+    </junit>
+  </target>
+
+  <target name="LevelMatchFilter" depends="build">
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.varia.LevelMatchFilterTestCase" />
+    </junit>
+  </target>
+
+  <target name="ErrorHandler" depends="build">
+    <junit printsummary="yes" fork="yes" 
+         haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false" />
+      <test name="org.apache.log4j.varia.ErrorHandlerTestCase" />
+    </junit>
+  </target>
+
+  <target name="OptionConverter" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.helpers.OptionConverterTestCase" />
+    </junit>
+  </target>
+
+  <target name="BoundedFIFO" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.helpers.BoundedFIFOTestCase" />
+    </junit>
+  </target>
+
+  <target name="CyclicBuffer" depends="build">
+    <junit printsummary="yes" fork="yes" 
+         haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.helpers.CyclicBufferTestCase" />
+    </junit>
+  </target>
+
+  <target name="PatternParser" depends="build">
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.helpers.PatternParserTestCase" />
+    </junit>
+  </target>
+
+
+  <target name="OR" depends="build">
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.or.ORTestCase" />
+    </junit>
+  </target>
+
+  <target name="DRFA" depends="build">
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.DRFATestCase" />
+    </junit>
+  </target>
+
+  <target name="RFA" depends="build">
+    <junit printsummary="yes" fork="yes" 
+       haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.RFATestCase" />
+    </junit>
+  </target>
+
+  <target name="ERFA" depends="build">
+    <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.varia.ERFATestCase" />
+    </junit>
+  </target>
+
+  <target name="Syslog" depends="build">
+      <junit printsummary="yes" fork="yes" 
+          haltonfailure="${haltonfailure}" dir="${basedir}">
+        <classpath refid="tests.classpath"/>
+        <formatter type="plain" usefile="false"/>
+        <test name="org.apache.log4j.net.SyslogAppenderTest" />
+      </junit>
+  </target>
+
+  <target name="NTEventLogAppender" depends="build" if="is-windows">
+    <junit printsummary="yes" 
+        fork="yes" 
+        haltonfailure="${haltonfailure}"
+        dir="${project.lib.home}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.nt.NTEventLogAppenderTest" />
+    </junit>
+  </target>
+
+  <target name="Socket" depends="build">
+      <junit printsummary="yes" fork="yes" 
+        haltonfailure="${haltonfailure}" dir="${basedir}">
+        <classpath refid="tests.classpath"/>
+        <formatter type="plain" usefile="false"/>
+        <test name="org.apache.log4j.net.SocketAppenderTest" />
+      </junit>
+  </target>
+
+
+  <!-- ================================================================= -->
+  <!-- ========================= Very long Tests ======================= -->
+  <!-- ================================================================= -->
+  
+  <!-- none yet, but StressCategory is a good candidate... -->
+  
+   <!-- ============================================================= --> 
+   <!--                      Coverage analysis                        -->
+   <!-- ============================================================= --> 
+   <target name="with.clover">
+        <!-- some tests fail when running clover
+                setting this property will cause testing to continue  -->
+        <property name="haltonfailure" value="no"/>
+        <available resource="clovertasks" property="clover-present"/>
+
+        <fail unless="clover-present">
+          clover.jar must be in the classpath and should also be
+          placed in the lib directory.  A version of clover 
+          (http://www.cenqua.com/clover) for use with ASF projects 
+          is available from the committers/donated-licenses/clover module 
+          in the SVN repository. 
+       </fail>
+         
+       <taskdef resource="clovertasks"/>
+       <clover-setup initString="log4j.db"/>
+    </target>
+
+    <target name="coverageReport" depends="parentClean, clean, with.clover, runAll">
+      <mkdir dir="coverage"/>
+      <taskdef resource="clovertasks"/>
+      <clover-report>
+        <current title="log4j coverage" outfile="coverage">
+          <format type="html"/>
+        </current>
+      </clover-report>
+    </target>
+
+
+  <!-- ================================================================= -->
+  <!-- This target reformats the source with Jalopy.                      -->
+  <!-- ================================================================= -->
+
+  <target name="jalopy" depends="prepare" description="Reformat source code using Jalopy">
+        <fail unless="jalopy.files">
+Specify files to reformat with -Djalopy.files=PATTERN.
+</fail>
+		<taskdef name="jalopy"
+         	classname="de.hunsicker.jalopy.plugin.ant.AntPlugin">
+  		    <classpath>
+    	        <fileset dir="${jalopy-ant.dir}/lib">
+                    <include name="*.jar" />
+                </fileset>
+            </classpath>
+        </taskdef>
+        <jalopy backup="no" 
+             convention="log4j-coding-convention.xml"
+             classpathref="tests.classpath">
+            <fileset dir="${tests.source.home}" includes="${jalopy.files}"/>
+        </jalopy>
+          
+  </target>
+
+  <!-- ================================================================= -->
+  <!-- This target checks code conventions with checkstyle.              -->
+  <!-- ================================================================= -->
+
+  <target name="checkstyle" depends="prepare" description="Check source code using checkstyle">
+        <property name="checkstyle.files" value="**/*.java"/>
+        <taskdef resource="checkstyletask.properties"
+         classpath="${checkstyle.jar}"/>
+        <checkstyle config="sun_checks.xml">
+            <fileset dir="${tests.source.home}" includes="${checkstyle.files}"/>
+        </checkstyle>          
+  </target>
+
+  
+</project>
+

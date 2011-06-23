@@ -1,0 +1,6 @@
+TRACE - pass 0; filter set to accept only TRACE msgs
+DEBUG - pass 1; filter set to accept only DEBUG msgs
+INFO - pass 2; filter set to accept only INFO msgs
+WARN - pass 3; filter set to accept only WARN msgs
+ERROR - pass 4; filter set to accept only ERROR msgs
+FATAL - pass 5; filter set to accept only FATAL msgs

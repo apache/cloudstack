@@ -330,6 +330,8 @@ function systemServiceOfferingJsonToDetailsTab() {
     
     $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
+       
+    setBooleanReadField(jsonObj.defaultuse,  $thisTab.find("#defaultuse"));
     
     $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
     $thisTab.find("#domain_edit").val(fromdb(jsonObj.domainid));   
@@ -338,9 +340,16 @@ function systemServiceOfferingJsonToDetailsTab() {
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();      
-    buildActionLinkForTab("label.action.edit.service.offering", systemServiceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    buildActionLinkForTab("label.action.delete.service.offering", systemServiceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    $actionMenu.find("#action_list").empty(); 
+    var noAvailableActions = true;    
+    if(jsonObj.defaultuse == false) {
+	    buildActionLinkForTab("label.action.edit.service.offering", systemServiceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+	    buildActionLinkForTab("label.action.delete.service.offering", systemServiceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);
+	    noAvailableActions = false;	        
+    }         
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	 
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();    	
@@ -364,7 +373,8 @@ function systemServiceOfferingClearDetailsTab() {
     $thisTab.find("#offerha").text("");
     $thisTab.find("#offerha_edit").val("");  
     $thisTab.find("#limitcpuuse").text("");
-    $thisTab.find("#tags").text("");  
+    $thisTab.find("#tags").text("");      
+    $thisTab.find("#defaultuse").text("");     
     $thisTab.find("#domain").text(""); 
     $thisTab.find("#domain_edit").val("");   
     $thisTab.find("#created").text(""); 

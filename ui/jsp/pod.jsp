@@ -507,8 +507,8 @@ dictionary = {
                 </div>
             </li>
 			<li>
-                <label input_group="general">
-                    Tags:</label>
+                <label input_group="general">                    
+					<fmt:message key="label.host.tags"/>:</label>
                 <input class="text" type="text" name="host_tags" id="host_tags" />
                 <div id="host_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -690,7 +690,7 @@ dictionary = {
             </li>
             <li id="add_pool_tags_container">
                 <label for="add_pool_tags">
-                    <fmt:message key="label.tags"/>:</label>
+                    <fmt:message key="label.storage.tags"/>:</label>
                 <input class="text" type="text" id="add_pool_tags" />
                 <div id="add_pool_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>

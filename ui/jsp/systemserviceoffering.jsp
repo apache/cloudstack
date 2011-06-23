@@ -149,7 +149,7 @@ dictionary = {
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <fmt:message key="label.tags"/>:</div>
+	                        <fmt:message key="label.storage.tags"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="tags">
@@ -158,6 +158,17 @@ dictionary = {
 	            </div>
 	            
 	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.default.use"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="defaultuse">
+	                    </div>	
+	                </div>
+	            </div>
+	            
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.domain"/>:</div>
@@ -170,7 +181,7 @@ dictionary = {
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.created"/>:</div>
@@ -250,7 +261,7 @@ dictionary = {
 				</li>	
 				<li id="add_service_tags_container">
                     <label for="add_service_tags">
-                        <fmt:message key="label.tags"/>:</label>
+                        <fmt:message key="label.storage.tags"/>:</label>
                     <input class="text" type="text" id="add_service_tags" />
                     <div id="add_service_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>

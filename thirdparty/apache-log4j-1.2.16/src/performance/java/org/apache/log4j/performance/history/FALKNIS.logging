@@ -1,0 +1,133 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+All tests done with java version "1.2.2"
+Classic VM (J2RE 1.2.2 IBM build cadev-19991008 (JIT enabled: jitc))
+-------------- Wed Dec 8 20:55:19 MET 1999 ---------------
+Logging to a real file.
+Results: 516 525 - average 520 (basic)
+Results: 657 655 - average 656 (cgu)
+
+Logging to a null (nop) output stream.
+Results: 63 61 - average 62 (basic)
+Results: 155 144 - average 149 (cgu)
+
+Logging with stack info to a regular file.
+Results: 2991 2999 - average 2995 (basic)
+Results: 5174 5260 - average 5217 (cgu)
+
+Logging with stack info to a null (nop) output stream.
+Results: 779 780 - average 779 (basic)
+Results: 2716 2876 - average 2796 (cgu)
+
+Result with the DateFormat line  in CGULog.java:
+static private final java.text.DateFormat __DATETIME_FORMAT = new
+                 java.text.SimpleDateFormat("[HH:mm:ss:SSS z] dd.MM.yy");
+-------------- Wed Dec 8 20:59:25 MET 1999 ---------------
+Logging to a real file.
+Results: 517 526 - average 521 (basic)
+Results: 720 656 - average 688 (cgu)
+
+Logging to a null (nop) output stream.
+Results: 61 63 - average 62 (basic)
+Results: 173 171 - average 172 (cgu)
+
+Logging with stack info to a regular file.
+Results: 3034 3048 - average 3041 (basic)
+Results: 5125 4603 - average 4864 (cgu)
+
+Logging with stack info to a null (nop) output stream.
+Results: 793 929 - average 861 (basic)
+-------------- Mon Jan 3 17:17:53 MET 2000 ---------------
+Logging to Writer instead of OutputStrem
+
+Logging to a real file.
+Results: 453 433 432 440 433 436 438 437 437 471 - average 441 (simple)
+Results: 611 588 587 619 595 585 596 590 639 600 - average 601 (ttcc)
+
+Logging to a null (nop) output stream.
+Results: 34 29 29 27 29 28 30 27 29 28 - average 29 (simple)
+Results: 87 112 89 87 86 87 86 87 86 86 - average 89 (ttcc)
+
+Logging with stack info to a regular file.
+Results: 1806 1786 1808 1807 1816 1862 1818 1808 1825 - average 1816 (simple)
+Results: 2391 2196 2170 2229 2206 2191 2183 2181 2244 - average 2221 (ttcc)
+
+Logging with stack info to a null (nop) output stream.
+Results: 763 767 806 772 769 758 756 756 768 - average 768 (simple)
+Results: 1046 1067 1095 1042 1037 1034 1058 1082 1057 - average 1058 (ttcc)
+-------------- Thu Jan 13 15:08:27 MET 2000 ---------------
+Using 0.7.3 style appender.doAppend method
+
+Logging to a real file.
+Results: 436 484 438 443 449 448 440 444 - average 447 (simple)
+Results: 665 616 598 596 604 588 603 593 - average 607 (ttcc)
+
+Logging to a null (nop) output stream.
+Results: 24 24 24 23 24 24 27 24 - average 24 (simple)
+Results: 81 83 81 81 82 80 80 81 - average 81 (ttcc)
+
+Logging with stack info to a regular file.
+Results: 1434 1392 1578 1430 1413 1409 1410 1409 - average 1434 (simple)
+Results: 1769 1801 1886 1783 1790 1754 1763 1771 - average 1789 (ttcc)
+
+Logging with stack info to a null (nop) output stream.
+Results: 726 710 721 695 707 699 707 710 - average 709 (simple)
+Results: 961 963 966 933 932 930 932 945 - average 945 (ttcc)
+-------------- Fri Jan 21 19:05:34 MET 2000 ---------------
+0.7.4 performance, JDK 1.2.2 GA
+
+Logging to a real file.
+Results: 436 432 479 451 457 454 436 434 - average 447 simple
+Results: 597 632 585 589 587 593 586 593 - average 595 ttcc/RelTime
+Results: 729 745 744 738 782 748 730 765 - average 747 ttcc/AbsTime
+Results: 765 832 767 772 763 762 778 770 - average 776 ttcc/Date
+
+Logging to a NOPWriter.
+Results: 17 18 18 17 17 18 18 17 - average 17 simple
+Results: 71 80 68 68 68 69 71 68 - average 70 ttcc/RelTime
+Results: 165 166 166 168 167 163 164 167 - average 165 ttcc/AbsTime
+Results: 176 179 175 178 179 180 175 176 - average 177 ttcc/Date
+
+Logging with stack info to a regular file.
+Results: 1403 1408 1399 1405 1406 1390 1399 1515 - average 1415 simple
+Results: 1697 1811 1676 1591 1631 1599 1616 1613 - average 1654 ttcc/RelTime
+
+Logging with stack info to a NOPWriter.
+Results: 599 597 604 595 605 596 597 616 - average 601 simple
+Results: 780 764 767 775 765 758 752 765 - average 765 ttcc/RelTime
+-------------- Fri Jan 21 19:29:31 MET 2000 ---------------
+static Date object
+
+Logging to a real file.
+Results: 467 437 442 442 433 453 438 435 - average 443 simple
+Results: 580 583 588 621 586 579 592 585 - average 589 ttcc/RelTime
+Results: 737 773 731 734 732 740 762 734 - average 742 ttcc/AbsTime
+Results: 755 755 760 805 757 752 770 766 - average 765 ttcc/Date
+
+Logging to a NOPWriter.
+Results: 11 11 12 12 11 11 11 11 - average 11 simple
+Results: 51 53 51 52 51 52 51 51 - average 51 ttcc/RelTime
+Results: 97 95 95 95 97 98 98 96 - average 96 ttcc/AbsTime
+Results: 113 112 113 113 113 110 114 115 - average 112 ttcc/Date
+
+Logging with stack info to a regular file.
+Results: 1391 1426 1410 1403 1454 1471 1475 1470 - average 1437 simple
+Results: 1620 1627 1631 1615 1601 1606 1598 1802 - average 1637 ttcc/RelTime
+
+Logging with stack info to a NOPWriter.
+Results: 598 629 609 605 595 602 599 608 - average 605 simple
+Results: 759 765 743 757 758 747 773 756 - average 757 ttcc/RelTime

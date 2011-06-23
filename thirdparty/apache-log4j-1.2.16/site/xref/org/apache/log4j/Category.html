@@ -1,0 +1,1076 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
+<title>Category xref</title>
+<link type="text/css" rel="stylesheet" href="../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../apidocs/org/apache/log4j/Category.html">View Javadoc</a></div><pre>
+
+<a name="1" href="#1">1</a>   <em class="jxr_comment">/*</em>
+<a name="2" href="#2">2</a>   <em class="jxr_comment"> * Licensed to the Apache Software Foundation (ASF) under one or more</em>
+<a name="3" href="#3">3</a>   <em class="jxr_comment"> * contributor license agreements.  See the NOTICE file distributed with</em>
+<a name="4" href="#4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright ownership.</em>
+<a name="5" href="#5">5</a>   <em class="jxr_comment"> * The ASF licenses this file to You under the Apache License, Version 2.0</em>
+<a name="6" href="#6">6</a>   <em class="jxr_comment"> * (the "License"); you may not use this file except in compliance with</em>
+<a name="7" href="#7">7</a>   <em class="jxr_comment"> * the License.  You may obtain a copy of the License at</em>
+<a name="8" href="#8">8</a>   <em class="jxr_comment"> * </em>
+<a name="9" href="#9">9</a>   <em class="jxr_comment"> *      <a href="http://www.apache.org/licenses/LICENSE-2.0" target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.0</a></em>
+<a name="10" href="#10">10</a>  <em class="jxr_comment"> * </em>
+<a name="11" href="#11">11</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a name="12" href="#12">12</a>  <em class="jxr_comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a name="13" href="#13">13</a>  <em class="jxr_comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a name="14" href="#14">14</a>  <em class="jxr_comment"> * See the License for the specific language governing permissions and</em>
+<a name="15" href="#15">15</a>  <em class="jxr_comment"> * limitations under the License.</em>
+<a name="16" href="#16">16</a>  <em class="jxr_comment"> */</em>
+<a name="17" href="#17">17</a>  
+<a name="18" href="#18">18</a>  <em class="jxr_comment">// Contibutors: Alex Blewitt &lt;Alex.Blewitt@ioshq.com&gt;</em>
+<a name="19" href="#19">19</a>  <em class="jxr_comment">//              Markus Oestreicher &lt;oes@zurich.ibm.com&gt;</em>
+<a name="20" href="#20">20</a>  <em class="jxr_comment">//              Frank Hoering &lt;fhr@zurich.ibm.com&gt;</em>
+<a name="21" href="#21">21</a>  <em class="jxr_comment">//              Nelson Minar &lt;nelson@media.mit.edu&gt;</em>
+<a name="22" href="#22">22</a>  <em class="jxr_comment">//              Jim Cakalic &lt;jim_cakalic@na.biomerieux.com&gt;</em>
+<a name="23" href="#23">23</a>  <em class="jxr_comment">//              Avy Sharell &lt;asharell@club-internet.fr&gt;</em>
+<a name="24" href="#24">24</a>  <em class="jxr_comment">//              Ciaran Treanor &lt;ciaran@xelector.com&gt;</em>
+<a name="25" href="#25">25</a>  <em class="jxr_comment">//              Jeff Turner &lt;jeff@socialchange.net.au&gt;</em>
+<a name="26" href="#26">26</a>  <em class="jxr_comment">//              Michael Horwitz &lt;MHorwitz@siemens.co.za&gt;</em>
+<a name="27" href="#27">27</a>  <em class="jxr_comment">//              Calvin Chan &lt;calvin.chan@hic.gov.au&gt;</em>
+<a name="28" href="#28">28</a>  <em class="jxr_comment">//              Aaron Greenhouse &lt;aarong@cs.cmu.edu&gt;</em>
+<a name="29" href="#29">29</a>  <em class="jxr_comment">//              Beat Meier &lt;bmeier@infovia.com.ar&gt;</em>
+<a name="30" href="#30">30</a>  <em class="jxr_comment">//              Colin Sampaleanu &lt;colinml1@exis.com&gt;</em>
+<a name="31" href="#31">31</a>  
+<a name="32" href="#32">32</a>  <strong class="jxr_keyword">package</strong> org.apache.log4j;
+<a name="33" href="#33">33</a>  
+<a name="34" href="#34">34</a>  <strong class="jxr_keyword">import</strong> org.apache.log4j.spi.AppenderAttachable;
+<a name="35" href="#35">35</a>  <strong class="jxr_keyword">import</strong> org.apache.log4j.spi.LoggingEvent;
+<a name="36" href="#36">36</a>  <strong class="jxr_keyword">import</strong> org.apache.log4j.spi.LoggerRepository;
+<a name="37" href="#37">37</a>  <strong class="jxr_keyword">import</strong> org.apache.log4j.spi.HierarchyEventListener;
+<a name="38" href="#38">38</a>  <strong class="jxr_keyword">import</strong> org.apache.log4j.helpers.NullEnumeration;
+<a name="39" href="#39">39</a>  <strong class="jxr_keyword">import</strong> org.apache.log4j.helpers.AppenderAttachableImpl;
+<a name="40" href="#40">40</a>  
+<a name="41" href="#41">41</a>  <strong class="jxr_keyword">import</strong> java.util.Enumeration;
+<a name="42" href="#42">42</a>  <strong class="jxr_keyword">import</strong> java.util.MissingResourceException;
+<a name="43" href="#43">43</a>  <strong class="jxr_keyword">import</strong> java.util.ResourceBundle;
+<a name="44" href="#44">44</a>  <strong class="jxr_keyword">import</strong> java.util.Vector;
+<a name="45" href="#45">45</a>  
+<a name="46" href="#46">46</a>  
+<a name="47" href="#47">47</a>  <em class="jxr_javadoccomment">/**</em>
+<a name="48" href="#48">48</a>  <em class="jxr_javadoccomment">  * &lt;font color="#AA2222"&gt;&lt;b&gt;This class has been deprecated and</em>
+<a name="49" href="#49">49</a>  <em class="jxr_javadoccomment">  * replaced by the {@link Logger} &lt;em&gt;subclass&lt;/em&gt;&lt;/b&gt;&lt;/font&gt;. It</em>
+<a name="50" href="#50">50</a>  <em class="jxr_javadoccomment">  * will be kept around to preserve backward compatibility until mid</em>
+<a name="51" href="#51">51</a>  <em class="jxr_javadoccomment">  * 2003.</em>
+<a name="52" href="#52">52</a>  <em class="jxr_javadoccomment">  * </em>
+<a name="53" href="#53">53</a>  <em class="jxr_javadoccomment">  * &lt;p&gt;&lt;code&gt;Logger&lt;/code&gt; is a subclass of Category, i.e. it extends</em>
+<a name="54" href="#54">54</a>  <em class="jxr_javadoccomment">  * Category. In other words, a logger &lt;em&gt;is&lt;/em&gt; a category. Thus,</em>
+<a name="55" href="#55">55</a>  <em class="jxr_javadoccomment">  * all operations that can be performed on a category can be</em>
+<a name="56" href="#56">56</a>  <em class="jxr_javadoccomment">  * performed on a logger. Internally, whenever log4j is asked to</em>
+<a name="57" href="#57">57</a>  <em class="jxr_javadoccomment">  * produce a Category object, it will instead produce a Logger</em>
+<a name="58" href="#58">58</a>  <em class="jxr_javadoccomment">  * object. Log4j 1.2 will &lt;em&gt;never&lt;/em&gt; produce Category objects but</em>
+<a name="59" href="#59">59</a>  <em class="jxr_javadoccomment">  * only &lt;code&gt;Logger&lt;/code&gt; instances. In order to preserve backward</em>
+<a name="60" href="#60">60</a>  <em class="jxr_javadoccomment">  * compatibility, methods that previously accepted category objects</em>
+<a name="61" href="#61">61</a>  <em class="jxr_javadoccomment">  * still continue to accept category objects.</em>
+<a name="62" href="#62">62</a>  <em class="jxr_javadoccomment">  * </em>
+<a name="63" href="#63">63</a>  <em class="jxr_javadoccomment">  * &lt;p&gt;For example, the following are all legal and will work as</em>
+<a name="64" href="#64">64</a>  <em class="jxr_javadoccomment">  * expected.</em>
+<a name="65" href="#65">65</a>  <em class="jxr_javadoccomment">  * </em>
+<a name="66" href="#66">66</a>  <em class="jxr_javadoccomment">   &lt;pre&gt;</em>
+<a name="67" href="#67">67</a>  <em class="jxr_javadoccomment">    &amp;nbsp;&amp;nbsp;&amp;nbsp;// Deprecated form:</em>
+<a name="68" href="#68">68</a>  <em class="jxr_javadoccomment">    &amp;nbsp;&amp;nbsp;&amp;nbsp;Category cat = Category.getInstance("foo.bar")</em>
+<a name="69" href="#69">69</a>  <em class="jxr_javadoccomment">   </em>
+<a name="70" href="#70">70</a>  <em class="jxr_javadoccomment">    &amp;nbsp;&amp;nbsp;&amp;nbsp;// Preferred form for retrieving loggers:</em>
+<a name="71" href="#71">71</a>  <em class="jxr_javadoccomment">    &amp;nbsp;&amp;nbsp;&amp;nbsp;Logger logger = Logger.getLogger("foo.bar")</em>
+<a name="72" href="#72">72</a>  <em class="jxr_javadoccomment">   &lt;/pre&gt;</em>
+<a name="73" href="#73">73</a>  <em class="jxr_javadoccomment">   </em>
+<a name="74" href="#74">74</a>  <em class="jxr_javadoccomment">  *  &lt;p&gt;The first form is deprecated and should be avoided.</em>
+<a name="75" href="#75">75</a>  <em class="jxr_javadoccomment">  * </em>
+<a name="76" href="#76">76</a>  <em class="jxr_javadoccomment">  *  &lt;p&gt;&lt;b&gt;There is absolutely no need for new client code to use or</em>
+<a name="77" href="#77">77</a>  <em class="jxr_javadoccomment">  *  refer to the &lt;code&gt;Category&lt;/code&gt; class.&lt;/b&gt; Whenever possible,</em>
+<a name="78" href="#78">78</a>  <em class="jxr_javadoccomment">  *  please avoid referring to it or using it.</em>
+<a name="79" href="#79">79</a>  <em class="jxr_javadoccomment">  * </em>
+<a name="80" href="#80">80</a>  <em class="jxr_javadoccomment">  * &lt;p&gt;See the &lt;a href="../../../../manual.html"&gt;short manual&lt;/a&gt; for an</em>
+<a name="81" href="#81">81</a>  <em class="jxr_javadoccomment">  * introduction on this class.</em>
+<a name="82" href="#82">82</a>  <em class="jxr_javadoccomment">  * &lt;p&gt;</em>
+<a name="83" href="#83">83</a>  <em class="jxr_javadoccomment">  * See the document entitled &lt;a href="<a href="http://www.qos.ch/logging/preparingFor13.html" target="alexandria_uri">http://www.qos.ch/logging/preparingFor13.html</a>"&gt;preparing</em>
+<a name="84" href="#84">84</a>  <em class="jxr_javadoccomment">  *  for log4j 1.3&lt;/a&gt; for a more detailed discussion.</em>
+<a name="85" href="#85">85</a>  <em class="jxr_javadoccomment">  *</em>
+<a name="86" href="#86">86</a>  <em class="jxr_javadoccomment">  * @author Ceki G&amp;uuml;lc&amp;uuml;</em>
+<a name="87" href="#87">87</a>  <em class="jxr_javadoccomment">  * @author Anders Kristensen </em>
+<a name="88" href="#88">88</a>  <em class="jxr_javadoccomment">  */</em>
+<a name="89" href="#89">89</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/apache/log4j/Category.html">Category</a> implements <a href="../../../org/apache/log4j/spi/AppenderAttachable.html">AppenderAttachable</a> {
+<a name="90" href="#90">90</a>  
+<a name="91" href="#91">91</a>    <em class="jxr_javadoccomment">/**</em>
+<a name="92" href="#92">92</a>  <em class="jxr_javadoccomment">     The hierarchy where categories are attached to by default.</em>
+<a name="93" href="#93">93</a>  <em class="jxr_javadoccomment">  */</em>
+<a name="94" href="#94">94</a>    <em class="jxr_comment">//static</em>
+<a name="95" href="#95">95</a>    <em class="jxr_comment">//public</em>
+<a name="96" href="#96">96</a>    <em class="jxr_comment">//final Hierarchy defaultHierarchy = new Hierarchy(new</em>
+<a name="97" href="#97">97</a>    <em class="jxr_comment">//					   RootCategory(Level.DEBUG));</em>
+<a name="98" href="#98">98</a>  
+<a name="99" href="#99">99</a>    <em class="jxr_javadoccomment">/**</em>
+<a name="100" href="#100">100</a> <em class="jxr_javadoccomment">     The name of this category.</em>
+<a name="101" href="#101">101</a> <em class="jxr_javadoccomment">  */</em>
+<a name="102" href="#102">102</a>   <strong class="jxr_keyword">protected</strong> String   name;
+<a name="103" href="#103">103</a> 
+<a name="104" href="#104">104</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="105" href="#105">105</a> <em class="jxr_javadoccomment">     The assigned level of this category.  The</em>
+<a name="106" href="#106">106</a> <em class="jxr_javadoccomment">     &lt;code&gt;level&lt;/code&gt; variable need not be assigned a value in</em>
+<a name="107" href="#107">107</a> <em class="jxr_javadoccomment">     which case it is inherited form the hierarchy.  */</em>
+<a name="108" href="#108">108</a>   <strong class="jxr_keyword">volatile</strong> <strong class="jxr_keyword">protected</strong> <a href="../../../org/apache/log4j/Level.html">Level</a> level;
+<a name="109" href="#109">109</a> 
+<a name="110" href="#110">110</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="111" href="#111">111</a> <em class="jxr_javadoccomment">     The parent of this category. All categories have at least one</em>
+<a name="112" href="#112">112</a> <em class="jxr_javadoccomment">     ancestor which is the root category. */</em>
+<a name="113" href="#113">113</a>   <strong class="jxr_keyword">volatile</strong> <strong class="jxr_keyword">protected</strong> <a href="../../../org/apache/log4j/Category.html">Category</a> parent;
+<a name="114" href="#114">114</a> 
+<a name="115" href="#115">115</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="116" href="#116">116</a> <em class="jxr_javadoccomment">     The fully qualified name of the Category class. See also the</em>
+<a name="117" href="#117">117</a> <em class="jxr_javadoccomment">     getFQCN method. */</em>
+<a name="118" href="#118">118</a>   <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> String FQCN = Category.<strong class="jxr_keyword">class</strong>.getName();
+<a name="119" href="#119">119</a> 
+<a name="120" href="#120">120</a>   <strong class="jxr_keyword">protected</strong> ResourceBundle resourceBundle;
+<a name="121" href="#121">121</a> 
+<a name="122" href="#122">122</a>   <em class="jxr_comment">// Categories need to know what Hierarchy they are in</em>
+<a name="123" href="#123">123</a>   <strong class="jxr_keyword">protected</strong> <a href="../../../org/apache/log4j/spi/LoggerRepository.html">LoggerRepository</a> repository;
+<a name="124" href="#124">124</a> 
+<a name="125" href="#125">125</a> 
+<a name="126" href="#126">126</a>   <a href="../../../org/apache/log4j/helpers/AppenderAttachableImpl.html">AppenderAttachableImpl</a> aai;
+<a name="127" href="#127">127</a> 
+<a name="128" href="#128">128</a>   <em class="jxr_javadoccomment">/**</em><em class="jxr_javadoccomment"> Additivity is set to true by default, that is children inherit</em>
+<a name="129" href="#129">129</a> <em class="jxr_javadoccomment">      the appenders of their ancestors by default. If this variable is</em>
+<a name="130" href="#130">130</a> <em class="jxr_javadoccomment">      set to &lt;code&gt;false&lt;/code&gt; then the appenders found in the</em>
+<a name="131" href="#131">131</a> <em class="jxr_javadoccomment">      ancestors of this category are not used. However, the children</em>
+<a name="132" href="#132">132</a> <em class="jxr_javadoccomment">      of this category will inherit its appenders, unless the children</em>
+<a name="133" href="#133">133</a> <em class="jxr_javadoccomment">      have their additivity flag set to &lt;code&gt;false&lt;/code&gt; too. See</em>
+<a name="134" href="#134">134</a> <em class="jxr_javadoccomment">      the user manual for more details. */</em>
+<a name="135" href="#135">135</a>   <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> additive = <strong class="jxr_keyword">true</strong>;
+<a name="136" href="#136">136</a> 
+<a name="137" href="#137">137</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="138" href="#138">138</a> <em class="jxr_javadoccomment">     This constructor created a new &lt;code&gt;Category&lt;/code&gt; instance and</em>
+<a name="139" href="#139">139</a> <em class="jxr_javadoccomment">     sets its name.</em>
+<a name="140" href="#140">140</a> 
+<a name="141" href="#141">141</a> <em class="jxr_javadoccomment">     &lt;p&gt;It is intended to be used by sub-classes only. You should not</em>
+<a name="142" href="#142">142</a> <em class="jxr_javadoccomment">     create categories directly.</em>
+<a name="143" href="#143">143</a> 
+<a name="144" href="#144">144</a> <em class="jxr_javadoccomment">     @param name The name of the category.</em>
+<a name="145" href="#145">145</a> <em class="jxr_javadoccomment">  */</em>
+<a name="146" href="#146">146</a>   <strong class="jxr_keyword">protected</strong>
+<a name="147" href="#147">147</a>   <a href="../../../org/apache/log4j/Category.html">Category</a>(String name) {
+<a name="148" href="#148">148</a>     <strong class="jxr_keyword">this</strong>.name = name;
+<a name="149" href="#149">149</a>   }
+<a name="150" href="#150">150</a> 
+<a name="151" href="#151">151</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="152" href="#152">152</a> <em class="jxr_javadoccomment">     Add &lt;code&gt;newAppender&lt;/code&gt; to the list of appenders of this</em>
+<a name="153" href="#153">153</a> <em class="jxr_javadoccomment">     Category instance.</em>
+<a name="154" href="#154">154</a> 
+<a name="155" href="#155">155</a> <em class="jxr_javadoccomment">     &lt;p&gt;If &lt;code&gt;newAppender&lt;/code&gt; is already in the list of</em>
+<a name="156" href="#156">156</a> <em class="jxr_javadoccomment">     appenders, then it won't be added again.</em>
+<a name="157" href="#157">157</a> <em class="jxr_javadoccomment">  */</em>
+<a name="158" href="#158">158</a>   <strong class="jxr_keyword">synchronized</strong>
+<a name="159" href="#159">159</a>   <strong class="jxr_keyword">public</strong>
+<a name="160" href="#160">160</a>   <strong class="jxr_keyword">void</strong> addAppender(<a href="../../../org/apache/log4j/Appender.html">Appender</a> newAppender) {
+<a name="161" href="#161">161</a>     <strong class="jxr_keyword">if</strong>(aai == <strong class="jxr_keyword">null</strong>) {
+<a name="162" href="#162">162</a>       aai = <strong class="jxr_keyword">new</strong> <a href="../../../org/apache/log4j/helpers/AppenderAttachableImpl.html">AppenderAttachableImpl</a>();
+<a name="163" href="#163">163</a>     }
+<a name="164" href="#164">164</a>     aai.addAppender(newAppender);
+<a name="165" href="#165">165</a>     repository.fireAddAppenderEvent(<strong class="jxr_keyword">this</strong>, newAppender);
+<a name="166" href="#166">166</a>   }
+<a name="167" href="#167">167</a> 
+<a name="168" href="#168">168</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="169" href="#169">169</a> <em class="jxr_javadoccomment">     If &lt;code&gt;assertion&lt;/code&gt; parameter is &lt;code&gt;false&lt;/code&gt;, then</em>
+<a name="170" href="#170">170</a> <em class="jxr_javadoccomment">     logs &lt;code&gt;msg&lt;/code&gt; as an {@link #error(Object) error} statement.</em>
+<a name="171" href="#171">171</a> 
+<a name="172" href="#172">172</a> <em class="jxr_javadoccomment">     &lt;p&gt;The &lt;code&gt;assert&lt;/code&gt; method has been renamed to</em>
+<a name="173" href="#173">173</a> <em class="jxr_javadoccomment">     &lt;code&gt;assertLog&lt;/code&gt; because &lt;code&gt;assert&lt;/code&gt; is a language</em>
+<a name="174" href="#174">174</a> <em class="jxr_javadoccomment">     reserved word in JDK 1.4.</em>
+<a name="175" href="#175">175</a> 
+<a name="176" href="#176">176</a> <em class="jxr_javadoccomment">     @param assertion</em>
+<a name="177" href="#177">177</a> <em class="jxr_javadoccomment">     @param msg The message to print if &lt;code&gt;assertion&lt;/code&gt; is</em>
+<a name="178" href="#178">178</a> <em class="jxr_javadoccomment">     false.</em>
+<a name="179" href="#179">179</a> 
+<a name="180" href="#180">180</a> <em class="jxr_javadoccomment">     @since 1.2 */</em>
+<a name="181" href="#181">181</a>   <strong class="jxr_keyword">public</strong>
+<a name="182" href="#182">182</a>   <strong class="jxr_keyword">void</strong> assertLog(<strong class="jxr_keyword">boolean</strong> assertion, String msg) {
+<a name="183" href="#183">183</a>     <strong class="jxr_keyword">if</strong>(!assertion)
+<a name="184" href="#184">184</a>       <strong class="jxr_keyword">this</strong>.error(msg);
+<a name="185" href="#185">185</a>   }
+<a name="186" href="#186">186</a> 
+<a name="187" href="#187">187</a> 
+<a name="188" href="#188">188</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="189" href="#189">189</a> <em class="jxr_javadoccomment">     Call the appenders in the hierrachy starting at</em>
+<a name="190" href="#190">190</a> <em class="jxr_javadoccomment">     &lt;code&gt;this&lt;/code&gt;.  If no appenders could be found, emit a</em>
+<a name="191" href="#191">191</a> <em class="jxr_javadoccomment">     warning.</em>
+<a name="192" href="#192">192</a> 
+<a name="193" href="#193">193</a> <em class="jxr_javadoccomment">     &lt;p&gt;This method calls all the appenders inherited from the</em>
+<a name="194" href="#194">194</a> <em class="jxr_javadoccomment">     hierarchy circumventing any evaluation of whether to log or not</em>
+<a name="195" href="#195">195</a> <em class="jxr_javadoccomment">     to log the particular log request.</em>
+<a name="196" href="#196">196</a> 
+<a name="197" href="#197">197</a> <em class="jxr_javadoccomment">     @param event the event to log.  */</em>
+<a name="198" href="#198">198</a>   <strong class="jxr_keyword">public</strong>
+<a name="199" href="#199">199</a>   <strong class="jxr_keyword">void</strong> callAppenders(<a href="../../../org/apache/log4j/spi/LoggingEvent.html">LoggingEvent</a> event) {
+<a name="200" href="#200">200</a>     <strong class="jxr_keyword">int</strong> writes = 0;
+<a name="201" href="#201">201</a> 
+<a name="202" href="#202">202</a>     <strong class="jxr_keyword">for</strong>(<a href="../../../org/apache/log4j/Category.html">Category</a> c = <strong class="jxr_keyword">this</strong>; c != <strong class="jxr_keyword">null</strong>; c=c.parent) {
+<a name="203" href="#203">203</a>       <em class="jxr_comment">// Protected against simultaneous call to addAppender, removeAppender,...</em>
+<a name="204" href="#204">204</a>       <strong class="jxr_keyword">synchronized</strong>(c) {
+<a name="205" href="#205">205</a> 	<strong class="jxr_keyword">if</strong>(c.aai != <strong class="jxr_keyword">null</strong>) {
+<a name="206" href="#206">206</a> 	  writes += c.aai.appendLoopOnAppenders(event);
+<a name="207" href="#207">207</a> 	}
+<a name="208" href="#208">208</a> 	<strong class="jxr_keyword">if</strong>(!c.additive) {
+<a name="209" href="#209">209</a> 	  <strong class="jxr_keyword">break</strong>;
+<a name="210" href="#210">210</a> 	}
+<a name="211" href="#211">211</a>       }
+<a name="212" href="#212">212</a>     }
+<a name="213" href="#213">213</a> 
+<a name="214" href="#214">214</a>     <strong class="jxr_keyword">if</strong>(writes == 0) {
+<a name="215" href="#215">215</a>       repository.emitNoAppenderWarning(<strong class="jxr_keyword">this</strong>);
+<a name="216" href="#216">216</a>     }
+<a name="217" href="#217">217</a>   }
+<a name="218" href="#218">218</a> 
+<a name="219" href="#219">219</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="220" href="#220">220</a> <em class="jxr_javadoccomment">     Close all attached appenders implementing the AppenderAttachable</em>
+<a name="221" href="#221">221</a> <em class="jxr_javadoccomment">     interface.</em>
+<a name="222" href="#222">222</a> <em class="jxr_javadoccomment">     @since 1.0</em>
+<a name="223" href="#223">223</a> <em class="jxr_javadoccomment">  */</em>
+<a name="224" href="#224">224</a>   <strong class="jxr_keyword">synchronized</strong>
+<a name="225" href="#225">225</a>   <strong class="jxr_keyword">void</strong> closeNestedAppenders() {
+<a name="226" href="#226">226</a>     Enumeration enumeration = <strong class="jxr_keyword">this</strong>.getAllAppenders();
+<a name="227" href="#227">227</a>     <strong class="jxr_keyword">if</strong>(enumeration != <strong class="jxr_keyword">null</strong>) {
+<a name="228" href="#228">228</a>       <strong class="jxr_keyword">while</strong>(enumeration.hasMoreElements()) {
+<a name="229" href="#229">229</a> 	Appender a = (Appender) enumeration.nextElement();
+<a name="230" href="#230">230</a> 	<strong class="jxr_keyword">if</strong>(a instanceof <a href="../../../org/apache/log4j/spi/AppenderAttachable.html">AppenderAttachable</a>) {
+<a name="231" href="#231">231</a> 	  a.close();
+<a name="232" href="#232">232</a> 	}
+<a name="233" href="#233">233</a>       }
+<a name="234" href="#234">234</a>     }
+<a name="235" href="#235">235</a>   }
+<a name="236" href="#236">236</a> 
+<a name="237" href="#237">237</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="238" href="#238">238</a> <em class="jxr_javadoccomment">    Log a message object with the {@link Level#DEBUG DEBUG} level.</em>
+<a name="239" href="#239">239</a> 
+<a name="240" href="#240">240</a> <em class="jxr_javadoccomment">    &lt;p&gt;This method first checks if this category is &lt;code&gt;DEBUG&lt;/code&gt;</em>
+<a name="241" href="#241">241</a> <em class="jxr_javadoccomment">    enabled by comparing the level of this category with the {@link</em>
+<a name="242" href="#242">242</a> <em class="jxr_javadoccomment">    Level#DEBUG DEBUG} level. If this category is</em>
+<a name="243" href="#243">243</a> <em class="jxr_javadoccomment">    &lt;code&gt;DEBUG&lt;/code&gt; enabled, then it converts the message object</em>
+<a name="244" href="#244">244</a> <em class="jxr_javadoccomment">    (passed as parameter) to a string by invoking the appropriate</em>
+<a name="245" href="#245">245</a> <em class="jxr_javadoccomment">    {@link org.apache.log4j.or.ObjectRenderer}. It then proceeds to call all the</em>
+<a name="246" href="#246">246</a> <em class="jxr_javadoccomment">    registered appenders in this category and also higher in the</em>
+<a name="247" href="#247">247</a> <em class="jxr_javadoccomment">    hierarchy depending on the value of the additivity flag.</em>
+<a name="248" href="#248">248</a> 
+<a name="249" href="#249">249</a> <em class="jxr_javadoccomment">    &lt;p&gt;&lt;b&gt;WARNING&lt;/b&gt; Note that passing a {@link Throwable} to this</em>
+<a name="250" href="#250">250</a> <em class="jxr_javadoccomment">    method will print the name of the &lt;code&gt;Throwable&lt;/code&gt; but no</em>
+<a name="251" href="#251">251</a> <em class="jxr_javadoccomment">    stack trace. To print a stack trace use the {@link #debug(Object,</em>
+<a name="252" href="#252">252</a> <em class="jxr_javadoccomment">    Throwable)} form instead.</em>
+<a name="253" href="#253">253</a> 
+<a name="254" href="#254">254</a> <em class="jxr_javadoccomment">    @param message the message object to log. */</em>
+<a name="255" href="#255">255</a>   <strong class="jxr_keyword">public</strong>
+<a name="256" href="#256">256</a>   <strong class="jxr_keyword">void</strong> debug(Object message) {
+<a name="257" href="#257">257</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.DEBUG_INT))
+<a name="258" href="#258">258</a>       <strong class="jxr_keyword">return</strong>;
+<a name="259" href="#259">259</a>     <strong class="jxr_keyword">if</strong>(Level.DEBUG.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel())) {
+<a name="260" href="#260">260</a>       forcedLog(FQCN, Level.DEBUG, message, <strong class="jxr_keyword">null</strong>);
+<a name="261" href="#261">261</a>     }
+<a name="262" href="#262">262</a>   }
+<a name="263" href="#263">263</a> 
+<a name="264" href="#264">264</a> 
+<a name="265" href="#265">265</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="266" href="#266">266</a> <em class="jxr_javadoccomment">   Log a message object with the &lt;code&gt;DEBUG&lt;/code&gt; level including</em>
+<a name="267" href="#267">267</a> <em class="jxr_javadoccomment">   the stack trace of the {@link Throwable} &lt;code&gt;t&lt;/code&gt; passed as</em>
+<a name="268" href="#268">268</a> <em class="jxr_javadoccomment">   parameter.</em>
+<a name="269" href="#269">269</a> 
+<a name="270" href="#270">270</a> <em class="jxr_javadoccomment">   &lt;p&gt;See {@link #debug(Object)} form for more detailed information.</em>
+<a name="271" href="#271">271</a> 
+<a name="272" href="#272">272</a> <em class="jxr_javadoccomment">   @param message the message object to log.</em>
+<a name="273" href="#273">273</a> <em class="jxr_javadoccomment">   @param t the exception to log, including its stack trace.  */</em>
+<a name="274" href="#274">274</a>   <strong class="jxr_keyword">public</strong>
+<a name="275" href="#275">275</a>   <strong class="jxr_keyword">void</strong> debug(Object message, Throwable t) {
+<a name="276" href="#276">276</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.DEBUG_INT))
+<a name="277" href="#277">277</a>       <strong class="jxr_keyword">return</strong>;
+<a name="278" href="#278">278</a>     <strong class="jxr_keyword">if</strong>(Level.DEBUG.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="279" href="#279">279</a>       forcedLog(FQCN, Level.DEBUG, message, t);
+<a name="280" href="#280">280</a>   }
+<a name="281" href="#281">281</a> 
+<a name="282" href="#282">282</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="283" href="#283">283</a> <em class="jxr_javadoccomment">    Log a message object with the {@link Level#ERROR ERROR} Level.</em>
+<a name="284" href="#284">284</a> 
+<a name="285" href="#285">285</a> <em class="jxr_javadoccomment">    &lt;p&gt;This method first checks if this category is &lt;code&gt;ERROR&lt;/code&gt;</em>
+<a name="286" href="#286">286</a> <em class="jxr_javadoccomment">    enabled by comparing the level of this category with {@link</em>
+<a name="287" href="#287">287</a> <em class="jxr_javadoccomment">    Level#ERROR ERROR} Level. If this category is &lt;code&gt;ERROR&lt;/code&gt;</em>
+<a name="288" href="#288">288</a> <em class="jxr_javadoccomment">    enabled, then it converts the message object passed as parameter</em>
+<a name="289" href="#289">289</a> <em class="jxr_javadoccomment">    to a string by invoking the appropriate {@link</em>
+<a name="290" href="#290">290</a> <em class="jxr_javadoccomment">    org.apache.log4j.or.ObjectRenderer}. It proceeds to call all the</em>
+<a name="291" href="#291">291</a> <em class="jxr_javadoccomment">    registered appenders in this category and also higher in the</em>
+<a name="292" href="#292">292</a> <em class="jxr_javadoccomment">    hierarchy depending on the value of the additivity flag.</em>
+<a name="293" href="#293">293</a> 
+<a name="294" href="#294">294</a> <em class="jxr_javadoccomment">    &lt;p&gt;&lt;b&gt;WARNING&lt;/b&gt; Note that passing a {@link Throwable} to this</em>
+<a name="295" href="#295">295</a> <em class="jxr_javadoccomment">    method will print the name of the &lt;code&gt;Throwable&lt;/code&gt; but no</em>
+<a name="296" href="#296">296</a> <em class="jxr_javadoccomment">    stack trace. To print a stack trace use the {@link #error(Object,</em>
+<a name="297" href="#297">297</a> <em class="jxr_javadoccomment">    Throwable)} form instead.</em>
+<a name="298" href="#298">298</a> 
+<a name="299" href="#299">299</a> <em class="jxr_javadoccomment">    @param message the message object to log */</em>
+<a name="300" href="#300">300</a>   <strong class="jxr_keyword">public</strong>
+<a name="301" href="#301">301</a>   <strong class="jxr_keyword">void</strong> error(Object message) {
+<a name="302" href="#302">302</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.ERROR_INT))
+<a name="303" href="#303">303</a>       <strong class="jxr_keyword">return</strong>;
+<a name="304" href="#304">304</a>     <strong class="jxr_keyword">if</strong>(Level.ERROR.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="305" href="#305">305</a>       forcedLog(FQCN, Level.ERROR, message, <strong class="jxr_keyword">null</strong>);
+<a name="306" href="#306">306</a>   }
+<a name="307" href="#307">307</a> 
+<a name="308" href="#308">308</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="309" href="#309">309</a> <em class="jxr_javadoccomment">   Log a message object with the &lt;code&gt;ERROR&lt;/code&gt; level including</em>
+<a name="310" href="#310">310</a> <em class="jxr_javadoccomment">   the stack trace of the {@link Throwable} &lt;code&gt;t&lt;/code&gt; passed as</em>
+<a name="311" href="#311">311</a> <em class="jxr_javadoccomment">   parameter.</em>
+<a name="312" href="#312">312</a> 
+<a name="313" href="#313">313</a> <em class="jxr_javadoccomment">   &lt;p&gt;See {@link #error(Object)} form for more detailed information.</em>
+<a name="314" href="#314">314</a> 
+<a name="315" href="#315">315</a> <em class="jxr_javadoccomment">   @param message the message object to log.</em>
+<a name="316" href="#316">316</a> <em class="jxr_javadoccomment">   @param t the exception to log, including its stack trace.  */</em>
+<a name="317" href="#317">317</a>   <strong class="jxr_keyword">public</strong>
+<a name="318" href="#318">318</a>   <strong class="jxr_keyword">void</strong> error(Object message, Throwable t) {
+<a name="319" href="#319">319</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.ERROR_INT))
+<a name="320" href="#320">320</a>       <strong class="jxr_keyword">return</strong>;
+<a name="321" href="#321">321</a>     <strong class="jxr_keyword">if</strong>(Level.ERROR.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="322" href="#322">322</a>       forcedLog(FQCN, Level.ERROR, message, t);
+<a name="323" href="#323">323</a> 
+<a name="324" href="#324">324</a>   }
+<a name="325" href="#325">325</a> 
+<a name="326" href="#326">326</a> 
+<a name="327" href="#327">327</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="328" href="#328">328</a> <em class="jxr_javadoccomment">     If the named category exists (in the default hierarchy) then it</em>
+<a name="329" href="#329">329</a> <em class="jxr_javadoccomment">     returns a reference to the category, otherwise it returns</em>
+<a name="330" href="#330">330</a> <em class="jxr_javadoccomment">     &lt;code&gt;null&lt;/code&gt;.</em>
+<a name="331" href="#331">331</a> 
+<a name="332" href="#332">332</a> <em class="jxr_javadoccomment">     @deprecated Please use {@link LogManager#exists} instead.</em>
+<a name="333" href="#333">333</a> 
+<a name="334" href="#334">334</a> <em class="jxr_javadoccomment">     @since 0.8.5 */</em>
+<a name="335" href="#335">335</a>   <strong class="jxr_keyword">public</strong>
+<a name="336" href="#336">336</a>   <strong class="jxr_keyword">static</strong>
+<a name="337" href="#337">337</a>   <a href="../../../org/apache/log4j/Logger.html">Logger</a> exists(String name) {
+<a name="338" href="#338">338</a>     <strong class="jxr_keyword">return</strong> LogManager.exists(name);
+<a name="339" href="#339">339</a>   }
+<a name="340" href="#340">340</a> 
+<a name="341" href="#341">341</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="342" href="#342">342</a> <em class="jxr_javadoccomment">    Log a message object with the {@link Level#FATAL FATAL} Level.</em>
+<a name="343" href="#343">343</a> 
+<a name="344" href="#344">344</a> <em class="jxr_javadoccomment">    &lt;p&gt;This method first checks if this category is &lt;code&gt;FATAL&lt;/code&gt;</em>
+<a name="345" href="#345">345</a> <em class="jxr_javadoccomment">    enabled by comparing the level of this category with {@link</em>
+<a name="346" href="#346">346</a> <em class="jxr_javadoccomment">    Level#FATAL FATAL} Level. If the category is &lt;code&gt;FATAL&lt;/code&gt;</em>
+<a name="347" href="#347">347</a> <em class="jxr_javadoccomment">    enabled, then it converts the message object passed as parameter</em>
+<a name="348" href="#348">348</a> <em class="jxr_javadoccomment">    to a string by invoking the appropriate</em>
+<a name="349" href="#349">349</a> <em class="jxr_javadoccomment">    {@link org.apache.log4j.or.ObjectRenderer}. It</em>
+<a name="350" href="#350">350</a> <em class="jxr_javadoccomment">    proceeds to call all the registered appenders in this category and</em>
+<a name="351" href="#351">351</a> <em class="jxr_javadoccomment">    also higher in the hierarchy depending on the value of the</em>
+<a name="352" href="#352">352</a> <em class="jxr_javadoccomment">    additivity flag.</em>
+<a name="353" href="#353">353</a> 
+<a name="354" href="#354">354</a> <em class="jxr_javadoccomment">    &lt;p&gt;&lt;b&gt;WARNING&lt;/b&gt; Note that passing a {@link Throwable} to this</em>
+<a name="355" href="#355">355</a> <em class="jxr_javadoccomment">    method will print the name of the Throwable but no stack trace. To</em>
+<a name="356" href="#356">356</a> <em class="jxr_javadoccomment">    print a stack trace use the {@link #fatal(Object, Throwable)} form</em>
+<a name="357" href="#357">357</a> <em class="jxr_javadoccomment">    instead.</em>
+<a name="358" href="#358">358</a> 
+<a name="359" href="#359">359</a> <em class="jxr_javadoccomment">    @param message the message object to log */</em>
+<a name="360" href="#360">360</a>   <strong class="jxr_keyword">public</strong>
+<a name="361" href="#361">361</a>   <strong class="jxr_keyword">void</strong> fatal(Object message) {
+<a name="362" href="#362">362</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.FATAL_INT))
+<a name="363" href="#363">363</a>       <strong class="jxr_keyword">return</strong>;
+<a name="364" href="#364">364</a>     <strong class="jxr_keyword">if</strong>(Level.FATAL.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="365" href="#365">365</a>       forcedLog(FQCN, Level.FATAL, message, <strong class="jxr_keyword">null</strong>);
+<a name="366" href="#366">366</a>   }
+<a name="367" href="#367">367</a> 
+<a name="368" href="#368">368</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="369" href="#369">369</a> <em class="jxr_javadoccomment">   Log a message object with the &lt;code&gt;FATAL&lt;/code&gt; level including</em>
+<a name="370" href="#370">370</a> <em class="jxr_javadoccomment">   the stack trace of the {@link Throwable} &lt;code&gt;t&lt;/code&gt; passed as</em>
+<a name="371" href="#371">371</a> <em class="jxr_javadoccomment">   parameter.</em>
+<a name="372" href="#372">372</a> 
+<a name="373" href="#373">373</a> <em class="jxr_javadoccomment">   &lt;p&gt;See {@link #fatal(Object)} for more detailed information.</em>
+<a name="374" href="#374">374</a> 
+<a name="375" href="#375">375</a> <em class="jxr_javadoccomment">   @param message the message object to log.</em>
+<a name="376" href="#376">376</a> <em class="jxr_javadoccomment">   @param t the exception to log, including its stack trace.  */</em>
+<a name="377" href="#377">377</a>   <strong class="jxr_keyword">public</strong>
+<a name="378" href="#378">378</a>   <strong class="jxr_keyword">void</strong> fatal(Object message, Throwable t) {
+<a name="379" href="#379">379</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.FATAL_INT))
+<a name="380" href="#380">380</a>       <strong class="jxr_keyword">return</strong>;
+<a name="381" href="#381">381</a>     <strong class="jxr_keyword">if</strong>(Level.FATAL.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="382" href="#382">382</a>       forcedLog(FQCN, Level.FATAL, message, t);
+<a name="383" href="#383">383</a>   }
+<a name="384" href="#384">384</a> 
+<a name="385" href="#385">385</a> 
+<a name="386" href="#386">386</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="387" href="#387">387</a> <em class="jxr_javadoccomment">     This method creates a new logging event and logs the event</em>
+<a name="388" href="#388">388</a> <em class="jxr_javadoccomment">     without further checks.  */</em>
+<a name="389" href="#389">389</a>   <strong class="jxr_keyword">protected</strong>
+<a name="390" href="#390">390</a>   <strong class="jxr_keyword">void</strong> forcedLog(String fqcn, <a href="../../../org/apache/log4j/Priority.html">Priority</a> level, Object message, Throwable t) {
+<a name="391" href="#391">391</a>     callAppenders(<strong class="jxr_keyword">new</strong> <a href="../../../org/apache/log4j/spi/LoggingEvent.html">LoggingEvent</a>(fqcn, <strong class="jxr_keyword">this</strong>, level, message, t));
+<a name="392" href="#392">392</a>   }
+<a name="393" href="#393">393</a> 
+<a name="394" href="#394">394</a> 
+<a name="395" href="#395">395</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="396" href="#396">396</a> <em class="jxr_javadoccomment">     Get the additivity flag for this Category instance.</em>
+<a name="397" href="#397">397</a> <em class="jxr_javadoccomment">  */</em>
+<a name="398" href="#398">398</a>   <strong class="jxr_keyword">public</strong>
+<a name="399" href="#399">399</a>   <strong class="jxr_keyword">boolean</strong> getAdditivity() {
+<a name="400" href="#400">400</a>     <strong class="jxr_keyword">return</strong> additive;
+<a name="401" href="#401">401</a>   }
+<a name="402" href="#402">402</a> 
+<a name="403" href="#403">403</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="404" href="#404">404</a> <em class="jxr_javadoccomment">     Get the appenders contained in this category as an {@link</em>
+<a name="405" href="#405">405</a> <em class="jxr_javadoccomment">     Enumeration}. If no appenders can be found, then a {@link NullEnumeration}</em>
+<a name="406" href="#406">406</a> <em class="jxr_javadoccomment">     is returned.</em>
+<a name="407" href="#407">407</a> 
+<a name="408" href="#408">408</a> <em class="jxr_javadoccomment">     @return Enumeration An enumeration of the appenders in this category.  */</em>
+<a name="409" href="#409">409</a>   <strong class="jxr_keyword">synchronized</strong>
+<a name="410" href="#410">410</a>   <strong class="jxr_keyword">public</strong>
+<a name="411" href="#411">411</a>   Enumeration getAllAppenders() {
+<a name="412" href="#412">412</a>     <strong class="jxr_keyword">if</strong>(aai == <strong class="jxr_keyword">null</strong>)
+<a name="413" href="#413">413</a>       <strong class="jxr_keyword">return</strong> NullEnumeration.getInstance();
+<a name="414" href="#414">414</a>     <strong class="jxr_keyword">else</strong>
+<a name="415" href="#415">415</a>       <strong class="jxr_keyword">return</strong> aai.getAllAppenders();
+<a name="416" href="#416">416</a>   }
+<a name="417" href="#417">417</a> 
+<a name="418" href="#418">418</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="419" href="#419">419</a> <em class="jxr_javadoccomment">     Look for the appender named as &lt;code&gt;name&lt;/code&gt;.</em>
+<a name="420" href="#420">420</a> 
+<a name="421" href="#421">421</a> <em class="jxr_javadoccomment">     &lt;p&gt;Return the appender with that name if in the list. Return</em>
+<a name="422" href="#422">422</a> <em class="jxr_javadoccomment">     &lt;code&gt;null&lt;/code&gt; otherwise.  */</em>
+<a name="423" href="#423">423</a>   <strong class="jxr_keyword">synchronized</strong>
+<a name="424" href="#424">424</a>   <strong class="jxr_keyword">public</strong>
+<a name="425" href="#425">425</a>   <a href="../../../org/apache/log4j/Appender.html">Appender</a> getAppender(String name) {
+<a name="426" href="#426">426</a>      <strong class="jxr_keyword">if</strong>(aai == <strong class="jxr_keyword">null</strong> || name == <strong class="jxr_keyword">null</strong>)
+<a name="427" href="#427">427</a>       <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a name="428" href="#428">428</a> 
+<a name="429" href="#429">429</a>      <strong class="jxr_keyword">return</strong> aai.getAppender(name);
+<a name="430" href="#430">430</a>   }
+<a name="431" href="#431">431</a> 
+<a name="432" href="#432">432</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="433" href="#433">433</a> <em class="jxr_javadoccomment">     Starting from this category, search the category hierarchy for a</em>
+<a name="434" href="#434">434</a> <em class="jxr_javadoccomment">     non-null level and return it. Otherwise, return the level of the</em>
+<a name="435" href="#435">435</a> <em class="jxr_javadoccomment">     root category.</em>
+<a name="436" href="#436">436</a> 
+<a name="437" href="#437">437</a> <em class="jxr_javadoccomment">     &lt;p&gt;The Category class is designed so that this method executes as</em>
+<a name="438" href="#438">438</a> <em class="jxr_javadoccomment">     quickly as possible.</em>
+<a name="439" href="#439">439</a> <em class="jxr_javadoccomment">   */</em>
+<a name="440" href="#440">440</a>   <strong class="jxr_keyword">public</strong>
+<a name="441" href="#441">441</a>   <a href="../../../org/apache/log4j/Level.html">Level</a> getEffectiveLevel() {
+<a name="442" href="#442">442</a>     <strong class="jxr_keyword">for</strong>(<a href="../../../org/apache/log4j/Category.html">Category</a> c = <strong class="jxr_keyword">this</strong>; c != <strong class="jxr_keyword">null</strong>; c=c.parent) {
+<a name="443" href="#443">443</a>       <strong class="jxr_keyword">if</strong>(c.level != <strong class="jxr_keyword">null</strong>)
+<a name="444" href="#444">444</a> 	<strong class="jxr_keyword">return</strong> c.level;
+<a name="445" href="#445">445</a>     }
+<a name="446" href="#446">446</a>     <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>; <em class="jxr_comment">// If reached will cause an NullPointerException.</em>
+<a name="447" href="#447">447</a>   }
+<a name="448" href="#448">448</a> 
+<a name="449" href="#449">449</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="450" href="#450">450</a> <em class="jxr_javadoccomment">    *</em>
+<a name="451" href="#451">451</a> <em class="jxr_javadoccomment">    * @deprecated Please use the the {@link #getEffectiveLevel} method</em>
+<a name="452" href="#452">452</a> <em class="jxr_javadoccomment">    * instead.  </em>
+<a name="453" href="#453">453</a> <em class="jxr_javadoccomment">    * */</em>
+<a name="454" href="#454">454</a>   <strong class="jxr_keyword">public</strong>
+<a name="455" href="#455">455</a>   <a href="../../../org/apache/log4j/Priority.html">Priority</a> getChainedPriority() {
+<a name="456" href="#456">456</a>     <strong class="jxr_keyword">for</strong>(<a href="../../../org/apache/log4j/Category.html">Category</a> c = <strong class="jxr_keyword">this</strong>; c != <strong class="jxr_keyword">null</strong>; c=c.parent) {
+<a name="457" href="#457">457</a>       <strong class="jxr_keyword">if</strong>(c.level != <strong class="jxr_keyword">null</strong>)
+<a name="458" href="#458">458</a> 	<strong class="jxr_keyword">return</strong> c.level;
+<a name="459" href="#459">459</a>     }
+<a name="460" href="#460">460</a>     <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>; <em class="jxr_comment">// If reached will cause an NullPointerException.</em>
+<a name="461" href="#461">461</a>   }
+<a name="462" href="#462">462</a> 
+<a name="463" href="#463">463</a> 
+<a name="464" href="#464">464</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="465" href="#465">465</a> <em class="jxr_javadoccomment">     Returns all the currently defined categories in the default</em>
+<a name="466" href="#466">466</a> <em class="jxr_javadoccomment">     hierarchy as an {@link java.util.Enumeration Enumeration}.</em>
+<a name="467" href="#467">467</a> 
+<a name="468" href="#468">468</a> <em class="jxr_javadoccomment">     &lt;p&gt;The root category is &lt;em&gt;not&lt;/em&gt; included in the returned</em>
+<a name="469" href="#469">469</a> <em class="jxr_javadoccomment">     {@link Enumeration}.</em>
+<a name="470" href="#470">470</a> 
+<a name="471" href="#471">471</a> <em class="jxr_javadoccomment">     @deprecated Please use {@link LogManager#getCurrentLoggers()} instead.</em>
+<a name="472" href="#472">472</a> <em class="jxr_javadoccomment">  */</em>
+<a name="473" href="#473">473</a>   <strong class="jxr_keyword">public</strong>
+<a name="474" href="#474">474</a>   <strong class="jxr_keyword">static</strong>
+<a name="475" href="#475">475</a>   Enumeration getCurrentCategories() {
+<a name="476" href="#476">476</a>     <strong class="jxr_keyword">return</strong> LogManager.getCurrentLoggers();
+<a name="477" href="#477">477</a>   }
+<a name="478" href="#478">478</a> 
+<a name="479" href="#479">479</a> 
+<a name="480" href="#480">480</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="481" href="#481">481</a> <em class="jxr_javadoccomment">     Return the default Hierarchy instance.</em>
+<a name="482" href="#482">482</a> 
+<a name="483" href="#483">483</a> <em class="jxr_javadoccomment">     @deprecated Please use {@link LogManager#getLoggerRepository()} instead.</em>
+<a name="484" href="#484">484</a> 
+<a name="485" href="#485">485</a> <em class="jxr_javadoccomment">     @since 1.0</em>
+<a name="486" href="#486">486</a> <em class="jxr_javadoccomment">   */</em>
+<a name="487" href="#487">487</a>   <strong class="jxr_keyword">public</strong>
+<a name="488" href="#488">488</a>   <strong class="jxr_keyword">static</strong>
+<a name="489" href="#489">489</a>   <a href="../../../org/apache/log4j/spi/LoggerRepository.html">LoggerRepository</a> getDefaultHierarchy() {
+<a name="490" href="#490">490</a>     <strong class="jxr_keyword">return</strong> LogManager.getLoggerRepository();
+<a name="491" href="#491">491</a>   }
+<a name="492" href="#492">492</a> 
+<a name="493" href="#493">493</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="494" href="#494">494</a> <em class="jxr_javadoccomment">     Return the the {@link Hierarchy} where this &lt;code&gt;Category&lt;/code&gt;</em>
+<a name="495" href="#495">495</a> <em class="jxr_javadoccomment">     instance is attached.</em>
+<a name="496" href="#496">496</a> 
+<a name="497" href="#497">497</a> <em class="jxr_javadoccomment">     @deprecated Please use {@link #getLoggerRepository} instead.</em>
+<a name="498" href="#498">498</a> 
+<a name="499" href="#499">499</a> <em class="jxr_javadoccomment">     @since 1.1 */</em>
+<a name="500" href="#500">500</a>   <strong class="jxr_keyword">public</strong>
+<a name="501" href="#501">501</a>   <a href="../../../org/apache/log4j/spi/LoggerRepository.html">LoggerRepository</a>  getHierarchy() {
+<a name="502" href="#502">502</a>     <strong class="jxr_keyword">return</strong> repository;
+<a name="503" href="#503">503</a>   }
+<a name="504" href="#504">504</a> 
+<a name="505" href="#505">505</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="506" href="#506">506</a> <em class="jxr_javadoccomment">     Return the the {@link LoggerRepository} where this</em>
+<a name="507" href="#507">507</a> <em class="jxr_javadoccomment">     &lt;code&gt;Category&lt;/code&gt; is attached.</em>
+<a name="508" href="#508">508</a> 
+<a name="509" href="#509">509</a> <em class="jxr_javadoccomment">     @since 1.2 */</em>
+<a name="510" href="#510">510</a>   <strong class="jxr_keyword">public</strong>
+<a name="511" href="#511">511</a>   <a href="../../../org/apache/log4j/spi/LoggerRepository.html">LoggerRepository</a>  getLoggerRepository() {
+<a name="512" href="#512">512</a>     <strong class="jxr_keyword">return</strong> repository;
+<a name="513" href="#513">513</a>   }
+<a name="514" href="#514">514</a> 
+<a name="515" href="#515">515</a> 
+<a name="516" href="#516">516</a>  <em class="jxr_javadoccomment">/**</em>
+<a name="517" href="#517">517</a> <em class="jxr_javadoccomment">  * @deprecated Make sure to use {@link Logger#getLogger(String)} instead.</em>
+<a name="518" href="#518">518</a> <em class="jxr_javadoccomment">  */</em>
+<a name="519" href="#519">519</a>   <strong class="jxr_keyword">public</strong>
+<a name="520" href="#520">520</a>   <strong class="jxr_keyword">static</strong>
+<a name="521" href="#521">521</a>   <a href="../../../org/apache/log4j/Category.html">Category</a> getInstance(String name) {
+<a name="522" href="#522">522</a>     <strong class="jxr_keyword">return</strong> LogManager.getLogger(name);
+<a name="523" href="#523">523</a>   }
+<a name="524" href="#524">524</a> 
+<a name="525" href="#525">525</a>  <em class="jxr_javadoccomment">/**</em>
+<a name="526" href="#526">526</a> <em class="jxr_javadoccomment">  * @deprecated Please make sure to use {@link Logger#getLogger(Class)} instead.</em>
+<a name="527" href="#527">527</a> <em class="jxr_javadoccomment">  */</em> 
+<a name="528" href="#528">528</a>   <strong class="jxr_keyword">public</strong>
+<a name="529" href="#529">529</a>   <strong class="jxr_keyword">static</strong>
+<a name="530" href="#530">530</a>   <a href="../../../org/apache/log4j/Category.html">Category</a> getInstance(Class clazz) {
+<a name="531" href="#531">531</a>     <strong class="jxr_keyword">return</strong> LogManager.getLogger(clazz);
+<a name="532" href="#532">532</a>   }
+<a name="533" href="#533">533</a> 
+<a name="534" href="#534">534</a> 
+<a name="535" href="#535">535</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="536" href="#536">536</a> <em class="jxr_javadoccomment">     Return the category name.  */</em>
+<a name="537" href="#537">537</a>   <strong class="jxr_keyword">public</strong>
+<a name="538" href="#538">538</a>   <strong class="jxr_keyword">final</strong>
+<a name="539" href="#539">539</a>   String getName() {
+<a name="540" href="#540">540</a>     <strong class="jxr_keyword">return</strong> name;
+<a name="541" href="#541">541</a>   }
+<a name="542" href="#542">542</a> 
+<a name="543" href="#543">543</a> 
+<a name="544" href="#544">544</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="545" href="#545">545</a> <em class="jxr_javadoccomment">     Returns the parent of this category. Note that the parent of a</em>
+<a name="546" href="#546">546</a> <em class="jxr_javadoccomment">     given category may change during the lifetime of the category.</em>
+<a name="547" href="#547">547</a> 
+<a name="548" href="#548">548</a> <em class="jxr_javadoccomment">     &lt;p&gt;The root category will return &lt;code&gt;null&lt;/code&gt;.</em>
+<a name="549" href="#549">549</a> 
+<a name="550" href="#550">550</a> <em class="jxr_javadoccomment">     @since 1.2</em>
+<a name="551" href="#551">551</a> <em class="jxr_javadoccomment">  */</em>
+<a name="552" href="#552">552</a>   <strong class="jxr_keyword">final</strong>
+<a name="553" href="#553">553</a>   <strong class="jxr_keyword">public</strong>
+<a name="554" href="#554">554</a>   <a href="../../../org/apache/log4j/Category.html">Category</a> getParent() {
+<a name="555" href="#555">555</a>     <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.parent;
+<a name="556" href="#556">556</a>   }
+<a name="557" href="#557">557</a> 
+<a name="558" href="#558">558</a> 
+<a name="559" href="#559">559</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="560" href="#560">560</a> <em class="jxr_javadoccomment">     Returns the assigned {@link Level}, if any, for this Category.</em>
+<a name="561" href="#561">561</a> 
+<a name="562" href="#562">562</a> <em class="jxr_javadoccomment">     @return Level - the assigned Level, can be &lt;code&gt;null&lt;/code&gt;.</em>
+<a name="563" href="#563">563</a> <em class="jxr_javadoccomment">  */</em>
+<a name="564" href="#564">564</a>   <strong class="jxr_keyword">final</strong>
+<a name="565" href="#565">565</a>   <strong class="jxr_keyword">public</strong>
+<a name="566" href="#566">566</a>   <a href="../../../org/apache/log4j/Level.html">Level</a> getLevel() {
+<a name="567" href="#567">567</a>     <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.level;
+<a name="568" href="#568">568</a>   }
+<a name="569" href="#569">569</a> 
+<a name="570" href="#570">570</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="571" href="#571">571</a> <em class="jxr_javadoccomment">     @deprecated Please use {@link #getLevel} instead.</em>
+<a name="572" href="#572">572</a> <em class="jxr_javadoccomment">  */</em>
+<a name="573" href="#573">573</a>   <strong class="jxr_keyword">final</strong>
+<a name="574" href="#574">574</a>   <strong class="jxr_keyword">public</strong>
+<a name="575" href="#575">575</a>   <a href="../../../org/apache/log4j/Level.html">Level</a> getPriority() {
+<a name="576" href="#576">576</a>     <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.level;
+<a name="577" href="#577">577</a>   }
+<a name="578" href="#578">578</a> 
+<a name="579" href="#579">579</a> 
+<a name="580" href="#580">580</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="581" href="#581">581</a> <em class="jxr_javadoccomment">   *  @deprecated Please use {@link Logger#getRootLogger()} instead.</em>
+<a name="582" href="#582">582</a> <em class="jxr_javadoccomment">   */</em>
+<a name="583" href="#583">583</a>   <strong class="jxr_keyword">final</strong>
+<a name="584" href="#584">584</a>   <strong class="jxr_keyword">public</strong>
+<a name="585" href="#585">585</a>   <strong class="jxr_keyword">static</strong>
+<a name="586" href="#586">586</a>   <a href="../../../org/apache/log4j/Category.html">Category</a> getRoot() {
+<a name="587" href="#587">587</a>     <strong class="jxr_keyword">return</strong> LogManager.getRootLogger();
+<a name="588" href="#588">588</a>   }
+<a name="589" href="#589">589</a> 
+<a name="590" href="#590">590</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="591" href="#591">591</a> <em class="jxr_javadoccomment">     Return the &lt;em&gt;inherited&lt;/em&gt; {@link ResourceBundle} for this</em>
+<a name="592" href="#592">592</a> <em class="jxr_javadoccomment">     category.</em>
+<a name="593" href="#593">593</a> 
+<a name="594" href="#594">594</a> <em class="jxr_javadoccomment">     &lt;p&gt;This method walks the hierarchy to find the appropriate</em>
+<a name="595" href="#595">595</a> <em class="jxr_javadoccomment">     resource bundle. It will return the resource bundle attached to</em>
+<a name="596" href="#596">596</a> <em class="jxr_javadoccomment">     the closest ancestor of this category, much like the way</em>
+<a name="597" href="#597">597</a> <em class="jxr_javadoccomment">     priorities are searched. In case there is no bundle in the</em>
+<a name="598" href="#598">598</a> <em class="jxr_javadoccomment">     hierarchy then &lt;code&gt;null&lt;/code&gt; is returned.</em>
+<a name="599" href="#599">599</a> 
+<a name="600" href="#600">600</a> <em class="jxr_javadoccomment">     @since 0.9.0 */</em>
+<a name="601" href="#601">601</a>   <strong class="jxr_keyword">public</strong>
+<a name="602" href="#602">602</a>   ResourceBundle getResourceBundle() {
+<a name="603" href="#603">603</a>     <strong class="jxr_keyword">for</strong>(<a href="../../../org/apache/log4j/Category.html">Category</a> c = <strong class="jxr_keyword">this</strong>; c != <strong class="jxr_keyword">null</strong>; c=c.parent) {
+<a name="604" href="#604">604</a>       <strong class="jxr_keyword">if</strong>(c.resourceBundle != <strong class="jxr_keyword">null</strong>)
+<a name="605" href="#605">605</a> 	<strong class="jxr_keyword">return</strong> c.resourceBundle;
+<a name="606" href="#606">606</a>     }
+<a name="607" href="#607">607</a>     <em class="jxr_comment">// It might be the case that there is no resource bundle</em>
+<a name="608" href="#608">608</a>     <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a name="609" href="#609">609</a>   }
+<a name="610" href="#610">610</a> 
+<a name="611" href="#611">611</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="612" href="#612">612</a> <em class="jxr_javadoccomment">     Returns the string resource coresponding to &lt;code&gt;key&lt;/code&gt; in</em>
+<a name="613" href="#613">613</a> <em class="jxr_javadoccomment">     this category's inherited resource bundle. See also {@link</em>
+<a name="614" href="#614">614</a> <em class="jxr_javadoccomment">     #getResourceBundle}.</em>
+<a name="615" href="#615">615</a> 
+<a name="616" href="#616">616</a> <em class="jxr_javadoccomment">     &lt;p&gt;If the resource cannot be found, then an {@link #error error}</em>
+<a name="617" href="#617">617</a> <em class="jxr_javadoccomment">     message will be logged complaining about the missing resource.</em>
+<a name="618" href="#618">618</a> <em class="jxr_javadoccomment">  */</em>
+<a name="619" href="#619">619</a>   <strong class="jxr_keyword">protected</strong>
+<a name="620" href="#620">620</a>   String getResourceBundleString(String key) {
+<a name="621" href="#621">621</a>     ResourceBundle rb = getResourceBundle();
+<a name="622" href="#622">622</a>     <em class="jxr_comment">// This is one of the rare cases where we can use logging in order</em>
+<a name="623" href="#623">623</a>     <em class="jxr_comment">// to report errors from within log4j.</em>
+<a name="624" href="#624">624</a>     <strong class="jxr_keyword">if</strong>(rb == <strong class="jxr_keyword">null</strong>) {
+<a name="625" href="#625">625</a>       <em class="jxr_comment">//if(!hierarchy.emittedNoResourceBundleWarning) {</em>
+<a name="626" href="#626">626</a>       <em class="jxr_comment">//error("No resource bundle has been set for category "+name);</em>
+<a name="627" href="#627">627</a>       <em class="jxr_comment">//hierarchy.emittedNoResourceBundleWarning = true;</em>
+<a name="628" href="#628">628</a>       <em class="jxr_comment">//}</em>
+<a name="629" href="#629">629</a>       <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a name="630" href="#630">630</a>     }
+<a name="631" href="#631">631</a>     <strong class="jxr_keyword">else</strong> {
+<a name="632" href="#632">632</a>       <strong class="jxr_keyword">try</strong> {
+<a name="633" href="#633">633</a> 	<strong class="jxr_keyword">return</strong> rb.getString(key);
+<a name="634" href="#634">634</a>       }
+<a name="635" href="#635">635</a>       <strong class="jxr_keyword">catch</strong>(MissingResourceException mre) {
+<a name="636" href="#636">636</a> 	error(<span class="jxr_string">"No resource is associated with key \&quot;"</span>+key+<span class="jxr_string">"\&quot;."</span>);
+<a name="637" href="#637">637</a> 	<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a name="638" href="#638">638</a>       }
+<a name="639" href="#639">639</a>     }
+<a name="640" href="#640">640</a>   }
+<a name="641" href="#641">641</a> 
+<a name="642" href="#642">642</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="643" href="#643">643</a> <em class="jxr_javadoccomment">    Log a message object with the {@link Level#INFO INFO} Level.</em>
+<a name="644" href="#644">644</a> 
+<a name="645" href="#645">645</a> <em class="jxr_javadoccomment">    &lt;p&gt;This method first checks if this category is &lt;code&gt;INFO&lt;/code&gt;</em>
+<a name="646" href="#646">646</a> <em class="jxr_javadoccomment">    enabled by comparing the level of this category with {@link</em>
+<a name="647" href="#647">647</a> <em class="jxr_javadoccomment">    Level#INFO INFO} Level. If the category is &lt;code&gt;INFO&lt;/code&gt;</em>
+<a name="648" href="#648">648</a> <em class="jxr_javadoccomment">    enabled, then it converts the message object passed as parameter</em>
+<a name="649" href="#649">649</a> <em class="jxr_javadoccomment">    to a string by invoking the appropriate</em>
+<a name="650" href="#650">650</a> <em class="jxr_javadoccomment">    {@link org.apache.log4j.or.ObjectRenderer}. It</em>
+<a name="651" href="#651">651</a> <em class="jxr_javadoccomment">    proceeds to call all the registered appenders in this category and</em>
+<a name="652" href="#652">652</a> <em class="jxr_javadoccomment">    also higher in the hierarchy depending on the value of the</em>
+<a name="653" href="#653">653</a> <em class="jxr_javadoccomment">    additivity flag.</em>
+<a name="654" href="#654">654</a> 
+<a name="655" href="#655">655</a> <em class="jxr_javadoccomment">    &lt;p&gt;&lt;b&gt;WARNING&lt;/b&gt; Note that passing a {@link Throwable} to this</em>
+<a name="656" href="#656">656</a> <em class="jxr_javadoccomment">    method will print the name of the Throwable but no stack trace. To</em>
+<a name="657" href="#657">657</a> <em class="jxr_javadoccomment">    print a stack trace use the {@link #info(Object, Throwable)} form</em>
+<a name="658" href="#658">658</a> <em class="jxr_javadoccomment">    instead.</em>
+<a name="659" href="#659">659</a> 
+<a name="660" href="#660">660</a> <em class="jxr_javadoccomment">    @param message the message object to log */</em>
+<a name="661" href="#661">661</a>   <strong class="jxr_keyword">public</strong>
+<a name="662" href="#662">662</a>   <strong class="jxr_keyword">void</strong> info(Object message) {
+<a name="663" href="#663">663</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.INFO_INT))
+<a name="664" href="#664">664</a>       <strong class="jxr_keyword">return</strong>;
+<a name="665" href="#665">665</a>     <strong class="jxr_keyword">if</strong>(Level.INFO.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="666" href="#666">666</a>       forcedLog(FQCN, Level.INFO, message, <strong class="jxr_keyword">null</strong>);
+<a name="667" href="#667">667</a>   }
+<a name="668" href="#668">668</a> 
+<a name="669" href="#669">669</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="670" href="#670">670</a> <em class="jxr_javadoccomment">   Log a message object with the &lt;code&gt;INFO&lt;/code&gt; level including</em>
+<a name="671" href="#671">671</a> <em class="jxr_javadoccomment">   the stack trace of the {@link Throwable} &lt;code&gt;t&lt;/code&gt; passed as</em>
+<a name="672" href="#672">672</a> <em class="jxr_javadoccomment">   parameter.</em>
+<a name="673" href="#673">673</a> 
+<a name="674" href="#674">674</a> <em class="jxr_javadoccomment">   &lt;p&gt;See {@link #info(Object)} for more detailed information.</em>
+<a name="675" href="#675">675</a> 
+<a name="676" href="#676">676</a> <em class="jxr_javadoccomment">   @param message the message object to log.</em>
+<a name="677" href="#677">677</a> <em class="jxr_javadoccomment">   @param t the exception to log, including its stack trace.  */</em>
+<a name="678" href="#678">678</a>   <strong class="jxr_keyword">public</strong>
+<a name="679" href="#679">679</a>   <strong class="jxr_keyword">void</strong> info(Object message, Throwable t) {
+<a name="680" href="#680">680</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.INFO_INT))
+<a name="681" href="#681">681</a>       <strong class="jxr_keyword">return</strong>;
+<a name="682" href="#682">682</a>     <strong class="jxr_keyword">if</strong>(Level.INFO.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="683" href="#683">683</a>       forcedLog(FQCN, Level.INFO, message, t);
+<a name="684" href="#684">684</a>   }
+<a name="685" href="#685">685</a> 
+<a name="686" href="#686">686</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="687" href="#687">687</a> <em class="jxr_javadoccomment">     Is the appender passed as parameter attached to this category?</em>
+<a name="688" href="#688">688</a> <em class="jxr_javadoccomment">   */</em>
+<a name="689" href="#689">689</a>   <strong class="jxr_keyword">public</strong>
+<a name="690" href="#690">690</a>   <strong class="jxr_keyword">boolean</strong> isAttached(<a href="../../../org/apache/log4j/Appender.html">Appender</a> appender) {
+<a name="691" href="#691">691</a>     <strong class="jxr_keyword">if</strong>(appender == <strong class="jxr_keyword">null</strong> || aai == <strong class="jxr_keyword">null</strong>)
+<a name="692" href="#692">692</a>       <strong class="jxr_keyword">return</strong> false;
+<a name="693" href="#693">693</a>     <strong class="jxr_keyword">else</strong> {
+<a name="694" href="#694">694</a>       <strong class="jxr_keyword">return</strong> aai.isAttached(appender);
+<a name="695" href="#695">695</a>     }
+<a name="696" href="#696">696</a>   }
+<a name="697" href="#697">697</a> 
+<a name="698" href="#698">698</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="699" href="#699">699</a> <em class="jxr_javadoccomment">    *  Check whether this category is enabled for the &lt;code&gt;DEBUG&lt;/code&gt;</em>
+<a name="700" href="#700">700</a> <em class="jxr_javadoccomment">    *  Level.</em>
+<a name="701" href="#701">701</a> <em class="jxr_javadoccomment">    *</em>
+<a name="702" href="#702">702</a> <em class="jxr_javadoccomment">    *  &lt;p&gt; This function is intended to lessen the computational cost of</em>
+<a name="703" href="#703">703</a> <em class="jxr_javadoccomment">    *  disabled log debug statements.</em>
+<a name="704" href="#704">704</a> <em class="jxr_javadoccomment">    *</em>
+<a name="705" href="#705">705</a> <em class="jxr_javadoccomment">    *  &lt;p&gt; For some &lt;code&gt;cat&lt;/code&gt; Category object, when you write,</em>
+<a name="706" href="#706">706</a> <em class="jxr_javadoccomment">    *  &lt;pre&gt;</em>
+<a name="707" href="#707">707</a> <em class="jxr_javadoccomment">    *      cat.debug("This is entry number: " + i );</em>
+<a name="708" href="#708">708</a> <em class="jxr_javadoccomment">    *  &lt;/pre&gt;</em>
+<a name="709" href="#709">709</a> <em class="jxr_javadoccomment">    *</em>
+<a name="710" href="#710">710</a> <em class="jxr_javadoccomment">    *  &lt;p&gt;You incur the cost constructing the message, concatenatiion in</em>
+<a name="711" href="#711">711</a> <em class="jxr_javadoccomment">    *  this case, regardless of whether the message is logged or not.</em>
+<a name="712" href="#712">712</a> <em class="jxr_javadoccomment">    *</em>
+<a name="713" href="#713">713</a> <em class="jxr_javadoccomment">    *  &lt;p&gt;If you are worried about speed, then you should write</em>
+<a name="714" href="#714">714</a> <em class="jxr_javadoccomment">    *  &lt;pre&gt;</em>
+<a name="715" href="#715">715</a> <em class="jxr_javadoccomment">    * 	 if(cat.isDebugEnabled()) {</em>
+<a name="716" href="#716">716</a> <em class="jxr_javadoccomment">    * 	   cat.debug("This is entry number: " + i );</em>
+<a name="717" href="#717">717</a> <em class="jxr_javadoccomment">    * 	 }</em>
+<a name="718" href="#718">718</a> <em class="jxr_javadoccomment">    *  &lt;/pre&gt;</em>
+<a name="719" href="#719">719</a> <em class="jxr_javadoccomment">    *</em>
+<a name="720" href="#720">720</a> <em class="jxr_javadoccomment">    *  &lt;p&gt;This way you will not incur the cost of parameter</em>
+<a name="721" href="#721">721</a> <em class="jxr_javadoccomment">    *  construction if debugging is disabled for &lt;code&gt;cat&lt;/code&gt;. On</em>
+<a name="722" href="#722">722</a> <em class="jxr_javadoccomment">    *  the other hand, if the &lt;code&gt;cat&lt;/code&gt; is debug enabled, you</em>
+<a name="723" href="#723">723</a> <em class="jxr_javadoccomment">    *  will incur the cost of evaluating whether the category is debug</em>
+<a name="724" href="#724">724</a> <em class="jxr_javadoccomment">    *  enabled twice. Once in &lt;code&gt;isDebugEnabled&lt;/code&gt; and once in</em>
+<a name="725" href="#725">725</a> <em class="jxr_javadoccomment">    *  the &lt;code&gt;debug&lt;/code&gt;.  This is an insignificant overhead</em>
+<a name="726" href="#726">726</a> <em class="jxr_javadoccomment">    *  since evaluating a category takes about 1%% of the time it</em>
+<a name="727" href="#727">727</a> <em class="jxr_javadoccomment">    *  takes to actually log.</em>
+<a name="728" href="#728">728</a> <em class="jxr_javadoccomment">    *</em>
+<a name="729" href="#729">729</a> <em class="jxr_javadoccomment">    *  @return boolean - &lt;code&gt;true&lt;/code&gt; if this category is debug</em>
+<a name="730" href="#730">730</a> <em class="jxr_javadoccomment">    *  enabled, &lt;code&gt;false&lt;/code&gt; otherwise.</em>
+<a name="731" href="#731">731</a> <em class="jxr_javadoccomment">    *   */</em>
+<a name="732" href="#732">732</a>   <strong class="jxr_keyword">public</strong>
+<a name="733" href="#733">733</a>   <strong class="jxr_keyword">boolean</strong> isDebugEnabled() {
+<a name="734" href="#734">734</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled( Level.DEBUG_INT))
+<a name="735" href="#735">735</a>       <strong class="jxr_keyword">return</strong> false;
+<a name="736" href="#736">736</a>     <strong class="jxr_keyword">return</strong> Level.DEBUG.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel());
+<a name="737" href="#737">737</a>   }
+<a name="738" href="#738">738</a> 
+<a name="739" href="#739">739</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="740" href="#740">740</a> <em class="jxr_javadoccomment">     Check whether this category is enabled for a given {@link</em>
+<a name="741" href="#741">741</a> <em class="jxr_javadoccomment">     Level} passed as parameter.</em>
+<a name="742" href="#742">742</a> 
+<a name="743" href="#743">743</a> <em class="jxr_javadoccomment">     See also {@link #isDebugEnabled}.</em>
+<a name="744" href="#744">744</a> 
+<a name="745" href="#745">745</a> <em class="jxr_javadoccomment">     @return boolean True if this category is enabled for &lt;code&gt;level&lt;/code&gt;.</em>
+<a name="746" href="#746">746</a> <em class="jxr_javadoccomment">  */</em>
+<a name="747" href="#747">747</a>   <strong class="jxr_keyword">public</strong>
+<a name="748" href="#748">748</a>   <strong class="jxr_keyword">boolean</strong> isEnabledFor(<a href="../../../org/apache/log4j/Priority.html">Priority</a> level) {
+<a name="749" href="#749">749</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(level.level))
+<a name="750" href="#750">750</a>       <strong class="jxr_keyword">return</strong> false;
+<a name="751" href="#751">751</a>     <strong class="jxr_keyword">return</strong> level.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel());
+<a name="752" href="#752">752</a>   }
+<a name="753" href="#753">753</a> 
+<a name="754" href="#754">754</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="755" href="#755">755</a> <em class="jxr_javadoccomment">    Check whether this category is enabled for the info Level.</em>
+<a name="756" href="#756">756</a> <em class="jxr_javadoccomment">    See also {@link #isDebugEnabled}.</em>
+<a name="757" href="#757">757</a> 
+<a name="758" href="#758">758</a> <em class="jxr_javadoccomment">    @return boolean - &lt;code&gt;true&lt;/code&gt; if this category is enabled</em>
+<a name="759" href="#759">759</a> <em class="jxr_javadoccomment">    for level info, &lt;code&gt;false&lt;/code&gt; otherwise.</em>
+<a name="760" href="#760">760</a> <em class="jxr_javadoccomment">  */</em>
+<a name="761" href="#761">761</a>   <strong class="jxr_keyword">public</strong>
+<a name="762" href="#762">762</a>   <strong class="jxr_keyword">boolean</strong> isInfoEnabled() {
+<a name="763" href="#763">763</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.INFO_INT))
+<a name="764" href="#764">764</a>       <strong class="jxr_keyword">return</strong> false;
+<a name="765" href="#765">765</a>     <strong class="jxr_keyword">return</strong> Level.INFO.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel());
+<a name="766" href="#766">766</a>   }
+<a name="767" href="#767">767</a> 
+<a name="768" href="#768">768</a> 
+<a name="769" href="#769">769</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="770" href="#770">770</a> <em class="jxr_javadoccomment">     Log a localized message. The user supplied parameter</em>
+<a name="771" href="#771">771</a> <em class="jxr_javadoccomment">     &lt;code&gt;key&lt;/code&gt; is replaced by its localized version from the</em>
+<a name="772" href="#772">772</a> <em class="jxr_javadoccomment">     resource bundle.</em>
+<a name="773" href="#773">773</a> 
+<a name="774" href="#774">774</a> <em class="jxr_javadoccomment">     @see #setResourceBundle</em>
+<a name="775" href="#775">775</a> 
+<a name="776" href="#776">776</a> <em class="jxr_javadoccomment">     @since 0.8.4 */</em>
+<a name="777" href="#777">777</a>   <strong class="jxr_keyword">public</strong>
+<a name="778" href="#778">778</a>   <strong class="jxr_keyword">void</strong> l7dlog(<a href="../../../org/apache/log4j/Priority.html">Priority</a> priority, String key, Throwable t) {
+<a name="779" href="#779">779</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(priority.level)) {
+<a name="780" href="#780">780</a>       <strong class="jxr_keyword">return</strong>;
+<a name="781" href="#781">781</a>     }
+<a name="782" href="#782">782</a>     <strong class="jxr_keyword">if</strong>(priority.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel())) {
+<a name="783" href="#783">783</a>       String msg = getResourceBundleString(key);
+<a name="784" href="#784">784</a>       <em class="jxr_comment">// if message corresponding to 'key' could not be found in the</em>
+<a name="785" href="#785">785</a>       <em class="jxr_comment">// resource bundle, then default to 'key'.</em>
+<a name="786" href="#786">786</a>       <strong class="jxr_keyword">if</strong>(msg == <strong class="jxr_keyword">null</strong>) {
+<a name="787" href="#787">787</a> 	msg = key;
+<a name="788" href="#788">788</a>       }
+<a name="789" href="#789">789</a>       forcedLog(FQCN, priority, msg, t);
+<a name="790" href="#790">790</a>     }
+<a name="791" href="#791">791</a>   }
+<a name="792" href="#792">792</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="793" href="#793">793</a> <em class="jxr_javadoccomment">     Log a localized and parameterized message. First, the user</em>
+<a name="794" href="#794">794</a> <em class="jxr_javadoccomment">     supplied &lt;code&gt;key&lt;/code&gt; is searched in the resource</em>
+<a name="795" href="#795">795</a> <em class="jxr_javadoccomment">     bundle. Next, the resulting pattern is formatted using</em>
+<a name="796" href="#796">796</a> <em class="jxr_javadoccomment">     {@link java.text.MessageFormat#format(String,Object[])} method with the</em>
+<a name="797" href="#797">797</a> <em class="jxr_javadoccomment">     user supplied object array &lt;code&gt;params&lt;/code&gt;.</em>
+<a name="798" href="#798">798</a> 
+<a name="799" href="#799">799</a> <em class="jxr_javadoccomment">     @since 0.8.4</em>
+<a name="800" href="#800">800</a> <em class="jxr_javadoccomment">  */</em>
+<a name="801" href="#801">801</a>   <strong class="jxr_keyword">public</strong>
+<a name="802" href="#802">802</a>   <strong class="jxr_keyword">void</strong> l7dlog(<a href="../../../org/apache/log4j/Priority.html">Priority</a> priority, String key,  Object[] params, Throwable t) {
+<a name="803" href="#803">803</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(priority.level)) {
+<a name="804" href="#804">804</a>       <strong class="jxr_keyword">return</strong>;
+<a name="805" href="#805">805</a>     }
+<a name="806" href="#806">806</a>     <strong class="jxr_keyword">if</strong>(priority.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel())) {
+<a name="807" href="#807">807</a>       String pattern = getResourceBundleString(key);
+<a name="808" href="#808">808</a>       String msg;
+<a name="809" href="#809">809</a>       <strong class="jxr_keyword">if</strong>(pattern == <strong class="jxr_keyword">null</strong>)
+<a name="810" href="#810">810</a> 	msg = key;
+<a name="811" href="#811">811</a>       <strong class="jxr_keyword">else</strong>
+<a name="812" href="#812">812</a> 	msg = java.text.MessageFormat.format(pattern, params);
+<a name="813" href="#813">813</a>       forcedLog(FQCN, priority, msg, t);
+<a name="814" href="#814">814</a>     }
+<a name="815" href="#815">815</a>   }
+<a name="816" href="#816">816</a> 
+<a name="817" href="#817">817</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="818" href="#818">818</a> <em class="jxr_javadoccomment">     This generic form is intended to be used by wrappers.</em>
+<a name="819" href="#819">819</a> <em class="jxr_javadoccomment">   */</em>
+<a name="820" href="#820">820</a>   <strong class="jxr_keyword">public</strong>
+<a name="821" href="#821">821</a>   <strong class="jxr_keyword">void</strong> log(<a href="../../../org/apache/log4j/Priority.html">Priority</a> priority, Object message, Throwable t) {
+<a name="822" href="#822">822</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(priority.level)) {
+<a name="823" href="#823">823</a>       <strong class="jxr_keyword">return</strong>;
+<a name="824" href="#824">824</a>     }
+<a name="825" href="#825">825</a>     <strong class="jxr_keyword">if</strong>(priority.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="826" href="#826">826</a>       forcedLog(FQCN, priority, message, t);
+<a name="827" href="#827">827</a>   }
+<a name="828" href="#828">828</a> 
+<a name="829" href="#829">829</a>  <em class="jxr_javadoccomment">/**</em>
+<a name="830" href="#830">830</a> <em class="jxr_javadoccomment">    This generic form is intended to be used by wrappers.</em>
+<a name="831" href="#831">831</a> <em class="jxr_javadoccomment"> */</em>
+<a name="832" href="#832">832</a>   <strong class="jxr_keyword">public</strong>
+<a name="833" href="#833">833</a>   <strong class="jxr_keyword">void</strong> log(<a href="../../../org/apache/log4j/Priority.html">Priority</a> priority, Object message) {
+<a name="834" href="#834">834</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(priority.level)) {
+<a name="835" href="#835">835</a>       <strong class="jxr_keyword">return</strong>;
+<a name="836" href="#836">836</a>     }
+<a name="837" href="#837">837</a>     <strong class="jxr_keyword">if</strong>(priority.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="838" href="#838">838</a>       forcedLog(FQCN, priority, message, <strong class="jxr_keyword">null</strong>);
+<a name="839" href="#839">839</a>   }
+<a name="840" href="#840">840</a> 
+<a name="841" href="#841">841</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="842" href="#842">842</a> 
+<a name="843" href="#843">843</a> <em class="jxr_javadoccomment">     This is the most generic printing method. It is intended to be</em>
+<a name="844" href="#844">844</a> <em class="jxr_javadoccomment">     invoked by &lt;b&gt;wrapper&lt;/b&gt; classes.</em>
+<a name="845" href="#845">845</a> 
+<a name="846" href="#846">846</a> <em class="jxr_javadoccomment">     @param callerFQCN The wrapper class' fully qualified class name.</em>
+<a name="847" href="#847">847</a> <em class="jxr_javadoccomment">     @param level The level of the logging request.</em>
+<a name="848" href="#848">848</a> <em class="jxr_javadoccomment">     @param message The message of the logging request.</em>
+<a name="849" href="#849">849</a> <em class="jxr_javadoccomment">     @param t The throwable of the logging request, may be null.  */</em>
+<a name="850" href="#850">850</a>   <strong class="jxr_keyword">public</strong>
+<a name="851" href="#851">851</a>   <strong class="jxr_keyword">void</strong> log(String callerFQCN, <a href="../../../org/apache/log4j/Priority.html">Priority</a> level, Object message, Throwable t) {
+<a name="852" href="#852">852</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(level.level)) {
+<a name="853" href="#853">853</a>       <strong class="jxr_keyword">return</strong>;
+<a name="854" href="#854">854</a>     }
+<a name="855" href="#855">855</a>     <strong class="jxr_keyword">if</strong>(level.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel())) {
+<a name="856" href="#856">856</a>       forcedLog(callerFQCN, level, message, t);
+<a name="857" href="#857">857</a>     }
+<a name="858" href="#858">858</a>   }
+<a name="859" href="#859">859</a> 
+<a name="860" href="#860">860</a>     <em class="jxr_javadoccomment">/**</em>
+<a name="861" href="#861">861</a> <em class="jxr_javadoccomment">      *  LoggerRepository forgot the fireRemoveAppenderEvent method,</em>
+<a name="862" href="#862">862</a> <em class="jxr_javadoccomment">      *     if using the stock Hierarchy implementation, then call its fireRemove.</em>
+<a name="863" href="#863">863</a> <em class="jxr_javadoccomment">      *     Custom repositories can implement HierarchyEventListener if they</em>
+<a name="864" href="#864">864</a> <em class="jxr_javadoccomment">      *     want remove notifications.</em>
+<a name="865" href="#865">865</a> <em class="jxr_javadoccomment">     * @param appender appender, may be null.</em>
+<a name="866" href="#866">866</a> <em class="jxr_javadoccomment">     */</em>
+<a name="867" href="#867">867</a>    <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> fireRemoveAppenderEvent(<strong class="jxr_keyword">final</strong> <a href="../../../org/apache/log4j/Appender.html">Appender</a> appender) {
+<a name="868" href="#868">868</a>        <strong class="jxr_keyword">if</strong> (appender != <strong class="jxr_keyword">null</strong>) {
+<a name="869" href="#869">869</a>          <strong class="jxr_keyword">if</strong> (repository instanceof Hierarchy) {
+<a name="870" href="#870">870</a>            ((<a href="../../../org/apache/log4j/Hierarchy.html">Hierarchy</a>) repository).fireRemoveAppenderEvent(<strong class="jxr_keyword">this</strong>, appender);
+<a name="871" href="#871">871</a>          } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (repository instanceof HierarchyEventListener) {
+<a name="872" href="#872">872</a>              ((<a href="../../../org/apache/log4j/spi/HierarchyEventListener.html">HierarchyEventListener</a>) repository).removeAppenderEvent(<strong class="jxr_keyword">this</strong>, appender);
+<a name="873" href="#873">873</a>          }
+<a name="874" href="#874">874</a>        }
+<a name="875" href="#875">875</a>    }
+<a name="876" href="#876">876</a> 
+<a name="877" href="#877">877</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="878" href="#878">878</a> <em class="jxr_javadoccomment">     Remove all previously added appenders from this Category</em>
+<a name="879" href="#879">879</a> <em class="jxr_javadoccomment">     instance.</em>
+<a name="880" href="#880">880</a> 
+<a name="881" href="#881">881</a> <em class="jxr_javadoccomment">     &lt;p&gt;This is useful when re-reading configuration information.</em>
+<a name="882" href="#882">882</a> <em class="jxr_javadoccomment">  */</em>
+<a name="883" href="#883">883</a>   <strong class="jxr_keyword">synchronized</strong>
+<a name="884" href="#884">884</a>   <strong class="jxr_keyword">public</strong>
+<a name="885" href="#885">885</a>   <strong class="jxr_keyword">void</strong> removeAllAppenders() {
+<a name="886" href="#886">886</a>     <strong class="jxr_keyword">if</strong>(aai != <strong class="jxr_keyword">null</strong>) {
+<a name="887" href="#887">887</a>       Vector appenders = <strong class="jxr_keyword">new</strong> Vector();
+<a name="888" href="#888">888</a>       <strong class="jxr_keyword">for</strong> (Enumeration iter = aai.getAllAppenders(); iter != <strong class="jxr_keyword">null</strong> &amp;&amp; iter.hasMoreElements();) {
+<a name="889" href="#889">889</a>           appenders.add(iter.nextElement());
+<a name="890" href="#890">890</a>       }
+<a name="891" href="#891">891</a>       aai.removeAllAppenders();
+<a name="892" href="#892">892</a>       <strong class="jxr_keyword">for</strong>(Enumeration iter = appenders.elements(); iter.hasMoreElements();) {
+<a name="893" href="#893">893</a>           fireRemoveAppenderEvent((Appender) iter.nextElement());
+<a name="894" href="#894">894</a>       }
+<a name="895" href="#895">895</a>       aai = <strong class="jxr_keyword">null</strong>;
+<a name="896" href="#896">896</a>     }
+<a name="897" href="#897">897</a>   }
+<a name="898" href="#898">898</a> 
+<a name="899" href="#899">899</a> 
+<a name="900" href="#900">900</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="901" href="#901">901</a> <em class="jxr_javadoccomment">     Remove the appender passed as parameter form the list of appenders.</em>
+<a name="902" href="#902">902</a> 
+<a name="903" href="#903">903</a> <em class="jxr_javadoccomment">     @since 0.8.2</em>
+<a name="904" href="#904">904</a> <em class="jxr_javadoccomment">  */</em>
+<a name="905" href="#905">905</a>   <strong class="jxr_keyword">synchronized</strong>
+<a name="906" href="#906">906</a>   <strong class="jxr_keyword">public</strong>
+<a name="907" href="#907">907</a>   <strong class="jxr_keyword">void</strong> removeAppender(<a href="../../../org/apache/log4j/Appender.html">Appender</a> appender) {
+<a name="908" href="#908">908</a>     <strong class="jxr_keyword">if</strong>(appender == <strong class="jxr_keyword">null</strong> || aai == <strong class="jxr_keyword">null</strong>)
+<a name="909" href="#909">909</a>       <strong class="jxr_keyword">return</strong>;
+<a name="910" href="#910">910</a>     <strong class="jxr_keyword">boolean</strong> wasAttached = aai.isAttached(appender);
+<a name="911" href="#911">911</a>     aai.removeAppender(appender);
+<a name="912" href="#912">912</a>     <strong class="jxr_keyword">if</strong> (wasAttached) {
+<a name="913" href="#913">913</a>         fireRemoveAppenderEvent(appender);
+<a name="914" href="#914">914</a>     }
+<a name="915" href="#915">915</a>   }
+<a name="916" href="#916">916</a> 
+<a name="917" href="#917">917</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="918" href="#918">918</a> <em class="jxr_javadoccomment">     Remove the appender with the name passed as parameter form the</em>
+<a name="919" href="#919">919</a> <em class="jxr_javadoccomment">     list of appenders.</em>
+<a name="920" href="#920">920</a> 
+<a name="921" href="#921">921</a> <em class="jxr_javadoccomment">     @since 0.8.2 */</em>
+<a name="922" href="#922">922</a>   <strong class="jxr_keyword">synchronized</strong>
+<a name="923" href="#923">923</a>   <strong class="jxr_keyword">public</strong>
+<a name="924" href="#924">924</a>   <strong class="jxr_keyword">void</strong> removeAppender(String name) {
+<a name="925" href="#925">925</a>     <strong class="jxr_keyword">if</strong>(name == <strong class="jxr_keyword">null</strong> || aai == <strong class="jxr_keyword">null</strong>) <strong class="jxr_keyword">return</strong>;
+<a name="926" href="#926">926</a>     <a href="../../../org/apache/log4j/Appender.html">Appender</a> appender = aai.getAppender(name);
+<a name="927" href="#927">927</a>     aai.removeAppender(name);
+<a name="928" href="#928">928</a>     <strong class="jxr_keyword">if</strong> (appender != <strong class="jxr_keyword">null</strong>) {
+<a name="929" href="#929">929</a>         fireRemoveAppenderEvent(appender);
+<a name="930" href="#930">930</a>     }
+<a name="931" href="#931">931</a>   }
+<a name="932" href="#932">932</a> 
+<a name="933" href="#933">933</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="934" href="#934">934</a> <em class="jxr_javadoccomment">     Set the additivity flag for this Category instance.</em>
+<a name="935" href="#935">935</a> <em class="jxr_javadoccomment">     @since 0.8.1</em>
+<a name="936" href="#936">936</a> <em class="jxr_javadoccomment">   */</em>
+<a name="937" href="#937">937</a>   <strong class="jxr_keyword">public</strong>
+<a name="938" href="#938">938</a>   <strong class="jxr_keyword">void</strong> setAdditivity(<strong class="jxr_keyword">boolean</strong> additive) {
+<a name="939" href="#939">939</a>     <strong class="jxr_keyword">this</strong>.additive = additive;
+<a name="940" href="#940">940</a>   }
+<a name="941" href="#941">941</a> 
+<a name="942" href="#942">942</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="943" href="#943">943</a> <em class="jxr_javadoccomment">     Only the Hiearchy class can set the hiearchy of a</em>
+<a name="944" href="#944">944</a> <em class="jxr_javadoccomment">     category. Default package access is MANDATORY here.  */</em>
+<a name="945" href="#945">945</a>   <strong class="jxr_keyword">final</strong>
+<a name="946" href="#946">946</a>   <strong class="jxr_keyword">void</strong> setHierarchy(<a href="../../../org/apache/log4j/spi/LoggerRepository.html">LoggerRepository</a> repository) {
+<a name="947" href="#947">947</a>     <strong class="jxr_keyword">this</strong>.repository = repository;
+<a name="948" href="#948">948</a>   }
+<a name="949" href="#949">949</a> 
+<a name="950" href="#950">950</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="951" href="#951">951</a> <em class="jxr_javadoccomment">     Set the level of this Category. If you are passing any of</em>
+<a name="952" href="#952">952</a> <em class="jxr_javadoccomment">     &lt;code&gt;Level.DEBUG&lt;/code&gt;, &lt;code&gt;Level.INFO&lt;/code&gt;,</em>
+<a name="953" href="#953">953</a> <em class="jxr_javadoccomment">     &lt;code&gt;Level.WARN&lt;/code&gt;, &lt;code&gt;Level.ERROR&lt;/code&gt;,</em>
+<a name="954" href="#954">954</a> <em class="jxr_javadoccomment">     &lt;code&gt;Level.FATAL&lt;/code&gt; as a parameter, you need to case them as</em>
+<a name="955" href="#955">955</a> <em class="jxr_javadoccomment">     Level.</em>
+<a name="956" href="#956">956</a> 
+<a name="957" href="#957">957</a> <em class="jxr_javadoccomment">     &lt;p&gt;As in &lt;pre&gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;logger.setLevel((Level) Level.DEBUG); &lt;/pre&gt;</em>
+<a name="958" href="#958">958</a> 
+<a name="959" href="#959">959</a> 
+<a name="960" href="#960">960</a> <em class="jxr_javadoccomment">     &lt;p&gt;Null values are admitted.  */</em>
+<a name="961" href="#961">961</a>   <strong class="jxr_keyword">public</strong>
+<a name="962" href="#962">962</a>   <strong class="jxr_keyword">void</strong> setLevel(<a href="../../../org/apache/log4j/Level.html">Level</a> level) {
+<a name="963" href="#963">963</a>     <strong class="jxr_keyword">this</strong>.level = level;
+<a name="964" href="#964">964</a>   }
+<a name="965" href="#965">965</a> 
+<a name="966" href="#966">966</a> 
+<a name="967" href="#967">967</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="968" href="#968">968</a> <em class="jxr_javadoccomment">     Set the level of this Category.</em>
+<a name="969" href="#969">969</a> 
+<a name="970" href="#970">970</a> <em class="jxr_javadoccomment">     &lt;p&gt;Null values are admitted.</em>
+<a name="971" href="#971">971</a> 
+<a name="972" href="#972">972</a> <em class="jxr_javadoccomment">     @deprecated Please use {@link #setLevel} instead.</em>
+<a name="973" href="#973">973</a> <em class="jxr_javadoccomment">  */</em>
+<a name="974" href="#974">974</a>   <strong class="jxr_keyword">public</strong>
+<a name="975" href="#975">975</a>   <strong class="jxr_keyword">void</strong> setPriority(<a href="../../../org/apache/log4j/Priority.html">Priority</a> priority) {
+<a name="976" href="#976">976</a>     <strong class="jxr_keyword">this</strong>.level = (Level) priority;
+<a name="977" href="#977">977</a>   }
+<a name="978" href="#978">978</a> 
+<a name="979" href="#979">979</a> 
+<a name="980" href="#980">980</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="981" href="#981">981</a> <em class="jxr_javadoccomment">     Set the resource bundle to be used with localized logging</em>
+<a name="982" href="#982">982</a> <em class="jxr_javadoccomment">     methods {@link #l7dlog(Priority,String,Throwable)} and {@link</em>
+<a name="983" href="#983">983</a> <em class="jxr_javadoccomment">     #l7dlog(Priority,String,Object[],Throwable)}.</em>
+<a name="984" href="#984">984</a> 
+<a name="985" href="#985">985</a> <em class="jxr_javadoccomment">     @since 0.8.4</em>
+<a name="986" href="#986">986</a> <em class="jxr_javadoccomment">   */</em>
+<a name="987" href="#987">987</a>   <strong class="jxr_keyword">public</strong>
+<a name="988" href="#988">988</a>   <strong class="jxr_keyword">void</strong> setResourceBundle(ResourceBundle bundle) {
+<a name="989" href="#989">989</a>     resourceBundle = bundle;
+<a name="990" href="#990">990</a>   }
+<a name="991" href="#991">991</a> 
+<a name="992" href="#992">992</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="993" href="#993">993</a> <em class="jxr_javadoccomment">     Calling this method will &lt;em&gt;safely&lt;/em&gt; close and remove all</em>
+<a name="994" href="#994">994</a> <em class="jxr_javadoccomment">     appenders in all the categories including root contained in the</em>
+<a name="995" href="#995">995</a> <em class="jxr_javadoccomment">     default hierachy.</em>
+<a name="996" href="#996">996</a> 
+<a name="997" href="#997">997</a> <em class="jxr_javadoccomment">     &lt;p&gt;Some appenders such as {@link org.apache.log4j.net.SocketAppender}</em>
+<a name="998" href="#998">998</a> <em class="jxr_javadoccomment">     and {@link AsyncAppender} need to be closed before the</em>
+<a name="999" href="#999">999</a> <em class="jxr_javadoccomment">     application exists. Otherwise, pending logging events might be</em>
+<a name="1000" href="#1000">1000</a> <em class="jxr_javadoccomment">     lost.</em>
+<a name="1001" href="#1001">1001</a> 
+<a name="1002" href="#1002">1002</a> <em class="jxr_javadoccomment">     &lt;p&gt;The &lt;code&gt;shutdown&lt;/code&gt; method is careful to close nested</em>
+<a name="1003" href="#1003">1003</a> <em class="jxr_javadoccomment">     appenders before closing regular appenders. This is allows</em>
+<a name="1004" href="#1004">1004</a> <em class="jxr_javadoccomment">     configurations where a regular appender is attached to a category</em>
+<a name="1005" href="#1005">1005</a> <em class="jxr_javadoccomment">     and again to a nested appender.</em>
+<a name="1006" href="#1006">1006</a> 
+<a name="1007" href="#1007">1007</a> <em class="jxr_javadoccomment">     @deprecated Please use {@link LogManager#shutdown()} instead.</em>
+<a name="1008" href="#1008">1008</a> 
+<a name="1009" href="#1009">1009</a> <em class="jxr_javadoccomment">     @since 1.0</em>
+<a name="1010" href="#1010">1010</a> <em class="jxr_javadoccomment">  */</em>
+<a name="1011" href="#1011">1011</a>   <strong class="jxr_keyword">public</strong>
+<a name="1012" href="#1012">1012</a>   <strong class="jxr_keyword">static</strong>
+<a name="1013" href="#1013">1013</a>   <strong class="jxr_keyword">void</strong> shutdown() {
+<a name="1014" href="#1014">1014</a>     LogManager.shutdown();
+<a name="1015" href="#1015">1015</a>   }
+<a name="1016" href="#1016">1016</a> 
+<a name="1017" href="#1017">1017</a> 
+<a name="1018" href="#1018">1018</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="1019" href="#1019">1019</a> <em class="jxr_javadoccomment">    Log a message object with the {@link Level#WARN WARN} Level.</em>
+<a name="1020" href="#1020">1020</a> 
+<a name="1021" href="#1021">1021</a> <em class="jxr_javadoccomment">    &lt;p&gt;This method first checks if this category is &lt;code&gt;WARN&lt;/code&gt;</em>
+<a name="1022" href="#1022">1022</a> <em class="jxr_javadoccomment">    enabled by comparing the level of this category with {@link</em>
+<a name="1023" href="#1023">1023</a> <em class="jxr_javadoccomment">    Level#WARN WARN} Level. If the category is &lt;code&gt;WARN&lt;/code&gt;</em>
+<a name="1024" href="#1024">1024</a> <em class="jxr_javadoccomment">    enabled, then it converts the message object passed as parameter</em>
+<a name="1025" href="#1025">1025</a> <em class="jxr_javadoccomment">    to a string by invoking the appropriate</em>
+<a name="1026" href="#1026">1026</a> <em class="jxr_javadoccomment">    {@link org.apache.log4j.or.ObjectRenderer}. It</em>
+<a name="1027" href="#1027">1027</a> <em class="jxr_javadoccomment">    proceeds to call all the registered appenders in this category and</em>
+<a name="1028" href="#1028">1028</a> <em class="jxr_javadoccomment">    also higher in the hieararchy depending on the value of the</em>
+<a name="1029" href="#1029">1029</a> <em class="jxr_javadoccomment">    additivity flag.</em>
+<a name="1030" href="#1030">1030</a> 
+<a name="1031" href="#1031">1031</a> <em class="jxr_javadoccomment">    &lt;p&gt;&lt;b&gt;WARNING&lt;/b&gt; Note that passing a {@link Throwable} to this</em>
+<a name="1032" href="#1032">1032</a> <em class="jxr_javadoccomment">    method will print the name of the Throwable but no stack trace. To</em>
+<a name="1033" href="#1033">1033</a> <em class="jxr_javadoccomment">    print a stack trace use the {@link #warn(Object, Throwable)} form</em>
+<a name="1034" href="#1034">1034</a> <em class="jxr_javadoccomment">    instead.  &lt;p&gt;</em>
+<a name="1035" href="#1035">1035</a> 
+<a name="1036" href="#1036">1036</a> <em class="jxr_javadoccomment">    @param message the message object to log.  */</em>
+<a name="1037" href="#1037">1037</a>   <strong class="jxr_keyword">public</strong>
+<a name="1038" href="#1038">1038</a>   <strong class="jxr_keyword">void</strong> warn(Object message) {
+<a name="1039" href="#1039">1039</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled( Level.WARN_INT))
+<a name="1040" href="#1040">1040</a>       <strong class="jxr_keyword">return</strong>;
+<a name="1041" href="#1041">1041</a> 
+<a name="1042" href="#1042">1042</a>     <strong class="jxr_keyword">if</strong>(Level.WARN.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="1043" href="#1043">1043</a>       forcedLog(FQCN, Level.WARN, message, <strong class="jxr_keyword">null</strong>);
+<a name="1044" href="#1044">1044</a>   }
+<a name="1045" href="#1045">1045</a> 
+<a name="1046" href="#1046">1046</a>   <em class="jxr_javadoccomment">/**</em>
+<a name="1047" href="#1047">1047</a> <em class="jxr_javadoccomment">   Log a message with the &lt;code&gt;WARN&lt;/code&gt; level including the</em>
+<a name="1048" href="#1048">1048</a> <em class="jxr_javadoccomment">   stack trace of the {@link Throwable} &lt;code&gt;t&lt;/code&gt; passed as</em>
+<a name="1049" href="#1049">1049</a> <em class="jxr_javadoccomment">   parameter.</em>
+<a name="1050" href="#1050">1050</a> 
+<a name="1051" href="#1051">1051</a> <em class="jxr_javadoccomment">   &lt;p&gt;See {@link #warn(Object)} for more detailed information.</em>
+<a name="1052" href="#1052">1052</a> 
+<a name="1053" href="#1053">1053</a> <em class="jxr_javadoccomment">   @param message the message object to log.</em>
+<a name="1054" href="#1054">1054</a> <em class="jxr_javadoccomment">   @param t the exception to log, including its stack trace.  */</em>
+<a name="1055" href="#1055">1055</a>   <strong class="jxr_keyword">public</strong>
+<a name="1056" href="#1056">1056</a>   <strong class="jxr_keyword">void</strong> warn(Object message, Throwable t) {
+<a name="1057" href="#1057">1057</a>     <strong class="jxr_keyword">if</strong>(repository.isDisabled(Level.WARN_INT))
+<a name="1058" href="#1058">1058</a>       <strong class="jxr_keyword">return</strong>;
+<a name="1059" href="#1059">1059</a>     <strong class="jxr_keyword">if</strong>(Level.WARN.isGreaterOrEqual(<strong class="jxr_keyword">this</strong>.getEffectiveLevel()))
+<a name="1060" href="#1060">1060</a>       forcedLog(FQCN, Level.WARN, message, t);
+<a name="1061" href="#1061">1061</a>   }
+<a name="1062" href="#1062">1062</a> }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

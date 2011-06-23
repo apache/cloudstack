@@ -1,0 +1,389 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test the performance of logging
+
+# Set the variable REMOTE_HOST to the appropriate value for the
+# to perform SocketAppender measurements.
+
+
+LCF=logging.lcf
+TARGET_FILE=test
+DELAY=1000
+PORT=12345
+
+# The results are somehow RUN_LENGTH dependent. Keep RUN_LENGTH the
+# same to be able to compare results
+LONGRUN=100000
+SHORTRUN=5000
+
+#LONGRUN=1
+#SHORTRUN=2
+
+
+declare -i start=$1
+
+#D=-Dlog4j.configDebug
+# -------------------------------------------------------------
+function multiRun() {
+  lcf=$1
+  loopLength=$2
+  msg=$3
+  runLength=$4
+    
+  echo -n "Results: "
+  
+  declare -i total
+  declare -i i
+  i=0
+  total=0
+  
+  while [ $i -lt $loopLength ]
+  do
+    i=$i+1
+    x=$(java $D org.apache.log4j.performance.Logging  $lcf $runLength $5)
+    if [ $x -lt 100 ]; then
+      echo -n " "
+    fi  
+    echo -n "$x "
+    total=$total+$x
+  done
+
+  while [ $i -lt 8 ]
+  do
+    i=$i+1
+    echo -n "    "
+  done  
+  
+  average=$[ $total / $loopLength ]
+  echo "- average $average $msg"
+
+}
+# =============================================
+# Echo to $LCF
+# =============================================
+function lecho {
+ echo $* >> $LCF
+}
+# =============================================
+
+
+echo "--------------" $(date) "---------------" 
+
+
+echo echo "Starting performance measures. This make take a few minutes...."
+
+declare -i TEST
+
+echo; echo "NullAppender:"; echo
+
+TEST=1
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 4 "SimpleLayout"  $LONGRUN 
+fi
+
+TEST=2
+if [ $TEST -ge $start ]; then
+   format="%p - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=3
+if [ $TEST -ge $start ]; then
+   format="%-5p - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=4
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 4 "TTCCLayout/RELATIVE"  $LONGRUN 
+fi
+
+TEST=5
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %c{2} %x - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=6
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %.10c %x - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=7
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %.20c %x - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=8
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %c - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=9
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 4 "TTCCLayout/ISO8601"  $LONGRUN 
+fi
+
+TEST=10
+if [ $TEST -ge $start ]; then
+   format="%d{ISO8601} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=11
+if [ $TEST -ge $start ]; then
+   format="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=12
+if [ $TEST -ge $start ]; then
+   format="%l - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $SHORTRUN 
+fi
+
+TEST=13
+if [ $TEST -ge $start ]; then
+   format="%C.%M.%L - %m%n"
+   multiRun xml/logging$TEST.xml 4 "PatternLayout \"$format\""  $SHORTRUN 
+fi
+
+echo 
+echo "FileAppender: "
+echo
+
+
+TEST=100
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "SimpleLayout"  $LONGRUN 
+fi
+
+TEST=101
+if [ $TEST -ge $start ]; then
+   format="%p - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN    
+fi
+
+TEST=102
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCC/RELATIVE" $LONGRUN 
+fi
+
+TEST=103
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %c - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=104
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCCLayout/ISO8601"  $LONGRUN 
+fi
+
+
+TEST=105
+if [ $TEST -ge $start ]; then
+   format="%d{ISO8601} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=106
+if [ $TEST -ge $start ]; then
+   format="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN    
+fi
+
+echo ================== 107 ===============================
+TEST=107
+if [ $TEST -ge $start ]; then
+   format="%l - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $SHORTRUN   
+fi
+
+echo -------------------------------------
+echo "FileAppender: ImmediateFlush=false"
+echo -------------------------------------
+
+TEST=200
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "SimpleLayout"  $LONGRUN 
+fi
+
+TEST=201
+if [ $TEST -ge $start ]; then
+   format="%p - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN    
+fi
+
+TEST=202
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCC/RELATIVE" $LONGRUN 
+fi
+
+TEST=203
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %c - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=204
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCCLayout/ISO8601"  $LONGRUN 
+fi
+
+TEST=205
+if [ $TEST -ge $start ]; then
+   format="%d{ISO8601} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=206
+if [ $TEST -ge $start ]; then
+   format="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN    
+fi
+
+TEST=207
+if [ $TEST -ge $start ]; then
+   format="%l - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $SHORTRUN   
+fi
+
+echo -------------------------------------
+echo "FileAppender: BufferedIO=true"
+echo -------------------------------------
+
+TEST=220
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "SimpleLayout"  $LONGRUN 
+fi
+
+TEST=221
+if [ $TEST -ge $start ]; then
+   format="%p - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN    
+fi
+
+TEST=222
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCC/RELATIVE" $LONGRUN 
+fi
+
+TEST=223
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %c - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=224
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCCLayout/ISO8601"  $LONGRUN 
+fi
+
+TEST=225
+if [ $TEST -ge $start ]; then
+   format="%d{ISO8601} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN 
+fi
+
+TEST=226
+if [ $TEST -ge $start ]; then
+   format="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN    
+fi
+
+TEST=227
+if [ $TEST -ge $start ]; then
+   format="%l - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $SHORTRUN   
+fi
+
+
+echo ==================================
+echo Async appender
+echo ==================================
+
+TEST=300
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "SimpleLayout"  $LONGRUN   
+fi
+
+TEST=301
+if [ $TEST -ge $start ]; then
+   format="%p - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN   
+fi
+
+TEST=302
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCCLayout/RELATIVE"  $LONGRUN   
+fi
+
+TEST=303
+if [ $TEST -ge $start ]; then
+   format="%r [%t] %-5p %c - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN   
+fi
+
+TEST=304
+if [ $TEST -ge $start ]; then
+   multiRun xml/logging$TEST.xml 8 "TTCCLayout/ISO8601"  $LONGRUN   
+fi
+
+
+TEST=305
+if [ $TEST -ge $start ]; then
+   format="%d{ISO8601} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN   
+fi
+
+TEST=306
+if [ $TEST -ge $start ]; then
+   format="%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5p %c %x - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $LONGRUN   
+fi
+
+TEST=307
+if [ $TEST -ge $start ]; then
+   format="%l - %m%n"
+   multiRun xml/logging$TEST.xml 8 "PatternLayout \"$format\""  $SHORTRUN   
+fi
+
+
+# ===============================================================
+#  Remote logging
+# ===============================================================
+TEST=1000
+#RL=1000
+RL=10000
+if [ $TEST -ge $start ]; then
+   java org.apache.log4j.performance.Logging xml/logging$TEST.xml $RL 100 100
+   #multiRun 4 "SocketAppender" $SHORTRUN $DELAY
+fi
+
+
+TEST=1001
+#RL=1000
+RL=30000
+if [ $TEST -ge $start ]; then
+   java org.apache.log4j.performance.Logging xml/logging$TEST.xml $RL 
+   #multiRun 4 "SocketAppender" $SHORTRUN $DELAY
+fi
+
+

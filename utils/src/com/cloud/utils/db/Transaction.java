@@ -175,7 +175,7 @@ public class Transaction {
     public static Connection getStandaloneConnectionWithException() throws SQLException {
         Connection conn = s_ds.getConnection();
         if (s_connLogger.isTraceEnabled()) {
-            s_logger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
+            s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
         }
 		return conn;
     }
@@ -184,7 +184,7 @@ public class Transaction {
     	try {
             Connection conn = s_ds.getConnection();
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
+                s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
             }
             return conn;
 		} catch (SQLException e) {
@@ -197,7 +197,7 @@ public class Transaction {
         try {
             Connection conn = s_usageDS.getConnection();
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
+                s_connLogger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
             }
             return conn;
         } catch (SQLException e) {
@@ -258,8 +258,19 @@ public class Transaction {
         if (s_logger.isDebugEnabled()) {
             final StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
             final StringBuilder str = new StringBuilder();
-            for (int i = 3, max = stacks.length > 7 ? 7 : stacks.length; i < max; i++) {
+            int i = 3, j = 3;
+            while (j < 7 && i < stacks.length) {
+                StackTraceElement element = stacks[i];
+                String filename = element.getFileName();
+                String method = element.getMethodName();
+                if ((filename != null && filename.equals("<generated>")) || (method != null && method.equals("invokeSuper"))) {
+                    i++;
+                    continue;
+                }
+                
                 str.append("-").append(stacks[i].getClassName().substring(stacks[i].getClassName().lastIndexOf(".") + 1)).append(".").append(stacks[i].getMethodName()).append(":").append(stacks[i].getLineNumber());
+                j++;
+                i++;
             }
             return str.toString();
         }
@@ -659,13 +670,13 @@ public class Transaction {
         }
 
         if (_txn) {
-            s_logger.trace("txn: Not closing DB connection because we're still in a transaction.");
+            s_connLogger.trace("txn: Not closing DB connection because we're still in a transaction.");
             return;
         }
 
         try {
             if (s_connLogger.isTraceEnabled()) {
-                s_logger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
+                s_connLogger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
             }
             if(this._dbId != CONNECTED_DB) {
                 _conn.close();

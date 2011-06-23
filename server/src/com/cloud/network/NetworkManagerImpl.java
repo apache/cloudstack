@@ -570,6 +570,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             // Check that the maximum number of public IPs for the given
             // accountId will not be exceeded
             if (_accountMgr.resourceLimitExceeded(accountToLock, ResourceType.public_ip)) {
+                UserContext.current().setEventDetails("Maximum number of public IP addresses for account: " + accountToLock.getAccountName() + " has been exceeded.");
                 ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + accountToLock.getAccountName() + " has been exceeded.");
                 rae.setResourceType("ip");
                 throw rae;

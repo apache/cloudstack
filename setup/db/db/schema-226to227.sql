@@ -118,4 +118,15 @@ UPDATE vm_instance set vm_type=type;
 ALTER TABLE `cloud`.`networks` ADD COLUMN `is_domain_specific` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is domain specific, 0 false otherwise';
 INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'allow.subdomain.network.access', 'true', 'Allow subdomains to use networks dedicated to their parent domain(s)'); 
 
-INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'encode.api.response', 'true', 'Do UTF-8 encoding for the api response, true by default'); 
+INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'encode.api.response', 'false', 'Do UTF-8 encoding for the api response, false by default'); 
+
+
+DELETE FROM load_balancer_vm_map WHERE instance_id IN (SELECT id FROM vm_instance WHERE removed IS NOT NULL);
+
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'hypervisor.list', 'KVM,XenServer,VMware,BareMetal', 'The list of hypervisors that this deployment will use.');
+
+
+UPDATE IGNORE configuration set name='guest.domain.suffix' where name='domain.suffix';
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'guest.domain.suffix', 'cloud.internal', 'Default domain name for vms inside virtualized networks fronted by router');
+DELETE FROM configuration WHERE name='domain.suffix';
+

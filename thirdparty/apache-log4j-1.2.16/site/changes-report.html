@@ -1,0 +1,3715 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Apache log4j 1.2 - Apache log4j 1.2</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+          </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="../../" id="bannerLeft">
+    
+                                            <img src="images/ls-logo.jpg" alt="" />
+    
+            </a>
+                        <a href=".." id="bannerRight">
+    
+                                            <img src="images/logo.jpg" alt="" />
+    
+            </a>
+            <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-03-30
+                          |   
+                <a href="http://www.apache.org/" class="externalLink">Apache</a>
+                &gt;
+      
+                <a href="../../">Logging Services</a>
+                &gt;
+      
+                <a href="../">log4j</a>
+                &gt;
+      
+                <a href="http://logging.apache.org:80/log4j/1.2/" class="externalLink">1.2</a>
+                          </div>
+            <div class="xright">      
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>Get log4j 1.2</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+              <strong>Changes</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="license.html">License</a>
+          </li>
+          </ul>
+              <h5>About log4j 1.2</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">What is log4j?</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="roadmap.html">Roadmap</a>
+          </li>
+          </ul>
+              <h5>Community</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="issue-tracking.html">Issue Tracking</a>
+          </li>
+          </ul>
+              <h5>Development</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="source-repository.html">Repository</a>
+          </li>
+              
+    <li class="none">
+                    <a href="jxr.html">Cross Reference</a>
+          </li>
+              
+    <li class="none">
+                    <a href="dependencies.html">Dependencies</a>
+          </li>
+              
+    <li class="none">
+                    <a href="integration.html">Continuous Integration</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="manual.html">Introduction</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">JavaDoc</a>
+          </li>
+              
+    <li class="none">
+                    <a href="publications.html">Publications</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://wiki.apache.org/logging-log4j" class="externalLink">Wiki</a>
+          </li>
+          </ul>
+              <h5>Apache</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="http://www.apache.org" class="externalLink">Home</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://www.apache.org/foundation/sponsorship.html" class="externalLink">Sponsorship</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://www.apache.org/foundation/thanks.html" class="externalLink">Thanks</a>
+          </li>
+              
+    <li class="none">
+                    <a href="http://www.apachecon.com" class="externalLink">Conferences</a>
+          </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <div class="section"><h2>Apache log4j 1.2</h2>
+<a name="Apache_log4j_1.2"></a><div class="section"><h3>Release History</h3>
+<a name="Release_History"></a><table class="bodyTable"><tr class="a"><th>Version</th>
+<th>Date</th>
+<th>Description</th>
+</tr>
+<tr class="b"><td><a href="#a1.2.16">1.2.16</a></td>
+<td>2010-04-06</td>
+<td>Maintenance release</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.15">1.2.15</a></td>
+<td>2007-08-24</td>
+<td>SyslogAppender enhancements, NTEventLogAppender and Maven build.</td>
+</tr>
+<tr class="b"><td><a href="#a1.2.14">1.2.14</a></td>
+<td>2006-09-18</td>
+<td>AsyncAppender rewrite, Syslog and SMTPAppender enhancements.</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.13">1.2.13</a></td>
+<td>2005-12-04</td>
+<td>TRACE level missing info fixed, ConsoleAppender.follow added to make redirection following an optional behavior.</td>
+</tr>
+<tr class="b"><td><a href="#a1.2.12">1.2.12</a></td>
+<td>2005-08-29</td>
+<td>TRACE level introduced, ConsoleAppender modified to follow redirection of System.out</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.11">1.2.11</a></td>
+<td>2005-06-18</td>
+<td>JMS MessageRenderer fix</td>
+</tr>
+<tr class="b"><td><a href="#a1.2.10">1.2.10</a></td>
+<td>2005-04-28</td>
+<td>Version 1.2.10 was not released following the accepted rules and process of    the log4j project and Logging Services Project and was recalled and removed.    Please do not use version 1.2.10, it is not an official log4j release.</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.9">1.2.9</a></td>
+<td>2004-11-01</td>
+<td>Deprecation of obsolete methods</td>
+</tr>
+<tr class="b"><td><a href="#a1.2.8">1.2.8</a></td>
+<td>2003-02-19</td>
+<td>Fixes to XMLAppender, DOMConfiguration, SocketAppender and JDBCAppender.</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.7">1.2.7</a></td>
+<td>2002-10-09</td>
+<td>log4j.xml now checked during default configuration.</td>
+</tr>
+<tr class="b"><td><a href="#a1.2.6">1.2.6</a></td>
+<td>2002-07-31</td>
+<td>LoggingEvent.getLoggerName() added, JMSAppender enhancements.</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.5">1.2.5</a></td>
+<td>2002-07-05</td>
+<td>AsyncAppender.close now closes nested appender.</td>
+</tr>
+<tr class="b"><td><a href="#a1.2.4">1.2.4</a></td>
+<td>2002-06-12</td>
+<td>XMLLayout now handles embedded CDATA, JDBCAppender deprecated.</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.3">1.2.3</a></td>
+<td>2002-05-24</td>
+<td>SyslogAppender and stack trace fixes.</td>
+</tr>
+<tr class="b"><td><a href="#a1.2.2">1.2.2</a></td>
+<td>2002-05-22</td>
+<td>NULL added as synonym for INHERITED in Configurators, Thread context loader used preferentially.</td>
+</tr>
+<tr class="a"><td><a href="#a1.2.1">1.2.1</a></td>
+<td>2002-05-17</td>
+<td>Fixed MDC problem when used with AsyncAppender</td>
+</tr>
+<tr class="b"><td><a href="#a1.2">1.2</a></td>
+<td>2002-05-01</td>
+<td>Initial release of log4j 1.2</td>
+</tr>
+<tr class="a"><td><a href="#a1.1.3">1.1.3</a></td>
+<td>2001-06-19</td>
+<td>Added missing namespace and reduced size of log4j-core.jar.</td>
+</tr>
+<tr class="b"><td><a href="#a1.1.2">1.1.2</a></td>
+<td>2001-06-07</td>
+<td>Default initialization improvements</td>
+</tr>
+<tr class="a"><td><a href="#a1.1.1">1.1.1</a></td>
+<td>2001-05-20</td>
+<td>Added custom priority support to PropertyConfigurator, SMTPAppender visibility changes.</td>
+</tr>
+<tr class="b"><td><a href="#a1.1">1.1</a></td>
+<td>2001-05-19</td>
+<td>Minor documentation changes</td>
+</tr>
+<tr class="a"><td><a href="#a1.1b7">1.1b7</a></td>
+<td>2001-05-09</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a1.1b6">1.1b6</a></td>
+<td>2001-04-26</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a1.1b5">1.1b5</a></td>
+<td>2001-04-22</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a1.1b4">1.1b4</a></td>
+<td>2001-04-20</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a1.1b3">1.1b3</a></td>
+<td>2001-04-18</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a1.1b2">1.1b2</a></td>
+<td>2001-04-18</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a1.1b1">1.1b1</a></td>
+<td>2001-02-23</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a1.0.4">1.0.4</a></td>
+<td>2001-01-12</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a1.0.3">1.0.3</a></td>
+<td>2001-01-11</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a1.0.2">1.0.2</a></td>
+<td>2001-01-11</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a1.0.1">1.0.1</a></td>
+<td>2001-01-10</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a1.0">1.0</a></td>
+<td>2001-01-08</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.9.1">0.9.1</a></td>
+<td>2000-11-30</td>
+<td>the 19th public release</td>
+</tr>
+<tr class="b"><td><a href="#a0.9.0">0.9.0</a></td>
+<td>2000-11-20</td>
+<td>the 18th public release</td>
+</tr>
+<tr class="a"><td><a href="#a0.8.5b">0.8.5b</a></td>
+<td>2000-08-27</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.8.5a">0.8.5a</a></td>
+<td>2000-08-24</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.8.5.">0.8.5.</a></td>
+<td>2000-08-23</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.8.4d">0.8.4d</a></td>
+<td>2000-05-11</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.8.4c">0.8.4c</a></td>
+<td>2000-05-05</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.8.4b">0.8.4b</a></td>
+<td>2000-05-03</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.8.4a">0.8.4a</a></td>
+<td>2000-05-03</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.8.4">0.8.4</a></td>
+<td>2000-05-01</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.8.3b">0.8.3b</a></td>
+<td>2000-04-14</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.8.3a">0.8.3a</a></td>
+<td>2000-04-14</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.8.3">0.8.3</a></td>
+<td>2000-04-13</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.8.2">0.8.2</a></td>
+<td>2000-03-23</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.8.1">0.8.1</a></td>
+<td>2000-02-19</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.8.0">0.8.0</a></td>
+<td>2000-02-09</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.7.5">0.7.5</a></td>
+<td>2000-01-29</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.7.4">0.7.4</a></td>
+<td>2000-01-21</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.7.3">0.7.3</a></td>
+<td>2000-01-14</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.7.2">0.7.2</a></td>
+<td>2000-01-04</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.7.1">0.7.1</a></td>
+<td>1999-12-20</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.7.0">0.7.0</a></td>
+<td>1999-12-16</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.6.2">0.6.2</a></td>
+<td>1999-12-08</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.6.1">0.6.1</a></td>
+<td>1999-11-16</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.6.0">0.6.0</a></td>
+<td>1999-11-09</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a0.5a">0.5a</a></td>
+<td>1999-10-28</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a0.5">0.5</a></td>
+<td>1999-10-27</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#null"></a></td>
+<td>1999-10-15</td>
+<td></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.16 - 2010-04-06</h3>
+<a name="a1.2.16"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j 1.2.16 release preparation. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43313">43313</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Create a public identifier for log4j.dtd (&quot;-//APACHE//DTD LOG4J 1.2//EN&quot;) Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42842">42842</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>TelnetAppender misses messages when one of many clients disconnect. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44108">44108</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>TelnetAppender throws null pointers at log time when socket couldn't be opened. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44109">44109</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>ThrowableInformation.getThrowableStringRep can return null strings. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44032">44032</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j.dtd defines class attribute for category element, but not for logger. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43298">43298</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SMTPAppender.setSMTPUserName and others missing @since tags. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43314">43314</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Request for compile-on-Windows help file in src package. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43618">43618</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>AsyncAppender failing on changing message objects. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43599">43599</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Subst-mechanism in DOMConfigurator broken. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43325">43325</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>DailyRollingFileAppender may lose messages during failed rollover attempts. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43374">43374</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fix mangled source-repository.html. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43312">43312</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Minor documentation changes. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43387">43387</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Make javamail, jmx, jms dependencies optional in pom.xml. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43304">43304</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketHubAppender should expose actual port in use to extending classes. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43874">43874</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketHubAppender in the 1.2.16 does not support a scroll back buffer or application property Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44551">44551</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Give log4j threads reasonable names. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41156">41156</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>LocationInfo can report wrong caller when other class names contain logger class name as substring. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44888">44888</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>ErrorHandlerTestCase is not run and does not pass. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45426">45426</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Agent.java is sole dependency on jmxtools.jar with Java 5+. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45485">45485</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Eliminate compile dependency on non-redistributable JMS reference implementation. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44517">44517</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Exception in call to toString of message propagates to caller. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37182">37182</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Javadoc class index corrupted by JDBCAppender deprecation warning. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45299">45299</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Improve warning message when log4j is accessed after unload by Tomcat. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43867">43867</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NullPointerException in NDC.remove after unload by Tomcat. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45335">45335</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Configuring triggering/rolling policies should be supported through properties. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=36384">36384</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>More explanations when hitting WARN No appenders could be found for logger. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=25747">25747</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Use Throwable.getStackTrace to obtain location when running on JDK 1.4 or later. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45039">45039</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>AsyncAppender fails on changing Throwable. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44745">44745</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Extra NPE error message when using missing appender class with DOMConfigurator. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44899">44899</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>org.apache.log4j.varia.NullAppender lacks static accessor to static instance. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44555">44555</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Javadoc for Appender.getName implies that the return value will be unique and not null. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43849">43849</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Weekly rotation problem in Europe. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40888">40888</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add OSGi packaging info. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43282">43282</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>InterruptedIOException ignored by log4j. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44157">44157</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>HierarchyDynamicMBean missing unregister MBean Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40246">40246</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Support -Dm2_repo option on Maven build for non-default Maven repository location. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45635">45635</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>2 tests for DateLayout are failing because of ill initialized DateFormat. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45636">45636</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Incorrect user mailing list URL. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45659">45659</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NTEventLogAppender.dll for 64-bit editions for Microsoft Windows. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44386">44386</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add configuration of ThrowableRenderers and add org.apache.log4j.EnhancedThrowableRenderer. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45721">45721</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SMTPAppender does not force evaluation of message at request time Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45969">45969</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Support SSL transport in SMTPAppender Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=25355">25355</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SMTPAppender should have a sendOnClose option Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45980">45980</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Support %X layout specification to output all MDC key-value pairs Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45982">45982</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add replyTo attribute to SMTPAppender Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45990">45990</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SMTPAppender does not properly encode subject or content containing non-ASCII characters. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44644">44644</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Clarify javadoc of Layout.ignoresThrowable. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46388">46388</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender.append throws exception if layout is not set. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46271">46271</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>QuietWriter.write should check for null argument. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46144">46144</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>LogFactor5 CategoryPath doesn't replace slashes with dots. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46512">46512</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>LoggerDynamicMBean needs to handle a null Appender name. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46163">46163</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>DOMConfigurator.configure(URL) fails on JRE 1.5.0_16. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45704">45704</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Document system properties used by log4j. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44357">44357</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j is susceptible to exceptions in Exception.printStackTrace. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=44038">44038</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Misuse of &quot;it's&quot; in Javadoc for PatternLayout. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46741">46741</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add SMTPAppender.formatBody to simplify extension. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=47142">47142</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Failure when toString() of throwable performs logging in SocketAppender, SocketHubAppender and JDBCAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46404">46404</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Reading configuration files from a JAR locks the JAR file Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=47465">47465</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>PropertyConfigurator does not support configuring ErrorHandler. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=38061">38061</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j.ignoreTCL should apply to the getResource method in addition to the loadClass method of org.apache.log4j.helpers.Loader. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=47967">47967</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The QuietWriter class does not live up to its published contract. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46539">46539</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>More Debug output for log4j auto-configure requested. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=46983">46983</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add MDC.clear(). Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=47107">47107</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NullPointerException when calling Category.removeAllAppenders(). Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=47547">47547</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Allow overriding of flush strategy. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=28647">28647</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add recommendation to use EnhancedPatternLayout to avoid synchronization issues in PatternLayout Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=47350">47350</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Source contains unnecessary imports. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=45481">45481</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add LoggingEvent.removeProperty Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48159">48159</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Typo (&quot;two three goals&quot;) in log4j FAQ Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48187">48187</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Unit tests fail for system dates after 2009-12-31 Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48531">48531</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Download page does not have link to KEYS file Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48604">48604</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add parameterized logging utility classes LogMF and LogSF from extras companion. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49812">49812</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add EnhancedPatternLayout from extras companion. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48927">48927</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Links to example code broken in the JavaDocs Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48784">48784</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Unused imports and variables in test code cause gcj compile warnings. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48953">48953</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Unit tests fail on Apache Harmony and gcj due to stack trace expectations. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49002">49002</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketServerTestCase.test8 fails on Apache Harmony. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49003">49003</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>TestLogMF.testDebugDate fails on gcj. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49004">49004</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>TelnetAppenderTest.testIt fails on gcj. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49005">49005</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Eclipse Java Compiler and gcj do not support -source=1.2. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49006">49006</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>CachedDateFormatTest fails on Apache Harmony. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49007">49007</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add %p{-2} pattern to EnhancedPatternLayout to drop two leading elements from name. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=49010">49010</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add %throwable{n} and {-n} pattern to EnhancedPatternLayout to print n or drop last n lines. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=48902">48902</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.15 - 2007-08-24</h3>
+<a name="a1.2.15"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j 1.2.15 release preparation. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40951">40951</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Switch to NOPLoggerRepository if application reloading nulls repositorySelector. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40212">40212</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add 'application' property support to SocketAppender (from 1.3) Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43202">43202</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4JEntityResolver will return null if log4j.dtd can not be found on classpath. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43200">43200</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>HierarchyEventListener.removeAppenderEvent never called. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37736">37736</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>XMLLayout does not escape CDATA sections within NDC or throwables. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37560">37560</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added test to confirm that DOMConfigurator.configureAndWatch does configure. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=33502">33502</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Default initialization with XML file halts program if JAXP not available. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=32527">32527</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add reset option to PropertyConfigurator and DOMConfigurator. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=17531">17531</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Error message always logged to LogLog when calling close on TelnetAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=14350">14350</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add configurable triggeringPolicy for SMTPAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=32572">32572</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NullPointerException in MDC on Tomcat reload. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43181">43181</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Notice to use UTF-8 or UTF-16 encoding added to XML and HTMLLayout javadoc. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=34874">34874</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>XML and HTMLLayout do not always escape special characters. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=34875">34875</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Optionally render MDC content in XMLLayout Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=43078">43078</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Typo in log4j.dtd concerning threshold. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42694">42694</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>ERFATestCase fails on some JDK's. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42611">42611</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketNode can leak Sockets. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42585">42585</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Migrate to Maven based build and documentation. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37930">37930</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Prepare Maven release bundles. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40604">40604</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Eclipse compiler warning cleanup. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42283">42283</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>JRockit VM and java-gcj fail unit tests. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42281">42281</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketAppender does not use FallbackErrorHandler Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=21796">21796</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Enhance DOMConfigurator to delegate unrecognized elements to configured object. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42257">42257</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add LoggingEvent accessors. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42108">42108</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>InstanceAlreadyExistsException using MBean. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42017">42017</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Reduce first connection failure severity in SocketAppender Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=29227">29227</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender does not limit packets to 1024 bytes. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42087">42087</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender: Added &quot;header&quot; property which if set to true will cause the appender
+        to produce the HEADER part (timestamp and hostname) of the syslog packet.
+        Default value is false for compatibility with previous behavior. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41040">41040</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender also now sends any header from the associated
+        layout when activateOptions is called or first logging event is sent and
+        any footer when the appender is closed. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40161">40161</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender leaks descriptors Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37282">37282</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender assumes all lines start with tab Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40502">40502</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender does not limit packet size to 1024 bytes Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42087">42087</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NTEventLogAppender: Updated NTEventLogAppender.dll which corrects missing event messages
+        and which should work with earlier releases of log4j.
+		NTEventLogAppender.dll also now supports registration and unregistration
+		using regsvr32.  If replacing an existing copy of NTEventLogAppender,
+		use &quot;regsvr32 NTDllEventLogAppender.dll&quot; or manually remove the
+		HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/Eventlog/Application/Log4J
+		registry key. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41169">41169</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NTEventLogAppender.dll performs unnecessary code page conversion using code copied from book. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=39437">39437</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>PropertyConfigurator.configure(URL) does not close resource stream. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40944">40944</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In Turkish locale level &quot;info&quot; is not equivalent to &quot;INFO&quot; Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40937">40937</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Javadoc of PatternLayout should use %n in TTCC layout examples Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41339">41339</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Stacktraces of exceptions disappear occassionally Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41219">41219</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Incorrect message when specified custom level class does not implement toLevel Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=38680">38680</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Warning when configuring inner-class logger Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41487">41487</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>AsyncAppender in 1.2.14 DiscardSummary events create NullPointerExceptions in layouts Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41186">41186</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add target to generate binary and source compatibility report Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37864">37864</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>PropertyPrinter.printOptions breaking signature change in log4j 1.2.9 Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41708">41708</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>RollingFileAppender may delete files during rollover Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41735">41735</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>XMLConfiguration of loggerFactory does not work Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=33708">33708</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender does not limit packet size to 1024 bytes Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=42087">42087</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Update source per new ASF Header Policy. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40755">40755</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>DateLayoutTest fails if default Locale is not en_US. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41373">41373</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Stacktrace may choke on null fields. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35324">35324</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add projects.apache.org project descriptor. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=41575">41575</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.14 - 2006-09-18</h3>
+<a name="a1.2.14"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Monitor deadlock in AsyncAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=38137">38137</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>AsyncAppender: Dispatcher should run at normal prio. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=28006">28006</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>AsyncAppender wait forever when buffer is full. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37904">37904</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add non-blocking option for AsyncAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=38982">38982</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add SyslogPort option to SyslogAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=39687">39687</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add cc and bcc addresses to SMTPAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=19125">19125</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add password authentication to SMTPAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=24969">24969</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NullPointerException in org.apache.log4j.NDC.get. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40159">40159</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>org.apache.log4j.lf5.util.DateFormatManager.setTimeZone assignment error. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=36787">36787</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Monthly logs not generated at midnight with DailyRollingFileAppender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=38559">38559</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>PatternLayout specifier %r is not consistent with documentation. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40145">40145</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Space after log level causes default level to be used. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37119">37119</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Bad patterns in ISO8601DateFormat and DateTimeDateFormat. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=39135">39135</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender throws NullPointerException upon misconfiguration. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35743">35743</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>FallbackErrorHandler throws NullPointerException if no loggers are set. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=15501">15501</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Bad documentation for WriterAppender.encoding. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=38564">38564</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NTEventLogAppender not build, tested and placed in distribution. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37866">37866</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SMTPAppender does not output newlines between stack trace lines. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=38662">38662</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SMTPAppender will not run within sandbox. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=30294">30294</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>MDC with SMTPAppender doesn't work. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=16922">16922</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Misspelling in HierarchyDynamicMBean. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=31507">31507</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Additivity not exported by PropertyPrinter. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35123">35123</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>RollingFileAppender, if removed, can cause NullPointerExceptions. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=31003">31003</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>AsyncAppender blocks on thread death. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=23021">23021</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>NOTICE file added to distribution and jars. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40412">40412</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Chainsaw of log4j 1.2 does not show TRACE level. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40378">40378</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>TRACE level missing in short introduction to log4j. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=40501">40501</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Update site generation to velocity 1.4 and remove dependency on logging/site project. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37960">37960</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.13 - 2005-12-04</h3>
+<a name="a1.2.13"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Location info missing for TRACE level messages. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=36800">36800</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Console appender now behaves as before to fix
+   compatibility problem with JBoss introduced in 1.2.12 release due to fix
+   for bug 31056.  Can still be configured to detect changes in the System.out
+   and System.err streams as needed by setting the follow property. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37122">37122</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.12 - 2005-08-29</h3>
+<a name="a1.2.12"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed final qualifiers on member variables
+            in org.apache.log4j.chainsaw.LoggingReceiver which would cause
+            spurious compiler errors with JDK 1.1 and 1.2 javac compilers. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=36262">36262</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added a jndi.jar property to the build.xml. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=36267">36267</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added &quot;release&quot; target to build.xml. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=37268">37268</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed references to obsolete documentation. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=36213">36213</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added protected accessors for member variables
+            topicConnection, topicSession, and topicPublisher. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35965">35965</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender now checks Layout.ignoresThrowable() just
+            like every other appender. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=34026">34026</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>DOMConfigurator would call LogLog.error to report
+            XML validation errors that caused no problems in the interpretation of the
+            configuration file. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35947">35947</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed the JavaDoc links
+            for the XML sample files. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=14551">14551</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added getNext/setNext methods to org.apache.log4j.spi.Filter and deprecated
+            public &quot;next&quot; field. This mirrors the same change in the upcoming 1.3
+            version and, hence, provides a migration path. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35654">35654</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added o.a.log4j.Logger.trace(), o.a.log4j.Logger.isTraceEnabled() and
+            o.a.log4j.Level.TRACE Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35711">35711</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Implemented serialization for Level. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=34758">34758</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>o.a.log4j.ConsoleAppender would ignore redirections
+            of System.out and System.err that occurred after configuration. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=31056">31056</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>o.a.log4j.xml.DOMConfigurator would not properly
+            interpret relative path names in external entity declarations. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=23705">23705</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>o.a.log4j.xml.XmlLayout would not properly escape
+            class names that contained '&lt;' or '&gt;'. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35691">35691</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Use of String.intern() in o.a.log4j.CategoryKey
+            would cause application to slow down. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35052">35052</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>o.a.log4j.FileAppender would not create log file
+            if parent directory did not exist. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=9150">9150</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>o.a.log4j.AsyncAppender would deadlock if a
+            unchecked exception occurred in the attached appender causing the
+            dispatch thread to die. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=23021">23021</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added jdiff target to build.xml. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35516">35516</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j would not build with a JDK 1.5 javac. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35831">35831</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added log4j 1.1 compatibility method
+            to o.a.l.helpers.Loader. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=35893">35893</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Additional null terminating character in Windows
+            nteventlog.cpp code. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=34981">34981</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Broken links to J2SE classes in javadocs. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=36332">36332</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.11 - 2005-06-18</h3>
+<a name="a1.2.11"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>o.a.log4j.or.jms.MessageRenderer
+            would not be compiled in the build.jms target. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=34491">34491</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.10 - 2005-04-28</h3>
+<a name="a1.2.10"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Version 1.2.10 was not released following the accepted rules and process of
+   the log4j project and Logging Services Project and was recalled and removed.
+   Please do not use version 1.2.10, it is not an official log4j release.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.9 - 2004-11-01</h3>
+<a name="a1.2.9"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4j version 1.2.9, is identical to version 1.2.8, except that
+  several key methods have been deprecated in preparation for version
+  1.3.0, the next major release of log4j. These changes are intended to
+  enforce the rule that client code should never refer to the Category
+  class directly, but use the Logger class instead. Similarly, client
+  code should not refer to the Priority class but to the Level class
+  instead.
+
+  For a more detailed discussion, refer to the document entitled
+  preparing for log4j 1.3 at:
+
+    http://www.qos.ch/logging/preparingFor13.jsp</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.8 - 2003-02-19</h3>
+<a name="a1.2.8"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>XMLAppender would throw a
+   NullPointerException if the input message was null. Many thanks to
+   David Vandegrift for reporting the bug and to Hendrik Brummermann for
+   supplying the patch. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=11570">11570</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Various versions of Xerces would not parse
+   log4j configuration scripts expressed in XML format. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=12366">12366</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The &quot;removes&quot; buffer used in the flushBuffer() method
+   of JDBCAppender is now cleared, solving the memory leak.  Thanks to John
+   Landers for reporting the bug and suggesting the fix. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=14827">14827</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketAppender now honors ReconnectionDelay of 0.
+   Many thanks to Scott Schram for reporting the bug and providing the fix. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=15599">15599</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.7 - 2002-10-09</h3>
+<a name="a1.2.7"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4j now searches for the file log4j.xml as well as the file
+   log4j.properties during log4j initialization.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.6 - 2002-07-31</h3>
+<a name="a1.2.6"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add of new options in JMSAppender and new command line arguments in
+   JMSSink.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add new method getLoggerName() in LoggingEvent class. The
+   getLoggerName is the preferred way for accessing the logger
+   name. The public access categoryName field should not be accessed
+   directly. Similarly, added the getLevel method which is now the
+   preferred way of accessing the event's level. The public access
+   level field should not be accessed directly.  The javadocs now mark
+   the categoryName and level fields as deprecated.
+     Modified existing appenders to comply with these new directives.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4j now will check if a system property named &quot;log4j.ignoreTCL&quot;
+   is set. If it is set, then it will ignore the Thread Context
+   ClassLoader when loading classes. This solves the irritating
+   &quot;appender is not assignable to Appender&quot; messages observed when
+   log4j.jar is loaded by multiple class loaders.
+   The error reporting for this problem was also improved.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Calling the MDC.get method with a null
+   argument would throw a NullPointerException. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=10528">10528</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.5 - 2002-07-05</h3>
+<a name="a1.2.5"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Calling an AsyncAppender close method also closes the embedded
+   appender instances. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=10185">10185</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.4 - 2002-06-12</h3>
+<a name="a1.2.4"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The JDBCAppender is marked as slated for replacement. Do not build
+   critical software using it.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add LF5 documentation and examples. Further tests are required
+   for full integration.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>XMLLayout can now output messages which contain embedded CDATA
+   sections.Many thanks to Michael
+   A. McAngus for supplying the relevant patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The dispatcher thread associated with AsyncAppender is now marked
+   as a deamon thread. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=9750">9750</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add missing NTEventLogAppender.dll Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=9606">9606</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j.dtd was changed so that
+   &lt;log4j:event&gt; is now made of logger and level attributes instead of
+   category and priority. Changed XMLLayout to conform to the
+   DTD. Chainsaw was changed to adapt to the XMLLayout. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=9435">9435</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add missing LevelRangeFilter file.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.3 - 2002-05-24</h3>
+<a name="a1.2.3"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SyslogAppender would incorrectly compute
+   the length of the datagram to send to the remote syslogd host.
+   Reported by Mamoru Kadota. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=9285">9285</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The stack trace of exception would not be
+   properly printed on the Compaq tru64 Unix platform. Initially
+   reported by Fabrice Claes and later by Espen H. Kolstad who also
+   provided the fix. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=8505">8505</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.2 - 2002-05-22</h3>
+<a name="a1.2.2"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4j configurators take the &quot;NULL&quot; string value as a synonym for
+   &quot;INHERITED&quot;. Both of these two strings are legal level values for
+   setting the level of a logger. Both values are case insensitive.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>When loading component classes, log4j will now first attempt to use
+   the Thread Context Loader and if that fails, it will use
+   Class.forName. In log4j 1.2 and 1.2.1, only Class.forName was used
+   and the TCL was ignored. This change is a response to bug #9305
+   opened by Scott M. Stark. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=9305">9305</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2.1 - 2002-05-17</h3>
+<a name="a1.2.1"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>LoggingEvent.getMDCCopy() method now sets mdcCopyLookupRequired
+   instead of ndcLookupRequired.  This bug would cause the wrong MDC
+   information to appear on a log server. It could only occur if the
+   client wrapped an AsyncAppender around a SocketAppender or if the
+   server used an AsyncAppender for its logging. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=9155">9155</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.2 - 2002-05-01</h3>
+<a name="a1.2"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>A closed TelnetAppender would continue waiting
+   for connections even if its ServerSocket was closed. This caused
+   the TelnetSocket to sit in a loop and complain about the closed
+   socket. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=8527">8527</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>AsyncAppender throws NullPointerException problem. The bug was actually in
+   AppenderSkeleton. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=5444">5444</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add support for recursive variable substiuton as requested by
+   Eric Chastan.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketNode now used a BufferedInputStream as suggested by Kok Chong Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=3933">3933</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed a problem with DailiyRollingAppender which would not
+   correctly compute the rollover period in certain timezones. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=7550">7550</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed documentation bug #2726 in FAQ.html. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=2726">2726</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Added a flush statement in the
+   WriterAppender.writeFooter method. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=2383">2383</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In XMLLayout, escaped the method attribute. The
+   XMLLayout also outputs each item of a stack trace in a separate
+   line.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The
+   LoggingEvent.getMDCCopy method now clones the MDC instead of just
+   referencing it. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=5932">5932</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The ANT build script was modified to use jar files specified in
+    the build.properties file instead of the CLASSPATH environment
+    variable. The build.properties file depends on local paths and is
+    supplied by the user. The build.properties.sample file is included
+    in the distribution. The build.sh and build.bat scripts have
+    been removed. This is the way many other jakarta projects build their
+    projects. The jar files in the dist/lib directory were also removed
+    since they are no longer used.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The DOMConfigurator now interprets the string after the '#'
+   character in the value attribute within the &lt;level&gt; element as
+   the fully qualified class name of a custom Level. This is consistent
+   with the way log4j handles &quot;level&quot; values in other places. The
+   class attribute is still honored.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add Oliver Burn's chainsaw tool to the core log4j
+   distribution. Visualisation and dynamic filtering of log events is
+   bound to be a very important area of activity in the future.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the org.apache.log4j.jdbc.JDBCAppender which as the name
+   indicates sends events to a database using the JDBC API. Thanks to
+   Kevin Steppe for supplying the code.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add SocketHubAppender class as contributed by Mark Womack. This
+   appender sends LoggingEvent objects to a set of remote a log
+   servers.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In the Category class, the getChainedPriority method has been
+   replaced with getEffectiveLevel method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Replaced the custom class loading based on the thread context class
+    loader with a simple Class.forName() call. This solves two allied
+    but distinct problems encountered when using Ant with JUnit
+    although the bug is more general. In one instance of the
+    problem, log4j would throw java.lang.NoClassDefFoundError for
+    org/apache/log4j/AppenderSkeleton where log4j.jar and related
+    classes were clearly available to the Ant classloader. In another
+    incarnation, log4j would reject a custom appender claiming that it is
+    not assignable to a org.apache.log4j.Appender variable. This would
+    occur when log4j.jar was available to both the Ant classloader and the
+    system classloader.
+    
+    Thanks to Dave Herman for providing detailed scenarios exposing
+    the issues involved. See
+      http://forum.java.sun.com/thread.jsp?forum=38&amp;thread=70946
+      http://forum.java.sun.com/thread.jsp?forum=38&amp;thread=70946#479697
+      http://marc.theaimsgroup.com/?l=ant-user&amp;m=101139178705895&amp;w=2
+    for more details.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed the complaints the compiler issued when using the
+   Logger.setLevel() method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Incorporated the performance enhancements to ISO8601DateFormat and
+   AbsoluteTimeDateFormat classes submitted by Andrew Vajoczki.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Source code written for log4j 1.1.3.jar will compile fine with
+   log4j 1.2X. However, code compiled for log4j 1.1.3 would previously
+   systematically throw &quot;java.lang.NoSuchMethodError&quot; runtime exceptions
+   when run with log4j 1.2 - prior to beta2. This problem has been
+   corrected in beta2. Pheew, that was a close one.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4j 1.2 is now backward compatible in serialization of
+   LoggingEvents. For example, a 1.1.3 SocketAppedner can write to 1.2
+   SocketServer. Similarly a 1.2 JMSAppender will work with 1.1.3
+   JMSSink. This should ease the move to log4j 1.2, especially in
+   large deployments.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The src/java/org/apache/log4j/examples/ directory moved under the
+   top-level directory as examples/.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed the ArrayIndexOutOfBoundsException that was thrown by
+   AsyncAppender if multiple threads were trying to log an event
+   containing an exception near simultaneously. Thanks to Thomas Tuft Muller
+   for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Improved error reporting in DOMConfigurator. Thanks to Thomas Tuft
+   Muller for contributing the enhancement.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4j is now configurable using JMX. JMX support is not of
+   production quality.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add support for different encodings in WriterAppender. Thanks to
+   Ben Sandee for submitting the relevant patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Modified SMTPAppender to allow multiple email sessions. Thanks to
+   Jon Skeet for supplying the relevant patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The CategoryFactory class has been replaced by the LoggerFactory
+   class. The makeNewCategoryInstance method has been renamed as
+   makeNewLoggerInstance. This change requires subclasses of Category
+   classes to be modified and recompiled.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Level class replaced the Priority class. Priority class now
+   extends Level to preserve backward compatibility.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Logger class replaced the Category class. Logger class
+   extends Category to preserve backward compatibility. We proudly
+   mark this change with a single star for 100% compatibility.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Category.assert method has been replaced by
+   Category.assertLog.  This change was necessary because assert is a
+   language reserved word in JDK 1.4.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed deprecated methods setOptions and getOptionStrings defined
+   in the org.apache.log4j.spi.OptionHandler interface. This interface
+   is implemented by most log4j appenders and layouts. In particular,
+   all appenders and layouts shipped with log4j contain these
+   deprecated methods. They have become totally redundant after we
+   moved to JavaBeans style configuration in log4j 1.1.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The disable(Level) methods in Hierarchy have been removed and been
+   replaced by threshold methods.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add buffered IO capability to FileAppender and subclasses.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The location information (or stack information) was not correctly
+   transmitted by JMSAppender.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add event reporting capability to the Hierarchy class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add new system property &quot;log4j.configuratorClass&quot;. This property
+   allows the user to specify the custom configurator at the default
+   initialization phase. This property replaces the previous
+   interpretation of the reference part of &quot;log4j.configuration&quot; 
+   as the custom configurator class. This interpretation was sometimes
+   erroneous and caused headaches.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Introduced the Mapped Diagnostic Context or MDC class. This class
+   is similar to the NDC except that the diagnostic context is based
+   on a map instead of a stack. Moreover the MDC is automatically
+   inherited by child threads under JDK 1.2 and above.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a performance bug in the NDC class as observed by Dan
+   Milstein and independently by Ray Millard.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed deprecated methods disable(Priority), disableAll,
+   disableDebug, disableInfo and enableAll in BasicConfigurator.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add supports java.io.Reader objects in the method doConfigure(),
+   instead of only InputStream. Thanks to Mark Womack for submitting
+   the relevant patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected the restart bug in DailyRollingFileAppender. Thanks to
+   Jim Moore for supplying the relevant patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1.3 - 2001-06-19</h3>
+<a name="a1.1.3"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a missing namespace declaration in the log4j:configuration
+   element in log4j.dtd. The missing declaration caused the new
+   generation of namespace aware parsers to barf when parsing log4j
+   configuration files.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Reduced the size of log4j-core.jar to 78KB.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Minor documentation changes.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1.2 - 2001-06-07</h3>
+<a name="a1.1.2"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a problem with the static initializer of the Category
+   class which would use the wrong class loader to search for the
+   default configuration file.  The associated search algorithm has
+   been also simplified. Nevertheless, the preferred method to specify
+   the automatic configuration file is by setting the
+   log4j.configuration system property.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Documentation improvements. Added a new section to the manual
+   explaining the default initialization procedure</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Enhancements to the org.apache.log4j.examples.appserver package.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in the way the NTEventLogAppender printed
+   exceptions.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1.1 - 2001-05-20</h3>
+<a name="a1.1.1"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add missing custom priority support in PropertyConfigurator.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Made a number of fields protected instead of default access in
+   SMTPAppender.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1 - 2001-05-19</h3>
+<a name="a1.1"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>This release has the same code as 1.1b7. It differs only in a few minor
+   documentation changes.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1b7 - 2001-05-09</h3>
+<a name="a1.1b7"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Made BasicConfigurator disable methods static as they were in log4j
+   1.0.4. Thanks to Francisco Marin for reporting the bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a two related deadlock problems introduced while fixing
+   bug 1505. Thanks to joelr@viair.com for reporting the problem. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=1505">1505</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The configureAndWatch methods in Configurators did not close the
+   configuration file, preventing its editing. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=1686">1686</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In DOMConfigurator.setParameter special character conversion now
+   precedes variable substitution. This change was suggested by Steven
+   Velez. The vast majority of users should be oblivious to it.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The TextPaneAppender is no longer maintained and has been
+   removed.  It is still available under the contribs/
+   directory. This change has been discussed in the log4j mailing
+   lists and no one objected to the removal of the TextPaneAppender
+   class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1b6 - 2001-04-26</h3>
+<a name="a1.1b6"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Aaron Greenhouse from Carnegie Mellon SCS found a series of
+   multi-threading related bugs in Category and AsyncAppender. See bug
+   ids 1505 and 1507 in our bug database for exemplary bug
+   reports. They are worth the detour. Fixes <a class="externalLink" href="http://issues.apache.org/bugzilla/show_bug.cgi?id=1505">1505</a>.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>InvalidJarIndexException is only available in JDK 1.3.  Referring
+   to this exception type caused log4j 1.1b5 to break on earlier JDKs.
+   We now avoid referring to it.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add PriorityRangeFilter by Simon Kitching. See the Threshold
+   option in AppenderSkeleton for a more convenient alternative.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1b5 - 2001-04-22</h3>
+<a name="a1.1b5"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In HTMLLayout, the Title option sets the HTML document
+   title (&lt;title&gt;...&lt;title&gt;).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected an important performance bug in LocationInfo. Hein Couwet
+   and kr@it-practice.dk have independently identified the bug. This is
+   yet another example of the difference made by the number of eyeballs
+   studying source code.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected the incorrect value returned by LocationInfo.getClassName
+   method when running under IBM Visual Age. Thanks to Mathias
+   Rupprecht for supplying the relevant patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug where the build.sh file in the distribution would be in
+   DOS CRLF format. Thanks to ma.darche@free.fr for reporting the
+   problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected InvalidJarIndexException thrown in applets while
+   searching for the default log4j configuration file. Thanks to
+   Michael Lundahl for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add missing PropertySetterException class to log4j-core.jar.
+   Thanks to ma.darche@free.fr for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1b4 - 2001-04-20</h3>
+<a name="a1.1b4"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Mathias Bogaert observed that in version 1.1b3 the search algorithm
+   for the resource used in automatic log4j configuration was
+   different than in 1.0.x. Beta4 uses a more powerful mechanism which
+   is also compatible with 1.0.x.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Paul Glezen correctly observed that if log4j is deployed in a
+   client/server mode where multiple log4j clients log to a log4j
+   server, all hosts must be upgraded to version 1.1 in one go because
+   the internal LoggingEvent class used in client/server communication
+   changed in log4j 1.1.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1b3 - 2001-04-18</h3>
+<a name="a1.1b3"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a RollingFileAppenderBeanInfo class that fakes the
+   maxFileSize JavaBeans property as a String type instead of a long.
+   This allows us to resuscitate setMaxFileSize(long) method that was
+   removed in 1.1b2 breaking 100% backward compatibility. This addition
+   restores 100% backward compatibility.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1b2 - 2001-04-18</h3>
+<a name="a1.1b2"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The directory structure has changed to better suit Jakarta
+   conventions</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a few jar files required at build time to build/lib so that
+   it is now possible to compile log4j out of the box.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Whenever a priority parameter is expected in a configuration file,
+   one can now use a custom priority class. See OptionConverter.toPriority
+   method for more information. Note that the &lt;priority&gt; element in
+   log4j.dtd remains unaffected by this change.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the setQuietMode(boolean) method to LogLog. In quiet mode
+   LogLog will not output anything even in case of errors.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log4j components are now configured as JavaBeans. The setOption and
+   getOptionString methods have been deprecated in OptionHandler
+   interface which is implemented by most log4j components.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The stack trace of a throwable passed in a logging statement is not
+   parsed into a stack array which is serializable. This allows cascading of
+   log4j servers to properly propagate throwable information.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In XML configuration files, the &lt;configuration&gt; element has been
+   deprecated and was replaced by the &lt;log4j:configuration&gt; element.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The &quot;log4j.configDebug&quot; system property has been replaced with the
+   &quot;log4j.debug&quot; system property although it is still available.
+   Similarly, the &quot;configDebug&quot; attribute has been deprecated and
+   replaced with the &quot;debug&quot; attribute in log4j.dtd.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.1b1 - 2001-02-23</h3>
+<a name="a1.1b1"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Logging can now be disabled per Hierarchy. It can also be disabled
+   using configuration files using the &quot;disable&quot; directive.  The
+   &quot;disableOverride&quot; directive takes precedence over the &quot;disable&quot;
+   directive.  As a result of this change the disable family of
+   methods in BasicConfigurator has been deprecated and replaced by the same 
+   family of methods in the Hierarchy class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The FileAppender has been split into three parts: WriterAppender,
+   ConsoleAppender and FileAppender. ConsoleAppender takes over the
+   console logging functionality of FileAppender. As a result support
+   for stream and console printing has been deprecated in FileAppender.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The FileAppender now correctly outputs the header and footer of its
+   layout. This problem was reported by too many users to list here.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Appenders and Layouts now get to see the raw message object in
+   LoggingEvent not just its rendered form. The access modifiers of
+   some LoggingEvent fields were changed so that they can be accessed
+   in less error-prone ways. Thanks to Jim Cakalic and Anders Kristens
+   for their valuable advice.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add getLayout(), getErrorHandler(), and getFilter() to the
+   Appender interface.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add getOption(key) method to the OptionHandler interface and modified
+   implementations of it as appropriate.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the much awaited DailyRollingFileAppender.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The structure of the distribution changed somewhat. The log4j.jar
+   files can be found under dist/. The javadoc directory has been
+   moved to docs/api/. We are now totally dependent on ANT to perform
+   all the steps involved in creating a release, including
+   compilation, jar file creation, generation of the javadocs, and for
+   the creation of the distribution tar and zip files.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed org/apache/log4j/varia/ResilientFileAppender.java which was
+   bogus to begin with.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>XMLLayout will now mark some output as &lt;![CDATA[ .. ]]&gt; so that it
+   does not get interpreted by the XML parser. This was suggested by
+   Mathias Bogaert like a long list of other fixes.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in CyclicBuffer.resize method that would not update the
+   next insertion point. Thanks to Ole Bulbuk for accurately reporting
+   the bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The LoggingEvent class now supports serialization of priorities
+   derived from the org.apache.log4j.Priority class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Improved the search method for finding the &quot;log4j.properties&quot; file in
+   the static initializer of Category class. Thanks to Calvin Chan for
+   supplying a better method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The code handling the FCQN (formerly instanceFQN) parameter was
+   cleaned up. There is now a well-established and simple manner for
+   sub-classes of Category (or wrapper classes) to define the FCQN
+   variable: just define a static variable, say FCQN, consisting of
+   the fully qualified class name of the subclass or wrapper, supply
+   this variable as an argument to forcedLog method if and when
+   the sub-class or wrapper invokes that method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Made the instanceFCQN an instance variable instead of a class
+   static in Category.java. In related move, the Category constructor
+   now takes an additional argument setting the instanceFCQN. This
+   makes life less miserable for Category subclasses.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in the OptionConverter.instantiateByClassName
+   method that would not return the defaultValue in case of error. Thanks
+   to Matthieu Verbert for identifying this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected the missing stack trace in e-mails generated by the
+   SMTPAppender when using certain Layouts.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Updated the &quot;Adding Conversion Characters to PatternLayout&quot;
+   document to reflect the latest changes to the code. Also added the
+   org/apache/log4j/examples/appserver directory containing the
+   associated example code.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the BufferSize option to the AsyncAppender.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Eliminated the SecurityExceptions thrown in Applets.  Thanks Timur
+   Zambalayev for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed the erroneously thrown IOInterruptedException when the AsyncAppender
+   was closed. Thanks to Tom Palmer for accurately reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.0.4 - 2001-01-12</h3>
+<a name="a1.0.4"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a serious bug in Hierarchy.java that would cause a
+   NullPointerException depending on the order of instantiation of
+   categories. Thanks to Wolfram Gewohn for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in the getOptionsStrings method of SMTPAppender
+   that omitted to mention the EvaluatorClass option. Thanks to Mark
+   Balster for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.0.3 - 2001-01-11</h3>
+<a name="a1.0.3"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed a NullPointerException occurring in AsyncAppender after
+   invoking Category.shutdown. Thanks to Frank-Olaf Lohmann for
+   reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Modified the OptionConverter.selectAndConfigure method to take an
+   extra argument of type Hierarchy. This method is used internally
+   and should not affect most users.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the warn method to LogLog which is used internally by log4j
+   to report on itself.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Displaced a number of HTML files under the docs directory. The new
+   structure is compatible with the jakarta site and results in a 
+   more consistent navigation experience.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Made a few improvements in the javadocs.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.0.2 - 2001-01-11</h3>
+<a name="a1.0.2"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the missing build.inc file to the distribution. No code
+   changed.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.0.1 - 2001-01-10</h3>
+<a name="a1.0.1"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>This version corrects some documentation and build script bugs;
+   code has not changed.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 1.0 - 2001-01-08</h3>
+<a name="a1.0"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Package hierarchy now starts at org.apache.log4j.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the fatal() family of methods to the Category
+   class.  Moreover, the EMERG priority has been removed from the
+   Priority class.  This priority has been replaced by the FATAL
+   priority that is more widely accepted.  This change will
+   require EMERG log statements to be replaced by FATAL log
+   statements.  Assuming EMERG log statements are rare, this should
+   have a small but bearable impact on existing client code.
+ 
+   Moreover, the Unix Syslog priorities ALERT, CRIT and NOTICE are no
+   longer recognized. Support for these priorities was minimal and
+   few users should suffer from these changes.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed the methods setRootPriority, getRootPriority as these
+   methods were redundant and had been previously deprecated.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed the DOM Level 2 dependency in DOMConfigurator. This makes
+   log4j XML configurable using Sun's parser or Apache's Xerces.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The static initializer of the Category class now takes the
+   log4j.configuration system property to search for its configuration
+   file. The type of the configurator used to parse the configuration
+   file depends on the value of the log4j.configuration system
+   property.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Enhanced the PropertyConfigurator and DOMConfigurator to support
+   customisation of independent Hierarchy instances.  The
+   org.apache.log4j.net.SocketServer has been enhanced to take
+   advantage of this functionality. The old code of SocketServer has
+   been moved to SimpleSocketServer.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Enhanced the PropertyConfigurator to support variable substitution
+   for all options *values* (but not keys!).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Categories are now aware of the Hierarchy they are linked to. This
+   will provide a basis for several performance enhancements planned
+   for the future.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add support for object rendering. It is now possible to register
+   an object renderer for a given object type. When the given object
+   needs to be logged log4j will invoke the corresponding renderer to
+   transform the object into a String.
+
+   As a result of this enhancement, all the String forms of all the
+   printing methods such as debug(String), info(String) have been
+   removed as they are no longer necessary. This change should be
+   backward compatible but requires recompilation of old client
+   code. Thanks to Michael Smith for noting the recompilation
+   requirement.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add support for user defined category factories in the
+   PropertyConfigurator. Thus, it is now possible to configure log4j
+   with a properties file and still use custom Category
+   sub-classes. The DOMConfigurator had already a finer grain
+   support.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the SMTPAppender that in case of an error or fatal event
+   sends an e-mail containing latest N logging events in its buffer,
+   where N is chosen by the user.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the method getInstance(Class) to the Category class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in configureAndWatch method of configurators that
+   would configure log4j only after an unnecessary delay.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.9.1 - 2000-11-30</h3>
+<a name="a0.9.1"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a typo making NTEventLogAppender.dll register the wrong
+   category message file. Thanks to Peter Hayes for accurately
+   reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The DOMConfigurator and PropertyConfigurator can now automatically
+   detect modified configuration files and re-read them.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add AsyncAppender which buffers log requests and serves them
+   at a later time. AsyncAppender can increase logging performance
+   tremendously if logging operations are interspersed with long
+   and blocking non CPU-intensive operations, typically I/O or network
+   access. For CPU intensive applications, using the AsyncAppender
+   will actualy degrade logging performance by 10 to 25 percent.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The log4j.dtd has been modified to allow appenders to refer to
+   other appenders by IDREF.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The DOMConfigurator has been modified to take advantage of ID/IDREF
+   attributes when referring to appenders. This change requires a
+   DOM Level-2 API compliant parser. DOM Level-2 java bindings are
+   available at 
+   http://www.w3.org/TR/1999/WD-DOM-Level-2-19990923/java-binding.html.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the configure(String filename) method to DOMConfigurator.
+   This method requires the presence of a JAXP compatible parser.
+     At this time, the only DOM2 and JAXP compatible parser seems to be
+   the Apache xerces parser.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the PriorityMatchFilter allowing filtering by exact priority
+   match. This was a common request by users.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The configuration of a category is now an atomic operation. This
+   ensures that log requests are not lost while configuration is in
+   progress. Anders Kristensen was to first to observe the potential
+   problems in non-atomic configurations.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.9.0 - 2000-11-20</h3>
+<a name="a0.9.0"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The &quot;log4j&quot; element has been renamed to &quot;configuration&quot; in the
+   log4j DTD. This change requires that log4j configuration files
+   written in XML be modified. Since the log4j element figures only
+   once in the XML file, this change should take little time.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>ResourceBundles are now category instance specific and no longer
+   class static.  Moreover, like other properties resource bundles
+   are inherited from the category hierarchy.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The jar files log4j.jar and log4j-full.jar now contain versioning
+   information in their respective manifest files.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected an inconsistency in the NTEventLogAppender which broke it.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Fixed a bug where configuration files were not parsed correctely
+   due to trailing spaces in option values as returned by
+   java.util.Properties. Trailing spaces are now removed from option
+   values. This bug was quite disconcerting because the
+   trailing spaces cannot be seen without careful examination of the
+   configuration file.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the XMLLayout.
+  
+   The output of the XMLLayout consists of a series of log4j:event
+   elements. It does not output a complete XML file. The output is designed to 
+   be included as an external entity to form a well-formed XML file.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a new abstract class org.log4j.helpers.DateLayout. The TTCCLayout
+   now extends DateLayout.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a rather subtle performance bug in the buffer management code
+   in PatternLayout. Thanks to Vladislav Dutov and Constantine
+   A. Plotnikov for for insisting on the correction of this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Created a new package called org.log4j.spi. This new package
+   holds classes that are hidden from the casual user but are needed
+   to extend log4j.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add org.log4j.varia.ExternallyRolledFileAppender to handle
+   externally triggered file rollovers.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add support for multiple hierarchy trees.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>PatternLayout can now be  subclassed to support new conversion
+   patterns.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Extended the DOMConfigurator and the log4j DTD to properly handle
+   sub-classing of Category and Priority classes.
+   There have been also minor adjustments to other classes to handle
+   sub-classing. These changes should be invisible to users. 
+
+   All categories except the root category can be sub-classed and also
+   assigned priorities sub-classing org.log4j.Priority.
+
+   The root category always exists and CANNOT be subclassed.
+
+   The ProppertyConfigurator remains unchanged. Thus, it does not
+   handle extensions of the Category class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add filter support in appenders. The DOMConfigurator and the
+   log4j.dtd have been enhanced to support filters.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add error handling support to appenders. The DOMConfigurator and the
+   log4j.dtd have been enhanced to support filters.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add support for correct interpretation of location information in
+   IBM's Visual Age environment. Thanks to Wolf Siberski for supplying
+   the relevant patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add getAdditivity method to Category. This feature was requested
+   by Constantin Mitran. (mitran at ecircle.de)</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.5b - 2000-08-27</h3>
+<a name="a0.8.5b"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected multiple bugs in default initialization code of
+   Category class. Thanks to Jeff Turner for identifying and supplying
+   corrective patches.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.5a - 2000-08-24</h3>
+<a name="a0.8.5a"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the %n conversion character to PatternLayout so that a line
+   separator can be specified in a platform independent way.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In 0.8.5 internal Priority integer values were decoupled from the
+   Unix Syslog values. This broke SyslogAppedder. A new function
+   Priority.toSyslogInt is introduced to solve this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug where the internal priority integer</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.5. - 2000-08-23</h3>
+<a name="a0.8.5."></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>All log4j internal output is now prepended with the string
+   &quot;log4j: &quot;. This makes is easier to differentiate log4j internal
+   logs from messages output by other sources.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Sub-classes of Category class must now specify their fully
+   qualified name when constructing logging events. This allows the %C
+   conversion specifier in PatternLayout to work properly even with 
+   sub-classes or wrappers of Category.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the method disableDebug to BasicConfigurator. This method
+   disables all print requests of debug priority regardless its
+   category. Similar methods disableInfo, disable, disableAll and
+   enableAll have also been added. Disable type methods can be
+   overriden by setting the log4j.disableOverride system property.
+
+   Calling BasicConfigurator.disableInfo is equivalent to the now
+   deprecated flagAsShippedCode method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Given the above changes, the system property
+   log4j.shippedCodeFlagOverride is no longer honored.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>It is now possible to sub-class Category. The sub-classes may
+   continue to adhere to the category hierarchy. This was a frequently
+   requested feature.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a problem with the additivity flag being ignored in
+   categories without appenders. This bug was discovered by Anders
+   Kristensen.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a method BasicConfigurator.resetConfiguration to reset the
+   log4j environment. This method should be used sparingly.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>At the initialization of the Category class, the file
+   log4j.properties will now be searched from the search path used to
+   load classes. If the file can be found, then it is fed to the
+   PropertyConfigurator.configure(java.net.URL) method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Failing to access system properties within the static initializer
+   of BasicConfigurator class is no longer reported as an error but as
+   a debug message. Thanks to Gilles Schlienger for reporting this
+   problem with applets.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug which caused infinite loops when using conversion
+   patterns with a single element, fortunately under very rare
+   circumstances. This bug was first reported by Igor Potraev, the
+   author of log4p. It was independently reported by Joe Haberl from
+   IBM Global Services.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a mechanism to lazily remove references to dead threads in
+   the NDC class. Indeed, in previous versions calling NDC.pop within
+   a thread but forgetting to call to NDC.remove before exiting (that
+   thread) resulted in a memory leak.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a huge memory leak in SocketAppender. This leak was due
+   to the ObjectOutputStream indefinitely holding a reference for each
+   written to the stream. Thanks to Dan MacDonald for very accurately
+   describing this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The log and l7dlog methods in Category no longer ignore the shipped
+   code flag. This bug was reported by Mario Schomburg.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add missing NDC information to LoggingEvent.writeObject
+   method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected handling of SocketException in SocketNode. Thanks to
+   Gerald Gutierez (ggutierez@emobiledata.com) for reporting this and
+   the previous problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Phased out custom shell scripts to build java documentation and jar
+   files in favor of Jakarta's ANT. It was becoming a nuisance to keep
+   the ANT build file in sync with the custom shell scripts.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.4d - 2000-05-11</h3>
+<a name="a0.8.4d"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The NT EventViewer no longer complains about missing message 4096.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Minor corrections in documentation.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add missing icons GIFs into the distribution.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketNode now attempts to close the socket when exiting. Thanks to
+   Moses Hohman (mmhohman@rainbow.uchicago.edu) for noting this.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed the com.ibm.log4j from the javadoc directory. This seems to
+   confuse VAJ. Thanks to Steve Ashcroft for reporting this problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.4c - 2000-05-05</h3>
+<a name="a0.8.4c"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>As a result of the infinite loop problem (see next item), added
+   over 800 new test cases to stress-test the code in CategoryFactory
+   class where category creation occurs.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Under certain rare circumstances the Category.getInstance method
+   entered an infinite loop. Thanks to Mario Schomburg from IBM Global
+   Services / Hannover for identifying this problem and proposing a
+   patch.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>DOMConfigurator and the log4j.dtd were out of sync on the type of
+   the priority directive. As a result, priority directives all
+   defaulted to DEBUG. Thanks to Peter (petervt@users.sourceforge.net)
+   for accurately reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Minor additions to the FAQ.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the NumberCruncher example showing how the NDC class can be
+   used to distinguish output from different clients.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the %x conversion specifier to the TTCC_CONVERSION_PATTERN in
+   the PatternLayout class. This is consistent expected output of
+   Trivial.java example. Thanks to Jerome (schrom@users.sourceforge.net)
+   for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.4b - 2000-05-03</h3>
+<a name="a0.8.4b"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The value of the additivity option would not be parsed properly by
+   the ProperytConfigurator if the line containing the option
+   contained trailing spaces.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.4a - 2000-05-03</h3>
+<a name="a0.8.4a"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The localized logging methods (l7dlog) omitted priority based
+   evaluation and erroneously logged all requests.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.4 - 2000-05-01</h3>
+<a name="a0.8.4"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The close method was added to the Appender interface allowing
+   appender implementations to release any resources they may have
+   allocated.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The package naming scheme of changed from &quot;com.ibm.log4j.*&quot; to
+   &quot;org.log4j.*&quot;.  The new naming reflects the open source nature of
+   the project and is consistent with the URL http://www.log4j.org.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add internationalization support. See the newly introduced l7dlog
+   methods in Category class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In the FileAppender, the File option now admits variable
+   substitution.  For example, if &quot;java.home&quot; system property is set
+   to /home/xyz and the File option is given the value
+   &quot;%{java.home}/test.log&quot;, then File option will be interpreted as
+   &quot;/home/xyz/test.log&quot;.
+
+   Thanks to Avy Sharell (sharell@online.fr) for contributing this
+   feature.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>SocketAppender is now officially part of the package. It is capable
+   of sending logging events to a remote SocketNode. The SocketNode
+   logs events according to server (local) policy. For example, a
+   client can log events to a local file and also send them to a
+   remote server (a SocketNode). This server can log the event to any
+   number of files, to the console, to any number of TextPaneAppenders
+   and even re-transmit the event to another server, and so forth.
+
+   This paradigm is common in most logging systems, e.g. Syslog and NT
+   Event Log.  Many thanks to Andrew Harrison for showing a way to
+   actually implement the paradigm.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Category.callAppenders method now accepts a LoggingEvent
+   instead of creating one itself. This was necessary to accommodate
+   events generated at a remote client.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>LoggingEvent class changed slightly to support remote logging. The
+   category field (a Category) has been replaced by the categoryName
+   field (a String).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.3b - 2000-04-14</h3>
+<a name="a0.8.3b"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in Category.removeAppender(String) which would
+   never remove the desired appender. Thanks to Moses Hohman for
+   reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.3a - 2000-04-14</h3>
+<a name="a0.8.3a"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug RollingFileAppender which would throw an uncaught
+   exception in case output file could not be opened for
+   writing. Thanks to Vinay Aggarwal for signaling this problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.3 - 2000-04-13</h3>
+<a name="a0.8.3"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The log4j.override key defined in BasicConfigurator has been
+   renamed to log4j.shippedCodeFlagOverride.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The getCurrentCategories method in the Category class would not
+   return the correct value. Thanks to Timothy Potter
+   (tpotter@agency.com) for reporting this problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Appenders now admit a priority threshold as an option. All requests
+   with a priority lower than the appender's threshold priority are
+   ignored by the appender.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Integrated Christopher Taylor's DOMConfigurator parsing XML
+   configuration files.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The jar file log4j-net.jar has been replaced by log4j-full.jar.  It
+   contains DOMConfigurator.class in addition to the com.ibm.log4j.net
+   package.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add support for the ANT build tool. Thanks to Christopher Taylor
+   for supplying the build.xml file. ANT is available form
+   http://jakarta.apache.org.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>FileAppender's File option now accepts the values &quot;System.out&quot; or
+   &quot;System.err&quot;. If one these values is suppiled in a configuration
+   file then the output is directed to the corresponding stream.
+   Moreover, the default constructor of FileAppender no longer sets
+   System.out as an output target nor does it define a default
+   layout.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add caller class (C), caller file name (F), caller line number
+   (L), caller method name (M) conversion specifiers to the
+   PatternLayout class.  
+
+   The category conversion specifier now takes an optional precision
+   modifier allowing the user to control the number of right most
+   components in the category name that will be printed.
+
+   Corrected a bug occuring when the caller file name and line number
+   information were unavilable due to JIT compilation. In that case,
+   the PatternLayout would not properly use the rest of the available
+   location information.
+
+   The above enhancements and bug-fixes originate from comments by
+   Nelson Minar (nelson@monkey.org).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.2 - 2000-03-23</h3>
+<a name="a0.8.2"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The SimpleLayout and TTCCLayout are replaced by the PatternLayout
+   in the log4j.jar file to keep its size small. These two layouts are
+   still part of the package.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The PatternLayout class is introduced. This new layout is
+   configurable using a conversion pattern which is parsed at
+   runtime. This allows the user to choose the output layout without
+   writing any code and only at a marginal performance cost compared
+   to the dedicated layouts such as SimpleLayout and TTCCLayout. The
+   PatternLayout also allows the user to determine minimum and maximum
+   field lengths.
+
+   The PatternLayout was written by Jim Cakalic
+   (jim_cakalic@na.biomerieux.com).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>All internal components now use LoggingEvent instances to specifiy
+   logging information.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a problem with a missing variable initialization in
+   SyslogAppender. This caused NullPinterException to be thrown when
+   logging exceptions. 
+
+   Added a default constructor to SyslogAppender. The lack of this
+   constructor caused PropertyConfigurator to throw a
+   java.lang.InstantiationException when the appender type was set to
+   be SyslogAppender.
+
+   Thanks to Yves Bossel (ybossel@opengets.cl) for accurately
+   identifying these bugs.
+
+   Modified some other related option handling code in
+   SyslogAppender.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Made NDC.get public access instead of default access. Thanks to
+   Y. J. Chun (monac@softonnet.com) for reporting this problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>PropertyConfigurator now parses the additivity option for
+   categories.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected the value of the ADDITIVITY_PREFIX constant to match the
+   documented value, that is &quot;log4j.additivity&quot;.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a really bad bug where System.out would be closed when
+   PropertyConfigurator.configure was called. Thanks to Christopher
+   Taylor (cstaylor@pacbell.net) for tracking and reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The PropertyConfiguator now prints debug messages if the flag
+   &quot;log4j.configDebug&quot; is defined in the configuration
+   file. Previously, only if the system property &quot;log4j.configDebug&quot;
+   was set would debug messages be printed. A question by Shawn
+   Kircher (skircher@vninet.com) induced this change.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>In AbsoluteTimeDateFormat, DateTimeDateFormat and ISO8601DateFormat
+   the separator between the seconds and milliseconds has been changed
+   to comma from full stop, in order to be compliant with ISO8601's
+   preferred sign. Thanks to Jim Cakalic
+   (jim_cakalic@na.biomerieux.com) for pointing out this discrepancy
+   with the standard.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug where RollingFileAppender would not work
+   properly on Windows systems. Thanks to Heinz Richter
+   (heinz.richter@ecmwf.int) for noting this problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.1 - 2000-02-19</h3>
+<a name="a0.8.1"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Core classes are now independent of the format of the options
+   file. Configurable core classes implement the OptionHandler
+   interface. OptionHandlers allows configurators to learn the
+   relevant option names. The configurator feeds option values to the
+   OptionHandler which configures itself.
+
+   As a result of these changes, the Init class has been broken down
+   to two separate classes: the BasicConfigurator and the
+   PropertiesConfigurator.
+
+   An XML configurator for 0.8.0 has been already written by
+   Christopher Taylor (cstaylor@pacbell.net).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add multiple appender support per category. The appenders follow
+   the category hierarchy, i.e. a child category inherits the
+   appenders of its parents.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add an assert() method to the Category class.  Steven Marcus
+   (srnm@awaretechnologies.com) requested this addition.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Automatic stack printing is no longer supported. This was an unused
+   and unreliable feature which unnecessarily complicated the
+   code.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>log4j now emits a single warning message when no appender to write to
+   could be found. This is typically the case when the user forgets
+   to configure the log4j environment.  This change was suggested by
+   Jim Cakalic (jim_cakalic@na.biomerieux.com).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>RollingFileAppender adds file roll over capability-implemented by
+   Heinz Richter (heinz.richter@ecmwf.int).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug where a java.lang.NoClassDefFoundError would be
+   thrown because com.ibm.log4j.helpers.SyslogTracerPrintWriter was
+   not included in log4j.jar. Thanks to Jim Cakalic (jim_cakalic@na.biomerieux.com)
+   for signaling this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.8.0 - 2000-02-09</h3>
+<a name="a0.8.0"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>There has been an important API changes. The Log, NOPLog and ILog
+   classes have been removed. Their functionality has been migrated to
+   the Category class.
+
+   In this release, instead of writing
+
+        ILog.debug(CAT, &quot;Some message.&quot;);
+
+   one will write
+
+        CAT.debug(&quot;Some message.&quot;);
+
+   Arndt Schoenewald &lt;arndt@ibm23093i821.mc.schoenewald.de&gt; observed that
+   one could use the Category objects directly for logging.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>It is no longer possible to instantiate Category objects directly.
+   Instead, one would use the factory method
+   Category.getInstance(String name). [***]
+
+   There category instantiation code was moved to CateogryFactory
+   class.  This class has package visibility and remains hidden from
+   the user. 
+
+   This stylistic improvement was suggested by Luke Blanshard
+   (luke@quiq.com).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Init class offers methods to initialize the log4j
+   environment. The Init.flagAsShippedCode method replaces the NOPLog
+   class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Changes in the documentation to reflect the API changes.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The NDC.cloneStack and inherit methods now tolerate null-stacks.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.7.5 - 2000-01-29</h3>
+<a name="a0.7.5"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>TTCCLayout now takes a java.text.DateFormat object as a
+   parameter. The task of formatting the date is delegated to this
+   object.
+
+   Added four classes extending the java.text.DateFormat class. These
+   are RelativeTimeDateFormat, AbsoluteTimeDateFormat,
+   DateTimeDateFormat and ISO8601DateFormat classes.
+
+   Thanks to Arndt Schoenewald &lt;arndt@ibm23093i821.mc.schoenewald.de&gt;
+   for suggesting the ISO8601 date format.
+
+   These four classes can be parametrized with a particular
+   TimeZone. The TTCCLayout class now accepts a new configuration file
+   option called &quot;TimeZone&quot;.
+
+   These four DateFormats are less malleable than the
+   java.text.SimpleDateFormat but they are also much faster.
+   
+   As a consequence of these changes, the setRelativeTime,
+   setDatePrinting methods in TTCCLayout have been removed along with
+   the associated configuration file options RelativeTime,
+   DatePrinting and TimePrinting.
+
+   The current code is inspired by code contributed by
+   Heinz Richter (heinz.richter@ecmwf.int).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Log.emerg method has been deprecated. If you use statements of
+   EMERG priority, please use the Log.log form instead.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add getDepth and setMaxdepth methods to the NDC class. This makes
+   it easier to manage the nested context depth especially when
+   callees push but forget to pop.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Moved the documentation in com/ibm/log4j/package.html to
+   com/ibm/log4j/overview.html. Many users were failing to read the
+   com/ibm/log4j/package.html description due to the unfortunate
+   layout of the text. Hopefully more people will read the package
+   overview in its present location.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the com.ibm.log4j.net package for doing remote logging using
+   TCP sockets. This is still experimental code.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add new debug, .., emerg methods that do not require a category
+   parameter. They assume the &quot;root&quot; category, that is the decision to
+   whether print or not is made by comparing the statement's priority
+   with the default priority.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.7.4 - 2000-01-21</h3>
+<a name="a0.7.4"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a new ILog.init method accepting an Appender and a
+   configuration file as parameters.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>FileAppender's setWriter and setFile methods where not instantiating
+   a new tracer.  This caused stack traces to be lost! SyslogAppender
+   had a similar problem.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The FileAppender and SyslogAppender where not calling the layout's
+   readConfig method to set layout specific options. Thanks to Heinz
+   Richter (heinz.richter@ecmwf.int) for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in Log.log() method where the appender was always
+   called with Priority.DEBUG.  Thanks to Oliver Boehm
+   (Oliver.Boehm@abaxx.de) for reporting this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.7.3 - 2000-01-14</h3>
+<a name="a0.7.3"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add Syslog compatibility. One can now choose (at runtime) between
+   remote syslog logging or file logging.
+   Syslog logging performance, although not appalling, is significantly
+   slower than file logging.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Priority class was enriched with the previously missing priorities
+   NOTICE, ALERT and CRIT. The internal constants were also aligned with
+   the syslog counterparts.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the Log.log method to support the new priorities.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>TracerPrintWriter is now an independent class instead of being a
+   nested top-level class in Tracer.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>A number of writers, namely the SyslogWriter, SyslogQuietWriter,
+   SyslogTracerPrintWriter, were added to the helper package.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Log.force method was removed. The various Appender.doAppend
+   implementations take over its functionality.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>FileAppender and SyslogAppender now use QuietWriter. QuietWriter is
+   a FilterWriter which hides exceptions and instead emits a single
+   warning message to System.err.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The layout is now an initialization parameter to the appender
+   type. Previously, the layout and the appender where independent
+   parameters to the Log constructor.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Many small improvements and corrections in the documentation.
+   Syslog related documentation remains sparse.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>ILog.init() and ILog.init(String configFile) have been changed to
+   call ILog.init(,,,) with &quot;com.ibm.log4j.Log.class&quot; as the first
+   parameter. This makes it easier for people to get familiar with log4j.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add missing files to the make directory. These files are useful
+   for those wishing to use the log4j make environment. Thanks to &quot;Lee
+   Hall&quot; &lt;LHall@JavaFoundry.com&gt; for reporting this omission.
+   Until recently the make environment failed to compile RMI stubs in
+   a single run. This nagging problem has been corrected thanks to
+   help from Thomas Eirich (IBM Zurich Research Lab).</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.7.2 - 2000-01-04</h3>
+<a name="a0.7.2"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Some users have been rightly complaining about the verbosity
+   TTCCLayout's date output. The full date output is now shortened to
+   &quot;dd MMM YYYY HH:mm:ss.SSS&quot; for example, &quot;06 Nov 1994 08:49:37.459&quot;
+   In addition, users may now choose to print only time information,
+   as in &quot;08:49:37.459&quot;.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The package now uses Writer instead of OutputStream as its output
+   target. This makes the log4j code smaller and easier to
+   understand at the cost of a slight performance degradation. As a
+   result of this change a few method names in FileAppender class were
+   changed.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Preliminary experiments with SyslogAppedner and SyslogLayout show
+   that syslog compatibility is not far away. The difficultly is
+   adding syslog compatibility without making radical changes to the
+   current log4j architecture.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in the NOPLog.createInstance method which always
+   created a Log singleton even if the system property &quot;log4j.logType&quot;
+   was set to NOPLog.  Thanks to Robert Gottofrey
+   (Robert.Gottofrey@wdr.com) for reporting this bug and the
+   associated test case.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Removed the inconsistent &quot;Layout&quot; configuration option in
+   Log.readConfig().  This change should be transparent to most
+   users.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.7.1 - 1999-12-20</h3>
+<a name="a0.7.1"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The LogCreationManager class has been removed. Its functionality
+   has been transfered to the createInstance and getInstance methods
+   in the Log and NOPLog classes. The new way of creating instances is
+   both simpler and less error prone although just as flexible.
+
+   As a result of these changes, the init family of methods in the
+   ILog class have been adjusted to the new way of creating the log
+   singleton.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Appender interface has been introduced. The method of writing a
+   log statement into an output stream can now be varied by using a
+   different Appender. The new FileAppender offers the same
+   functionality that was previously part of the Log class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Changed the time format used in TTCCLayout to be of the form &quot;Day,
+   dd MMM YYYY HH:mm:ss.SSS GMT&quot; for example, &quot;Sun, 06 Nov 1994
+   22:49:37.459 GMT&quot;. This format is almost the same as the format
+   specified in RFC 1123 and also the format recommended in RFC
+   2616. The only difference is the additional milliseconds
+   information.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The layout specific options were not read from the configuration
+   file due to a missing instruction. Many thanks to Vikram Sridharan
+   (Vikram.Sridharan@alysis.com) to patiently pointing out this
+   omission to an unbelieving maintainer.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.7.0 - 1999-12-16</h3>
+<a name="a0.7.0"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Version 0.7.0 and above will be distributed under the IBM Public
+   License (IPL). The IPL is an approved open source license (see
+   http://www.opensource.org/licenses/ for a list). It grants similar
+   rights to the previous ALPHAWORKS license agreement, in particular,
+   the right to redistribute and to modify the package.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>The Log class can now be parameterized with a Layout object.
+   Layouts determine the format of what is printed, where as the Log
+   class decides when to print and to where.
+
+   As a result of this modularization, the CGULog and NOPCGULog
+   classes no longer exists. CGULog class has been replaced with the
+   TTCCLayout (Time Thread Context Category). This should make it
+   easier to create new log output formats.
+   
+   Some time in the near future, the Log class will be further broken
+   down to allow different strategies for writing to output streams.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Renamed com.ibm.util.log hierarchy to to com.ibm.log4j. I wanted to
+   do this for some time. I feel release 0.7.0 was the last
+   opportunity to do so. I am sorry for the the trouble caused by this
+   change.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>New NDC class. This class implements nested diagnostic contexts as
+   suggested by Neil Harrison in the article &quot;Patterns for Logging
+   Diagnostic Messages&quot; part of the book &quot;Pattern Languages of Program
+   Design 3&quot; edited by Martin et al. Nested diagnostic contexts is a
+   nifty feature that was missing up to now.
+
+   The StressNDC test class seems to break JDK 1.2.2 beta on AIX. On
+   Linux and NT using sun's JDK 1.2.2 it seem to work OK. In any case,
+   tests done with StressNDC and associated perl script seem to
+   indicate that the NDC class is bug-free.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a date formatting bug in CGULog class where on some
+   environments the wrong month was printed. Thanks to Christopher
+   Williams (Christopher_Williams@mail.northgrum.com) for signaling
+   this bug.  Also changed the month format from a number to a three
+   letter abbreviation such as &quot;Jan&quot;, &quot;Feb&quot;, ..., &quot;Dec&quot;. The new
+   format is unambiguous regardless of local date format.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.6.2 - 1999-12-08</h3>
+<a name="a0.6.2"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Clearer documentation with still much room for improvement.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug in the Tracer class which always used the Unix line
+   separator instead of the system specific separator. Thanks to
+   Vikram Sridharan (Vikram.Sridharan@alysis.com) for singaling this
+   bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a runaway comment which gulped the CGULog.readConfig
+   method.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add the init family of methods to the ILog class to ease the
+   setup of a basic logging environment. Thanks to Mark Donszelmann
+   (Mark.Donszelmann@cern.ch) for this enhancement.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Just an hour after releasing version 0.6.1 detected and corrected a
+   bug where the Tracer class would correctly print Exception stack
+   trace but not the type of the Exception.  Replaced the
+   distribution on www.zurich.ibm.com without changing the version
+   number. I hope nobody is using the intermediary (and buggy) release
+   of 0.6.1.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.6.1 - 1999-11-16</h3>
+<a name="a0.6.1"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Better documentation with still much room for improvement.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>For consistence sake, added setDefaultPriority and
+   getDefaultPriority methods to the Category class and deprecated
+   setDefaultPriority in the Log.class.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a major bug where if two categories were homonyms the
+   second instance would not be properly initialized.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Increased the speed of Exception logging from about 4000
+   microseconds to about 1000. It seems that for some people Exception
+   logging is performance critical. Improved implementation is a
+   variant of Nocolai's (XNH@crisplant.com) implementation.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.6.0 - 1999-11-09</h3>
+<a name="a0.6.0"></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Release of log4j 0.6.0 with incomplete documentation.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a stress test program to debug the new Category class. It
+   turns out that the test program was as hard to get right as the
+   Category class. Given the favorable results of the stress test I am
+   quite confident that the new class is now bug free. This assumption
+   has been proven to be wrong. See above.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Created a new class called Category to manipulate categories
+   instead of plain Strings. The new class is just as easy to use.
+   However, the evaluation of whether to log or not to log is at least
+   10 times faster. The NOP class performance remain unaffected by the
+   change. (You can't improve on the performance of an empty function
+   call.)
+
+   Many thanks to Alex Blewitt &quot;Alex.Blewitt@ioshq.com&quot; for his
+   valuable comments. He was the first to observe that finding Strings
+   in a hash table was an expensive operation.
+		    
+   This change will require some recoding on your part. See the FAQ
+   for more details.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Modified the force in Log and CGULog method to use a byte[] buffer
+   instead of a StringBuffer. The old code was clearer but the new one
+   is at least 25% faster.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add regression testing.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>We now enforce a policy where the OutputStream set by
+   setOutputStream is a user managed resource whereas the OutputStream
+   opened using setLogFile is the Log class' responsibility.
+
+   The setLogFile method now closes any previous OutputStream if only
+   if opened through setLogFile. If the previous OutputStream was
+   opened by the user and set through setOutputStream the previous
+   OutputStream is untouched.
+
+   Similarly, setOutputStream will close any previous OutputStream if
+   and only if it was opened using setLogFile.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a new method logOutputStreamExists to the Log class allowing
+   the programmer to check if there is already an opened stream before
+   trying to set a new one.  A stream can be opened as a byproduct of
+   reading the configuration file.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Changed the behavior of the (private) Log.Append method in case of
+   failure to write to the OutputStream.
+
+   Previously, in case of failure, we reverted to System.err.  Now, we
+   emit a warning message and discard all future log messages.  The
+   new behavior is consistent with our current unreliable logging
+   semantics.  The change prevents an otherwise functional program
+   from failing because the terminal is flooded with logging messages.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Renamed the iLog to ILog to remain consistent with our class naming
+   scheme. The initial intention was to add ILog and deprecate
+   iLog. However, I am running CVS on a fat16 partition, causing
+   serious problems when files differ only in case.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug where the LogFileName was not remembered. Thanks to
+   Jens for signaling this bug.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.5a - 1999-10-28</h3>
+<a name="a0.5a"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Now the programmer can choose to truncate the log file instead of
+   always appending to it.  This functionality was first requested and
+   intially implemented by &quot;Jens Uwe Pipka&quot; jens.pipka@gmx.de.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>setLogFile now opens the requested file instead of having the
+   Append function open it later. Cleaned up some related code in the
+   Append function.  Although nobody has requested it, there is still
+   no method to close the log file. This is harder to implement
+   reliably than it sounds.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Simplified setLogOutputStream so that it does no longer return the
+   previously set OutputStream.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release 0.5 - 1999-10-27</h3>
+<a name="a0.5"></a><table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Joe Walker (joe@eireneh.com) observed that the
+   LogCreationManager.getSingleton mechanism was cumbersome.  There is
+   now a new class iLog (indirect Log) which hides the need to call
+   getSingleton. Performance testing on my 233Mhz Thinkpad shows that
+   this indirection has small performance impact on non-logged calls
+   in the order of 40 nanoseconds. The impact on logged calls is
+   negligible.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a jar file to the distribution. The jar file contains only
+   the files you would need to use log but not other classes needed
+   for testing nor examples.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Corrected a bug where CGUNOPLog was not integrated to the Makefile.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add new public methods isDebugEnabled and isInfoEnabled to allow
+   programmers to check whether a debug/info statement will be logged
+   without incurring the cost of message parameter construction. This
+   addition was suggested by Luke Blanshard Luke@quiq.com.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Renamed the private method evaluate to isEnabled. Also made it
+   final with no apparent speed gains.  In addition, made the
+   Log.force method public.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>New syntactic sugar debug, ..., emerg, methods to log objects.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Modified the interface to deal with Throwables and not just
+   Exceptions.  My thanks to Luke Blanshard for signaling this &quot;bug&quot;.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add more tests to the LogPerformance class. In particular, to
+   test the influence of indirect debug calls.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="a"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Add a &quot;make&quot; mini-tutorial for those who want to modify the code.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>License updated to standard alphaWorks license allowing
+   modifications to source code. However, this license explicitly
+   requires that modifications be communicated back to alphaWorks.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3>Release null - 1999-10-15</h3>
+<a></a><table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/icon_help_sml.gif" alt="?" /></td>
+<td>Initial availability on alphaWorks.  Refer to the FAQ for the lineage of the package.</td>
+<td><a href="team-list.html#null"></a></td>
+</tr>
+</table>
+</div>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          1999-2010
+    
+          Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>
