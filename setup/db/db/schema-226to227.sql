@@ -124,3 +124,9 @@ INSERT INTO configuration (`category`, `instance`, `component`, `name`, `value`,
 DELETE FROM load_balancer_vm_map WHERE instance_id IN (SELECT id FROM vm_instance WHERE removed IS NOT NULL);
 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'hypervisor.list', 'KVM,XenServer,VMware,BareMetal', 'The list of hypervisors that this deployment will use.');
+
+
+UPDATE IGNORE configuration set name='guest.domain.suffix' where name='domain.suffix';
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'guest.domain.suffix', 'cloud.internal', 'Default domain name for vms inside virtualized networks fronted by router');
+DELETE FROM configuration WHERE name='domain.suffix';
+
