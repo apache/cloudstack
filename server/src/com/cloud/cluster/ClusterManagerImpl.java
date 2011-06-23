@@ -50,7 +50,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
-import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
@@ -457,12 +456,14 @@ public class ClusterManagerImpl implements ClusterManager {
     public void registerListener(ClusterManagerListener listener) {
         // Note : we don't check duplicates
         synchronized (listeners) {
+        	listeners.add(listener);
         }
     }
 
     @Override
     public void unregisterListener(ClusterManagerListener listener) {
         synchronized(listeners) {
+        	listeners.remove(listener);
         }
     }
 
