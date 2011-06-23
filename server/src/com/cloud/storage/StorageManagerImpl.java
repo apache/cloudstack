@@ -1420,12 +1420,16 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (answer != null && answer.getResult()) {
             return true;
         } else {
+            _storagePoolDao.expunge(pool.getId());
+            String msg = "";
             if (answer != null) {
-                s_logger.warn(" can not create strorage pool through host " + hostId + " due to " + answer.getDetails());
+                msg = "Can not create strorage pool through host " + hostId + " due to " + answer.getDetails();
+                s_logger.warn(msg);
             } else {
-                s_logger.warn(" can not create strorage pool through host " + hostId + " due to CreateStoragePoolCommand returns null");
+                msg = "Can not create strorage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
+                s_logger.warn(msg);
             }
-            return false;
+            throw new CloudRuntimeException(msg);
         }
     }
 

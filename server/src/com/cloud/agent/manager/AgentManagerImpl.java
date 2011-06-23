@@ -1426,11 +1426,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 return null;
             }
 
-            if (!answer.getResult()) {
-                s_logger.warn("Unable to execute command: " + cmd.toString() + " due to " + answer.getDetails());
-                return null;
-            }
-
             if (s_logger.isDebugEnabled() && answer.getDetails() != null) {
                 s_logger.debug("Details from executing " + cmd.getClass().toString() + ": " + answer.getDetails());
             }
