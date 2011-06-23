@@ -676,7 +676,26 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 if (dest == null) {
-                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile + " due to lack of VLAN available.", DataCenter.class, plan.getDataCenterId());
+                    //see if we can allocate the router without limitation
+                    if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
+                        avoids = new ExcludeList();
+                        s_logger.info("Router: cancel avoids ");
+                        for (DeploymentPlanner planner : _planners) {
+                            if (planner.canHandle(vmProfile, plan, avoids)) {
+                                dest = planner.plan(vmProfile, plan, avoids);
+                            } else {
+                                continue;
+                            }
+                            if (dest != null) {
+                                avoids.addHost(dest.getHost().getId());
+                                journal.record("Deployment found ", vmProfile, dest);
+                                break;
+                            }
+                        }
+                    }
+                    if (dest == null) {
+                        throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+                    }
                 }
 
                 long destHostId = dest.getHost().getId();
