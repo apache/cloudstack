@@ -1508,13 +1508,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
      * something should be cleaned up
      * 
      */
-    protected Command compareState(long hostId, VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean nativeHA) {
+    protected Command compareState(long hostId, VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean trackExternalChange) {
         State agentState = info.state;
         final String agentName = info.name;
         final State serverState = vm.getState();
         final String serverName = vm.getInstanceName();
-
-        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vm);
 
         Command command = null;
 
@@ -1540,6 +1538,16 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             _alertMgr.sendAlert(alertType, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure",
                     "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
+        
+        if(trackExternalChange) {
+        	if(hostId != vm.getHostId()) {
+        		try {
+        			stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+        		} catch (NoTransitionException e) {
+                    s_logger.warn(e.getMessage());
+                }
+        	}
+        }
 
         // if (serverState == State.Migrating) {
         // s_logger.debug("Skipping vm in migrating state: " + vm);
@@ -1553,17 +1561,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             assert (agentState == State.Stopped || agentState == State.Running) : "If the states we send up is changed, this must be changed.";
             if (agentState == State.Running) {
                 try {
-                	if(nativeHA) {
-                        stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, hostId);
-                    } else {
-                        stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-                    }
+                    stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, hostId);
                 } catch (NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
                 // FIXME: What if someone comes in and sets it to stopping? Then what?
                 return null;
             }
+
             s_logger.debug("State matches but the agent said stopped so let's send a cleanup command anyways.");
             return cleanup(agentName);
         }
@@ -1595,7 +1600,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 // Our records showed that it should be running so let's restart it.
                 _haMgr.scheduleRestart(vm, false);
             } else if (serverState == State.Stopping) {
-                _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.ForceStop);
+                _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                 s_logger.debug("Scheduling a check stop for VM in stopping mode: " + vm);
             } else if (serverState == State.Starting) {
                 s_logger.debug("Ignoring VM in starting mode: " + vm.getInstanceName());
@@ -1605,65 +1610,67 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } else if (agentState == State.Running) {
             if (serverState == State.Starting) {
                 if (fullSync) {
-                    s_logger.debug("VM state is starting on full sync so updating it to running");
-                    vm = findById(vm.getType(), vm.getId());
-                    try {
-                        stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
-                    } catch (NoTransitionException e1) {
-                        s_logger.warn(e1.getMessage());
-                    }
-                    s_logger.debug("VM's " + vm + " state is starting on full sync so updating it to Running");
-                    vm = vmGuru.findById(vm.getId());
-
-                    VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
-                    List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
-                    for (NicVO nic : nics) {
-                        Network network = _networkMgr.getNetwork(nic.getNetworkId());
-                        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null);
-                        profile.addNic(nicProfile);
-                    }
-
-                    Commands cmds = new Commands(OnError.Stop);
-                    s_logger.debug("Finalizing commands that need to be send to complete Start process for the vm " + vm);
-
-                    if (vmGuru.finalizeCommandsOnStart(cmds, profile)) {
-                        if (cmds.size() != 0) {
-                            try {
-                                _agentMgr.send(vm.getHostId(), cmds);
-                            } catch (OperationTimedoutException e) {
-                                s_logger.error("Exception during update for running vm: " + vm, e);
-                                return null;
-                            } catch (ResourceUnavailableException e) {
-                                s_logger.error("Exception during update for running vm: " + vm, e);
-                                return null;
-                            }
-                        }
-
-                        if (vmGuru.finalizeStart(profile, vm.getHostId(), cmds, null)) {
-                            try {
-                                stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
-                            } catch (NoTransitionException e) {
-                                s_logger.warn(e.getMessage());
-                            }
-                        } else {
-                            s_logger.error("Exception during update for running vm: " + vm);
-                            return null;
-                        }
-                    } else {
-                        s_logger.error("Unable to finalize commands on start for vm: " + vm);
+                	try {
+                		ensureVmRunningContext(hostId, vm, Event.AgentReportRunning);
+                	} catch (OperationTimedoutException e) {
+                        s_logger.error("Exception during update for running vm: " + vm, e);
                         return null;
+                    } catch (ResourceUnavailableException e) {
+                        s_logger.error("Exception during update for running vm: " + vm, e);
+                        return null;
+                    } catch (NoTransitionException e) {
+                        s_logger.warn(e.getMessage());
                     }
-
                 }
             } else if (serverState == State.Stopping) {
                 s_logger.debug("Scheduling a stop command for " + vm);
-                _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.Stop);
+                _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
             } else {
                 s_logger.debug("VM state is in stopped so stopping it on the agent");
                 command = cleanup(agentName);
             }
         }
         return command;
+    }
+    
+    private void ensureVmRunningContext(long hostId, VMInstanceVO vm, Event cause) throws OperationTimedoutException, ResourceUnavailableException, NoTransitionException {
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vm);
+    	
+        s_logger.debug("VM state is starting on full sync so updating it to running");
+        vm = findById(vm.getType(), vm.getId());
+        try {
+            stateTransitTo(vm, cause, hostId);
+        } catch (NoTransitionException e1) {
+            s_logger.warn(e1.getMessage());
+        }
+        
+        s_logger.debug("VM's " + vm + " state is starting on full sync so updating it to Running");
+        vm = vmGuru.findById(vm.getId());		// this should ensure vm has the most up to date info
+
+        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
+        for (NicVO nic : nics) {
+            Network network = _networkMgr.getNetwork(nic.getNetworkId());
+            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null);
+            profile.addNic(nicProfile);
+        }
+
+        Commands cmds = new Commands(OnError.Stop);
+        s_logger.debug("Finalizing commands that need to be send to complete Start process for the vm " + vm);
+
+        if (vmGuru.finalizeCommandsOnStart(cmds, profile)) {
+            if (cmds.size() != 0) {
+                _agentMgr.send(vm.getHostId(), cmds);
+            }
+
+            if (vmGuru.finalizeStart(profile, vm.getHostId(), cmds, null)) {
+                stateTransitTo(vm, cause, vm.getHostId());
+            } else {
+                s_logger.error("Unable to finish finialization for running vm: " + vm);
+            }
+        } else {
+            s_logger.error("Unable to finalize commands on start for vm: " + vm);
+        }
     }
 
     public Commands fullSync(final long hostId, final Map<String, State> newStates) {

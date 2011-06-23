@@ -519,10 +519,14 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                 releaseVmCapacity(vm, false, false, oldHostId);
             } else if (event == Event.AgentReportStopped) {
                 releaseVmCapacity(vm, false, true, oldHostId);
+            } else if(event == Event.AgentReportMigrated) {
+            	releaseVmCapacity(vm, false, false, oldHostId);
             }
         } else if (oldState == State.Running) {
             if (event == Event.AgentReportStopped) {
                 releaseVmCapacity(vm, false, true, oldHostId);
+            } else if(event == Event.AgentReportMigrated) {
+                releaseVmCapacity(vm, false, false, oldHostId);
             }
         } else if (oldState == State.Migrating) {
             if (event == Event.AgentReportStopped) {
@@ -538,14 +542,18 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
         } else if (oldState == State.Stopping) {
             if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
                 releaseVmCapacity(vm, false, true, oldHostId);
+            } else if(event == Event.AgentReportMigrated) {
+                releaseVmCapacity(vm, false, false, oldHostId);
             }
         } else if (oldState == State.Stopped) {
             if (event == Event.DestroyRequested) {
                 releaseVmCapacity(vm, true, false, vm.getLastHostId());
+            } else if(event == Event.AgentReportMigrated) {
+                releaseVmCapacity(vm, false, false, oldHostId);
             }
         }
-
-        if ((newState == State.Starting || newState == State.Migrating) && vm.getHostId() != null) {
+        
+        if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
             boolean fromLastHost = false;
             if (vm.getLastHostId() == vm.getHostId()) {
                 s_logger.debug("VM starting again on the last host it was stopped on");
