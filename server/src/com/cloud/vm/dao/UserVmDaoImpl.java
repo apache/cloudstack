@@ -234,7 +234,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public List<UserVmVO> listByNetworkId(long networkId) {
+    public List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states) {
         if (UserVmSearch == null) {
             NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
@@ -242,11 +242,15 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
 
             UserVmSearch = createSearchBuilder();
+            UserVmSearch.and("states", UserVmSearch.entity().getState(), SearchCriteria.Op.IN);
             UserVmSearch.join("nicSearch", nicSearch, UserVmSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             UserVmSearch.done();
         }
 
         SearchCriteria<UserVmVO> sc = UserVmSearch.create();
+        if (states != null) {
+            sc.setParameters("states", (Object[]) states);
+        }
         sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);
