@@ -100,12 +100,10 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
         int hostsLeftToGive = hostsToGive;
         int hostsLeft = directHosts.size();
         List<HostVO> hostsToReturn = new ArrayList<HostVO>();
-        int count = 0;
         
         for (Long cluster : hostToClusterMap.keySet()) {
             List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
             hostsLeft = hostsLeft - hostsInCluster.size();
-            count++;
             if (hostsToReturn.size() < hostsToGive) {
                 s_logger.debug("Trying cluster id=" + cluster);
                 
@@ -114,14 +112,12 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
                         s_logger.debug("Skipping cluster id=" + cluster + " as it has more hosts that we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive);
                         continue;
                     } else {
-                        if (count == hostToClusterMap.size()) {
-                            //get all hosts that are needed from the cluster
-                            for (int i=0; i <= hostsLeftToGive; i++) {
-                                hostsToReturn.add(hostsInCluster.get(i));
-                                hostsLeftToGive = hostsLeftToGive - 1;
-                                s_logger.debug("Taking host " + hostsInCluster.get(i) + " from cluster " + cluster);
-                            } 
-                        }
+                        //get all hosts that are needed from the cluster
+                        s_logger.debug("Taking " + hostsLeftToGive + " from cluster " + cluster);
+                        for (int i=0; i < hostsLeftToGive; i++) {
+                            hostsToReturn.add(hostsInCluster.get(i));
+                        } 
+                       
                         break;
                     }  
                 } else {
