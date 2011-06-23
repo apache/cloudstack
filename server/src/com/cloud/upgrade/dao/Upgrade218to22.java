@@ -1128,6 +1128,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 pstmt.setLong(2, dataCenterId);
                 ResultSet rs1 = pstmt.executeQuery();
 
+                Long deviceId = 0L;
                 if (!rs1.next()) {
                     // check if there are any non-removed user vms existing for this account
                     // if all vms are expunged, and there is no domR, just skip this record
@@ -1137,14 +1138,24 @@ public class Upgrade218to22 implements DbUpgrade {
                     ResultSet nonRemovedVms = pstmt.executeQuery();
 
                     if (nonRemovedVms.next()) {
-                        s_logger.error("Unable to update user_statistics table with device id");
-                        throw new CloudRuntimeException("Unable to update user_statistics table with device id");
+                        s_logger.warn("Failed to find domR for for account id=" + accountId + " in zone id=" + dataCenterId + "; will try to locate domR based on user_vm info");
+                        //try to get domR information from the user_vm belonging to the account
+                        pstmt = conn.prepareStatement("SELECT u.domain_router_id from user_vm u, vm_instance v where u.account_id=? AND v.data_center_id=? AND v.removed IS NULL AND u.domain_router_id is NOT NULL");
+                        pstmt.setLong(1, accountId);
+                        pstmt.setLong(2, dataCenterId);
+                        ResultSet userVmSet = pstmt.executeQuery();
+                        if (!userVmSet.next()) {
+                            s_logger.warn("Skipping user_statistics upgrade for account id=" + accountId + " in datacenter id=" + dataCenterId);
+                            continue;
+                        } 
+                        deviceId = userVmSet.getLong(1);
                     } else {
                         s_logger.debug("Account id=" + accountId + " doesn't own any user vms and domRs, so skipping user_statistics update");
                         continue;
                     }
+                } else {
+                    deviceId = rs1.getLong(1);
                 }
-                Long deviceId = rs1.getLong(1);
 
                 pstmt = conn.prepareStatement("UPDATE user_statistics SET device_id=? where id=?");
                 pstmt.setLong(1, deviceId);
