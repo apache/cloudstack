@@ -1077,8 +1077,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _haMgr.cancelDestroy(vm, vm.getHostId());
 
-        _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
-
         try {
             if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
                 s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
@@ -1113,6 +1111,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
                 .getHypervisorType().toString());
         _usageEventDao.persist(usageEvent);
+
+        _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
+
         txn.commit();
 
         return _vmDao.findById(vmId);
@@ -1638,6 +1639,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _usageEventDao.persist(usageEvent);
                 String msg = "Failed to deploy Vm with Id: " + vmId;
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), msg, msg);
+
+                _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
             }
         }
     }
