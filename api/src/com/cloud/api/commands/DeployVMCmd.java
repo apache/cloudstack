@@ -116,6 +116,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter. Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to use ip 10.10.10.11 in network id=204")
     private Map ipToNetworkList;
+    
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the ip address for default vm's network")
+    private String ipAddress;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -194,9 +197,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     public List<Long> getNetworkIds() {
-       if (ipToNetworkList != null ) {
-           if (networkIds != null) {
-               throw new InvalidParameterValueException("NetworkIds can't be specified along with ipToNetworkMap");
+       if (ipToNetworkList != null) {
+           if (networkIds != null || ipAddress != null) {
+               throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
            } else {
                List<Long> networks = new ArrayList<Long>();
                networks.addAll(getIpToNetworkMap().keySet());
@@ -219,9 +222,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return hostId;
     }
     
+    private String getIpAddress() {
+        return ipAddress;
+    }
+
     private Map<Long, String> getIpToNetworkMap() {
-        if (networkIds != null && ipToNetworkList != null) {
-            throw new InvalidParameterValueException("NetworkIds can't be specified along with ipToNetworkMap");
+        if ((networkIds != null || ipAddress != null) && ipToNetworkList != null) {
+            throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
         }
         Map<Long, String> ipToNetworkMap = null;
         if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
@@ -360,18 +367,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                         throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                     } else {
                         vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap());
+                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress);
                     }
                 } else {
                     if (zone.isSecurityGroupEnabled()) {
                         vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap());
+                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress);
                     } else {
                         if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
                             throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                         }
                         vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap());
+                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress);
                     }
                 }
             }
