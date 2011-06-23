@@ -1,5 +1,5 @@
 /usr/share/java/cloud-commons-codec-1.4.jar
-/usr/share/java/cloud-apache-log4j-extras-1.0.jar
+/usr/share/java/cloud-log4j-extras.jar
 /usr/share/java/cloud-backport-util-concurrent-3.0.jar
 /usr/share/java/cloud-ehcache.jar
 /usr/share/java/cloud-email.jar
