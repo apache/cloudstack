@@ -805,10 +805,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         } finally {
             if (startedVm == null) {
-                // decrement only for user VM's and newly created VM
-                if (vm.getType().equals(VirtualMachine.Type.User) && (vm.getLastHostId() == null)) {
-                    _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-                }
                 if (canRetry) {
                     try {
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
