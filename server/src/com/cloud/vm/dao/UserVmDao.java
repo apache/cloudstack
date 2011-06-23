@@ -22,6 +22,8 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 
 public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<UserVmVO> listByAccountId(long id);
@@ -57,7 +59,7 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	 */
 	List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId, long networkId);
 	
-	List<UserVmVO> listByNetworkId(long networkId);
+	List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states);
 	
 	List<UserVmVO> listByAccountIdAndHostId(long accountId, long hostId);
 	

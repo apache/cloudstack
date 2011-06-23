@@ -1635,40 +1635,34 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     private void createVmDataCommands(DomainRouterVO router, Commands cmds) {
         long networkId = router.getNetworkId();
-        List<UserVmVO> vms = _userVmDao.listByNetworkId(networkId);
-        if (vms != null && !vms.isEmpty()) {
-            for (UserVmVO vm : vms) {
-                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
-                if (nic != null) {
-                    s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
-                    String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
-                    String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
-                    cmds.addCommand("vmdata",
-                            generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(), vm.getId(), null));
-                }
+        List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, State.Starting, State.Running, State.Migrating, State.Stopping);
+        for (UserVmVO vm : vms) {
+            NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+            if (nic != null) {
+                s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
+                String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
+                String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
+                cmds.addCommand("vmdata",
+                        generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(), vm.getId(), null));
             }
         }
     }
 
     private void createDhcpEntriesCommands(DomainRouterVO router, Commands cmds) {
         long networkId = router.getNetworkId();
-        List<UserVmVO> vms = _userVmDao.listByNetworkId(networkId);
-        if (!vms.isEmpty()) {
-            for (UserVmVO vm : vms) {
-                if (vm.getState() != State.Destroyed && vm.getState() != State.Expunging) {
-                    NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
-                    if (nic != null) {
-                        s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
+        List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, State.Starting, State.Running, State.Migrating, State.Stopping);
+        for (UserVmVO vm : vms) {
+            NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+            if (nic != null) {
+                s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
 
-                        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
-                        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-                        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-                        dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+                DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
+                dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+                dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
-                        cmds.addCommand("dhcp", dhcpCommand);
-                    }
-                }
+                cmds.addCommand("dhcp", dhcpCommand);
             }
         }
     }
