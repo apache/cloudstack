@@ -21,13 +21,17 @@ package com.cloud.agent.api.routing;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
 public class VmDataCommand extends NetworkElementCommand {
     
 	String vmIpAddress;
 	String vmName;
+	@LogLevel(Log4jLevel.Trace)
 	List<String[]> vmData;
 	
-    protected VmDataCommand() {    	
+    protected VmDataCommand() {
     }
     
     @Override
