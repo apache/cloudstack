@@ -95,6 +95,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> DirectConnectSearch;
     protected final SearchBuilder<HostVO> ManagedDirectConnectSearch;
     protected final SearchBuilder<HostVO> ManagedRoutingServersSearch;
+    protected final SearchBuilder<HostVO> SecondaryStorageVMSearch;
 
     protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
     protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
@@ -143,6 +144,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcSearch.and("type", TypeDcSearch.entity().getType(), SearchCriteria.Op.EQ);
         TypeDcSearch.and("dc", TypeDcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         TypeDcSearch.done();
+        
+        SecondaryStorageVMSearch = createSearchBuilder();
+        SecondaryStorageVMSearch.and("type", SecondaryStorageVMSearch.entity().getType(), SearchCriteria.Op.EQ);
+        SecondaryStorageVMSearch.and("dc", SecondaryStorageVMSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        SecondaryStorageVMSearch.and("status", SecondaryStorageVMSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        SecondaryStorageVMSearch.done();
 
         TypeDcStatusSearch = createSearchBuilder();
         TypeDcStatusSearch.and("type", TypeDcStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -693,7 +700,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         return listBy(sc);
     }
+    
+    @Override
+    public List<HostVO> listSecondaryStorageVM(long dcId) {
+        SearchCriteria<HostVO> sc = SecondaryStorageVMSearch.create();
+        sc.setParameters("type", Type.SecondaryStorageVM);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("dc", dcId);
 
+        return listBy(sc);
+    }
     @Override
     public List<HostVO> listByType(Type type) {
         SearchCriteria<HostVO> sc = TypeSearch.create();

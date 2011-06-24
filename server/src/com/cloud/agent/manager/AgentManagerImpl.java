@@ -507,7 +507,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return  ssHost;
         } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
             Long dcId = ssHost.getDataCenterId();
-            List<HostVO> ssAHosts = _hostDao.listBy(Host.Type.SecondaryStorageVM, dcId);
+            List<HostVO> ssAHosts = _hostDao.listSecondaryStorageVM(dcId);
             if (ssAHosts == null || ssAHosts.isEmpty() ) {
                 return null;
             }
@@ -532,7 +532,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
 
     private long sendToSSVM(final long dcId, final Command cmd, final Listener listener) {
-        List<HostVO> ssAHosts = _hostDao.listBy(Host.Type.SecondaryStorageVM, dcId);
+        List<HostVO> ssAHosts = _hostDao.listSecondaryStorageVM(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return -1;
         }
@@ -546,7 +546,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     private Answer sendToSSVM(final long dcId, final Command cmd) {
-        List<HostVO> ssAHosts = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorageVM, dcId);
+        List<HostVO> ssAHosts = _hostDao.listSecondaryStorageVM(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return new Answer(cmd, false, "can not find secondary storage VM agent for data center " + dcId);
         }

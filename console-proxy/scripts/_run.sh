@@ -60,4 +60,4 @@ then
   maxmem=$eightypcnt
 fi
 
-java -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@
+java -Djavax.net.ssl.trustStore=./certs/realhostip.keystore -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@
