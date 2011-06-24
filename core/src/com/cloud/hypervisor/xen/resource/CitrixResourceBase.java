@@ -130,14 +130,12 @@ import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -467,10 +465,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((PoolEjectCommand) cmd);
         } else if (cmd instanceof StartCommand) {
             return execute((StartCommand)cmd);
-        } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
-            return execute((RemoteAccessVpnCfgCommand)cmd);
-        } else if (cmd instanceof VpnUsersCfgCommand) {
-            return execute((VpnUsersCfgCommand)cmd);
         } else if (cmd instanceof CheckSshCommand) {
             return execute((CheckSshCommand)cmd);
         } else if (cmd instanceof SecurityIngressRulesCmd) {
@@ -1316,45 +1310,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new Answer(cmd, false, "DhcpEntry failed");
         }
         return new Answer(cmd);
-    }
-    
-    protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
-        Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        if (cmd.isCreate()) {
-        	args += " -r " + cmd.getIpRange();
-        	args += " -p " + cmd.getPresharedKey();
-        	args += " -s " + cmd.getVpnServerIp();
-        	args += " -l " + cmd.getLocalIp();
-        	args += " -c ";
-        	
-        } else {
-        	args += " -d ";
-        	args += " -s " + cmd.getVpnServerIp();
-        }
-        String result = callHostPlugin(conn, "vmops", "lt2p_vpn", "args", args);
-    	if (result == null || result.isEmpty()) {
-    		return new Answer(cmd, false, "Configure VPN failed");
-    	}
-    	return new Answer(cmd);
-    }
-    
-    protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
-        Connection conn = getConnection();
-        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
-            String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        	if (!userpwd.isAdd()) {
-        		args += " -U " + userpwd.getUsername();
-        	} else {
-        		args += " -u " + userpwd.getUsernamePassword();
-        	}
-        	String result = callHostPlugin(conn, "vmops", "lt2p_vpn", "args", args);
-        	if (result == null || result.isEmpty()) {
-        		return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
-        	}
-        }
-        
-    	return new Answer(cmd);
     }
 
     protected Answer execute(final VmDataCommand cmd) {

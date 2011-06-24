@@ -2648,7 +2648,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (trafficType == TrafficType.Guest) {
             firewallService = true;
             lbService = true;
-            vpnService = true;
+            vpnService = false;
             gatewayService = true;
         }
 

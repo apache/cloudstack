@@ -40,8 +40,8 @@ dictionary = {
             <fmt:message key="label.port.forwarding"/></div>
         <div class="content_tabs off" id="tab_load_balancer" style="display: none">
             <fmt:message key="label.load.balancer"/></div>
-		<div class="content_tabs off" id="tab_vpn" style="display: none">
-            <fmt:message key="label.vpn"/></div>
+		<!-- <div class="content_tabs off" id="tab_vpn" style="display: none">
+            <fmt:message key="label.vpn"/></div> -->
     </div>  
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">

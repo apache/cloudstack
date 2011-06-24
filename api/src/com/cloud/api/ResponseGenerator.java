@@ -43,7 +43,6 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
-import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
@@ -57,7 +56,6 @@ import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
-import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -71,8 +69,6 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
@@ -155,10 +151,6 @@ public interface ResponseGenerator {
     Account findAccountByNameDomain(String accountName, Long domainId);
 
     VirtualMachineTemplate findTemplateById(Long templateId);
-
-    VpnUsersResponse createVpnUserResponse(VpnUser user);
-
-    RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
     void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin,
             Account account);

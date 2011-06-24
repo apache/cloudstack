@@ -327,10 +327,6 @@ EOF
 
 }
 
-vpn_config() {
-  cp -r ${scriptdir}/vpn/* ./
-}
-
 packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
@@ -351,8 +347,6 @@ packages() {
   chroot . apt-get --no-install-recommends -q -y --force-yes install dnsmasq 
   #nfs client
   chroot . apt-get --no-install-recommends -q -y --force-yes install nfs-common
-  #vpn stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools tdb-tools
   #vmware tools
   chroot . apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
@@ -420,7 +414,6 @@ cleanup() {
 
 signature() {
   (cd ${scriptdir}/config;  tar cvf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar *)
-  (cd ${scriptdir}/vpn;  tar rvf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar *)
   gzip -c ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar  > ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz
   md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > ${MOUNTPOINT}/etc/cloudstack-release
@@ -488,9 +481,6 @@ services
 
 echo "*************CONFIGURING APACHE********************"
 apache2
-
-echo "*************CONFIGURING VPN********************"
-vpn_config
 
 echo "*************CLEANING UP********************"
 cleanup 

@@ -56,7 +56,6 @@ import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PodResponse;
-import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
@@ -71,7 +70,6 @@ import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
-import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
@@ -103,8 +101,6 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
@@ -1357,43 +1353,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VirtualMachineTemplate findTemplateById(Long templateId) {
         return ApiDBUtils.findTemplateById(templateId);
-    }
-    
-    @Override
-    public VpnUsersResponse createVpnUserResponse(VpnUser vpnUser) {
-        VpnUsersResponse vpnResponse = new VpnUsersResponse();
-        vpnResponse.setId(vpnUser.getId());
-        vpnResponse.setUserName(vpnUser.getUsername());
-        
-        Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
-        if (accountTemp != null) {
-            vpnResponse.setAccountName(accountTemp.getAccountName());
-            vpnResponse.setDomainId(accountTemp.getDomainId());
-            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
-
-        vpnResponse.setObjectName("vpnuser");
-        return vpnResponse;
-    }
-    
-    @Override
-    public RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn) {
-        RemoteAccessVpnResponse vpnResponse = new RemoteAccessVpnResponse();
-        vpnResponse.setPublicIpId(vpn.getServerAddressId());
-        vpnResponse.setPublicIp(ApiDBUtils.findIpAddressById(vpn.getServerAddressId()).getAddress().addr());
-        vpnResponse.setIpRange(vpn.getIpRange());
-        vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
-        vpnResponse.setDomainId(vpn.getDomainId());
-        
-        Account accountTemp = ApiDBUtils.findAccountById(vpn.getAccountId());
-        if (accountTemp != null) {
-            vpnResponse.setAccountName(accountTemp.getAccountName());
-            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }      
-        vpnResponse.setState(vpn.getState().toString());
-        vpnResponse.setObjectName("remoteaccessvpn");
-      
-        return vpnResponse;
     }
 
     @Override
