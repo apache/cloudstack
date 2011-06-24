@@ -2033,8 +2033,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         if (securityGroupIdList != null && isVmWare) {
             throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else if (securityGroupIdList == null && !isVmWare) {
-            securityGroupIdList = new ArrayList<Long>();
+        } else if (!isVmWare) {
+            if (securityGroupIdList == null) {
+                securityGroupIdList = new ArrayList<Long>();
+            }
             SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
             if (defaultGroup != null) {
               //check if security group id list already contains Default security group, and if not - add it
