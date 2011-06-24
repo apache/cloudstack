@@ -182,7 +182,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				s_logger.debug("ConfigurationServer could not detect mount.parent.");
 			}
 
-			String hostIpAdr = getHost();
+			String hostIpAdr = NetUtils.getDefaultHostIp();
 			if (hostIpAdr != null) {
 			    _configDao.update("host", hostIpAdr);
 				s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
@@ -242,23 +242,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		_configDao.update("init", "true");
 	}
 
-
-
-	private String getEthDevice() {
-		String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
-		
-		if (defaultRoute == null) {
-			return null;
-		}
-		
-		String[] defaultRouteList = defaultRoute.split("\\s+");
-		
-		if (defaultRouteList.length != 8) {
-			return null;
-		}
-		
-		return defaultRouteList[7];
-	}
 	
 	private String getMountParent() {
 		return getEnvironmentProperty("mount.parent");
@@ -282,26 +265,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		}
 	}
 	
-	
-	
-	@DB
-	protected String getHost() {
-		NetworkInterface nic = null;
-		String pubNic = getEthDevice();
-		
-		if (pubNic == null) {
-			return null;
-		}
-		
-		try {
-			nic = NetworkInterface.getByName(pubNic);
-		} catch (final SocketException e) {
-			return null;
-		}
-		
-		String[] info = NetUtils.getNetworkParams(nic);
-		return info[0];
-	}
 	
 	@DB
 	protected void saveUser() {
