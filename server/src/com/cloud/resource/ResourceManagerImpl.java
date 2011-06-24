@@ -253,12 +253,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             List<HostVO> hosts = new ArrayList<HostVO>();
             Map<? extends ServerResource, Map<String, String>> resources = null;
-
-            try {
-                resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
-            } catch (Exception e) {
-                s_logger.info("Exception in external cluster discovery process with discoverer: " + discoverer.getName());
-            }
+            resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+            
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
@@ -281,9 +277,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             s_logger.warn("Unable to find the server resources at " + url);
             throw new DiscoveryException("Unable to add the external cluster");
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception ", e);
-            throw new DiscoveryException("Unable to add the external cluster due to unhandled exception");
         } finally {
             if (!success) {
                 _clusterDetailsDao.deleteDetails(clusterId);
@@ -487,8 +480,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             try {
                 resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
-            } catch (DiscoveredWithErrorException e) {
-                throw e;
+            } catch(DiscoveryException e) {
+            	throw e;
             } catch (Exception e) {
                 s_logger.info("Exception in host discovery process with discoverer: " + discoverer.getName() + ", skip to another discoverer if there is any");
             }
