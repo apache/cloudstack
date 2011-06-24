@@ -282,6 +282,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected StoragePoolWorkDao _storagePoolWorkDao;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected VolumeDao _volumeDao;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -290,6 +292,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
+    protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
+    protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
 
     ScheduledExecutorService _executor = null;
     boolean _storageCleanupEnabled;
@@ -864,6 +868,20 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         UpHostsInPoolSearch.and("pool", UpHostsInPoolSearch.entity().getPoolId(), Op.EQ);
         UpHostsInPoolSearch.done();
 
+        StoragePoolSearch = _vmInstanceDao.createSearchBuilder();
+        
+        SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+        volumeSearch.and("volumeType", volumeSearch.entity().getVolumeType(), SearchCriteria.Op.EQ);
+        volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        StoragePoolSearch.join("vmVolume", volumeSearch, volumeSearch.entity().getInstanceId(), StoragePoolSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        StoragePoolSearch.done();
+        
+        LocalStorageSearch = _storagePoolDao.createSearchBuilder();
+        SearchBuilder<StoragePoolHostVO> storageHostSearch = _storagePoolHostDao.createSearchBuilder();
+        storageHostSearch.and("hostId", storageHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        LocalStorageSearch.join("poolHost", storageHostSearch, storageHostSearch.entity().getPoolId(), LocalStorageSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        LocalStorageSearch.and("type", LocalStorageSearch.entity().getPoolType(), SearchCriteria.Op.IN);
+        LocalStorageSearch.done();
         return true;
     }
 
@@ -1987,8 +2005,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     @DB
-    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
-        Long primaryStorageId = cmd.getId();
+    public StoragePoolVO preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException {
         Long userId = UserContext.current().getCallerUserId();
         User user = _userDao.findById(userId);
         Account account = UserContext.current().getCaller();
@@ -2055,7 +2072,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             txn.commit();
-            txn.close();
 
             // 4. Process the queue
             List<StoragePoolWorkVO> pendingWork = _storagePoolWorkDao.listPendingWorkForPrepareForMaintenanceByPoolId(primaryStorageId);
@@ -2963,8 +2979,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         long dcId = pool.getDataCenterId();
         Long podId = pool.getPodId();
         
+        List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
+        
         //FIXME, for cloudzone, the local secondary storoge
-        if (pool.isLocal() && pool.getPoolType() == StoragePoolType.Filesystem) {
+        if (pool.isLocal() && pool.getPoolType() == StoragePoolType.Filesystem && secHosts.isEmpty()) {
             List<StoragePoolHostVO> sphs = _storagePoolHostDao.listByPoolId(pool.getId());
             if (!sphs.isEmpty()) {
                 StoragePoolHostVO localStoragePoolHost = sphs.get(0);
@@ -2974,7 +2992,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
         }
         
-        List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
         if (secHosts.size() == 1) {
             VMTemplateHostVO templateHostVO = _templateHostDao.findByHostTemplate(secHosts.get(0).getId(), templateId);
             return templateHostVO;
@@ -2992,6 +3009,29 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             return templHosts.get(0);
         }
         return null;
+    }
+    
+
+    @Override
+    @DB
+    public List<VMInstanceVO> listByStoragePool(long storagePoolId) {
+        SearchCriteria<VMInstanceVO> sc = StoragePoolSearch.create();
+        sc.setJoinParameters("vmVolume", "volumeType", Volume.Type.ROOT);
+        sc.setJoinParameters("vmVolume", "poolId", storagePoolId);
+        return _vmInstanceDao.search(sc, null);
+    }
+    @Override
+    @DB
+    public StoragePoolVO findLocalStorageOnHost(long hostId) {
+        SearchCriteria<StoragePoolVO> sc = LocalStorageSearch.create();
+        sc.setParameters("type", new Object[]{StoragePoolType.Filesystem, StoragePoolType.LVM});
+        sc.setJoinParameters("poolHost", "hostId", hostId);
+        List<StoragePoolVO> storagePools = _storagePoolDao.search(sc, null);
+        if (!storagePools.isEmpty()) {
+            return storagePools.get(0);
+        } else {
+            return null;
+        }
     }
 
 }

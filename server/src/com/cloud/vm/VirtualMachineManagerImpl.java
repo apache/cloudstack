@@ -1012,7 +1012,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         vm.setReservationId(null);
 
         try {
-            return stateTransitTo(vm, Event.OperationSucceeded, null);
+            if (!forced)
+                return stateTransitTo(vm, Event.OperationSucceeded, null);
+            else 
+                return true;
         } catch (NoTransitionException e) {
             s_logger.warn(e.getMessage());
             return false;

@@ -79,7 +79,7 @@ public interface ResourceService {
      * 
      * @param true if deleted, false otherwise
      */
-    boolean deleteHost(long hostId, boolean isForced);
+    boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
 
     boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
 

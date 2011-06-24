@@ -89,7 +89,7 @@ public interface StorageService {
      * @throws InsufficientCapacityException
      *             TODO
      */
-    public StoragePool preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
+    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Complete maintenance for primary storage

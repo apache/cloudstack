@@ -43,6 +43,9 @@ public class DeleteHostCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Force delete the host. All HA enabled vms running on the host will be put to HA; HA disabled ones will be stopped")
     private Boolean forced;
+    
+    @Parameter(name = ApiConstants.FORCED_DESTRORY_VM, type = CommandType.BOOLEAN, description = "Force destroy VMs on this host. All VMs created on this local storage will be destroyed")
+    private Boolean forceDestroyVM;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -54,6 +57,10 @@ public class DeleteHostCmd extends BaseCmd {
 
     public boolean isForced() {
         return (forced != null) ? forced : false;
+    }
+    
+    public boolean isForceDestoryVM() {
+        return (forceDestroyVM != null) ? forceDestroyVM : false;
     }
 
     // ///////////////////////////////////////////////////
@@ -72,7 +79,7 @@ public class DeleteHostCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean result = _resourceService.deleteHost(getId(), isForced());
+        boolean result = _resourceService.deleteHost(getId(), isForced(), isForceDestoryVM());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

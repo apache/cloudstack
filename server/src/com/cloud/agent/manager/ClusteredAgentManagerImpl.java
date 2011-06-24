@@ -347,7 +347,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     @DB
-    public boolean deleteHost(long hostId, boolean isForced, User caller) {
+    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller) {
         try {
             Boolean result = _clusterMgr.propagateAgentEvent(hostId, Event.Remove);
             if (result != null) {
@@ -357,7 +357,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             return false;
         }
 
-        return super.deleteHost(hostId, isForced, caller);
+        return super.deleteHost(hostId, isForced, forceDestroy, caller);
     }
 
     @Override

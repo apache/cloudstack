@@ -529,7 +529,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     @Override
-    public boolean deleteHost(long hostId, boolean isForced) {
+    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy) {
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
@@ -541,7 +541,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             _secondaryStorageMgr.deleteHost(hostId);
             return true;
         } else {
-            return _agentMgr.deleteHost(hostId, isForced, caller);
+            return _agentMgr.deleteHost(hostId, isForced, forceDestroy, caller);
         }
     }
 
