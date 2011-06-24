@@ -922,10 +922,12 @@ public class ClusterManagerImpl implements ClusterManager {
         return true;
     }
 
-    @Override
+    @Override @DB
     public boolean stop() {
         if(_mshostId != null) {
-            _mshostDao.remove(_mshostId);
+            ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
+            mshost.setState(ManagementServerHost.State.Down);
+            _mshostDao.update(_mshostId, mshost);
         }
 
         _heartbeatScheduler.shutdownNow();
