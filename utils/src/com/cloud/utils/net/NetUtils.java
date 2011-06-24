@@ -40,6 +40,7 @@ import org.apache.log4j.xml.DOMConfigurator;
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.script.Script;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -113,6 +114,8 @@ public class NetUtils {
     }
 
     public static String[] getLocalCidrs() {
+    	String defaultHostIp = getDefaultHostIp();
+    	
         List<String> cidrList = new ArrayList<String>();
         try {
             for (NetworkInterface ifc : IteratorUtil.enumerationAsIterable(NetworkInterface.getNetworkInterfaces())) {
@@ -122,7 +125,8 @@ public class NetUtils {
                         int prefixLength = address.getNetworkPrefixLength();
                         if (prefixLength < 32 && prefixLength > 0) {
                             String ip = ipFromInetAddress(addr);
-                            cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
+                            if(ip.equalsIgnoreCase(defaultHostIp))
+                            	cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
                         }
                     }
                 }
@@ -134,6 +138,40 @@ public class NetUtils {
         return cidrList.toArray(new String[0]);
     }
 
+	public static String getDefaultHostIp() {
+		NetworkInterface nic = null;
+		String pubNic = getDefaultEthDevice();
+		
+		if (pubNic == null) {
+			return null;
+		}
+		
+		try {
+			nic = NetworkInterface.getByName(pubNic);
+		} catch (final SocketException e) {
+			return null;
+		}
+		
+		String[] info = NetUtils.getNetworkParams(nic);
+		return info[0];
+	}
+	
+	public static String getDefaultEthDevice() {
+		String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
+		
+		if (defaultRoute == null) {
+			return null;
+		}
+		
+		String[] defaultRouteList = defaultRoute.split("\\s+");
+		
+		if (defaultRouteList.length != 8) {
+			return null;
+		}
+		
+		return defaultRouteList[7];
+	}
+    
     public static InetAddress getFirstNonLoopbackLocalInetAddress() {
         InetAddress[] addrs = getAllLocalInetAddresses();
         if (addrs != null) {
@@ -851,7 +889,7 @@ public class NetUtils {
 
     public static void main(String[] args) {
         configLog4j();
-
+        
         if (args.length == 0) {
             System.out.println("Must specify at least one parameter");
         }
