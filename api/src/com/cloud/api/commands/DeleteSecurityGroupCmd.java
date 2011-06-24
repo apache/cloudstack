@@ -53,10 +53,12 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
         }
         
         if (name != null) {
-            id = _responseGenerator.getSecurityGroupId(name, getEntityOwnerId());
-            if (id == null) {
+            Long groupId = _responseGenerator.getSecurityGroupId(name, getEntityOwnerId());
+            if (groupId == null) {
                 throw new InvalidParameterValueException("Unable to find security group by name " + name + " for the account id=" + getEntityOwnerId());
             }
+            
+            return groupId;
         }
         
         return id;

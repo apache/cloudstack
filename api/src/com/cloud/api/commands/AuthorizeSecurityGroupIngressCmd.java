@@ -120,10 +120,11 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
         }
         
         if (securityGroupName != null) {
-            securityGroupId = _responseGenerator.getSecurityGroupId(securityGroupName, getEntityOwnerId());
-            if (securityGroupId == null) {
+            Long groupId = _responseGenerator.getSecurityGroupId(securityGroupName, getEntityOwnerId());
+            if (groupId == null) {
                 throw new InvalidParameterValueException("Unable to find security group " + securityGroupName + " for account id=" + getEntityOwnerId());
             }
+            return groupId;
         }
         
         return securityGroupId;

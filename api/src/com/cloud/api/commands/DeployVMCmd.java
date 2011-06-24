@@ -147,21 +147,22 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     public List<Long> getSecurityGroupIdList() {
-        if (securityGroupIdList != null && securityGroupIdList != null) {
+        if (securityGroupIdList != null && securityGroupNameList != null) {
             throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
         }
         
        //transform group names to ids here
        if (securityGroupNameList != null) {
-            securityGroupIdList = new ArrayList<Long>();
+            List<Long> securityGroupIdListToReturn = new ArrayList<Long>();
             for (String groupName : securityGroupNameList) {
                 Long groupId = _responseGenerator.getSecurityGroupId(groupName, getEntityOwnerId());
                 if (groupId == null) {
                     throw new InvalidParameterValueException("Unable to find group by name " + groupName + " for account " + getEntityOwnerId());
                 } else {
-                    securityGroupIdList.add(groupId);
+                    securityGroupIdListToReturn.add(groupId);
                 }
-            }    
+            }
+            return securityGroupIdListToReturn;
         }
        
        return securityGroupIdList;
