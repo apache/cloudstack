@@ -39,8 +39,8 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade226to227 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade226to227.class);
+public class Upgrade227to228 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade227to228.class);
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
@@ -52,12 +52,12 @@ public class Upgrade226to227 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"2.2.5"};
+        return new String[] {"2.2.6, 2.2.7"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "2.2.6";
+        return "2.2.8";
     }
 
     @Override
@@ -67,9 +67,9 @@ public class Upgrade226to227 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-226to227.sql");
+        String script = Script.findScript("", "db/schema-227to228.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-226to227.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-227to228.sql");
         }
         
         return new File[] { new File(script) };
@@ -143,7 +143,7 @@ public class Upgrade226to227 implements DbUpgrade {
         keys.add("unique_name");
         indexes.put("network_offerings", keys);
 
-        s_logger.debug("Dropping keys that don't exist in 2.2.7 version of the DB...");
+        s_logger.debug("Dropping keys that don't exist in 2.2.8 version of the DB...");
 
         // drop indexes now
         for (String tableName : indexes.keySet()) {
