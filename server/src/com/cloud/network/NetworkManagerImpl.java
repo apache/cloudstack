@@ -100,8 +100,6 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.PasswordResetElement;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
-import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -199,8 +197,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     LoadBalancingRulesManager _lbMgr;
     @Inject
     UsageEventDao _usageEventDao;
-    @Inject
-    RemoteAccessVpnService _vpnMgr;
     @Inject
     PodVlanMapDao _podVlanMapDao;
     @Inject(adapter = NetworkGuru.class)
@@ -1432,18 +1428,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements() {
-        List<RemoteAccessVpnElement> elements = new ArrayList<RemoteAccessVpnElement>();
-        for (NetworkElement element : _networkElements) {
-            if (element instanceof RemoteAccessVpnElement) {
-                elements.add((RemoteAccessVpnElement) element);
-            }
-        }
-
-        return elements;
-    }
-
-    @Override
     public void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
@@ -2368,18 +2352,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
 
-        // apply vpn rules
-        List<? extends RemoteAccessVpn> vpnsToReapply = _vpnMgr.listRemoteAccessVpns(networkId);
-        if (vpnsToReapply != null) {
-            for (RemoteAccessVpn vpn : vpnsToReapply) {
-                // Start remote access vpn per ip
-                if (_vpnMgr.startRemoteAccessVpn(vpn.getServerAddressId()) == null) {
-                    s_logger.warn("Failed to reapply vpn rules as a part of network id=" + networkId + " restart");
-                    success = false;
-                }
-            }
-        }
-
         return success;
     }
 
@@ -2731,18 +2703,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         s_logger.debug("Revoking all LB rules as a part of public IP id=" + ipId + " release...");
         if (!_lbMgr.removeAllLoadBalanacersForIp(ipId, caller, userId)) {
             s_logger.warn("Unable to revoke all the load balancer rules for ip id=" + ipId + " as a part of ip release");
-            success = false;
-        }
-
-        // remote access vpn can be enabled only for static nat ip, so this part should never be executed under normal
-        // conditions
-        // only when ip address failed to be cleaned up as a part of account destroy and was marked as Releasing, this part of
-        // the code would be triggered
-        s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
-        try {
-            _vpnMgr.destroyRemoteAccessVpn(ipId);
-        } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
             success = false;
         }
 

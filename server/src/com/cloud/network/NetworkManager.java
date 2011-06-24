@@ -36,7 +36,6 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpn.PasswordResetElement;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -139,8 +138,6 @@ public interface NetworkManager extends NetworkService {
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
-
-    List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 

@@ -231,15 +231,6 @@ uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;1
 ### other commands
 listHypervisors=com.cloud.api.commands.ListHypervisorsCmd;15
 
-### VPN
-createRemoteAccessVpn=com.cloud.api.commands.CreateRemoteAccessVpnCmd;15
-deleteRemoteAccessVpn=com.cloud.api.commands.DeleteRemoteAccessVpnCmd;15
-listRemoteAccessVpns=com.cloud.api.commands.ListRemoteAccessVpnsCmd;15
-
-addVpnUser=com.cloud.api.commands.AddVpnUserCmd;15
-removeVpnUser=com.cloud.api.commands.RemoveVpnUserCmd;15
-listVpnUsers=com.cloud.api.commands.ListVpnUsersCmd;15
-
 #### network offering commands
 #### createNetworkOffering=com.cloud.api.commands.CreateNetworkOfferingCmd;1
 updateNetworkOffering=com.cloud.api.commands.UpdateNetworkOfferingCmd;1

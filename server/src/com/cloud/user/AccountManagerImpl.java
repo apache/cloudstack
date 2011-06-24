@@ -53,10 +53,9 @@ import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
@@ -71,22 +70,16 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.RemoteAccessVpnVO;
-import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -120,7 +113,6 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -184,12 +176,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private VirtualMachineManager _itMgr;
     @Inject
     private UsageEventDao _usageEventDao;
-    @Inject
-    private RemoteAccessVpnDao _remoteAccessVpnDao;
-    @Inject
-    private RemoteAccessVpnService _remoteAccessVpnMgr;
-    @Inject
-    private VpnUserDao _vpnUser;
     @Inject
     private DataCenterDao _dcDao;
 
@@ -1107,23 +1093,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                         accountCleanupNeeded = true;
                     }
                 }
-            }
-
-            // delete remote access vpns and associated users
-            List<RemoteAccessVpnVO> remoteAccessVpns = _remoteAccessVpnDao.findByAccount(accountId);
-            List<VpnUserVO> vpnUsers = _vpnUser.listByAccount(accountId);
-
-            for (VpnUserVO vpnUser : vpnUsers) {
-                _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername());
-            }
-
-            try {
-                for (RemoteAccessVpnVO vpn : remoteAccessVpns) {
-                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId());
-                }
-            } catch (ResourceUnavailableException ex) {
-                s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
-                accountCleanupNeeded = true;
             }
 
             // Cleanup security groups

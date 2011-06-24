@@ -42,7 +42,6 @@ import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
-import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageService;
@@ -53,8 +52,8 @@ import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.UserVmService;
 import com.cloud.vm.BareMetalVmService;
+import com.cloud.vm.UserVmService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
@@ -113,7 +112,6 @@ public abstract class BaseCmd {
     public static EntityManager _entityMgr;
     public static RulesService _rulesService;
     public static LoadBalancingRulesService _lbService;
-    public static RemoteAccessVpnService _ravService;
     public static BareMetalVmService _bareMetalVmService;
    
     
@@ -134,7 +132,6 @@ public abstract class BaseCmd {
         _entityMgr = locator.getManager(EntityManager.class);
         _rulesService = locator.getManager(RulesService.class);
         _lbService = locator.getManager(LoadBalancingRulesService.class);
-        _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
         _bareMetalVmService = locator.getManager(BareMetalVmService.class);
     }

@@ -543,9 +543,6 @@
       <fileset dir="${base.dir}/patches/systemvm/debian/config/" >
         <include name="**/*"/>
       </fileset>
-      <fileset dir="${base.dir}/patches/systemvm/debian/vpn/" >
-        <include name="**/*"/>
-      </fileset>
       <fileset dir="${base.dir}/patches/systemvm/debian/xe/" >
         <include name="**/*"/>
         <exclude name="**/xe-*" />
