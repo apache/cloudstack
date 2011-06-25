@@ -52,6 +52,13 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     
     @Override
 	public ClusterService getPeerService(String strPeer) throws RemoteException {
+    	try {
+    		init();
+    	} catch (ConfigurationException e) {
+    		s_logger.error("Unable to init ClusterServiceServletAdapter");
+    		throw new RemoteException("Unable to init ClusterServiceServletAdapter");
+    	}
+    	
     	String serviceUrl = getServiceEndpointName(strPeer);
     	if(serviceUrl == null)
     		return null;
@@ -61,6 +68,12 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     
     @Override
 	public String getServiceEndpointName(String strPeer) {
+    	try {
+    		init();
+    	} catch (ConfigurationException e) {
+    		s_logger.error("Unable to init ClusterServiceServletAdapter");
+    		return null;
+    	}
     	
     	long msid = Long.parseLong(strPeer);
     	
@@ -86,6 +99,33 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	_name = name;
     	
+    	init();
+    	return true;
+    }
+    
+    @Override
+    public String getName() {
+    	return _name;
+    }
+    
+    @Override
+    public boolean start() {
+    	_servletContainer = new ClusterServiceServletContainer();
+    	_servletContainer.start(new ClusterServiceServletHttpHandler(manager), _clusterServicePort);
+    	return true;
+    }
+    
+    @Override
+    public boolean stop() {
+    	if(_servletContainer != null)
+    		_servletContainer.stop();
+    	return true;
+    }
+    
+    private void init() throws ConfigurationException {
+    	if(_mshostDao != null)
+    		return;
+    	
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
         manager = locator.getManager(ClusterManager.class);
@@ -109,26 +149,5 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
         _clusterServicePort = NumbersUtil.parseInt(dbProps.getProperty("cluster.servlet.port"), DEFAULT_SERVICE_PORT);
         if(s_logger.isInfoEnabled())
         	s_logger.info("Cluster servlet port : " + _clusterServicePort);
-        
-    	return true;
-    }
-    
-    @Override
-    public String getName() {
-    	return _name;
-    }
-    
-    @Override
-    public boolean start() {
-    	_servletContainer = new ClusterServiceServletContainer();
-    	_servletContainer.start(new ClusterServiceServletHttpHandler(manager), _clusterServicePort);
-    	return true;
-    }
-    
-    @Override
-    public boolean stop() {
-    	if(_servletContainer != null)
-    		_servletContainer.stop();
-    	return true;
     }
 }
