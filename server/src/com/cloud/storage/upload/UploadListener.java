@@ -241,7 +241,7 @@ public class UploadListener implements Listener {
 	}
 
 	@Override
-	public void processConnect(HostVO agent, StartupCommand cmd) {		
+	public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {		
 		if (!(cmd instanceof StartupStorageCommand)) {
 	        return;
 	    }
@@ -446,10 +446,5 @@ public class UploadListener implements Listener {
 	public void setCurrState(Status uploadState) {
 		this.currState = getState(currState.toString());		
 	}
-	
-	@Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
 	
 }

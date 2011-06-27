@@ -65,7 +65,7 @@ public class ConsoleProxyListener implements Listener {
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd) {
+    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
         _proxyMgr.onAgentConnect(host, cmd);
     	
     	if (cmd instanceof StartupProxyCommand) {
@@ -89,8 +89,4 @@ public class ConsoleProxyListener implements Listener {
         return -1;
     }
     
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
 }

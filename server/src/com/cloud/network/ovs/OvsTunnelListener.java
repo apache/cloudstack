@@ -69,7 +69,7 @@ public class OvsTunnelListener implements Listener {
 	}
 
 	@Override
-	public void processConnect(HostVO host, StartupCommand cmd)
+	public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance)
 			throws ConnectionException {
 		if (host.getType() != Host.Type.Routing) {
 			return;
@@ -130,10 +130,5 @@ public class OvsTunnelListener implements Listener {
 		// TODO Auto-generated method stub
 		return true;
 	}
-	
-	@Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
 
 }

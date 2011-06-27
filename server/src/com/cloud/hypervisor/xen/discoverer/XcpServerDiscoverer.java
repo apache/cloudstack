@@ -492,7 +492,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
+    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand )) {
             return;
         }       
@@ -562,11 +562,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
-    }
-    
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
     }
     
 }

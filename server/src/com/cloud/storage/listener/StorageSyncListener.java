@@ -52,7 +52,7 @@ public class StorageSyncListener implements Listener {
     }
     
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd) {
+    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
     }
     
     @Override
@@ -79,11 +79,6 @@ public class StorageSyncListener implements Listener {
     @Override
     public int getTimeout() {
     	return -1;
-    }
-    
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
     }
     
 }

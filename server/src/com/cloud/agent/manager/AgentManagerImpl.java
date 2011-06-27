@@ -1097,16 +1097,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         long hostId = attache.getId();
         HostVO host = _hostDao.findById(hostId);
         for (Pair<Integer, Listener> monitor : _hostMonitors) {
-            //some listeneres don't have to be notified when host is connected as a part of rebalance process
-            boolean processConnect = (!forRebalance || (forRebalance && monitor.second().processConnectForRebalanceHost()));
-            if (s_logger.isDebugEnabled() && processConnect) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Sending Connect to listener: " + monitor.second().getClass().getSimpleName());
             }
             for (int i = 0; i < cmd.length; i++) {
                 try {
-                    if (processConnect) {
-                        monitor.second().processConnect(host, cmd[i]);
-                    }
+                    monitor.second().processConnect(host, cmd[i], forRebalance);
                 } catch (Exception e) {
                     if (e instanceof ConnectionException) {
                         ConnectionException ce = (ConnectionException)e;

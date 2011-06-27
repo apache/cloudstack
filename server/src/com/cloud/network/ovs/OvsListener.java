@@ -116,7 +116,7 @@ public class OvsListener implements Listener {
 	}
 
 	@Override
-	public void processConnect(HostVO host, StartupCommand cmd)
+	public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance)
 			throws ConnectionException {
 		if (host.getType() != Host.Type.Routing) {
 			return;
@@ -181,10 +181,4 @@ public class OvsListener implements Listener {
 	public boolean processTimeout(long agentId, long seq) {
 		return true;
 	}
-	
-	@Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
-
 }

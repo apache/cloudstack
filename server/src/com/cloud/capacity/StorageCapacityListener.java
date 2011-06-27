@@ -70,7 +70,7 @@ public class StorageCapacityListener implements Listener {
 
 
     @Override
-    public void processConnect(HostVO server, StartupCommand startup) throws ConnectionException {
+    public void processConnect(HostVO server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
         
         if (!(startup instanceof StartupStorageCommand)) {
             return;
@@ -122,11 +122,6 @@ public class StorageCapacityListener implements Listener {
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
-    }
-    
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
     }
 
 }

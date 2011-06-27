@@ -70,7 +70,7 @@ public class SecondaryStorageListener implements Listener {
     }
 
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd) {
+    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
         
         if ((cmd instanceof StartupStorageCommand) ) {
             StartupStorageCommand scmd = (StartupStorageCommand)cmd;
@@ -107,10 +107,5 @@ public class SecondaryStorageListener implements Listener {
     @Override
     public int getTimeout() {
     	return -1;
-    }
-    
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
     }
 }

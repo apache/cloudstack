@@ -71,7 +71,7 @@ public class ComputeCapacityListener implements Listener {
 
 
     @Override
-    public void processConnect(HostVO server, StartupCommand startup) throws ConnectionException {
+    public void processConnect(HostVO server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
         if (!(startup instanceof StartupRoutingCommand)) {
             return;
         }
@@ -191,9 +191,4 @@ public class ComputeCapacityListener implements Listener {
         return false;
     }
     
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
-
 }
