@@ -1518,6 +1518,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (volume == null) {
                     throw new CloudRuntimeException("Unable to find volume for Id " + volumeId);
                 }
+                accountId = volume.getAccountId();
+                
                 if (volume.getPoolId() == null) {
                     _templateDao.remove(templateId);
                     throw new CloudRuntimeException("Volume " + volumeId + " is empty, can't create template on it");
@@ -1531,7 +1533,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
                 pool = _storagePoolDao.findById(volume.getPoolId());
-                cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, volume.getAccountId(), command.getTemplateName(), uniqueName, volume.getPath(), vmName);
+                cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName);
 
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");
