@@ -958,7 +958,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         }
         final Status currentState = host.getStatus();
-        if (currentState == Status.Down || currentState == Status.Alert || currentState == Status.Removed || currentState == Status.PrepareForMaintenance) {
+        if (currentState == Status.Down || currentState == Status.Alert || currentState == Status.Removed) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Host " + hostId + " is already " + currentState.toString());
             }
