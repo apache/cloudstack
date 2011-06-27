@@ -43,7 +43,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @Param dcId data center Id.
      * @return DomainRouterVO
      */
-    public DomainRouterVO findBy(long accountId, long dcId);
+    public List<DomainRouterVO> findBy(long accountId, long dcId);
     
     /**
      * gets the DomainRouterVO by user id.
@@ -78,11 +78,11 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
 	 */
 	public List<DomainRouterVO> listByDomain(Long id);
 
-	DomainRouterVO findBy(long accountId, long dcId, Role role);
+	List<DomainRouterVO> findBy(long accountId, long dcId, Role role);
 	
-	DomainRouterVO findByNetwork(long networkId);
+	List<DomainRouterVO> findByNetwork(long networkId);
 
-	DomainRouterVO findByNetworkAndPod(long networkId, long podId);
+	List<DomainRouterVO> findByNetworkAndPod(long networkId, long podId);
 
     List<DomainRouterVO> listActive(long networkId);
 

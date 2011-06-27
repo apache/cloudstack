@@ -153,13 +153,13 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		long hostId = dest.getHost().getId();
 		long accountId = instance.getAccountId();
 		List<UserVmVO>vms = _userVmDao.listByAccountId(accountId);
-		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
+		List<DomainRouterVO> routers = _routerDao.findBy(accountId, instance.getDataCenterIdToDeployIn());
 		List<VMInstanceVO>ins = new ArrayList<VMInstanceVO>();
 		if (vms != null) {
 			ins.addAll(vms);
 		}
-		if (router != null) {
-			ins.add(router);
+		if (routers.size() != 0) {
+			ins.addAll(routers);
 		}
 		List<Pair<Long, Integer>>toHosts = new ArrayList<Pair<Long, Integer>>();
 		List<Pair<Long, Integer>>fromHosts = new ArrayList<Pair<Long, Integer>>();
@@ -284,9 +284,11 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
                 return;
             }
             
-            DomainRouterVO router = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn());
-            if (router.getHostId() == vm.getHostId()) {
-                return;
+            List<DomainRouterVO> routers = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn());
+            for (DomainRouterVO router : routers) {
+                if (router.getHostId() == vm.getHostId()) {
+                    return;
+                }
             }
         } else if (vm.getType() == VirtualMachine.Type.DomainRouter && userVms.size() != 0) {
                 return;

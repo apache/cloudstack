@@ -613,6 +613,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             Journal journal = start.second().getJournal();
 
             ExcludeList avoids = new ExcludeList();
+            if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
+                List<DomainRouterVO> routers = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn());
+                for (DomainRouterVO router : routers) {
+                    if (router.hostId != null) {
+                        avoids.addHost(router.hostId);
+                        s_logger.info("Router: try to avoid host " + router.hostId);
+                    }
+                }
+            }
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
                 // edit plan if this vm's ROOT volume is in READY state already

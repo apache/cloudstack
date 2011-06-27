@@ -894,6 +894,9 @@ CREATE TABLE `cloud`.`domain_router` (
   `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
   `guest_ip_address` char(40) COMMENT ' ip address in the guest network',   
   `network_id` bigint unsigned NOT NULL COMMENT 'network configuration that this domain router belongs to',
+  `is_redundant_router` int(1) unsigned NOT NULL COMMENT 'if in redundant router mode',
+  `priority` int(4) unsigned COMMENT 'priority of router in the redundant router mode',
+  `is_master` int(1) unsigned DEFAULT 0 COMMENT 'if the router is master in redundant router mode',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE

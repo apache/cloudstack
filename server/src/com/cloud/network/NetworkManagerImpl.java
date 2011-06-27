@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.Random;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -3021,7 +3022,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } while (result.split("\\.")[3].equals("1"));
         return result;
     }
-    
     
     protected String getZoneNetworkDomain(long zoneId) {
         return _dcDao.findById(zoneId).getDomain();

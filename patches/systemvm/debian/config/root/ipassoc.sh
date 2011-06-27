@@ -30,12 +30,12 @@ usage() {
   printf " %s -D  -l <public-ip-address>  -c <dev> [-f] \n" $(basename $0) >&2
 }
 
-
 add_nat_entry() {
   local pubIp=$1
   logger -t cloud "$(basename $0):Adding nat entry for ip $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
-  sudo ip link set $ethDev up
+  sudo ip link show $ethDev | grep "state DOWN" > /dev/null
+  local old_state=$?
   sudo ip addr add dev $ethDev $pubIp
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
@@ -43,16 +43,19 @@ add_nat_entry() {
   sudo iptables -A FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -A FORWARD -i eth0 -o $ethDev  -j ACCEPT
   sudo iptables -t nat -I POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
-  sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      logger -t cloud "$(basename $0):Failed adding nat entry for ip $pubIp on interface $ethDev"
      return 1
   fi
   logger -t cloud "$(basename $0):Added nat entry for ip $pubIp on interface $ethDev"
+  if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
+  then
+      sudo ip link set $ethDev up
+      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+  fi
 
   return 0
-   
 }
 
 del_nat_entry() {
@@ -79,10 +82,17 @@ add_an_ip () {
   local pubIp=$1
   logger -t cloud "$(basename $0):Adding ip $pubIp on interface $ethDev"
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  sudo ip link show $ethDev | grep "state DOWN" > /dev/null
+  local old_state=$?
 
-  sudo ip link set $ethDev up
   sudo ip addr add dev $ethDev $pubIp ;
-  sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+
+  if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
+  then
+      sudo ip link set $ethDev up
+      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+  fi
+
   return $?
    
 }
@@ -126,6 +136,24 @@ lflag=
 fflag=
 cflag=
 op=""
+
+is_master=0
+is_redundant=0
+if_keep_state=0
+sudo ls /root/keepalived.log > /dev/null 2>&1
+if [ $? -eq 0 ]
+then
+    is_redundant=1
+    sudo /root/checkrouter.sh|grep "Status: MASTER" > /dev/null 2>&1 
+    if [ $? -eq 0 ]
+    then
+        is_master=1
+    fi
+fi
+if [ $is_redundant -eq 1 -a $is_master -ne 1 ]
+then
+    if_keep_state=1
+fi
 
 while getopts 'fADa:l:c:' OPTION
 do
