@@ -156,6 +156,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -1398,7 +1399,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            sourceTemplateId = template.getId();
+            if (template == null && volume.getVolumeType() == Type.ROOT){ //vm created out of blank template
+            	UserVm userVm = ApiDBUtils.findUserVmById(volume.getInstanceId());
+            	sourceTemplateId = userVm.getIsoId();
+            }
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue, bitsValue, accountId,
                 null, description, passwordEnabledValue, guestOS.getId(), true, hyperType);
