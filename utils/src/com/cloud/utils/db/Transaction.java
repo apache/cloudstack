@@ -27,6 +27,7 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -43,6 +44,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.mgmt.JmxUtil;
 
 /**
  * Transaction abstracts away the Connection object in JDBC.  It allows the
@@ -119,6 +121,12 @@ public class Transaction {
         tls.set(txn);
         
         txn.takeOver(name, true);
+        try {
+            s_logger.debug("Registering txn" + System.identityHashCode(txn));
+            JmxUtil.registerMBean("Transaction", "txn" + System.identityHashCode(txn), new TransactionMBeanImpl(txn));
+        } catch (Exception e) {
+            s_logger.error("Unable to register MBean", e);
+        }
         return txn;
     }
     
@@ -128,12 +136,14 @@ public class Transaction {
     
     public static Transaction open(final String name, final short databaseId, final boolean forceDbChange) {
         Transaction txn = tls.get();
+        boolean isNew = false;
         if (txn == null) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Creating the transaction: " + name);
             }
             txn = new Transaction(name, false, databaseId);
             tls.set(txn);
+            isNew = true;
         } else if (forceDbChange) {
             final short currentDbId = txn.getDatabaseId();
             if (currentDbId != databaseId) {
@@ -142,11 +152,19 @@ public class Transaction {
 
                 txn = new Transaction(name, false, databaseId);
                 tls.set(txn);
+                isNew = true;
             }
         }
 
         txn.takeOver(name, false);
-
+        if (isNew) {
+            try {
+                s_logger.debug("Registering txn" + System.identityHashCode(txn));
+                JmxUtil.registerMBean("Transaction", "txn" + System.identityHashCode(txn), new TransactionMBeanImpl(txn));
+            } catch (Exception e) {
+                s_logger.error("Unable to register MBean", e);
+            }
+        }
         return txn;
     }
     
@@ -579,6 +597,12 @@ public class Transaction {
         if(this._dbId == CONNECTED_DB) {
 	        tls.set(_prev);
 	        _prev = null;
+            try {
+                s_logger.debug("Unregistering txn" + System.identityHashCode(this));
+                JmxUtil.unregisterMBean("Transaction", "txn" + System.identityHashCode(this));
+            } catch (Exception e) {
+                s_logger.error("Unable to unregister MBean", e);
+            }
         }
     }
     
@@ -589,7 +613,7 @@ public class Transaction {
      * @param name
      * @return true if this close actually closes the connection.  false if not.
      */
-    protected boolean close(final String name) {
+    public boolean close(final String name) {
         if (_name == null) {    // Already cleaned up.
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Already cleaned up." + buildName());
@@ -879,6 +903,14 @@ public class Transaction {
         rollbackSavepoint(sp);
     }
     
+    public Connection getCurrentConnection() {
+        return _conn;
+    }
+    
+    public List<StackElement> getStack() {
+        return _stack;
+    }
+    
     protected Transaction() {
             _name = null;
             _conn = null;
@@ -886,6 +918,15 @@ public class Transaction {
             _txn = false;
             _dbId = -1;
             _lockMaster = null;
+    }
+    
+    @Override
+    protected void finalize() throws Throwable {
+        if (!(_conn == null && (_stack == null || _stack.size() == 0))) {
+            assert (false) : "Oh Alex oh alex...something is wrong with how we're doing this";
+            s_logger.error("Something went wrong that a transaction is orphaned before db connection is closed");
+            cleanup();
+        }
     }
     
     protected class StackElement {

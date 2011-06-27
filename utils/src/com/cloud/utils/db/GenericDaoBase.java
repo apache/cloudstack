@@ -164,7 +164,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") @DB(txn=false)
     public <J> GenericSearchBuilder<T, J> createSearchBuilder(Class<J> resultType) {
         final T entity = (T)_searchEnhancer.create();
         final Factory factory = (Factory)entity;
