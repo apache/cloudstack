@@ -2287,6 +2287,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (networkOffering.getAvailability() == Availability.Unavailable) {
                     throw new InvalidParameterValueException("Network id=" + network.getId() + " can't be used; corresponding network offering is " + Availability.Unavailable);
                 }
+                
+                //don't allow to use system networks 
+                if (networkOffering.isSystemOnly()) {
+                    throw new InvalidParameterValueException("Network id=" + networkId + " is system only and can't be used for vm deployment");
+                }
 
                 if (requiredOfferingId != null && network.getNetworkOfferingId() == requiredOfferingId.longValue()) {
                     requiredNetworkOfferingIsPresent = true;
