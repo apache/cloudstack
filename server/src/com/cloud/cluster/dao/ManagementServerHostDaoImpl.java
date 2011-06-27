@@ -33,8 +33,6 @@ import com.cloud.cluster.ClusterInvalidSessionException;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -92,9 +90,10 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             int count = pstmt.executeUpdate();
             conn.commit();
             
-            if(count < 1)
-            	throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
-        } catch (SQLException e) { 
+            if(count < 1) {
+                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+            }
+        } catch (SQLException e) {
         	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         } finally {
         	if(pstmt != null) {
@@ -117,7 +116,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             
             pstmt.executeUpdate();
             conn.commit();
-        } catch (SQLException e) { 
+        } catch (SQLException e) {
         	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         } finally {
         	if(pstmt != null) {
@@ -139,7 +138,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 		    
 		    return listIncludingRemovedBy(sc);
 		} finally {
-			txn.close();
+			txn.close("getActiveList");
 		}
 	}
 	
@@ -152,7 +151,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 		    
 		    return listIncludingRemovedBy(sc);
 		} finally {
-			txn.close();
+			txn.close("getInactiveList");
 		}
 	}
 	
@@ -162,8 +161,9 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         sc.setParameters("msid", msid);
 		
 		List<ManagementServerHostVO> l = listIncludingRemovedBy(sc);
-		if(l != null && l.size() > 0)
-			return l.get(0);
+		if(l != null && l.size() > 0) {
+            return l.get(0);
+        }
 		 
 		return null;
 	}
@@ -232,8 +232,9 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             int count = pstmt.executeUpdate();
             txn.commit();
 
-            if(count < 1)
-            	throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+            if(count < 1) {
+                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
+            }
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
             txn.rollback();
@@ -309,9 +310,10 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             int count = pstmt.executeUpdate();
             conn.commit();
             
-            if(count < 1)
+            if(count < 1) {
                 throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runId + " is no longer valid"));
-        } catch (SQLException e) { 
+            }
+        } catch (SQLException e) {
             throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         } finally {
             if(pstmt != null) {
