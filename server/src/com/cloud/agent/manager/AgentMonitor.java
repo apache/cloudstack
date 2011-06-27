@@ -72,12 +72,6 @@ public class AgentMonitor extends Thread implements Listener {
 	public void run() {
         s_logger.info("Agent Monitor is started.");
         
-//        _agentMgr.startDirectlyConnectedHosts();
-        try {
-            Thread.sleep(_pingTimeout * 2000);
-        } catch (InterruptedException e) {
-            s_logger.info("Woke me up so early!");
-        }
         while (!_stop) {
             try {
                 // check every 60 seconds

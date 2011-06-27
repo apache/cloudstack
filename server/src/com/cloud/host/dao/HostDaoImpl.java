@@ -137,7 +137,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         MsStatusSearch = createSearchBuilder();
         MsStatusSearch.and("ms", MsStatusSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
-        MsStatusSearch.and("statuses", MsStatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        MsStatusSearch.and("statuses", MsStatusSearch.entity().getStatus(), SearchCriteria.Op.NIN);
         MsStatusSearch.done();
 
         TypeDcSearch = createSearchBuilder();
@@ -224,6 +224,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.and("resource", UnmanagedDirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
+        UnmanagedDirectConnectSearch.and("statuses", UnmanagedDirectConnectSearch.entity().getStatus(), SearchCriteria.Op.NIN);
         /*
          * UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId",
          * UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
@@ -367,7 +368,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<HostVO> findDirectAgentToLoad(long lastPingSecondsAfter, Long limit) {
     	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
     	sc.setParameters("lastPinged", lastPingSecondsAfter);
-    	
+        sc.setParameters("statuses", Status.ErrorInMaintenance, Status.Maintenance, Status.PrepareForMaintenance);
         return search(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit));
     }
 
@@ -375,15 +376,24 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public void markHostsAsDisconnected(long msId) {
         SearchCriteria<HostVO> sc = MsStatusSearch.create();
         sc.setParameters("ms", msId);
+        sc.setParameters("statuses", Status.ErrorInMaintenance, Status.Maintenance, Status.PrepareForMaintenance);
 
         HostVO host = createForUpdate();
-        host.setManagementServerId(null);
         host.setLastPinged((System.currentTimeMillis() >> 10) - (10 * 60));
         host.setDisconnectedOn(new Date());
-
         UpdateBuilder ub = getUpdateBuilder(host);
         ub.set(host, "status", Status.Disconnected);
 
+        update(ub, sc, null);
+
+        sc = MsStatusSearch.create();
+        sc.setParameters("ms", msId);
+
+        host = createForUpdate();
+        host.setManagementServerId(null);
+        host.setLastPinged((System.currentTimeMillis() >> 10) - (10 * 60));
+        host.setDisconnectedOn(new Date());
+        ub = getUpdateBuilder(host);
         update(ub, sc, null);
     }
 
