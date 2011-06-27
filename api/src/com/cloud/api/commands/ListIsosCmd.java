@@ -126,6 +126,8 @@ public class ListIsosCmd extends BaseListCmd {
     }
     
     public boolean listInReadyState() {
+        return true;
+        /*
         Account account = UserContext.current().getCaller();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
@@ -134,6 +136,7 @@ public class ListIsosCmd extends BaseListCmd {
         boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
         || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
         return onlyReady;
+        */
     }
 
     /////////////////////////////////////////////////////
@@ -171,7 +174,7 @@ public class ListIsosCmd extends BaseListCmd {
             isAdmin = true;            
         }
 
-       ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isoZonePairSet, isAdmin, account, bootable, listInReadyState());
+       ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isoZonePairSet, isAdmin, account, bootable, true);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
