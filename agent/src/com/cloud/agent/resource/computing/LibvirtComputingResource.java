@@ -1008,11 +1008,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         OutputInterpreter.OneLineParser vlanIdParser = new  OutputInterpreter.OneLineParser();
         final Script cmd = new Script("/bin/bash", s_logger);
         cmd.add("-c");
-        cmd.add("vlanid=$(brctl show |grep " + brName + " |awk '{print $4}' | cut -d. -f 2);echo $vlanid");
-        if (cmd.execute(vlanIdParser) != null) {
+        cmd.add("vlanid=$(brctl show |grep " + brName + " |awk '{print $4}' | cut -s -d. -f 2);echo $vlanid");
+        String result = cmd.execute(vlanIdParser);
+        if (result != null) {
             return null;
         }
-        return vlanIdParser.getLine();
+        String vlanId = vlanIdParser.getLine();
+        if (vlanId.equalsIgnoreCase("")) {
+            return null;
+        } else {
+            return vlanId;
+        }
     }
     
     private void VifHotPlug(Connect conn, String vmName, String vlanId, String macAddr) throws InternalErrorException, LibvirtException {
