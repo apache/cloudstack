@@ -1270,6 +1270,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return _routerDao.persist(router);
     }
 
+    @Override
     public DomainRouterVO findById(long id) {
         return _routerDao.findById(id);
     }

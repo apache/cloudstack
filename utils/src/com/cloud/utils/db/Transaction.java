@@ -94,7 +94,7 @@ public class Transaction {
         Transaction txn = tls.get();
         assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
         
-        assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn.toString();
+        assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn;
         return txn;
     }
     
@@ -354,7 +354,7 @@ public class Transaction {
     	if (_stmt != null) {
 	        try {
 	            if (s_stmtLogger.isTraceEnabled()) {
-	                s_stmtLogger.trace("Closing: " + _stmt.toString());
+	                s_stmtLogger.trace("Closing: " + _stmt);
 	            }
 	        	try {
 	            	ResultSet rs = _stmt.getResultSet();
@@ -366,7 +366,7 @@ public class Transaction {
 	        	}
 	            _stmt.close();
 	        } catch (final SQLException e) {
-	            s_stmtLogger.trace("Unable to close statement: " + _stmt.toString());
+	            s_stmtLogger.trace("Unable to close statement: " + _stmt);
 	        } finally {
 	        	_stmt = null;
 	        }
@@ -721,7 +721,7 @@ public class Transaction {
                 } else if (item.type == STATEMENT) {
                     try {
                         if (s_stmtLogger.isTraceEnabled()) {
-                            s_stmtLogger.trace("Closing: " + ref.toString());
+                            s_stmtLogger.trace("Closing: " + ref);
                         }
                         Statement stmt = (Statement)ref;
                     	try {
@@ -734,7 +734,7 @@ public class Transaction {
                     	}
                         stmt.close();
                     } catch (final SQLException e) {
-                        s_stmtLogger.trace("Unable to close statement: " + item.toString());
+                        s_stmtLogger.trace("Unable to close statement: " + item);
                     }
                 } else if (item.type == ATTACHMENT) {
                         TransactionAttachment att = (TransactionAttachment)item.ref;
@@ -783,7 +783,7 @@ public class Transaction {
                 _conn.rollback(sp);
             }
         } catch (SQLException e) {
-            s_logger.warn("Unable to rollback to savepoint " + sp.toString());
+            s_logger.warn("Unable to rollback to savepoint " + sp);
         }
         
         if (!hasTxnInStack()) {
@@ -899,7 +899,7 @@ public class Transaction {
         
         @Override
         public String toString() {
-            return type + "-" + (ref != null ? ref.toString() : "");
+            return type + "-" + ref;
         }
     }
     
