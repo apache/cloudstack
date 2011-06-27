@@ -1781,8 +1781,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
+    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
+            return;
+        }
+        
+        if (forRebalance) {
+            s_logger.debug("Not processing listener " + this + " as connect happens on rebalance process");
             return;
         }
 
@@ -1865,8 +1870,4 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
     }
     
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return false;
-    }
 }

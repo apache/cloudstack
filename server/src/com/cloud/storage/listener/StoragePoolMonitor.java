@@ -63,7 +63,7 @@ public class StoragePoolMonitor implements Listener {
     }
     
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException {
+    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
     	if (cmd instanceof StartupRoutingCommand) {
     		StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
     		if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
@@ -107,8 +107,4 @@ public class StoragePoolMonitor implements Listener {
     	return -1;
     }
     
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
 }

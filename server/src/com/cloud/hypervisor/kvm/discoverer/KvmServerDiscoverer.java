@@ -94,7 +94,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	}
 
 	@Override
-	public void processConnect(HostVO host, StartupCommand cmd) {
+	public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
 	}
 
 	@Override
@@ -290,8 +290,4 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
     	return Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisor);
     }
     
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
 }

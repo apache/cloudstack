@@ -80,7 +80,7 @@ public class SynchronousListener implements Listener {
     }
     
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd) {
+    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
     }
 
     @Override
@@ -132,8 +132,4 @@ public class SynchronousListener implements Listener {
     	return -1;
     }
     
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
 }

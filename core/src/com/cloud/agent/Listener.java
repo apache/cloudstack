@@ -72,11 +72,12 @@ public interface Listener {
      * This method is called by AgentManager when an agent made a
      * connection to this server if the listener has
      * been registered for host events.
-     * @param agentId id of the agent
      * @param cmd command sent by the agent to the server on startup.
+     * @param forRebalance TODO
+     * @param agentId id of the agent
      * @throws ConnectionException if host has problems and needs to put into maintenance state.
      */
-    void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException;
+    void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException;
     
     /**
      * This method is called by AgentManager when an agent disconnects
@@ -119,12 +120,5 @@ public interface Listener {
      * @return true if processed; false if not.
      */
     boolean processTimeout(long agentId, long seq);
-    
-    
-    /**
-     * If set to false, processConnect wouldn't be called for the host
-     * 
-     * @return true when connect has to be processed when host connects as a part of rebalance process, false otherwise
-     */
-    boolean processConnectForRebalanceHost();
+  
 }

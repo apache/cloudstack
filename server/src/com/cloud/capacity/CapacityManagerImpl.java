@@ -653,7 +653,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException {
+    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         // TODO Auto-generated method stub
 
     }
@@ -680,11 +680,6 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     public boolean processTimeout(long agentId, long seq) {
         // TODO Auto-generated method stub
         return false;
-    }
-    
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
     }
 
 }

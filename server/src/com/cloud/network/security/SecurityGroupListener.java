@@ -114,7 +114,7 @@ public class SecurityGroupListener implements Listener {
 
 
 	@Override
-	public void processConnect(HostVO host, StartupCommand cmd) {
+	public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
 	    if(s_logger.isInfoEnabled())
             s_logger.info("Received a host startup notification");
         
@@ -152,10 +152,4 @@ public class SecurityGroupListener implements Listener {
 	public boolean processTimeout(long agentId, long seq) {
 		return true;
 	}
-	
-	@Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
-    }
-
 }

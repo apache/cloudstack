@@ -277,7 +277,7 @@ public class DownloadListener implements Listener {
 	}
 	
 	@Override
-	public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
+	public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 	    if (cmd instanceof StartupRoutingCommand) {
 	        downloadMonitor.handleSysTemplateDownload(agent);
 	    } else if ( cmd instanceof StartupStorageCommand) {
@@ -372,10 +372,5 @@ public class DownloadListener implements Listener {
     @Override
     public int getTimeout() {
     	return -1;
-    }
-    
-    @Override
-    public boolean processConnectForRebalanceHost() {
-        return true;
     }
 }

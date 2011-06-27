@@ -72,7 +72,7 @@ public class SshKeysDistriMonitor implements Listener {
 	    }
 	    
 	    @Override
-	    public void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException {
+	    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 	    	if (cmd instanceof StartupRoutingCommand) {
 	    		if (((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.KVM ||
 	    		    ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.XenServer) {
@@ -116,9 +116,4 @@ public class SshKeysDistriMonitor implements Listener {
 			// TODO Auto-generated method stub
 			return false;
 		}
-		
-		@Override
-	    public boolean processConnectForRebalanceHost() {
-	        return true;
-	    }
 }
