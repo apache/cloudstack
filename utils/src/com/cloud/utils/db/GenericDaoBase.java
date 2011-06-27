@@ -875,7 +875,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return lockRow(id, null);
     }
 
-    @Override
+    @Override @DB(txn=false)
     public T lockRow(ID id, Boolean lock) {
         return findById(id, false, lock);
     }
