@@ -450,7 +450,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return pcs;
     }
 
-    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags, String allocationState)
+    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance)
     throws ConnectionException {
         if (startup == null) {
             return null;
@@ -470,7 +470,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         attache.process(answers);
 
-        attache = notifyMonitorsOfConnection(attache, startup);
+        attache = notifyMonitorsOfConnection(attache, startup, forRebalance);
 
         return attache;
     }
@@ -1058,16 +1058,20 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return true;
     }
 
-    protected AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd) throws ConnectionException {
+    protected AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd, boolean forRebalance) throws ConnectionException {
         long hostId = attache.getId();
         HostVO host = _hostDao.findById(hostId);
         for (Pair<Integer, Listener> monitor : _hostMonitors) {
-            if (s_logger.isDebugEnabled()) {
+            //some listeneres don't have to be notified when host is connected as a part of rebalance process
+            boolean processConnect = (!forRebalance || (forRebalance && monitor.second().processConnectForRebalanceHost()));
+            if (s_logger.isDebugEnabled() && processConnect) {
                 s_logger.debug("Sending Connect to listener: " + monitor.second().getClass().getSimpleName());
             }
             for (int i = 0; i < cmd.length; i++) {
                 try {
-                    monitor.second().processConnect(host, cmd[i]);
+                    if (processConnect) {
+                        monitor.second().processConnect(host, cmd[i]);
+                    }
                 } catch (Exception e) {
                     if (e instanceof ConnectionException) {
                         ConnectionException ce = (ConnectionException)e;
@@ -1141,7 +1145,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @SuppressWarnings("rawtypes")
-    protected boolean loadDirectlyConnectedHost(HostVO host, boolean executeNow) {
+    protected boolean loadDirectlyConnectedHost(HostVO host, boolean forRebalance) {
         String resourceName = host.getResource();
         ServerResource resource = null;
         try {
@@ -1212,8 +1216,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return false;
         }
         
-        if (executeNow) {
-            AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null);
+        if (forRebalance) {
+            AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null, true);
             if (attache == null) {
                 return false;
             } else {
@@ -1226,7 +1230,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState) throws IllegalArgumentException {
+    public AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance) throws IllegalArgumentException {
         HostVO host = null;
         if (id != null) {
             synchronized (_loadingAgents) {
@@ -1263,7 +1267,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
             }
             try {
-                attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState);
+                attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState, forRebalance);
             } catch (IllegalArgumentException ex) {
                 s_logger.warn("Unable to connect due to ", ex);
                 throw ex;
@@ -1711,7 +1715,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
 
-        AgentAttache attache = simulateStart(null, resource, hostDetails, true, null, null);
+        AgentAttache attache = simulateStart(null, resource, hostDetails, true, null, null, false);
         return _hostDao.findById(attache.getId());
     }
 
@@ -1871,7 +1875,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         AgentAttache attache = createAttache(id, server, link);
 
-        attache = notifyMonitorsOfConnection(attache, startup);
+        attache = notifyMonitorsOfConnection(attache, startup, false);
 
         return attache;
     }
@@ -2141,7 +2145,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
-                simulateStart(id, resource, details, false, null, null);
+                simulateStart(id, resource, details, false, null, null, false);
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {

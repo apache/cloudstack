@@ -1864,4 +1864,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             this.guru = (VirtualMachineGuru<VMInstanceVO>) guru;
         }
     }
+    
+    @Override
+    public boolean processConnectForRebalanceHost() {
+        return false;
+    }
 }

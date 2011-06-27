@@ -681,5 +681,10 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
         // TODO Auto-generated method stub
         return false;
     }
+    
+    @Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
 
 }

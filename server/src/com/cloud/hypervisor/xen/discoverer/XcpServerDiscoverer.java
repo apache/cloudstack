@@ -596,4 +596,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         return false;
     }
     
+    @Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
+    
 }

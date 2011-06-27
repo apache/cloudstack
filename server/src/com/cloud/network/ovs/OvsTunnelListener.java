@@ -130,5 +130,10 @@ public class OvsTunnelListener implements Listener {
 		// TODO Auto-generated method stub
 		return true;
 	}
+	
+	@Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
 
 }

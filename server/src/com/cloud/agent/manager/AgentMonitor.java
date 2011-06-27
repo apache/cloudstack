@@ -203,4 +203,9 @@ public class AgentMonitor extends Thread implements Listener {
     public int getTimeout() {
     	return -1;
     }
+    
+    @Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
 }

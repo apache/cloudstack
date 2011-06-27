@@ -264,7 +264,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         break;
                     }
 
-                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, null, null);
+                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, null, null, false);
                     if (attache != null) {
                         hosts.add(_hostDao.findById(attache.getId()));
                     }
@@ -503,7 +503,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         }
                         return null;
                     }
-                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, hostTags, allocationState);
+                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, hostTags, allocationState, false);
                     if (attache != null) {
                         hosts.add(_hostDao.findById(attache.getId()));
                     }
