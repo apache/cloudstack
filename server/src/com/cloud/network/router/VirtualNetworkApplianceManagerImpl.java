@@ -703,59 +703,66 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
         
         Transaction txn = Transaction.currentTxn();
-        txn.start();
-        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
         }
         
-        router = _routerDao.findByNetwork(guestNetwork.getId());
-        if (router != null) {
-            return router;
-        }
-        
-        long id = _routerDao.getNextInSequence(Long.class, "id");
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating the router " + id);
-        }
-        PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
-
-        NicProfile defaultNic = new NicProfile();
-        defaultNic.setDefaultNic(true);
-        defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-        defaultNic.setGateway(sourceNatIp.getGateway());
-        defaultNic.setNetmask(sourceNatIp.getNetmask());
-        defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-        defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-        defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-        defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
-        defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
-        NicProfile gatewayNic = new NicProfile();
-        gatewayNic.setIp4Address(guestNetwork.getGateway());
-        gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
-        gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
-        gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
-        gatewayNic.setMode(guestNetwork.getMode());
-
-        String gatewayCidr = guestNetwork.getCidr();
-        gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
-        networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
-        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
-
-        router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
-        router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
-        // Creating stats entry for router
-        UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), plan.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
-        if (stats == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
+        try {
+            txn.start();
+            
+            router = _routerDao.findByNetwork(guestNetwork.getId());
+            if (router != null) {
+                return router;
             }
-            stats = new UserStatisticsVO(owner.getId(), plan.getDataCenterId(), null, router.getId(), router.getType().toString(), guestNetwork.getId());
-            _userStatsDao.persist(stats);
+            
+            long id = _routerDao.getNextInSequence(Long.class, "id");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating the router " + id);
+            }
+            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
+    
+            NicProfile defaultNic = new NicProfile();
+            defaultNic.setDefaultNic(true);
+            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
+            defaultNic.setGateway(sourceNatIp.getGateway());
+            defaultNic.setNetmask(sourceNatIp.getNetmask());
+            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            defaultNic.setDeviceId(2);
+            networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
+            NicProfile gatewayNic = new NicProfile();
+            gatewayNic.setIp4Address(guestNetwork.getGateway());
+            gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
+            gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
+            gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
+            gatewayNic.setMode(guestNetwork.getMode());
+    
+            String gatewayCidr = guestNetwork.getCidr();
+            gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
+            networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+    
+            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
+            router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+            // Creating stats entry for router
+            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), plan.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
+            if (stats == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
+                }
+                stats = new UserStatisticsVO(owner.getId(), plan.getDataCenterId(), null, router.getId(), router.getType().toString(), guestNetwork.getId());
+                _userStatsDao.persist(stats);
+            }
+            txn.commit();
+        } finally {
+            if (network != null) {
+                _networkDao.releaseFromLockTable(network.getId());
+            }
         }
-        txn.commit();
         return router;
     }
 
@@ -826,39 +833,46 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
 
         Transaction txn = Transaction.currentTxn();
-        txn.start();
-        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
         }
         
-        // In Basic zone and Guest network we have to start domR per pod, not per network
-        if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
-            router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
-            plan = new DataCenterDeployment(dcId, podId, null, null, null);
-        } else {
-            router = _routerDao.findByNetwork(guestNetwork.getId());
-            plan = new DataCenterDeployment(dcId);
-        }
-
-        if (router != null) {
-            return router;
-        }
+        try {
+            txn.start();
         
-        router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
-        router.setRole(Role.DHCP_USERDATA);
-        router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
-        // Creating stats entry for router
-        UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
-        if (stats == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
+            // In Basic zone and Guest network we have to start domR per pod, not per network
+            if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
+                router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
+                plan = new DataCenterDeployment(dcId, podId, null, null, null);
+            } else {
+                router = _routerDao.findByNetwork(guestNetwork.getId());
+                plan = new DataCenterDeployment(dcId);
             }
-            stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
-            _userStatsDao.persist(stats);
+    
+            if (router != null) {
+                return router;
+            }
+            
+            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
+            router.setRole(Role.DHCP_USERDATA);
+            router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+            // Creating stats entry for router
+            UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
+            if (stats == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: " + router.getId());
+                }
+                stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
+                _userStatsDao.persist(stats);
+            }
+            txn.commit();
+        } finally {
+            if (network != null) {
+                _networkDao.releaseFromLockTable(network.getId());
+            }
         }
-        txn.commit();
         return router;
     }
 
