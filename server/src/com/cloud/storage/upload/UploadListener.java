@@ -447,4 +447,9 @@ public class UploadListener implements Listener {
 		this.currState = getState(currState.toString());		
 	}
 	
+	@Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
+	
 }

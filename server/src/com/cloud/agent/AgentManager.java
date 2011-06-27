@@ -250,7 +250,7 @@ public interface AgentManager extends Manager {
 
     void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers);
 
-    AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState) throws IllegalArgumentException;
+    AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance) throws IllegalArgumentException;
 
     boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
 

@@ -289,4 +289,9 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
     	
     	return Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisor);
     }
+    
+    @Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
 }

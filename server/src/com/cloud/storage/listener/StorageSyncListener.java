@@ -81,4 +81,9 @@ public class StorageSyncListener implements Listener {
     	return -1;
     }
     
+    @Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
+    
 }

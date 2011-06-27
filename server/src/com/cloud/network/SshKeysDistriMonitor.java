@@ -116,4 +116,9 @@ public class SshKeysDistriMonitor implements Listener {
 			// TODO Auto-generated method stub
 			return false;
 		}
+		
+		@Override
+	    public boolean processConnectForRebalanceHost() {
+	        return true;
+	    }
 }

@@ -119,4 +119,12 @@ public interface Listener {
      * @return true if processed; false if not.
      */
     boolean processTimeout(long agentId, long seq);
+    
+    
+    /**
+     * If set to false, processConnect wouldn't be called for the host
+     * 
+     * @return true when connect has to be processed when host connects as a part of rebalance process, false otherwise
+     */
+    boolean processConnectForRebalanceHost();
 }

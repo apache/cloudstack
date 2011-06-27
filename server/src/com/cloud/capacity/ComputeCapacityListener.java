@@ -190,5 +190,10 @@ public class ComputeCapacityListener implements Listener {
     public boolean processTimeout(long agentId, long seq) {
         return false;
     }
+    
+    @Override
+    public boolean processConnectForRebalanceHost() {
+        return true;
+    }
 
 }
