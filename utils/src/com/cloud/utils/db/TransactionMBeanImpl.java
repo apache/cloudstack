@@ -27,10 +27,17 @@ import com.cloud.utils.db.Transaction.StackElement;
 
 public class TransactionMBeanImpl extends StandardMBean implements TransactionMBean {
     Transaction _txn = null;
+    String _threadName = null;
     
     public TransactionMBeanImpl(Transaction txn) {
         super(TransactionMBean.class, false);
         _txn = txn;
+        _threadName = Thread.currentThread().getName();
+    }
+    
+    @Override
+    public String getThreadName() {
+        return _threadName;
     }
     
     @Override
@@ -57,4 +64,5 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
     public String getName() {
         return _txn.getName();
     }
+    
 }

@@ -91,6 +91,10 @@ public class Transaction {
     private final Merovingian _lockMaster;
     
     private Transaction _prev = null;
+    
+    public Merovingian getLockMaster() {
+        return _lockMaster;
+    }
  
     public static Transaction currentTxn() {
         Transaction txn = tls.get();
