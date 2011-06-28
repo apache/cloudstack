@@ -581,6 +581,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     snapshot.setSwiftId(1L);
                     snapshot.setSwiftName(backedUpSnapshotUuid);
                 } else {
+                    snapshot.setSecHostId(secHost.getId());
                     snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
                 }
                 if (answer.isFull()) {
@@ -1279,12 +1280,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // user
         Type snapshotType = getSnapshotType(policyId);
         HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
-        HostVO ssHost  = _hostDao.findSecondaryStorageHost(volume.getDataCenterId());
-        if( ssHost == null ) {
-            throw new CloudRuntimeException("There is no secondary storage in this zone :" + volume.getDataCenterId());
-        }
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), null, snapshotName,
-                (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType, ssHost.getId());
+                (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
 
         if (snapshot != null) {
