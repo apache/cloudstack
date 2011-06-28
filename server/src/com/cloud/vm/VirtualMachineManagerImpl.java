@@ -1525,7 +1525,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
         
         if(trackExternalChange) {
-        	if(hostId != vm.getHostId()) {
+        	if(vm.getHostId() == null || hostId != vm.getHostId()) {
         		try {
         			stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
         		} catch (NoTransitionException e) {

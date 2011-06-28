@@ -119,4 +119,16 @@ public class StringUtils {
     	}
     	return sb.toString();
     }
+    
+    public static String getMaskedPasswordForDisplay(String password) {
+    	if(password == null || password.isEmpty())
+    		return "*";
+    	
+    	StringBuffer sb = new StringBuffer();
+    	sb.append(password.charAt(0));
+    	for(int i = 1; i < password.length(); i++)
+    		sb.append("*");
+    	
+    	return sb.toString();
+    }
 }
