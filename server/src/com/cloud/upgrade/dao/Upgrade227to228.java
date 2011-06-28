@@ -52,7 +52,7 @@ public class Upgrade227to228 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"2.2.6, 2.2.7"};
+        return new String[] { "2.2.6", "2.2.7"};
     }
 
     @Override
