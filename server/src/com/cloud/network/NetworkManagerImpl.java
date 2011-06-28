@@ -2089,7 +2089,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Make sure that there are no user vms in the network that are not Expunged/Error
-        List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId, null);
+        List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
         for (UserVmVO vm : userVms) {
             if (!(vm.getState() == VirtualMachine.State.Error || (vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null))) {
