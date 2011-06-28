@@ -1451,9 +1451,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new CloudRuntimeException("Unable to find Snapshot for Id " + snapshotId);
                 }
                 zoneId = snapshot.getDataCenterId();
-                secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+                secondaryStorageHost = _hostDao.findById(snapshot.getSecHostId());
                 if (secondaryStorageHost == null) {
-                    throw new CloudRuntimeException("Can not find the secondary storage for zoneId " + zoneId);
+                    throw new CloudRuntimeException("Secondary storage " + snapshot.getSecHostId() + " doesn't exist");
                 }
                 String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
