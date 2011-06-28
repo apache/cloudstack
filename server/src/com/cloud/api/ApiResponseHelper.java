@@ -1493,7 +1493,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 boolean foundTheSameTemplate = false;
                 for (TemplateResponse res : responses) {
-                    if (res.getId() == templateHostRef.getTemplateId()) {
+                    if (res.getId() == templateHostRef.getTemplateId() && res.getZoneId() == templateZonePair.second()) {
                         foundTheSameTemplate = true;
                         continue;
                     }
@@ -2079,6 +2079,23 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second(), readyOnly);
             for (VMTemplateHostVO isoHost : isoHosts) {
+            	
+                if (readyOnly) {
+                    if (isoHost.getDownloadState() != Status.DOWNLOADED) {
+                        continue;
+                    }
+                    boolean foundTheSameTemplate = false;
+                    for (TemplateResponse res : isoResponses) {
+                        if (res.getId() == isoHost.getTemplateId() && res.getZoneId() == isoZonePair.second()) {
+                            foundTheSameTemplate = true;
+                            continue;
+                        }
+                    }
+                    if (foundTheSameTemplate) {
+                        continue;
+                    }
+                }
+            	
                 TemplateResponse isoResponse = new TemplateResponse();
                 isoResponse.setId(iso.getId());
                 isoResponse.setName(iso.getName());
