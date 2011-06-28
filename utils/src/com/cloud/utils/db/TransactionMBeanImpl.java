@@ -17,52 +17,80 @@
  */
 package com.cloud.utils.db;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.StandardMBean;
 
 import com.cloud.utils.db.Transaction.StackElement;
 
 public class TransactionMBeanImpl extends StandardMBean implements TransactionMBean {
-    Transaction _txn = null;
-    String _threadName = null;
     
-    public TransactionMBeanImpl(Transaction txn) {
+    Map<Long, Transaction> _txns = new ConcurrentHashMap<Long, Transaction>();
+    
+    public TransactionMBeanImpl() {
         super(TransactionMBean.class, false);
-        _txn = txn;
-        _threadName = Thread.currentThread().getName();
+    }
+    
+    public void addTransaction(Transaction txn) {
+        _txns.put(txn.getId(), txn);
+    }
+    
+    public void removeTransaction(Transaction txn) {
+        _txns.remove(txn.getId());
     }
     
     @Override
-    public String getThreadName() {
-        return _threadName;
+    public int getTransactionCount() {
+        return _txns.size();
     }
     
     @Override
-    public List<String> getStack() {
-        ArrayList<StackElement> elements = new ArrayList<StackElement>(_txn.getStack());
-        ArrayList<String> stack = new ArrayList<String>(elements.size());
-        
-        for (StackElement element : elements) {
-            stack.add(element.toString());
+    public int getActiveTransactionCount() {
+        int count = 0;
+        for (Transaction txn : _txns.values()) {
+            if (txn.getStack().size() > 0) {
+                count++;
+            }
         }
-        
-        return stack;
+        return count;
     }
     
     @Override
-    public String getDbConnection() {
-        Connection conn = _txn.getCurrentConnection();
-        
-        return (conn != null) ? conn.toString() : "No DB connection";
+    public List<String> getTransactions() {
+        ArrayList<String> txns = new ArrayList<String>();
+        for (Transaction info : _txns.values()) {
+            txns.add(toString(info));
+        }
+        return txns;
     }
     
-
     @Override
-    public String getName() {
-        return _txn.getName();
+    public List<String> getActiveTransactions() {
+        ArrayList<String> txns = new ArrayList<String>();
+        for (Transaction txn : _txns.values()) {
+            if (txn.getStack().size() > 0 || txn.getCurrentConnection() != null) {
+                txns.add(toString(txn));
+            }
+        }
+        return txns;
     }
     
+    protected String toString(Transaction txn) {
+        StringBuilder buff = new StringBuilder("[Name=");
+        buff.append(txn.getName());
+        buff.append("; Creator=");
+        buff.append(txn.getCreator());
+        buff.append("; DB=");
+        buff.append(txn.getCurrentConnection());
+        buff.append("; Stack=");
+        for (StackElement element : txn.getStack()) {
+            buff.append(",").append(element.toString());
+        }
+        buff.append("]");
+        
+        return buff.toString();
+    }
 }

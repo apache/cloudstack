@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
 
@@ -77,8 +78,19 @@ public class Transaction {
     public static final short CLOUD_DB = 0;
     public static final short USAGE_DB = 1;
     public static final short CONNECTED_DB = -1;
+    
+    private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
+    static {
+        try {
+            JmxUtil.registerMBean("Transaction", "Transaction", s_mbean);
+        } catch (Exception e) {
+            s_logger.error("Unable to register mbean for transaction", e);
+        }
+    }
 
     private final LinkedList<StackElement> _stack;
+    private static AtomicLong s_id = new AtomicLong();
+    private long _id;
     
     private final LinkedList<Pair<String, Long>> _lockTimes = new LinkedList<Pair<String, Long>>();
 
@@ -89,6 +101,7 @@ public class Transaction {
     private long _txnTime;
     private Statement _stmt;
     private final Merovingian _lockMaster;
+    private String _creator;
     
     private Transaction _prev = null;
     
@@ -125,12 +138,8 @@ public class Transaction {
         tls.set(txn);
         
         txn.takeOver(name, true);
-        try {
-            s_logger.debug("Registering txn" + System.identityHashCode(txn));
-            JmxUtil.registerMBean("Transaction", "txn" + System.identityHashCode(txn), new TransactionMBeanImpl(txn));
-        } catch (Exception e) {
-            s_logger.error("Unable to register MBean", e);
-        }
+        s_logger.debug("Registering txn" + txn.getId());
+        s_mbean.addTransaction(txn);
         return txn;
     }
     
@@ -162,12 +171,8 @@ public class Transaction {
 
         txn.takeOver(name, false);
         if (isNew) {
-            try {
-                s_logger.debug("Registering txn" + System.identityHashCode(txn));
-                JmxUtil.registerMBean("Transaction", "txn" + System.identityHashCode(txn), new TransactionMBeanImpl(txn));
-            } catch (Exception e) {
-                s_logger.error("Unable to register MBean", e);
-            }
+            s_logger.debug("Registering txn" + txn.getId());
+            s_mbean.addTransaction(txn);
         }
         return txn;
     }
@@ -307,6 +312,16 @@ public class Transaction {
         _txn = false;
         _dbId = databaseId;
         _lockMaster = forLocking ? null : new Merovingian(_dbId);
+        _id = s_id.incrementAndGet();
+        _creator = Thread.currentThread().getName();
+    }
+    
+    public String getCreator() {
+        return _creator;
+    }
+    
+    public long getId() {
+        return _id;
     }
 
     public String getName() {
@@ -601,12 +616,8 @@ public class Transaction {
         if(this._dbId == CONNECTED_DB) {
 	        tls.set(_prev);
 	        _prev = null;
-            try {
-                s_logger.debug("Unregistering txn" + System.identityHashCode(this));
-                JmxUtil.unregisterMBean("Transaction", "txn" + System.identityHashCode(this));
-            } catch (Exception e) {
-                s_logger.error("Unable to unregister MBean", e);
-            }
+            s_logger.debug("Unregistering txn" + getId());
+	        s_mbean.removeTransaction(this);
         }
     }
     

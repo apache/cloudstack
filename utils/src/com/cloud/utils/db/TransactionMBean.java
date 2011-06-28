@@ -20,12 +20,12 @@ package com.cloud.utils.db;
 import java.util.List;
 
 public interface TransactionMBean {
-    List<String> getStack();
+    int getTransactionCount();
     
-    String getName();
+    int getActiveTransactionCount();
     
-    String getDbConnection();
+    List<String> getTransactions();
     
-    String getThreadName();
-
+    List<String> getActiveTransactions();
+    
 }
