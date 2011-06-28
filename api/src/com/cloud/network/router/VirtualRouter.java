@@ -29,4 +29,12 @@ public interface VirtualRouter extends VirtualMachine {
 		DHCP_USERDATA
 	}
     Role getRole();
+    boolean getIsRedundantRouter();
+    public enum RedundantState {
+        UNKNOWN,
+        MASTER,
+        BACKUP,
+        FAULT
+    }
+    RedundantState getRedundantState();
 }

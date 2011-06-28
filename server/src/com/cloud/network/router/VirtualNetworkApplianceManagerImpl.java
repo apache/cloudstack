@@ -115,6 +115,7 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -700,12 +701,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         public CheckRouterTask() {
         }
 
-        @Override
-        public void run() {
-            
-            final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
-            s_logger.debug("Found " + routers.size() + " running routers. ");
-
+        private void updateRoutersRedundantState(List<DomainRouterVO> routers) {
             for (DomainRouterVO router : routers) {
                 if (!router.getIsRedundantRouter()) {
                     continue;
@@ -721,15 +717,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
-                    if (answer != null) {
-                        if (answer.getResult()) {
-                            router.setIsMaster(answer.getIsMaster());
+                    RedundantState state = RedundantState.UNKNOWN;
+                    if (answer != null && answer.getResult()) {
+                        if (answer.getIsMaster()) {
+                            state = RedundantState.MASTER;
                         } else {
-                            router.setIsMaster(false);
+                            if (answer.getDetails() != null) {
+                                if (answer.getDetails().equals("Status: BACKUP")) {
+                                    state = RedundantState.BACKUP;
+                                } else if (answer.getDetails().startsWith("Status: FAULT")) {
+                                    state = RedundantState.FAULT;
+                                }
+                            }
                         }
-                    } else {
-                        router.setIsMaster(false);
                     }
+                    router.setRedundantState(state);
                     Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                     try {
                         txn.start();
@@ -743,6 +745,38 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     }
                 }
             }
+        }
+        
+        private void checkDuplicateMaster(List <DomainRouterVO> routers) {
+            Map<Long, DomainRouterVO> networkRouterMaps = new HashMap<Long, DomainRouterVO>();
+            for (DomainRouterVO router : routers) {
+                if (router.getRedundantState() == RedundantState.MASTER) {
+                    if (networkRouterMaps.containsKey(router.getNetworkId())) {
+                        DomainRouterVO dupRouter = networkRouterMaps.get(router.getNetworkId());
+                        String title = "More than one redundant virtual router is in MASTER state! Router " + router.getHostName() + " and router " + dupRouter.getHostName();
+                        String context =  "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: "
+                            + dupRouter.getHostName() + ", id: " + router.getId() + ") are both in MASTER state! If the problem persist, restart both of routers. ";
+                            
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, dupRouter.getDataCenterIdToDeployIn(), dupRouter.getPodIdToDeployIn(), title, context);
+                    } else {
+                        networkRouterMaps.put(router.getNetworkId(), router);
+                    } 
+                }
+            }
+        }
+        
+        @Override
+        public void run() {
+            
+            final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
+            s_logger.debug("Found " + routers.size() + " running routers. ");
+
+            updateRoutersRedundantState(routers);
+            
+            /* FIXME assumed the a pair of redundant routers managed by same mgmt server,
+             * then the update above can get the latest status */
+            checkDuplicateMaster(routers);
         }
     }
 
@@ -838,7 +872,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     priority = 100 - routers.size() * 20;
                 }
                 router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, priority, false, _offering.getOfferHA());
+                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, priority, RedundantState.UNKNOWN, _offering.getOfferHA());
                 router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
                 // Creating stats entry for router
                 UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), plan.getDataCenterId(), router.getNetworkId(), null, router.getId(), router.getType().toString());
@@ -952,7 +986,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false,_offering.getOfferHA());
+                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, RedundantState.UNKNOWN,_offering.getOfferHA());
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
             // Creating stats entry for router
