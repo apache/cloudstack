@@ -25,5 +25,7 @@ public interface TransactionMBean {
     String getName();
     
     String getDbConnection();
+    
+    String getThreadName();
 
 }
