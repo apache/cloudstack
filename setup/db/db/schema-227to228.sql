@@ -11,7 +11,7 @@ ALTER TABLE `cloud`.`service_offering` ADD COLUMN `vm_type` varchar(32) COMMENT 
 ALTER TABLE `cloud`.`storage_pool` MODIFY `host_address` varchar(255) NOT NULL;
 
 DROP TABLE IF EXISTS `cloud`.`certificate`;
-CREATE TABLE `cloud`.`keystore` (
+CREATE TABLE IF NOT EXISTS `cloud`.`keystore` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL COMMENT 'unique name for the certifiation',
   `certificate` text NOT NULL COMMENT 'the actual certificate being stored in the db',
@@ -21,7 +21,7 @@ CREATE TABLE `cloud`.`keystore` (
   UNIQUE(name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`cmd_exec_log` (
+CREATE TABLE IF NOT EXISTS `cloud`.`cmd_exec_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id of the system VM agent that command is sent to',
   `instance_id` bigint unsigned NOT NULL COMMENT 'instance id of the system VM that command is executed on',
@@ -34,7 +34,7 @@ CREATE TABLE `cloud`.`cmd_exec_log` (
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`network_tags` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
   `tag` varchar(255) NOT NULL COMMENT 'tag',
