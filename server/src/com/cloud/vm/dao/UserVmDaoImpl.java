@@ -248,7 +248,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
 
         SearchCriteria<UserVmVO> sc = UserVmSearch.create();
-        if (states != null) {
+        if (states != null && states.length != 0) {
             sc.setParameters("states", (Object[]) states);
         }
         sc.setJoinParameters("nicSearch", "networkId", networkId);
