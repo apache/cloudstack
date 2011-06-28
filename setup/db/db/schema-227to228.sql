@@ -62,6 +62,7 @@ DELETE FROM `cloud`.`configuration` where name='guest.netmask';
 
 ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `removed` datetime COMMENT 'date removed if not null';
 ALTER TABLE `cloud`.`host_pod_ref` MODIFY `name` varchar(255);
+ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `external_dhcp` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this Pod using external DHCP';
 
 ALTER TABLE `cloud`.`security_group` DROP COLUMN `account_name`;
 
