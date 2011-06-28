@@ -1403,7 +1403,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            if (template == null && volume.getVolumeType() == Type.ROOT){ //vm created out of blank template
+            if (template != null){
+            	sourceTemplateId = template.getId();
+            }else if (volume.getVolumeType() == Type.ROOT){ //vm created out of blank template
             	UserVm userVm = ApiDBUtils.findUserVmById(volume.getInstanceId());
             	sourceTemplateId = userVm.getIsoId();
             }
