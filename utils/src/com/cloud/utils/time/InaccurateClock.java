@@ -24,6 +24,7 @@ package com.cloud.utils.time;
 public class InaccurateClock extends Thread {
 	static final InaccurateClock s_timer = new InaccurateClock();
 	static {
+	    time = System.currentTimeMillis();
 		s_timer.start();
 	}
 	

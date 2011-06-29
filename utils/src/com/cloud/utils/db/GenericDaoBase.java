@@ -1268,7 +1268,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             while (en.hasMoreElements()) {
                 pstmt = txn.prepareAutoCloseStatement(ec.insertSql);
                 if (ec.targetClass == Date.class) {
-                    pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), (Date)en.nextElement()));
+                    pstmt.setString(1, DateUtil.getDateDisplayString(s_gmtTimeZone, (Date)en.nextElement()));
                 } else {
                     pstmt.setObject(1, en.nextElement());
                 }
@@ -1347,11 +1347,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 return;
             }
             if (attr.is(Attribute.Flag.Date)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), date));
+                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, date));
             } else if (attr.is(Attribute.Flag.TimeStamp)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), date));
+                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, date));
             } else if (attr.is(Attribute.Flag.Time)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), date));
+                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, date));
             }
         } else if (attr.field.getType() == Calendar.class) {
             final Calendar cal = (Calendar)value;
@@ -1360,11 +1360,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 return;
             }
             if (attr.is(Attribute.Flag.Date)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cal.getTime()));
+                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, cal.getTime()));
             } else if (attr.is(Attribute.Flag.TimeStamp)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cal.getTime()));
+                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, cal.getTime()));
             } else if (attr.is(Attribute.Flag.Time)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cal.getTime()));
+                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, cal.getTime()));
             }
         } else if (attr.field.getType().isEnum()) {
             final Enumerated enumerated = attr.field.getAnnotation(Enumerated.class);

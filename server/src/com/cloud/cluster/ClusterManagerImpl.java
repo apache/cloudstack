@@ -69,6 +69,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Merovingian2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -604,13 +605,14 @@ public class ClusterManagerImpl implements ClusterManager {
                     s_logger.error("Problem with the cluster heartbeat!", e);
                 }
             }
-        };  
+        };
     }
 
     private boolean isRootCauseConnectionRelated(Throwable e) {
         while (e != null) {
-            if (e instanceof com.mysql.jdbc.CommunicationsException || e instanceof com.mysql.jdbc.exceptions.jdbc4.CommunicationsException)
+            if (e instanceof com.mysql.jdbc.CommunicationsException || e instanceof com.mysql.jdbc.exceptions.jdbc4.CommunicationsException) {
                 return true;
+            }
 
             e = e.getCause();
         }
@@ -1029,6 +1031,9 @@ public class ClusterManagerImpl implements ClusterManager {
         
         
         _agentLBEnabled = Boolean.valueOf(configDao.getValue(Config.AgentLbEnable.key()));
+        
+        Merovingian2 m = Merovingian2.createLockMaster(this._msId);
+        m.clear();
 
         checkConflicts();
 

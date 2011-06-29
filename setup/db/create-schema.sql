@@ -312,7 +312,8 @@ CREATE TABLE `cloud`.`op_lock` (
   `thread` varchar(255) NOT NULL COMMENT 'Thread that acquired this lock',
   `acquired_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Time acquired',
   `waiters` int NOT NULL DEFAULT 0 COMMENT 'How many have waited for this',
-  PRIMARY KEY (`key`)
+  PRIMARY KEY (`key`),
+  INDEX `i_op_lock__mac_ip_thread`(`mac`, `ip`, `thread`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`configuration` (
