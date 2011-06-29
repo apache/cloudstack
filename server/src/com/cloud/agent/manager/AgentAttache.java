@@ -268,31 +268,36 @@ public abstract class AgentAttache {
 
         boolean processed = false;
 
-        Listener monitor = getListener(seq);
+        try {
+            Listener monitor = getListener(seq);
 
-        if (monitor == null) {
-            if ( answers[0] != null && answers[0].getResult() ) {
-                processed = true;
-            }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(seq, "Unable to find listener."));
-            }
-        } else {
-            processed = monitor.processAnswers(_id, seq, answers);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(log(seq, (processed ? "" : " did not ") + " processed "));
-            }
+            if (monitor == null) {
+                if ( answers[0] != null && answers[0].getResult() ) {
+                    processed = true;
+                }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(log(seq, "Unable to find listener."));
+                }
+            } else {
+                processed = monitor.processAnswers(_id, seq, answers);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(log(seq, (processed ? "" : " did not ") + " processed "));
+                }
 
-            if (!monitor.isRecurring()) {
-                unregisterListener(seq);
+                if (!monitor.isRecurring()) {
+                    unregisterListener(seq);
+                }
+            }
+            
+            _agentMgr.notifyAnswersToMonitors(_id, seq, answers); 
+            
+        } finally {
+            // we should always trigger next command execution, even in failure cases - otherwise in exception case all the remaining will be stuck in the sync queue forever
+            if (resp.executeInSequence()) {
+                sendNext(seq);
             }
         }
-
-        if (resp.executeInSequence()) {
-            sendNext(seq);
-        }
-
-        _agentMgr.notifyAnswersToMonitors(_id, seq, answers);
+        
         return processed;
     }
 
