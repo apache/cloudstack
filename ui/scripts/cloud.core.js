@@ -1877,6 +1877,31 @@ function validateCIDR(label, field, errMsgField, isOptional) {
 	return isValid;
 }
 
+function validateCIDRList(label, field, errMsgField, isOptional) {  	
+    if(validateString(label, field, errMsgField, isOptional) == false)
+        return;        
+    var isValid = true;
+    var errMsg = "";
+    var cidrList = field.val();    
+        
+    var array1 = cidrList.split(",");
+    for(var i=0; i < array1.length; i++) {
+        var value = array1[i];   
+        if(value!=null && value.length>0) {
+            myregexp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/;	   
+            var isMatch = myregexp.test(value);
+            if(!isMatch) { 
+    	        isValid = false;		
+    	    }
+    	}	
+    }       
+    if(isValid == false)
+    	errMsg = g_dictionary["label.example"] + ": 10.1.1.0/24,10.1.1.1/24,10.1.1.2/24";
+    
+	showError(isValid, field, errMsgField, errMsg);	
+	return isValid;
+}
+
 /*
 function validateFilename(label, field, errMsgField, isOptional) {  
     if(validateString(label, field, errMsgField, isOptional) == false)
