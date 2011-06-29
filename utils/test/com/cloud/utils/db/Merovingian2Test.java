@@ -31,12 +31,12 @@ public class Merovingian2Test extends TestCase {
     
     @Override @Before
     protected void setUp() throws Exception {
-        _lockMaster.clear();
+        _lockMaster.cleanupThisServer();
     }
     
     @Override @After
     protected void tearDown() throws Exception {
-        _lockMaster.clear();
+        _lockMaster.cleanupThisServer();
     }
 
     @Test

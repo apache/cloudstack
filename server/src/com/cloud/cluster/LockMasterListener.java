@@ -21,12 +21,16 @@ import java.util.List;
 
 import com.cloud.utils.db.Merovingian2;
 
+/**
+ * This listener is specifically written to cause cleanups in the Merovingian
+ * when a management server is down.
+ *
+ */
 public class LockMasterListener implements ClusterManagerListener {
     Merovingian2 _lockMaster;
     
     public LockMasterListener(long msId) {
         _lockMaster = Merovingian2.createLockMaster(msId);
-        _lockMaster.clear();
     }
 
     @Override
@@ -36,7 +40,7 @@ public class LockMasterListener implements ClusterManagerListener {
     @Override
     public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
         for (ManagementServerHostVO node : nodeList) {
-            _lockMaster.clear(node.getMsid());
+            _lockMaster.cleanupForServer(node.getMsid());
         }
     }
 
