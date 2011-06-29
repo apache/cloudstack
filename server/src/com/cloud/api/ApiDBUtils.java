@@ -431,12 +431,7 @@ public class ApiDBUtils {
         if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
             return _templateHostDao.listByTemplateId(templateId).get(0);
         } else {
-            HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-            if (secondaryStorageHost == null) {
-                return null;
-            } else {
-                return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-            }
+            return _storageMgr.getTemplateHostRef(zoneId, templateId);
         }
     }
 
