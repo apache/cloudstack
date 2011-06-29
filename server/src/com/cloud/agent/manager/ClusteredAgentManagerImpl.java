@@ -182,6 +182,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         }
         if (hosts != null && hosts.size() > 0) {
+            s_logger.debug("Found " + hosts.size() + " unmanaged direct hosts, processing connect for them...");
             for (HostVO host : hosts) {
                 try {
                     AgentAttache agentattache = findAttache(host.getId());
