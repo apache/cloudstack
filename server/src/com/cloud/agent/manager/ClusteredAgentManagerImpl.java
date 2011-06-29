@@ -170,13 +170,16 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingInterval * 3);
         List<HostVO> hosts = _hostDao.findDirectAgentToLoad(cutSeconds, _loadSize);
         if (hosts != null && hosts.size() == _loadSize) {
-            Long clusterId = hosts.get((int) (_loadSize - 1)).getClusterId();
-            if (clusterId != null) {
-                for (int i = (int) (_loadSize - 1); i > 0; i--) {
-                    if (hosts.get(i).getClusterId() == clusterId) {
-                        hosts.remove(i);
-                    } else {
-                        break;
+            //if list contains more than one cluster, exclude the last cluster from the list
+            if (hosts.size() > 1 && hosts.get(0).getClusterId().longValue() != hosts.get(hosts.size()-1).getClusterId().longValue()) {
+                Long clusterId = hosts.get((int) (_loadSize - 1)).getClusterId();
+                if (clusterId != null) {
+                    for (int i = (int) (_loadSize - 1); i > 0; i--) {
+                        if (hosts.get(i).getClusterId().longValue() == clusterId.longValue()) {
+                            hosts.remove(i);
+                        } else {
+                            break;
+                        }
                     }
                 }
             }
@@ -203,7 +206,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                     loadDirectlyConnectedHost(host, false);
                 } catch (Throwable e) {
-                    s_logger.debug(" can not load directly connected host " + host.getId() + "(" + host.getName() + ") due to " + e.toString());
+                    s_logger.warn(" can not load directly connected host " + host.getId() + "(" + host.getName() + ") due to ",e);
                 }
             }
         }
