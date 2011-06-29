@@ -280,8 +280,9 @@ function afterLoadIpJSP() {
     */
     
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
-		var isValid = true;			
-		isValid &= validateCIDR("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
+		var isValid = true;		
+	
+		isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
 				
 		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535, false); //required
 		isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
