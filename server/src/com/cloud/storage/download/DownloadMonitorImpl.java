@@ -727,6 +727,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	private void checksumSync(long hostId){
         SearchCriteria<VMTemplateHostVO> sc = ReadyTemplateStatesSearch.create();
         sc.setParameters("download_state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        sc.setParameters("host_id", hostId);
 
         List<VMTemplateHostVO> templateHostRefList = _vmTemplateHostDao.search(sc, null);
         s_logger.debug("Found " +templateHostRefList.size()+ " templates with no checksum. Will ask for computation");
