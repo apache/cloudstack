@@ -21,11 +21,11 @@ import java.util.List;
 
 import com.cloud.utils.db.Merovingian2;
 
-public class LockTableListener implements ClusterManagerListener {
+public class LockMasterListener implements ClusterManagerListener {
     Merovingian2 _lockMaster;
     
-    public LockTableListener() {
-        _lockMaster = Merovingian2.createLockMaster(ManagementServerNode.getManagementServerId());
+    public LockMasterListener(long msId) {
+        _lockMaster = Merovingian2.createLockMaster(msId);
         _lockMaster.clear();
     }
 
@@ -36,7 +36,7 @@ public class LockTableListener implements ClusterManagerListener {
     @Override
     public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
         for (ManagementServerHostVO node : nodeList) {
-            
+            _lockMaster.clear(node.getMsid());
         }
     }
 

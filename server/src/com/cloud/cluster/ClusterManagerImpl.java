@@ -69,7 +69,6 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Merovingian2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1031,9 +1030,8 @@ public class ClusterManagerImpl implements ClusterManager {
         
         
         _agentLBEnabled = Boolean.valueOf(configDao.getValue(Config.AgentLbEnable.key()));
-        
-        Merovingian2 m = Merovingian2.createLockMaster(this._msId);
-        m.clear();
+
+        this.registerListener(new LockMasterListener(_msId));
 
         checkConflicts();
 
