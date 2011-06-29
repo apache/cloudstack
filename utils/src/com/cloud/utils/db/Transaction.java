@@ -79,7 +79,6 @@ public class Transaction {
     public static final short USAGE_DB = 1;
     public static final short CONNECTED_DB = -1;
     
-    private static final Merovingian2 s_lockMaster = Merovingian2.getLockMaster();
     private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
     static {
@@ -197,7 +196,6 @@ public class Transaction {
     
     public static Connection getStandaloneConnectionWithException() throws SQLException {
         Connection conn = s_ds.getConnection();
-        conn.setAutoCommit(true);
         if (s_connLogger.isTraceEnabled()) {
             s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
         }
@@ -342,11 +340,19 @@ public class Transaction {
     }
 
     public boolean lock(final String name, final int timeoutSeconds) {
-    	return s_lockMaster.acquire(name, timeoutSeconds);
+        Merovingian2 lockMaster = Merovingian2.getLockMaster();
+        if (lockMaster == null) {
+            throw new CloudRuntimeException("There's no support for locking yet");
+        }
+    	return lockMaster.acquire(name, timeoutSeconds);
     }
 
     public boolean release(final String name) {
-    	return s_lockMaster.release(name);
+        Merovingian2 lockMaster = Merovingian2.getLockMaster();
+        if (lockMaster == null) {
+            throw new CloudRuntimeException("There's no support for locking yet");
+        }
+    	return lockMaster.release(name);
     }
 
     public void start() {
@@ -588,7 +594,10 @@ public class Transaction {
         closeConnection();
         
         _stack.clear();
-    	s_lockMaster.cleanupThread();
+        Merovingian2 lockMaster = Merovingian2.getLockMaster();
+        if (lockMaster != null) {
+            lockMaster.cleanupThread();
+        }
     }
 
     public void close() {

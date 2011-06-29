@@ -94,6 +94,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         Connection conn = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             while ((InaccurateClock.getTime() - startTime) < (timeInSeconds * 1000)) {
                 int count = owns(conn, key);
                 if (count == -1) {
@@ -227,6 +228,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         Connection conn = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             cleanup(conn, msId);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to clear the locks", e);
@@ -244,6 +246,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         PreparedStatement pstmt = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             pstmt = conn.prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
             pstmt.setLong(1, _msId);
             pstmt.executeUpdate();
@@ -267,6 +270,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         int threadId = System.identityHashCode(th);
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             pstmt = conn.prepareStatement(DECREMENT_SQL);
             pstmt.setString(1, key);
             pstmt.setLong(2, _msId);
@@ -330,6 +334,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         ResultSet rs = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             pstmt = conn.prepareStatement(sql);
             if (msId != null) {
                 pstmt.setLong(1, msId);
@@ -381,6 +386,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         Connection conn = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             return owns(conn, key);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to retrieve locks ", e);
@@ -400,6 +406,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         ResultSet rs = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             pstmt = conn.prepareStatement(SELECT_THREAD_LOCKS_SQL);
             pstmt.setLong(1, msId);
             pstmt.setString(2, threadName);
@@ -432,6 +439,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         PreparedStatement pstmt = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
             pstmt = conn.prepareStatement(CLEANUP_THREAD_LOCKS_SQL);
             pstmt.setLong(1, _msId);
             pstmt.setString(2, threadName);
