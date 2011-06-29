@@ -201,6 +201,7 @@ public class Transaction {
     
     public static Connection getStandaloneConnectionWithException() throws SQLException {
         Connection conn = s_ds.getConnection();
+        conn.setAutoCommit(true);
         if (s_connLogger.isTraceEnabled()) {
             s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
         }
@@ -209,13 +210,9 @@ public class Transaction {
     
     public static Connection getStandaloneConnection() {
     	try {
-            Connection conn = s_ds.getConnection();
-            if (s_connLogger.isTraceEnabled()) {
-                s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
-            }
-            return conn;
+    	    return getStandaloneConnectionWithException();
 		} catch (SQLException e) {
-			s_logger.warn("Unexpected exception: ", e);
+			s_logger.error("Unexpected exception: ", e);
 			return null;
 		}
     }
