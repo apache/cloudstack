@@ -980,13 +980,24 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if( hosts == null || hosts.size() == 0) {
             return null;
         }
-        for( HostVO host : hosts ) {
+        VMTemplateHostVO inProgress = null;
+        VMTemplateHostVO other = null;
+        for (HostVO host : hosts) {
             VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), tmpltId);
-            if (tmpltHost != null && !tmpltHost.getDestroyed() && tmpltHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                return tmpltHost;
+            if (tmpltHost != null && !tmpltHost.getDestroyed()) {
+                if (tmpltHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                    return tmpltHost;
+                } else if (tmpltHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
+                    inProgress = tmpltHost;
+                } else {
+                    other = tmpltHost;
+                }
             }
         }
-        return null;
+        if (inProgress != null) {
+            return inProgress;
+        }
+        return other;
     }
 
     @Override
