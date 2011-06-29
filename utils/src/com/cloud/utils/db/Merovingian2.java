@@ -218,7 +218,27 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     }
     
     public void clear() {
+        clear(_msId);
+    }
+    
+    public void clear(long msId) {
         Connection conn = null;
+        try {
+            conn = Transaction.getStandaloneConnectionWithException();
+            clear(conn, msId);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to clear the locks", e);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    protected void clear(Connection conn, long msId) {
         PreparedStatement pstmt = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
@@ -231,9 +251,6 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             try {
                 if (pstmt != null) {
                     pstmt.close();
-                }
-                if (conn != null) {
-                    conn.close();
                 }
             } catch (SQLException e) {
             }

@@ -19,37 +19,29 @@ package com.cloud.cluster;
 
 import java.util.List;
 
+import com.cloud.utils.db.Merovingian2;
+
 public class LockTableListener implements ClusterManagerListener {
+    Merovingian2 _lockMaster;
     
     public LockTableListener() {
-        
+        _lockMaster = Merovingian2.createLockMaster(ManagementServerNode.getManagementServerId());
+        _lockMaster.clear();
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.cluster.ClusterManagerListener#onManagementNodeJoined(java.util.List, long)
-     */
     @Override
     public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
-        // TODO Auto-generated method stub
-
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.cluster.ClusterManagerListener#onManagementNodeLeft(java.util.List, long)
-     */
     @Override
     public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
-        // TODO Auto-generated method stub
-
+        for (ManagementServerHostVO node : nodeList) {
+            
+        }
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.cluster.ClusterManagerListener#onManagementNodeIsolated()
-     */
     @Override
     public void onManagementNodeIsolated() {
-        // TODO Auto-generated method stub
-
     }
 
 }
