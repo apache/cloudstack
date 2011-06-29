@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -26,6 +28,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
@@ -183,12 +186,15 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
-        if (template != null) {
-            TemplateResponse response = _responseGenerator.createTemplateResponse(template, snapshotId, volumeId);
-            response.setResponseName(getCommandName());
+        if (template != null){
+            ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+            List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
+            response.setResponses(templateResponses);
+            response.setResponseName(getCommandName());              
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create template");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private template");
         }
+        
     }
 }

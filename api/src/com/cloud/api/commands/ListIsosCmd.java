@@ -18,6 +18,7 @@
 
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -126,8 +127,6 @@ public class ListIsosCmd extends BaseListCmd {
     }
     
     public boolean listInReadyState() {
-    	return true;
-/*
         Account account = UserContext.current().getCaller();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
@@ -136,7 +135,6 @@ public class ListIsosCmd extends BaseListCmd {
         boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
         || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
         return onlyReady;
-*/
     }
 
     /////////////////////////////////////////////////////
@@ -155,27 +153,15 @@ public class ListIsosCmd extends BaseListCmd {
     @Override
     public void execute(){
         Set<Pair<Long, Long>> isoZonePairSet = _mgr.listIsos(this);
-        TemplateFilter isoFilterObj = null;
+        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
-        try {
-            if (isoFilter == null) {
-                isoFilterObj = TemplateFilter.selfexecutable;
-            } else {
-                isoFilterObj = TemplateFilter.valueOf(isoFilter);
-            }
-        } catch (IllegalArgumentException e) {
-            // how did we get this far?  The request should've been rejected already before the response stage...
-            isoFilterObj = TemplateFilter.selfexecutable;
+        for (Pair<Long, Long> iso : isoZonePairSet) {
+            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
+            responses = _responseGenerator.createIsoResponses(iso.first(), iso.second(), listInReadyState());
+            templateResponses.addAll(responses);
         }
-
-        boolean isAdmin = false;
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
-            isAdmin = true;            
-        }
-
-       ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isoZonePairSet, isAdmin, account, bootable, listInReadyState());
+        response.setResponses(templateResponses);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 }

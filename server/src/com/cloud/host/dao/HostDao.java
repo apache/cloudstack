@@ -142,7 +142,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 
 	HostVO findConsoleProxyHost(String name, Type type);
 
-    List<HypervisorType> getAvailHypervisorInZone(long hostId, long zoneId);
+    List<HypervisorType> getAvailHypervisorInZone(Long hostId, Long zoneId);
 
     /**
      * Returns a list of host ids given the conditions.

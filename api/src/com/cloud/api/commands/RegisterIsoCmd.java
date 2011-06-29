@@ -17,6 +17,8 @@
  */
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -153,9 +155,11 @@ public class RegisterIsoCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceAllocationException{
         VirtualMachineTemplate template = _templateService.registerIso(this);
-            if (template != null) {
-            ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponses(template, zoneId);
-            response.setResponseName(getCommandName());
+        if (template != null) {
+            ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(template.getId(), zoneId, false);
+            response.setResponses(templateResponses);
+            response.setResponseName(getCommandName());              
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register iso");

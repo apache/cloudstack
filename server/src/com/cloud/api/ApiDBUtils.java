@@ -425,13 +425,17 @@ public class ApiDBUtils {
     public static VMTemplateVO findTemplateById(Long templateId) {
         return _templateDao.findByIdIncludingRemoved(templateId);
     }
-
+    
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
+        return findTemplateHostRef(templateId, zoneId, false);
+    }
+    
+    public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId, boolean readyOnly) {
         VMTemplateVO vmTemplate = findTemplateById(templateId);
         if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
             return _templateHostDao.listByTemplateId(templateId).get(0);
         } else {
-            return _storageMgr.getTemplateHostRef(zoneId, templateId);
+            return _storageMgr.getTemplateHostRef(zoneId, templateId, readyOnly);
         }
     }
 

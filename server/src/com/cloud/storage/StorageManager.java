@@ -205,5 +205,5 @@ public interface StorageManager extends Manager {
 
     StoragePoolVO findLocalStorageOnHost(long hostId);
 
-    VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId);
+    VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly);
 }

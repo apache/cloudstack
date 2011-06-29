@@ -1655,6 +1655,8 @@ public class ManagementServerImpl implements ManagementServer {
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr, boolean onlyReady) {
 
+        
+
         Account caller = UserContext.current().getCaller();
         VMTemplateVO template = null;
         if (templateId != null) {
@@ -1680,11 +1682,14 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
         }
-
+        List<HypervisorType> hypers = null;
+        if( ! isIso ) {
+            hypers =  _hostDao.getAvailHypervisorInZone(null, null);
+        }
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
 
         if (template == null) {
-            templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr);
+            templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, account, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr);
         } else {
             // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {

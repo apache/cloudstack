@@ -1447,225 +1447,209 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin, Account account, boolean readyOnly) {
-        List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(templateZonePair.first(), templateZonePair.second(), readyOnly);
-        VMTemplateVO template = ApiDBUtils.findTemplateById(templateZonePair.first());
+    public List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly) {
+        VirtualMachineTemplate template = findTemplateById(templateId);
+        List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
+        VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(templateId, zoneId, readyOnly);
+        if (templateHostRef == null) {
+            return responses;
+        }
 
-        for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
-           
-            if (readyOnly) {
-                if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-                    continue;
-                }
-                boolean foundTheSameTemplate = false;
-                for (TemplateResponse res : responses) {
-                    if (res.getId() == templateHostRef.getTemplateId() && res.getZoneId() == templateZonePair.second()) {
-                        foundTheSameTemplate = true;
-                        continue;
+        HostVO host = ApiDBUtils.findHostById(templateHostRef.getHostId());
+        if (host.getType() == Host.Type.LocalSecondaryStorage && host.getStatus() != com.cloud.host.Status.Up) {
+            return responses;
+        }
+
+        TemplateResponse templateResponse = new TemplateResponse();
+        templateResponse.setId(template.getId());
+        templateResponse.setName(template.getName());
+        templateResponse.setDisplayText(template.getDisplayText());
+        templateResponse.setPublic(template.isPublicTemplate());
+        templateResponse.setCreated(templateHostRef.getCreated());
+
+        templateResponse.setReady(templateHostRef.getDownloadState() == Status.DOWNLOADED);
+        templateResponse.setFeatured(template.isFeatured());
+        templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
+        templateResponse.setPasswordEnabled(template.getEnablePassword());
+        templateResponse.setCrossZones(template.isCrossZones());
+        templateResponse.setFormat(template.getFormat());
+        if (template.getTemplateType() != null) {
+            templateResponse.setTemplateType(template.getTemplateType().toString());
+        }
+        templateResponse.setHypervisor(template.getHypervisorType().toString());
+
+        GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+        if (os != null) {
+            templateResponse.setOsTypeId(os.getId());
+            templateResponse.setOsTypeName(os.getDisplayName());
+        } else {
+            templateResponse.setOsTypeId(-1L);
+            templateResponse.setOsTypeName("");
+        }
+
+        // add account ID and name
+        Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+        if (owner != null) {
+            templateResponse.setAccount(owner.getAccountName());
+            templateResponse.setDomainId(owner.getDomainId());
+            templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+        }
+        
+
+        
+        DataCenterVO datacenter = ApiDBUtils.findZoneById(zoneId);
+
+        // Add the zone ID
+        templateResponse.setZoneId(zoneId);
+        templateResponse.setZoneName(datacenter.getName());
+        
+        Account account = UserContext.current().getCaller();
+        boolean isAdmin = false;
+        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+            isAdmin = true;
+        }
+
+        // If the user is an Admin, add the template download status
+        if (isAdmin || account.getId() == template.getAccountId()) {
+            // add download status
+            if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
+                String templateStatus = "Processing";
+                if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                    if (templateHostRef.getDownloadPercent() == 100) {
+                        templateStatus = "Installing Template";
+                    } else {
+                        templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
                     }
+                } else {
+                    templateStatus = templateHostRef.getErrorString();
                 }
-                if (foundTheSameTemplate) {
-                    continue;
-                }
-            }
-            
-            HostVO host = ApiDBUtils.findHostById(templateHostRef.getHostId());
-            if (host.getType() == Host.Type.LocalSecondaryStorage && host.getStatus() != com.cloud.host.Status.Up) {
-                continue;
-            }
-            
-            TemplateResponse templateResponse = new TemplateResponse();
-            templateResponse.setId(template.getId());
-            templateResponse.setName(template.getName());
-            templateResponse.setDisplayText(template.getDisplayText());
-            templateResponse.setPublic(template.isPublicTemplate());
-            templateResponse.setCreated(templateHostRef.getCreated());
-
-            templateResponse.setReady(templateHostRef.getDownloadState() == Status.DOWNLOADED);
-            templateResponse.setFeatured(template.isFeatured());
-            templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
-            templateResponse.setPasswordEnabled(template.getEnablePassword());
-            templateResponse.setCrossZones(template.isCrossZones());
-            templateResponse.setFormat(template.getFormat());
-            if (template.getTemplateType() != null) {
-                templateResponse.setTemplateType(template.getTemplateType().toString());
-            }
-            templateResponse.setHypervisor(template.getHypervisorType().toString());
-
-            GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
-            if (os != null) {
-                templateResponse.setOsTypeId(os.getId());
-                templateResponse.setOsTypeName(os.getDisplayName());
+                templateResponse.setStatus(templateStatus);
+            } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                templateResponse.setStatus("Download Complete");
             } else {
-                templateResponse.setOsTypeId(-1L);
-                templateResponse.setOsTypeName("");
+                templateResponse.setStatus("Successfully Installed");
             }
+        }
 
-            // add account ID and name
-            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+        Long templateSize = templateHostRef.getSize();
+        if (templateSize > 0) {
+            templateResponse.setSize(templateSize);
+        }
+
+        templateResponse.setChecksum(template.getChecksum());
+        templateResponse.setSourceTemplateId(template.getSourceTemplateId());
+
+        templateResponse.setChecksum(template.getChecksum());
+
+        templateResponse.setObjectName("template");
+        responses.add(templateResponse);
+        return responses;
+    }
+
+ 
+    @Override
+    public List<TemplateResponse> createIsoResponses(long isoId, long zoneId, boolean readyOnly) {
+        VirtualMachineTemplate iso = findTemplateById(isoId);
+        List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
+        if ( iso.getTemplateType() == TemplateType.PERHOST) {
+            TemplateResponse isoResponse = new TemplateResponse();
+            isoResponse.setId(iso.getId());
+            isoResponse.setName(iso.getName());
+            isoResponse.setDisplayText(iso.getDisplayText());
+            isoResponse.setPublic(iso.isPublicTemplate());
+            isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
+            isoResponse.setReady(true);
+            isoResponse.setBootable(iso.isBootable());
+            isoResponse.setFeatured(iso.isFeatured());
+            isoResponse.setCrossZones(iso.isCrossZones());
+            isoResponse.setPublic(iso.isPublicTemplate());
+            isoResponse.setCreated(iso.getCreated());
+            isoResponse.setPasswordEnabled(false);
+            Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
             if (owner != null) {
-                templateResponse.setAccount(owner.getAccountName());
-                templateResponse.setDomainId(owner.getDomainId());
-                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+                isoResponse.setAccount(owner.getAccountName());
+                isoResponse.setDomainId(owner.getDomainId());
+                isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
             }
+            isoResponse.setObjectName("iso");
+            isoResponses.add(isoResponse);
 
-            templateResponse.setHostId(host.getId());
-            templateResponse.setHostName(host.getName());
-            
-            DataCenterVO datacenter = ApiDBUtils.findZoneById(host.getDataCenterId());
-            
+        } else {
+
+            VMTemplateHostVO isoHost = ApiDBUtils.findTemplateHostRef(isoId, zoneId, readyOnly);
+            TemplateResponse isoResponse = new TemplateResponse();
+            isoResponse.setId(iso.getId());
+            isoResponse.setName(iso.getName());
+            isoResponse.setDisplayText(iso.getDisplayText());
+            isoResponse.setPublic(iso.isPublicTemplate());
+            isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
+            isoResponse.setCreated(isoHost.getCreated());
+            isoResponse.setReady(isoHost.getDownloadState() == Status.DOWNLOADED);
+            isoResponse.setBootable(iso.isBootable());
+            isoResponse.setFeatured(iso.isFeatured());
+            isoResponse.setCrossZones(iso.isCrossZones());
+            isoResponse.setPublic(iso.isPublicTemplate());
+    
+            // TODO: implement
+            GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
+            if (os != null) {
+                isoResponse.setOsTypeId(os.getId());
+                isoResponse.setOsTypeName(os.getDisplayName());
+            } else {
+                isoResponse.setOsTypeId(-1L);
+                isoResponse.setOsTypeName("");
+            }
+    
+            // add account ID and name
+            Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
+            if (owner != null) {
+                isoResponse.setAccount(owner.getAccountName());
+                isoResponse.setDomainId(owner.getDomainId());
+                // TODO: implement
+                isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+            }
+    
+            Account account = UserContext.current().getCaller();
+            boolean isAdmin = false;
+            if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+                isAdmin = true;
+            }
             // Add the zone ID
-            templateResponse.setZoneId(host.getDataCenterId());
-            templateResponse.setZoneName(datacenter.getName());
-
+            DataCenterVO datacenter = ApiDBUtils.findZoneById(zoneId);
+            isoResponse.setZoneId(zoneId);
+            isoResponse.setZoneName(datacenter.getName());
+    
             // If the user is an admin, add the template download status
-            if (isAdmin || account.getId() == template.getAccountId()) {
+            if (isAdmin || account.getId() == iso.getAccountId()) {
                 // add download status
-                if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-                    String templateStatus = "Processing";
-                    if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                        if (templateHostRef.getDownloadPercent() == 100) {
-                            templateStatus = "Installing Template";
+                if (isoHost.getDownloadState() != Status.DOWNLOADED) {
+                    String isoStatus = "Processing";
+                    if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                        isoStatus = "Download Complete";
+                    } else if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                        if (isoHost.getDownloadPercent() == 100) {
+                            isoStatus = "Installing ISO";
                         } else {
-                            templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
+                            isoStatus = isoHost.getDownloadPercent() + "% Downloaded";
                         }
                     } else {
-                        templateStatus = templateHostRef.getErrorString();
+                        isoStatus = isoHost.getErrorString();
                     }
-                    templateResponse.setStatus(templateStatus);
-                } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                    templateResponse.setStatus("Download Complete");
+                    isoResponse.setStatus(isoStatus);
                 } else {
-                    templateResponse.setStatus("Successfully Installed");
+                    isoResponse.setStatus("Successfully Installed");
                 }
             }
-
-            Long templateSize = templateHostRef.getSize();
-            if (templateSize > 0) {
-                templateResponse.setSize(templateSize);
+    
+            Long isoSize = isoHost.getSize();
+            if (isoSize > 0) {
+                isoResponse.setSize(isoSize);
             }
-
-            templateResponse.setChecksum(template.getChecksum());
-            templateResponse.setSourceTemplateId(template.getSourceTemplateId());
-            
-            templateResponse.setChecksum(template.getChecksum());
-
-            templateResponse.setObjectName("template");
-            responses.add(templateResponse);
+    
+            isoResponse.setObjectName("iso");
+            isoResponses.add(isoResponse);
         }
-    }
-
-    @Override
-    public ListResponse<TemplateResponse> createTemplateResponse2(VirtualMachineTemplate template, Long zoneId) {
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-        List<DataCenterVO> zones = null;
-
-        if ((zoneId != null) && (zoneId != -1)) {
-            zones = new ArrayList<DataCenterVO>();
-            zones.add(ApiDBUtils.findZoneById(zoneId));
-        } else {
-            zones = ApiDBUtils.listZones();
-        }
-
-        for (DataCenterVO zone : zones) {
-            TemplateResponse templateResponse = new TemplateResponse();
-            templateResponse.setId(template.getId());
-            templateResponse.setName(template.getName());
-            templateResponse.setDisplayText(template.getDisplayText());
-            templateResponse.setPublic(template.isPublicTemplate());
-            templateResponse.setExtractable(template.isExtractable());
-            templateResponse.setCrossZones(template.isCrossZones());
-
-            VMTemplateHostVO isoHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), zone.getId());
-            if (isoHostRef != null) {
-                templateResponse.setCreated(isoHostRef.getCreated());
-                templateResponse.setReady(isoHostRef.getDownloadState() == Status.DOWNLOADED);
-            }
-
-            templateResponse.setFeatured(template.isFeatured());
-            templateResponse.setPasswordEnabled(template.getEnablePassword());
-            templateResponse.setFormat(template.getFormat());
-            templateResponse.setStatus("Processing");
-
-            GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
-            if (os != null) {
-                templateResponse.setOsTypeId(os.getId());
-                templateResponse.setOsTypeName(os.getDisplayName());
-            } else {
-                templateResponse.setOsTypeId(-1L);
-                templateResponse.setOsTypeName("");
-            }
-
-            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-            if (owner != null) {
-                templateResponse.setAccountId(owner.getId());
-                templateResponse.setAccount(owner.getAccountName());
-                templateResponse.setDomainId(owner.getDomainId());
-                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
-
-            templateResponse.setZoneId(zone.getId());
-            templateResponse.setZoneName(zone.getName());
-            templateResponse.setHypervisor(template.getHypervisorType().toString());
-            templateResponse.setObjectName("template");
-            templateResponse.setChecksum(template.getChecksum());
-            templateResponse.setSourceTemplateId(template.getSourceTemplateId());
-            
-            responses.add(templateResponse);
-        }
-        response.setResponses(responses);
-        return response;
-    }
-
-    @Override
-    public ListResponse<TemplateResponse> createIsoResponses(VirtualMachineTemplate template, Long zoneId) {
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-        List<DataCenterVO> zones = null;
-
-        if ((zoneId != null) && (zoneId != -1)) {
-            zones = new ArrayList<DataCenterVO>();
-            zones.add(ApiDBUtils.findZoneById(zoneId));
-        } else {
-            zones = ApiDBUtils.listZones();
-        }
-
-        for (DataCenterVO zone : zones) {
-            TemplateResponse templateResponse = new TemplateResponse();
-            templateResponse.setId(template.getId());
-            templateResponse.setName(template.getName());
-            templateResponse.setDisplayText(template.getDisplayText());
-            templateResponse.setPublic(template.isPublicTemplate());
-
-            VMTemplateHostVO isoHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), zone.getId());
-            if (isoHostRef != null) {
-                templateResponse.setCreated(isoHostRef.getCreated());
-                templateResponse.setReady(isoHostRef.getDownloadState() == Status.DOWNLOADED);
-            }
-
-            templateResponse.setFeatured(template.isFeatured());
-            templateResponse.setExtractable(template.isExtractable());
-            templateResponse.setBootable(template.isBootable());
-            templateResponse.setOsTypeId(template.getGuestOSId());
-            templateResponse.setOsTypeName(ApiDBUtils.findGuestOSById(template.getGuestOSId()).getDisplayName());
-
-            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-            if (owner != null) {
-                templateResponse.setAccountId(owner.getId());
-                templateResponse.setAccount(owner.getAccountName());
-                templateResponse.setDomainId(owner.getDomainId());
-                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
-
-            templateResponse.setZoneId(zone.getId());
-            templateResponse.setZoneName(zone.getName());
-            templateResponse.setObjectName("iso");
-
-            responses.add(templateResponse);
-        }
-        response.setResponses(responses);
-        return response;
+        return isoResponses;
     }
 
     @Override
@@ -1758,154 +1742,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long destZoneId) {
-        TemplateResponse templateResponse = new TemplateResponse();
-        if (template != null) {
-            templateResponse.setId(template.getId());
-            templateResponse.setName(template.getName());
-            templateResponse.setDisplayText(template.getDisplayText());
-            templateResponse.setPublic(template.isPublicTemplate());
-            templateResponse.setBootable(template.isBootable());
-            templateResponse.setFeatured(template.isFeatured());
-            templateResponse.setCrossZones(template.isCrossZones());
-            templateResponse.setCreated(template.getCreated());
-            templateResponse.setFormat(template.getFormat());
-            templateResponse.setPasswordEnabled(template.getEnablePassword());
-            templateResponse.setZoneId(destZoneId);
-            templateResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
-            templateResponse.setSourceTemplateId(template.getSourceTemplateId());
-            templateResponse.setChecksum(template.getChecksum());
-
-            GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
-            if (os != null) {
-                templateResponse.setOsTypeId(os.getId());
-                templateResponse.setOsTypeName(os.getDisplayName());
-            } else {
-                templateResponse.setOsTypeId(-1L);
-                templateResponse.setOsTypeName("");
-            }
-
-            // add account ID and name
-            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-            if (owner != null) {
-                templateResponse.setAccount(owner.getAccountName());
-                templateResponse.setDomainId(owner.getDomainId());
-                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
-
-            // set status
-            Account account = UserContext.current().getCaller();
-            boolean isAdmin = false;
-            if ((account == null) || BaseCmd.isAdmin(account.getType())) {
-                isAdmin = true;
-            }
-
-            // Return download status for admin users
-            VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), destZoneId);
-
-            if (isAdmin || template.getAccountId() == account.getId()) {
-                if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-                    String templateStatus = "Processing";
-                    if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                        if (templateHostRef.getDownloadPercent() == 100) {
-                            templateStatus = "Installing Template";
-                        } else {
-                            templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
-                        }
-                    } else {
-                        templateStatus = templateHostRef.getErrorString();
-                    }
-                    templateResponse.setStatus(templateStatus);
-                } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                    templateResponse.setStatus("Download Complete");
-                } else {
-                    templateResponse.setStatus("Successfully Installed");
-                }
-            }
-
-            templateResponse.setReady(templateHostRef != null && templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
-
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
-        }
-
-        templateResponse.setObjectName("template");
-        return templateResponse;
-    }
-
-    @Override
-    public TemplateResponse createIsoResponse3(VirtualMachineTemplate iso, Long destZoneId) {
-        TemplateResponse isoResponse = new TemplateResponse();
-        if (iso != null) {
-            isoResponse.setId(iso.getId());
-            isoResponse.setName(iso.getName());
-            isoResponse.setDisplayText(iso.getDisplayText());
-            isoResponse.setPublic(iso.isPublicTemplate());
-            isoResponse.setBootable(iso.isBootable());
-            isoResponse.setFeatured(iso.isFeatured());
-            isoResponse.setCrossZones(iso.isCrossZones());
-            isoResponse.setCreated(iso.getCreated());
-            isoResponse.setZoneId(destZoneId);
-            isoResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
-
-            GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
-            if (os != null) {
-                isoResponse.setOsTypeId(os.getId());
-                isoResponse.setOsTypeName(os.getDisplayName());
-            } else {
-                isoResponse.setOsTypeId(-1L);
-                isoResponse.setOsTypeName("");
-            }
-
-            // add account ID and name
-            Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
-            if (owner != null) {
-                isoResponse.setAccount(owner.getAccountName());
-                isoResponse.setDomainId(owner.getDomainId());
-                isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
-
-            // set status
-            Account account = UserContext.current().getCaller();
-            boolean isAdmin = false;
-            if ((account == null) || BaseCmd.isAdmin(account.getType())) {
-                isAdmin = true;
-            }
-
-            // Return download status for admin users
-            VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(iso.getId(), destZoneId);
-
-            if (isAdmin || iso.getAccountId() == account.getId()) {
-                if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-                    String templateStatus = "Processing";
-                    if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                        if (templateHostRef.getDownloadPercent() == 100) {
-                            templateStatus = "Installing Template";
-                        } else {
-                            templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
-                        }
-                    } else {
-                        templateStatus = templateHostRef.getErrorString();
-                    }
-                    isoResponse.setStatus(templateStatus);
-                } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                    isoResponse.setStatus("Download Complete");
-                } else {
-                    isoResponse.setStatus("Successfully Installed");
-                }
-            }
-
-            isoResponse.setReady(templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
-
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy iso");
-        }
-
-        isoResponse.setObjectName("iso");
-        return isoResponse;
-    }
-
-    @Override
     public String toSerializedString(CreateCmdResponse response, String responseType) {
         return ApiResponseSerializer.toSerializedString(response, responseType);
     }
@@ -1933,16 +1769,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long snapshotId, Long volumeId) {
-        TemplateResponse response = new TemplateResponse();
-        response.setId(template.getId());
-        response.setName(template.getName());
-        response.setDisplayText(template.getDisplayText());
-        response.setPublic(template.isPublicTemplate());
-        response.setPasswordEnabled(template.getEnablePassword());
-        response.setCrossZones(template.isCrossZones());
-        response.setChecksum(template.getChecksum());
-
+    public List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
+        Long zoneId = null;
         VolumeVO volume = null;
         if (snapshotId != null) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
@@ -1950,38 +1778,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             volume = findVolumeById(volumeId);
         }
-
-        VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), volume.getDataCenterId());
-        response.setCreated(templateHostRef.getCreated());
-        response.setReady(templateHostRef != null && templateHostRef.getDownloadState() == Status.DOWNLOADED);
-
-        GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
-        if (os != null) {
-            response.setOsTypeId(os.getId());
-            response.setOsTypeName(os.getDisplayName());
-        } else {
-            response.setOsTypeId(-1L);
-            response.setOsTypeName("");
-        }
-
-        Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-        if (owner != null) {
-            response.setAccount(owner.getAccountName());
-            response.setDomainId(owner.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-        }
-
-        DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
-        if (zone != null) {
-            response.setZoneId(zone.getId());
-            response.setZoneName(zone.getName());
-        }
-
-        response.setSourceTemplateId(template.getSourceTemplateId());
-        
-        response.setObjectName("template");
-        return response;
-
+        return createTemplateResponses(templateId, volume.getDataCenterId(), readyOnly);
     }
 
     @Override
@@ -2006,137 +1803,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return responseEvent;
     }
 
-    @Override
-    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long, Long>> isoZonePairSet, boolean isAdmin, Account account, Boolean isBootable, boolean readyOnly) {
-
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
-
-        for (Pair<Long, Long> isoZonePair : isoZonePairSet) {
-            VMTemplateVO iso = ApiDBUtils.findTemplateById(isoZonePair.first());
-            if ((isBootable == null || !isBootable) && iso.getTemplateType() == TemplateType.PERHOST) {
-                TemplateResponse isoResponse = new TemplateResponse();
-                isoResponse.setId(iso.getId());
-                isoResponse.setName(iso.getName());
-                isoResponse.setDisplayText(iso.getDisplayText());
-                isoResponse.setPublic(iso.isPublicTemplate());
-                isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
-                isoResponse.setReady(true);
-                isoResponse.setBootable(iso.isBootable());
-                isoResponse.setFeatured(iso.isFeatured());
-                isoResponse.setCrossZones(iso.isCrossZones());
-                isoResponse.setPublic(iso.isPublicTemplate());
-                isoResponse.setCreated(iso.getCreated());
-                isoResponse.setPasswordEnabled(false);
-                Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
-                if (owner != null) {
-                    isoResponse.setAccount(owner.getAccountName());
-                    isoResponse.setDomainId(owner.getDomainId());
-                    isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-                }
-                isoResponse.setObjectName("iso");
-                isoResponses.add(isoResponse);
-                response.setResponses(isoResponses);
-
-                if (isBootable != null && !isBootable) {
-                    continue; // fetch only non-bootable isos and return (for now only xen tools iso)
-                }
-            }
-
-            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second(), readyOnly);
-            for (VMTemplateHostVO isoHost : isoHosts) {
-            	
-                if (readyOnly) {
-                    if (isoHost.getDownloadState() != Status.DOWNLOADED) {
-                        continue;
-                    }
-                    boolean foundTheSameTemplate = false;
-                    for (TemplateResponse res : isoResponses) {
-                        if (res.getId() == isoHost.getTemplateId() && res.getZoneId() == isoZonePair.second()) {
-                            foundTheSameTemplate = true;
-                            continue;
-                        }
-                    }
-                    if (foundTheSameTemplate) {
-                        continue;
-                    }
-                }
-            	
-                TemplateResponse isoResponse = new TemplateResponse();
-                isoResponse.setId(iso.getId());
-                isoResponse.setName(iso.getName());
-                isoResponse.setDisplayText(iso.getDisplayText());
-                isoResponse.setPublic(iso.isPublicTemplate());
-                isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
-                isoResponse.setCreated(isoHost.getCreated());
-                isoResponse.setReady(isoHost.getDownloadState() == Status.DOWNLOADED);
-                isoResponse.setBootable(iso.isBootable());
-                isoResponse.setFeatured(iso.isFeatured());
-                isoResponse.setCrossZones(iso.isCrossZones());
-                isoResponse.setPublic(iso.isPublicTemplate());
-
-                // TODO: implement
-                GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
-                if (os != null) {
-                    isoResponse.setOsTypeId(os.getId());
-                    isoResponse.setOsTypeName(os.getDisplayName());
-                } else {
-                    isoResponse.setOsTypeId(-1L);
-                    isoResponse.setOsTypeName("");
-                }
-
-                // add account ID and name
-                Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
-                if (owner != null) {
-                    isoResponse.setAccount(owner.getAccountName());
-                    isoResponse.setDomainId(owner.getDomainId());
-                    // TODO: implement
-                    isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-                }
-
-                // Add the zone ID
-                // TODO: implement
-                HostVO host = ApiDBUtils.findHostById(isoHost.getHostId());
-                DataCenterVO datacenter = ApiDBUtils.findZoneById(host.getDataCenterId());
-                isoResponse.setZoneId(host.getDataCenterId());
-                isoResponse.setZoneName(datacenter.getName());
-
-                // If the user is an admin, add the template download status
-                if (isAdmin || account.getId() == iso.getAccountId()) {
-                    // add download status
-                    if (isoHost.getDownloadState() != Status.DOWNLOADED) {
-                        String isoStatus = "Processing";
-                        if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                            isoStatus = "Download Complete";
-                        } else if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                            if (isoHost.getDownloadPercent() == 100) {
-                                isoStatus = "Installing ISO";
-                            } else {
-                                isoStatus = isoHost.getDownloadPercent() + "% Downloaded";
-                            }
-                        } else {
-                            isoStatus = isoHost.getErrorString();
-                        }
-                        isoResponse.setStatus(isoStatus);
-                    } else {
-                        isoResponse.setStatus("Successfully Installed");
-                    }
-                }
-
-                Long isoSize = isoHost.getSize();
-                if (isoSize > 0) {
-                    isoResponse.setSize(isoSize);
-                }
-
-                isoResponse.setObjectName("iso");
-                isoResponses.add(isoResponse);
-            }
-        }
-
-        response.setResponses(isoResponses);
-
-        return response;
-    }
 
     private List<CapacityVO> sumCapacities(List<? extends Capacity> hostCapacities) {
         Map<String, Long> totalCapacityMap = new HashMap<String, Long>();

@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -26,6 +28,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -115,10 +118,16 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     public void execute() throws ResourceAllocationException{
         try {
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
-            TemplateResponse templateResponse = _responseGenerator.createTemplateResponse(template, destZoneId);
-            templateResponse.setResponseName(getCommandName());
             
-            this.setResponseObject(templateResponse);
+            if (template != null){
+                ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), getDestinationZoneId(), false);
+                response.setResponses(templateResponses);
+                response.setResponseName(getCommandName());              
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
+            }
         } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
