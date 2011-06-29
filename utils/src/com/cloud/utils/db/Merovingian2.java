@@ -42,16 +42,17 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     
     private static final String ACQUIRE_SQL = "INSERT INTO op_lock (op_lock.key, op_lock.mac, op_lock.ip, op_lock.thread, op_lock.acquired_on, waiters) VALUES (?, ?, ?, ?, ?, 1)";
     private static final String INCREMENT_SQL = "UPDATE op_lock SET waiters=waiters+1 where op_lock.key=? AND op_lock.mac=? AND op_lock.ip=? AND op_lock.thread=?";
-    private static final String SELECT_ALL_SQL = "SELECT op_lock.key, mac, ip, thread, acquired_on, waiters FROM op_lock";
-    private static final String INQUIRE_SQL = SELECT_ALL_SQL + " WHERE op_lock.key=?";
+    private static final String SELECT_SQL = "SELECT op_lock.key, mac, ip, thread, acquired_on, waiters FROM op_lock";
+    private static final String INQUIRE_SQL = SELECT_SQL + " WHERE op_lock.key=?";
     private static final String DECREMENT_SQL = "UPDATE op_lock SET waiters=waiters-1 where op_lock.key=? AND op_lock.mac=? AND op_lock.ip=? AND op_lock.thread=?";
     private static final String RELEASE_SQL = "DELETE FROM op_lock WHERE op_lock.key = ? AND op_lock.mac=? AND waiters=0";
-    private static final String CLEAR_SQL = "DELETE FROM op_lock WHERE op_lock.mac = ?";
-    private static final String SELECT_SQL = SELECT_ALL_SQL + " WHERE mac=?";
-    private static final String SELECT_LOCKS_SQL = SELECT_ALL_SQL + " WHERE mac=? AND ip=?";
+    private static final String CLEANUP_MGMT_LOCKS_SQL = "DELETE FROM op_lock WHERE op_lock.mac = ?";
+    private static final String SELECT_MGMT_LOCKS_SQL = SELECT_SQL + " WHERE mac=?";
+    private static final String SELECT_THREAD_LOCKS_SQL = SELECT_SQL + " WHERE mac=? AND ip=?";
     private static final String SELECT_OWNER_SQL = "SELECT mac, ip, thread FROM op_lock WHERE op_lock.key=?";
     private static final String DEADLOCK_DETECT_SQL = "SELECT l2.key FROM op_lock l2 WHERE l2.mac=? AND l2.ip=? AND l2.thread=? AND l2.key in " +
             "(SELECT l1.key from op_lock l1 WHERE l1.mac=? AND l1.ip=? AND l1.thread=?)";
+    private static final String CLEANUP_THREAD_LOCKS_SQL = "DELETE FROM op_lock WHERE mac=? AND ip=? AND thread=?";
     
     TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
     
@@ -67,6 +68,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     public static synchronized Merovingian2 createLockMaster(long msId) {
         assert s_instance == null : "No lock can serve two masters.  Either he will hate the one and love the other, or he will be devoted to the one and despise the other.";
         s_instance = new Merovingian2(msId);
+        s_instance.cleanupThisServer();
         try {
             JmxUtil.registerMBean("Locks", "Locks", s_instance);
         } catch (Exception e) {
@@ -217,15 +219,15 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
     }
     
-    public void clear() {
-        clear(_msId);
+    public void cleanupThisServer() {
+        cleanupForServer(_msId);
     }
     
-    public void clear(long msId) {
+    public void cleanupForServer(long msId) {
         Connection conn = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
-            clear(conn, msId);
+            cleanup(conn, msId);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to clear the locks", e);
         } finally {
@@ -238,11 +240,11 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
     }
     
-    protected void clear(Connection conn, long msId) {
+    protected void cleanup(Connection conn, long msId) {
         PreparedStatement pstmt = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
-            pstmt = conn.prepareStatement(CLEAR_SQL);
+            pstmt = conn.prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
             pstmt.setLong(1, _msId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -354,12 +356,12 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
 
     @Override
     public List<Map<String, String>> getAllLocks() {
-        return getLocks(SELECT_ALL_SQL, null);
+        return getLocks(SELECT_SQL, null);
     }
 
     @Override
     public List<Map<String, String>> getLocksAcquiredByThisServer() {
-        return getLocks(SELECT_SQL, _msId);
+        return getLocks(SELECT_MGMT_LOCKS_SQL, _msId);
     }
     
     public int owns(Connection conn, String key) {
@@ -398,7 +400,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         ResultSet rs = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
-            pstmt = conn.prepareStatement(SELECT_LOCKS_SQL);
+            pstmt = conn.prepareStatement(SELECT_THREAD_LOCKS_SQL);
             pstmt.setLong(1, msId);
             pstmt.setString(2, threadName);
             rs = pstmt.executeQuery();
@@ -420,4 +422,35 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
+    
+    public void cleanupThread() {
+        Thread th = Thread.currentThread();
+        String threadName = th.getName();
+        int threadId = System.identityHashCode(th);
+                
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = Transaction.getStandaloneConnectionWithException();
+            pstmt = conn.prepareStatement(CLEANUP_THREAD_LOCKS_SQL);
+            pstmt.setLong(1, _msId);
+            pstmt.setString(2, threadName);
+            pstmt.setInt(3, threadId);
+            int rows = pstmt.executeUpdate();
+            assert (rows == 0) : "Abandon hope, all ye who enter here....There were still " + rows + " locks not released when the transaction ended!";
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Can't clear locks " + pstmt, e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
 }

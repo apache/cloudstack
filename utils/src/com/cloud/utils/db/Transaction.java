@@ -79,6 +79,8 @@ public class Transaction {
     public static final short USAGE_DB = 1;
     public static final short CONNECTED_DB = -1;
     
+    private static final Merovingian2 s_lockMaster = Merovingian2.getLockMaster();
+    private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
     static {
         try {
@@ -89,7 +91,6 @@ public class Transaction {
     }
 
     private final LinkedList<StackElement> _stack;
-    private static AtomicLong s_id = new AtomicLong();
     private long _id;
     
     private final LinkedList<Pair<String, Long>> _lockTimes = new LinkedList<Pair<String, Long>>();
@@ -100,15 +101,10 @@ public class Transaction {
     private final short _dbId;
     private long _txnTime;
     private Statement _stmt;
-    private final Merovingian _lockMaster;
     private String _creator;
     
     private Transaction _prev = null;
     
-    public Merovingian getLockMaster() {
-        return _lockMaster;
-    }
- 
     public static Transaction currentTxn() {
         Transaction txn = tls.get();
         assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
@@ -308,7 +304,6 @@ public class Transaction {
         _stack = new LinkedList<StackElement>();
         _txn = false;
         _dbId = databaseId;
-        _lockMaster = forLocking ? null : new Merovingian(_dbId);
         _id = s_id.incrementAndGet();
         _creator = Thread.currentThread().getName();
     }
@@ -347,15 +342,11 @@ public class Transaction {
     }
 
     public boolean lock(final String name, final int timeoutSeconds) {
-    	assert (_lockMaster != null) : "Nah nah nah....you can't call lock if you are the lock!";
-    		
-    	return _lockMaster.acquire(name, timeoutSeconds);
+    	return s_lockMaster.acquire(name, timeoutSeconds);
     }
 
     public boolean release(final String name) {
-    	assert (_lockMaster != null) : "Nah nah nah....you can't call lock if you are the lock!";
-    	
-    	return _lockMaster.release(name);
+    	return s_lockMaster.release(name);
     }
 
     public void start() {
@@ -597,9 +588,7 @@ public class Transaction {
         closeConnection();
         
         _stack.clear();
-        if (_lockMaster != null) {
-        	_lockMaster.clear();
-        }
+    	s_lockMaster.cleanupThread();
     }
 
     public void close() {
@@ -929,7 +918,6 @@ public class Transaction {
             _stack = null;
             _txn = false;
             _dbId = -1;
-            _lockMaster = null;
     }
     
     @Override
