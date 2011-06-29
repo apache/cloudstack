@@ -18,6 +18,7 @@
 
 package com.cloud.capacity;
 
+import com.cloud.host.HostVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 
@@ -32,4 +33,6 @@ public interface CapacityManager extends Manager {
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
     
     boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor);
+
+	void updateCapacityForHost(HostVO host);
 }

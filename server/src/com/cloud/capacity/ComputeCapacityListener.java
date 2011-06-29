@@ -33,19 +33,23 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria;
 
 
 public class ComputeCapacityListener implements Listener {
     private static final Logger s_logger = Logger.getLogger(ComputeCapacityListener.class);
-    CapacityDao _capacityDao;
+    CapacityDao _capacityDao;   
+    CapacityManager _capacityMgr;
     float _cpuOverProvisioningFactor = 1.0f;
 
 
     public ComputeCapacityListener(CapacityDao _capacityDao,
+    		CapacityManager _capacityMgr,
             float _overProvisioningFactor) {
         super();
         this._capacityDao = _capacityDao;
+        this._capacityMgr = _capacityMgr;
         this._cpuOverProvisioningFactor = _overProvisioningFactor;
     }
 
@@ -76,7 +80,7 @@ public class ComputeCapacityListener implements Listener {
             return;
         }
 
-
+        _capacityMgr.updateCapacityForHost(server);
         SearchCriteria<CapacityVO> capacityCPU = _capacityDao
         .createSearchCriteria();
         capacityCPU.addAnd("hostOrPoolId", SearchCriteria.Op.EQ,
