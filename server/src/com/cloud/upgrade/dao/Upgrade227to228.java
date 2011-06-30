@@ -28,27 +28,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade227to228 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade227to228.class);
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
-    protected HostDao _hostDao;
-    @Inject
-    protected DataCenterDao _dcDao;
-    @Inject
-    protected DiskOfferingDao _diskOfferingDao;
 
     @Override
     public String[] getUpgradableVersionRange() {
