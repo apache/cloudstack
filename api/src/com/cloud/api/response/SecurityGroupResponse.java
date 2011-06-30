@@ -134,6 +134,6 @@ public class SecurityGroupResponse extends BaseResponse {
     
     @Override
     public boolean equals(Object r){
-        return id==((SecurityGroupResponse)r).id; 
+        return  (r instanceof SecurityGroupResponse) && id==((SecurityGroupResponse)r).id; 
     }
 }

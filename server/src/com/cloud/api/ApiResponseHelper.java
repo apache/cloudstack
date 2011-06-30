@@ -1047,24 +1047,22 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         for (UserVm userVm : userVms) {
-            List<UserVmResponse>  rsps = ApiDBUtils.listVmDetails(userVm, (((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)));
-            for (UserVmResponse userVmResponse: rsps){
-                // stats calculation
-                String cpuUsed = null;
-                VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
-                if (vmStats != null) {
-                    float cpuUtil = (float) vmStats.getCPUUtilization();
-                    cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                    userVmResponse.setCpuUsed(cpuUsed);
+            UserVmResponse  userVmResponse = ApiDBUtils.listVmDetails(userVm, (((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)));
+            // stats calculation
+            String cpuUsed = null;
+            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+            if (vmStats != null) {
+                float cpuUtil = (float) vmStats.getCPUUtilization();
+                cpuUsed = decimalFormat.format(cpuUtil) + "%";
+                userVmResponse.setCpuUsed(cpuUsed);
 
-                    Double networkKbRead = Double.valueOf(vmStats.getNetworkReadKBs());
-                    userVmResponse.setNetworkKbsRead(networkKbRead.longValue());
+                Double networkKbRead = Double.valueOf(vmStats.getNetworkReadKBs());
+                userVmResponse.setNetworkKbsRead(networkKbRead.longValue());
 
-                    Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
-                    userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
-                }
-                vmResponses.add(userVmResponse);
+                Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
+                userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
             }
+            vmResponses.add(userVmResponse);
         }
         return vmResponses;
     }

@@ -341,10 +341,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public List<UserVmResponse> listVmDetails(UserVm userVm, boolean show_host){
+    public UserVmResponse listVmDetails(UserVm userVm, boolean show_host){
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
-        List<UserVmResponse> result = new ArrayList<UserVmResponse>();
 
         try {
             String sql = VM_DETAILS;
@@ -409,7 +408,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                     userVmResponse.setRootDeviceType(rs.getString("volumes.volume_type"));
                     
                     is_data_center_security_group_enabled = rs.getBoolean("data_center.is_security_group_enabled");
-                    result.add(userVmResponse);
                 }
                 
                 //security_group.id, security_group.name, security_group.description, , data_center.is_security_group_enabled
@@ -449,7 +447,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             }
             userVmResponse.setSecurityGroupList(new ArrayList(securityGroupResponse));
             userVmResponse.setNics(new ArrayList(nicResponses));
-            return result;
+            return userVmResponse;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
         } catch (Throwable e) {
