@@ -36,38 +36,41 @@ function periodicallyCheckNonCompleteAsyncJob() {
 	                    } 
 	                    else {		                    
 	                        var label2 = g_nonCompleteAsyncJob[jobId];
-	                        delete g_nonCompleteAsyncJob[jobId];                        
-	                        var afterActionInfo;			                          			                                             
-	                        if (result.jobstatus == 1) { // Succeeded 	
-	                            afterActionInfo = (label2 + " - " + g_dictionary["label.succeeded"]);	                             
-	                        } 
-	                        else if (result.jobstatus == 2) { // Failed	
-	                            afterActionInfo = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);                                                     
-	                        }	                                            
-	                        
-	                        $("#dialog_action_complete")
-	                        .text(afterActionInfo)
-	                        .dialog("open");
+	                        delete g_nonCompleteAsyncJob[jobId];   
+	                        if(label2 != null) {
+		                        var afterActionInfo;			                          			                                             
+		                        if (result.jobstatus == 1) { // Succeeded 	
+		                            afterActionInfo = (label2 + " - " + g_dictionary["label.succeeded"]);	                             
+		                        } 
+		                        else if (result.jobstatus == 2) { // Failed	
+		                            afterActionInfo = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);                                                     
+		                        }	                                            
+		                        
+		                        $("#dialog_action_complete")
+		                        .text(afterActionInfo)
+		                        .dialog("open");
+	                        }
 	                    }
 	                },
 	                error: function(XMLHttpResponse) { 
 	                    var label2 = g_nonCompleteAsyncJob[jobId];
 	                    delete g_nonCompleteAsyncJob[jobId];   
-	                        
-	                    var errorMsg = "";
-	                    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {        
-	                        errorMsg = parseXMLHttpResponse(XMLHttpResponse);	
-	                    }        
-	                   
-	                    var afterActionInfo;
-	                    if(errorMsg.length > 0) 
-	                        afterActionInfo = label2 + " - " + g_dictionary["label.failed"] + " - " + errorMsg;	        
-	                    else
-	                        afterActionInfo = label2 + " - " + g_dictionary["label.failed"];
-	                    
-	                    $("#dialog_action_complete")
-	                    .text(afterActionInfo)
-	                    .dialog("open");				    
+	                    if(label2 != null) {
+		                    var errorMsg = "";
+		                    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {        
+		                        errorMsg = parseXMLHttpResponse(XMLHttpResponse);	
+		                    }        
+		                   
+		                    var afterActionInfo;
+		                    if(errorMsg.length > 0) 
+		                        afterActionInfo = label2 + " - " + g_dictionary["label.failed"] + " - " + errorMsg;	        
+		                    else
+		                        afterActionInfo = label2 + " - " + g_dictionary["label.failed"];
+		                    
+		                    $("#dialog_action_complete")
+		                    .text(afterActionInfo)
+		                    .dialog("open");	
+	                    }
 	                }
 	            });	           
 	        }
