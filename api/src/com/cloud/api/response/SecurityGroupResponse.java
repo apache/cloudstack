@@ -131,4 +131,9 @@ public class SecurityGroupResponse extends BaseResponse {
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }
+    
+    @Override
+    public boolean equals(Object r){
+        return id==((SecurityGroupResponse)r).id; 
+    }
 }
