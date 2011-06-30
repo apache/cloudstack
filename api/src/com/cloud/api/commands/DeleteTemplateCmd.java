@@ -31,6 +31,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(responseObject=SuccessResponse.class, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
 public class DeleteTemplateCmd extends BaseAsyncCmd {
@@ -104,6 +105,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Template Id: "+getId());
         boolean result = _templateService.deleteTemplate(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

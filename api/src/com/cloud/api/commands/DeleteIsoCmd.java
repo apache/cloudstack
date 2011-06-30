@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes an ISO file.", responseObject=SuccessResponse.class)
 public class DeleteIsoCmd extends BaseAsyncCmd {
@@ -102,6 +103,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
+    	UserContext.current().setEventDetails("ISO Id: "+getId());
         boolean result = _templateService.deleteIso(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

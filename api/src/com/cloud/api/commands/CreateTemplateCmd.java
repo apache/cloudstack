@@ -38,6 +38,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
         + "A template created from this command is automatically designated as a private template visible to the account that created it.")
@@ -185,6 +186,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
+        UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
         if (template != null){
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
