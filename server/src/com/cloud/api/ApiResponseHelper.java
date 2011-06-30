@@ -1405,7 +1405,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
  
     @Override
-    public List<TemplateResponse> createIsoResponses(long isoId, long zoneId, boolean readyOnly) {
+    public List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly) {
         VirtualMachineTemplate iso = findTemplateById(isoId);
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         if ( iso.getTemplateType() == TemplateType.PERHOST) {
