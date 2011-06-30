@@ -81,8 +81,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     private static final String VM_DETAILS = "select account.account_name, account.type, domain.name, instance_group_vm_map.group_id, instance_group_vm_map.id," +
     		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, " +
-    		"vm_template.enable_password, service_offering.id, disk_offering.name, " +
-    		"service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
+    		"vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
+    		"service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
     		"security_group.description, nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
     		"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance " +
             "left join account on vm_instance.account_id=account.id  " +
@@ -94,6 +94,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "left join service_offering on vm_instance.service_offering_id=service_offering.id " +
             "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " +
             "left join volumes on vm_instance.id=volumes.instance_id " +
+            "left join storage_pool on volumes.pool_id=storage_pool.id " +
             "left join security_group_vm_map on vm_instance.id=security_group_vm_map.instance_id " +
             "left join security_group on security_group_vm_map.security_group_id=security_group.id " +
             "left join nics on vm_instance.id=nics.instance_id " +
@@ -389,13 +390,28 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                         userVmResponse.setHostId(rs.getLong("host.id"));
                         userVmResponse.setHostName(rs.getString("host.name"));
                     }
+
+                    if (userVm.getHypervisorType() != null) {
+                        userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
+                    }
                     
-                   
-                    userVmResponse.setTemplateId(rs.getLong("vm_template.id"));
-                    userVmResponse.setTemplateName(rs.getString("vm_template.name"));
-                    userVmResponse.setTemplateDisplayText(rs.getString("vm_template.display_text"));
-                    userVmResponse.setPasswordEnabled(rs.getBoolean("vm_template.enable_password"));
-                    
+                    long template_id = rs.getLong("vm_template.id");
+                    if (template_id > 0){
+                        userVmResponse.setTemplateId(template_id);
+                        userVmResponse.setTemplateName(rs.getString("vm_template.name"));
+                        userVmResponse.setTemplateDisplayText(rs.getString("vm_template.display_text"));
+                        userVmResponse.setPasswordEnabled(rs.getBoolean("vm_template.enable_password"));
+                    }
+                    else {
+                        userVmResponse.setTemplateId(-1L);
+                        userVmResponse.setTemplateName("ISO Boot");
+                        userVmResponse.setTemplateDisplayText("ISO Boot");
+                        userVmResponse.setPasswordEnabled(false);
+                    }
+
+                    if (userVm.getPassword() != null) {
+                        userVmResponse.setPassword(userVm.getPassword());
+                    }
     
                     //service_offering.id, disk_offering.name, " 
                     //"service_offering.cpu, service_offering.speed, service_offering.ram_size,
@@ -404,12 +420,21 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                     userVmResponse.setCpuNumber(rs.getInt("service_offering.cpu"));
                     userVmResponse.setCpuSpeed(rs.getInt("service_offering.speed"));
                     userVmResponse.setMemory(rs.getInt("service_offering.ram_size"));
-                    
-                    
+
                     // volumes.device_id, volumes.volume_type, 
-                    userVmResponse.setRootDeviceId(rs.getLong("volumes.device_id"));
-                    userVmResponse.setRootDeviceType(rs.getString("volumes.volume_type"));
-                    
+                    long vol_id = rs.getLong("volumes.id");
+                    if (vol_id > 0){
+                        userVmResponse.setRootDeviceId(rs.getLong("volumes.device_id"));
+                        userVmResponse.setRootDeviceType(rs.getString("volumes.volume_type"));
+                        // storage pool
+                        long pool_id = rs.getLong("storage_pool.id");
+                        if (pool_id > 0){
+                            userVmResponse.setRootDeviceType(rs.getString("storage_pool.pool_type"));
+                        }
+                        else {
+                            userVmResponse.setRootDeviceType("Not created");
+                        }
+                    }
                     is_data_center_security_group_enabled = rs.getBoolean("data_center.is_security_group_enabled");
                 }
                 
