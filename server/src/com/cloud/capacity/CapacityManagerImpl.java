@@ -109,7 +109,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
     @Override
     public boolean start() {
-        _executor.schedule(new HostCapacityCollector(), _hostCapacityCheckerDelay, TimeUnit.SECONDS);
+        _executor.scheduleWithFixedDelay(new HostCapacityCollector(), _hostCapacityCheckerDelay, _hostCapacityCheckerInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -406,96 +406,14 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
         @Override
         public void run() {
-            while (!_stopped) {
-                try {
-                    Thread.sleep(_hostCapacityCheckerInterval * 1000);
-                } catch (InterruptedException e1) {
-
-                }
-                // get all hosts...even if they are not in 'UP' state
-                List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
-
-                // prep the service offerings
-                List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
-                Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
-                for (ServiceOfferingVO offering : offerings) {
-                    offeringsMap.put(offering.getId(), offering);
-                }
-
-                for (HostVO host : hosts) {
-
-                    long usedCpu = 0;
-                    long usedMemory = 0;
-                    long reservedMemory = 0;
-                    long reservedCpu = 0;
-
-                    List<VMInstanceVO> vms = _vmDao.listUpByHostId(host.getId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found " + vms.size() + " VMs on host " + host.getId());
-                    }
-
-                    for (VMInstanceVO vm : vms) {
-                        ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
-                        usedMemory += so.getRamSize() * 1024L * 1024L;
-                        usedCpu += so.getCpu() * so.getSpeed();
-                    }
-
-                    List<VMInstanceVO> vmsByLastHostId = _vmDao.listByLastHostId(host.getId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found " + vmsByLastHostId.size() + " VM, not running on host " + host.getId());
-                    }
-                    for (VMInstanceVO vm : vmsByLastHostId) {
-                        long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime()) / 1000;
-                        if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                            ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
-                            reservedMemory += so.getRamSize() * 1024L * 1024L;
-                            reservedCpu += so.getCpu() * so.getSpeed();
-                        }
-                    }
-
-                    CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
-                    CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
-
-                    if (cpuCap.getUsedCapacity() == usedCpu && cpuCap.getReservedCapacity() == reservedCpu) {
-                        s_logger.debug("No need to calibrate cpu capacity, host:" + host.getId() + " usedCpu: " + cpuCap.getUsedCapacity()
-                                + " reservedCpu: " + cpuCap.getReservedCapacity());
-                    } else if (cpuCap.getReservedCapacity() != reservedCpu) {
-                        s_logger.debug("Calibrate reserved cpu for host: " + host.getId() + " old reservedCpu:" + cpuCap.getReservedCapacity()
-                                + " new reservedCpu:" + reservedCpu);
-                        cpuCap.setReservedCapacity(reservedCpu);
-                    } else if (cpuCap.getUsedCapacity() != usedCpu) {
-                        s_logger.debug("Calibrate used cpu for host: " + host.getId() + " old usedCpu:" + cpuCap.getUsedCapacity() + " new usedCpu:"
-                                + usedCpu);
-                        cpuCap.setUsedCapacity(usedCpu);
-                    }
-
-                    if (memCap.getUsedCapacity() == usedMemory && memCap.getReservedCapacity() == reservedMemory) {
-                        s_logger.debug("No need to calibrate memory capacity, host:" + host.getId() + " usedMem: " + memCap.getUsedCapacity()
-                                + " reservedMem: " + memCap.getReservedCapacity());
-                    } else if (memCap.getReservedCapacity() != reservedMemory) {
-                        s_logger.debug("Calibrate reserved memory for host: " + host.getId() + " old reservedMem:" + memCap.getReservedCapacity()
-                                + " new reservedMem:" + reservedMemory);
-                        memCap.setReservedCapacity(reservedMemory);
-                    } else if (memCap.getUsedCapacity() != usedMemory) {
-                        /*
-                         * Didn't calibrate for used memory, because VMs can be in state(starting/migrating) that I don't know on which host they are
-                         * allocated
-                         */
-                        s_logger.debug("Calibrate used memory for host: " + host.getId() + " old usedMem: " + memCap.getUsedCapacity()
-                                + " new usedMem: " + usedMemory);
-                        memCap.setUsedCapacity(usedMemory);
-                    }
-
-                    try {
-                        _capacityDao.update(cpuCap.getId(), cpuCap);
-                        _capacityDao.update(memCap.getId(), memCap);
-                    } catch (Exception e) {
-
-                    }
-                }
-
+        	s_logger.debug("HostCapacityCollector is running...");
+            // get all hosts...even if they are not in 'UP' state
+            List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
+            for (HostVO host : hosts) {
+            	updateCapacityForHost(host);
             }
-        }
+
+        }        
     }
 
     @Override
