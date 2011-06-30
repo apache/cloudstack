@@ -77,19 +77,31 @@ public class Upgrade227to228 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        List<DataCenterVO> dcs = _dcDao.listAll();
-        for ( DataCenterVO dc : dcs ) {
-            HostVO host = _hostDao.findSecondaryStorageHost(dc.getId());
-            _snapshotDao.updateSnapshotSecHost(dc.getId(), host.getId());           
-        }
-        List<DiskOfferingVO> offerings = _diskOfferingDao.listAll();
-        for ( DiskOfferingVO offering : offerings ) {
-            if( offering.getDiskSize() <= 2 * 1024 * 1024) { // the unit is MB
-                offering.setDiskSize(offering.getDiskSize() * 1024 * 1024);
-                _diskOfferingDao.update(offering.getId(), offering);
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("select id from data_center");
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long dcId = rs.getLong(1);
+                pstmt = conn.prepareStatement("select id from host where data_center_id=? and type='SecondaryStorage'");
+                pstmt.setLong(0, dcId);
+                ResultSet rs1 = pstmt.executeQuery();               
+                if (rs1.next()) {
+                    long secHostId = rs1.getLong(1);
+                    pstmt = conn.prepareStatement("update snapshot set sechost_id=? where data_center_id=?");
+                    pstmt.setLong(0, secHostId);
+                    pstmt.setLong(0, dcId);
+                    pstmt.executeUpdate();                   
+                }
             }
-        }
+
+            pstmt = conn.prepareStatement("update disk_offering set disk_size = disk_size * 1024 * 1024 where disk_size <= 2 * 1024 * 1024 and disk_size != 0");
+            pstmt.executeUpdate(); 
         
+        } catch (SQLException e) {
+            s_logger.error("Failed to DB migration for multiple secondary storages", e);
+            throw new CloudRuntimeException("Failed to DB migration for multiple secondary storages", e);
+        }
+            
         updateDomainLevelNetworks(conn);
         dropKeysIfExist(conn);
     }
