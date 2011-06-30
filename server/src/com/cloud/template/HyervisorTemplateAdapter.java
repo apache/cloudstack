@@ -126,8 +126,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
     	if (!template.isCrossZones() && zoneId != null) {
     		DataCenterVO zone = _dcDao.findById(zoneId);
     		zoneName = zone.getName();
-    		secondaryStorageHosts = new ArrayList<HostVO>();
-			secondaryStorageHosts.add(_hostDao.findSecondaryStorageHost(zoneId));
+    		secondaryStorageHosts = _hostDao.listSecondaryStorageHosts(zoneId);
     	} else {
     		zoneName = "(all zones)";
     		secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
@@ -171,8 +170,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 						success = false;
 						break;
 					}
-					
-					templateHostVO.setDestroyed(true);
+                    templateHostVO.setDestroyed(true);
 					_tmpltHostDao.update(templateHostVO.getId(), templateHostVO);
 					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
 					
