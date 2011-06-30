@@ -164,13 +164,10 @@ public interface ResponseGenerator {
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
-    void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin,
-            Account account, boolean readyOnly);
-
-    ListResponse<TemplateResponse> createTemplateResponse2(VirtualMachineTemplate template, Long zoneId);
-
-    ListResponse<TemplateResponse> createIsoResponses(VirtualMachineTemplate template, Long zoneId);
-
+    List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
+    
+    List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
+    
     ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
     
     SecurityGroupResponse createSecurityGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules);
@@ -179,19 +176,11 @@ public interface ResponseGenerator {
 
     ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode);
 
-    TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long destZoneId);
-
-    TemplateResponse createIsoResponse3(VirtualMachineTemplate iso, Long destZoneId);
-
     String toSerializedString(CreateCmdResponse response, String responseType);
 
     AsyncJobResponse createAsyncJobResponse(AsyncJob job);
 
-    TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long snapshotId, Long volumeId);
-
     EventResponse createEventResponse(Event event);
-
-    ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean onlyReady, Account account, Boolean isBootable, boolean readyOnly);
 
     TemplateResponse createIsoResponse(VirtualMachineTemplate result);
 
@@ -210,5 +199,7 @@ public interface ResponseGenerator {
 	AccountResponse createUserAccountResponse(UserAccount user);
 	
 	Long getSecurityGroupId(String groupName, long accountId);
+
+    List<TemplateResponse> createIsoResponses(long isoId, long zoneId, boolean readyOnly);
 
 }

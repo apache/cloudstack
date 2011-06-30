@@ -18,6 +18,8 @@
 package com.cloud.api.commands;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -34,6 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Registers an existing template into the Cloud.com cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
@@ -196,9 +199,10 @@ public class RegisterTemplateCmd extends BaseCmd {
         try {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){
-                ListResponse<TemplateResponse> response = _responseGenerator.createTemplateResponse2(template, zoneId);
-                response.setResponseName(getCommandName());
-                
+                ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), zoneId, false);
+                response.setResponses(templateResponses);
+                response.setResponseName(getCommandName());              
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register template");

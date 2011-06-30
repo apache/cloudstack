@@ -305,7 +305,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	@Override
-	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady,boolean showDomr) {
+	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, Account account, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady,boolean showDomr) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
@@ -332,10 +332,25 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	if ((templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.community)) {
         	    dataCenterJoin = " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
         	}
-        	
+        	       	
         	sql +=  guestOSJoin + templateHostRefJoin + dataCenterJoin;
         	String whereClause = "";        	
 
+        	if ( !isIso ) {
+        	    if ( hypers.isEmpty() ) {
+        	        return templateZonePairList;
+        	    } else {
+        	        StringBuilder relatedHypers = new StringBuilder();
+        	        for (HypervisorType hyper : hypers ) {
+        	            relatedHypers.append("'");
+        	            relatedHypers.append(hyper.toString());
+                        relatedHypers.append("'");
+        	            relatedHypers.append(",");
+        	        }
+        	        relatedHypers.setLength(relatedHypers.length()-1);
+                    whereClause += " AND t.hypervisor_type IN (" + relatedHypers + ")";
+        	    }
+        	}
             if (account != null) {
                 accountType = account.getType();
                 accountId = Long.toString(account.getId());

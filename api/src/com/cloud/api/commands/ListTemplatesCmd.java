@@ -107,8 +107,7 @@ public class ListTemplatesCmd extends BaseListCmd {
     }
     
     public boolean listInReadyState() {
-    	return true;
-/*    	
+   	
         Account account = UserContext.current().getCaller();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
@@ -117,7 +116,6 @@ public class ListTemplatesCmd extends BaseListCmd {
         boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
         || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
         return onlyReady;
-*/
     }
 
     /////////////////////////////////////////////////////
@@ -136,18 +134,14 @@ public class ListTemplatesCmd extends BaseListCmd {
     @Override
     public void execute(){
         Set<Pair<Long, Long>> templateZonePairSet = _mgr.listTemplates(this);
-                
-        boolean isAdmin = false;
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
-            isAdmin = true;
-        }
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (Pair<Long, Long> template : templateZonePairSet) {
-            _responseGenerator.createTemplateResponse(templateResponses, template, isAdmin, account, listInReadyState());
+            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
+            responses = _responseGenerator.createTemplateResponses(template.first(), template.second(), listInReadyState());
+            templateResponses.addAll(responses);
         }
 
         response.setResponses(templateResponses);

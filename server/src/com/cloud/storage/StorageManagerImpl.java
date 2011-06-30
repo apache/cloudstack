@@ -975,7 +975,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
     
     @Override
-    public VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId) {
+    public VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly) {
         List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
         if( hosts == null || hosts.size() == 0) {
             return null;

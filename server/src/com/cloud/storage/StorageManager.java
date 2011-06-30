@@ -201,5 +201,5 @@ public interface StorageManager extends Manager {
 
     List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
 
-    VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId);
+    VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly);
 }

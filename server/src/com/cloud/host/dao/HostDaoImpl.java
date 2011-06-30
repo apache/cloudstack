@@ -812,10 +812,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<HypervisorType> getAvailHypervisorInZone(long hostId, long zoneId) {
+    public List<HypervisorType> getAvailHypervisorInZone(Long hostId, Long zoneId) {
         SearchCriteria<HostVO> sc = AvailHypevisorInZone.create();
-        sc.setParameters("zoneId", zoneId);
-        sc.setParameters("hostId", hostId);
+        if ( zoneId != null ) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if ( hostId != null ) {
+            sc.setParameters("hostId", hostId);
+        }
         sc.setParameters("type", Host.Type.Routing);
         List<HostVO> hosts = listBy(sc);
         List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
