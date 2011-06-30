@@ -145,6 +145,6 @@ public class NicResponse extends BaseResponse {
 
     @Override
     public boolean equals(Object r){
-        return id==((NicResponse)r).id; 
+        return (r instanceof NicResponse) && id==((NicResponse)r).id; 
     }
 }

@@ -595,7 +595,7 @@ public class ApiDBUtils {
         return _firewallCidrsDao.getSourceCidrs(id);  
     }
     
-    public static List<UserVmResponse> listVmDetails(UserVm userVm, boolean show_host){
+    public static UserVmResponse listVmDetails(UserVm userVm, boolean show_host){
         return _userVmDao.listVmDetails(userVm, show_host);
     }
 
