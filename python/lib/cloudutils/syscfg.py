@@ -76,8 +76,6 @@ class sysConfigAgent(sysConfig):
         if self.env.agentMode == "myCloud":
             if self.env.distribution.getVersion() != "Ubuntu":
                 raise CloudInternalException("Need to run myCloud agent on an Ubuntu machine\n")
-            elif self.env.distribution.getRelease() != "10.04":
-                raise CloudInternalException("Need to run myCloud agent on an Ubuntu 10.04\n")
             elif self.env.distribution.getArch() != "x86_64":
                 raise CloudInternalException("Need to run myCloud agent on an 64bit machine\n")
             #check free disk space on the local disk 
