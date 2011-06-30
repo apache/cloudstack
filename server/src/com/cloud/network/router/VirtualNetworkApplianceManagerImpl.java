@@ -685,11 +685,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     @DB
-    protected DomainRouterVO findOrCreateVirtualRouter(Network guestNetwork, DataCenterDeployment plan, HypervisorType type, Account owner) throws ConcurrentOperationException, InsufficientCapacityException {
-        DomainRouterVO router = _routerDao.findByNetwork(guestNetwork.getId());
-        if (router != null) {
-            return router;
-        }
+    protected DomainRouterVO createVirtualRouter(Network guestNetwork, DataCenterDeployment plan, HypervisorType type, Account owner) throws ConcurrentOperationException, InsufficientCapacityException {
 
         /* Before starting router, already know the hypervisor type */
         VMTemplateVO template = _templateDao.findRoutingTemplate(type);
@@ -708,6 +704,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ConcurrentOperationException("Unable to acquire lock on " + guestNetwork.getId());
         }
         
+        DomainRouterVO router = null;
         try {
             txn.start();
             
@@ -780,8 +777,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
-
-        DomainRouterVO router = findOrCreateVirtualRouter(guestNetwork, plan, dest.getCluster().getHypervisorType(), owner);
+        
+        DomainRouterVO router = _routerDao.findByNetwork(guestNetwork.getId());
+        if (router == null) {
+            router = createVirtualRouter(guestNetwork, plan, dest.getCluster().getHypervisorType(), owner);
+        }
         
         State state = router.getState();
         if (state != State.Running) {
