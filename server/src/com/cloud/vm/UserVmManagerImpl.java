@@ -1281,6 +1281,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws ResourceAllocationException {
         Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {
@@ -1430,6 +1431,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", async = true)
     public VMTemplateVO createPrivateTemplate(CreateTemplateCmd command) throws CloudRuntimeException {
         Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {

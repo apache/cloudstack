@@ -755,6 +755,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	}
 
 	@Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
 	public boolean detachIso(DetachIsoCmd cmd)  {
         Account account = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -775,6 +776,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
         }
+    	UserContext.current().setEventDetails("Vm Id: " +vmId+ " ISO Id: "+isoId);
         
         State vmState = userVM.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
@@ -789,6 +791,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	}
 	
 	@Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
 	public boolean attachIso(AttachIsoCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -872,6 +875,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	}
 	
 	@Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_DELETE, eventDescription = "deleting template", async = true)
     public boolean deleteTemplate(DeleteTemplateCmd cmd) {
         Long templateId = cmd.getId();
         Account caller = UserContext.current().getCaller();
@@ -901,6 +905,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	}
 	
 	@Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_DELETE, eventDescription = "deleting iso", async = true)
     public boolean deleteIso(DeleteIsoCmd cmd) {
         Long templateId = cmd.getId();
         Account caller = UserContext.current().getCaller();
