@@ -631,8 +631,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             Long templateId = template.getId();
             Long tmpltAccountId = template.getAccountId();
-            if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
-                throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to volume:" + volumeId + " is being used, try it later ");
+            if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
+                throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to this snapshot is being used, try it later ");
             }
             UpgradeSnapshotCommand cmd = new UpgradeSnapshotCommand(null, secondaryStoragePoolUrl, dcId, accountId, volumeId, templateId, tmpltAccountId, null, snapshot.getBackupSnapshotId(),
                     snapshot.getName(), "2.1");
@@ -641,7 +641,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 answer = sendToPool(pool, cmd);
             } catch (StorageUnavailableException e) {
             } finally {
-                _volsDao.unlockFromLockTable(volumeId.toString());
+                _snapshotDao.unlockFromLockTable(snapshotId.toString());
             }
             if ((answer != null) && answer.getResult()) {
                 _snapshotDao.updateSnapshotVersion(volumeId, "2.1", "2.2");
@@ -659,7 +659,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         String basicErrMsg = "Failed to create volume from " + snapshot.getName();
         CreateVolumeFromSnapshotAnswer answer;
         if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
-            throw new CloudRuntimeException("failed to create volume from " + snapshotId + " due to original volume:" + volumeId + " is being used, try it later ");
+            throw new CloudRuntimeException("failed to create volume from " + snapshotId + " due to this snapshot is being used, try it later ");
         }
         try {
             answer = (CreateVolumeFromSnapshotAnswer) sendToPool(pool, createVolumeFromSnapshotCommand);

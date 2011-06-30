@@ -1541,14 +1541,24 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             // This can be sent to a KVM host too.
             CreatePrivateTemplateAnswer answer = null;
-            if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
-                throw new CloudRuntimeException("Creating template failed due to volume:" + volumeId + " is being used, try it later ");
+            if (snapshotId != null) {
+                if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
+                    throw new CloudRuntimeException("Creating template from snapshot failed due to snapshot:" + snapshotId + " is being used, try it later ");
+                }
+            } else {
+                if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
+                    throw new CloudRuntimeException("Creating template from volume failed due to volume:" + volumeId + " is being used, try it later ");
+                }
             }
             try {
                 answer = (CreatePrivateTemplateAnswer) _storageMgr.sendToPool(pool, cmd);
             } catch (StorageUnavailableException e) {
             } finally {
-                _volsDao.unlockFromLockTable(volumeId.toString());
+                if (snapshotId != null) {
+                    _snapshotDao.unlockFromLockTable(snapshotId.toString());
+                } else {
+                    _volsDao.unlockFromLockTable(volumeId.toString());
+                }
             }
             if ((answer != null) && answer.getResult()) {
                 privateTemplate = _templateDao.findById(templateId);
