@@ -654,7 +654,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         String basicErrMsg = "Failed to create volume from " + snapshot.getName();
         CreateVolumeFromSnapshotAnswer answer;
-        if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
+        if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
             throw new CloudRuntimeException("failed to create volume from " + snapshotId + " due to original volume:" + volumeId + " is being used, try it later ");
         }
         try {
@@ -667,7 +667,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } catch (StorageUnavailableException e) {
             s_logger.error(basicErrMsg);
         } finally {
-            _volsDao.unlockFromLockTable(volumeId.toString());
+            _snapshotDao.unlockFromLockTable(snapshotId.toString());
         }
         return new Pair<String, String>(vdiUUID, basicErrMsg);
     }
