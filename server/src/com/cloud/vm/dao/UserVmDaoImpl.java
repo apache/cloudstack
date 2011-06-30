@@ -423,26 +423,29 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 
                 //nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics. mac_address, nics.broadcast_uri, nics.isolation_uri, " +
                 //"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance, "
-                NicResponse nicResponse = new NicResponse();
-                nicResponse.setId(rs.getLong("nics.id"));
-                nicResponse.setIpaddress(rs.getString("nics.ip4_address"));
-                nicResponse.setGateway(rs.getString("nics.gateway"));
-                nicResponse.setNetmask(rs.getString("nics.netmask"));
-                nicResponse.setNetworkid(rs.getLong("nics.network_id"));
-                nicResponse.setMacAddress(rs.getString("nics.mac_address"));
-                
-                int account_type = rs.getInt("account.type");
-                if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
-                    nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
-                    nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
+                long nic_id = rs.getLong("nics.id");
+                if (nic_id > 0){
+                    NicResponse nicResponse = new NicResponse();
+                    nicResponse.setId(nic_id);
+                    nicResponse.setIpaddress(rs.getString("nics.ip4_address"));
+                    nicResponse.setGateway(rs.getString("nics.gateway"));
+                    nicResponse.setNetmask(rs.getString("nics.netmask"));
+                    nicResponse.setNetworkid(rs.getLong("nics.network_id"));
+                    nicResponse.setMacAddress(rs.getString("nics.mac_address"));
+                    
+                    int account_type = rs.getInt("account.type");
+                    if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
+                        nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
+                        nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
+                    }
+    
+    
+                    nicResponse.setTrafficType(rs.getString("networks.traffic_type"));
+                    nicResponse.setType(rs.getString("networks.guest_type"));
+                    nicResponse.setIsDefault(rs.getBoolean("networks.is_default"));
+                    nicResponse.setObjectName("nic");
+                    nicResponses.add(nicResponse);
                 }
-
-
-                nicResponse.setTrafficType(rs.getString("networks.traffic_type"));
-                nicResponse.setType(rs.getString("networks.guest_type"));
-                nicResponse.setIsDefault(rs.getBoolean("networks.is_default"));
-                nicResponse.setObjectName("nic");
-                nicResponses.add(nicResponse);
                 
             }
             userVmResponse.setSecurityGroupList(new ArrayList(securityGroupResponse));
