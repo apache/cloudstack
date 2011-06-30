@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
@@ -61,7 +62,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
@@ -589,6 +589,10 @@ public class ApiDBUtils {
     
     public static List<String> findPortForwardingSourceCidrs(long id){
         return _firewallCidrsDao.getSourceCidrs(id);  
+    }
+    
+    public static List<UserVmResponse> listVmDetails(UserVm userVm, boolean show_host){
+        return _userVmDao.listVmDetails(userVm, show_host);
     }
 
 }

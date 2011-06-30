@@ -22,13 +22,22 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.response.NicResponse;
+import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
@@ -70,6 +79,26 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND state = 'Running' OR state = 'Stopped' " +
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
 
+    private static final String VM_DETAILS = "select account.account_name, account.type, domain.name, instance_group_vm_map.group_id, instance_group_vm_map.id," +
+    		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, " +
+    		"vm_template.enable_password, service_offering.id, disk_offering.name, " +
+    		"service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
+    		"security_group.description, nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
+    		"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance " +
+            "left join account on vm_instance.account_id=account.id  " +
+            "left join domain on vm_instance.domain_id=domain.id " +
+            "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id " +
+            "left join data_center on vm_instance.data_center_id=data_center.id " +
+            "left join host on vm_instance.host_id=host.id " + 
+            "left join vm_template on vm_instance.vm_template_id=vm_template.id " +
+            "left join service_offering on vm_instance.service_offering_id=service_offering.id " +
+            "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " +
+            "left join volumes on vm_instance.id=volumes.instance_id " +
+            "left join security_group_vm_map on vm_instance.id=security_group_vm_map.instance_id " +
+            "left join security_group on security_group_vm_map.security_group_id=security_group.id " +
+            "left join nics on vm_instance.id=nics.instance_id " +
+            "left join networks on nics.network_id=networks.id " +
+            "where vm_instance.id=?";
     
     protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
     
@@ -308,6 +337,123 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             throw new CloudRuntimeException("DB Exception on: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + LIST_PODS_HAVING_VMS_FOR_ACCOUNT, e);
+        }
+    }
+    
+    @Override
+    public List<UserVmResponse> listVmDetails(UserVm userVm, boolean show_host){
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<UserVmResponse> result = new ArrayList<UserVmResponse>();
+
+        try {
+            String sql = VM_DETAILS;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, userVm.getId());
+            
+            ResultSet rs = pstmt.executeQuery();
+            boolean is_data_center_security_group_enabled=false;
+            Set<SecurityGroupResponse> securityGroupResponse = new HashSet<SecurityGroupResponse>();
+            Set<NicResponse> nicResponses = new HashSet<NicResponse>();
+            UserVmResponse userVmResponse = null;
+            while (rs.next()) {
+                if (userVmResponse==null){
+                    userVmResponse=new UserVmResponse();
+                    userVmResponse.setId(userVm.getId());
+                    userVmResponse.setName(userVm.getDisplayName());
+                    userVmResponse.setCreated(userVm.getCreated());
+                    userVmResponse.setGuestOsId(userVm.getGuestOSId());
+                    userVmResponse.setHaEnable(userVm.isHaEnabled());
+                    if (userVm.getDisplayName() != null) {
+                        userVmResponse.setDisplayName(userVm.getDisplayName());
+                    } else {
+                        userVmResponse.setDisplayName(userVm.getHostName());
+                    }
+                    
+                    //account.account_name, account.type, domain.name, instance_group_vm_map.group_id, instance_group_vm_map.id,"
+                    
+                    userVmResponse.setAccountName(rs.getString("account.account_name"));
+                    userVmResponse.setDomainId(userVm.getDomainId());
+                    userVmResponse.setDomainName(rs.getString("domain.name"));
+                    
+                    userVmResponse.setGroup(rs.getString("instance_group_vm_map.group_id"));
+                    userVmResponse.setGroupId(rs.getLong("instance_group_vm_map.id"));
+                    
+                    //"data_center.id, data_center.name, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, vm_template.enable_password, 
+                    userVmResponse.setZoneId(rs.getLong("data_center.id"));
+                    userVmResponse.setZoneName(rs.getString("data_center.name"));
+                    
+                    if (show_host){
+                        userVmResponse.setHostId(rs.getLong("host.id"));
+                        userVmResponse.setHostName(rs.getString("host.name"));
+                    }
+                    
+                   
+                    userVmResponse.setTemplateId(rs.getLong("vm_template.id"));
+                    userVmResponse.setTemplateName(rs.getString("vm_template.name"));
+                    userVmResponse.setTemplateDisplayText(rs.getString("vm_template.display_text"));
+                    userVmResponse.setPasswordEnabled(rs.getBoolean("vm_template.enable_password"));
+                    
+    
+                    //service_offering.id, disk_offering.name, " 
+                    //"service_offering.cpu, service_offering.speed, service_offering.ram_size,
+                    userVmResponse.setServiceOfferingId(rs.getLong("service_offering.id"));
+                    userVmResponse.setServiceOfferingName(rs.getString("disk_offering.name"));
+                    userVmResponse.setCpuNumber(rs.getInt("service_offering.cpu"));
+                    userVmResponse.setCpuSpeed(rs.getInt("service_offering.speed"));
+                    userVmResponse.setMemory(rs.getInt("service_offering.ram_size"));
+                    
+                    
+                    // volumes.device_id, volumes.volume_type, 
+                    userVmResponse.setRootDeviceId(rs.getLong("volumes.device_id"));
+                    userVmResponse.setRootDeviceType(rs.getString("volumes.volume_type"));
+                    
+                    is_data_center_security_group_enabled = rs.getBoolean("data_center.is_security_group_enabled");
+                    result.add(userVmResponse);
+                }
+                
+                //security_group.id, security_group.name, security_group.description, , data_center.is_security_group_enabled
+                if (is_data_center_security_group_enabled){
+                    SecurityGroupResponse resp = new SecurityGroupResponse();
+                    resp.setId(rs.getLong("security_group.id"));
+                    resp.setName("security_group.name");
+                    resp.setDescription("security_group.description");
+                    resp.setObjectName("securitygroup");
+                    securityGroupResponse.add(resp);
+                }
+                
+                
+                //nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics. mac_address, nics.broadcast_uri, nics.isolation_uri, " +
+                //"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance, "
+                NicResponse nicResponse = new NicResponse();
+                nicResponse.setId(rs.getLong("nics.id"));
+                nicResponse.setIpaddress(rs.getString("nics.ip4_address"));
+                nicResponse.setGateway(rs.getString("nics.gateway"));
+                nicResponse.setNetmask(rs.getString("nics.netmask"));
+                nicResponse.setNetworkid(rs.getLong("nics.network_id"));
+                nicResponse.setMacAddress(rs.getString("nics.mac_address"));
+                
+                int account_type = rs.getInt("account.type");
+                if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
+                    nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
+                    nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
+                }
+
+
+                nicResponse.setTrafficType(rs.getString("networks.traffic_type"));
+                nicResponse.setType(rs.getString("networks.guest_type"));
+                nicResponse.setIsDefault(rs.getBoolean("networks.is_default"));
+                nicResponse.setObjectName("nic");
+                nicResponses.add(nicResponse);
+                
+            }
+            userVmResponse.setSecurityGroupList(new ArrayList(securityGroupResponse));
+            userVmResponse.setNics(new ArrayList(nicResponses));
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + VM_DETAILS, e);
         }
     }
 

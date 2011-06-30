@@ -20,9 +20,10 @@ package com.cloud.vm.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 public interface UserVmDao extends GenericDao<UserVmVO, Long> {
@@ -69,4 +70,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	
 	List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId);	
     public Long countAllocatedVMsForAccount(long accountId);
+
+    List<UserVmResponse> listVmDetails(UserVm userVm, boolean show_host);
 }

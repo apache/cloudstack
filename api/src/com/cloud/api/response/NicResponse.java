@@ -142,4 +142,9 @@ public class NicResponse extends BaseResponse {
 	public void setMacAddress(String macAddress) {
 		this.macAddress = macAddress;
 	}
+
+    @Override
+    public boolean equals(Object r){
+        return id==((NicResponse)r).id; 
+    }
 }
