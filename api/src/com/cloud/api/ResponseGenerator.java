@@ -192,6 +192,6 @@ public interface ResponseGenerator {
 	
 	Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(long isoId, long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
 
 }

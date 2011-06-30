@@ -163,5 +163,6 @@ public class ListIsosCmd extends BaseListCmd {
         }
         response.setResponses(templateResponses);
         response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 }
