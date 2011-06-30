@@ -1062,6 +1062,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
                 userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
             }
+            userVmResponse.setObjectName(objectName);
             vmResponses.add(userVmResponse);
         }
         return vmResponses;
