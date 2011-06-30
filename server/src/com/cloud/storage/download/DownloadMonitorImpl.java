@@ -527,84 +527,65 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         return null;
     }
     
-    private List<VMTemplateVO> listAllInZone(long dcId){
-        List<VMTemplateVO> tmplts = _templateDao.listAllInZone(dcId);
-        Iterator<VMTemplateVO> iter = tmplts.iterator();
-        while ( iter.hasNext() ) {
-            VMTemplateVO tmplt = iter.next();
-            if( tmplt.isPublicTemplate() || tmplt.isFeatured() ) {
-                continue;
-            }
-            List<VMTemplateHostVO> tmpltHosts = _vmTemplateHostDao.listByZoneTemplate(dcId, tmplt.getId(), false);
-            for ( VMTemplateHostVO tmpltHost : tmpltHosts ) {
-               if ( tmpltHost.getDownloadState() == Status.DOWNLOADED || tmpltHost.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-                   iter.remove();
-                   break;
-               }
-            }
-        }
-        return tmplts;       
-    }
 	
 	@Override
-	public void handleTemplateSync(HostVO ssHost) {
-	    Long sserverId = ssHost.getId();
-		if (ssHost == null) {
-			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
-			return;
-		}
-		if ( !(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage) ) {
-	        s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
-		    return;
-		}
-		Map<String, TemplateInfo> templateInfos = listTemplate(ssHost);
-		if( templateInfos == null ) {
-		    return;
-		}
-		long zoneId = ssHost.getDataCenterId();
+    public void handleTemplateSync(HostVO ssHost) {
+        if (ssHost == null) {
+            s_logger.warn("Huh? ssHost is null");
+            return;
+        }
+        long sserverId = ssHost.getId();
+        long zoneId = ssHost.getDataCenterId();
+        if (!(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage)) {
+            s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
+            return;
+        }
+        Map<String, TemplateInfo> templateInfos = listTemplate(ssHost);
+        if (templateInfos == null) {
+            return;
+        }
 
-		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-		List<VMTemplateVO> allTemplates = listAllInZone(ssHost.getDataCenterId());
-		List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
-		List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
-		
-		if (rtngTmplts != null) {
-		    for (VMTemplateVO rtngTmplt : rtngTmplts) {
-		        if (!allTemplates.contains(rtngTmplt)) {
-		            allTemplates.add(rtngTmplt);
-		        }
-		    }
-		}
+        Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+        List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(zoneId);
+        List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
+        List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
-		if (defaultBuiltin != null) {
-		    for (VMTemplateVO builtinTmplt : defaultBuiltin) {
-		        if (!allTemplates.contains(builtinTmplt)) {
-		            allTemplates.add(builtinTmplt);
-		        }
-		    }
-		}
+        if (rtngTmplts != null) {
+            for (VMTemplateVO rtngTmplt : rtngTmplts) {
+                if (!allTemplates.contains(rtngTmplt)) {
+                    allTemplates.add(rtngTmplt);
+                }
+            }
+        }
+
+        if (defaultBuiltin != null) {
+            for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+                if (!allTemplates.contains(builtinTmplt)) {
+                    allTemplates.add(builtinTmplt);
+                }
+            }
+        }
 
         toBeDownloaded.addAll(allTemplates);
-        
-		for (VMTemplateVO tmplt: allTemplates) {
-			String uniqueName = tmplt.getUniqueName();
-			VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserverId, tmplt.getId());
-			if (templateInfos.containsKey(uniqueName)) {
-			    TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
-				toBeDownloaded.remove(tmplt);
-				if (tmpltHost != null) {
-					s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
+
+        for (VMTemplateVO tmplt : allTemplates) {
+            String uniqueName = tmplt.getUniqueName();
+            VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserverId, tmplt.getId());
+            if (templateInfos.containsKey(uniqueName)) {
+                TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
+                toBeDownloaded.remove(tmplt);
+                if (tmpltHost != null) {
+                    s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
                     if (tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-                    	tmpltHost.setErrorString("");
+                        tmpltHost.setErrorString("");
                     }
-                    if( tmpltInfo.isCorrupted() ) {
+                    if (tmpltInfo.isCorrupted()) {
                         tmpltHost.setDownloadState(Status.DOWNLOAD_ERROR);
-                        tmpltHost.setErrorString("This template is corrupted");
-                        toBeDownloaded.add(tmplt);
-                        s_logger.info("Template (" + tmplt +") is corrupted");
-                        if( tmplt.getUrl() == null) {
-                            String msg = "Private Template (" + tmplt +") with install path "  + tmpltInfo.getInstallPath() + 
-                            "is corrupted, please check in secondary storage: " + tmpltHost.getHostId();
+                        String msg = "Template " + tmplt.getName() + ":" + tmplt.getId() + " is corrupted on secondary storage " + tmpltHost.getId();
+                        tmpltHost.setErrorString(msg);
+                        s_logger.info("msg");
+                        if (tmplt.getUrl() == null) {
+                            msg = "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath() + "is corrupted, please check in secondary storage: " + tmpltHost.getHostId();
                             s_logger.warn(msg);
                         } else {
                             toBeDownloaded.add(tmplt);
@@ -618,93 +599,97 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                         tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
                         tmpltHost.setLastUpdated(new Date());
                     }
-					_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
-				} else {
-				    tmpltHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
-					tmpltHost.setSize(tmpltInfo.getSize());
+                    _vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
+                } else {
+                    tmpltHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
+                    tmpltHost.setSize(tmpltInfo.getSize());
                     tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
-					_vmTemplateHostDao.persist(tmpltHost);
-					VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
-					if (tmpltZoneVO == null){
-					    tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
-					    _vmTemplateZoneDao.persist(tmpltZoneVO);
-					} else {
-					    tmpltZoneVO.setLastUpdated(new Date());
-					    _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
-					}
+                    _vmTemplateHostDao.persist(tmpltHost);
+                    VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
+                    if (tmpltZoneVO == null) {
+                        tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
+                        _vmTemplateZoneDao.persist(tmpltZoneVO);
+                    } else {
+                        tmpltZoneVO.setLastUpdated(new Date());
+                        _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
+                    }
 
-				}
+                }
 
-				continue;
-			}
-			if (tmpltHost != null && tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-				s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + sserverId + ", will request download to start/resume shortly");
+                continue;
+            }
+            if (tmpltHost != null && tmpltHost.getDownloadState() != Status.DOWNLOADED) {
+                s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + sserverId + ", will request download to start/resume shortly");
 
-			} else if (tmpltHost == null) {
-				s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request download shortly");
-				VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
-				_vmTemplateHostDao.persist(templtHost);
-				VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
-				if (tmpltZoneVO == null){
-				    tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
-				    _vmTemplateZoneDao.persist(tmpltZoneVO);
-				} else {
-				    tmpltZoneVO.setLastUpdated(new Date());
-				    _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
-				}
-			}
+            } else if (tmpltHost == null) {
+                s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request download shortly");
+                VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
+                _vmTemplateHostDao.persist(templtHost);
+                VMTemplateZoneVO tmpltZoneVO = _vmTemplateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
+                if (tmpltZoneVO == null) {
+                    tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
+                    _vmTemplateZoneDao.persist(tmpltZoneVO);
+                } else {
+                    tmpltZoneVO.setLastUpdated(new Date());
+                    _vmTemplateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
+                }
+            }
 
-		}
-		
-		if (toBeDownloaded.size() > 0) {
-			/*Only download templates whose hypervirsor type is in the zone*/
-			List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(ssHost.getDataCenterId());
-			if (availHypers.isEmpty()) {
-			    /*This is for cloudzone, local secondary storage resource started before cluster created*/
-			    availHypers.add(HypervisorType.KVM);
-			}
-			/* Baremetal need not to download any template */
-			availHypers.remove(HypervisorType.BareMetal);
-			availHypers.add(HypervisorType.None); //bug 9809: resume ISO download.
-			for (VMTemplateVO tmplt: toBeDownloaded) {
-				
-				if (tmplt.getUrl() == null){ // If url is null we cant initiate the download so mark it as an error.
-					VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(ssHost.getId(), tmplt.getId());
-					if(tmpltHost != null){
-						tmpltHost.setDownloadState(Status.DOWNLOAD_ERROR);
-						tmpltHost.setDownloadPercent(0);
-						tmpltHost.setErrorString("Cannot initiate the download as url is null.");
-						_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
-					}
-					continue;
-				}
-				
-			    if (availHypers.contains(tmplt.getHypervisorType())) {
-			        s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + ssHost.getName());
-			        downloadTemplateToStorage(tmplt, ssHost);
-			    }
-			}
-		}
-		
-		for (String uniqueName: templateInfos.keySet()) {
-			TemplateInfo tInfo = templateInfos.get(uniqueName);
-			DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssHost.getStorageUrl(), tInfo.getInstallPath());
-			long result = _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
-			if (result == -1 ){
-				String description = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
-				s_logger.error(description);
-				return;
-			}
-			String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
-			s_logger.info(description);
-		}
-		
-		//This code is mostly for migration purposes so that we have checksum for all the templates
-		if (ssHost.getType() == Host.Type.SecondaryStorage)
-		    checksumSync(sserverId);
-		
+        }
 
-	}
+        if (toBeDownloaded.size() > 0) {
+            /* Only download templates whose hypervirsor type is in the zone */
+            List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(zoneId);
+            if (availHypers.isEmpty()) {
+                /*
+                 * This is for cloudzone, local secondary storage resource
+                 * started before cluster created
+                 */
+                availHypers.add(HypervisorType.KVM);
+            }
+            /* Baremetal need not to download any template */
+            availHypers.remove(HypervisorType.BareMetal);
+            availHypers.add(HypervisorType.None); // bug 9809: resume ISO
+                                                  // download.
+            for (VMTemplateVO tmplt : toBeDownloaded) {
+                if (tmplt.getUrl() == null) { // If url is null we can't
+                                              // initiate the download
+                    continue;
+                }
+                // if this is private template, and there is no record for this
+                // template in this sHost, skip
+                if (!tmplt.isPublicTemplate() && !tmplt.isFeatured()) {
+                    VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserverId, tmplt.getId());
+                    if (tmpltHost == null) {
+                        continue;
+                    }
+                }
+                if (availHypers.contains(tmplt.getHypervisorType())) {
+                    s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + ssHost.getName());
+                    downloadTemplateToStorage(tmplt, ssHost);
+                }
+            }
+        }
+
+        for (String uniqueName : templateInfos.keySet()) {
+            TemplateInfo tInfo = templateInfos.get(uniqueName);
+            DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssHost.getStorageUrl(), tInfo.getInstallPath());
+            long result = _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
+            if (result == -1) {
+                String description = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
+                s_logger.error(description);
+                return;
+            }
+            String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
+            s_logger.info(description);
+        }
+
+        // This code is mostly for migration purposes so that we have checksum
+        // for all the templates
+        if (ssHost.getType() == Host.Type.SecondaryStorage) {
+            checksumSync(sserverId);
+        }
+    }
 
 	@Override
 	public void cancelAllDownloads(Long templateId) {
