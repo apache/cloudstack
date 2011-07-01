@@ -66,7 +66,7 @@ Provides: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
 Conflicts: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
 Replaces: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
 Architecture: any
-Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client
+Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client, cloud-system-iso
 Description: Cloud.com agent scripts
  The Cloud.com agent is in charge of managing shared computing resources in
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
