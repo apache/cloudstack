@@ -79,7 +79,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND state = 'Running' OR state = 'Stopped' " +
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
 
-    private static final String VM_DETAILS = "select account.account_name, account.type, domain.name, instance_group_vm_map.group_id, instance_group_vm_map.id," +
+    private static final String VM_DETAILS = "select account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
     		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, " +
     		"vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
     		"service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
@@ -88,6 +88,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "left join account on vm_instance.account_id=account.id  " +
             "left join domain on vm_instance.domain_id=domain.id " +
             "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id " +
+            "left join instance_group on instance_group_vm_map.group_id=instance_group.id " + 
             "left join data_center on vm_instance.data_center_id=data_center.id " +
             "left join host on vm_instance.host_id=host.id " + 
             "left join vm_template on vm_instance.vm_template_id=vm_template.id " +
@@ -373,14 +374,17 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                         userVmResponse.setDisplayName(userVm.getHostName());
                     }
                     
-                    //account.account_name, account.type, domain.name, instance_group_vm_map.group_id, instance_group_vm_map.id,"
+                    //account.account_name, account.type, domain.name,  instance_group.id, instance_group.name,"
                     
                     userVmResponse.setAccountName(rs.getString("account.account_name"));
                     userVmResponse.setDomainId(userVm.getDomainId());
                     userVmResponse.setDomainName(rs.getString("domain.name"));
                     
-                    userVmResponse.setGroup(rs.getString("instance_group_vm_map.group_id"));
-                    userVmResponse.setGroupId(rs.getLong("instance_group_vm_map.id"));
+                    long grp_id = rs.getLong("instance_group.id");
+                    if (grp_id > 0){
+                        userVmResponse.setGroupId(grp_id);
+                        userVmResponse.setGroup(rs.getString("instance_group.name"));
+                    }
                     
                     //"data_center.id, data_center.name, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, vm_template.enable_password, 
                     userVmResponse.setZoneId(rs.getLong("data_center.id"));
