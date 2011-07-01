@@ -188,7 +188,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
 
-    @Override
+    @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating forwarding rule", create = true)
     public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
@@ -257,6 +257,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             dstIp = new Ip(guestNic.getIp4Address());
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
                 rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), rule.getSourceCidrList(), networkId, accountId, domainId, vmId);
         newRule = _forwardingDao.persist(newRule);
@@ -269,6 +272,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), ipAddress.getDataCenterId(), newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
+            txn.commit();
             return newRule;
         } catch (Exception e) {
             _forwardingDao.remove(newRule.getId());
@@ -279,7 +283,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
 
-    @Override
+    @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating static nat rule", create = true)
     public StaticNatRule createStaticNatRule(StaticNatRule rule) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
@@ -330,6 +334,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Start port can't be bigger than end port");
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
                 networkId, accountId, domainId, rule.getPurpose());
         newRule = _firewallDao.persist(newRule);
@@ -343,6 +350,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
 
+            txn.commit();
             StaticNatRule staticNatRule = new StaticNatRuleImpl(newRule, dstIp);
 
             return staticNatRule;

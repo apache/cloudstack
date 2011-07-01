@@ -73,9 +73,11 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
@@ -381,6 +383,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		
 	}
 
+	@DB
 	public void handleDownloadEvent(HostVO host, VMTemplateVO template, Status dnldStatus) {
 		if ((dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) || (dnldStatus==Status.ABANDONED)){
 			VMTemplateHostVO vmTemplateHost = new VMTemplateHostVO(host.getId(), template.getId());
@@ -391,24 +394,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		
 		VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
 		
-        if (dnldStatus == Status.DOWNLOADED) {
-            long size = -1;
-            if(vmTemplateHost!=null){
-            	size = vmTemplateHost.getPhysicalSize();
-            }
-            else{
-            	s_logger.warn("Failed to get size for template" + template.getName());
-            }
-			String eventType = EventTypes.EVENT_TEMPLATE_CREATE;
-            if((template.getFormat()).equals(ImageFormat.ISO)){
-                eventType = EventTypes.EVENT_ISO_CREATE;
-            }
-            if(template.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
-                UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, template.getSourceTemplateId() , size);
-                _usageEventDao.persist(usageEvent);
-            }
-        } 
-        
+		Transaction txn = Transaction.currentTxn();
+        txn.start();
+		
 		if (vmTemplateHost != null) {
 			Long poolId = vmTemplateHost.getPoolId();
 			if (poolId != null) {
@@ -440,6 +428,24 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			}
 		}
 
+        if (dnldStatus == Status.DOWNLOADED) {
+            long size = -1;
+            if(vmTemplateHost!=null){
+                size = vmTemplateHost.getPhysicalSize();
+            }
+            else{
+                s_logger.warn("Failed to get size for template" + template.getName());
+            }
+            String eventType = EventTypes.EVENT_TEMPLATE_CREATE;
+            if((template.getFormat()).equals(ImageFormat.ISO)){
+                eventType = EventTypes.EVENT_ISO_CREATE;
+            }
+            if(template.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
+                UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, template.getSourceTemplateId() , size);
+                _usageEventDao.persist(usageEvent);
+            }
+        }
+        txn.commit();
 	}
 	
 	@Override

@@ -1575,7 +1575,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
      * Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally created
      * only when it's attached to a VM.
      */
-    @Override
+    @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException {
         // FIXME: some of the scheduled event stuff might be missing here...
@@ -1727,6 +1727,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             userSpecifiedName = getRandomVolumeName();
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
@@ -1742,6 +1745,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume = _volsDao.persist(volume);
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
         _usageEventDao.persist(usageEvent);
+        txn.commit();
         
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
