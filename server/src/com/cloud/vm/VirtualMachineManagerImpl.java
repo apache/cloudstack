@@ -78,7 +78,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
@@ -183,8 +182,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected ConsoleProxyDao _consoleDao;
     @Inject
     protected SecondaryStorageVmDao _secondaryDao;
-    @Inject
-    protected UsageEventDao _usageEventDao;
     @Inject
     protected NicDao _nicsDao;
     @Inject

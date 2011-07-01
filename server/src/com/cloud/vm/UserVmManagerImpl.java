@@ -1110,10 +1110,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
 
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
-                .getHypervisorType().toString());
-        _usageEventDao.persist(usageEvent);
-
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
 
         txn.commit();
@@ -1150,6 +1146,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
 
         _itMgr.registerGuru(VirtualMachine.Type.User, this);
+        
+        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao));
 
         s_logger.info("User VM Manager is configured.");
 
@@ -1654,8 +1652,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         s_logger.warn("Unable to delete volume:" + volume.getId() + " for vm:" + vmId + " whilst transitioning to error state");
                     }
                 }
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName());
-                _usageEventDao.persist(usageEvent);
                 String msg = "Failed to deploy Vm with Id: " + vmId;
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), msg, msg);
 
@@ -2525,9 +2521,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug("Successfully allocated DB entry for " + vm);
         }
         UserContext.current().setEventDetails("Vm Id: " + vm.getId());
+
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString());
         _usageEventDao.persist(usageEvent);
-
+        
         _accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
 
         // Assign instance to the group
@@ -2714,9 +2711,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
         UserVmVO vm = profile.getVirtualMachine();
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm
-                .getHypervisorType().toString());
-        _usageEventDao.persist(usageEvent);
         Answer startAnswer = cmds.getAnswer(StartAnswer.class);
         String returnedIp = null;
         String originalIp = null;
@@ -2735,7 +2729,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(), null, isDefault);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(), null, isDefault);
             _usageEventDao.persist(usageEvent);
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIp4Address();
@@ -2826,21 +2820,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
-        if(answer != null && "VM does not exist".equals(answer.getDetails())){
-            // Stop answer returns true when Vm does not exist.
-            // This is a hack to avoid logging usage events
-            return;
-        }
-        VMInstanceVO vm = profile.getVirtualMachine();
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName());
-        _usageEventDao.persist(usageEvent);
-
-        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
-        for (NicVO nic : nics) {
-            NetworkVO network = _networkDao.findById(nic.getNetworkId());
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), null, network.getNetworkOfferingId(), null, 0L);
-            _usageEventDao.persist(usageEvent);
-        }
     }
 
     public String generateRandomPassword() {
@@ -2916,8 +2895,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     _usageEventDao.persist(usageEvent);
                 }
             }
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName());
-            _usageEventDao.persist(usageEvent);
 
             if (vmState != State.Error) {
                 _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);

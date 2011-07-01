@@ -1075,9 +1075,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
-                        vm.getTemplateId(), vm.getHypervisorType().toString());
-                _usageEventDao.persist(usageEvent);
             }
 
             // Mark the account's volumes as destroyed
