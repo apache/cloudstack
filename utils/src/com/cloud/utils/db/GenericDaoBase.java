@@ -279,7 +279,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return createForUpdate(null);
     }
 
-    @Override
+    @Override @DB(txn=false)
     public <K> K getNextInSequence(final Class<K> clazz, final String name) {
         final TableGenerator tg = _tgs.get(name);
         assert (tg != null) : "Couldn't find Table generator using " + name;
@@ -377,7 +377,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         }
     }
 
-    @Override @SuppressWarnings("unchecked") @DB
+    @Override @SuppressWarnings("unchecked")
     public <M> List<M> customSearchIncludingRemoved(SearchCriteria<M> sc, final Filter filter) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
@@ -733,7 +733,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return rowsUpdated;
     }
 
-    //   @Override
     public int update(UpdateBuilder ub, final SearchCriteria<?> sc, Integer rows) {
         StringBuilder sql = null;
         PreparedStatement pstmt = null;

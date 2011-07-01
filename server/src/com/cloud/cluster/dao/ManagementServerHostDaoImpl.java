@@ -18,7 +18,6 @@
 
 package com.cloud.cluster.dao;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
@@ -51,108 +50,18 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
 
 	@Override
-    public void update(Connection conn, long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
+    public void invalidateRunSession(long id, long runid) {
+	    Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=? where id=?");
-            pstmt.setString(1, name);
-            pstmt.setString(2, version);
-            pstmt.setString(3, serviceIP);
-            pstmt.setInt(4, servicePort);
-            pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
-            pstmt.setLong(6, runid);
-            pstmt.setLong(7, id);
-            
-            pstmt.executeUpdate();
-            conn.commit();
-        } catch(SQLException e ) {
-        	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
-        } finally {
-        	if(pstmt != null) {
-        		try {
-        			pstmt.close();
-        		} catch(Exception e) {
-        			s_logger.warn("Unable to close prepared statement due to exception ", e);
-        		}
-        	}
-        }
-	}
-
-	@Override
-    public void update(Connection conn, long id, long runid, Date lastUpdate) {
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");
-            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
-            pstmt.setLong(2, id);
-            pstmt.setLong(3, runid);
-            
-            int count = pstmt.executeUpdate();
-            conn.commit();
-            
-            if(count < 1) {
-                throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runid + " is no longer valid"));
-            }
-        } catch (SQLException e) {
-        	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
-        } finally {
-        	if(pstmt != null) {
-        		try {
-        			pstmt.close();
-        		} catch(Exception e) {
-        			s_logger.warn("Unable to close prepared statement due to exception ", e);
-        		}
-        	}
-        }
-	}
-	
-	@Override
-    public void invalidateRunSession(Connection conn, long id, long runid) {
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement("update mshost set runid=0, state='Down' where id=? and runid=?");
+            pstmt = txn.prepareAutoCloseStatement("update mshost set runid=0, state='Down' where id=? and runid=?");
             pstmt.setLong(1, id);
             pstmt.setLong(2, runid);
             
             pstmt.executeUpdate();
-            conn.commit();
         } catch (SQLException e) {
         	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
-        } finally {
-        	if(pstmt != null) {
-        		try {
-        			pstmt.close();
-        		} catch(Exception e) {
-        			s_logger.warn("Unable to close prepared statement due to exception ", e);
-        		}
-        	}
         }
-	}
-	
-	@Override
-    public List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime) {
-		Transaction txn = Transaction.openNew("getActiveList", conn);
-		try {
-		    SearchCriteria<ManagementServerHostVO> sc = ActiveSearch.create();
-		    sc.setParameters("lastUpdateTime", cutTime);
-		    
-		    return listIncludingRemovedBy(sc);
-		} finally {
-			txn.close("getActiveList");
-		}
-	}
-	
-	@Override
-    public List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime) {
-		Transaction txn = Transaction.openNew("getInactiveList", conn);
-		try {
-		    SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
-		    sc.setParameters("lastUpdateTime", cutTime);
-		    
-		    return listIncludingRemovedBy(sc);
-		} finally {
-			txn.close("getInactiveList");
-		}
 	}
 	
 	@Override
@@ -190,7 +99,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.commit();
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
-            txn.rollback();
         }
 	}
 	
@@ -210,7 +118,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         	return true;
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
-            txn.rollback();
         }
         
         return false;
@@ -237,7 +144,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             }
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
-            txn.rollback();
         }
 	}
 	
@@ -298,31 +204,23 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	
 	
 	@Override
-    public void update(Connection conn, long id, long runId, State state, Date lastUpdate) {
+    public void update(long id, long runId, State state, Date lastUpdate) {
+	    Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("update mshost set state=?, last_update=? where id=? and runid=?");
+            pstmt = txn.prepareAutoCloseStatement("update mshost set state=?, last_update=? where id=? and runid=?");
             pstmt.setString(1, state.toString());
             pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(3, id);
             pstmt.setLong(4, runId);
             
             int count = pstmt.executeUpdate();
-            conn.commit();
             
             if(count < 1) {
                 throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runId + " is no longer valid"));
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
-        } finally {
-            if(pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch(Exception e) {
-                    s_logger.warn("Unable to close prepared statement due to exception ", e);
-                }
-            }
         }
     }
 	
