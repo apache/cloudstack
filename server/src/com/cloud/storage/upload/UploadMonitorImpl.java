@@ -228,7 +228,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    _uploadDao.persist(uploadTemplateObj);
 	    try{
     	    // Create Symlink at ssvm
-	    	String uuid = UUID.randomUUID().toString() + ".vhd";
+	    	String uuid = UUID.randomUUID().toString() + "." + template.getFormat().toString().toLowerCase();
     	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(storageServers.get(0).getParent(), vmTemplateHost.getInstallPath(), uuid);
     	    long result = send(use_ssvm.getId(), cmd, null);
     	    if (result == -1){
