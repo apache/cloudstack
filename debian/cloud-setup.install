@@ -5,3 +5,4 @@
 /usr/share/cloud/setup/*.sql
 /usr/share/cloud/setup/*.sh
 /usr/share/cloud/setup/server-setup.xml
+/usr/share/cloud/setup/db/*.sql
