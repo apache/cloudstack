@@ -224,18 +224,20 @@ public class VirtualRoutingResource implements Manager {
                 } else {
                     dataBytes = data.getBytes();
                 }
-
-                try {
-                    tmpFile = File.createTempFile("vmdata_", null);
-                    FileOutputStream outStream = new FileOutputStream(tmpFile);
-                    outStream.write(dataBytes); 
-                    outStream.close();
-                } catch (IOException e) {
-                    String tmpDir = System.getProperty("java.io.tmpdir");
-                    s_logger.warn("Failed to create temporary file: is " + tmpDir + " full?", e);
-                    return new Answer(cmd, false, "Failed to create or write to temporary file: is " + tmpDir + " full? " + e.getMessage() );
-                }
             }
+
+            try {
+                tmpFile = File.createTempFile("vmdata_", null);
+                FileOutputStream outStream = new FileOutputStream(tmpFile);
+                if (dataBytes != null)
+                    outStream.write(dataBytes); 
+                outStream.close();
+            } catch (IOException e) {
+                String tmpDir = System.getProperty("java.io.tmpdir");
+                s_logger.warn("Failed to create temporary file: is " + tmpDir + " full?", e);
+                return new Answer(cmd, false, "Failed to create or write to temporary file: is " + tmpDir + " full? " + e.getMessage() );
+            }
+       
 
             final Script command  = new Script(_vmDataPath, _timeout, s_logger);
             command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
