@@ -11,7 +11,7 @@ Provides: vmops-deps
 Conflicts: vmops-deps
 Replaces: vmops-deps
 Architecture: any
-Depends: openjdk-6-jre
+Depends: openjdk-6-jre, cloud-agent-deps
 Description: Cloud.com library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the Cloud.com
