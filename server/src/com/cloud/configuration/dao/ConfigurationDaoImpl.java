@@ -26,10 +26,12 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -194,5 +196,18 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         SearchCriteria<ConfigurationVO> sc = NameSearch.create();
         sc.setParameters("name", name);
         return findOneIncludingRemovedBy(sc);
+    }
+    
+    @Override
+    public ConfigurationVO persistConfigValue(ConfigurationVO config) {
+        ConfigurationVO vo = findByName(config.getName());
+        if (vo != null) {
+            return vo;
+        }
+        try {
+            return persist(config);
+        } catch (EntityExistsException e) {
+            return findByName(config.getName());
+        }
     }
 }

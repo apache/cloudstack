@@ -27,8 +27,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -169,9 +167,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, null);			
 			createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, $0.10 per hour", false, false, null);
 			// Save default disk offerings
-			createDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
-			createDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
-			createDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null);
+			createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
+			createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
+			createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null);
 			
 			// Save the mount parent to the configuration table
 			String mountParent = getMountParent();
@@ -757,24 +755,23 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         return pod;
     }
 
-    private DiskOfferingVO createDiskOffering(Long domainId, String name, String description, int numGibibytes, String tags) {
+    private DiskOfferingVO createdefaultDiskOffering(Long domainId, String name, String description, int numGibibytes, String tags) {
         long diskSize = numGibibytes;
         diskSize = diskSize * 1024 * 1024 * 1024;
         tags = cleanupTags(tags);
 
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags,false);
-        return _diskOfferingDao.persist(newDiskOffering);
+        newDiskOffering.setUniqueName("Cloud.Com-" + name);
+        newDiskOffering = _diskOfferingDao.persistDeafultDiskOffering(newDiskOffering);
+        return newDiskOffering;
     }
 
     private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, String tags) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, localStorageRequired, false, tags, false, null, false);
-        
-        if ((offering = _serviceOfferingDao.persist(offering)) != null) {
-            return offering;
-        } else {
-            return null;
-        }
+        offering.setUniqueName("Cloud.Com-" + name);
+        offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
+        return offering;
     }
 
     private String cleanupTags(String tags) {
