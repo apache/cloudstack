@@ -43,6 +43,7 @@ import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageService;
@@ -53,8 +54,8 @@ import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.UserVmService;
 import com.cloud.vm.BareMetalVmService;
+import com.cloud.vm.UserVmService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
@@ -115,6 +116,7 @@ public abstract class BaseCmd {
     public static LoadBalancingRulesService _lbService;
     public static RemoteAccessVpnService _ravService;
     public static BareMetalVmService _bareMetalVmService;
+    public static ProjectService _projectService;
    
     
     static void setComponents(ResponseGenerator generator) {
@@ -137,6 +139,7 @@ public abstract class BaseCmd {
         _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
         _bareMetalVmService = locator.getManager(BareMetalVmService.class);
+        _projectService = locator.getManager(ProjectService.class);
     }
     
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException;

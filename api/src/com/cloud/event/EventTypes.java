@@ -200,4 +200,8 @@ public class EventTypes {
 	public static final String EVENT_ZONE_VLAN_ASSIGN = "ZONE.VLAN.ASSIGN";
 	public static final String EVENT_ZONE_VLAN_RELEASE = "ZONE.VLAN.RELEASE";
 	
+	//Projects
+	public static final String EVENT_PROJECT_CREATE = "PROJECT.CREATE";
+	public static final String EVENT_PROJECT_DELETE = "PROJECT.DELETE";
+	
 }

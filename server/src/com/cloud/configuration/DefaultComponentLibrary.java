@@ -103,6 +103,8 @@ import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
+import com.cloud.projects.ProjectManagerImpl;
+import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.StorageManagerImpl;
@@ -274,6 +276,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DcDetailsDao", DcDetailsDaoImpl.class);
         addDao("SwiftDao", SwiftDaoImpl.class);
         addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
+        addDao("ProjectDao", ProjectDaoImpl.class);
     }
 
     @Override
@@ -321,6 +324,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
+        addManager("ProjectManager", ProjectManagerImpl.class);
     }
 
     @Override

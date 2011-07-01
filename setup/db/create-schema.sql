@@ -114,6 +114,7 @@ DROP TABLE IF EXISTS `cloud`.`vpn_users`;
 DROP TABLE IF EXISTS `cloud`.`data_center_details`;
 DROP TABLE IF EXISTS `cloud`.`network_tags`;
 DROP TABLE IF EXISTS `cloud`.`op_host_transfer`;
+DROP TABLE IF EXISTS `cloud`.`projects`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -1543,5 +1544,24 @@ CREATE TABLE `cloud`.`op_host_transfer` (
   CONSTRAINT `fk_op_host_transfer__initial_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__initial_mgmt_server_id`(`initial_mgmt_server_id`) REFERENCES `mshost`(`msid`),
   CONSTRAINT `fk_op_host_transfer__future_mgmt_server_id` FOREIGN KEY `fk_op_host_transfer__future_mgmt_server_id`(`future_mgmt_server_id`) REFERENCES `mshost`(`msid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE  `cloud`.`projects` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `name` varchar(255) COMMENT 'project name',
+  `display_text` varchar(255) COMMENT 'project name',
+  `account_id` bigint unsigned,
+  `domain_id` bigint unsigned,
+  `data_center_id` bigint unsigned,
+  `created` datetime COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed',
+  `cleanup_needed` tinyint(1) NOT NULL default '0',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_projects__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_projects__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_projects__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  INDEX `i_projects__removed`(`removed`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 SET foreign_key_checks = 1;

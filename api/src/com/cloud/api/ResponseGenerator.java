@@ -19,7 +19,6 @@ package com.cloud.api;
 
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Set;
 
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
@@ -43,9 +42,10 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
-import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ResourceCountResponse;
+import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
@@ -63,8 +63,8 @@ import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
-import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
@@ -86,6 +86,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.projects.Project;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -95,7 +96,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 
@@ -201,5 +201,7 @@ public interface ResponseGenerator {
 	Long getSecurityGroupId(String groupName, long accountId);
 
     List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    
+    ProjectResponse createProjectResponse(Project project);
 
 }

@@ -260,3 +260,7 @@ createSSHKeyPair=com.cloud.api.commands.CreateSSHKeyPairCmd;15
 deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
 listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
 
+#### Projects commands
+createProject=com.cloud.api.commands.CreateProjectCmd;15
+deleteProject=com.cloud.api.commands.DeleteProjectCmd;15
+listProjects=com.cloud.api.commands.ListProjectsCmd;15

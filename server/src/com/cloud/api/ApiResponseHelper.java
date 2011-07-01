@@ -55,11 +55,11 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
-import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
-import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ResourceCountResponse;
+import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupResultObject;
 import com.cloud.api.response.ServiceOfferingResponse;
@@ -81,9 +81,9 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Configuration;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.configuration.ResourceCount;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -116,11 +116,11 @@ import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.projects.Project;
 import com.cloud.server.Criteria;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -148,12 +148,10 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
-import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -2075,5 +2073,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             return sg.getId();
         }
+    }
+    
+    @Override
+    public ProjectResponse createProjectResponse(Project project) {
+        ProjectResponse response = new ProjectResponse();
+        response.setId(project.getId());
+        response.setName(project.getName());
+        response.setDisplaytext(project.getDisplayText());
+        response.setZoneId(project.getDataCenterId());
+        
+        Account owner = ApiDBUtils.findAccountById(project.getAccountId());
+        response.setAccountName(owner.getAccountName());
+        
+        Domain domain = ApiDBUtils.findDomainById(owner.getDomainId());
+        response.setDomainId(domain.getId());
+        response.setDomain(domain.getName());
+        
+        response.setObjectName("project");
+        return response;
     }
 }
