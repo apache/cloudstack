@@ -203,7 +203,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         SearchCriteria<SecondaryStorageVmVO> sc = InstanceSearch.create();
         sc.setParameters("instanceName", instanceName);
         List<SecondaryStorageVmVO> list = listBy(sc);
-        if( list == null ) {
+        if( list == null || list.size() == 0 ) {
             return null;
         } else {
             return list.get(0);
