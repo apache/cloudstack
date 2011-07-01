@@ -314,7 +314,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         ResultSet rs = null;
         StringBuilder relatedDomainIds = new StringBuilder();
         String sql = SELECT_TEMPLATE_ZONE_REF;
-
+        String groupByClause = "";
         try {        	
         	short accountType;
         	String accountId = null;
@@ -328,6 +328,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	if (onlyReady){
         		templateHostRefJoin.append(" INNER JOIN  template_host_ref thr on (t.id = thr.template_id) INNER JOIN host h on (thr.host_id = h.id)");
         		sql = SELECT_TEMPLATE_HOST_REF;
+                groupByClause = " GROUP BY t.id, h.data_center_id ";
         	}
         	if ((templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.community)) {
         	    dataCenterJoin = " INNER JOIN data_center dc on (h.data_center_id = dc.id)";
@@ -418,8 +419,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             } else if (!whereClause.equals(" WHERE ")) {
             	whereClause += " AND ";
             }
-            
-            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType, zoneId, onlyReady, showDomr, accountType) + getOrderByLimit(pageSize, startIndex);
+
+            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType, zoneId, onlyReady, showDomr, accountType) + groupByClause + getOrderByLimit(pageSize, startIndex);
 
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
