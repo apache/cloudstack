@@ -1581,8 +1581,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     privateTemplate.setFormat(ImageFormat.RAW);
                 }
                 Transaction txn = Transaction.currentTxn();
-                txn.start();
                 String checkSum = getChecksum(secondaryStorageHost.getId(), answer.getPath());
+
+                txn.start();
                 privateTemplate.setChecksum(checkSum);
                 _templateDao.update(templateId, privateTemplate);
 
