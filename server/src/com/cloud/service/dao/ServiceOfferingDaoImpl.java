@@ -127,4 +127,19 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     	sc.setParameters("system", false);
         return listBy(sc);    	
     }
+    
+    @Override @DB
+    public ServiceOfferingVO persistDeafultServiceOffering(ServiceOfferingVO offering) {
+        assert offering.getUniqueName() != null : "unique name should be set for the service offering";
+        ServiceOfferingVO vo = findByName(offering.getUniqueName());
+        if (vo != null) {
+            return vo;
+        }
+        try {
+            return persist(offering);
+        } catch (EntityExistsException e) {
+            // Assume it's conflict on unique name
+            return findByName(offering.getUniqueName());
+        }
+    }
 }

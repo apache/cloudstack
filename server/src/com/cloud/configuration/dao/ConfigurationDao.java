@@ -69,4 +69,6 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     boolean isPremium();
     
     ConfigurationVO findByName(String name);
+
+    ConfigurationVO persistConfigValue(ConfigurationVO config);
 }

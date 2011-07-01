@@ -21,10 +21,10 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskOfferingVO.Type;
 import com.cloud.utils.db.Attribute;
@@ -41,6 +41,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     private final SearchBuilder<DiskOfferingVO> DomainIdSearch;
     private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
     private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
+    protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
     private final Attribute _typeAttr;
 
     protected DiskOfferingDaoImpl() {
@@ -56,6 +57,10 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
         PublicDiskOfferingSearch.done();
+        
+        UniqueNameSearch = createSearchBuilder();
+        UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
+        UniqueNameSearch.done();
         
         _typeAttr = _allAttributes.get("type");
     }
@@ -105,5 +110,32 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     	SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
     	sc.setParameters("system", false);
         return listBy(sc);    	
+    }
+    
+    @Override
+    public DiskOfferingVO findByUniqueName(String uniqueName) {
+        SearchCriteria<DiskOfferingVO> sc = UniqueNameSearch.create();
+        sc.setParameters("name", uniqueName);
+        List<DiskOfferingVO> vos = search(sc, null, null, false);
+        if (vos.size() == 0) {
+            return null;
+        }
+        
+        return vos.get(0);
+    }
+    
+    @Override
+    public DiskOfferingVO persistDeafultDiskOffering(DiskOfferingVO offering) {
+        assert offering.getUniqueName() != null : "unique name shouldn't be null for the disk offering";
+        DiskOfferingVO vo = findByUniqueName(offering.getUniqueName());
+        if (vo != null) {
+            return vo;
+        }
+        try {
+            return persist(offering);
+        } catch (EntityExistsException e) {
+            // Assume it's conflict on unique name
+            return findByUniqueName(offering.getUniqueName());
+        }
     }
 }
