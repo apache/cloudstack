@@ -120,9 +120,12 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
             
             if (template != null){
-                ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), getDestinationZoneId(), false);
-                response.setResponses(templateResponses);
+                List<TemplateResponse> listResponse = _responseGenerator.createTemplateResponses(template.getId(), getDestinationZoneId(), false);
+                TemplateResponse response = new TemplateResponse();
+                if (listResponse != null && !listResponse.isEmpty()) {
+                    response = listResponse.get(0);
+                }
+                    
                 response.setResponseName(getCommandName());              
                 this.setResponseObject(response);
             } else {
