@@ -3003,7 +3003,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 synchronized (_vms) {
                     _vms.remove(vmName);
                 }
-                return new StopAnswer(cmd, "VM does not exist", 0, 0L, 0L);
+                return new StopAnswer(cmd, "VM does not exist");
             }
             Long bytesSent = 0L;
             Long bytesRcvd = 0L;
