@@ -97,7 +97,7 @@ public class Transaction {
     private String _name;
     private Connection _conn;
     private boolean _txn;
-    private final short _dbId;
+    private short _dbId;
     private long _txnTime;
     private Statement _stmt;
     private String _creator;
@@ -125,17 +125,16 @@ public class Transaction {
     // transaction context in the stack. It is used in special use cases that we want to control DB connection explicitly and in the mean time utilize
     // the existing DAO features
     //
-    public static Transaction openNew(final String name, Connection conn) {
-    	assert(conn != null);
-        Transaction txn = new Transaction(name, false, CONNECTED_DB);
-        txn._conn = conn;
-        txn._prev = tls.get();
-        tls.set(txn);
-        
-        txn.takeOver(name, true);
-        s_logger.debug("Registering txn" + txn.getId());
-        s_mbean.addTransaction(txn);
-        return txn;
+    public void transitToUserManagedConnection(Connection conn) {
+    	assert(_conn == null && _stack.size() <= 1) : "Can't change to a user managed connection unless the stack is empty and the db connection is null: " + toString();
+        _conn = conn;
+        _dbId = CONNECTED_DB;
+    }
+    
+    public void transitToAutoManagedConnection(short dbId) {
+        assert(_stack.size() == 0) : "Can't change to auto managed connection unless your stack is empty";
+        _dbId = dbId;
+        _conn = null;
     }
     
     public static Transaction open(final String name) {
@@ -166,7 +165,6 @@ public class Transaction {
 
         txn.takeOver(name, false);
         if (isNew) {
-            s_logger.debug("Registering txn" + txn.getId());
             s_mbean.addTransaction(txn);
         }
         return txn;
@@ -611,7 +609,6 @@ public class Transaction {
         if(this._dbId == CONNECTED_DB) {
 	        tls.set(_prev);
 	        _prev = null;
-            s_logger.debug("Unregistering txn" + getId());
 	        s_mbean.removeTransaction(this);
         }
     }

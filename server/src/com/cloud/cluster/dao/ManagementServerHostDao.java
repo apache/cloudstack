@@ -18,14 +18,12 @@
 
 package com.cloud.cluster.dao;
 
-import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHost;
+import com.cloud.cluster.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.host.Status;
 import com.cloud.utils.db.GenericDao;
 
 public interface ManagementServerHostDao extends GenericDao<ManagementServerHostVO, Long> {
@@ -40,13 +38,9 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 	List<ManagementServerHostVO> getActiveList(Date cutTime);
 	List<ManagementServerHostVO> getInactiveList(Date cutTime);
 
-	void update(Connection conn, long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
-	void update(Connection conn, long id, long runid, Date lastUpdate);
-	void invalidateRunSession(Connection conn, long id, long runid);
-	List<ManagementServerHostVO> getActiveList(Connection conn, Date cutTime);
-	List<ManagementServerHostVO> getInactiveList(Connection conn, Date cutTime);
+	void invalidateRunSession(long id, long runid);
 	
-	void update(Connection conn, long id, long runId, State state, Date lastUpdate);
+	void update(long id, long runId, State state, Date lastUpdate);
 	
 	List<ManagementServerHostVO> listBy(ManagementServerHost.State...states);
 }

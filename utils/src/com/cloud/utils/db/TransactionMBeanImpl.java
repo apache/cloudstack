@@ -17,7 +17,9 @@
  */
 package com.cloud.utils.db;
 
+import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,49 +50,65 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
     }
     
     @Override
-    public int getActiveTransactionCount() {
-        int count = 0;
+    public int[] getActiveTransactionCount() {
+        int[] count = new int[2];
+        count[0] = 0;
+        count[1] = 0;
         for (Transaction txn : _txns.values()) {
             if (txn.getStack().size() > 0) {
-                count++;
+                count[0]++;
+            }
+            if (txn.getCurrentConnection() != null) {
+                count[1]++;
             }
         }
         return count;
     }
     
     @Override
-    public List<String> getTransactions() {
-        ArrayList<String> txns = new ArrayList<String>();
+    public List<Map<String, String>> getTransactions() {
+        ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
         for (Transaction info : _txns.values()) {
-            txns.add(toString(info));
+            txns.add(toMap(info));
         }
         return txns;
     }
     
     @Override
-    public List<String> getActiveTransactions() {
-        ArrayList<String> txns = new ArrayList<String>();
+    public List<Map<String, String>> getActiveTransactions() {
+        ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
         for (Transaction txn : _txns.values()) {
             if (txn.getStack().size() > 0 || txn.getCurrentConnection() != null) {
-                txns.add(toString(txn));
+                txns.add(toMap(txn));
             }
         }
         return txns;
     }
     
-    protected String toString(Transaction txn) {
-        StringBuilder buff = new StringBuilder("[Name=");
-        buff.append(txn.getName());
-        buff.append("; Creator=");
-        buff.append(txn.getCreator());
-        buff.append("; DB=");
-        buff.append(txn.getCurrentConnection());
-        buff.append("; Stack=");
+    protected Map<String, String> toMap(Transaction txn) {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("name", txn.getName());
+        map.put("id", Long.toString(txn.getId()));
+        map.put("creator", txn.getCreator());
+        Connection conn = txn.getCurrentConnection();
+        map.put("db", conn != null ? Integer.toString(System.identityHashCode(conn)) : "none");
+        StringBuilder buff = new StringBuilder();
         for (StackElement element : txn.getStack()) {
-            buff.append(",").append(element.toString());
+            buff.append(element.toString()).append(",");
         }
-        buff.append("]");
+        map.put("stack", buff.toString());
         
-        return buff.toString();
+        return map;
+    }
+
+    @Override
+    public List<Map<String, String>> getTransactionsWithDatabaseConnection() {
+        ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
+        for (Transaction txn : _txns.values()) {
+            if (txn.getCurrentConnection() != null) {
+                txns.add(toMap(txn));
+            }
+        }
+        return txns;
     }
 }

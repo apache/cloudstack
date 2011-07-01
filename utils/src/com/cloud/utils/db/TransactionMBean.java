@@ -18,14 +18,17 @@
 package com.cloud.utils.db;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TransactionMBean {
     int getTransactionCount();
     
-    int getActiveTransactionCount();
+    int[] getActiveTransactionCount();
     
-    List<String> getTransactions();
+    List<Map<String, String>> getTransactions();
     
-    List<String> getActiveTransactions();
+    List<Map<String, String>> getActiveTransactions();
+    
+    List<Map<String, String>> getTransactionsWithDatabaseConnection();
     
 }

@@ -37,9 +37,9 @@ import java.lang.annotation.Target;
  *    txn.commit();
  * 
  * 2. Annotate methods that uses a DAO's acquire method.
- *    _dao.acquire(id);
+ *    _dao.acquireInLockTable(id);
  *    ...
- *    _dao.release(id);
+ *    _dao.releaseFromLockTable(id);
  * 
  * 3. Annotate methods that are inside a DAO but doesn't use
  *    the Transaction class.  Generally, these are methods

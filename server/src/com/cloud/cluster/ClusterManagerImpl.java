@@ -94,6 +94,7 @@ public class ClusterManagerImpl implements ClusterManager {
     private final Map<String, Listener> asyncCalls;
     private final Gson gson;
 
+    @Inject
     private AgentManager _agentMgr;
     @Inject
     private ClusteredAgentRebalanceService _rebalanceService;
@@ -563,13 +564,14 @@ public class ClusterManagerImpl implements ClusterManager {
         return new Runnable() {
             @Override
             public void run() {
+                Transaction txn = Transaction.open("ClusterHeartBeat");
                 try {
+                    txn.transitToUserManagedConnection(getHeartbeatConnection());
                     if(s_logger.isTraceEnabled()) {
                         s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
                     }
 
-                    Connection conn = getHeartbeatConnection();
-                    _mshostDao.update(conn, _mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
+                    _mshostDao.update(_mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
 
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
@@ -577,10 +579,10 @@ public class ClusterManagerImpl implements ClusterManager {
 
                     if (!_peerScanInited) {
                         _peerScanInited = true;
-                        initPeerScan(conn);
+                        initPeerScan();
                     }
 
-                    peerScan(conn);
+                    peerScan();
                 } catch(CloudRuntimeException e) {
                     s_logger.error("Runtime DB exception ", e.getCause());
 
@@ -602,6 +604,8 @@ public class ClusterManagerImpl implements ClusterManager {
                     }
 
                     s_logger.error("Problem with the cluster heartbeat!", e);
+                } finally {
+                    txn.close("ClusterHeartBeat");
                 }
             }
         };
@@ -706,7 +710,7 @@ public class ClusterManagerImpl implements ClusterManager {
                         }
                     }
 
-                    try { Thread.currentThread().sleep(1000); } catch (InterruptedException e) {}
+                    try { Thread.sleep(1000); } catch (InterruptedException e) {}
                 }
             }
         };
@@ -729,20 +733,20 @@ public class ClusterManagerImpl implements ClusterManager {
         return null;
     }
 
-    private void initPeerScan(Connection conn) {
+    private void initPeerScan() {
         // upon startup, for all inactive management server nodes that we see at startup time, we will send notification also to help upper layer perform
         // missed cleanup
         Date cutTime = DateUtil.currentGMTTime();
-        List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(conn, new Date(cutTime.getTime() - heartbeatThreshold));
+        List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - heartbeatThreshold));
         if(inactiveList.size() > 0) {
             this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, inactiveList));
         }
     }
 
-    private void peerScan(Connection conn) {
+    private void peerScan() {
         Date cutTime = DateUtil.currentGMTTime();
 
-        List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(conn, new Date(cutTime.getTime() - heartbeatThreshold));
+        List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - heartbeatThreshold));
 
         List<ManagementServerHostVO> removedNodeList = new ArrayList<ManagementServerHostVO>();
         List<ManagementServerHostVO> invalidatedNodeList = new ArrayList<ManagementServerHostVO>();
@@ -801,7 +805,7 @@ public class ClusterManagerImpl implements ClusterManager {
             if(!pingManagementNode(mshost)) {
                 s_logger.warn("Management node " + mshost.getId() + " is detected inactive by timestamp and also not pingable");
                 activePeers.remove(mshost.getId());
-                _mshostDao.invalidateRunSession(conn, mshost.getId(), mshost.getRunid());
+                _mshostDao.invalidateRunSession(mshost.getId(), mshost.getRunid());
                 try {
                     JmxUtil.unregisterMBean("ClusterManager", "Node " + mshost.getId());
                 } catch(Exception e) {
