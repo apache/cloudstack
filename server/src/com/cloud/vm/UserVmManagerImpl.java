@@ -1580,6 +1580,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     // Specify RAW format makes it unusable for snapshots.
                     privateTemplate.setFormat(ImageFormat.RAW);
                 }
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
                 String checkSum = getChecksum(secondaryStorageHost.getId(), answer.getPath());
                 privateTemplate.setChecksum(checkSum);
                 _templateDao.update(templateId, privateTemplate);
@@ -1598,7 +1600,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), secondaryStorageHost.getDataCenterId(), privateTemplate.getId(),
                         privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(), templateHostVO.getSize());
                 _usageEventDao.persist(usageEvent);
-
+                txn.commit();
             }
         } finally {
             if (privateTemplate == null) {
@@ -2320,7 +2322,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIp);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
+    @DB @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
             Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, String> requestedIps, String defaultNetworkIp) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
@@ -2498,7 +2500,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         } else {
             hypervisorType = template.getHypervisorType();
         }
-
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.getOfferHA(), offering.getLimitCpuUse(), owner.getDomainId(), owner.getId(),
                 offering.getId(), userData, hostName);
 
@@ -2527,7 +2530,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _usageEventDao.persist(usageEvent);
         
         _accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
-
+        txn.commit();
         // Assign instance to the group
         try {
             if (group != null) {

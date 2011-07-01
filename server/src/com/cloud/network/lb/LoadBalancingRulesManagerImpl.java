@@ -340,7 +340,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         return true;
     }
 
-    @Override
+    @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
     public LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException {
         UserContext caller = UserContext.current();
@@ -394,6 +394,9 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("LB service is not supported in network id=" + networkId);
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), lb.getAlgorithm(),
                 networkId, ipAddr.getAccountId(), ipAddr.getDomainId());
 
@@ -408,6 +411,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             UserContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
+            txn.commit();
             return newRule;
         } catch (Exception e) {
             _lbDao.remove(newRule.getId());
