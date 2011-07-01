@@ -23,9 +23,7 @@ import java.util.List;
 
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.UsageServerException;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
 
 public interface UsageEventDao extends GenericDao<UsageEventVO, Long> {
     

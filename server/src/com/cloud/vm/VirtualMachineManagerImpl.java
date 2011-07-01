@@ -65,7 +65,6 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
@@ -79,7 +78,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
@@ -184,8 +182,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected ConsoleProxyDao _consoleDao;
     @Inject
     protected SecondaryStorageVmDao _secondaryDao;
-    @Inject
-    protected UsageEventDao _usageEventDao;
     @Inject
     protected NicDao _nicsDao;
     @Inject

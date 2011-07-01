@@ -581,11 +581,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         VolumeVO createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId); // Precondition: snapshot is not null and not removed.
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         createdVolume = volumeDetails.first();
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         Long diskOfferingId = volume.getDiskOfferingId();
 
         if (createdVolume.getPath() != null) {
@@ -1756,11 +1756,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume.setDomainId((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
         volume.setState(Volume.State.Allocated);
         volume = _volsDao.persist(volume);
-        UserContext.current().setEventDetails("Volume Id: " + volume.getId());
-
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
-
         _usageEventDao.persist(usageEvent);
+        
+        UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
         // Increment resource count during allocation; if actual creation fails, decrement it
         _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);

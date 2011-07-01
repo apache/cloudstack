@@ -127,6 +127,21 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
             }
             return false;
         }
+        
+        public static boolean isVmCreated(State oldState, Event e, State newState) {
+            if (oldState == State.Destroyed && newState == State.Stopped) {
+                // VM recover
+                return true;
+            }
+            return false;
+        }
+        
+        public static boolean isVmDestroyed(State oldState, Event e, State newState) {
+            if (oldState == State.Stopped && newState == State.Destroyed) {
+                return true;
+            }
+            return false;
+        }
     }
     
     public enum Event {
