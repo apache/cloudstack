@@ -41,7 +41,19 @@ for _globber in [
 	"repomanagement",  # internal management stuff
 	"client-api",  # obsolete
 	"cloud-bridge",  # not compiled and packaged yet
-	"target",],  # eclipse workdir
+	"target",  # eclipse workdir
+        "apache-log4j-1.2.16",
+        "apache-log4j-extras-1.1",
+        "cglib",
+        "gson",
+        "vnc",
+        "ehcache",
+        "vhd-tools",
+        "xmlrpc",
+        "PreviousDatabaseSchema",
+        "mockito",
+        "gcc",
+        "junit" ],
 	_glob("./*.disabledblahxml"),
 	]:
 	for f in _globber: Scripting.excludes.append(_basename(f)) # _basename() only the filename
@@ -591,7 +603,7 @@ def rpm(context):
 	
 	if _exists(sourcedir): shutil.rmtree(sourcedir)
 	for a in ["RPMS/noarch","SRPMS","BUILD","SPECS","SOURCES"]: mkdir_p(_join(outputdir,a))
-	shutil.copy(tarball,_join(sourcedir,tarball))
+	shutil.move(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever)
