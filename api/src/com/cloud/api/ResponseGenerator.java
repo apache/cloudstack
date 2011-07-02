@@ -163,10 +163,10 @@ public interface ResponseGenerator {
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
+    List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
-    
-    List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
     
     ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
     
@@ -201,7 +201,7 @@ public interface ResponseGenerator {
 	Long getSecurityGroupId(String groupName, long accountId);
 
     List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
-    
     ProjectResponse createProjectResponse(Project project);
+    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
 }

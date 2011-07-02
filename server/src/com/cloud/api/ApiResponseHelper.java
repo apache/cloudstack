@@ -1302,6 +1302,21 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly) {
+        List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
+        if (zoneId == null) {
+            dcs.addAll(ApiDBUtils.listZones());
+            List<TemplateResponse> response = new ArrayList<TemplateResponse>();
+            for (DataCenterVO dc : dcs ) {
+                response.addAll(createTemplateResponses(templateId, dc.getId(), readyOnly));
+            }
+            return response;
+        } else {
+            return createTemplateResponses(templateId, zoneId.longValue(), readyOnly);
+        }
+    }
+    
+    @Override
     public List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly) {
         VirtualMachineTemplate template = findTemplateById(templateId);
         List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
@@ -1400,12 +1415,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         responses.add(templateResponse);
         return responses;
     }
-
- 
     @Override
     public List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly) {
-        VirtualMachineTemplate iso = findTemplateById(isoId);
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
+        VirtualMachineTemplate iso = findTemplateById(isoId);
         if ( iso.getTemplateType() == TemplateType.PERHOST) {
             TemplateResponse isoResponse = new TemplateResponse();
             isoResponse.setId(iso.getId());
@@ -1428,82 +1441,97 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             isoResponse.setObjectName("iso");
             isoResponses.add(isoResponse);
-
+            return isoResponses;
         } else {
-
-            VMTemplateHostVO isoHost = ApiDBUtils.findTemplateHostRef(isoId, zoneId, readyOnly);
-            TemplateResponse isoResponse = new TemplateResponse();
-            isoResponse.setId(iso.getId());
-            isoResponse.setName(iso.getName());
-            isoResponse.setDisplayText(iso.getDisplayText());
-            isoResponse.setPublic(iso.isPublicTemplate());
-            isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
-            isoResponse.setCreated(isoHost.getCreated());
-            isoResponse.setReady(isoHost.getDownloadState() == Status.DOWNLOADED);
-            isoResponse.setBootable(iso.isBootable());
-            isoResponse.setFeatured(iso.isFeatured());
-            isoResponse.setCrossZones(iso.isCrossZones());
-            isoResponse.setPublic(iso.isPublicTemplate());
-    
-            // TODO: implement
-            GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
-            if (os != null) {
-                isoResponse.setOsTypeId(os.getId());
-                isoResponse.setOsTypeName(os.getDisplayName());
-            } else {
-                isoResponse.setOsTypeId(-1L);
-                isoResponse.setOsTypeName("");
-            }
-    
-            // add account ID and name
-            Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
-            if (owner != null) {
-                isoResponse.setAccount(owner.getAccountName());
-                isoResponse.setDomainId(owner.getDomainId());
-                // TODO: implement
-                isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
-    
-            Account account = UserContext.current().getCaller();
-            boolean isAdmin = false;
-            if ((account == null) || BaseCmd.isAdmin(account.getType())) {
-                isAdmin = true;
-            }
-            // Add the zone ID
-            DataCenterVO datacenter = ApiDBUtils.findZoneById(zoneId);
-            isoResponse.setZoneId(zoneId);
-            isoResponse.setZoneName(datacenter.getName());
-    
-            // If the user is an admin, add the template download status
-            if (isAdmin || account.getId() == iso.getAccountId()) {
-                // add download status
-                if (isoHost.getDownloadState() != Status.DOWNLOADED) {
-                    String isoStatus = "Processing";
-                    if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                        isoStatus = "Download Complete";
-                    } else if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                        if (isoHost.getDownloadPercent() == 100) {
-                            isoStatus = "Installing ISO";
-                        } else {
-                            isoStatus = isoHost.getDownloadPercent() + "% Downloaded";
-                        }
-                    } else {
-                        isoStatus = isoHost.getErrorString();
-                    }
-                    isoResponse.setStatus(isoStatus);
-                } else {
-                    isoResponse.setStatus("Successfully Installed");
+            List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();       
+            if (zoneId == null) {
+                dcs.addAll(ApiDBUtils.listZones());
+                for (DataCenterVO dc : dcs ) {
+                    isoResponses.addAll(createIsoResponses(iso, dc.getId(), readyOnly));
                 }
+                return isoResponses;
+            } else {
+                return createIsoResponses(iso, zoneId, readyOnly);
             }
-    
-            Long isoSize = isoHost.getSize();
-            if (isoSize > 0) {
-                isoResponse.setSize(isoSize);
-            }
-    
-            isoResponse.setObjectName("iso");
-            isoResponses.add(isoResponse);
         }
+    }
+ 
+    @Override
+    public List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly) {
+        long isoId = iso.getId();
+        List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
+        VMTemplateHostVO isoHost = ApiDBUtils.findTemplateHostRef(isoId, zoneId, readyOnly);
+        TemplateResponse isoResponse = new TemplateResponse();
+        isoResponse.setId(iso.getId());
+        isoResponse.setName(iso.getName());
+        isoResponse.setDisplayText(iso.getDisplayText());
+        isoResponse.setPublic(iso.isPublicTemplate());
+        isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
+        isoResponse.setCreated(isoHost.getCreated());
+        isoResponse.setReady(isoHost.getDownloadState() == Status.DOWNLOADED);
+        isoResponse.setBootable(iso.isBootable());
+        isoResponse.setFeatured(iso.isFeatured());
+        isoResponse.setCrossZones(iso.isCrossZones());
+        isoResponse.setPublic(iso.isPublicTemplate());
+
+        // TODO: implement
+        GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
+        if (os != null) {
+            isoResponse.setOsTypeId(os.getId());
+            isoResponse.setOsTypeName(os.getDisplayName());
+        } else {
+            isoResponse.setOsTypeId(-1L);
+            isoResponse.setOsTypeName("");
+        }
+
+        // add account ID and name
+        Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
+        if (owner != null) {
+            isoResponse.setAccount(owner.getAccountName());
+            isoResponse.setDomainId(owner.getDomainId());
+            // TODO: implement
+            isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+        }
+
+        Account account = UserContext.current().getCaller();
+        boolean isAdmin = false;
+        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+            isAdmin = true;
+        }
+        // Add the zone ID
+        DataCenterVO datacenter = ApiDBUtils.findZoneById(zoneId);
+        isoResponse.setZoneId(zoneId);
+        isoResponse.setZoneName(datacenter.getName());
+
+        // If the user is an admin, add the template download status
+        if (isAdmin || account.getId() == iso.getAccountId()) {
+            // add download status
+            if (isoHost.getDownloadState() != Status.DOWNLOADED) {
+                String isoStatus = "Processing";
+                if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                    isoStatus = "Download Complete";
+                } else if (isoHost.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                    if (isoHost.getDownloadPercent() == 100) {
+                        isoStatus = "Installing ISO";
+                    } else {
+                        isoStatus = isoHost.getDownloadPercent() + "% Downloaded";
+                    }
+                } else {
+                    isoStatus = isoHost.getErrorString();
+                }
+                isoResponse.setStatus(isoStatus);
+            } else {
+                isoResponse.setStatus("Successfully Installed");
+            }
+        }
+
+        Long isoSize = isoHost.getSize();
+        if (isoSize > 0) {
+            isoResponse.setSize(isoSize);
+        }
+
+        isoResponse.setObjectName("iso");
+        isoResponses.add(isoResponse);
         return isoResponses;
     }
 
