@@ -140,7 +140,7 @@ public class ListTemplatesCmd extends BaseListCmd {
 
         for (Pair<Long, Long> template : templateZonePairSet) {
             List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createTemplateResponses(template.first(), template.second(), listInReadyState());
+            responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
             templateResponses.addAll(responses);
         }
 
