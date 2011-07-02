@@ -595,7 +595,7 @@ def rpm(context):
 
 	specfile = "%s.spec"%APPNAME
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever)
-	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease+packagever)
+	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-bb",specfile]+buildnumber+prerelease+packagever)
 	try: checkdeps()
 	except (CalledProcessError,OSError),e:
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
