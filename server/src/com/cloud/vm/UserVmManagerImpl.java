@@ -3310,57 +3310,63 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         // OS 3: update the network
-        s_logger.warn("zone.getNetworkType() = " + zone.getNetworkType());
-        if (zone.getNetworkType() == NetworkType.Basic) {
-            s_logger.warn("Basic network type");
-        }
-        else {
+        if (zone.getNetworkType() == NetworkType.Advanced) { 
             //cleanup the network for the oldOwner
             _networkMgr.cleanupNics(vmOldProfile);
             _networkMgr.expungeNics(vmOldProfile);
-            s_logger.warn("Nics expunged ");
 
             // add the new nics
             List<NetworkVO> networkList = new ArrayList<NetworkVO>();
             NetworkVO defaultNetwork = null; 
-            List<NetworkVO> oldNetwork = _networkMgr.listNetworksForAccount(oldAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
-            long networkOffering =  oldNetwork.get(0).getNetworkOfferingId();   
-            s_logger.warn("Old network offering " + networkOffering); 
-            List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
-            if (virtualNetworks.isEmpty()) {
-                s_logger.warn("Creating default Virtual network for account " + newAccount + " as a part of deployVM process");
-                Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", false, null,
-                        vm.getDataCenterIdToDeployIn(), null, null, null, null, newAccount, false, null, null);
-                s_logger.warn("New network " +  newNetwork);
-                defaultNetwork = _networkDao.findById(newNetwork.getId());
-            } else if (virtualNetworks.size() > 1) {
-                throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + newAccount + "; please specify networkIds");
-            } else {
-                defaultNetwork = virtualNetworks.get(0);
-                s_logger.warn("Virtaul networks " + virtualNetworks.get(0));
-            }
-
-            networkList.add(defaultNetwork);
-            List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
-            short defaultNetworkNumber = 0;
-            for (NetworkVO network : networkList) {
-
-                if (network.isDefault()) {
-                    defaultNetworkNumber++;
-                }
-
-                networks.add(new Pair<NetworkVO, NicProfile>(network, null));
-            }
             
-            VMInstanceVO vmi = _itMgr.findById(vm.getType(), vm.getId());
-            VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
-            _networkMgr.allocate(vmProfile, networks);
-            s_logger.warn("Saved the network profile ");
+            List<NetworkVO> oldNetworks = new ArrayList<NetworkVO>();
+            List<NetworkVO> zoneNetworks = _networkDao.listByZone(zone.getId());
+
+            for (NetworkVO network : zoneNetworks) { // get the default networks for the account
+                NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                if (!no.isSystemOnly()) {
+                    if (network.getIsShared() || !_networkDao.listBy(oldAccount.getId(), network.getId()).isEmpty()) {
+                        if (network.isDefault()) {
+                            oldNetworks.add(network);
+                        }
+                    }
+                }
+            }
+            for (NetworkVO oldNet: oldNetworks){
+                long networkOffering =  oldNet.getNetworkOfferingId();   
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
+                if (virtualNetworks.isEmpty()) {
+                    Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", false, null,
+                            vm.getDataCenterIdToDeployIn(), null, null, null, null, newAccount, false, null, null);
+                    defaultNetwork = _networkDao.findById(newNetwork.getId());
+                } else if (virtualNetworks.size() > 1) {
+                    throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + newAccount + "; please specify networkIds");
+                } else {
+                    defaultNetwork = virtualNetworks.get(0);
+                }
+    
+                networkList.add(defaultNetwork);
+                List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+                short defaultNetworkNumber = 0;
+                for (NetworkVO network : networkList) {
+    
+                    if (network.isDefault()) {
+                        defaultNetworkNumber++;
+                    }
+    
+                    networks.add(new Pair<NetworkVO, NicProfile>(network, null));
+                }
+                
+                VMInstanceVO vmi = _itMgr.findById(vm.getType(), vm.getId());
+                VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
+                _networkMgr.allocate(vmProfile, networks);
+            }
             
         }
                 
         return vm;
     }
+
 
 
 }
