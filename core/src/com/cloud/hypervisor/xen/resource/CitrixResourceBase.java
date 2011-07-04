@@ -3054,7 +3054,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             if (vms.size() == 0) {
-                s_logger.warn("VM does not exist on XenServer" + _host.uuid);
+                s_logger.info("VM does not exist on XenServer" + _host.uuid);
                 synchronized (_vms) {
                     _vms.remove(vmName);
                 }
