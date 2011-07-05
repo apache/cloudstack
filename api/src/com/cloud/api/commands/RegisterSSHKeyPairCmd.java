@@ -24,6 +24,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SSHKeyPairResponse;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
@@ -45,6 +46,12 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
     @Parameter(name="publickey", type=CommandType.STRING, required=true, description="Public key material of the keypair") 
     private String publicKey;
 
+    //Owner information
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the ssh key. Must be used with domainId.")
+    private String accountName;
+    
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
+    private Long domainId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -58,6 +65,13 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
 		return publicKey;
 	}
 
+	public String getAccountName() {
+	    return accountName;
+	}
+	    
+    public Long getDomainId() {
+        return domainId;
+    }
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

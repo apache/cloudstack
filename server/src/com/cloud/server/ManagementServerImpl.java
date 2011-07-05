@@ -4598,7 +4598,7 @@ public class ManagementServerImpl implements ManagementServer {
         String fingerprint = keys.getPublicKeyFingerPrint();
         String privateKey = keys.getPrivateKey();
 
-        return createAndSaveSSHKeyPair(name, fingerprint, publicKey, privateKey);
+        return createAndSaveSSHKeyPair(name, fingerprint, publicKey, privateKey, owner);
     }
 
     @Override
@@ -4670,29 +4670,32 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
-        Account account = UserContext.current().getCaller();
-        SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+        Account caller = UserContext.current().getCaller();
+        
+        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId());
+        
+        SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s != null) {
             throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
         }
 
         String name = cmd.getName();
         String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
-        String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
-
+        
         if (publicKey == null) {
             throw new InvalidParameterValueException("Public key is invalid");
         }
+        
+        String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
 
-        return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null);
+        return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null, owner);
     }
 
-    private SSHKeyPair createAndSaveSSHKeyPair(String name, String fingerprint, String publicKey, String privateKey) {
-        Account account = UserContext.current().getCaller();
+    private SSHKeyPair createAndSaveSSHKeyPair(String name, String fingerprint, String publicKey, String privateKey, Account owner) {
         SSHKeyPairVO newPair = new SSHKeyPairVO();
 
-        newPair.setAccountId(account.getAccountId());
-        newPair.setDomainId(account.getDomainId());
+        newPair.setAccountId(owner.getAccountId());
+        newPair.setDomainId(owner.getDomainId());
         newPair.setName(name);
         newPair.setFingerprint(fingerprint);
         newPair.setPublicKey(publicKey);
