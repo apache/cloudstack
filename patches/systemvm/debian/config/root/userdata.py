@@ -42,24 +42,26 @@ def vm_data(args):
         
         fd = None
         tmp_path = None
-        if (vmDataValue != "none"):
-            try:
-                fd,tmp_path = tempfile.mkstemp()
-                tmpfile = open(tmp_path, 'w')
+       
+        try:
+            fd,tmp_path = tempfile.mkstemp()
+            tmpfile = open(tmp_path, 'w')
 
-                if (vmDataFolder == "userdata"):
-                    vmDataValue = base64.urlsafe_b64decode(vmDataValue)
-                    
+            if (vmDataFolder == "userdata" and vmDataValue != "none"):
+                vmDataValue = base64.urlsafe_b64decode(vmDataValue)
+            
+            if vmDataValue != "none":
                 tmpfile.write(vmDataValue)
-                tmpfile.close()
-                cmd.append("-d")
-                cmd.append(tmp_path)
-            except:
-		if (fd !=None):
-                	os.close(fd)
-                	os.remove(tmp_path)
+            
+            tmpfile.close()
+            cmd.append("-d")
+            cmd.append(tmp_path)
+        except:
+            if fd !=None:
+                os.close(fd)
+                os.remove(tmp_path)
                 return ''
-
+        
         try:
             call(cmd)
             txt = 'success'
