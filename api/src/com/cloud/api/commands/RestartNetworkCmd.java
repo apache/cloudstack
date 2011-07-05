@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 
-@Implementation(description="Reapplies all ip addresses for the particular network", responseObject=IPAddressResponse.class)
+@Implementation(description="Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules", responseObject=IPAddressResponse.class)
 public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";
@@ -45,7 +45,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The network this ip address should be associated to.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The id of the network to restart.")
     private Long id;
 
 
