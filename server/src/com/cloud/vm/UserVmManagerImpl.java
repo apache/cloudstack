@@ -2436,8 +2436,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Find an SSH public key corresponding to the key pair name, if one is given
         String sshPublicKey = null;
         if (sshKeyPair != null && !sshKeyPair.equals("")) {
-            Account account = UserContext.current().getCaller();
-            SSHKeyPair pair = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), sshKeyPair);
+            SSHKeyPair pair = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (pair == null) {
                 throw new InvalidParameterValueException("A key pair with name '" + sshKeyPair + "' was not found.");
             }
