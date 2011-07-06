@@ -2917,9 +2917,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
         }
         
-        // Don't allow to update system network
+        // Don't allow to update system network - make an exception for the Guest network in Basic zone
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-        if (offering.isSystemOnly()) {
+        if (offering.isSystemOnly() && network.getTrafficType() != TrafficType.Guest) {
             throw new InvalidParameterValueException("Can't update system networks");
         }
         
