@@ -263,6 +263,8 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
 
                 tmpSnapshotScheduleVO.setAsyncJobId(jobId);
                 _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
+            } catch (Exception e) {
+                s_logger.debug("Scheduling snapshot failed due to " + e.toString(), e);
             } finally {
                 if (tmpSnapshotScheduleVO != null) {
                     _snapshotScheduleDao.releaseFromLockTable(snapshotScheId);
