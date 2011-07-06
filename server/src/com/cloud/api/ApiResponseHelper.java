@@ -1304,7 +1304,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly) {
         List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
-        if (zoneId == -1) {
+        if (zoneId == null || zoneId == -1) {
             dcs.addAll(ApiDBUtils.listZones());
             List<TemplateResponse> response = new ArrayList<TemplateResponse>();
             for (DataCenterVO dc : dcs ) {
