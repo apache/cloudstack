@@ -189,9 +189,11 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
         if (template != null){
-            ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
             List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
-            response.setResponses(templateResponses);
+            TemplateResponse response = new TemplateResponse();
+            if (templateResponses != null && !templateResponses.isEmpty()) {
+                response = templateResponses.get(0);
+            }
             response.setResponseName(getCommandName());              
             this.setResponseObject(response);
         } else {
