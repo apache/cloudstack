@@ -64,15 +64,19 @@ public class DomainVO implements Domain {
     @Column(name="state")
     private Domain.State state;
     
+    @Column(name="network_domain")
+    private String networkDomain;
+    
     public DomainVO() {}
 
-    public DomainVO(String name, long owner, Long parentId) {
+    public DomainVO(String name, long owner, Long parentId, String networkDomain) {
     	this.parent = parentId;
         this.name = name;
         this.accountId = owner;
         this.path ="";
         this.level = 0;
         this.state = Domain.State.Active;
+        this.networkDomain = networkDomain;
     }
 
     @Override
@@ -167,6 +171,15 @@ public class DomainVO implements Domain {
     @Override
     public String toString() {
         return new StringBuilder("Domain:").append(id).append(path).toString();
+    }
+
+    @Override
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
+
+    public void setNetworkDomain(String domainSuffix) {
+        this.networkDomain = domainSuffix;
     }
 }
 

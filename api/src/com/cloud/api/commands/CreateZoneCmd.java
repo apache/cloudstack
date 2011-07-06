@@ -60,7 +60,7 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the Zone")
     private String vlan;
     
-    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Domain name for the Vms in the zone")
+    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
     private String domain;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones")

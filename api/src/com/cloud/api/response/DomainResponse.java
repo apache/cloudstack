@@ -39,6 +39,9 @@ public class DomainResponse extends BaseResponse {
 
     @SerializedName("haschild") @Param(description="whether the domain has one or more sub-domains")
     private boolean hasChild;
+    
+    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
+    private String networkDomain;
 
     public Long getId() {
         return id;
@@ -87,4 +90,9 @@ public class DomainResponse extends BaseResponse {
     public void setHasChild(boolean hasChild) {
         this.hasChild = hasChild;
     }
+
+    public void setNetworkDomain(String networkDomain) {
+        this.networkDomain = networkDomain;
+    }
+    
 }

@@ -234,25 +234,25 @@ public class TestAsyncJobManager extends ComponentTestCase {
 		getRandomMilliseconds(1, 100);		
 		DomainDao domainDao = new DomainDaoImpl();
 		
-		DomainVO domain1 = new DomainVO("d1", 2L, 1L);
+		DomainVO domain1 = new DomainVO("d1", 2L, 1L, null);
 		domainDao.create(domain1);
 		
-		DomainVO domain2 = new DomainVO("d2", 2L, 1L);
+		DomainVO domain2 = new DomainVO("d2", 2L, 1L, null);
 		domainDao.create(domain2);
 		
-		DomainVO domain3 = new DomainVO("d3", 2L, 1L);
+		DomainVO domain3 = new DomainVO("d3", 2L, 1L, null);
 		domainDao.create(domain3);
 
-		DomainVO domain11 = new DomainVO("d11", 2L, domain1.getId());
+		DomainVO domain11 = new DomainVO("d11", 2L, domain1.getId(), null);
 		domainDao.create(domain11);
 		
 		domainDao.remove(domain11.getId());
 		
-		DomainVO domain12 = new DomainVO("d12", 2L, domain1.getId());
+		DomainVO domain12 = new DomainVO("d12", 2L, domain1.getId(), null);
 		domainDao.create(domain12);
 		
 		domainDao.remove(domain3.getId());
-		DomainVO domain4 = new DomainVO("d4", 2L, 1L);
+		DomainVO domain4 = new DomainVO("d4", 2L, 1L, null);
 		domainDao.create(domain4);
 	}
 }

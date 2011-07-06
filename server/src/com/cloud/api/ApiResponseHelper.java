@@ -225,6 +225,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setDomainId(account.getDomainId());
         accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
         accountResponse.setState(account.getState().toString());
+        accountResponse.setNetworkDomain(account.getNetworkDomain());
 
         // get network stat
         List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
@@ -345,6 +346,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         domainResponse.setDomainName(domain.getName());
         domainResponse.setId(domain.getId());
         domainResponse.setLevel(domain.getLevel());
+        domainResponse.setNetworkDomain(domain.getNetworkDomain());
         domainResponse.setParentDomainId(domain.getParent());
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());

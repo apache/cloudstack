@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
@@ -76,7 +75,10 @@ public class UpdateZoneCmd extends BaseCmd {
     private Map details;
     
     @Parameter(name=ApiConstants.DHCP_PROVIDER, type=CommandType.STRING, description="the dhcp Provider for the Zone")
-    private String dhcpProvider;       
+    private String dhcpProvider;
+    
+    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
+    private String domain;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -128,11 +130,15 @@ public class UpdateZoneCmd extends BaseCmd {
     
     public String getDhcpProvider() {
         return dhcpProvider;
-    }        
+    }
+    
+    public String getDomain() {
+        return domain;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {

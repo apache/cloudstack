@@ -58,4 +58,6 @@ public interface Domain extends OwnedBy {
     State getState();
 
     void setState(State state);
+
+    String getNetworkDomain();
 }

@@ -110,7 +110,7 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("service") @Param(description="the list of services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
     
-    @SerializedName("networkdomain") @Param(description="the network domain")
+    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
     
     @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is enabled, false otherwise")

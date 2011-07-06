@@ -70,12 +70,6 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 
 	}
 	
-    public void update(Long id, String domainName, String domainPath) {
-        DomainVO ub = createForUpdate();
-        ub.setName(domainName);
-        ub.setPath(domainPath);
-        update(id, ub);
-    }
     
     private static String allocPath(DomainVO parentDomain, String name) {
         String parentPath = parentDomain.getPath();

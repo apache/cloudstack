@@ -66,7 +66,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -112,6 +111,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
@@ -1220,6 +1220,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         short userType = cmd.getAccountType().shortValue();
         DomainVO domain = _domainDao.findById(domainId);
         checkAccess(UserContext.current().getCaller(), domain);
+        String networkDomain = cmd.getNetworkDomain();
+        
         try {
             if (accountName == null) {
                 accountName = username;
@@ -1244,6 +1246,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (!_userAccountDao.validateUsernameInDomain(username, domainId)) {
                 throw new CloudRuntimeException("The user " + username + " already exists in domain " + domainId);
             }
+            
+            if (networkDomain != null) {
+                if (!NetUtils.verifyDomainName(networkDomain)) {
+                    throw new InvalidParameterValueException(
+                            "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                            + "and the hyphen ('-'); can't start or end with \"-\"");
+                }
+            }
 
             if (accountId == null) {
                 if ((userType < Account.ACCOUNT_TYPE_NORMAL) || (userType > Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
@@ -1265,6 +1275,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 newAccount.setDomainId(domainId);
                 newAccount.setType(userType);
                 newAccount.setState(State.enabled);
+                newAccount.setNetworkDomain(networkDomain);
                 newAccount = _accountDao.persist(newAccount);
                 accountId = newAccount.getId();
             }
@@ -1715,6 +1726,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String newAccountName = cmd.getNewName();
+        String networkDomain = cmd.getNetworkDomain();
 
         boolean success = false;
         Account account = _accountDao.findAccount(accountName, domainId);
@@ -1744,17 +1756,27 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                                                                                                                                   // to
                                                                                                                                   // update
                                                                                                                                   // itself
-            throw new PermissionDeniedException("There already exists an account with the name:" + newAccountName + " in the domain:" + domainId + " with existing account id:"
+            throw new InvalidParameterValueException("There already exists an account with the name:" + newAccountName + " in the domain:" + domainId + " with existing account id:"
                     + duplicateAcccount.getId());
         }
 
-        if (account.getAccountName().equals(newAccountName)) {
-            success = true;
-        } else {
-            AccountVO acctForUpdate = _accountDao.createForUpdate();
-            acctForUpdate.setAccountName(newAccountName);
-            success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
+        if (networkDomain != null) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
         }
+        
+        AccountVO acctForUpdate = _accountDao.findById(account.getId());
+        acctForUpdate.setAccountName(newAccountName);
+        
+        if (networkDomain != null) {
+            acctForUpdate.setNetworkDomain(networkDomain);
+        }
+        
+        success = _accountDao.update(account.getId(), acctForUpdate);
+        
         if (success) {
             return _accountDao.findById(account.getId());
         } else {

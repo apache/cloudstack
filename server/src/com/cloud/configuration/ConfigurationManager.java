@@ -112,11 +112,12 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param guestCidr
      * @param zoneType
      * @param allocationState
+     * @param networkDomain TODO
      * @return
      * @throws 
      * @throws 
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationState);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationState, String networkDomain);
 
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
