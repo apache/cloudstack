@@ -1092,10 +1092,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (!volume.getState().equals(Volume.State.Destroy)) {
                     try {
                         _storageMgr.destroyVolume(volume);
-                        if (volume.getPoolId() != null) {
-                            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
-                            _usageEventDao.persist(usageEvent);
-                        }
                     } catch (ConcurrentOperationException ex) {
                         s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                         accountCleanupNeeded = true;
