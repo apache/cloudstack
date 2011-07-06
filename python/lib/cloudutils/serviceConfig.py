@@ -489,6 +489,7 @@ class firewallConfigBase(serviceCfgBase):
     def __init__(self, syscfg):
         super(firewallConfigBase, self).__init__(syscfg)
         self.serviceName = "Firewall" 
+        self.rules = []
     
     def allowPort(self, port):
         status = False
@@ -504,7 +505,10 @@ class firewallConfigBase(serviceCfgBase):
         try:
             for port in self.ports:
                 self.allowPort(port)
-
+                
+            for rule in self.rules:
+                bash("iptables " + rule)
+            
             bash("iptables-save > /etc/sysconfig/iptables")
             self.syscfg.svo.stopService("iptables")
             self.syscfg.svo.startService("iptables")
@@ -519,7 +523,8 @@ class firewallConfigAgent(firewallConfigBase):
     def __init__(self, syscfg):
         super(firewallConfigAgent, self).__init__(syscfg)
         self.ports = "22 16509 5900:6100 49152:49216".split()
-
+        if syscfg.env.distribution.getVersion() == "CentOS":
+            self.rules = ["-D FORWARD -j RH-Firewall-1-INPUT"]
 
 
 class cloudAgentConfig(serviceCfgBase):
