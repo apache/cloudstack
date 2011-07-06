@@ -50,13 +50,11 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private static final String SELECT_SQL = "SELECT op_lock.key, mac, ip, thread, acquired_on, waiters FROM op_lock";
     private static final String INQUIRE_SQL = SELECT_SQL + " WHERE op_lock.key=?";
     private static final String DECREMENT_SQL = "UPDATE op_lock SET waiters=waiters-1 where op_lock.key=? AND op_lock.mac=? AND op_lock.ip=? AND op_lock.thread=?";
-    private static final String RELEASE_SQL = "DELETE FROM op_lock WHERE op_lock.key = ? AND op_lock.mac=? AND waiters=0";
+    private static final String RELEASE_LOCK_SQL = "DELETE FROM op_lock WHERE op_lock.key = ?";
+    private static final String RELEASE_SQL = RELEASE_LOCK_SQL + " AND op_lock.mac=? AND waiters=0";
     private static final String CLEANUP_MGMT_LOCKS_SQL = "DELETE FROM op_lock WHERE op_lock.mac = ?";
     private static final String SELECT_MGMT_LOCKS_SQL = SELECT_SQL + " WHERE mac=?";
     private static final String SELECT_THREAD_LOCKS_SQL = SELECT_SQL + " WHERE mac=? AND ip=?";
-    private static final String SELECT_OWNER_SQL = "SELECT mac, ip, thread FROM op_lock WHERE op_lock.key=?";
-    private static final String DEADLOCK_DETECT_SQL = "SELECT l2.key FROM op_lock l2 WHERE l2.mac=? AND l2.ip=? AND l2.thread=? AND l2.key in " +
-            "(SELECT l1.key from op_lock l1 WHERE l1.mac=? AND l1.ip=? AND l1.thread=?)";
     private static final String CLEANUP_THREAD_LOCKS_SQL = "DELETE FROM op_lock WHERE mac=? AND ip=? AND thread=?";
     
     TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
@@ -64,19 +62,16 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private long _msId;
     
     private static Merovingian2 s_instance = null;
-    ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("LockMasterConnectionKeepAlive"));
-    Connection _conn;
+    ScheduledExecutorService _executor = null;
+    Connection _conn = null;
     
     private Merovingian2(long msId) {
         super(MerovingianMBean.class, false);
         _msId = msId;
-        try {
-            _conn = Transaction.getStandaloneConnectionWithException();
-            _conn.setAutoCommit(true);
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes", e);
+        String result = resetDbConnection();
+        if (!result.equalsIgnoreCase("Success")) {
+            throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes due to " + result);
         }
-        _executor.schedule(new KeepAliveTask(), 10, TimeUnit.SECONDS);
     }
     
     public static synchronized Merovingian2 createLockMaster(long msId) {
@@ -93,6 +88,42 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     
     public static Merovingian2 getLockMaster() {
         return s_instance;
+    }
+    
+    @Override
+    public String resetDbConnection() {
+        if (_conn != null) {
+            try {
+                _conn.close();
+            } catch (Throwable th) {
+                s_logger.error("Unable to close connection", th);
+            }
+        }
+        
+        try {
+            _conn = Transaction.getStandaloneConnectionWithException();
+            _conn.setAutoCommit(true);
+        } catch (SQLException e) {
+            s_logger.error("Unable to get a new db connection", e);
+            return "Unable to initialize a connection to the database for locking purposes: " + e;
+        }
+        
+        if (_conn == null) {
+            return "Unable to initialize a connection to the database for locking purposes, shutdown this server!";
+        }
+        
+        if (_executor != null) {
+            try {
+                _executor.shutdown();
+            } catch (Throwable th) {
+                s_logger.error("Unable to shutdown the executor", th);
+            }
+        }
+        
+        _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("LockMasterConnectionKeepAlive"));
+        _executor.schedule(new KeepAliveTask(), 10, TimeUnit.SECONDS);
+        
+        return "Success";
     }
     
     public boolean acquire(String key, int timeInSeconds) {
@@ -222,7 +253,8 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     public void cleanupThisServer() {
         cleanupForServer(_msId);
     }
-    
+
+    @Override
     public void cleanupForServer(long msId) {
         PreparedStatement pstmt = null;
         try {
@@ -397,6 +429,20 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
     }
     
+    @Override
+    public boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key) {
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = _conn.prepareStatement(RELEASE_LOCK_SQL);
+            pstmt.setString(1, key);
+            int rows = pstmt.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            s_logger.error("Unable to release lock " + key, e);
+            return false;
+        }
+    }
+
     protected class KeepAliveTask implements Runnable {
         @Override
         public void run() {
@@ -416,4 +462,5 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
+
 }

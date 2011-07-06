@@ -23,6 +23,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     Long _clusterId;
     Long _poolId;
     Long _hostId;
+    boolean _recreateDisks;
     
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null);
