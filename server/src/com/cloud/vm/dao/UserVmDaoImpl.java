@@ -80,7 +80,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
 
     private static final String VM_DETAILS = "select account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
-    		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, " +
+    		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, " + 
+    		"vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
     		"vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
     		"service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
     		"security_group.description, nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
@@ -92,6 +93,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "left join data_center on vm_instance.data_center_id=data_center.id " +
             "left join host on vm_instance.host_id=host.id " + 
             "left join vm_template on vm_instance.vm_template_id=vm_template.id " +
+            "left join vm_template iso on iso.id=? " + 
             "left join service_offering on vm_instance.service_offering_id=service_offering.id " +
             "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " +
             "left join volumes on vm_instance.id=volumes.instance_id " +
@@ -350,7 +352,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         try {
             String sql = VM_DETAILS;
             pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, userVm.getId());
+            pstmt.setLong(1, userVm.getIsoId() == null ? -1 : userVm.getIsoId());
+            pstmt.setLong(2, userVm.getId());
             
             ResultSet rs = pstmt.executeQuery();
             boolean is_data_center_security_group_enabled=false;
@@ -411,6 +414,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                         userVmResponse.setTemplateName("ISO Boot");
                         userVmResponse.setTemplateDisplayText("ISO Boot");
                         userVmResponse.setPasswordEnabled(false);
+                    }
+                    
+                    long iso_id = rs.getLong("iso.id");
+                    if (iso_id > 0){
+                        userVmResponse.setIsoId(iso_id);
+                        userVmResponse.setIsoName(rs.getString("iso.name"));
                     }
 
                     if (userVm.getPassword() != null) {
