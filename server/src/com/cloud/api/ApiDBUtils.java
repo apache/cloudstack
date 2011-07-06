@@ -433,7 +433,8 @@ public class ApiDBUtils {
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId, boolean readyOnly) {
         VMTemplateVO vmTemplate = findTemplateById(templateId);
         if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-            return _templateHostDao.listByTemplateId(templateId).get(0);
+            List<VMTemplateHostVO> res = _templateHostDao.listByTemplateId(templateId);
+            return res.size() == 0 ? null : res.get(0);
         } else {
             return _storageMgr.getTemplateHostRef(zoneId, templateId, readyOnly);
         }

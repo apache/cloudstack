@@ -252,7 +252,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 				profile.getBits(), profile.getAccountId(), profile.getCheckSum(), profile.getDisplayText(),
 				profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType());
         
-		if (zoneId == null) {
+		if (zoneId == null || zoneId == -1) {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 
         	for (DataCenterVO dc: dcs) {
