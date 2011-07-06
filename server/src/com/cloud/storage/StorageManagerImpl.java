@@ -1805,6 +1805,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (instanceId == null || (vmInstance.getType().equals(VirtualMachine.Type.User))) {
             // Decrement the resource count for volumes belonging user VM's only
             _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
+            // Log usage event for volumes belonging user VM's only
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
+            _usageEventDao.persist(usageEvent);
         }
 
         txn.commit();
@@ -2445,8 +2448,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // Check that the volume is not already destroyed
         if (volume.getState() != Volume.State.Destroy) {
             destroyVolume(volume);
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volumeId, volume.getName());
-            _usageEventDao.persist(usageEvent);
         }
 
         try {
@@ -2834,11 +2835,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 // This check is for VM in Error state (volume is already destroyed)
                 if (!vol.getState().equals(Volume.State.Destroy)) {
                     destroyVolume(vol);
-                    VMInstanceVO vm = _vmInstanceDao.findById(vmId);
-                    if (vm.getType() == VirtualMachine.Type.User) {
-                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName());
-                        _usageEventDao.persist(usageEvent);
-                    }
                 }
                 toBeExpunged.add(vol);
             } else {
