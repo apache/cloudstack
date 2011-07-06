@@ -298,7 +298,7 @@ function podNetworkDeviceJsonToTemplate(jsonObj, template) {
 	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
     
-    buildActionLinkForSubgridItem("Delete Network Device", podNetworkDeviceActionMap, $actionMenu, template);	
+    //buildActionLinkForSubgridItem("Delete Network Device", podNetworkDeviceActionMap, $actionMenu, template);	
 }
 
 
