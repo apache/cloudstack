@@ -100,6 +100,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final DataCenterDao _dataCenterDao;
     private final NetworkDao _networkDao;
     private final VlanDao _vlanDao;
+    private String _domainSuffix;
 
 	
 	public ConfigurationServerImpl() {
@@ -123,6 +124,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		
 		// Get init
 		String init = _configDao.getValue("init");
+		
+		// Get domain suffix - needed for network creation
+		_domainSuffix = _configDao.getValue("guest.domain.suffix");
 		
 		if (init == null || init.equals("false")) {
 			s_logger.debug("ConfigurationServer is saving default values to the database.");
@@ -856,6 +860,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     long related = id;
                     long networkOfferingId = offering.getId();
                     Mode mode = Mode.Static;
+                    String networkDomain = null;
                     
                     BroadcastDomainType broadcastDomainType = null;
                     TrafficType trafficType= offering.getTrafficType();
@@ -878,10 +883,12 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         } else {
                             continue;
                         }
+                        
+                        networkDomain = "cs" + Long.toHexString(Account.ACCOUNT_ID_SYSTEM) + _domainSuffix;
                     }
                     
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true, isNetworkDefault, false, null);
+                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true, isNetworkDefault, false, networkDomain);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

@@ -56,7 +56,7 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the display text of the zone")
     private String displayText;
     
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the Vms in the zone")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="Network domain name for the networks in the zone")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the containing domain, null for public zones")

@@ -104,6 +104,9 @@ public class AccountResponse extends BaseResponse {
     
     @SerializedName("user")  @Param(description="the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
+    
+    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
+    private String networkDomain;
 
     public Long getId() {
         return id;
@@ -320,4 +323,9 @@ public class AccountResponse extends BaseResponse {
     public void setUsers(List<UserResponse> users) {
         this.users = users;
     }
+
+    public void setNetworkDomain(String networkDomain) {
+        this.networkDomain = networkDomain;
+    }
+    
 }

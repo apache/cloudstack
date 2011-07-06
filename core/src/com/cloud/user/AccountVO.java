@@ -57,6 +57,9 @@ public class AccountVO implements Account {
     
     @Column(name="cleanup_needed")
     private boolean needsCleanup = false;
+    
+    @Column(name="network_domain")
+    private String networkDomain;
 
 
     public AccountVO() {}
@@ -127,4 +130,14 @@ public class AccountVO implements Account {
     public String toString() {
         return new StringBuilder("Acct[").append(id).append("-").append(accountName).append("]").toString();
     }
+    
+    @Override
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
+    
+    public void setNetworkDomain(String networkDomain) {
+        this.networkDomain = networkDomain;
+    }
+    
 }

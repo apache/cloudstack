@@ -1685,7 +1685,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         } else {
             if (networkDomain == null) {
-                networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
+                //1) Get networkDomain from the corresponding account/domain/zone
+                if (isShared) {
+                    if (domainId != null) {
+                        networkDomain = getDomainNetworkDomain(domainId, zoneId);
+                    } else {
+                        networkDomain = getZoneNetworkDomain(zoneId);
+                    }
+                } else {
+                    networkDomain = getAccountNetworkDomain(owner.getId(), zoneId);
+                }
+                
+                //2) If null, generate networkDomain using domain suffix from the global config variables
+                if (networkDomain == null) {
+                    networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
+                }
+                
             } else {
                 // validate network domain
                 if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -3005,5 +3020,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             result = NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
         } while (result.split("\\.")[3].equals("1"));
         return result;
+    }
+    
+    
+    protected String getZoneNetworkDomain(long zoneId) {
+        return _dcDao.findById(zoneId).getDomain();
+    }
+    
+    protected String getDomainNetworkDomain(long domainId, long zoneId) {
+        String networkDomain = _domainDao.findById(domainId).getNetworkDomain();
+        if (networkDomain == null) {
+            return getZoneNetworkDomain(zoneId);
+        }
+        
+        return networkDomain;
+    }
+    
+    protected String getAccountNetworkDomain(long accountId, long zoneId) {
+        String networkDomain = _accountDao.findById(accountId).getNetworkDomain();
+        
+        if (networkDomain == null) {
+            //get domain level network domain
+            return getDomainNetworkDomain(_accountDao.findById(accountId).getDomainId(), zoneId);
+        }
+        
+        return networkDomain;
+    }
+    
+    @Override
+    public String getGlobalGuestDomainSuffix() {
+        return _networkDomain;
     }
 }

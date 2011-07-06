@@ -991,6 +991,7 @@ CREATE TABLE  `cloud`.`domain` (
   `next_child_seq` bigint unsigned NOT NULL DEFAULT 1,
   `removed` datetime COMMENT 'date removed',
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
+  `network_domain` varchar(255),
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed),
   INDEX `i_domain__path`(`path`)
@@ -1004,6 +1005,7 @@ CREATE TABLE  `cloud`.`account` (
   `state` varchar(10) NOT NULL default 'enabled',
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
+  `network_domain` varchar(255),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

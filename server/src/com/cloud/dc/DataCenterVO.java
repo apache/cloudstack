@@ -77,7 +77,7 @@ public class DataCenterVO implements DataCenter {
     private Long domainId = null;
 
     @Column(name="domain")
-    private String domain = null;
+    private String domain;
     
     @Column(name="networktype")
     @Enumerated(EnumType.STRING) 
@@ -172,13 +172,13 @@ public class DataCenterVO implements DataCenter {
         this.firewallProvider = firewallProvider;
     }
 
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken) {
-        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false, zoneToken);
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
+        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false, zoneToken, domainSuffix);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled, String zoneToken) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled, String zoneToken, String domainSuffix) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -208,7 +208,7 @@ public class DataCenterVO implements DataCenter {
         }
 
         this.zoneToken = zoneToken;
-        
+        this.domain = domainSuffix;
     }
     
     @Override

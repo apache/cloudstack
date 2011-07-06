@@ -44,6 +44,9 @@ public class UpdateAccountCmd extends BaseCmd{
 
     @Parameter(name=ApiConstants.NEW_NAME, type=CommandType.STRING, required=true, description="new name for the account")
     private String newName;
+    
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
+    private String networkDomain;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -59,6 +62,10 @@ public class UpdateAccountCmd extends BaseCmd{
 
     public String getNewName() {
         return newName;
+    }
+    
+    public String getNetworkDomain() {
+        return networkDomain;
     }
 
     /////////////////////////////////////////////////////

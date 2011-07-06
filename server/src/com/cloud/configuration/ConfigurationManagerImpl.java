@@ -1094,6 +1094,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String allocationStateStr = cmd.getAllocationState();
         String dhcpProvider = cmd.getDhcpProvider();        
         Map detailsMap = cmd.getDetails();
+        String networkDomain = cmd.getDomain();
 
         Map<String, String> newDetails = new HashMap<String, String>();
         if (detailsMap != null) {
@@ -1206,6 +1207,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (guestCidr == null) {
             guestCidr = zone.getGuestNetworkCidr();
         }
+        
+        //validate network domain
+        if (networkDomain != null) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+        } else {
+            networkDomain = zone.getDomain();
+        }
 
         boolean checkForDuplicates = !zoneName.equals(oldZoneName);
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null, allocationStateStr);// not
@@ -1225,6 +1237,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
+        zone.setDomain(networkDomain);
 
         if (vnetRange != null) {
             zone.setVnet(vnetRange);
@@ -1272,7 +1285,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationStateStr) {
+            NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationStateStr, String networkDomain) {
         int vnetStart = 0;
         int vnetEnd = 0;
         if (vnetRange != null) {
@@ -1299,6 +1312,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
             throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
+        
+        //Validate network domain 
+        if (networkDomain != null) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+        }
 
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr);
 
@@ -1308,7 +1330,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType, isSecurityGroupEnabled, zoneToken);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType, isSecurityGroupEnabled, zoneToken, networkDomain);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
@@ -1336,6 +1358,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException {
         DataCenterVO zone = _zoneDao.findById(zoneId);
+        String networkDomain = null;
         // Create public, management, control and storage networks as a part of the zone creation
         if (zone != null) {
             List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
@@ -1369,8 +1392,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     } else {
                         continue;
                     }
+                    
+                    networkDomain = "cs" + Long.toHexString(Account.ACCOUNT_ID_SYSTEM) + _networkMgr.getGlobalGuestDomainSuffix();
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
+                userNetwork.setNetworkDomain(networkDomain);
                 _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, isNetworkDefault, false, null, null);
             }
         }
@@ -1391,6 +1417,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String type = cmd.getNetworkType();
         Boolean isBasic = false;
         String allocationState = cmd.getAllocationState();
+        String networkDomain = cmd.getDomain();
+        
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();
         }
@@ -1432,7 +1460,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, securityGroupEnabled,
-                allocationState);
+                allocationState, networkDomain);
     }
 
     @Override

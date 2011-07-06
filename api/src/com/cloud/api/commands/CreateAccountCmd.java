@@ -67,6 +67,9 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="Unique username.")
     private String username;
+    
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
+    private String networkDomain;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -107,6 +110,10 @@ public class CreateAccountCmd extends BaseCmd {
     public String getUsername() {
         return username;
     }
+    
+    public String getNetworkDomain() {
+        return networkDomain;
+    } 
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

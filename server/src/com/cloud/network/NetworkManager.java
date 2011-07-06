@@ -203,4 +203,6 @@ public interface NetworkManager extends NetworkService {
     IPAddressVO markIpAsUnavailable(long addrId);
     
     public String acquireGuestIpAddress(Network network, String requestedIp);
+
+    String getGlobalGuestDomainSuffix();
 }

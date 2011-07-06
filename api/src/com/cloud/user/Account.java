@@ -53,4 +53,5 @@ public interface Account extends ControlledEntity {
     public short getType();
     public State getState();
     public Date getRemoved();
+    public String getNetworkDomain();
 }

@@ -2922,6 +2922,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long parentId = cmd.getParentDomainId();
         Long ownerId = UserContext.current().getCaller().getId();
         Account account = UserContext.current().getCaller();
+        String networkDomain = cmd.getNetworkDomain();
 
         if (ownerId == null) {
             ownerId = Long.valueOf(1);
@@ -2939,13 +2940,21 @@ public class ManagementServerImpl implements ManagementServer {
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), parentId)) {
             throw new PermissionDeniedException("Unable to create domain " + name + ", permission denied.");
         }
+        
+        if (networkDomain != null) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+        }
 
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, name);
         sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
         List<DomainVO> domains = _domainDao.search(sc, null);
         if ((domains == null) || domains.isEmpty()) {
-            DomainVO domain = new DomainVO(name, ownerId, parentId);
+            DomainVO domain = new DomainVO(name, ownerId, parentId, networkDomain);
             try {
                 return _domainDao.create(domain);
             } catch (IllegalArgumentException ex) {
@@ -3065,44 +3074,66 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_UPDATE, eventDescription = "updating Domain")
+    @DB
     public DomainVO updateDomain(UpdateDomainCmd cmd) {
         Long domainId = cmd.getId();
         String domainName = cmd.getDomainName();
+        String networkDomain = cmd.getNetworkDomain();
 
         // check if domain exists in the system
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
             throw new InvalidParameterValueException("Unable to find domain " + domainId);
-        } else if (domain.getParent() == null) {
-            // check if domain is ROOT domain - and deny to edit it
-            throw new InvalidParameterValueException("ROOT domain can not be edited");
+        } else if (domain.getParent() == null && domainName != null) {
+            // check if domain is ROOT domain - and deny to edit it with the new name
+            throw new InvalidParameterValueException("ROOT domain can not be edited with a new name");
         }
 
         // check permissions
-        Account account = UserContext.current().getCaller();
-        if ((account != null) && !isChildDomain(account.getDomainId(), domain.getId())) {
-            throw new PermissionDeniedException("Unable to update domain " + domainId + ", permission denied");
+        Account caller = UserContext.current().getCaller();
+        _accountMgr.checkAccess(caller, domain);
+        
+        //domain name is unique in the cloud
+        if (domainName != null) {
+            SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+            sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
+            List<DomainVO> domains = _domainDao.search(sc, null);
+            
+            if (!domains.isEmpty()) {
+                throw new InvalidParameterValueException("Failed to update domain id=" + domainId + "; domain with name " + domainName + " already exists in the system");
+            }
         }
 
-        if (domainName == null || domainName.equals(domain.getName())) {
-            return _domainDao.findById(domainId);
+        //validate network domain 
+        if (networkDomain != null){
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
         }
 
-        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
-        List<DomainVO> domains = _domainDao.search(sc, null);
-        if ((domains == null) || domains.isEmpty()) {
-            // whilst updating a domain name, update its path and update all its children's path
-            domain = _domainDao.findById(domainId);
+        Transaction txn = Transaction.currentTxn();
+        
+        txn.start();
+        
+        if (domainName != null) {
             String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
             updateDomainChildren(domain, updatedDomainPath);
-            _domainDao.update(domainId, domainName, updatedDomainPath);
-            return _domainDao.findById(domainId);
-        } else {
-            domain = _domainDao.findById(domainId);
-            s_logger.error("Domain with name " + domainName + " already exists in the system");
-            throw new CloudRuntimeException("Failed to update domain " + domainId);
+            domain.setName(domainName);
+            domain.setPath(updatedDomainPath);
         }
+        
+        if (networkDomain != null) {
+            domain.setNetworkDomain(networkDomain);
+        }
+        
+        _domainDao.update(domainId, domain);
+        
+        txn.commit();
+
+        return _domainDao.findById(domainId);
+       
     }
 
     private String getUpdatedDomainPath(String oldPath, String newName) {
