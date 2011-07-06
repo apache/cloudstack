@@ -265,7 +265,10 @@ public class StatsCollector {
                 ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
                 for (HostVO host : hosts) {
                     GetStorageStatsCommand command = new GetStorageStatsCommand(host.getStorageUrl());
-        			HostVO ssAhost = _agentMgr.getSSAgent(host);
+                    HostVO ssAhost = _agentMgr.getSSAgent(host);
+                    if (ssAhost == null) {
+                        return;
+                    }
                     long hostId = host.getId();
                     Answer answer = _agentMgr.easySend(ssAhost.getId(), command);
                     if (answer != null && answer.getResult()) {
