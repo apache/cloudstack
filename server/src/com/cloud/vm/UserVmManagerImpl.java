@@ -2808,7 +2808,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
-        if("VM does not exist".equals(answer.getDetails())){
+        if(answer != null && "VM does not exist".equals(answer.getDetails())){
             // Stop answer returns true when Vm does not exist.
             // This is a hack to avoid logging usage events
             return;
