@@ -305,7 +305,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	}
 
 	protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
-	    String rootDir = getRootDir(cmd.getLocalPath());
+	    String rootDir = getRootDir(cmd.getSecUrl());
         final long usedSize = getUsedSize(rootDir);
         final long totalSize = getTotalSize(rootDir);
         if (usedSize == -1 || totalSize == -1) {

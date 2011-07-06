@@ -25,9 +25,18 @@ public class GetStorageStatsCommand extends Command {
     private String id;
     private String localPath;
     private StoragePoolType pooltype;
+    private String secUrl;
 
 
-    public GetStorageStatsCommand() {
+    public String getSecUrl() {
+		return secUrl;
+	}
+
+	public void setSecUrl(String secUrl) {
+		this.secUrl = secUrl;
+	}
+
+	public GetStorageStatsCommand() {
     }
 
     public StoragePoolType getPooltype() {
@@ -38,8 +47,8 @@ public class GetStorageStatsCommand extends Command {
         this.pooltype = pooltype;
     }
 
-    public GetStorageStatsCommand(String id) {
-        this.id = id;
+    public GetStorageStatsCommand(String secUrl) {
+        this.secUrl = secUrl;
     }
 
     public GetStorageStatsCommand(String id, StoragePoolType pooltype) {
