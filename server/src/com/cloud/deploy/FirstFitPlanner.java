@@ -47,8 +47,8 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -84,7 +84,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	@Inject protected HostPodDao _podDao;
 	@Inject protected ClusterDao _clusterDao;
 	@Inject protected HostDetailsDao _hostDetailsDao = null;
-	@Inject protected GuestOSDao _guestOSDao = null; 
+	@Inject protected GuestOSDao _guestOSDao = null;
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DiskOfferingDao _diskOfferingDao;
     @Inject protected StoragePoolHostDao _poolHostDao;
@@ -118,24 +118,28 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
 
 		
-		s_logger.debug("In FirstFitPlanner:: plan");
-		
-		s_logger.debug("Trying to allocate a host and storage pools from dc:" + plan.getDataCenterId() + ", pod:" + plan.getPodId() + ",cluster:" + plan.getClusterId() +
-				", requested cpu: " + cpu_requested + ", requested ram: " + ram_requested);
-		
-		s_logger.debug("Is ROOT volume READY (pool already allocated)?: " + (plan.getPoolId()!=null ? "Yes": "No"));
-		
+        if (s_logger.isDebugEnabled()) {
+    		s_logger.debug("In FirstFitPlanner:: plan");
+    		
+    		s_logger.debug("Trying to allocate a host and storage pools from dc:" + plan.getDataCenterId() + ", pod:" + plan.getPodId() + ",cluster:" + plan.getClusterId() +
+    				", requested cpu: " + cpu_requested + ", requested ram: " + ram_requested);
+    		
+    		s_logger.debug("Is ROOT volume READY (pool already allocated)?: " + (plan.getPoolId()!=null ? "Yes": "No"));
+        }
+        
 		if(plan.getHostId() != null){
 			Long hostIdSpecified = plan.getHostId();
-			if(s_logger.isDebugEnabled()){
+			if (s_logger.isDebugEnabled()){
 				s_logger.debug("DeploymentPlan has host_id specified, making no checks on this host, looks like admin test: "+hostIdSpecified);
 			}
 			HostVO host = _hostDao.findById(hostIdSpecified);
-			if(host == null){
-				s_logger.debug("The specified host cannot be found");
-			}else{
-				s_logger.debug("Looking for suitable pools for this host under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
-			}
+            if (s_logger.isDebugEnabled()) {
+    			if(host == null){
+    				s_logger.debug("The specified host cannot be found");
+    			}else{
+    			        s_logger.debug("Looking for suitable pools for this host under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
+    			}
+            }
 			
 			//search for storage under the zone, pod, cluster of the host.
 			DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId());
@@ -154,21 +158,21 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 					Pod pod = _podDao.findById(host.getPodId());
 					Cluster cluster = _clusterDao.findById(host.getClusterId());
 					Map<Volume, StoragePool> storageVolMap = potentialResources.second();
-					// remove the reused vol<->pool from destination, since we don't have to prepare this volume.					
+					// remove the reused vol<->pool from destination, since we don't have to prepare this volume.
 					for(Volume vol : readyAndReusedVolumes){
 						storageVolMap.remove(vol);
-					}					
+					}
 					DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, storageVolMap);
 					s_logger.debug("Returning Deployment Destination: "+ dest);
 					return dest;
 				}
-			}			
+			}
 			s_logger.debug("Cannnot deploy to specified host, returning.");
 			return null;
 		}
 		
 		if (vm.getLastHostId() != null) {
-			s_logger.debug("This VM has last host_id specified, trying to choose the same host: " +vm.getLastHostId());			
+			s_logger.debug("This VM has last host_id specified, trying to choose the same host: " +vm.getLastHostId());
 
 			HostVO host = _hostDao.findById(vm.getLastHostId());
 			if(host == null){
@@ -178,13 +182,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 					//check zone/pod/cluster are enabled
 					if(isEnabledForAllocation(host.getDataCenterId(), host.getPodId(), host.getClusterId())){
 						if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor)){
-							s_logger.debug("The last host of this VM is UP and has enough capacity"); 
+							s_logger.debug("The last host of this VM is UP and has enough capacity");
 							s_logger.debug("Now checking for suitable pools under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
 							//search for storage under the zone, pod, cluster of the last host.
-							DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());			
+							DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());
 							Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
 							Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
-							List<Volume> readyAndReusedVolumes = result.second();							
+							List<Volume> readyAndReusedVolumes = result.second();
 							//choose the potential pool for this VM for this host
 							if(!suitableVolumeStoragePools.isEmpty()){
 								List<Host> suitableHosts = new ArrayList<Host>();
@@ -198,7 +202,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 									// remove the reused vol<->pool from destination, since we don't have to prepare this volume.
 									for(Volume vol : readyAndReusedVolumes){
 										storageVolMap.remove(vol);
-									}										
+									}
 									DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, storageVolMap);
 									s_logger.debug("Returning Deployment Destination: "+ dest);
 									return dest;
@@ -219,14 +223,14 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		if(!isEnabledForAllocation(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId())){
 			s_logger.debug("Cannot deploy to specified plan, allocation state is disabled, returning.");
 			return null;
-		}		
+		}
 
 		List<Long> clusterList = new ArrayList<Long>();
 		if (plan.getClusterId() != null) {
 			Long clusterIdSpecified = plan.getClusterId();
 			s_logger.debug("Searching resources only under specified Cluster: "+ clusterIdSpecified);
 			ClusterVO cluster = _clusterDao.findById(plan.getClusterId());
-			if (cluster != null ){ 
+			if (cluster != null ){
 				clusterList.add(clusterIdSpecified);
 				return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
 			}else{
@@ -241,7 +245,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			
 			HostPodVO pod = _podDao.findById(podIdSpecified);
 			if (pod != null) {
-				//list clusters under this pod by cpu and ram capacity 
+				//list clusters under this pod by cpu and ram capacity
 				clusterList = listClustersByCapacity(podIdSpecified, cpu_requested, ram_requested, avoid, false, cpuOverprovisioningFactor);
 				if(!clusterList.isEmpty()){
 			    	if(avoid.getClustersToAvoid() != null){
@@ -256,7 +260,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			    		if (s_logger.isDebugEnabled()) {
 			    			s_logger.debug("Removing from the clusterId list these clusters that are disabled: "+ disabledClusters);
 			    		}
-			    		clusterList.removeAll(disabledClusters);	
+			    		clusterList.removeAll(disabledClusters);
 			    	}
 					
 			    	DeployDestination dest = checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
@@ -279,7 +283,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		}else{
 			//consider all clusters under this zone.
 			s_logger.debug("Searching all possible resources under this Zone: "+ plan.getDataCenterId());
-			//list clusters under this zone by cpu and ram capacity 
+			//list clusters under this zone by cpu and ram capacity
 			List<Long> prioritizedClusterIds = listClustersByCapacity(plan.getDataCenterId(), cpu_requested, ram_requested, avoid, true, cpuOverprovisioningFactor);
 			if(!prioritizedClusterIds.isEmpty()){
 				if(avoid.getClustersToAvoid() != null){
@@ -302,7 +306,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	    		return null;
 			}
 			if(!prioritizedClusterIds.isEmpty()){
-				boolean applyUserConcentrationPodHeuristic = Boolean.parseBoolean(_configDao.getValue(Config.UseUserConcentratedPodAllocation.key())); 
+				boolean applyUserConcentrationPodHeuristic = Boolean.parseBoolean(_configDao.getValue(Config.UseUserConcentratedPodAllocation.key()));
 				if(applyUserConcentrationPodHeuristic && vmProfile.getOwner() != null){
 					//user has VMs in certain pods. - prioritize those pods first
 					//UserConcentratedPod strategy
@@ -397,7 +401,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 						Pod pod = _podDao.findById(clusterVO.getPodId());
 						Host host = _hostDao.findById(potentialResources.first().getId());
 						Map<Volume, StoragePool> storageVolMap = potentialResources.second();
-						// remove the reused vol<->pool from destination, since we don't have to prepare this volume.						
+						// remove the reused vol<->pool from destination, since we don't have to prepare this volume.
 						for(Volume vol : readyAndReusedVolumes){
 							storageVolMap.remove(vol);
 						}
@@ -464,13 +468,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		}
 		
 		return prioritizedPods;
-	}	
+	}
 	
 	protected List<Long> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone, float cpuOverprovisioningFactor){
 		//look at the aggregate available cpu and ram per cluster
 		//although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 		
-		//we need clusters having enough cpu AND RAM 
+		//we need clusters having enough cpu AND RAM
     	if (s_logger.isDebugEnabled()) {
     		s_logger.debug("Listing clusters that have enough aggregate CPU and RAM capacity under this "+(isZone ? "Zone: " : "Pod: " )+id);
 		}
@@ -543,7 +547,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		      suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, avoid, returnUpTo);
 		      if (suitableHosts != null && !suitableHosts.isEmpty()) {
 		          break;
-		      } 
+		      }
 		}
 		
 		if(suitableHosts.isEmpty()){
@@ -573,7 +577,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 							long exstPoolDcId = pool.getDataCenterId();
                             Long exstPoolPodId = pool.getPodId();
                             Long exstPoolClusterId = pool.getClusterId();
-                        	if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){							
+                        	if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
 								s_logger.debug("Planner need not allocate a pool for this volume since its READY");
 								suitablePools.add(pool);
 								suitableVolumeStoragePools.put(toBeCreated, suitablePools);
@@ -635,7 +639,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		}
 
 		return new Pair<Map<Volume, List<StoragePool>>, List<Volume>>(suitableVolumeStoragePools, readyAndReusedVolumes);
-	}	
+	}
 
 	
 	@Override

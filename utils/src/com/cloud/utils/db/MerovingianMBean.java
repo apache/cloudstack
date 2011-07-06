@@ -23,8 +23,13 @@ import java.util.Map;
 
 public interface MerovingianMBean {
     
-    public List<Map<String, String>> getAllLocks();
+    List<Map<String, String>> getAllLocks();
     
-    public List<Map<String, String>> getLocksAcquiredByThisServer();
+    List<Map<String, String>> getLocksAcquiredByThisServer();
     
+    boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key);
+    
+    String resetDbConnection();
+
+    void cleanupForServer(long msId);
 }
