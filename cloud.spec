@@ -27,8 +27,8 @@ BuildRequires: java-1.6.0-openjdk-devel
 BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 #BuildRequires: commons-codec
-BuildRequires: commons-dbcp
-BuildRequires: commons-collections
+#BuildRequires: commons-dbcp
+#BuildRequires: commons-collections
 BuildRequires: commons-httpclient
 BuildRequires: jpackage-utils
 BuildRequires: gcc

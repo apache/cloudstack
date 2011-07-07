@@ -156,7 +156,26 @@ def power(args):
 	else:
 		return 0
 
-call_table = {"ping":ping, "boot_dev":boot_dev, "reboot":reboot, "power":power}
+def boot_or_reboot(args):
+    hostname = args.get("hostname")
+    usrname = args.get("usrname")
+    password = args.get("password")
+    o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status")
+    if o.ret:
+        print o.stderr
+        return 1
+    
+    if "is on" in o.stdout:
+        args["action"] = "reset"
+    elif "is off" in o.stdout:
+        args["action"] = "on"
+    else:
+        print "unknown power status:" + o.stdout
+        return 1
+    
+    return power(args)
+
+call_table = {"ping":ping, "boot_dev":boot_dev, "reboot":reboot, "power":power, "boot_or_reboot":boot_or_reboot}
 def dispatch(args):
 	cmd = args[1]
 	params = args[2:]

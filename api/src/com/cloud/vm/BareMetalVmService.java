@@ -18,5 +18,8 @@
 
 package com.cloud.vm;
 
+import com.cloud.exception.ResourceAllocationException;
+
 public interface BareMetalVmService extends UserVmService {
+    public Long createTemplate(Long hostId, Integer bits, String displayText, String url, Boolean featured, Boolean publicTemplate, String templateName, Long osTypeId) throws ResourceAllocationException;
 }

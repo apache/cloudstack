@@ -87,7 +87,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 
-	private TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
+	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
 			Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
 			Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
 			String accountName, Long domainId, String chksum, Boolean bootable) throws ResourceAllocationException {
