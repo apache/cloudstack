@@ -455,8 +455,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 if (is_data_center_security_group_enabled){
                     SecurityGroupResponse resp = new SecurityGroupResponse();
                     resp.setId(rs.getLong("security_group.id"));
-                    resp.setName("security_group.name");
-                    resp.setDescription("security_group.description");
+                    resp.setName(rs.getString("security_group.name"));
+                    resp.setDescription(rs.getString("security_group.description"));
                     resp.setObjectName("securitygroup");
                     securityGroupResponse.add(resp);
                 }
