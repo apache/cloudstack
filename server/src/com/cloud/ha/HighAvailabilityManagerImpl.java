@@ -185,6 +185,19 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         if (host.getType() != Host.Type.Routing) {
             return;
         }
+        // need to wait 60 seconds to make sure storage heartbeat check correct
+        long begin = System.currentTimeMillis();
+        while ( true ) {
+            try {
+                    Thread.sleep(60*1000);
+            } catch (InterruptedException e) {
+            }
+            long now = System.currentTimeMillis();
+            if( (now - begin) > 60*1000) {
+                break;
+            }
+        }
+
         s_logger.warn("Scheduling restart for VMs on host " + host.getId());
 
         final List<VMInstanceVO> vms = _instanceDao.listByHostId(host.getId());
