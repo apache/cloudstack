@@ -2038,9 +2038,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
         try {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-
             // 1. Get the primary storage record and perform validation check
             primaryStorage = _storagePoolDao.lockRow(primaryStorageId, true);
 
@@ -2096,8 +2093,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     }
                 }
             }
-
-            txn.commit();
 
             // 4. Process the queue
             List<StoragePoolWorkVO> pendingWork = _storagePoolWorkDao.listPendingWorkForPrepareForMaintenanceByPoolId(primaryStorageId);
