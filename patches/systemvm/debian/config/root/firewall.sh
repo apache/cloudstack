@@ -47,7 +47,7 @@ ip_to_dev() {
 tcp_or_udp_entry() {
   local instIp=$1
   local dport0=$2
-  local dport=$(echo $2 | sed 's/:/-/')
+  local dport=$2
   local publicIp=$3
   local port=$4
   local op=$5
