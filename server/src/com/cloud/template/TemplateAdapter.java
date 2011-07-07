@@ -5,6 +5,7 @@ import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.Adapter;
 
@@ -35,4 +36,9 @@ public interface TemplateAdapter extends Adapter {
 	public TemplateProfile prepareDelete(DeleteIsoCmd cmd);
 
 	public boolean delete(TemplateProfile profile);
+	
+	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
+            Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
+            Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
+            String accountName, Long domainId, String chksum, Boolean bootable) throws ResourceAllocationException;
 }
