@@ -265,15 +265,16 @@ public class StatsCollector {
 				
                 List<HostVO> hosts = _hostDao.listSecondaryStorageHosts();
                 ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
-                
                 for (HostVO host : hosts) {
+                    if ( host.getStorageUrl() == null ) {
+                        continue;
+                    }
                     GetStorageStatsCommand command = new GetStorageStatsCommand(host.getStorageUrl());
-        			HostVO ssAhost = _agentMgr.getSSAgent(host);
-        			if( ssAhost == null ) {
-        				s_logger.warn("There is no secondary storage VM for secondary storage host " + host.getName());
-        				continue;
-        			}
-        			
+                    HostVO ssAhost = _agentMgr.getSSAgent(host);
+                    if (ssAhost == null) {
+                        s_logger.warn("There is no secondary storage VM for secondary storage host " + host.getName());
+                        continue;
+                    }
                     long hostId = host.getId();
                     Answer answer = _agentMgr.easySend(ssAhost.getId(), command);
                     if (answer != null && answer.getResult()) {
