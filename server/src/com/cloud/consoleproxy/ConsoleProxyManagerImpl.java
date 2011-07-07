@@ -1248,6 +1248,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
+        
+        // this can sometimes happen, if DB is manually or programmatically manipulated
+        if(_serviceOffering == null) {
+        	String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
+        	s_logger.error(msg);
+            throw new ConfigurationException(msg);
+        }
 
         _loadScanner = new SystemVmLoadScanner<Long>(this);
         _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);

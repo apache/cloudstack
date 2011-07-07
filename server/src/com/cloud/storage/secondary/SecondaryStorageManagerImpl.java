@@ -784,6 +784,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, null, null, false, null, _useLocalStorage, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
         _serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
+        
+        // this can sometimes happen, if DB is manually or programmatically manipulated
+        if(_serviceOffering == null) {
+        	String msg = "Data integrity problem : System Offering For Secondary Storage VM has been removed?";
+        	s_logger.error(msg);
+            throw new ConfigurationException(msg);
+        }
 
         if (_useServiceVM) {
             _loadScanner = new SystemVmLoadScanner<Long>(this);

@@ -550,6 +550,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
+        
+        // this can sometimes happen, if DB is manually or programmatically manipulated
+        if(_offering == null) {
+        	String msg = "Data integrity problem : System Offering For Software router VM has been removed?";
+        	s_logger.error(msg);
+            throw new ConfigurationException(msg);
+        }
 
         _systemAcct = _accountService.getSystemAccount();
         
