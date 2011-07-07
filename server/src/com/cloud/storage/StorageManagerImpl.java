@@ -2267,8 +2267,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         primaryStorageId);
             }
 
-            // set state to cancelmaintenance
-            primaryStorage.setStatus(StoragePoolStatus.CancelMaintenance);
+            // Change the storage state back to up
+            primaryStorage.setStatus(StoragePoolStatus.Up);
             _storagePoolDao.update(primaryStorageId, primaryStorage);
             txn.commit();
 
@@ -2373,10 +2373,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 s_logger.warn(msg, e);
                 throw new ExecutionException(msg);
             }
-
-            // Change the storage state back to up
-            primaryStorage.setStatus(StoragePoolStatus.Up);
-            _storagePoolDao.update(primaryStorageId, primaryStorage);
 
             return primaryStorage;
         } catch (Exception e) {
