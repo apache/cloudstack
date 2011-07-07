@@ -259,21 +259,26 @@ public class StatsCollector {
 		@Override
         public void run() {
 			try {
-				s_logger.debug("StorageCollector is running...");
+	            if (s_logger.isDebugEnabled()) {
+	            	s_logger.debug("StorageCollector is running...");
+	            }
 				
                 List<HostVO> hosts = _hostDao.listSecondaryStorageHosts();
                 ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
+                
                 for (HostVO host : hosts) {
                     GetStorageStatsCommand command = new GetStorageStatsCommand(host.getStorageUrl());
-                    HostVO ssAhost = _agentMgr.getSSAgent(host);
-                    if (ssAhost == null) {
-                        return;
-                    }
+        			HostVO ssAhost = _agentMgr.getSSAgent(host);
+        			if( ssAhost == null ) {
+        				s_logger.warn("There is no secondary storage VM for secondary storage host " + host.getName());
+        				continue;
+        			}
+        			
                     long hostId = host.getId();
                     Answer answer = _agentMgr.easySend(ssAhost.getId(), command);
                     if (answer != null && answer.getResult()) {
                         storageStats.put(hostId, (StorageStats)answer);
-                        s_logger.debug("HostId: "+hostId+ " Used: " + ((StorageStats)answer).getByteUsed() + " Total Available: " + ((StorageStats)answer).getCapacityBytes());
+                        s_logger.trace("HostId: "+hostId+ " Used: " + ((StorageStats)answer).getByteUsed() + " Total Available: " + ((StorageStats)answer).getCapacityBytes());
                         //Seems like we have dynamically updated the sec. storage as prev. size and the current do not match
                         if (_storageStats.get(hostId)!=null &&
                         		_storageStats.get(hostId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){
