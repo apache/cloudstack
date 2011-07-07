@@ -2919,8 +2919,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = false)
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
     public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, long networkOfferingId) {
+        boolean restartNetwork = false;
 
         // verify input parameters
         NetworkVO network = _networksDao.findById(networkId);
@@ -2931,6 +2932,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
         }
+        
+        _accountMgr.checkAccess(caller, network);
         
         // Don't allow to update system network - make an exception for the Guest network in Basic zone
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
@@ -2954,16 +2957,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Domain name change is not supported for network id=" + network.getNetworkOfferingId() + " in zone id=" + network.getDataCenterId());
             }
             
+            //restart network if it has active network elements
             List<DomainRouterVO> routers = _routerDao.listActive(networkId);
             if (!routers.isEmpty()) {
-                throw new CloudRuntimeException("Unable to update network id=" + networkId + " with new network domain as the network has running network elements");
+               restartNetwork = true;
             }
-            
             
             network.setNetworkDomain(domainSuffix);
         }
-
-        _accountMgr.checkAccess(caller, network);
 
         if (name != null) {
             network.setName(name);
@@ -2988,34 +2989,30 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             network.setNetworkOfferingId(networkOfferingId);
         }
-
-        _networksDao.update(networkId, network);
         
         if ((networkOfferingId != 0) && (networkOfferingId != oldNetworkOfferingId)) {
-            s_logger.info("Try to restart the network since the networkofferingID is changed");
-            // Don't allow to restart network if it's not in Implemented/Setup state
-            if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
-                s_logger.warn("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
-            }
+            restartNetwork = true;
+        }
 
-            boolean success = true;
+        boolean success = _networksDao.update(networkId, network);
+        
+        if (success && restartNetwork && (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
+            s_logger.info("Restarting network " + network + " as a part of update network call");
+
             try {
-                // Restart network - network elements restart is required
                 success = restartNetwork(networkId, true, caller);
             } catch (Exception e) {
-                s_logger.warn("Fail to restart the network: " + e);
                 success = false;
             }
 
             if (success) {
-                s_logger.debug("Network id=" + networkId + " is restarted successfully.");
+                s_logger.debug("Successully restarted the network " + network + " as a part of updateNetwork call");
             } else {
-                s_logger.warn("Network id=" + networkId + " failed to restart.");
+                s_logger.warn("Failed to restart the network " + network + " as a part of updateNetwork call");
             }
         }
-
+        
         return network;
-
     }
 
     @Override
