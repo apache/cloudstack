@@ -1007,14 +1007,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 + guestNetwork;
         
         List<DomainRouterVO> routers = findOrCreateDhcpServers(guestNetwork, dest, owner);
+        List<DomainRouterVO> runningRouters = null;
         
-        DomainRouterVO router = routers.get(0);
-        State state = router.getState();
-        if (state != State.Running) {
-            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+        if (routers != null) {
+            runningRouters = new ArrayList<DomainRouterVO>();
         }
         
-        return routers;
+        for (DomainRouterVO router : routers) {
+            State state = router.getState();
+            if (state != State.Running) {
+                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+            }
+            runningRouters.add(router);
+        }
+
+        return runningRouters;
     }
 
     @Override
@@ -1421,6 +1428,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<VirtualRouter> rets = new ArrayList<VirtualRouter>(routers.size());
 
         for (DomainRouterVO router : routers) {
+            boolean sendPasswordAndVmData = true;
             _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
 
             String password = (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword);
@@ -1446,26 +1454,37 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 	        dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 	        
 	        cmds.addCommand("dhcp", dhcpCommand);
+	        
+	        //for basic zone, send vm data/password information only to the dhcp in the same pod
+            DataCenter dc = dest.getDataCenter();
+            if (dc.getNetworkType() == NetworkType.Basic) {
+                Long podId = dest.getPod().getId();
+                if (router.getPodIdToDeployIn().longValue() != podId.longValue()) {
+                    sendPasswordAndVmData = false;
+                }
+            }
 	
-	        // password should be set only on default network element
-	        if (password != null && network.isDefault()) {
-	            final String encodedPassword = PasswordGenerator.rot13(password);
-	            SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName());
-	            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-	            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
-	            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-	            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-	            
-	            cmds.addCommand("password", cmd);
-	        }
+            if (sendPasswordAndVmData) {
+                // password should be set only on default network element
+                if (password != null && network.isDefault()) {
+                    final String encodedPassword = PasswordGenerator.rot13(password);
+                    SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName());
+                    cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+                    cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                    cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+                    
+                    cmds.addCommand("password", cmd);
+                }
 
-            String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
-            String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
+                String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
+                String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
 
-            cmds.addCommand(
-                    "vmdata",
-                    generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), profile.getVirtualMachine()
-                            .getInstanceName(), profile.getId(), sshPublicKey));
+                cmds.addCommand(
+                        "vmdata",
+                        generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), profile.getVirtualMachine()
+                                .getInstanceName(), profile.getId(), sshPublicKey));
+            }
 
             try {
                 _agentMgr.send(router.getHostId(), cmds);
