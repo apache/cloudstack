@@ -206,7 +206,7 @@ public interface AgentManager extends Manager {
      *            TODO
      * @param true if deleted, false otherwise
      */
-    boolean deleteHost(long hostId, boolean isForced, User caller);
+    boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller);
 
     /**
      * Find a pod based on the user id, template, and data center.

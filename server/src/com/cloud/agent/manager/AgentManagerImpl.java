@@ -120,10 +120,17 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StorageService;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
@@ -212,6 +219,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected ClusterDetailsDao _clusterDetailsDao = null;
     @Inject
     protected HostTagsDao _hostTagsDao = null;
+    @Inject
+    protected VolumeDao _volumeDao = null;
 
     protected int _port;
 
@@ -225,6 +234,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     @Inject
     protected VirtualMachineManager _vmMgr = null;
+    
+    @Inject StorageService _storageSvr = null;
+    @Inject StorageManager _storageMgr = null;
 
     protected int _retry = 2;
 
@@ -569,7 +581,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     @Override
     @DB
-    public boolean deleteHost(long hostId, boolean isForced, User caller) {
+    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller) {
 
         // Check if the host exists
         HostVO host = _hostDao.findById(hostId);
@@ -590,7 +602,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 // Check if host is ready for removal
                 Status currentState = host.getStatus();
                 Status nextState = currentState.getNextStatus(Status.Event.Remove);
-                if (nextState == null && !isForced) {
+                if (nextState == null) {
                     s_logger.debug("There is no transition from state " + currentState.toString() + " to state " + Status.Event.Remove.toString());
                     return false;
                 }
@@ -599,28 +611,54 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     s_logger.debug("Deleting Host: " + hostId + " Guid:" + host.getGuid());
                 }
 
-                // Check if there are vms running/starting/stopping on this host
-                List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
-
-                if (!vms.isEmpty()) {
-                    if (isForced) {
-                        // Stop HA disabled vms and HA enabled vms in Stopping state
-                        // Restart HA enabled vms
-                        for (VMInstanceVO vm : vms) {
-                            if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
-                                s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + hostId);
-                                if (!_vmMgr.advanceStop(vm, true, caller, _accountMgr.getAccount(vm.getAccountId()))) {
-                                    String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + hostId;
-                                    s_logger.warn(errorMsg);
-                                    throw new CloudRuntimeException(errorMsg);
+                if (forceDestroy) {
+                    //put local storage into mainenance mode, will set all the VMs on this local storage into stopped state
+                    StoragePool storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
+                    if (storagePool != null) {
+                        if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
+                            try {
+                                storagePool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
+                                if (storagePool == null) {
+                                    s_logger.debug("Failed to set primary storage into maintenance mode");
+                                    return false;
                                 }
-                            } else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
-                                s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on the host id=" + hostId);
-                                _haMgr.scheduleRestart(vm, false);
+                            } catch (Exception e) {
+                                s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+                                return false;
                             }
                         }
-                    } else {
-                        throw new CloudRuntimeException("Unable to delete the host as there are vms in " + vms.get(0).getState() + " state using this host and isForced=false specified");
+                        List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
+                        for (VMInstanceVO vm : vmsOnLocalStorage) {
+                            if(!_vmMgr.destroy(vm, caller, _accountMgr.getAccount(vm.getAccountId()))) {
+                                String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + hostId;
+                                s_logger.warn(errorMsg);
+                                throw new CloudRuntimeException(errorMsg);  
+                            }
+                        }
+                    }
+                } else {
+                    // Check if there are vms running/starting/stopping on this host
+                    List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+                    if (!vms.isEmpty()) {
+                        if (isForced) {
+                            // Stop HA disabled vms and HA enabled vms in Stopping state
+                            // Restart HA enabled vms
+                            for (VMInstanceVO vm : vms) {
+                                if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
+                                    s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + hostId);
+                                    if (!_vmMgr.advanceStop(vm, true, caller, _accountMgr.getAccount(vm.getAccountId()))) {
+                                        String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + hostId;
+                                        s_logger.warn(errorMsg);
+                                        throw new CloudRuntimeException(errorMsg);
+                                    }
+                                } else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
+                                    s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on the host id=" + hostId);
+                                    _haMgr.scheduleRestart(vm, false);
+                                }
+                            }
+                        } else {
+                            throw new CloudRuntimeException("Unable to delete the host as there are vms in " + vms.get(0).getState() + " state using this host and isForced=false specified");
+                        }
                     }
                 }
 
@@ -701,7 +739,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             for (StoragePoolHostVO pool : pools) {
                 Long poolId = pool.getPoolId();
                 StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
-                if (storagePool.isLocal()) {
+                if (storagePool.isLocal() && forceDestroy) {
                     storagePool.setUuid(null);
                     storagePool.setClusterId(null);
                     _storagePoolDao.update(poolId, storagePool);
@@ -1510,7 +1548,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return cancelMaintenance(hostId);
         } else if (event == Event.Remove) {
             User caller = _accountMgr.getActiveUser(User.UID_SYSTEM);
-            return deleteHost(hostId, false, caller);
+            return deleteHost(hostId, false, false, caller);
         } else if (event == Event.AgentDisconnected) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Received agent disconnect event for host " + hostId);

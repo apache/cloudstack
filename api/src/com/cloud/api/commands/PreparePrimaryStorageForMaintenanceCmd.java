@@ -99,7 +99,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        StoragePool result = _storageService.preparePrimaryStorageForMaintenance(this);
+        StoragePool result = _storageService.preparePrimaryStorageForMaintenance(getId());
         if (result != null){
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName("storagepool");
