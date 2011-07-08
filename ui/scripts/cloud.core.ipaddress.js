@@ -282,13 +282,13 @@ function afterLoadIpJSP() {
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;		
 	
-		//isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
+		isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
 				
 		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535, false); //required
-		isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
+		//isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
 		
 		isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535, false); //required		
-		isValid &= validateInteger("Private End Port", $createPortForwardingRow.find("#private_end_port"), $createPortForwardingRow.find("#private_end_port_errormsg"), 1, 65535, true); //optional				
+		//isValid &= validateInteger("Private End Port", $createPortForwardingRow.find("#private_end_port"), $createPortForwardingRow.find("#private_end_port_errormsg"), 1, 65535, true); //optional				
 		
 		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
 		if (!isValid) 
@@ -1516,13 +1516,13 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#cidr").text(fromdb(jsonObj.cidrlist));
     
     var publicPort = fromdb(jsonObj.publicport);
-    if(jsonObj.publicendport != null && jsonObj.publicendport.length > 0)
-    	publicPort += (" - " + fromdb(jsonObj.publicendport));    
+    //if(jsonObj.publicendport != null && jsonObj.publicendport.length > 0)
+    //	publicPort += (" - " + fromdb(jsonObj.publicendport));    
     $template.find("#public_port").text(publicPort);
                 
     var privatePort = fromdb(jsonObj.privateport);
-    if(jsonObj.privateendport != null && jsonObj.privateendport.length > 0)
-    	privatePort += (" - " + fromdb(jsonObj.privateendport));    
+    //if(jsonObj.privateendport != null && jsonObj.privateendport.length > 0)
+    //	privatePort += (" - " + fromdb(jsonObj.privateendport));    
     $template.find("#private_port").text(privatePort);
     
     $template.find("#protocol").text(fromdb(jsonObj.protocol));
