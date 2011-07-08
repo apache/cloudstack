@@ -109,18 +109,8 @@ dictionary = {
 			            <div class="row_celltitles" id="ipaddress">
 			            </div>
 			        </div>
-			    </div>			   
+			    </div>				   
 			    <div class="grid_rows even">
-			        <div class="grid_row_cell" style="width: 20%;">
-			            <div class="row_celltitles">
-			                <fmt:message key="label.version"/>:</div>
-			        </div>
-			        <div class="grid_row_cell" style="width: 79%;">
-			            <div class="row_celltitles" id="version">
-			            </div>
-			        </div>
-			    </div>
-			    <div class="grid_rows odd">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
 			                <fmt:message key="label.last.disconnected"/>:</div>
@@ -131,7 +121,7 @@ dictionary = {
 			        </div>
 			    </div>			    
 			    <!-- 
-			    <div class="grid_rows even">
+			    <div class="grid_rows old">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
 			                <fmt:message key="label.state"/>:</div>

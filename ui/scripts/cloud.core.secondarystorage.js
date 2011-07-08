@@ -125,8 +125,7 @@ function secondaryStorageToDetailsTab() {
     $thisTab.find("#ipaddress").text(jsonObj.ipaddress);
        
     //setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"))
-    
-    $thisTab.find("#version").text(jsonObj.version); 
+        
     setDateField(jsonObj.disconnected, $thisTab.find("#disconnected"));
        
     //actions ***   
