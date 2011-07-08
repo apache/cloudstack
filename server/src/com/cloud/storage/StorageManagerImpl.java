@@ -2048,6 +2048,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 throw new ExecutionException(msg);
             }
 
+            List<StoragePoolVO> spes = _storagePoolDao.listBy(primaryStorage.getDataCenterId(), primaryStorage.getPodId(), primaryStorage.getClusterId());
+            for( StoragePoolVO sp : spes ) {
+                if( sp.getStatus() == StoragePoolStatus.PrepareForMaintenance ) {
+                    throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() + " is already in  PrepareForMaintenance mode " );
+                }
+            }
+            
             if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
                 throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
             }
