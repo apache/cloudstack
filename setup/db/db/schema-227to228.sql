@@ -130,3 +130,10 @@ UPDATE IGNORE configuration set name='guest.domain.suffix' where name='domain.su
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'guest.domain.suffix', 'cloud.internal', 'Default domain name for vms inside virtualized networks fronted by router');
 DELETE FROM configuration WHERE name='domain.suffix';
 
+
+ALTER TABLE `cloud`.`user` ADD COLUMN `registration_token` varchar(255) default NULL;
+ALTER TABLE `cloud`.`user` ADD COLUMN `is_registered` tinyint NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `removed` datetime;
+
+CREATE INDEX `i_op_lock__mac_ip_thread` on `op_lock` (`mac`, `ip`, `thread`);
+
