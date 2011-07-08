@@ -99,7 +99,7 @@
 
     </management-server>
 
-    <configuration-server class="com.cloud.server.ConfigurationServerImpl">
+    <configuration-server class="com.cloud.server.ConfigurationServerImpl" library="com.cloud.configuration.ConfigurationCompoentLibrary">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
              <param name="premium">false</param>
         </dao>
