@@ -289,10 +289,13 @@ dictionary = {
         <div id="tab_container">
 	        <div class="grid_container" id="grid_container">
 	            <div class="grid_header">
-	                <div class="grid_header_cell" style="width: 25%; ">
-	                    <div class="grid_header_title">
+	                <!--
+			<div class="grid_header_cell" style="width: 25%; ">
+	                  
+			<div class="grid_header_title">
 	                        <fmt:message key="label.cidr.list"/></div>
-	                </div>		            
+	                </div>
+			-->		            
 	                <div class="grid_header_cell" style="width: 15%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.public.port"/></div>
@@ -301,28 +304,30 @@ dictionary = {
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.private.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 10%; ">
+	                <div class="grid_header_cell" style="width: 15%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.protocol"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;  border: none;">
+	                <div class="grid_header_cell" style="width: 25%;  border: none;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.instance"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 5%; ">
+	                <div class="grid_header_cell" style="width: 10%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.state"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 10%; ">
+	                <div class="grid_header_cell" style="width: 15%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even" id="create_port_forwarding_row">
+			<!--
 	                <div class="grid_row_cell" style="width: 25%; ">  
 	                    <input id="cidr" class="text" type="text" />
 	                    <div id="cidr_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
+			-->
 	                <div class="grid_row_cell" style="width: 15%; ">
 	                    <input id="public_port" class="text" style="width: 30%; " type="text" />
 	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
@@ -341,19 +346,19 @@ dictionary = {
 	                    <input id="private_end_port" class="text" style="width: 30%; " type="text" />
 	                    <div id="private_end_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>	 
 	                </div>
-	                <div class="grid_row_cell" style="width: 10%; ">  
+	                <div class="grid_row_cell" style="width: 15%; ">  
 	                   <select class="select" id="protocol" style="width:70%;">	                    
 	                   </select>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%; ">                   
+	                <div class="grid_row_cell" style="width: 25%; ">                   
 	                    <select class="select" id="vm">
 	                    </select>
 	                    <div id="vm_errormsg" class="errormsg" style="display: none;"></div>	                    
 	                </div>
-	                <div class="grid_row_cell" style="width: 5%; ">   
+	                <div class="grid_row_cell" style="width: 10%; ">   
 	                    <div class="row_celltitles" id="state" style="padding:1px;"></div>
 	                </div>  
-	                <div class="grid_row_cell" style="width: 10%; ">
+	                <div class="grid_row_cell" style="width: 15%; ">
 	                    <div class="row_celltitles">
 	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
 	                </div>
@@ -649,25 +654,25 @@ dictionary = {
 <!-- Port Forwarding template (begin) -->
 <div class="grid_rows odd" id="port_forwarding_template" style="display: none">    
     <div id="row_container">
-        <div class="grid_row_cell" style="width: 25%; ">
+        <!--<div class="grid_row_cell" style="width: 25%; ">
             <div class="row_celltitles" id="cidr" style="padding:1px;"></div>
-        </div>
+        </div>-->
         <div class="grid_row_cell" style="width: 15%; ">
             <div class="row_celltitles" id="public_port"></div>
         </div>
         <div class="grid_row_cell" style="width: 15%; ">
             <div class="row_celltitles" id="private_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 10%; ">
+        <div class="grid_row_cell" style="width: 15%; ">
             <div class="row_celltitles" id="protocol"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%; ">
+        <div class="grid_row_cell" style="width: 25%; ">
             <div class="row_celltitles" id="vm_name"></div>
         </div>   
-        <div class="grid_row_cell" style="width: 5%; ">
+        <div class="grid_row_cell" style="width: 10%; ">
             <div class="row_celltitles" id="state" style="padding:1px;"></div>
         </div>        
-        <div class="grid_row_cell" style="width: 10%; ">
+        <div class="grid_row_cell" style="width: 15%; ">
             <div class="row_celltitles">
                 <a id="delete_link" href="#" style="float:left;"><fmt:message key="label.delete"/> </a>                                
             </div>
