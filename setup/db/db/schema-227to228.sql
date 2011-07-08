@@ -9,6 +9,10 @@ ALTER TABLE `cloud`.`service_offering` ADD COLUMN `limit_cpu_use` tinyint(1) NOT
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `default_use` tinyint(1) NOT NULL DEFAULT 0 ;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `vm_type` varchar(32) COMMENT 'type of offering specified for system offerings';
 ALTER TABLE `cloud`.`storage_pool` MODIFY `host_address` varchar(255) NOT NULL;
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `unique_name` varchar(64) NOT NULL COMMENT 'unique name of the network offering';
+UPDATE `cloud`.`network_offerings` SET unique_name=name;
+ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` varchar(64) NOT NULL UNIQUE COMMENT 'unique name of the network offering';
+
 
 DROP TABLE IF EXISTS `cloud`.`certificate`;
 CREATE TABLE IF NOT EXISTS `cloud`.`keystore` (
