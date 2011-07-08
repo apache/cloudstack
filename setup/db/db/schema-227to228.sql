@@ -85,7 +85,7 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `shared_source_nat_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the shared source nat service';
 
-CREATE TABLE `cloud`.`op_host_transfer` (
+CREATE TABLE IF NOT EXISTS `cloud`.`op_host_transfer` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Id of the host',
   `initial_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered from',
   `future_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered to',
@@ -103,7 +103,7 @@ ALTER TABLE `cloud`.`snapshots` ADD COLUMN `swift_name` varchar(255);
 ALTER TABLE `cloud`.`snapshots` ADD COLUMN `sechost_id` bigint unsigned;
 
 
-CREATE TABLE `cloud`.`swift` (
+CREATE TABLE IF NOT EXISTS `cloud`.`swift` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `hostname` varchar(255),
   `account` varchar(255) COMMENT ' account in swift',
@@ -130,10 +130,8 @@ UPDATE IGNORE configuration set name='guest.domain.suffix' where name='domain.su
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'guest.domain.suffix', 'cloud.internal', 'Default domain name for vms inside virtualized networks fronted by router');
 DELETE FROM configuration WHERE name='domain.suffix';
 
-
 ALTER TABLE `cloud`.`user` ADD COLUMN `registration_token` varchar(255) default NULL;
 ALTER TABLE `cloud`.`user` ADD COLUMN `is_registered` tinyint NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `removed` datetime;
 
-CREATE INDEX `i_op_lock__mac_ip_thread` on `op_lock` (`mac`, `ip`, `thread`);
-
+CREATE INDEX `i_op_lock__mac_ip_thread` on `op_lock` (`mac`, `ip`, `thread`);8

@@ -65,13 +65,13 @@ public class Upgrade227to228 implements DbUpgrade {
             while (rs.next()) {
                 long dcId = rs.getLong(1);
                 pstmt = conn.prepareStatement("select id from host where data_center_id=? and type='SecondaryStorage'");
-                pstmt.setLong(0, dcId);
+                pstmt.setLong(1, dcId);
                 ResultSet rs1 = pstmt.executeQuery();               
                 if (rs1.next()) {
                     long secHostId = rs1.getLong(1);
-                    pstmt = conn.prepareStatement("update snapshot set sechost_id=? where data_center_id=?");
-                    pstmt.setLong(0, secHostId);
-                    pstmt.setLong(0, dcId);
+                    pstmt = conn.prepareStatement("update snapshots set sechost_id=? where data_center_id=?");
+                    pstmt.setLong(1, secHostId);
+                    pstmt.setLong(2, dcId);
                     pstmt.executeUpdate();                   
                 }
             }
@@ -109,12 +109,12 @@ public class Upgrade227to228 implements DbUpgrade {
             for (Object[] network : networks) {
                 Long networkId = (Long) network[0];
                 pstmt = conn.prepareStatement("SELECT * from domain_network_ref where network_id=?");
-                pstmt.setLong(0, networkId);
+                pstmt.setLong(1, networkId);
                 rs = pstmt.executeQuery();
                 if (rs.next()) {
                     s_logger.debug("Setting network id=" + networkId + " as domain specific shared network");
                     pstmt = conn.prepareStatement("UPDATE networks set is_domain_specific=1 where id=?");
-                    pstmt.setLong(0, networkId);
+                    pstmt.setLong(1, networkId);
                     pstmt.executeUpdate();
                 }
                 rs.close();
