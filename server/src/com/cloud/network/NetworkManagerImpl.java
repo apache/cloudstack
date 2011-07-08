@@ -2838,6 +2838,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
 
         IPAddressVO ip = _ipAddressDao.findById(addrId);
+        
+        if (ip.getAllocatedToAccountId() == null && ip.getAllocatedTime() == null) {
+            s_logger.trace("Ip address id=" + addrId + " is already released");
+            return ip;
+        }
 
         if (ip.getState() != State.Releasing) {
             txn.start();

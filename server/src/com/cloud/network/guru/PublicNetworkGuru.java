@@ -181,7 +181,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
-        IPAddressVO ip = _ipAddressDao.findByAccountAndIp(vm.getVirtualMachine().getAccountId(), nic.getIp4Address());
+        IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
         if (ip != null) {
             _networkMgr.markIpAsUnavailable(ip.getId());
             _ipAddressDao.unassignIpAddress(ip.getId());
