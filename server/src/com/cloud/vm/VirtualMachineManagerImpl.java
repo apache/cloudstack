@@ -65,7 +65,6 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
@@ -935,7 +934,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 throw new ConcurrentOperationException("VM is being operated on.");
             }
         } catch (NoTransitionException e1) {
-            throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
+            if (!forced) {
+                throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
+            }
+            s_logger.debug("Unable to transition the state but we're moving on because it's forced stop");
         }
 
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
