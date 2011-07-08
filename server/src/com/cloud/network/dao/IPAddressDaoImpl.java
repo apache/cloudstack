@@ -69,6 +69,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
         AllFieldsSearch.and("associatedWithVmId", AllFieldsSearch.entity().getAssociatedWithVmId(), Op.EQ);
         AllFieldsSearch.and("oneToOneNat", AllFieldsSearch.entity().isOneToOneNat(), Op.EQ);
+        AllFieldsSearch.and("sourcenetwork", AllFieldsSearch.entity().getSourceNetworkId(), Op.EQ);
         AllFieldsSearch.done();
 
         VlanDbIdSearchUnallocated = createSearchBuilder();
@@ -185,9 +186,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
     
     @Override
-    public IPAddressVO findByAccountAndIp(long accountId, String ipAddress) {
+    public IPAddressVO findByIpAndSourceNetworkId(long networkId, String ipAddress) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("accountId", accountId);
+        sc.setParameters("sourcenetwork", networkId);
         sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
     }
