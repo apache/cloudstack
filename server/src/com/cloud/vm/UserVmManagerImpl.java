@@ -861,7 +861,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             cmd.setStoreUrl(isoPathPair.second());
         }
         Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
-        return (a != null);
+        
+        return (a != null && a.getResult());
     }
 
     private UserVm rebootVirtualMachine(long userId, long vmId) throws InsufficientCapacityException, ResourceUnavailableException {
