@@ -930,7 +930,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
 
         try {
-            if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId(), null)) {
+            if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
                 throw new ConcurrentOperationException("VM is being operated on.");
             }
         } catch (NoTransitionException e1) {
@@ -951,6 +951,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         s_logger.warn("Unable to cleanup " + vm);
                         return false;
                     }
+                }
+            } else {
+                try {
+                    return stateTransitTo(vm, Event.AgentReportStopped, null);
+                } catch (NoTransitionException e) {
+                    s_logger.warn("Unable to cleanup " + vm);
+                    return false;
                 }
             }
         }
