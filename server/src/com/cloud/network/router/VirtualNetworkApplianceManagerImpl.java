@@ -912,15 +912,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
         List<DomainRouterVO> routers = findOrCreateVirtualRouters(guestNetwork, dest, owner, isRedundant);
-
+        List<DomainRouterVO> runningRouters = null;
+        
+        if (routers != null) {
+            runningRouters = new ArrayList<DomainRouterVO>();
+        }
+        
         for (DomainRouterVO router : routers) {
             State state = router.getState();
             if (state != State.Running) {
                 router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
             }
+            runningRouters.add(router);
         }
-        
-        return routers;
+
+        return runningRouters;
     }
     
     @DB
