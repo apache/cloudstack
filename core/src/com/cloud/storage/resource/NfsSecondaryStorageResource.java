@@ -192,7 +192,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         finally {
             try {
-                is.close();
+            	if(is != null)
+            		is.close();
             } catch (IOException e) {
                 if(s_logger.isDebugEnabled()){
                   s_logger.debug("Could not close the file " +absoluteTemplatePath);   
