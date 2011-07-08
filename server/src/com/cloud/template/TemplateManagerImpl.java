@@ -821,6 +821,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
         
+        if("vmware-tools.iso".equals(iso.getName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+        	throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
+        }
         return attachISOToVM(vmId, userId, isoId, true);
 	}
 
