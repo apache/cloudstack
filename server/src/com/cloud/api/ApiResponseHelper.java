@@ -1403,7 +1403,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             return isoResponses;
         } else {
             List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();       
-            if (zoneId == null) {
+            if (zoneId == null || zoneId == -1 ) {
                 dcs.addAll(ApiDBUtils.listZones());
                 for (DataCenterVO dc : dcs ) {
                     isoResponses.addAll(createIsoResponses(iso, dc.getId(), readyOnly));
@@ -1420,6 +1420,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         long isoId = iso.getId();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         VMTemplateHostVO isoHost = ApiDBUtils.findTemplateHostRef(isoId, zoneId, readyOnly);
+        if( isoHost == null ) {
+            return isoResponses;
+        }
         TemplateResponse isoResponse = new TemplateResponse();
         isoResponse.setId(iso.getId());
         isoResponse.setName(iso.getName());
