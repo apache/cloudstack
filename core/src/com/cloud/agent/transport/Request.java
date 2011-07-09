@@ -311,7 +311,12 @@ public class Request {
         StringBuilder content = new StringBuilder();
         if (logContent) {
             if (_cmds == null) {
-                _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
+                try {
+                    _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
+                } catch (Exception e) {
+                    s_logger.error("Unable to convert to json: " + _content);
+                    return null;
+                }
             }
             try {
                 s_gogger.toJson(_cmds, content);
