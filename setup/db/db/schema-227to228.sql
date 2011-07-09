@@ -137,3 +137,6 @@ ALTER TABLE `cloud`.`data_center` ADD COLUMN `removed` datetime;
 
 CREATE INDEX `i_op_lock__mac_ip_thread` on `op_lock` (`mac`, `ip`, `thread`);
 
+UPDATE `cloud`.`mshost` set removed=NULL where removed IS NOT NULL;
+
+

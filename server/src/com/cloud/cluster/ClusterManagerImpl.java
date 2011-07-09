@@ -739,7 +739,15 @@ public class ClusterManagerImpl implements ClusterManager {
         Date cutTime = DateUtil.currentGMTTime();
         List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - heartbeatThreshold));
         if(inactiveList.size() > 0) {
+        	if(s_logger.isInfoEnabled()) {
+        		s_logger.info("Found " + inactiveList.size() + " inactive management server node based on timestamp");
+        		for(ManagementServerHostVO host : inactiveList)
+        			s_logger.info("management server node msid: " + host.getMsid() + ", name: " + host.getName() + ", service ip: " + host.getServiceIP() + ", version: " + host.getVersion());
+        	}
+        	
             this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, inactiveList));
+        } else {
+        	s_logger.info("No inactive management server node found");
         }
     }
 
