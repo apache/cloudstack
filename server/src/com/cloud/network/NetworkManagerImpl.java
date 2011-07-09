@@ -1785,23 +1785,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     accountId = owner.getId();
                 }
             }
+            DomainVO domain = _domainDao.findById(caller.getDomainId());
+            path = domain.getPath();
 
-            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                DomainVO domain = _domainDao.findById(caller.getDomainId());
-                if (domain != null) {
-                    path = domain.getPath();
-                }
-            }
         } else {
             accountId = caller.getId();
         }
         
         if ((isSystem == null || !isSystem) && (isShared == null || isShared)) {
-            if (domainId == null) {
-                sharedNetworkDomainId = caller.getDomainId();
-            } else {
-                sharedNetworkDomainId = domainId;
-            }
+            sharedNetworkDomainId = domainId;
         }
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1833,6 +1825,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
        
             if (sharedNetworkDomainId != null) {
                 networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, sharedNetworkDomainId));
+            } else {
+                SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+                domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+                sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+                networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, path));
             }
             
             //if domain id is specified - list only domain level networks
@@ -1926,6 +1923,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ssc.addOr("id", SearchCriteria.Op.SC, zoneSC);
         
         sc.addAnd("id", SearchCriteria.Op.SC, ssc);
+        
+        return _networksDao.search(sc, searchFilter);
+    }
+    
+    
+    private List<NetworkVO> listDomainSpecificNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path) {
+        
+        if (path != null) {
+            sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
+            sc.addAnd("isDomainSpecific", SearchCriteria.Op.EQ, true);
+            sc.setJoinParameters("domainSearch", "path", path + "%");
+        }
         
         return _networksDao.search(sc, searchFilter);
     }
