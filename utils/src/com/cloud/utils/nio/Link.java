@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -347,16 +348,19 @@ public class Link {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         KeyStore ks = KeyStore.getInstance("JKS");
         TrustManager[] tms;
+        InputStream stream;
         
         if (!isClient) {
         	char[] passphrase = "vmops.com".toCharArray();
         	String keystorePath = "/etc/cloud/management/cloud.keystore";
         	if (new File(keystorePath).exists()) {
-        		ks.load(new FileInputStream(keystorePath), passphrase);
+        	    stream = new FileInputStream(keystorePath);
         	} else {
         		s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
-        		ks.load(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
+        		stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
         	}
+        	ks.load(stream, passphrase);
+        	stream.close();
         	kmf.init(ks, passphrase);
         	tmf.init(ks);
         	tms = tmf.getTrustManagers();
