@@ -197,11 +197,15 @@ public abstract class NioConnection implements Runnable {
         	sslEngine.setNeedClientAuth(false);
 
         	Link.doHandshake(socketChannel, sslEngine, false);
-        	s_logger.info("SSL: Handshake done");
         } catch (Exception e) {
-        	throw new IOException("SSL: Fail to init SSL! " + e);
+            logDebug(e, key, 0);
+            terminate(key);
+            return;
         }
         
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("SSL: Handshake done");
+        }
         socketChannel.configureBlocking(false);
         InetSocketAddress saddr = (InetSocketAddress)socket.getRemoteSocketAddress();
         Link link = new Link(saddr, this);

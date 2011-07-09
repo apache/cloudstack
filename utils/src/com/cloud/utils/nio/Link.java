@@ -369,14 +369,18 @@ public class Link {
         
         sslContext = SSLContext.getInstance("TLS");
         sslContext.init(kmf.getKeyManagers(), tms, null);
-        s_logger.info("SSL: SSLcontext has been initialized");
+        if (s_logger.isTraceEnabled()) {
+        	s_logger.trace("SSL: SSLcontext has been initialized");
+        }
 
         return sslContext;
     }
 
     public static void doHandshake(SocketChannel ch, SSLEngine sslEngine,
                                boolean isClient) throws IOException {
-        s_logger.info("SSL: begin Handshake, isClient: " + isClient);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("SSL: begin Handshake, isClient: " + isClient);
+        }
 
         SSLEngineResult engResult;
         SSLSession sslSession = sslEngine.getSession();
