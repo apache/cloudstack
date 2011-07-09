@@ -261,9 +261,11 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
 
     @Override
     public boolean scheduleMigration(final VMInstanceVO vm) {
-        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated());
-        _haDao.persist(work);
-        wakeupWorkers();
+        if (vm.getHostId() != null) {
+            final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated());
+            _haDao.persist(work);
+            wakeupWorkers();
+        }
         return true;
     }
 
