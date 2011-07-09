@@ -271,7 +271,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 tmpltHostRef = _tmpltHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
                 if (tmpltHostRef != null){
                     if (tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                        throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
+                        tmpltHostRef = null;
                     }
                     else {
                         break;
@@ -280,6 +280,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
         }
         
+        if ( tmpltHostRef == null ) {
+            throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
+        }
         Upload.Mode extractMode;
         if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
             throw new InvalidParameterValueException("Please specify a valid extract Mode "+Upload.Mode.values());
