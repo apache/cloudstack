@@ -191,17 +191,31 @@ public abstract class NioConnection implements Runnable {
 
         SSLEngine sslEngine = null;
         try {
-        	SSLContext sslContext = Link.initSSLContext(false);
-        	sslEngine = sslContext.createSSLEngine();
-        	sslEngine.setUseClientMode(false);
-        	sslEngine.setNeedClientAuth(false);
+            SSLContext sslContext = Link.initSSLContext(false);
+            sslEngine = sslContext.createSSLEngine();
+            sslEngine.setUseClientMode(false);
+            sslEngine.setNeedClientAuth(false);
 
-        	Link.doHandshake(socketChannel, sslEngine, false);
-        	s_logger.info("SSL: Handshake done");
+            Link.doHandshake(socketChannel, sslEngine, false);
         } catch (Exception e) {
-        	throw new IOException("SSL: Fail to init SSL! " + e);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
+                s_logger.debug("Closing socket " + socketChannel.socket());
+            }
+            try {
+                socketChannel.close();
+                socket.close();
+            } catch (IOException ignore) {
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Closed socket " + socketChannel.socket());
+            }
+            return;
         }
         
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("SSL: Handshake done");
+        }
         socketChannel.configureBlocking(false);
         InetSocketAddress saddr = (InetSocketAddress)socket.getRemoteSocketAddress();
         Link link = new Link(saddr, this);

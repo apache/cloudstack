@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -342,6 +343,7 @@ public class Link {
     }
     
     public static SSLContext initSSLContext(boolean isClient) throws Exception {
+        InputStream stream;
         SSLContext sslContext = null;
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
@@ -352,11 +354,13 @@ public class Link {
         	char[] passphrase = "vmops.com".toCharArray();
         	String keystorePath = "/etc/cloud/management/cloud.keystore";
         	if (new File(keystorePath).exists()) {
-        		ks.load(new FileInputStream(keystorePath), passphrase);
+        	    stream = new FileInputStream(keystorePath);
         	} else {
         		s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
-        		ks.load(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
+                        stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
         	}
+        	ks.load(stream, passphrase);
+        	stream.close();
         	kmf.init(ks, passphrase);
         	tmf.init(ks);
         	tms = tmf.getTrustManagers();
@@ -369,14 +373,18 @@ public class Link {
         
         sslContext = SSLContext.getInstance("TLS");
         sslContext.init(kmf.getKeyManagers(), tms, null);
-        s_logger.info("SSL: SSLcontext has been initialized");
+        if (s_logger.isTraceEnabled()) {
+        	s_logger.trace("SSL: SSLcontext has been initialized");
+        }
 
         return sslContext;
     }
 
     public static void doHandshake(SocketChannel ch, SSLEngine sslEngine,
                                boolean isClient) throws IOException {
-        s_logger.info("SSL: begin Handshake, isClient: " + isClient);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("SSL: begin Handshake, isClient: " + isClient);
+        }
 
         SSLEngineResult engResult;
         SSLSession sslSession = sslEngine.getSession();
