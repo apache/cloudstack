@@ -68,6 +68,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
@@ -102,7 +103,7 @@ public class ClusterManagerImpl implements ClusterManager {
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-Heartbeat"));
     private final ExecutorService _notificationExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("Cluster-Notification"));
     private final List<ClusterManagerMessage> _notificationMsgs = new ArrayList<ClusterManagerMessage>();
-    private Connection _heartbeatConnection = null;
+    private ConnectionConcierge _heartbeatConnection = null;
 
     private final ExecutorService _executor;
 
@@ -624,23 +625,20 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     private Connection getHeartbeatConnection() throws SQLException {
-        if(_heartbeatConnection != null) {
-            return _heartbeatConnection;
+        if(_heartbeatConnection == null) {
+            Connection conn = Transaction.getStandaloneConnectionWithException();
+            _heartbeatConnection = new ConnectionConcierge("ClusterManagerHeartBeat", conn, false, false);
         }
 
-        _heartbeatConnection = Transaction.getStandaloneConnectionWithException();
-        return _heartbeatConnection;
+        return _heartbeatConnection.conn();
     }
 
     private void invalidHeartbeatConnection() {
         if(_heartbeatConnection != null) {
-            try {
-                _heartbeatConnection.close();
-            } catch (SQLException e) {
-                s_logger.warn("Unable to close hearbeat DB connection. ", e);
+            Connection conn = Transaction.getStandaloneConnection();
+            if (conn != null) {
+                _heartbeatConnection.reset(Transaction.getStandaloneConnection());
             }
-
-            _heartbeatConnection = null;
         }
     }
 

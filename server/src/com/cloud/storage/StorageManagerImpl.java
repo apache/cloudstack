@@ -2626,7 +2626,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             if (assignedPool != null) {
                 Volume.State state = vol.getState();
-                if (state == Volume.State.Allocated && state == Volume.State.Creating) {
+                if (state == Volume.State.Allocated || state == Volume.State.Creating) {
                     recreateVols.add(vol);
                 } else {
                     if (vol.isRecreatable()) {
