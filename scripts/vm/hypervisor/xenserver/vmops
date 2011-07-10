@@ -12,6 +12,7 @@ import socket
 import stat
 import tempfile
 import util
+from util import CommandException
 
 def echo(fn):
     def wrapped(*v, **k):
