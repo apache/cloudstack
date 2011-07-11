@@ -217,6 +217,9 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 				status = STATUS_AUTHENTICATION_FAILURE;
 				String msg = e.getMessage();
 				s_logger.warn("Authentication exception, msg: " + msg + "sid: " + this.passwordParam);
+			} catch(OutOfMemoryError e) {
+				s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+				System.exit(1);
 			} catch (Exception e) {
 				status = STATUS_ERROR;
 				s_logger.error("Unexpected exception ", e);

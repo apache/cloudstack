@@ -26,14 +26,15 @@
  
 while true
 do
-  ./_run.sh "$@"
+  ./_run.sh "$@" &
+  wait
   ex=$?
   if [ $ex -eq 0 ] || [ $ex -eq 1 ] || [ $ex -eq 66 ] || [ $ex -gt 128 ]; then
       # permanent errors
-      sleep 160
+      sleep 5
   elif [ $ex -eq 143 ]; then
       # service cloud stop causes exit with 143
       exit $ex
   fi
-  sleep 20
+  sleep 5
 done

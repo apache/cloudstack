@@ -358,7 +358,10 @@ public class ConsoleCanvas extends Canvas
 		  
     		// rethrow the exception;
     		throw e;
-    	}
+    	} catch(OutOfMemoryError e) {
+			s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+			System.exit(1);
+		}
     }
   
     private void processNormalProtocol2() throws Exception {

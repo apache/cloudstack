@@ -28,6 +28,13 @@ import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.console.Logger;
 
+//
+// This class is not currently in use, was planning to add a simulated embedded VNC server and monitor console proxy health by
+// creating a fake client within the class, but this looks over-complicated and it may not be a reliable approach
+//
+// I switched to a simpler solution to monitor only unrecoverable exceptions, under these cases, console proxy process will exit
+// itself and the shell script will re-launch console proxy
+//
 public class ConsoleProxyMonitor {
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxyMonitor.class);
 	
@@ -56,8 +63,8 @@ public class ConsoleProxyMonitor {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				onShutdown();
 				_quit = true;
+				onShutdown();
 			}
 		});
 		
@@ -73,10 +80,19 @@ public class ConsoleProxyMonitor {
 				System.exit(1);
 			}
 			
-			try {
-				_process.waitFor();
-			} catch (InterruptedException e) {
-				// TODO
+			boolean waitSucceeded = false;
+			int exitCode = 0;
+			while(!waitSucceeded) {
+				try {
+					exitCode = _process.waitFor();
+					waitSucceeded = true;
+					
+					if(s_logger.isInfoEnabled())
+						s_logger.info("Console proxy process exits with code: " + exitCode);
+				} catch (InterruptedException e) {
+					if(s_logger.isInfoEnabled())
+						s_logger.info("InterruptedException while waiting for termination of console proxy, will retry");
+				}
 			}
 		}
 	}
@@ -97,6 +113,11 @@ public class ConsoleProxyMonitor {
 	}
 	
 	private void onShutdown() {
+		if(_process != null) {
+			if(s_logger.isInfoEnabled())
+				s_logger.info("Console proxy monitor shuts dwon, terminate console proxy process");
+			_process.destroy();
+		}
 	}
 
 	private static void configLog4j() {

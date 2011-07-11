@@ -1457,7 +1457,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
         } catch (OperationTimedoutException e) {
             s_logger.error("Unable to send http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
-        } catch (Exception e) {
+        } catch(OutOfMemoryError e) {
+			s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+			System.exit(1);
+		} catch (Exception e) {
             s_logger.error("Unexpected exception when sending http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
         }
     }

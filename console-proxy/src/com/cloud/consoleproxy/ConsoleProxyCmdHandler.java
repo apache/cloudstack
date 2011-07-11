@@ -45,6 +45,9 @@ public class ConsoleProxyCmdHandler implements HttpHandler {
 			OutputStream os = t.getResponseBody();
 			os.write(response.getBytes());
 			os.close();
+		} catch(OutOfMemoryError e) {
+			s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+			System.exit(1);
 		} catch (Throwable e) {
 			s_logger.error(e.toString(), e);
 		} finally {

@@ -285,6 +285,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 				s_logger.warn("Exception in handle client event bag: " + data + ", ", e);
 			} catch(Exception e) {
 				s_logger.warn("Exception in handle client event bag: " + data + ", ", e);
+			} catch(OutOfMemoryError e) {
+				s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+				System.exit(1);
 			}
 		}
 	}
