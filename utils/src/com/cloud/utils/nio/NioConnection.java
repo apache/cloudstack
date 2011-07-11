@@ -198,17 +198,13 @@ public abstract class NioConnection implements Runnable {
 
         	Link.doHandshake(socketChannel, sslEngine, false);
         } catch (Exception e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
-                s_logger.debug("Closing socket " + socketChannel.socket());
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
             }
             try {
                 socketChannel.close();
                 socket.close();
             } catch (IOException ignore) {
-            }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Closed socket " + socketChannel.socket());
             }
             return;
         }
