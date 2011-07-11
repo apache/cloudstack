@@ -31,11 +31,18 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
 
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-        EventVO event = interceptStart(method);;
+        EventVO event = interceptStart(method);
+        boolean success = true;
         try {
             return methodProxy.invokeSuper(object, args);
+        } catch (Exception e){
+            success = false;
+            interceptException(method, event);
+            return null;
         } finally {
-            interceptComplete(method, event);
+            if(success){
+                interceptComplete(method, event);
+            }
         }
     }
 
