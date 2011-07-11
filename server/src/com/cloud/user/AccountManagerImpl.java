@@ -1636,7 +1636,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             return true;
         }
 
-        return deleteAccount(account, callerUserId, caller);
+        if(!deleteAccount(account, callerUserId, caller)){
+            throw new CloudRuntimeException("Unable to delete account " + account.getAccountName() + " in domain " + account.getDomainId());
+        }
+        return true;
     }
 
     @Override
