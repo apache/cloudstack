@@ -430,8 +430,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		
 		Map<Long, List<Long>> podClusterMap = _clusterDao.getPodClusterIdMap(clusterIds);
 		
-		if (s_logger.isDebugEnabled()) {
-    		s_logger.debug("Pod To cluster Map is: "+podClusterMap );
+		if (s_logger.isTraceEnabled()) {
+    		s_logger.trace("Pod To cluster Map is: "+podClusterMap );
 		}
 		
 		List<Long> reorderedClusters = new ArrayList<Long>();
