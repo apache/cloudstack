@@ -43,6 +43,8 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.PropertiesUtil;
+
 /**
  * Link is the link between the socket listener and the handler threads.
  */
@@ -352,7 +354,10 @@ public class Link {
         
         if (!isClient) {
         	char[] passphrase = "vmops.com".toCharArray();
-        	String keystorePath = "/etc/cloud/management/cloud.keystore";
+        	File confFile= PropertiesUtil.findConfigFile("db.properties");
+        	/* This line may throw a NPE, but that's due to fail to find db.properities, meant some bugs in the other places */
+        	String confPath = confFile.getParent();
+        	String keystorePath = confPath + "/cloud.keystore";
         	if (new File(keystorePath).exists()) {
         	    stream = new FileInputStream(keystorePath);
         	} else {
