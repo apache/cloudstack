@@ -140,7 +140,14 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_change_service_offering", 600);                
     initDialog("dialog_create_template", 400);    
 	initDialog("dialog_migrate_instance", 600);
-       
+	initDialog("dialog_confirmation_stop_vm"); 
+	
+	var $dialogStopVm = $("#dialog_confirmation_stop_vm");
+	if(isAdmin()) {		
+		$dialogStopVm.find("#force_stop_instance_container").show();		   
+	}
+	
+	
     $.ajax({
 	    data: createURL("command=listOsTypes"),
 		dataType: "json",
@@ -219,8 +226,7 @@ function bindStopVMButton() {
             return false;
         }        
         
-        $("#dialog_confirmation")
-        .text(dictionary["message.action.stop.instance"])	
+        $("#dialog_confirmation_stop_vm")	
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
@@ -237,11 +243,13 @@ function bindStopVMButton() {
                             vmToRightPanel($midmenuItem1);                                             
                     }
                 }                      
-			                    
+			    
+			    var isForced = $("#dialog_confirmation_stop_vm").find("#force_stop_instance").attr("checked").toString();
+			    
                 for(var id in selectedItemsInMidMenu) {	
-                    var apiCommand = "command=stopVirtualMachine&id="+id;                                    
+                    var apiCommand = "command=stopVirtualMachine&id="+id+"&forced="+isForced;                                    
                     doActionToMidMenu(id, apiInfo, apiCommand); 	
-                }  
+                }  			                  
                 
                 selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
 		    }, 
@@ -1409,15 +1417,15 @@ function doStartVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
 
 function doStopVM($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_confirmation")	
-    .text(dictionary["message.action.stop.instance"])
+	$("#dialog_confirmation_stop_vm")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
 		    
 		    var jsonObj = $midmenuItem1.data("jsonObj");
-		    var id = jsonObj.id;
-		    var apiCommand = "command=stopVirtualMachine&id="+id;  
+		    var id = jsonObj.id;		    
+		    var isForced = $("#dialog_confirmation_stop_vm").find("#force_stop_instance").attr("checked").toString();
+		    var apiCommand = "command=stopVirtualMachine&id="+id+"&forced="+isForced;     		    
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
 	    }, 
 	    "Cancel": function() { 
