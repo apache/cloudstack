@@ -389,9 +389,11 @@ id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged u
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
 
 # set max file descriptors for cloud user to 4096
-sed -i /"cloud"/d /etc/security/limits.conf
-echo "cloud hard nofile 4096" >> /etc/security/limits.conf
-echo "cloud soft nofile 4096" >> /etc/security/limits.conf
+grep "cloud" /etc/security/limits.conf &>/dev/null
+if [ $? -eq 1 ]; then
+    echo "cloud hard nofile 4096" >> /etc/security/limits.conf
+    echo "cloud soft nofile 4096" >> /etc/security/limits.conf
+fi
 rm -rf %{_localstatedir}/cache/%{name}
 # user harcoded here, also hardcoded on wscript
 

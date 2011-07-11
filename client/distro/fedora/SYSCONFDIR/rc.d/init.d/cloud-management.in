@@ -25,6 +25,15 @@ if [ -r /lib/lsb/init-functions ]; then
     . /lib/lsb/init-functions
 fi
 
+set_ulimit() {
+    fd_limit=`ulimit -n`
+    if [ "$fd_limit" != "4096" ]; then
+        user=`whoami`
+        if [ $user == "root" ]; then
+            ulimit -n 4096
+        fi
+    fi
+}
 
 NAME="$(basename $0)"
 stop() {
@@ -62,9 +71,11 @@ case "$1" in
     restart)
 		stop
 		set start
+        set_ulimit
 		. /etc/rc.d/init.d/tomcat6
 		;;
 	*)
+        set_ulimit
 		. /etc/rc.d/init.d/tomcat6
 esac
 
