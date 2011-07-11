@@ -21,12 +21,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
@@ -42,7 +39,6 @@ import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.TransferAgentCommand;
-import com.cloud.agent.manager.AgentManagerImpl.SimulateStartTask;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Request.Version;
 import com.cloud.agent.transport.Response;
@@ -808,6 +804,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
 
+                s_logger.debug("Found " + hostsToRebalance + " hosts to rebalance from management server " + node.getMsid());
                 if (hostsToRebalance != null && !hostsToRebalance.isEmpty()) {
                     for (HostVO host : hostsToRebalance) {
                         long hostId = host.getId();
