@@ -1647,12 +1647,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     s_logger.warn(e1.getMessage());
                 }
                 // destroy associated volumes for vm in error state
-                List<VolumeVO> volumesForThisVm = _volsDao.findByInstance(vm.getId());
+                // get all volumes in non destroyed state
+                List<VolumeVO> volumesForThisVm = _volsDao.findUsableVolumesForInstance(vm.getId());
                 for (VolumeVO volume : volumesForThisVm) {
                     try {
-                        if (volume.getState() != Volume.State.Destroy) {
-                            _storageMgr.destroyVolume(volume);
-                        }
+                        _storageMgr.destroyVolume(volume);
+                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
+                        _usageEventDao.persist(usageEvent);
                     } catch (ConcurrentOperationException e) {
                         s_logger.warn("Unable to delete volume:" + volume.getId() + " for vm:" + vmId + " whilst transitioning to error state");
                     }

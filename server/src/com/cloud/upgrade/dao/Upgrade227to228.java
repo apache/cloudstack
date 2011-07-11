@@ -85,6 +85,7 @@ public class Upgrade227to228 implements DbUpgrade {
         }
             
         updateDomainLevelNetworks(conn);
+        updateVolumeUsageRecords(conn);
     }
 
     @Override
@@ -128,4 +129,30 @@ public class Upgrade227to228 implements DbUpgrade {
         }
     }
     
+    //this method inserts missing volume.delete events (events were missing when vm failed to create)
+    private void updateVolumeUsageRecords(Connection conn) {
+        try {
+            s_logger.debug("Inserting missing usage_event records for destroyed volumes...");
+            PreparedStatement pstmt = conn.prepareStatement("select id, account_id, data_center_id, name from volumes where state='Destroy' and id in (select resource_id from usage_event where type='volume.create') and id not in (select resource_id from usage_event where type='volume.delete')");
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long volumeId = rs.getLong(1);
+                long accountId = rs.getLong(2);
+                long zoneId = rs.getLong(3);
+                String volumeName = rs.getString(4);
+                
+                pstmt = conn.prepareStatement("insert into usage_event (type, account_id, created, zone_id, resource_name, resource_id) values ('VOLUME.DELETE', ?, now(), ?, ?, ?)");
+                pstmt.setLong(1, accountId);
+                pstmt.setLong(2, zoneId);
+                pstmt.setString(3, volumeName);
+                pstmt.setLong(4, volumeId);
+                
+                pstmt.executeUpdate(); 
+            }
+            s_logger.debug("Successfully inserted missing usage_event records for destroyed volumes");
+        } catch (SQLException e) {
+            s_logger.error("Failed to insert missing delete usage records ", e);
+            throw new CloudRuntimeException("Failed to insert missing delete usage records ", e);
+        }
+    }
 }
