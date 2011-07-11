@@ -804,8 +804,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
 
-                s_logger.debug("Found " + hostsToRebalance + " hosts to rebalance from management server " + node.getMsid());
+                
                 if (hostsToRebalance != null && !hostsToRebalance.isEmpty()) {
+                    s_logger.debug("Found " + hostsToRebalance.size() + " hosts to rebalance from management server " + node.getMsid());
                     for (HostVO host : hostsToRebalance) {
                         long hostId = host.getId();
                         s_logger.debug("Asking management server " + node.getMsid() + " to give away host id=" + hostId);
