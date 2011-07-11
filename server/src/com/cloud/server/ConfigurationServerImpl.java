@@ -441,7 +441,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         String o = ou;
         String c = "Unknown";
-        String dname = "cn=" + cn + ", ou=" + ou +", o=" + o + ", c=" + c;
+        String dname = "cn=\"" + cn + "\",ou=\"" + ou +"\",o=\"" + o + "\",c=\"" + c + "\"";
         Script script = new Script(true, "keytool", 5000, null);
         script.add("-genkey");
         script.add("-keystore", keystorePath);
