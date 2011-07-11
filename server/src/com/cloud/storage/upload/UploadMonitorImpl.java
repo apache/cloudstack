@@ -294,22 +294,23 @@ public class UploadMonitorImpl implements UploadMonitor {
             }
             // Create Symlink at ssvm
             String uuid = UUID.randomUUID().toString() + ".vhd";
-            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(path, uuid);
-            long result = send(ApiDBUtils.findUploadById(uploadId).getHostId(), cmd, null);
+            HostVO secStorage = ApiDBUtils.findHostById(ApiDBUtils.findUploadById(uploadId).getHostId());
+            HostVO ssvm = _agentMgr.getSSAgent(secStorage);
+            if( ssvm == null ) {
+            	errorString = "There is no secondary storage VM for secondary storage host " + secStorage.getName();
+            	throw new CloudRuntimeException(errorString);
+            }
+            
+            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(secStorage.getParent(), path, uuid);
+            long result = send(ssvm.getId(), cmd, null);
             if (result == -1){
                 errorString = "Unable to create a link for " +type+ " id:"+entityId;
                 s_logger.warn(errorString);
                 throw new CloudRuntimeException(errorString);
             }
             
-            //Construct actual URL locally now that the symlink exists at SSVM            
-            SecondaryStorageVmVO ssVm = ssVms.get(0);
-            if (ssVm.getPublicIpAddress() == null) {
-                errorString = "A running secondary storage vm has a null public ip?";
-                s_logger.warn(errorString);
-                throw new CloudRuntimeException(errorString);
-            }
-            String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), uuid);
+            //Construct actual URL locally now that the symlink exists at SSVM
+            String extractURL = generateCopyUrl(ssvm.getPublicIpAddress(), uuid);
             UploadVO vo = _uploadDao.createForUpdate();
             vo.setLastUpdated(new Date());
             vo.setUploadUrl(extractURL);
