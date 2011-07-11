@@ -221,7 +221,12 @@ public class Request {
 
     public Command[] getCommands() {
         if (_cmds == null) {
-            _cmds = s_gson.fromJson(_content, Command[].class);
+            try {
+                _cmds = s_gson.fromJson(_content, Command[].class);
+            } catch (RuntimeException e) {
+                s_logger.error("Caught problem with " + _content, e);
+                throw e;
+            }
         }
         return _cmds;
     }
@@ -313,9 +318,9 @@ public class Request {
             if (_cmds == null) {
                 try {
                     _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     s_logger.error("Unable to convert to json: " + _content);
-                    return null;
+                    throw e;
                 }
             }
             try {

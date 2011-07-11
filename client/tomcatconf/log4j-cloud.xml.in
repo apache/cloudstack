@@ -66,6 +66,10 @@
      <priority value="DEBUG"/>
    </category>
    
+   <category name="com.cloud.utils.nio">
+     <priority value="INFO"/>
+   </category>
+   
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
       <priority value="INFO"/>
