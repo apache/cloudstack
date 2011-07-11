@@ -73,11 +73,17 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
             }
 
         } catch(Throwable e) {
-            if(s_logger.isTraceEnabled()) {
-                s_logger.trace("Unexpected exception " + e.toString());
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Exception " + e.toString());
             }
 
-            writeResponse(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+            try {
+            	writeResponse(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+            } catch(Throwable e2) {
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Exception " + e2.toString());
+                }
+            }
         }
     }
 
@@ -161,8 +167,14 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
         }
 
         if(responseContent != null) {
+        	if(s_logger.isTraceEnabled())
+        		s_logger.trace("Write reponse with HTTP OK " + responseContent);
+        	
             writeResponse(response, HttpStatus.SC_OK, responseContent);
         } else {
+        	if(s_logger.isTraceEnabled())
+        		s_logger.trace("Write reponse with HTTP Bad request");
+        	
             writeResponse(response, HttpStatus.SC_BAD_REQUEST, null);
         }
     }

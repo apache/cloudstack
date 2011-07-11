@@ -25,6 +25,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.log4j.Logger;
 
 import com.cloud.serializer.GsonHelper;
@@ -32,9 +33,9 @@ import com.google.gson.Gson;
 
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
-
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
-
+    private static int HTTP_DATA_TIMEOUT = 60000;
+    
     private String serviceUrl;
 
     private final Gson gson;
@@ -55,7 +56,7 @@ public class ClusterServiceServletImpl implements ClusterService {
             s_logger.debug("Post (sync-call) " + gsonPackage + " to " + serviceUrl + " for agent " + agentId + " from " + callingPeer);
         }
 
-        HttpClient client = new HttpClient();
+        HttpClient client = getHttpClient();
         PostMethod method = new PostMethod(serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_EXECUTE));
@@ -65,7 +66,7 @@ public class ClusterServiceServletImpl implements ClusterService {
 
         return executePostMethod(client, method);
     }
-
+    
     @Override
     public long executeAsync(String callingPeer, long agentId, String gsonPackage, boolean stopOnError) throws RemoteException {
 
@@ -73,7 +74,7 @@ public class ClusterServiceServletImpl implements ClusterService {
             s_logger.debug("Post (Async-call) " + gsonPackage + " to " + serviceUrl + " for agent " + agentId + " from " + callingPeer);
         }
 
-        HttpClient client = new HttpClient();
+        HttpClient client = getHttpClient();
         PostMethod method = new PostMethod(serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_EXECUTE_ASYNC));
@@ -103,7 +104,7 @@ public class ClusterServiceServletImpl implements ClusterService {
                     + ", excutingPeer: " + executingPeer
                     + ", seq: " + seq + ", gsonPackage: " + gsonPackage);
         }
-        HttpClient client = new HttpClient();
+        HttpClient client = getHttpClient();
         PostMethod method = new PostMethod(serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_ASYNC_RESULT));
@@ -132,7 +133,7 @@ public class ClusterServiceServletImpl implements ClusterService {
             s_logger.debug("Ping at " + serviceUrl);
         }
 
-        HttpClient client = new HttpClient();
+        HttpClient client = getHttpClient();
         PostMethod method = new PostMethod(serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_PING));
@@ -170,6 +171,15 @@ public class ClusterServiceServletImpl implements ClusterService {
         }
 
         return result;
+    }
+    
+    private HttpClient getHttpClient() {
+        HttpClient client = new HttpClient();
+        HttpClientParams clientParams = new HttpClientParams();
+        clientParams.setSoTimeout(HTTP_DATA_TIMEOUT);
+        client.setParams(clientParams);
+    	
+        return client;
     }
 
     // for test purpose only
