@@ -4369,7 +4369,7 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new CloudRuntimeException(errorString);
             }
 
-            String volumeLocalPath = "volumes/" + volume.getId() + "/" + cvAnswer.getVolumePath() + ".vhd";
+            String volumeLocalPath = "volumes/" + volume.getId() + "/" + cvAnswer.getVolumePath() + "." + getFormatForPool(srcPool);
             // Update the DB that volume is copied and volumePath
             uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);
             uploadJob.setLastUpdated(new Date());
@@ -4386,6 +4386,23 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
+    private String getFormatForPool(StoragePoolVO pool){
+    	ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
+    	
+    	if (cluster.getHypervisorType() == HypervisorType.XenServer){
+    		return "vhd";
+    	}else if (cluster.getHypervisorType() == HypervisorType.KVM){
+    		return "qcow2";    		
+    	}else if (cluster.getHypervisorType() == HypervisorType.VMware){
+    		return "ova";
+    	}else{
+    		return null;
+    	}
+    	
+    }
+    
+    
+    
     @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
         Account account = UserContext.current().getCaller();
