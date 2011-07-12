@@ -228,8 +228,9 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    _uploadDao.persist(uploadTemplateObj);
 	    try{
     	    // Create Symlink at ssvm
-	    	String uuid = UUID.randomUUID().toString() + "." + template.getFormat().toString().toLowerCase();
-    	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(storageServers.get(0).getParent(), vmTemplateHost.getInstallPath(), uuid);
+	    	String path = vmTemplateHost.getInstallPath();
+	    	String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
+	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(storageServers.get(0).getParent(), path, uuid);
     	    long result = send(use_ssvm.getId(), cmd, null);
     	    if (result == -1){
     	        errorString = "Unable to create a link for " +type+ " id:"+template.getId();
@@ -293,7 +294,7 @@ public class UploadMonitorImpl implements UploadMonitor {
                 throw new CloudRuntimeException(errorString);
             }
             // Create Symlink at ssvm
-            String uuid = UUID.randomUUID().toString() + ".vhd";
+            String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
             HostVO secStorage = ApiDBUtils.findHostById(ApiDBUtils.findUploadById(uploadId).getHostId());
             HostVO ssvm = _agentMgr.getSSAgent(secStorage);
             if( ssvm == null ) {
