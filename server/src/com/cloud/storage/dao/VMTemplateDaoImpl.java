@@ -132,11 +132,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public List<VMTemplateVO> publicIsoSearch(){
+    public List<VMTemplateVO> publicIsoSearch(Boolean bootable){
         SearchCriteria<VMTemplateVO> sc = PublicIsoSearch.create();
     	sc.setParameters("public", 1);
     	sc.setParameters("format", "ISO");
     	sc.setParameters("type", TemplateType.PERHOST.toString());
+    	if (bootable != null) {
+    	    sc.setParameters("bootable", bootable);
+    	}
+    	
         return listBy(sc);
     }
     
@@ -246,6 +250,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		PublicIsoSearch.and("public", PublicIsoSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
 		PublicIsoSearch.and("format", PublicIsoSearch.entity().getFormat(), SearchCriteria.Op.EQ);
 		PublicIsoSearch.and("type", PublicIsoSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+		PublicIsoSearch.and("bootable", PublicIsoSearch.entity().isBootable(), SearchCriteria.Op.EQ);
 		
 		tmpltTypeHyperSearch = createSearchBuilder();
 		tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
@@ -427,7 +432,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
            if(isIso && templateZonePairList.size() < (pageSize != null ? pageSize : 500) 
                    && templateFilter != TemplateFilter.community 
                    && !(templateFilter == TemplateFilter.self && !BaseCmd.isRootAdmin(account.getType())) ){ //evaluates to true If root admin and filter=self
-            	List<VMTemplateVO> publicIsos = publicIsoSearch();            	
+            	List<VMTemplateVO> publicIsos = publicIsoSearch(bootable);            	
             	for( int i=0; i < publicIsos.size(); i++){
             		templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
             	}
