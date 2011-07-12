@@ -234,12 +234,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		        s_logger.info("Did not find template downloaded on secondary hosts in zone " + plan.getDataCenterId());
 		        return false;
 		    } else {
-		        s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 2);
-		        long templateSize = templateHostVO.getSize();
-		        long templatePhysicalSize = templateHostVO.getPhysicalSize();
-		        totalAllocatedSize +=  (templateSize + _extraBytesPerVolume) + (templatePhysicalSize + _extraBytesPerVolume);
+		        long templateSize = templateHostVO.getPhysicalSize();
+		        if ( templateSize == 0 ){
+		            templateSize = templateHostVO.getSize();
+		        }
+		        totalAllocatedSize +=  (templateSize + _extraBytesPerVolume);
 		    }
-
 		}
 
 		long askingSize = dskCh.getSize();
