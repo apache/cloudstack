@@ -1558,6 +1558,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_USER_LOCK, eventDescription = "locking User")
     public UserAccount lockUser(LockUserCmd cmd) {
         boolean success = false;
 
