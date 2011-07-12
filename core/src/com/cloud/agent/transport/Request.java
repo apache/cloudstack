@@ -17,11 +17,16 @@
  */
 package com.cloud.agent.transport;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -89,6 +94,7 @@ public class Request {
     protected static final short       FLAG_IN_SEQUENCE     = 0x4;
     protected static final short       FLAG_FROM_SERVER     = 0x20;
     protected static final short       FLAG_CONTROL         = 0x40;
+    protected static final short       FLAG_COMPRESSED      = 0x80;
 
 
     protected Version   _ver;
@@ -100,7 +106,7 @@ public class Request {
     protected long      _agentId;
     protected Command[] _cmds;
     protected String    _content;
-
+    
     protected Request() {
     }
 
@@ -250,13 +256,62 @@ public class Request {
         return buffer;
     }
 
+    public static ByteBuffer doDecompress(ByteBuffer buffer) {
+        byte[] byteArrayIn = new byte[1024];
+        ByteArrayInputStream byteIn;
+        if (buffer.hasArray()) {
+            byteIn = new ByteArrayInputStream(buffer.array(),
+                    buffer.position() + buffer.arrayOffset(),
+                    buffer.remaining());
+        } else {
+            byte[] array = new byte[buffer.limit() - buffer.position()];
+            buffer.get(array);
+            byteIn = new ByteArrayInputStream(array);
+        }
+        ByteBuffer retBuff = ByteBuffer.allocate(65535);
+        int len = 0;
+        try {
+            GZIPInputStream in = new GZIPInputStream(byteIn);
+            while ((len = in.read(byteArrayIn)) > 0) {
+                retBuff.put(byteArrayIn, 0, len);
+            }
+            in.close();
+        } catch (IOException e) {
+            s_logger.error("Fail to decompress the request!", e);
+        }
+        retBuff.flip();
+        return retBuff;
+    }
+    
+    public static ByteBuffer doCompress(ByteBuffer buffer) {
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream(65535);
+        byte[] array = new byte[buffer.capacity()];
+        buffer.get(array);
+        try {
+            GZIPOutputStream out = new GZIPOutputStream(byteOut, 65535);
+            out.write(array);
+            out.finish();
+            out.close();
+        } catch (IOException e) {
+            s_logger.error("Fail to compress the request!", e);
+        }
+        return ByteBuffer.wrap(byteOut.toByteArray());
+    }
+    
     public ByteBuffer[] toBytes() {
         final ByteBuffer[] buffers = new ByteBuffer[2];
-
+        ByteBuffer tmp;
+        
         if (_content == null) {
             _content = s_gson.toJson(_cmds, _cmds.getClass());
         }
-        buffers[1] = ByteBuffer.wrap(_content.getBytes());
+        tmp = ByteBuffer.wrap(_content.getBytes());
+        /* Check if we need to compress the data */
+        if (tmp.capacity() >= 8192) {
+            tmp = doCompress(tmp);
+            _flags |= FLAG_COMPRESSED;
+        }
+        buffers[1] = tmp;
         buffers[0] = serializeHeader(buffers[1].capacity());
 
         return buffers;
@@ -375,7 +430,7 @@ public class Request {
      * @throws
      */
     public static Request parse(final byte[] bytes) throws ClassNotFoundException, UnsupportedVersionException {
-        final ByteBuffer buff = ByteBuffer.wrap(bytes);
+        ByteBuffer buff = ByteBuffer.wrap(bytes);
         final byte ver = buff.get();
         final Version version = Version.get(ver);
         if (version.ordinal() != Version.v1.ordinal() && version.ordinal() != Version.v3.ordinal()) {
@@ -389,6 +444,7 @@ public class Request {
         final int size = buff.getInt();
         final long mgmtId = buff.getLong();
         final long agentId = buff.getLong();
+        
         long via;
         if (version.ordinal() == Version.v1.ordinal()) {
             via = buff.getLong();
@@ -396,6 +452,10 @@ public class Request {
             via = agentId;
         }
 
+        if ((flags & FLAG_COMPRESSED) != 0) {
+            buff = doDecompress(buff);
+        }
+        
         byte[] command = null;
         int offset = 0;
         if (buff.hasArray()) {
