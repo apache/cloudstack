@@ -2322,7 +2322,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         break;
                     }
                 }
-                vm.poolMigrate(conn, dsthost, new HashMap<String, String>());
+                Map<String, String> other = new HashMap<String, String>();
+                other.put("live", "true");
+                vm.poolMigrate(conn, dsthost, other);
                 vm.setAffinity(conn, dsthost);
                 state = State.Stopping;
             }
