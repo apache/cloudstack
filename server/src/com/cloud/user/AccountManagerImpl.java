@@ -1187,7 +1187,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         for (VMInstanceVO vm : vms) {
             try {
                 try {
-                    success = (success && _itMgr.advanceStop(vm, true, getSystemUser(), getSystemAccount()));
+                    success = (success && _itMgr.advanceStop(vm, false, getSystemUser(), getSystemAccount()));
                 } catch (OperationTimedoutException ote) {
                     s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                     success = false;
