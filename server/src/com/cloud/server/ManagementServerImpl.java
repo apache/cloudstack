@@ -3640,50 +3640,6 @@ public class ManagementServerImpl implements ManagementServer {
         return new String[] { "commands.properties" };
     }
 
-    protected class AccountCleanupTask implements Runnable {
-        @Override
-        public void run() {
-            try {
-                GlobalLock lock = GlobalLock.getInternLock("AccountCleanup");
-                if (lock == null) {
-                    s_logger.debug("Couldn't get the global lock");
-                    return;
-                }
-
-                if (!lock.lock(30)) {
-                    s_logger.debug("Couldn't lock the db");
-                    return;
-                }
-
-                Transaction txn = null;
-                try {
-                    txn = Transaction.open(Transaction.CLOUD_DB);
-
-                    List<AccountVO> accounts = _accountDao.findCleanups();
-                    s_logger.info("Found " + accounts.size() + " accounts to cleanup");
-                    for (AccountVO account : accounts) {
-                        s_logger.debug("Cleaning up " + account.getId());
-                        try {
-                            _accountMgr.cleanupAccount(account, _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
-                        } catch (Exception e) {
-                            s_logger.error("Skipping due to error on account " + account.getId(), e);
-                        }
-                    }
-                } catch (Exception e) {
-                    s_logger.error("Exception ", e);
-                } finally {
-                    if (txn != null) {
-                        txn.close();
-                    }
-
-                    lock.unlock();
-                }
-            } catch (Exception e) {
-                s_logger.error("Exception ", e);
-            }
-        }
-    }
-
     protected class EventPurgeTask implements Runnable {
         @Override
         public void run() {

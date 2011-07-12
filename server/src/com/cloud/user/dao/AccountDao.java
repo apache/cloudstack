@@ -37,9 +37,10 @@ public interface AccountDao extends GenericDao<AccountVO, Long> {
     List<AccountVO> findActiveAccounts(Long maxAccountId, Filter filter);
     List<AccountVO> findRecentlyDeletedAccounts(Long maxAccountId, Date earliestRemovedDate, Filter filter);
     List<AccountVO> findNewAccounts(Long minAccountId, Filter filter);
-    List<AccountVO> findCleanups();
+    List<AccountVO> findCleanupsForRemovedAccounts();
     List<AccountVO> findAdminAccountsForDomain(Long domainId);
     List<AccountVO> findActiveAccountsForDomain(Long domain);     
     void markForCleanup(long accountId);
     List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter);
+    List<AccountVO> findCleanupsForDisabledAccounts();
 }

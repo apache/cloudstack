@@ -976,6 +976,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         boolean success = false;
         AccountVO acctForUpdate = _accountDao.createForUpdate();
         acctForUpdate.setState(State.enabled);
+        acctForUpdate.setNeedsCleanup(false);
         success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
         return success;
     }
@@ -1148,14 +1149,19 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         AccountVO account = _accountDao.findById(accountId);
-        if ((account == null) || account.getState().equals(State.disabled)) {
+        if ((account == null) || (account.getState().equals(State.disabled) && !account.getNeedsCleanup())) {
             success = true;
         } else {
             AccountVO acctForUpdate = _accountDao.createForUpdate();
             acctForUpdate.setState(State.disabled);
             success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
-
-            success = (success && doDisableAccount(accountId));
+            
+            if (success) {
+                if (!doDisableAccount(accountId)) {
+                    s_logger.warn("Failed to disable account " + account + " resources as a part of disableAccount call, marking the account for cleanup");
+                    _accountDao.markForCleanup(accountId);
+                }
+            }
         }
         return success;
     }
@@ -1776,9 +1782,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 try {
                     txn = Transaction.open(Transaction.CLOUD_DB);
 
-                    List<AccountVO> accounts = _accountDao.findCleanups();
-                    s_logger.info("Found " + accounts.size() + " accounts to cleanup");
-                    for (AccountVO account : accounts) {
+                    //Cleanup removed accounts
+                    List<AccountVO> removedAccounts = _accountDao.findCleanupsForRemovedAccounts();
+                    s_logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
+                    for (AccountVO account : removedAccounts) {
                         s_logger.debug("Cleaning up " + account.getId());
                         try {
                             cleanupAccount(account, getSystemUser().getId(), getSystemAccount());
@@ -1786,6 +1793,23 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                             s_logger.error("Skipping due to error on account " + account.getId(), e);
                         }
                     }
+                    
+                    //cleanup disabled accounts
+                    List<AccountVO> disabledAccounts = _accountDao.findCleanupsForDisabledAccounts();
+                    s_logger.info("Found " + disabledAccounts.size() + " disabled accounts to cleanup");
+                    for (AccountVO account : disabledAccounts) {
+                        s_logger.debug("Cleaning up " + account.getId());
+                        try {
+                            if (disableAccount(account.getId())) {
+                                account.setNeedsCleanup(false);
+                                _accountDao.update(account.getId(), account);
+                            }
+                        } catch (Exception e) {
+                            s_logger.error("Skipping due to error on account " + account.getId(), e);
+                        }
+                    }
+                    
+                    
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
                 } finally {

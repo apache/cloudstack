@@ -51,8 +51,8 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     protected final SearchBuilder<AccountVO> AccountNameSearch;
     protected final SearchBuilder<AccountVO> AccountTypeSearch;
     protected final SearchBuilder<AccountVO> DomainAccountsSearch;
-
-    protected final SearchBuilder<AccountVO> CleanupSearch;
+    protected final SearchBuilder<AccountVO> CleanupForRemovedAccountsSearch;
+    protected final SearchBuilder<AccountVO> CleanupForDisabledAccountsSearch;
     
     protected AccountDaoImpl() {
         AccountNameSearch = createSearchBuilder();
@@ -69,19 +69,33 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         DomainAccountsSearch.and("removed", DomainAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         DomainAccountsSearch.done();
         
-        CleanupSearch = createSearchBuilder();
-        CleanupSearch.and("cleanup", CleanupSearch.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
-        CleanupSearch.and("removed", CleanupSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
-        CleanupSearch.done();
+        CleanupForRemovedAccountsSearch = createSearchBuilder();
+        CleanupForRemovedAccountsSearch.and("cleanup", CleanupForRemovedAccountsSearch.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
+        CleanupForRemovedAccountsSearch.and("removed", CleanupForRemovedAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        CleanupForRemovedAccountsSearch.done();
         
+        CleanupForDisabledAccountsSearch = createSearchBuilder();
+        CleanupForDisabledAccountsSearch.and("cleanup", CleanupForDisabledAccountsSearch.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
+        CleanupForDisabledAccountsSearch.and("removed", CleanupForDisabledAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CleanupForDisabledAccountsSearch.and("state", CleanupForDisabledAccountsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        CleanupForDisabledAccountsSearch.done();
     }
     
     @Override
-    public List<AccountVO> findCleanups() {
-    	SearchCriteria<AccountVO> sc = CleanupSearch.create();
+    public List<AccountVO> findCleanupsForRemovedAccounts() {
+    	SearchCriteria<AccountVO> sc = CleanupForRemovedAccountsSearch.create();
     	sc.setParameters("cleanup", true);
     	
     	return searchIncludingRemoved(sc, null, null, false);
+    }
+    
+    @Override
+    public List<AccountVO> findCleanupsForDisabledAccounts() {
+        SearchCriteria<AccountVO> sc = CleanupForDisabledAccountsSearch.create();
+        sc.setParameters("cleanup", true);
+        sc.setParameters("state", State.disabled);
+        
+        return listBy(sc);
     }
     
     @Override
