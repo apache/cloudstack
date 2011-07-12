@@ -22,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.UserVmResponse;
@@ -489,8 +487,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 }
                 
             }
-            userVmResponse.setSecurityGroupList(new ArrayList(securityGroupResponse));
-            userVmResponse.setNics(new ArrayList(nicResponses));
+            userVmResponse.setSecurityGroupList(new ArrayList<SecurityGroupResponse>(securityGroupResponse));
+            userVmResponse.setNics(new ArrayList<NicResponse>(nicResponses));
+            rs.close();
+            pstmt.close();
             return userVmResponse;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
