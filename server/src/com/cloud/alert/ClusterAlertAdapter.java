@@ -61,7 +61,9 @@ public class ClusterAlertAdapter implements AlertAdapter {
 
     private void onClusterNodeJoined(Object sender, ClusterNodeJoinEventArgs args) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Handle cluster node join alert, self node: " + args.getSelf());
+        	for(ManagementServerHostVO mshost: args.getJoinedNodes()) {
+                s_logger.debug("Handle cluster node join alert, joined node: " + mshost.getServiceIP());
+        	}
         }
 
         for (ManagementServerHostVO mshost : args.getJoinedNodes()) {
@@ -79,7 +81,9 @@ public class ClusterAlertAdapter implements AlertAdapter {
     private void onClusterNodeLeft(Object sender, ClusterNodeLeftEventArgs args) {
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Handle cluster node left alert, self node: " + args.getSelf());
+        	for(ManagementServerHostVO mshost: args.getLeftNodes()) {
+        		s_logger.debug("Handle cluster node left alert, leaving node: " + mshost.getServiceIP());
+        	}
         }
 
         for (ManagementServerHostVO mshost : args.getLeftNodes()) {

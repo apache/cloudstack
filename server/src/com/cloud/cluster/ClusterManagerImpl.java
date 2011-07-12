@@ -470,6 +470,14 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     public void notifyNodeJoined(List<ManagementServerHostVO> nodeList) {
+    	if(s_logger.isDebugEnabled()) {
+    		s_logger.debug("Notify management server node join to listeners.");
+    		
+    		for(ManagementServerHostVO mshost : nodeList) {
+    			s_logger.debug("Joining node, IP: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
+    		}
+    	}
+    	
         synchronized(listeners) {
             for(ClusterManagerListener listener : listeners) {
                 listener.onManagementNodeJoined(nodeList, _mshostId);
@@ -481,6 +489,14 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     public void notifyNodeLeft(List<ManagementServerHostVO> nodeList) {
+    	if(s_logger.isDebugEnabled()) {
+    		s_logger.debug("Notify management server node left to listeners.");
+    		
+    		for(ManagementServerHostVO mshost : nodeList) {
+    			s_logger.debug("Leaving node, IP: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
+    		}
+    	}
+    	
         synchronized(listeners) {
             for(ClusterManagerListener listener : listeners) {
                 listener.onManagementNodeLeft(nodeList, _mshostId);
@@ -492,6 +508,9 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     public void notifyNodeIsolated() {
+    	if(s_logger.isDebugEnabled())
+    		s_logger.debug("Notify management server node isolation to listeners");
+    	
         synchronized(listeners) {
             for(ClusterManagerListener listener : listeners) {
                 listener.onManagementNodeIsolated();
