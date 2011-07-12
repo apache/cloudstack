@@ -55,6 +55,7 @@ import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -175,7 +176,11 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
                 return true;
             }
             
-            return _routerMgr.applyFirewallRules(config, rules);
+            if(!_routerMgr.applyFirewallRules(config, rules)){
+                throw new CloudRuntimeException("Failed to apply firewall rules in network "+config.getId());
+            } else {
+                return true;
+            }
         } else {
             return true;
         }
