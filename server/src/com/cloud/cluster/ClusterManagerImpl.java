@@ -457,6 +457,8 @@ public class ClusterManagerImpl implements ClusterManager {
     public void registerListener(ClusterManagerListener listener) {
         // Note : we don't check duplicates
         synchronized (listeners) {
+    		s_logger.info("register cluster listener " + listener.getClass());
+    		
         	listeners.add(listener);
         }
     }
@@ -464,6 +466,8 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override
     public void unregisterListener(ClusterManagerListener listener) {
         synchronized(listeners) {
+    		s_logger.info("unregister cluster listener " + listener.getClass());
+        	
         	listeners.remove(listener);
         }
     }
