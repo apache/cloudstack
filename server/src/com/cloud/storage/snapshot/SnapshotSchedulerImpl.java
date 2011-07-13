@@ -392,8 +392,12 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             TimerTask timerTask = new TimerTask() {
                 @Override
                 public void run() {
-                    Date currentTimestamp = new Date();
-                    poll(currentTimestamp);
+                    try {
+                        Date currentTimestamp = new Date();
+                        poll(currentTimestamp);
+                    } catch (Throwable t) {
+                        s_logger.warn("Catch throwable in snapshot scheduler " + t.toString(), t);
+                    }
                 }
             };
             _testClockTimer = new Timer("SnapshotPollTask");
