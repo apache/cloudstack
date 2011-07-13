@@ -92,6 +92,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     
     @Override
     public String resetDbConnection() {
+        s_logger.info("Resetting the database connection for locks");
         if (_conn != null) {
             try {
                 _conn.close();
@@ -256,11 +257,13 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
 
     @Override
     public void cleanupForServer(long msId) {
+        s_logger.info("Cleaning up locks for " + msId);
         PreparedStatement pstmt = null;
         try {
             pstmt = _conn.prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
             pstmt.setLong(1, _msId);
-            pstmt.executeUpdate();
+            int rows = pstmt.executeUpdate();
+            s_logger.info("Released " + rows + " locks for " + msId);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to clear the locks", e);
         } finally {
@@ -431,6 +434,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     
     @Override
     public boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key) {
+        s_logger.info("Releasing a lock from jMX lck-" + key);
         PreparedStatement pstmt = null;
         try {
             pstmt = _conn.prepareStatement(RELEASE_LOCK_SQL);
