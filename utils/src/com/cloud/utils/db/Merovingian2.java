@@ -219,11 +219,13 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
 
     @Override
     public void cleanupForServer(long msId) {
+        s_logger.info("Cleaning up locks for " + msId);
         PreparedStatement pstmt = null;
         try {
             pstmt = _concierge.conn().prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
-            pstmt.setLong(1, _msId);
-            pstmt.executeUpdate();
+            pstmt.setLong(1, msId);
+            int rows = pstmt.executeUpdate();
+            s_logger.info("Released " + rows + " locks for " + msId);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to clear the locks", e);
         } finally {
