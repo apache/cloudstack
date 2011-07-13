@@ -261,7 +261,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         PreparedStatement pstmt = null;
         try {
             pstmt = _conn.prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
-            pstmt.setLong(1, _msId);
+            pstmt.setLong(1, msId);
             int rows = pstmt.executeUpdate();
             s_logger.info("Released " + rows + " locks for " + msId);
         } catch (SQLException e) {
