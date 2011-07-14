@@ -1204,114 +1204,109 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String timezone = cmd.getTimezone();
         String accountName = cmd.getAccountName();
         short userType = cmd.getAccountType().shortValue();
-        DomainVO domain = _domainDao.findById(domainId);
-        checkAccess(UserContext.current().getCaller(), domain);
+
         String networkDomain = cmd.getNetworkDomain();
         
-        try {
-            if (accountName == null) {
-                accountName = username;
+        if (accountName == null) {
+            accountName = username;
+        }
+        if (domainId == null) {
+            domainId = DomainVO.ROOT_DOMAIN;
+        }
+        
+        DomainVO domain = _domainDao.findById(domainId);
+        
+        if (domain == null) {
+            throw new InvalidParameterValueException("The domain " + domainId + " does not exist; unable to create account");
+        } 
+        
+        checkAccess(UserContext.current().getCaller(), domain);
+
+        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        if (account != null) {
+            throw new InvalidParameterValueException("The specified account: " + account.getAccountName() + " already exists");
+        }
+
+        if (domain.getState().equals(Domain.State.Inactive)) {
+            throw new CloudRuntimeException("The account cannot be created as domain " + domain.getName() + " is being deleted");
+        }
+
+        if (!_userAccountDao.validateUsernameInDomain(username, domainId)) {
+            throw new InvalidParameterValueException("The user " + username + " already exists in domain " + domainId);
+        }
+        
+        if (networkDomain != null) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
             }
+        }
+
+        if (accountId == null) {
+            if ((userType < Account.ACCOUNT_TYPE_NORMAL) || (userType > Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
+                throw new InvalidParameterValueException("Invalid account type " + userType + " given; unable to create user");
+            }
+
+            // create a new account for the user
+            AccountVO newAccount = new AccountVO();
             if (domainId == null) {
+                // root domain is default
                 domainId = DomainVO.ROOT_DOMAIN;
             }
 
-            Account account = _accountDao.findActiveAccount(accountName, domainId);
-            if (account != null) {
-                throw new CloudRuntimeException("The specified account: " + account.getAccountName() + " already exists");
+            if ((domainId != DomainVO.ROOT_DOMAIN) && (userType == Account.ACCOUNT_TYPE_ADMIN)) {
+                throw new InvalidParameterValueException("Invalid account type " + userType + " given for an account in domain " + domainId + "; unable to create user.");
             }
 
-            if (domain == null) {
-                throw new CloudRuntimeException("The domain " + domainId + " does not exist; unable to create account");
-            } else {
-                if (domain.getState().equals(Domain.State.Inactive)) {
-                    throw new CloudRuntimeException("The account cannot be created as domain " + domain.getName() + " is being deleted");
-                }
-            }
-
-            if (!_userAccountDao.validateUsernameInDomain(username, domainId)) {
-                throw new CloudRuntimeException("The user " + username + " already exists in domain " + domainId);
-            }
-            
-            if (networkDomain != null) {
-                if (!NetUtils.verifyDomainName(networkDomain)) {
-                    throw new InvalidParameterValueException(
-                            "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                            + "and the hyphen ('-'); can't start or end with \"-\"");
-                }
-            }
-
-            if (accountId == null) {
-                if ((userType < Account.ACCOUNT_TYPE_NORMAL) || (userType > Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
-                    throw new CloudRuntimeException("Invalid account type " + userType + " given; unable to create user");
-                }
-
-                // create a new account for the user
-                AccountVO newAccount = new AccountVO();
-                if (domainId == null) {
-                    // root domain is default
-                    domainId = DomainVO.ROOT_DOMAIN;
-                }
-
-                if ((domainId != DomainVO.ROOT_DOMAIN) && (userType == Account.ACCOUNT_TYPE_ADMIN)) {
-                    throw new CloudRuntimeException("Invalid account type " + userType + " given for an account in domain " + domainId + "; unable to create user.");
-                }
-
-                newAccount.setAccountName(accountName);
-                newAccount.setDomainId(domainId);
-                newAccount.setType(userType);
-                newAccount.setState(State.enabled);
-                newAccount.setNetworkDomain(networkDomain);
-                newAccount = _accountDao.persist(newAccount);
-                accountId = newAccount.getId();
-            }
-
-            if (userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                List<DataCenterVO> dc = _dcDao.findZonesByDomainId(domainId);
-                if (dc == null || dc.size() == 0) {
-                    throw new CloudRuntimeException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone");
-                }
-            }
-            if (accountId == null) {
-                throw new CloudRuntimeException("Failed to create account for user: " + username + "; unable to create user");
-            }
-
-            UserVO user = new UserVO();
-            user.setUsername(username);
-            user.setPassword(password);
-            user.setState(State.enabled);
-            user.setFirstname(firstName);
-            user.setLastname(lastName);
-            user.setAccountId(accountId.longValue());
-            user.setEmail(email);
-            user.setTimezone(timezone);
-            
-            if(userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
-            	//set registration token
-            	byte[] bytes = (domainId + accountName + username + System.currentTimeMillis()).getBytes();
-                String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
-                user.setRegistrationToken(registrationToken);
-            }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Creating user: " + username + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timezone);
-            }
-
-            UserVO dbUser = _userDao.persist(user);
-
-            _networkGroupMgr.createDefaultSecurityGroup(accountId);
-
-            if (!user.getPassword().equals(dbUser.getPassword())) {
-                throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
-            }
-            return _userAccountDao.findById(dbUser.getId());
-        } catch (Exception e) {
-            if (e instanceof CloudRuntimeException) {
-                s_logger.info("unable to create user: ", e);
-            } else {
-                s_logger.warn("unknown exception creating user", e);
-            }
-            throw new CloudRuntimeException(e.getMessage());
+            newAccount.setAccountName(accountName);
+            newAccount.setDomainId(domainId);
+            newAccount.setType(userType);
+            newAccount.setState(State.enabled);
+            newAccount.setNetworkDomain(networkDomain);
+            newAccount = _accountDao.persist(newAccount);
+            accountId = newAccount.getId();
         }
+
+        if (userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            List<DataCenterVO> dc = _dcDao.findZonesByDomainId(domainId);
+            if (dc == null || dc.size() == 0) {
+                throw new CloudRuntimeException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone");
+            }
+        }
+        if (accountId == null) {
+            throw new CloudRuntimeException("Failed to create account for user: " + username + "; unable to create user");
+        }
+
+        UserVO user = new UserVO();
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setState(State.enabled);
+        user.setFirstname(firstName);
+        user.setLastname(lastName);
+        user.setAccountId(accountId.longValue());
+        user.setEmail(email);
+        user.setTimezone(timezone);
+        
+        if(userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
+        	//set registration token
+        	byte[] bytes = (domainId + accountName + username + System.currentTimeMillis()).getBytes();
+            String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+            user.setRegistrationToken(registrationToken);
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating user: " + username + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timezone);
+        }
+
+        UserVO dbUser = _userDao.persist(user);
+
+        _networkGroupMgr.createDefaultSecurityGroup(accountId);
+
+        if (!user.getPassword().equals(dbUser.getPassword())) {
+            throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
+        }
+        return _userAccountDao.findById(dbUser.getId());
+       
     }
 
     @Override
