@@ -126,8 +126,6 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageService;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -300,7 +298,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         _hostDao.markHostsAsDisconnected(_nodeId);
 
-        _monitor = new AgentMonitor(_nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
+        _monitor = ComponentLocator.inject(AgentMonitor.class, _nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);
 
         _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
@@ -632,7 +630,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                             if(!_vmMgr.destroy(vm, caller, _accountMgr.getAccount(vm.getAccountId()))) {
                                 String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + hostId;
                                 s_logger.warn(errorMsg);
-                                throw new CloudRuntimeException(errorMsg);  
+                                throw new CloudRuntimeException(errorMsg);
                             }
                         }
                     }
@@ -1239,7 +1237,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         } catch (ConfigurationException e) {
             e.printStackTrace();
             s_logger.warn("Unable to configure resource due to ", e);
-            return false; 
+            return false;
         }
 
         if (!resource.start()) {
