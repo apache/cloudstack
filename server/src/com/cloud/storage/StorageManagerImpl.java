@@ -71,7 +71,6 @@ import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
-import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
@@ -119,6 +118,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -1662,7 +1662,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             // Check that the the disk offering is specified
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            if ((diskOffering == null) || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
+            if ((diskOffering == null) || diskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
                 throw new InvalidParameterValueException("Please specify a valid disk offering.");
             }
 

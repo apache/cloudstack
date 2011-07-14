@@ -135,6 +135,18 @@ public class SqlGenerator {
             }
 
             Attribute attr = new Attribute(clazz, overrides, field, tableName, embedded, isId);
+            
+            if (attr.getColumnName().equals(GenericDao.REMOVED_COLUMN)) {
+                attr.setColumnName(GenericDao.REMOVED);
+                attr.setTrue(Attribute.Flag.DaoGenerated);
+                attr.setFalse(Attribute.Flag.Insertable);
+                attr.setFalse(Attribute.Flag.Updatable);
+                attr.setTrue(Attribute.Flag.TimeStamp);
+                attr.setFalse(Attribute.Flag.Time);
+                attr.setFalse(Attribute.Flag.Date);
+                attr.setTrue(Attribute.Flag.Nullable);
+                attr.setTrue(Attribute.Flag.Removed);
+            } 
 
             if (attr.isId()) {
                 List<Attribute> attrs = _ids.get(tableName);
@@ -249,18 +261,6 @@ public class SqlGenerator {
             attr.setTrue(Attribute.Flag.Created);
         }
 
-        attr = findAttribute(GenericDao.REMOVED_COLUMN);
-        if (attr != null && attr.field.getType() == Date.class) {
-            attr.setTrue(Attribute.Flag.DaoGenerated);
-            attr.setFalse(Attribute.Flag.Insertable);
-            attr.setFalse(Attribute.Flag.Updatable);
-            attr.setTrue(Attribute.Flag.TimeStamp);
-            attr.setFalse(Attribute.Flag.Time);
-            attr.setFalse(Attribute.Flag.Date);
-            attr.setTrue(Attribute.Flag.Nullable);
-            attr.setTrue(Attribute.Flag.Removed);
-        }
-
         attr = findAttribute(GenericDao.XID_COLUMN);
         if (attr != null && attr.field.getType() == String.class) {
             attr.setTrue(Attribute.Flag.DaoGenerated);
@@ -280,7 +280,11 @@ public class SqlGenerator {
 
     public Attribute findAttribute(String name) {
         for (Attribute attr : _attributes) {
-            if (attr.columnName == name || attr.columnName.equals(name)) {
+            if (attr.columnName.equals(GenericDao.REMOVED) && attr.isUpdatable()) {
+                return null;
+            }
+            
+            if (attr.columnName.equals(name)) {
                 return attr;
             }
         }
@@ -432,7 +436,7 @@ public class SqlGenerator {
     }
 
     public Pair<String, Attribute[]> buildRemoveSql() {
-        Attribute attribute = findAttribute(GenericDao.REMOVED_COLUMN);
+        Attribute attribute = findAttribute(GenericDao.REMOVED);
         if (attribute == null) {
             return null;
         }
@@ -515,7 +519,7 @@ public class SqlGenerator {
     }
 
     public Pair<String, Attribute> getRemovedAttribute() {
-        Attribute removed = findAttribute(GenericDao.REMOVED_COLUMN);
+        Attribute removed = findAttribute(GenericDao.REMOVED);
         if (removed == null) {
             return null;
         }

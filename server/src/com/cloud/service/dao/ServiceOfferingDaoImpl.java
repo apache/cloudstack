@@ -18,6 +18,7 @@
 
 package com.cloud.service.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -26,6 +27,7 @@ import javax.persistence.EntityExistsException;
 import org.apache.log4j.Logger;
 
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -57,12 +59,14 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         SystemServiceOffering.and("domainId", SystemServiceOffering.entity().getDomainId(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("system", SystemServiceOffering.entity().getSystemUse(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("vm_type", SystemServiceOffering.entity().getSpeed(), SearchCriteria.Op.EQ);
+        SystemServiceOffering.and("removed", SystemServiceOffering.entity().getRemoved(), SearchCriteria.Op.NULL);
         SystemServiceOffering.done();
         
         
         PublicServiceOfferingSearch = createSearchBuilder();
         PublicServiceOfferingSearch.and("domainId", PublicServiceOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicServiceOfferingSearch.and("system", PublicServiceOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
+        PublicServiceOfferingSearch.and("removed", PublicServiceOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicServiceOfferingSearch.done();
         
         ServiceOfferingsByKeywordSearch = createSearchBuilder();
@@ -141,5 +145,13 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             // Assume it's conflict on unique name
             return findByName(offering.getUniqueName());
         }
+    }
+    
+    @Override
+    public boolean remove(Long id) {
+        ServiceOfferingVO offering = createForUpdate();
+        offering.setRemoved(new Date());
+
+        return update(id, offering);
     }
 }

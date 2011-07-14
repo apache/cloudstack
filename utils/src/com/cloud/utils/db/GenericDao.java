@@ -32,7 +32,9 @@ public interface GenericDao<T, ID extends Serializable> {
     /**
      * This column can be used if the table wants to delay deletion.
      */
-    static final String REMOVED_COLUMN = "removed";
+    static final String REMOVED_COLUMN = "cloud_removed";
+    
+    static final String REMOVED = "removed";
     
     /**
      * This column can be used if the table wants to track creation time.

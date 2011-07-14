@@ -94,7 +94,6 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
@@ -229,7 +228,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
         eventId = eventId == null ? 0:eventId;
         VMTemplateVO template = _tmpltDao.findById(templateId);
-        if (template == null) {
+        if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find " +desc+ " with id " + templateId);
         }
         if (template.getTemplateType() ==  Storage.TemplateType.SYSTEM){
@@ -567,7 +566,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
     	
         VMTemplateVO template = _tmpltDao.findById(templateId);
-        if (template == null) {
+        if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find template with id");
         }
       
@@ -808,7 +807,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
     	
     	VMTemplateVO iso = _tmpltDao.findById(isoId);
-    	if (iso == null) {
+    	if (iso == null || iso.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
     	}
     	
@@ -886,7 +885,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         Long templateId = cmd.getId();
         Account caller = UserContext.current().getCaller();
         
-        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        VirtualMachineTemplate template = getTemplate(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
@@ -917,7 +916,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         Account caller = UserContext.current().getCaller();
         Long zoneId = cmd.getZoneId();
         
-        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        VirtualMachineTemplate template = getTemplate(templateId);;
         if (template == null) {
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
@@ -947,6 +946,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
 	public VirtualMachineTemplate getTemplate(long templateId) {
-	    return _tmpltDao.findById(templateId);
+	    VMTemplateVO template = _tmpltDao.findById(templateId);
+	    if (template != null && template.getRemoved() == null) {
+	        return template;
+	    }
+	    
+	    return null;
 	}
 }

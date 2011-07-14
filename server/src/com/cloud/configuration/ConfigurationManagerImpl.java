@@ -1573,8 +1573,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Verify input parameters
-        ServiceOfferingVO offeringHandle = _serviceOfferingDao.findById(id);
-        ;
+        ServiceOffering offeringHandle = getServiceOffering(id);
+        
         if (offeringHandle == null) {
             throw new InvalidParameterValueException("unable to find service offering " + id);
         }
@@ -1682,7 +1682,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String displayText = cmd.getDisplayText();
 
         // Check if diskOffering exists
-        DiskOfferingVO diskOfferingHandle = _diskOfferingDao.findById(diskOfferingId);
+        DiskOffering diskOfferingHandle = getDiskOffering(diskOfferingId);
 
         if (diskOfferingHandle == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
@@ -1739,7 +1739,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) {
         Long diskOfferingId = cmd.getId();
 
-        DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+        DiskOffering offering = getDiskOffering(diskOfferingId);
 
         if (offering == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
@@ -1765,12 +1765,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Verify service offering id
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(offeringId);
+        ServiceOffering offering = getServiceOffering(offeringId);
         if (offering == null) {
             throw new InvalidParameterValueException("unable to find service offering " + offeringId);
-        } else if (offering.getRemoved() != null) {
-            throw new InvalidParameterValueException("unable to find service offering " + offeringId);
-        }
+        } 
         
         if(offering.getDefaultUse()){
             throw new InvalidParameterValueException("Default service offerings cannot be deleted");
@@ -3082,7 +3080,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public ServiceOffering getServiceOffering(long serviceOfferingId) {
-        return _serviceOfferingDao.findById(serviceOfferingId);
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
+        if (offering != null && offering.getRemoved() == null) {
+            return offering;
+        }
+        
+        return null;
     }
 
     @Override
@@ -3094,7 +3097,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public Integer getServiceOfferingNetworkRate(long serviceOfferingId) {
 
         // validate network offering information
-        ServiceOffering offering = getServiceOffering(serviceOfferingId);
+        ServiceOffering offering = _serviceOfferingDao.findById(serviceOfferingId);
         if (offering == null) {
             throw new InvalidParameterValueException("Unable to find service offering by id=" + serviceOfferingId);
         }
@@ -3114,4 +3117,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         return networkRate;
     }
+    
+    @Override
+    public DiskOffering getDiskOffering(long diskOfferingId) {
+        DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+        if (offering != null && offering.getRemoved() == null) {
+            return offering;
+        }
+        
+        return null;
+    }
+
 }

@@ -18,6 +18,7 @@
 
 package com.cloud.storage.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -47,6 +48,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     protected DiskOfferingDaoImpl() {
         DomainIdSearch  = createSearchBuilder();
         DomainIdSearch.and("domainId", DomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        DomainIdSearch.and("removed", DomainIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         DomainIdSearch.done();
         
         PrivateDiskOfferingSearch  = createSearchBuilder();
@@ -137,5 +139,13 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
             // Assume it's conflict on unique name
             return findByUniqueName(offering.getUniqueName());
         }
+    }
+    
+    @Override
+    public boolean remove(Long id) {
+        DiskOfferingVO diskOffering = createForUpdate();
+        diskOffering.setRemoved(new Date());
+
+        return update(id, diskOffering);
     }
 }

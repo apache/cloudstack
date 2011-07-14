@@ -44,6 +44,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -356,6 +357,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             // Make sure a valid template ID was specified
             if (template == null) {
                 throw new InvalidParameterValueException("Unable to use template " + templateId);
+            }
+            
+            if (diskOfferingId != null) {
+                DiskOffering diskOffering = _configService.getDiskOffering(diskOfferingId);
+                if (diskOffering == null) {
+                    throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+                }
             }
 
             UserVm vm = null;
