@@ -214,27 +214,29 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         long userId = 1;
 
         for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
+            SnapshotScheduleVO tmpSnapshotScheduleVO = null;
+            long snapshotScheId = snapshotToBeExecuted.getId();
             long policyId = snapshotToBeExecuted.getPolicyId();
             long volumeId = snapshotToBeExecuted.getVolumeId();
-            VolumeVO volume = _volsDao.findById(volumeId);
-            if ( volume.getPoolId() == null) {
-                // this volume is not attached
-                continue;
-            }
-            if ( _snapshotPolicyDao.findById(policyId) == null ) {
-                _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
-            }
-            if (s_logger.isDebugEnabled()) {
-                Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
-                displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-                s_logger.debug("Scheduling 1 snapshot for volume " + volumeId + " for schedule id: "
-                        + snapshotToBeExecuted.getId() + " at " + displayTime);
-            }
-            long snapshotScheId = snapshotToBeExecuted.getId();
-            SnapshotScheduleVO tmpSnapshotScheduleVO = null;
             try {
-                tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
+                VolumeVO volume = _volsDao.findById(volumeId);
+                if ( volume.getPoolId() == null) {
+                    // this volume is not attached
+                    continue;
+                }
+                if ( _snapshotPolicyDao.findById(policyId) == null ) {
+                    _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
+                }
+                if (s_logger.isDebugEnabled()) {
+                    Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
+                    displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
+                    s_logger.debug("Scheduling 1 snapshot for volume " + volumeId + " for schedule id: "
+                            + snapshotToBeExecuted.getId() + " at " + displayTime);
+                }
 
+
+
+                tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
                 Long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                         EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:"+volumeId,0);
 
@@ -266,7 +268,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             } catch (Exception e) {
                 s_logger.debug("Scheduling snapshot failed due to " + e.toString(), e);
             } finally {
-                if (tmpSnapshotScheduleVO != null) {
+                if ( tmpSnapshotScheduleVO != null) {
                     _snapshotScheduleDao.releaseFromLockTable(snapshotScheId);
                 }
             }
