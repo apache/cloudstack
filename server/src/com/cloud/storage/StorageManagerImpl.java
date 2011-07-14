@@ -577,7 +577,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return new Pair<VolumeVO, String>(createdVolume, details);
     }
 
-    @DB
     protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId) {
 
         // By default, assume failure.
@@ -586,25 +585,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         createdVolume = volumeDetails.first();
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        Long diskOfferingId = volume.getDiskOfferingId();
-
-        if (createdVolume.getPath() != null) {
-            Long offeringId = null;
-            if (diskOfferingId != null) {
-                DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
-                if (offering != null && (offering.getType() == DiskOfferingVO.Type.Disk)) {
-                    offeringId = offering.getId();
-                }
-            }
-
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, null,
-                    createdVolume.getSize());
-            _usageEventDao.persist(usageEvent);
-        }
-        txn.commit();
+       
         return createdVolume;
     }
 
