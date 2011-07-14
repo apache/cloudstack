@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.manager;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -38,21 +39,29 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.utils.db.ConnectionConcierge;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class AgentMonitor extends Thread implements Listener {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
-    private final long _pingTimeout;
-    private final HostDao _hostDao;
+    private long _pingTimeout;
+    private HostDao _hostDao;
     private boolean _stop;
-    private final AgentManagerImpl _agentMgr;
-    private final VMInstanceDao _vmDao;
+    private AgentManagerImpl _agentMgr;
+    private VMInstanceDao _vmDao;
     private DataCenterDao _dcDao = null;
     private HostPodDao _podDao = null;
-    private final AlertManager _alertMgr;
-    private final long _msId;
+    private AlertManager _alertMgr;
+    private long _msId;
+    private ConnectionConcierge _concierge;
+    
+    protected AgentMonitor() {
+    }
     
     public AgentMonitor(long msId, HostDao hostDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {
     	super("AgentMonitor");
@@ -65,6 +74,12 @@ public class AgentMonitor extends Thread implements Listener {
         _dcDao = dcDao;
         _podDao = podDao;
         _alertMgr = alertMgr;
+        Connection conn = Transaction.getStandaloneConnection();
+        if (conn == null) {
+            throw new CloudRuntimeException("Unable to get a db connection.");
+        }
+        
+        _concierge = new ConnectionConcierge("AgentMonitor", conn, true, true);
     }
     
     // TODO : use host machine time is not safe in clustering environment
@@ -100,7 +115,7 @@ public class AgentMonitor extends Thread implements Listener {
                 
                 for (HostVO host : hosts) {
                 	if (host.getType().equals(Host.Type.ExternalFirewall) ||
-                		host.getType().equals(Host.Type.ExternalLoadBalancer) || 
+                		host.getType().equals(Host.Type.ExternalLoadBalancer) ||
                 		host.getType().equals(Host.Type.TrafficMonitor) ||
                 		host.getType().equals(Host.Type.SecondaryStorage)) {
                 		continue;
@@ -127,7 +142,7 @@ public class AgentMonitor extends Thread implements Listener {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
                             _hostDao.updateStatus(host, Event.PreparationComplete, _msId);
                         }
-                    } 
+                    }
                 }
             } catch (Throwable th) {
                 s_logger.error("Caught the following exception: ", th);
@@ -154,20 +169,26 @@ public class AgentMonitor extends Thread implements Listener {
         return false;
     }
 
-    @Override
+    @Override @DB
     public boolean processCommands(long agentId, long seq, Command[] commands) {
         boolean processed = false;
         for (Command cmd : commands) {
             if (cmd instanceof PingCommand) {
-                HostVO host = _hostDao.findById(agentId);
-                if( host == null ) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Cant not find host " + agentId);
+                Transaction txn = Transaction.currentTxn();
+                txn.transitToUserManagedConnection(_concierge.conn());
+                try {
+                    HostVO host = _hostDao.findById(agentId);
+                    if( host == null ) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Cant not find host " + agentId);
+                        }
+                    } else {
+                        _hostDao.updateStatus(host, Event.Ping, _msId);
                     }
-                } else {
-                    _hostDao.updateStatus(host, Event.Ping, _msId);
+                    processed = true;
+                } finally {
+                    txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
                 }
-                processed = true;
             }
         }
         return processed;

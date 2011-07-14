@@ -132,7 +132,7 @@ public class Transaction {
     }
 
     public void transitToAutoManagedConnection(short dbId) {
-        assert(_stack.size() == 0) : "Can't change to auto managed connection unless your stack is empty";
+        assert(_stack.size() <= 1) : "Can't change to auto managed connection unless your stack is empty";
         _dbId = dbId;
         _conn = null;
     }
