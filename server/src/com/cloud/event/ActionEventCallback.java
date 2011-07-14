@@ -38,7 +38,7 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
         } catch (Exception e){
             success = false;
             interceptException(method, event);
-            return null;
+            throw e;
         } finally {
             if(success){
                 interceptComplete(method, event);
