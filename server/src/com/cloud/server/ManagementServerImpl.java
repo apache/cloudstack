@@ -210,6 +210,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
+import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -310,6 +312,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final NetworkDao _networkDao;
     private final StorageManager _storageMgr;
     private final VirtualMachineManager _itMgr;
+    private final TemplateManager _templateMgr;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
     private final HostPodDao _hostPodDao;
@@ -394,6 +397,8 @@ public class ManagementServerImpl implements ManagementServer {
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
         }
+        
+        _templateMgr = locator.getManager(TemplateManager.class);
 
         String value = _configs.get("account.cleanup.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
@@ -1079,6 +1084,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vm_type_str);
         }
         sc.addAnd("systemUse", SearchCriteria.Op.EQ, issystem);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
         return _offeringsDao.search(sc, searchFilter);
 
     }
@@ -1141,6 +1147,9 @@ public class ManagementServerImpl implements ManagementServer {
 
                 // for this domain
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainRecord.getId());
+                
+                //don't return removed service offerings
+                sc.addAnd("removed", SearchCriteria.Op.NULL);
 
                 // search and add for this domain
                 sol.addAll(_offeringsDao.search(sc, searchFilter));
@@ -1973,8 +1982,8 @@ public class ManagementServerImpl implements ManagementServer {
         Account account = UserContext.current().getCaller();
 
         // verify that template exists
-        VMTemplateVO template = findTemplateById(id);
-        if (template == null) {
+        VMTemplateVO template = _templateDao.findById(id);
+        if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("unable to find template/iso with id " + id);
         }
 
@@ -3216,17 +3225,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     }
 
-    @Override
-    public DiskOfferingVO findDiskOfferingById(long diskOfferingId) {
-        return _diskOfferingDao.findById(diskOfferingId);
-    }
-
-    @Override
-    public List<DiskOfferingVO> findPrivateDiskOffering() {
-        return _diskOfferingDao.findPrivateDiskOffering();
-    }
-
-    protected boolean templateIsCorrectType(VMTemplateVO template) {
+    protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
         return true;
     }
 
@@ -3414,7 +3413,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
         }
 
-        VMTemplateVO template = _templateDao.findById(id.longValue());
+        VirtualMachineTemplate template = _templateMgr.getTemplate(id);
         if (template == null || !templateIsCorrectType(template)) {
             throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with id " + id);
         }
@@ -3448,6 +3447,7 @@ public class ManagementServerImpl implements ManagementServer {
 
                 sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
                 sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+                sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NULL);
 
                 SearchCriteria<DiskOfferingVO> sc = sb.create();
                 if (keyword != null) {
@@ -3539,6 +3539,7 @@ public class ManagementServerImpl implements ManagementServer {
         // For root users, preserving existing flow
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NULL);
 
         // FIXME: disk offerings should search back up the hierarchy for available disk offerings...
         /*

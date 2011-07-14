@@ -37,7 +37,7 @@ import com.cloud.storage.VMTemplateVO;
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
  * It is also responsible for downloading.
  */
-public interface TemplateManager {
+public interface TemplateManager extends TemplateService{
 
     /**
      * Creates a Template

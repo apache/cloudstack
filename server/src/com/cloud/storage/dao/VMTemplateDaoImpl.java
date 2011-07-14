@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -36,25 +35,20 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.info.RunningHostCountInfo;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -64,8 +58,8 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.Transaction;
 
 @Local(value={VMTemplateDao.class})
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
@@ -608,5 +602,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     	SearchCriteria<Long> sc = CountTemplatesByAccount.create();
         sc.setParameters("account", accountId);
         return customSearch(sc, null).get(0);
+    }
+    
+    @Override
+    public boolean remove(Long id) {
+        VMTemplateVO template = createForUpdate();
+        template.setRemoved(new Date());
+
+        return update(id, template);
     }
 }

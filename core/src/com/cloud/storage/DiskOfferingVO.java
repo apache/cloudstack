@@ -31,6 +31,8 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.offering.DiskOffering;
@@ -72,7 +74,8 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="type")
     Type type;
     
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name=GenericDao.REMOVED)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
     @Column(name=GenericDao.CREATED_COLUMN)
@@ -276,4 +279,8 @@ public class DiskOfferingVO implements DiskOffering {
 	public void setUseLocalStorage(boolean useLocalStorage) {
 		this.useLocalStorage = useLocalStorage;
 	}
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
 }

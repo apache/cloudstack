@@ -234,4 +234,12 @@ public class Attribute {
     public String toString() {
         return table + "." + columnName;
     }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
+    }
 }

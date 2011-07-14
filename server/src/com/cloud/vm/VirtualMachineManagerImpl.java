@@ -597,7 +597,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         T startedVm = null;
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null);
         if(planToDeploy != null){

@@ -77,8 +77,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created = null;
     
-    @Temporal(value=TemporalType.TIMESTAMP)
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name=GenericDao.REMOVED)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
     
     @Column(name="account_id")
@@ -404,5 +404,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    }
 	    return toString;
 	}
-	
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
 }

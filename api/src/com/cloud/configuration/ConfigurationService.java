@@ -236,4 +236,5 @@ public interface ConfigurationService {
 
     Integer getServiceOfferingNetworkRate(long serviceOfferingId);
 
+    DiskOffering getDiskOffering(long diskOfferingId);
 }

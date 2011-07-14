@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -70,7 +71,6 @@ import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
-import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
@@ -112,12 +112,13 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -182,8 +183,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import java.util.Random;
 
 @Local(value = { StorageManager.class, StorageService.class })
 public class StorageManagerImpl implements StorageManager, StorageService, Manager, ClusterManagerListener {
@@ -1663,7 +1662,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             // Check that the the disk offering is specified
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            if ((diskOffering == null) || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
+            if ((diskOffering == null) || diskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
                 throw new InvalidParameterValueException("Please specify a valid disk offering.");
             }
 

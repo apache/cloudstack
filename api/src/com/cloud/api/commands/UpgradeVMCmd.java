@@ -25,6 +25,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -84,6 +86,12 @@ public class UpgradeVMCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());
+        
+        ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+        }
+        
         UserVm result = _userVmService.upgradeVirtualMachine(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

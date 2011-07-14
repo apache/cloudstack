@@ -119,6 +119,7 @@ import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -336,7 +337,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return _routerDao.findById(routerId);
         }
 
-        ServiceOfferingVO newServiceOffering = _serviceOfferingDao.findById(serviceOfferingId);
+        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(serviceOfferingId);
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
         }

@@ -500,21 +500,6 @@ public interface ManagementServer extends ManagementService {
     public long getMemoryUsagebyHost(Long hostId);
 
     /**
-     * Finds a diskOffering by the specified ID.
-     * 
-     * @param diskOfferingId
-     * @return A DiskOffering
-     */
-    DiskOfferingVO findDiskOfferingById(long diskOffering);
-
-    /**
-     * Finds the obj associated with the private disk offering
-     * 
-     * @return -- vo obj for private disk offering
-     */
-    List<DiskOfferingVO> findPrivateDiskOffering();
-
-    /**
      * List private templates for which the given account/domain has been granted permission to launch instances
      * 
      * @param accountId
