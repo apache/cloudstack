@@ -683,12 +683,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
             s_logger.info(description);
         }
-
-        // This code is mostly for migration purposes so that we have checksum
-        // for all the templates
-        if (ssHost.getType() == Host.Type.SecondaryStorage) {
-            checksumSync(sserverId);
-        }
+        
     }
 
 	@Override
