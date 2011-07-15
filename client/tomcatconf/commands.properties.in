@@ -4,7 +4,7 @@
 ### Account commands
 createAccount=com.cloud.api.commands.CreateAccountCmd;3
 deleteAccount=com.cloud.api.commands.DeleteAccountCmd;3
-updateAccount=com.cloud.api.commands.UpdateAccountCmd;7
+updateAccount=com.cloud.api.commands.UpdateAccountCmd;3
 disableAccount=com.cloud.api.commands.DisableAccountCmd;7
 enableAccount=com.cloud.api.commands.EnableAccountCmd;7
 ###lockAccount=com.cloud.api.commands.LockAccountCmd;7
