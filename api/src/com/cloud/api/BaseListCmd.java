@@ -23,7 +23,7 @@ import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseListCmd extends BaseCmd {
 
-    private static Long MAX_PAGESIZE = 500L;
+    private static Long MAX_PAGESIZE = null;
 
     // ///////////////////////////////////////////////////
     // ///////// BaseList API parameters /////////////////
@@ -52,15 +52,21 @@ public abstract class BaseListCmd extends BaseCmd {
     }
 
     public Integer getPageSize() {
-        if (pageSize != null && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
+        if (pageSize != null && MAX_PAGESIZE != null && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
             throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + MAX_PAGESIZE.longValue());
+        }
+        
+        if (pageSize != null && pageSize.longValue() == -1 && page != null) {
+            throw new InvalidParameterValueException("Can't specify page parameter when pagesize is -1 (Unlimited)");
         }
         
         return pageSize;
     }
 
     static void configure() {
-        MAX_PAGESIZE = _configService.getDefaultPageSize();
+        if (_configService.getDefaultPageSize().longValue() != -1) {
+            MAX_PAGESIZE = _configService.getDefaultPageSize();
+        } 
     }
 
     @Override
@@ -70,19 +76,21 @@ public abstract class BaseListCmd extends BaseCmd {
     }
 
     public Long getPageSizeVal() {
-        Long pageSize = MAX_PAGESIZE;
+        Long defaultPageSize = MAX_PAGESIZE;
         Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null && pageSizeInt.intValue() != -1) {
-            pageSize = pageSizeInt.longValue();
+            defaultPageSize = pageSizeInt.longValue();
         }
-        return pageSize;
+        return defaultPageSize;
     }
 
     public Long getStartIndex() {
         Long startIndex = Long.valueOf(0);
         Long pageSizeVal = getPageSizeVal();
 
-        if (page != null) {
+        if (pageSizeVal == null) {
+            startIndex = null;
+        } else if (page != null) {
             int pageNum = page.intValue();
             if (pageNum > 0) {
                 startIndex = Long.valueOf(pageSizeVal * (pageNum - 1));
