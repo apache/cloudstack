@@ -270,54 +270,79 @@ public class AlertManagerImpl implements AlertManager {
             _storageMgr.createCapacityEntry(pool, disk);
         }
 
-        // Calculate new Public IP capacity
-        List<DataCenterVO> datacenters = _dcDao.listAllIncludingRemoved();
-        for (DataCenterVO datacenter : datacenters) {
-            long dcId = datacenter.getId();
-
-            //NOTE
-            //What happens if we have multiple vlans? Dashboard currently shows stats 
-            //with no filter based on a vlan
-            //ideal way would be to remove out the vlan param, and filter only on dcId
-            //implementing the same
-            int totalPublicIPs = _publicIPAddressDao.countIPsForDashboard(dcId, false);
-            int allocatedPublicIPs = _publicIPAddressDao.countIPsForDashboard(dcId, true);
-
-            CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, null, allocatedPublicIPs, totalPublicIPs, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
-            newCapacities.add(newPublicIPCapacity);
-        }
-
-        // Calculate new Private IP capacity
-        List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
-        for (HostPodVO pod : pods) {
-            long podId = pod.getId();
-            long dcId = pod.getDataCenterId();
-
-            int totalPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, false);
-            int allocatedPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, true);
-
-            CapacityVO newPrivateIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedPrivateIPs, totalPrivateIPs, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
-            newCapacities.add(newPrivateIPCapacity);
-        }
-
         Transaction txn = Transaction.currentTxn();
         try {
-        	txn.start();
+        	txn.start();   
+        	// Calculate new Public IP capacity
+        	List<DataCenterVO> datacenters = _dcDao.listAllIncludingRemoved();
+        	for (DataCenterVO datacenter : datacenters) {
+        		long dcId = datacenter.getId();
+		
+		        //NOTE
+		        //What happens if we have multiple vlans? Dashboard currently shows stats 
+		        //with no filter based on a vlan
+		        //ideal way would be to remove out the vlan param, and filter only on dcId
+		        //implementing the same
 
-        	_capacityDao.clearNonStorageCapacities2();
-        	
-            for (CapacityVO newCapacity : newCapacities) {
             	s_logger.trace("Executing capacity update");
-                _capacityDao.persist(newCapacity);
+		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
                 s_logger.trace("Done with capacity update");
-            }
-            txn.commit();
+
+		    }
+        	txn.commit();
+        	
+        	txn.start();
+	        // Calculate new Private IP capacity
+	        List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
+	        for (HostPodVO pod : pods) {
+	            long podId = pod.getId();
+	            long dcId = pod.getDataCenterId();
+
+            	s_logger.trace("Executing capacity update");
+	            createOrUpdateIpCapacity(dcId, podId, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
+                s_logger.trace("Done with capacity update");
+
+	        }
+        	txn.commit();
         } catch (Exception ex) {
         	txn.rollback();
         	s_logger.error("Unable to start transaction for capacity update");
         }finally {
         	txn.close();
         }
+    }
+    
+    public void createOrUpdateIpCapacity(Long dcId, Long podId, short capacityType){
+        SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
+
+        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
+        capacitySC = _capacityDao.createSearchCriteria();
+        capacitySC.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
+        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
+
+        int totalIPs;
+        int allocatedIPs;
+        capacities = _capacityDao.search(capacitySC, null);
+        if (capacityType == CapacityVO.CAPACITY_TYPE_PRIVATE_IP){
+        	totalIPs = _privateIPAddressDao.countIPs(podId, dcId, false);
+        	allocatedIPs = _privateIPAddressDao.countIPs(podId, dcId, true);
+        }else{
+        	totalIPs = _publicIPAddressDao.countIPsForDashboard(dcId, false);
+            allocatedIPs = _publicIPAddressDao.countIPsForDashboard(dcId, true);
+        }
+        
+        if (capacities.size() == 0){
+        	CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedIPs, totalIPs, capacityType);
+            _capacityDao.persist(newPublicIPCapacity);
+        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedIPs 
+        		&& capacities.get(0).getTotalCapacity() == totalIPs) ){
+        	CapacityVO capacity = capacities.get(0);
+        	capacity.setUsedCapacity(allocatedIPs);
+        	capacity.setTotalCapacity(totalIPs);
+            _capacityDao.update(capacity.getId(), capacity);
+        }
+        
     }
 
     class CapacityChecker extends TimerTask {
