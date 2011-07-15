@@ -50,10 +50,10 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     //
     private static final String PROXY_ASSIGNMENT_MATRIX =
     	"SELECT c.id, count(runningVm.id) AS count "																+
-    	" FROM console_proxy AS c LEFT JOIN"																		+
+    	" FROM console_proxy AS c LEFT JOIN vm_instance AS i ON c.id=i.id LEFT JOIN"																		+
     	" (SELECT v.id AS id, v.proxy_id AS proxy_id FROM vm_instance AS v WHERE "  								+
     	"  (v.state='Running' OR v.state='Creating' OR v.state='Starting' OR v.state='Migrating')) "				+
-    	" AS runningVm ON c.id = runningVm.proxy_id"																+
+    	" AS runningVm ON c.id = runningVm.proxy_id WHERE i.state='Running' "																+
     	" GROUP BY c.id";
     
     //

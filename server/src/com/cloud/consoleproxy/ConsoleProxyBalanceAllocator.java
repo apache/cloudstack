@@ -19,6 +19,7 @@
 package com.cloud.consoleproxy;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -31,28 +32,47 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 @Local(value={ConsoleProxyAllocator.class})
 public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
 	
     private String _name;
-    private int _maxSessionCount = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
     private final Random _rand = new Random(System.currentTimeMillis());
    
     @Override
-	public ConsoleProxyVO allocProxy(List<ConsoleProxyVO> candidates, Map<Long, Integer> loadInfo, long dataCenterId) {
+	public ConsoleProxyVO allocProxy(List<ConsoleProxyVO> candidates, final Map<Long, Integer> loadInfo, long dataCenterId) {
     	if(candidates != null) {
     		
     		List<ConsoleProxyVO> allocationList = new ArrayList<ConsoleProxyVO>();
-    		
     		for(ConsoleProxyVO proxy : candidates) {
-    			Integer load = loadInfo.get(proxy.getId());
-    			if(load == null || load < _maxSessionCount) {
-    				allocationList.add(proxy);
-    			}
+				allocationList.add(proxy);
     		}
     		
+    		Collections.sort(candidates, new Comparator<ConsoleProxyVO> () {
+				@Override
+				public int compare(ConsoleProxyVO x, ConsoleProxyVO y) {
+					Integer loadOfX = loadInfo.get(x.getId());
+					Integer loadOfY = loadInfo.get(y.getId());
+
+					if(loadOfX != null && loadOfY != null) {
+						if(loadOfX < loadOfY)
+							return -1;
+						else if(loadOfX > loadOfY)
+							return 1;
+						return 0;
+					} else if(loadOfX == null && loadOfY == null) {
+						return 0;
+					} else {
+						if(loadOfX == null)
+							return -1;
+						return 1;
+					}
+				}
+    		});
+    		
     		if(allocationList.size() > 0)
-    			return allocationList.get(_rand.nextInt(allocationList.size()));
+    			return allocationList.get(0);
     	}
     	return null;
     }
