@@ -19,6 +19,9 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -55,11 +58,39 @@ public class Upgrade228to229 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        dropKeysIfExist(conn);
     }
 
     @Override
     public File[] getCleanupScripts() {
         return null;
+    }
+    
+    private void dropKeysIfExist(Connection conn) {
+        HashMap<String, List<String>> indexes = new HashMap<String, List<String>>();
+        HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
+
+        //indexes to drop
+        List<String> keys = new ArrayList<String>();
+        keys.add("name");
+        indexes.put("network_offerings", keys);
+        
+        //foreign keys to drop - this key would be re-added later
+        keys = new ArrayList<String>();
+        keys.add("fk_cluster__data_center_id");
+        foreignKeys.put("cluster", keys);
+        
+        
+        // drop all foreign keys first
+        s_logger.debug("Dropping keys that don't exist in 2.2.6 version of the DB...");
+        for (String tableName : foreignKeys.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
+        }
+
+        // drop indexes now
+        for (String tableName : indexes.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
+        }
     }
     
 }
