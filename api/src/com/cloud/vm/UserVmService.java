@@ -168,6 +168,7 @@ public interface UserVmService {
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
      * @param requestedIps TODO
+     * @param defaultIp TODO
      * @param accountName
      *            - an optional account for the virtual machine. Must be used with domainId
      * @param domainId
@@ -183,7 +184,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps, String defaultIp)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -222,6 +223,7 @@ public interface UserVmService {
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
      * @param requestedIps TODO
+     * @param defaultIp TODO
      * @param accountName
      *            - an optional account for the virtual machine. Must be used with domainId
      * @param domainId
@@ -237,7 +239,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList,
-            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps)
+            Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps, String defaultIp)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -274,6 +276,7 @@ public interface UserVmService {
      * @param sshKeyPair
      *            - name of the ssh key pair used to login to the virtual machine
      * @param requestedIps TODO
+     * @param defaultIp TODO
      * @param accountName
      *            - an optional account for the virtual machine. Must be used with domainId
      * @param domainId
@@ -289,7 +292,7 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps, String defaultIp)
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
