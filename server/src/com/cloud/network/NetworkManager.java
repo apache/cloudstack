@@ -61,10 +61,11 @@ public interface NetworkManager extends NetworkService {
      * @param owner
      * @param type
      * @param networkId
+     * @param requestedIp TODO
      * @return
      * @throws InsufficientAddressCapacityException
      */
-    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp) throws InsufficientAddressCapacityException;
 
     /**
      * assigns a source nat ip address to an account within a network.
@@ -200,4 +201,6 @@ public interface NetworkManager extends NetworkService {
     List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault);
 
     IPAddressVO markIpAsUnavailable(long addrId);
+    
+    public String acquireGuestIpAddress(Network network, String requestedIp);
 }

@@ -28,7 +28,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -232,25 +234,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
     @Override
-    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException {
-        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true);
+    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
+        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp);
     }
 
     @DB
-    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign)
+    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign, String requestedIp)
     throws InsufficientAddressCapacityException {
+        StringBuilder errorMessage = new StringBuilder("Unable to get ip adress in ");
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<IPAddressVO> sc = null;
         if (podId != null) {
             sc = AssignIpAddressFromPodVlanSearch.create();
             sc.setJoinParameters("podVlanMapSB", "podId", podId);
+            errorMessage.append(" pod id=" + podId);
         } else {
             sc = AssignIpAddressSearch.create();
+            errorMessage.append(" zone id=" + dcId);
         }
 
         if (vlanDbId != null) {
             sc.addAnd("vlanId", SearchCriteria.Op.EQ, vlanDbId);
+            errorMessage.append(", vlanId id=" + vlanDbId);
         }
 
         sc.setParameters("dc", dcId);
@@ -258,8 +264,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // for direct network take ip addresses only from the vlans belonging to the network
         if (vlanUse == VlanType.DirectAttached) {
             sc.setJoinParameters("vlan", "networkId", networkId);
+            errorMessage.append(", network id=" + networkId);
         }
         sc.setJoinParameters("vlan", "type", vlanUse);
+        
+        
+        if (requestedIp != null) {
+            sc.addAnd("address", SearchCriteria.Op.EQ, requestedIp);
+            errorMessage.append(": requested ip " + requestedIp + " is not available");
+        }
 
         Filter filter = new Filter(IPAddressVO.class, "vlanId", true, 0l, 1l);
 
@@ -267,8 +280,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (addrs.size() == 0) {
             if (podId != null) {
+                s_logger.warn(errorMessage.toString());
                 throw new InsufficientAddressCapacityException("Insufficient address capacity", HostPodDao.class, podId);
             }
+            s_logger.warn(errorMessage.toString());
             throw new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
         }
 
@@ -373,7 +388,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     vlanId = maps.get(0).getVlanDbId();
                 }
 
-                ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, network.getId(), true, false);
+                ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, network.getId(), true, false, null);
                 sourceNat = ip.ip();
 
                 markPublicIpAsAllocated(sourceNat);
@@ -586,7 +601,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
 
-            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), isSourceNat, false);
+            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), isSourceNat, false, null);
 
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
@@ -2940,5 +2955,55 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return _configMgr.getNetworkOfferingNetworkRate(networkOffering.getId());
         }
 
+    }
+
+    Random _rand = new Random(System.currentTimeMillis());
+    
+    @Override
+    @DB
+    public String acquireGuestIpAddress(Network network, String requestedIp) {
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        String[] cidr = network.getCidr().split("/");
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
+        Set<Long> usedIps = new TreeSet<Long>();
+        
+        if (requestedIp != null && requestedIp.equals(network.getGateway())) {
+            s_logger.warn("Requested ip address " + requestedIp + " is used as a gateway address in network " + network);
+            return null;
+        }
+        
+        for (String ip : ips) {
+            if (requestedIp != null && requestedIp.equals(ip)) {
+                s_logger.warn("Requested ip address " + requestedIp + " is already in use in network " + network);
+                return null;
+            }
+            
+            usedIps.add(NetUtils.ip2Long(ip));
+        }
+        if (usedIps.size() != 0) {
+            allPossibleIps.removeAll(usedIps);
+        }
+        if (allPossibleIps.isEmpty()) {
+            return null;
+        }
+        
+        Long[] array = allPossibleIps.toArray(new Long[allPossibleIps.size()]);
+        
+        if (requestedIp != null) {
+            //check that requested ip has the same cidr
+            boolean isSameCidr = NetUtils.sameSubnetCIDR(requestedIp, NetUtils.long2Ip(array[0]), Integer.parseInt(cidr[1]));
+            if (!isSameCidr) {
+                s_logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
+                return null;
+            } else {
+                return requestedIp;
+            }
+        }
+        
+        String result;
+        do {
+            result = NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
+        } while (result.split("\\.")[3].equals("1"));
+        return result;
     }
 }

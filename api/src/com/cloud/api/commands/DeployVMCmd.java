@@ -19,7 +19,11 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -80,7 +84,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     private Long domainId;
 
     //Network information
-    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine")
+    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
     //DataDisk information
@@ -110,6 +114,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     
     @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
+    
+    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter. Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to use ip 10.10.10.11 in network id=204")
+    private Map ipToNetworkList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -188,6 +195,16 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     public List<Long> getNetworkIds() {
+       if (ipToNetworkList != null ) {
+           if (networkIds != null) {
+               throw new InvalidParameterValueException("NetworkIds can't be specified along with ipToNetworkMap");
+           } else {
+               List<Long> networks = new ArrayList<Long>();
+               networks.addAll(getIpToNetworkMap().keySet());
+               return networks;
+           }
+       }
+        
         return networkIds;
     }
 
@@ -201,6 +218,27 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public Long getHostId() {
         return hostId;
+    }
+    
+    private Map<Long, String> getIpToNetworkMap() {
+        if (networkIds != null && ipToNetworkList != null) {
+            throw new InvalidParameterValueException("NetworkIds can't be specified along with ipToNetworkMap");
+        }
+        Map<Long, String> ipToNetworkMap = null;
+        if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
+            ipToNetworkMap = new HashMap<Long, String>();
+            Collection ipsCollection = ipToNetworkList.values();
+            Iterator iter = ipsCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> ips = (HashMap<String, String>) iter.next();
+                Long networkId = Long.valueOf(ips.get("networkid"));
+                String requestedIp = (String) ips.get("ip");
+               
+                ipToNetworkMap.put(networkId, requestedIp);
+            }
+        }
+        
+        return ipToNetworkMap;
     }
 
     /////////////////////////////////////////////////////
@@ -330,18 +368,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                         throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                     } else {
                         vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap());
                     }
                 } else {
                     if (zone.isSecurityGroupEnabled()) {
                         vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap());
                     } else {
                         if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
                             throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                         }
                         vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName);
+                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap());
                     }
                 }
             }

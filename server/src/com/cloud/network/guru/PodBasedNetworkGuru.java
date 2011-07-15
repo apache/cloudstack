@@ -46,6 +46,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -87,6 +88,9 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         assert (trafficType == TrafficType.Storage || trafficType == TrafficType.Management) : "Well, I can't take care of this config now can I? " + config; 
         
         if (nic != null) {
+            if (nic.getRequestedIp() != null) {
+                throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
+            }
             nic.setStrategy(nic.getIp4Address() != null ? ReservationStrategy.Create : ReservationStrategy.Start);
         } else {
             nic  = new NicProfile(ReservationStrategy.Start, null, null, null, null);

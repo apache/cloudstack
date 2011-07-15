@@ -739,6 +739,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             defaultNic.setDeviceId(2);
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
             NicProfile gatewayNic = new NicProfile();
+
             gatewayNic.setIp4Address(guestNetwork.getGateway());
             gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
             gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
