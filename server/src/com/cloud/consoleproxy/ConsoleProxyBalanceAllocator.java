@@ -88,9 +88,6 @@ public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
         
         Map<String, String> configs = configDao.getConfiguration();
         
-        String value = configs.get("consoleproxy.session.max");
-        _maxSessionCount = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_CAPACITY);
-        
         return true;
     }
 	
