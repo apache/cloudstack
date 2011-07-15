@@ -34,30 +34,33 @@ import com.google.gson.Gson;
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
-    private static int HTTP_DATA_TIMEOUT = 60000;
     
-    private String serviceUrl;
+    private String _serviceUrl;
 
-    private final Gson gson;
+    private final Gson _gson;
+    private int _requestTimeoutSeconds;
 
     public ClusterServiceServletImpl() {
-        gson = GsonHelper.getGson();
+        _gson = GsonHelper.getGson();
     }
 
-    public ClusterServiceServletImpl(String serviceUrl) {
-        this.serviceUrl = serviceUrl;
+    public ClusterServiceServletImpl(String serviceUrl, int requestTimeoutSeconds) {
+    	s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + requestTimeoutSeconds + " seconds");
+    	
+        this._serviceUrl = serviceUrl;
+        this._requestTimeoutSeconds = requestTimeoutSeconds;
 
-        gson = GsonHelper.getGson();
+        _gson = GsonHelper.getGson();
     }
 
     @Override
     public String execute(String callingPeer, long agentId, String gsonPackage, boolean stopOnError) throws RemoteException {
         if(s_logger.isDebugEnabled()) {
-            s_logger.debug("Post (sync-call) " + gsonPackage + " to " + serviceUrl + " for agent " + agentId + " from " + callingPeer);
+            s_logger.debug("Post (sync-call) " + gsonPackage + " to " + _serviceUrl + " for agent " + agentId + " from " + callingPeer);
         }
 
         HttpClient client = getHttpClient();
-        PostMethod method = new PostMethod(serviceUrl);
+        PostMethod method = new PostMethod(_serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_EXECUTE));
         method.addParameter("agentId", Long.toString(agentId));
@@ -71,11 +74,11 @@ public class ClusterServiceServletImpl implements ClusterService {
     public long executeAsync(String callingPeer, long agentId, String gsonPackage, boolean stopOnError) throws RemoteException {
 
         if(s_logger.isDebugEnabled()) {
-            s_logger.debug("Post (Async-call) " + gsonPackage + " to " + serviceUrl + " for agent " + agentId + " from " + callingPeer);
+            s_logger.debug("Post (Async-call) " + gsonPackage + " to " + _serviceUrl + " for agent " + agentId + " from " + callingPeer);
         }
 
         HttpClient client = getHttpClient();
-        PostMethod method = new PostMethod(serviceUrl);
+        PostMethod method = new PostMethod(_serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_EXECUTE_ASYNC));
         method.addParameter("agentId", Long.toString(agentId));
@@ -85,15 +88,15 @@ public class ClusterServiceServletImpl implements ClusterService {
 
         String result = executePostMethod(client, method);
         if(result == null) {
-            s_logger.error("Empty return from remote async-execution on " + serviceUrl);
-            throw new RemoteException("Invalid result returned from async-execution on peer : " + serviceUrl);
+            s_logger.error("Empty return from remote async-execution on " + _serviceUrl);
+            throw new RemoteException("Invalid result returned from async-execution on peer : " + _serviceUrl);
         }
 
         try {
-            return gson.fromJson(result, Long.class);
+            return _gson.fromJson(result, Long.class);
         } catch(Throwable e) {
             s_logger.error("Unable to parse executeAsync return : " + result);
-            throw new RemoteException("Invalid result returned from async-execution on peer : " + serviceUrl);
+            throw new RemoteException("Invalid result returned from async-execution on peer : " + _serviceUrl);
         }
     }
 
@@ -105,7 +108,7 @@ public class ClusterServiceServletImpl implements ClusterService {
                     + ", seq: " + seq + ", gsonPackage: " + gsonPackage);
         }
         HttpClient client = getHttpClient();
-        PostMethod method = new PostMethod(serviceUrl);
+        PostMethod method = new PostMethod(_serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_ASYNC_RESULT));
         method.addParameter("agentId", Long.toString(agentId));
@@ -130,11 +133,11 @@ public class ClusterServiceServletImpl implements ClusterService {
     @Override
     public boolean ping(String callingPeer) throws RemoteException {
         if(s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping at " + serviceUrl);
+            s_logger.debug("Ping at " + _serviceUrl);
         }
 
         HttpClient client = getHttpClient();
-        PostMethod method = new PostMethod(serviceUrl);
+        PostMethod method = new PostMethod(_serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_PING));
         method.addParameter("callingPeer", callingPeer);
@@ -154,20 +157,20 @@ public class ClusterServiceServletImpl implements ClusterService {
             if(response == HttpStatus.SC_OK) {
                 result = method.getResponseBodyAsString();
                 if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("POST " + serviceUrl + " response :" + result + ", responding time: "
+                    s_logger.debug("POST " + _serviceUrl + " response :" + result + ", responding time: "
                             + (System.currentTimeMillis() - startTick) + " ms");
                 }
             } else {
                 s_logger.error("Invalid response code : " + response + ", from : "
-                        + serviceUrl + ", method : " + method.getParameter("method")
+                        + _serviceUrl + ", method : " + method.getParameter("method")
                         + " responding time: " + (System.currentTimeMillis() - startTick));
             }
         } catch (HttpException e) {
-            s_logger.error("HttpException from : " + serviceUrl + ", method : " + method.getParameter("method"));
+            s_logger.error("HttpException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
         } catch (IOException e) {
-            s_logger.error("IOException from : " + serviceUrl + ", method : " + method.getParameter("method"));
+            s_logger.error("IOException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
         } catch(Throwable e) {
-            s_logger.error("Exception from : " + serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
+            s_logger.error("Exception from : " + _serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
         }
 
         return result;
@@ -176,7 +179,7 @@ public class ClusterServiceServletImpl implements ClusterService {
     private HttpClient getHttpClient() {
         HttpClient client = new HttpClient();
         HttpClientParams clientParams = new HttpClientParams();
-        clientParams.setSoTimeout(HTTP_DATA_TIMEOUT);
+        clientParams.setSoTimeout(this._requestTimeoutSeconds * 1000);
         client.setParams(clientParams);
     	
         return client;
@@ -184,7 +187,7 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     // for test purpose only
     public static void main(String[] args) {
-        ClusterServiceServletImpl service = new ClusterServiceServletImpl("http://localhost:9090/clusterservice");
+        ClusterServiceServletImpl service = new ClusterServiceServletImpl("http://localhost:9090/clusterservice", 300);
         try {
             String result = service.execute("test", 1, "{ p1:v1, p2:v2 }", true);
             System.out.println(result);
