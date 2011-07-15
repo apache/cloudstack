@@ -134,4 +134,13 @@ ALTER TABLE `cloud`.`user` ADD COLUMN `registration_token` varchar(255) default 
 ALTER TABLE `cloud`.`user` ADD COLUMN `is_registered` tinyint NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `removed` datetime;
 
-CREATE INDEX `i_op_lock__mac_ip_thread` on `op_lock` (`mac`, `ip`, `thread`);8
+CREATE INDEX `i_op_lock__mac_ip_thread` on `op_lock` (`mac`, `ip`, `thread`);
+
+UPDATE `cloud`.`mshost` set removed=NULL where removed IS NOT NULL;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.management.portgroup', 'Management Network', 'Specify the management network name(for ESXi hosts)');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.additional.vnc.portrange.start', '59000', 'Start port number of additional VNC port range');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.additional.vnc.portrange.size', '1000', 'Start port number of additional VNC port range');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state', 'Auto', 'console proxy service management state');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state.last', 'Auto', 'last console proxy service management state');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.message.timeout.seconds', '300', 'Time (in seconds) to wait before a inter-management server message post times out.');

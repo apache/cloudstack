@@ -32,6 +32,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -41,14 +43,20 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
 
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletAdapter.class);
     private static final int DEFAULT_SERVICE_PORT = 9090;
+    private static final int DEFAULT_REQUEST_TIMEOUT = 300;			// 300 seconds
     
-    private ClusterManager manager;
+    private ClusterManager _manager;
     
     private ManagementServerHostDao _mshostDao;
+    
+    private ConfigurationDao _configDao;
+    
     private ClusterServiceServletContainer _servletContainer;
     
     private String _name;
     private int _clusterServicePort = DEFAULT_SERVICE_PORT;
+    
+    private int _clusterRequestTimeoutSeconds = DEFAULT_REQUEST_TIMEOUT;
     
     @Override
 	public ClusterService getPeerService(String strPeer) throws RemoteException {
@@ -63,7 +71,7 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     	if(serviceUrl == null)
     		return null;
     	
-    	return new ClusterServiceServletImpl(serviceUrl);
+    	return new ClusterServiceServletImpl(serviceUrl, _clusterRequestTimeoutSeconds);
 	}
     
     @Override
@@ -111,7 +119,7 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     @Override
     public boolean start() {
     	_servletContainer = new ClusterServiceServletContainer();
-    	_servletContainer.start(new ClusterServiceServletHttpHandler(manager), _clusterServicePort);
+    	_servletContainer.start(new ClusterServiceServletHttpHandler(_manager), _clusterServicePort);
     	return true;
     }
     
@@ -128,13 +136,24 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
     	
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
-        manager = locator.getManager(ClusterManager.class);
-        if(manager == null) 
+        _manager = locator.getManager(ClusterManager.class);
+        if(_manager == null) 
             throw new ConfigurationException("Unable to get " + ClusterManager.class.getName());
 
         _mshostDao = locator.getDao(ManagementServerHostDao.class);
         if(_mshostDao == null)
             throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
+
+        if(_mshostDao == null)
+            throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
+
+        _configDao = locator.getDao(ConfigurationDao.class);
+        if(_configDao == null)
+            throw new ConfigurationException("Unable to get " + ConfigurationDao.class.getName());
+
+        String value = _configDao.getValue(Config.ClusterMessageTimeOutSeconds.key());
+    	_clusterRequestTimeoutSeconds = NumbersUtil.parseInt(value, DEFAULT_REQUEST_TIMEOUT);
+    	s_logger.info("Configure cluster request time out. timeout: " + _clusterRequestTimeoutSeconds + " seconds");
         
         File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
         Properties dbProps = new Properties();
@@ -145,7 +164,7 @@ public class ClusterServiceServletAdapter implements ClusterServiceAdapter {
 		} catch (IOException e) {
             throw new ConfigurationException("Unable to load db.properties content");
 		}
-        
+		
         _clusterServicePort = NumbersUtil.parseInt(dbProps.getProperty("cluster.servlet.port"), DEFAULT_SERVICE_PORT);
         if(s_logger.isInfoEnabled())
         	s_logger.info("Cluster servlet port : " + _clusterServicePort);
