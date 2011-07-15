@@ -856,8 +856,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             Request req = new Request(hostId, _nodeId, new CheckHealthCommand(), true);
             req.setSequence(agent.getNextSequence());
             Answer[] answers = agent.send(req, 50 * 1000);
-            if (answers != null && answers[0] != null) {
-                Status status = answers[0].getResult() ? Status.Up : Status.Down;
+            if (answers != null && answers[0] != null && answers[0].getResult()) {
+                Status status = Status.Up;
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
                 }
