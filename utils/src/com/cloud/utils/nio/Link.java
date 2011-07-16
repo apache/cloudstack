@@ -56,8 +56,10 @@ public class Link {
     private SelectionKey _key;
     private final ConcurrentLinkedQueue<ByteBuffer[]> _writeQueue;
     private ByteBuffer _readBuffer;
+    private ByteBuffer _plaintextBuffer;
     private Object _attach;
-    private boolean _readSize;
+    private boolean _readHeader;
+    private boolean _gotFollowingPacket;
     
     private SSLEngine _sslEngine;
 
@@ -68,7 +70,8 @@ public class Link {
         _attach = null;
         _key = null;
         _writeQueue = new ConcurrentLinkedQueue<ByteBuffer[]>();
-        _readSize = true;
+        _readHeader = true;
+        _gotFollowingPacket = false;
     }
     
     public Link (Link link) {
@@ -135,39 +138,57 @@ public class Link {
     */
     
     private static void doWrite(SocketChannel ch, ByteBuffer[] buffers, SSLEngine sslEngine) throws IOException {
-        ByteBuffer pkgBuf;
         SSLSession sslSession = sslEngine.getSession();
+        ByteBuffer pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
         SSLEngineResult engResult;
 
         ByteBuffer headBuf = ByteBuffer.allocate(4);
-
-        pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
-        engResult = sslEngine.wrap(buffers, pkgBuf);
-        if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
-                engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
-            throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+        
+        int totalLen = 0;
+        for (ByteBuffer buffer : buffers) {
+            totalLen += buffer.limit();
         }
 
-        int dataRemaining = pkgBuf.position();
-        int headRemaining = 4;
-        pkgBuf.flip();
-        headBuf.putInt(dataRemaining);
-        headBuf.flip();
+        int processedLen = 0;
+        while (processedLen < totalLen) {
+            headBuf.clear();
+            pkgBuf.clear();
+            engResult = sslEngine.wrap(buffers, pkgBuf);
+            if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
+                    engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
+                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+            }
+            
+            processedLen = 0;
+            for (ByteBuffer buffer : buffers) {
+                processedLen += buffer.position();
+            }
 
-        while (headRemaining > 0) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Writing Header " + headRemaining);
+            int dataRemaining = pkgBuf.position();
+            int header = dataRemaining;
+            int headRemaining = 4;
+            pkgBuf.flip();
+            if (processedLen < totalLen) {
+                header = header | HEADER_FLAG_FOLLOWING;
             }
-            long count = ch.write(headBuf);
-            headRemaining -= count;
-        }
-        while (dataRemaining > 0) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Writing Data " + dataRemaining);
+            headBuf.putInt(header);
+            headBuf.flip();
+
+            while (headRemaining > 0) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Writing Header " + headRemaining);
+                }
+                long count = ch.write(headBuf);
+                headRemaining -= count;
             }
-            long count = ch.write(pkgBuf);
-            dataRemaining -= count;
+            while (dataRemaining > 0) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Writing Data " + dataRemaining);
+                }
+                long count = ch.write(pkgBuf);
+                dataRemaining -= count;
+            }
         }
     }
     
@@ -186,8 +207,12 @@ public class Link {
         } 
     }
     
+    /* SSL has limitation of 16k, we may need to split packets. 18000 is 16k + some extra SSL informations */
+    protected static final int      MAX_SIZE_PER_PACKET = 18000;
+    protected static final int      HEADER_FLAG_FOLLOWING = 0x10000;
+    
     public byte[] read(SocketChannel ch) throws IOException {
-        if (_readSize) {   // Start of a packet
+        if (_readHeader) {   // Start of a packet
             if (_readBuffer.position() == 0) {
                 _readBuffer.limit(4);
             }
@@ -201,16 +226,28 @@ public class Link {
                 return null;
             }
             _readBuffer.flip();
-            int readSize = _readBuffer.getInt();
+            int header = _readBuffer.getInt();
+            int readSize = (short)header;
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Packet length is " + readSize);
             }
             
-            if (readSize > 65535) {
-            	throw new IOException("Packet is too big! Discard it. Size: " + readSize);
+            if (readSize > MAX_SIZE_PER_PACKET) {
+            	throw new IOException("Wrong packet size: " + readSize);
             }
+            
+            if (!_gotFollowingPacket) {
+                _plaintextBuffer = ByteBuffer.allocate(2000);
+            }
+            
+            if ((header & HEADER_FLAG_FOLLOWING) != 0) {
+                _gotFollowingPacket = true;
+            } else {
+                _gotFollowingPacket = false;
+            }
+            
             _readBuffer.clear();
-            _readSize = false;
+            _readHeader = false;
             
             if (_readBuffer.capacity() < readSize) {
                 if (s_logger.isTraceEnabled()) {
@@ -239,7 +276,6 @@ public class Link {
         SSLSession sslSession = _sslEngine.getSession();
         SSLEngineResult engResult;
 
-        //TODO may need to adjust the buffer size
         appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
         engResult = _sslEngine.unwrap(_readBuffer, appBuf);
         if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
@@ -248,17 +284,33 @@ public class Link {
             throw new IOException("SSL: SSLEngine return bad result! " + engResult);
         }
 
-        byte[] result = new byte[appBuf.position()];
         appBuf.flip();
-        appBuf.get(result);
+        if (_plaintextBuffer.remaining() < appBuf.limit()) {
+            // We need to expand _plaintextBuffer for more data
+            ByteBuffer newBuffer = ByteBuffer.allocate(_plaintextBuffer.capacity() + appBuf.limit() * 5);
+            _plaintextBuffer.flip();
+            newBuffer.put(_plaintextBuffer);
+            _plaintextBuffer = newBuffer;
+        }
+        _plaintextBuffer.put(appBuf);
         _readBuffer.clear();
-        _readSize = true;
+        _readHeader = true;
         
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Done with packet: " + result.length);
+            s_logger.trace("Done with packet: " + appBuf.limit());
         }
         
-        return result;
+        if (!_gotFollowingPacket) {
+            _plaintextBuffer.flip();
+            byte[] result = new byte[_plaintextBuffer.limit()];
+            _plaintextBuffer.get(result);
+            return result;
+        } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Waiting for more packets");
+            }
+            return null;
+        }
     }
     
     public void send(byte[] data) throws ClosedChannelException {
