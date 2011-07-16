@@ -91,6 +91,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
@@ -163,6 +164,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     VlanDao _vlanDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
     @Inject
     IPAddressDao _publicIpAddressDao;
     @Inject
@@ -270,6 +273,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
+    @DB
     public void updateConfiguration(long userId, String name, String value) {
         if (value != null && (value.trim().isEmpty() || value.equals("null"))) {
             value = null;
@@ -286,8 +290,72 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
+        if ( Config.XenGuestNetwork.key().equals(name) ) {
+            String sql = "update host_details set value=? where name=?";
+            Transaction txn = Transaction.currentTxn();
+            PreparedStatement pstmt = null;
+            try {
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                pstmt.setString(1, value);
+                pstmt.setString(2, "guest.network.device");
 
-        if (Config.SystemVMUseLocalStorage.key().equalsIgnoreCase(name)) {
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+            } catch (Throwable e) {
+            }
+        } else if ( Config.XenPrivateNetwork.key().equals(name) ) {
+            String sql = "update host_details set value=? where name=?";
+            Transaction txn = Transaction.currentTxn();
+            PreparedStatement pstmt = null;
+            try {
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                pstmt.setString(1, value);
+                pstmt.setString(2, "private.network.device");
+
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+            } catch (Throwable e) {
+            }
+        } else if ( Config.XenPublicNetwork.key().equals(name) ) {
+            String sql = "update host_details set value=? where name=?";
+            Transaction txn = Transaction.currentTxn();
+            PreparedStatement pstmt = null;
+            try {
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                pstmt.setString(1, value);
+                pstmt.setString(2, "public.network.device");
+
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+            } catch (Throwable e) {
+            }
+        } else if ( Config.XenStorageNetwork1.key().equals(name) ) {
+            String sql = "update host_details set value=? where name=?";
+            Transaction txn = Transaction.currentTxn();
+            PreparedStatement pstmt = null;
+            try {
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                pstmt.setString(1, value);
+                pstmt.setString(2, "storage.network.device1");
+
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+            } catch (Throwable e) {
+            }
+        } else if ( Config.XenStorageNetwork2.key().equals(name) ) {
+            String sql = "update host_details set value=? where name=?";
+            Transaction txn = Transaction.currentTxn();
+            PreparedStatement pstmt = null;
+            try {
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                pstmt.setString(1, value);
+                pstmt.setString(2, "storage.network.device2");
+
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+            } catch (Throwable e) {
+            }
+        } else if (Config.SystemVMUseLocalStorage.key().equalsIgnoreCase(name)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Config 'system.vm.use.local.storage' changed to value:" + value + ", need to update System VM offerings");
             }
