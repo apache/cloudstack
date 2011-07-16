@@ -1,9 +1,12 @@
 package com.cloud.agent.transport;
 
+import java.nio.ByteBuffer;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -134,6 +137,26 @@ public class RequestTest extends TestCase {
 
     }
 
+    public void testCompress() {
+        s_logger.info("testCompress");
+        int len = 800000;
+        ByteBuffer inputBuffer = ByteBuffer.allocate(len);
+        for (int i = 0; i < len; i ++) {
+            inputBuffer.array()[i] = 1;
+        }
+        inputBuffer.limit(len);
+        ByteBuffer compressedBuffer = ByteBuffer.allocate(len);
+        compressedBuffer = Request.doCompress(inputBuffer, len);
+        s_logger.info("compressed length: " + compressedBuffer.limit());
+        ByteBuffer decompressedBuffer = ByteBuffer.allocate(len);
+        decompressedBuffer = Request.doDecompress(compressedBuffer, len);
+        for (int i = 0; i < len; i ++) {
+            if (inputBuffer.array()[i] != decompressedBuffer.array()[i]) {
+                Assert.fail("Fail at " + i);
+            }
+        }
+    }
+    
     public void testLogging() {
         s_logger.info("Testing Logging");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);

@@ -247,6 +247,7 @@ public class Request {
         buffer.put((byte) 0);
         buffer.putShort(getFlags());
         buffer.putLong(_seq);
+        // The size here is uncompressed size, if the data is compressed.
         buffer.putInt(contentSize);
         buffer.putLong(_mgmtId);
         buffer.putLong(_agentId);
@@ -256,7 +257,7 @@ public class Request {
         return buffer;
     }
 
-    public static ByteBuffer doDecompress(ByteBuffer buffer) {
+    public static ByteBuffer doDecompress(ByteBuffer buffer, int length) {
         byte[] byteArrayIn = new byte[1024];
         ByteArrayInputStream byteIn;
         if (buffer.hasArray()) {
@@ -268,7 +269,7 @@ public class Request {
             buffer.get(array);
             byteIn = new ByteArrayInputStream(array);
         }
-        ByteBuffer retBuff = ByteBuffer.allocate(65535);
+        ByteBuffer retBuff = ByteBuffer.allocate(length);
         int len = 0;
         try {
             GZIPInputStream in = new GZIPInputStream(byteIn);
@@ -283,12 +284,17 @@ public class Request {
         return retBuff;
     }
     
-    public static ByteBuffer doCompress(ByteBuffer buffer) {
-        ByteArrayOutputStream byteOut = new ByteArrayOutputStream(65535);
-        byte[] array = new byte[buffer.capacity()];
-        buffer.get(array);
+    public static ByteBuffer doCompress(ByteBuffer buffer, int length) {
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream(length);
+        byte[] array;
+        if (buffer.hasArray()) {
+            array = buffer.array();
+        } else {
+            array = new byte[buffer.capacity()];
+            buffer.get(array);
+        }
         try {
-            GZIPOutputStream out = new GZIPOutputStream(byteOut, 65535);
+            GZIPOutputStream out = new GZIPOutputStream(byteOut, length);
             out.write(array);
             out.finish();
             out.close();
@@ -306,13 +312,14 @@ public class Request {
             _content = s_gson.toJson(_cmds, _cmds.getClass());
         }
         tmp = ByteBuffer.wrap(_content.getBytes());
+        int capacity = tmp.capacity();
         /* Check if we need to compress the data */
-        if (tmp.capacity() >= 8192) {
-            tmp = doCompress(tmp);
+        if (capacity >= 8192) {
+            tmp = doCompress(tmp, capacity);
             _flags |= FLAG_COMPRESSED;
         }
         buffers[1] = tmp;
-        buffers[0] = serializeHeader(buffers[1].capacity());
+        buffers[0] = serializeHeader(capacity);
 
         return buffers;
     }
@@ -441,6 +448,7 @@ public class Request {
         final boolean isRequest = (flags & FLAG_REQUEST) > 0;
 
         final long seq = buff.getLong();
+        // The size here is uncompressed size, if the data is compressed.
         final int size = buff.getInt();
         final long mgmtId = buff.getLong();
         final long agentId = buff.getLong();
@@ -453,7 +461,7 @@ public class Request {
         }
 
         if ((flags & FLAG_COMPRESSED) != 0) {
-            buff = doDecompress(buff);
+            buff = doDecompress(buff, size);
         }
         
         byte[] command = null;
