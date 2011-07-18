@@ -123,8 +123,24 @@ public class SearchCriteria<K> {
     private final List<Object> _groupByValues;
     private final Class<K> _resultType;
     private final SelectType _selectType;
+    private final QueryBuilder<?, K> _builder;
+    
+    protected SearchCriteria(QueryBuilder<?, K> builder) {
+        _builder = builder;
+        _attrs = null;
+        _conditions = null;
+        _additionals = null;
+        _counter = 0;
+        _joins = null;
+        _selects = null;
+        _groupBy = null;
+        _groupByValues = null;
+        _resultType = null;
+        _selectType = null;
+    }
     
     protected SearchCriteria(GenericSearchBuilder<?, K> sb) {
+        this._builder = null;
     	this._attrs = sb._attrs;
         this._conditions = sb._conditions;
         this._additionals = new ArrayList<Condition>();
@@ -321,5 +337,11 @@ public class SearchCriteria<K> {
                 }
             }
         }
+    }
+    
+    public Pair<String, ArrayList<Object>> toSql() {
+        StringBuilder sql = new StringBuilder();
+        
+        return new Pair<String, ArrayList<Object>>(sql.toString(), null);
     }
 }

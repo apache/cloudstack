@@ -383,7 +383,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
 
-        s_logger.warn("No handling of agent control command: " + cmd.toString() + " sent from " + attache.getId());
+        s_logger.warn("No handling of agent control command: " + cmd + " sent from " + attache.getId());
         return new AgentControlAnswer(cmd);
     }
 
@@ -601,7 +601,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 Status currentState = host.getStatus();
                 Status nextState = currentState.getNextStatus(Status.Event.Remove);
                 if (nextState == null) {
-                    s_logger.debug("There is no transition from state " + currentState.toString() + " to state " + Status.Event.Remove.toString());
+                    s_logger.debug("There is no transition from state " + currentState + " to state " + Status.Event.Remove);
                     return false;
                 }
 
@@ -981,7 +981,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         long hostId = attache.getId();
 
-        s_logger.info("Host " + hostId + " is disconnecting with event " + event.toString());
+        s_logger.info("Host " + hostId + " is disconnecting with event " + event);
 
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -993,7 +993,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         final Status currentState = host.getStatus();
         if (currentState == Status.Down || currentState == Status.Alert || currentState == Status.Removed) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host " + hostId + " is already " + currentState.toString());
+                s_logger.debug("Host " + hostId + " is already " + currentState);
             }
             if (currentState != Status.PrepareForMaintenance) {
                 removeAgent(attache, currentState);
@@ -1006,21 +1006,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 return false;
             }
 
-            s_logger.debug("There is no transition from state " + currentState.toString() + " and event " + event.toString());
+            s_logger.debug("There is no transition from state " + currentState + " and event " + event);
             assert false : "How did we get here.  Look at the FSM";
             return false;
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("The next state is " + nextState.toString() + ", current state is " + currentState);
+            s_logger.debug("The next state is " + nextState + ", current state is " + currentState);
         }
 
         // Now we go and correctly diagnose what the actual situation is
         if (nextState == Status.Alert && investigate) {
-            s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event.toString());
+            s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
 
             final Status determinedState = investigate(attache);
-            s_logger.info("The state determined is " + (determinedState != null ? determinedState.toString() : "undeterminable"));
+            s_logger.info("The state determined is " + determinedState);
 
             if (determinedState == null || determinedState == Status.Down) {
                 s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
@@ -1446,7 +1446,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         try {
             Host h = _hostDao.findById(hostId);
             if (h == null || h.getRemoved() != null) {
-                s_logger.debug("Host with id " + hostId.toString() + " doesn't exist");
+                s_logger.debug("Host with id " + hostId + " doesn't exist");
                 return null;
             }
             Status status = h.getStatus();
@@ -1460,7 +1460,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
 
             if (s_logger.isDebugEnabled() && answer.getDetails() != null) {
-                s_logger.debug("Details from executing " + cmd.getClass().toString() + ": " + answer.getDetails());
+                s_logger.debug("Details from executing " + cmd.getClass() + ": " + answer.getDetails());
             }
 
             return answer;
@@ -1530,7 +1530,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         List<VMInstanceVO> vms = _haMgr.findTakenMigrationWork();
         for (VMInstanceVO vm : vms) {
             if (vm.getHostId() != null && vm.getHostId() == hostId) {
-                s_logger.info("Unable to cancel migration because the vm is being migrated: " + vm.toString());
+                s_logger.info("Unable to cancel migration because the vm is being migrated: " + vm);
                 return false;
             }
         }
@@ -1595,8 +1595,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
             state = host.getStatus();
             if (state == Status.Disconnected || state == Status.Updating) {
-                s_logger.debug("Unable to put host " + hostId + " in matinenance mode because it is currently in " + state.toString());
-                throw new AgentUnavailableException("Agent is in " + state.toString() + " state.  Please wait for it to become Alert state try again.", hostId);
+                s_logger.debug("Unable to put host " + hostId + " in matinenance mode because it is currently in " + state);
+                throw new AgentUnavailableException("Agent is in " + state + " state.  Please wait for it to become Alert state try again.", hostId);
             }
         } while (!_hostDao.updateStatus(host, Event.MaintenanceRequested, _nodeId));
 
@@ -1865,12 +1865,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             server = _hostDao.persist(server);
             id = server.getId();
 
-            s_logger.info("New " + server.getType().toString() + " host connected w/ guid " + startup.getGuid() + " and id is " + id);
+            s_logger.info("New " + server.getType() + " host connected w/ guid " + startup.getGuid() + " and id is " + id);
         } else {
             if (!_hostDao.connect(server, _nodeId)) {
-                throw new CloudRuntimeException("Agent cannot connect because the current state is " + server.getStatus().toString());
+                throw new CloudRuntimeException("Agent cannot connect because the current state is " + server.getStatus());
             }
-            s_logger.info("Old " + server.getType().toString() + " host reconnected w/ id =" + id);
+            s_logger.info("Old " + server.getType() + " host reconnected w/ id =" + id);
         }
 
         return server;
@@ -2201,7 +2201,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             if (attache == null) {
                 request.logD("Processing the first command ");
                 if (!(cmd instanceof StartupCommand)) {
-                    s_logger.warn("Throwing away a request because it came through as the first command on a connect: " + request.toString());
+                    s_logger.warn("Throwing away a request because it came through as the first command on a connect: " + request);
                     return;
                 }
                 StartupCommand startup = (StartupCommand) cmd;
@@ -2228,28 +2228,28 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     attache = handleConnect(link, startups);
                 } catch (final IllegalArgumentException e) {
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
-                            + startup.getPrivateIpAddress() + " is unable to connect with " + request.toString() + " because of " + e.getMessage());
-                    s_logger.warn("Unable to create attache for agent: " + request.toString(), e);
+                            + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
+                    s_logger.warn("Unable to create attache for agent: " + request, e);
                     response = new Response(request, new StartupAnswer((StartupCommand) cmd, e.getMessage()), _nodeId, -1);
                 } catch (ConnectionException e) {
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
-                            + startup.getPrivateIpAddress() + " is unable to connect with " + request.toString() + " because of " + e.getMessage());
-                    s_logger.warn("Unable to create attache for agent: " + request.toString(), e);
+                            + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
+                    s_logger.warn("Unable to create attache for agent: " + request, e);
                     response = new Response(request, new StartupAnswer((StartupCommand) cmd, e.getMessage()), _nodeId, -1);
                 } catch (final CloudRuntimeException e) {
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
-                            + startup.getPrivateIpAddress() + " is unable to connect with " + request.toString() + " because of " + e.getMessage());
-                    s_logger.warn("Unable to create attache for agent: " + request.toString(), e);
+                            + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
+                    s_logger.warn("Unable to create attache for agent: " + request, e);
                 }
                 if (attache == null) {
                     if (response == null) {
-                        s_logger.warn("Unable to create attache for agent: " + request.toString());
+                        s_logger.warn("Unable to create attache for agent: " + request);
                         response = new Response(request, new StartupAnswer((StartupCommand) request.getCommand(), "Unable to register this agent"), _nodeId, -1);
                     }
                     try {
                         link.send(response.toBytes(), true);
                     } catch (final ClosedChannelException e) {
-                        s_logger.warn("Response was not sent: " + response.toString());
+                        s_logger.warn("Response was not sent: " + response);
                     }
                     return;
                 }
@@ -2261,18 +2261,18 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 if (cmd instanceof PingRoutingCommand) {
                     final PingRoutingCommand ping = (PingRoutingCommand) cmd;
                     if (ping.getNewStates().size() > 0) {
-                        s_logger.debug("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request.toString());
+                        s_logger.debug("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                     } else {
                         logD = false;
                         s_logger.debug("Ping from " + hostId);
-                        s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request.toString());
+                        s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                     }
                 } else if (cmd instanceof PingCommand) {
                     logD = false;
                     s_logger.debug("Ping from " + hostId);
-                    s_logger.trace("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request.toString());
+                    s_logger.trace("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request);
                 } else {
-                    s_logger.debug("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request.toString());
+                    s_logger.debug("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request);
                 }
             }
 
@@ -2351,26 +2351,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             response = new Response(request, answers, _nodeId, attache.getId());
             if (s_logger.isDebugEnabled()) {
                 if (logD) {
-                    s_logger.debug("SeqA " + attache.getId() + "-" + response.getSequence() + ": Sending " + response.toString());
+                    s_logger.debug("SeqA " + attache.getId() + "-" + response.getSequence() + ": Sending " + response);
                 } else {
-                    s_logger.trace("SeqA " + attache.getId() + "-" + response.getSequence() + ": Sending " + response.toString());
+                    s_logger.trace("SeqA " + attache.getId() + "-" + response.getSequence() + ": Sending " + response);
                 }
             }
             try {
                 link.send(response.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to send response because connection is closed: " + response.toString());
+                s_logger.warn("Unable to send response because connection is closed: " + response);
             }
         }
 
         protected void processResponse(final Link link, final Response response) {
             final AgentAttache attache = (AgentAttache) link.attachment();
             if (attache == null) {
-                s_logger.warn("Unable to process: " + response.toString());
+                s_logger.warn("Unable to process: " + response);
             }
 
             if (!attache.processAnswers(response.getSequence(), response)) {
-                s_logger.info("Host " + attache.getId() + " - Seq " + response.getSequence() + ": Response is not processed: " + response.toString());
+                s_logger.info("Host " + attache.getId() + " - Seq " + response.getSequence() + ": Response is not processed: " + response);
             }
         }
 

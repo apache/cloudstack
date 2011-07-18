@@ -115,7 +115,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
-    protected final static Map<Class<?>, GenericDao<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDao<?, ? extends Serializable>>(71);
+    protected final static Map<Class<?>, GenericDaoBase<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDaoBase<?, ? extends Serializable>>(71);
 
     protected Class<T> _entityBeanType;
     protected String _table;
@@ -156,9 +156,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     protected String _name;
 
-    public static <J> GenericDao<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
+    public static <J> GenericDaoBase<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
         @SuppressWarnings("unchecked")
-        GenericDao<? extends J, ? extends Serializable> dao = (GenericDao<? extends J, ? extends Serializable>)s_daoMaps.get(entityType);
+        GenericDaoBase<? extends J, ? extends Serializable> dao = (GenericDaoBase<? extends J, ? extends Serializable>)s_daoMaps.get(entityType);
         assert dao != null : "Unable to find DAO for " + entityType + ".  Are you sure you waited for the DAO to be initialized before asking for it?";
         return dao;
     }
@@ -171,6 +171,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         GenericSearchBuilder<T, J> builder = new GenericSearchBuilder<T, J>(entity, resultType, _allAttributes);
         factory.setCallback(0, builder);
         return builder;
+    }
+    
+    public final Map<String, Attribute> getAllAttributes() {
+        return _allAttributes;
     }
 
     @SuppressWarnings("unchecked")
