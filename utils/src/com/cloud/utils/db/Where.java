@@ -17,6 +17,7 @@
  */
 package com.cloud.utils.db;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,10 +25,10 @@ import java.util.List;
  *
  */
 public class Where<T, K> implements FirstWhere<T, K>, NextWhere<T, K> {
-    GenericSearchBuilder<T, K> _builder;
-    List<Object> _conditions;
+    QueryBuilder<T, K> _builder;
+    List<Object> _conditions = new ArrayList<Object>();
     
-    protected Where(GenericSearchBuilder<T, K> builder) {
+    protected Where(QueryBuilder<T, K> builder) {
         _builder = builder;
     }
     
@@ -76,7 +77,6 @@ public class Where<T, K> implements FirstWhere<T, K>, NextWhere<T, K> {
     }
 
     @Override
-    public GenericSearchBuilder<T, K> done() {
-        return _builder;
+    public void done() {
     }
 }

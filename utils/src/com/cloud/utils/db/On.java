@@ -17,14 +17,6 @@
  */
 package com.cloud.utils.db;
 
-public interface FirstWhere<T, K> {
-    Condition<T, K> field(Object field);
-    
-    Condition<T, K> field(Object field, String as);
-    
-    NextWhere<T, K> text(String text, String... paramNames);
-    
-    FirstWhere<T, K> op();
-    
-    void done();
+public interface On<S, J, T> {
+
 }

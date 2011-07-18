@@ -18,10 +18,11 @@
 package com.cloud.utils.db;
 
 public interface NextWhere<T, K> extends FirstWhere<T, K> {
-    public NextWhere<T, K> and();
+    NextWhere<T, K> and();
+    NextWhere<T, K> or();
+    NextWhere<T, K> not();
     
-    public NextWhere<T, K> or();
-    
-    public NextWhere<T, K> not();
+    @Override
+    void done();
 
 }

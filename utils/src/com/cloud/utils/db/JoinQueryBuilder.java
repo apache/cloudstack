@@ -17,14 +17,16 @@
  */
 package com.cloud.utils.db;
 
-public interface FirstWhere<T, K> {
-    Condition<T, K> field(Object field);
+/**
+ * JoinQueryBuilder builds queries for joins between multiple tables.
+ *
+ */
+public interface JoinQueryBuilder<S, T> {
+    Select<S, T> selectField(Object column);
+
+    <J> On<S, J, T> innerJoin(Class<J> entityClazz);
     
-    Condition<T, K> field(Object field, String as);
+    <J> J entity(Class<J> entityClazz);
     
-    NextWhere<T, K> text(String text, String... paramNames);
-    
-    FirstWhere<T, K> op();
-    
-    void done();
+    FirstWhere<S, T> where();
 }

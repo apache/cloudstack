@@ -17,14 +17,14 @@
  */
 package com.cloud.utils.db;
 
-public interface FirstWhere<T, K> {
-    Condition<T, K> field(Object field);
+/**
+ * SelectQueryBuilder allows you to select a column into a class that
+ * is defined.
+ */
+public interface SelectQueryBuilder<T, S> {
+    Select<T, S> selectColumn(Object column);
+
+    T entity();
     
-    Condition<T, K> field(Object field, String as);
-    
-    NextWhere<T, K> text(String text, String... paramNames);
-    
-    FirstWhere<T, K> op();
-    
-    void done();
+    FirstWhere<T, S> where();
 }

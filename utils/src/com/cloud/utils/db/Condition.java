@@ -17,6 +17,8 @@
  */
 package com.cloud.utils.db;
 
+import java.util.HashMap;
+
 import com.cloud.utils.db.SearchCriteria.Op;
 
 public class Condition<T, K> {
@@ -24,7 +26,7 @@ public class Condition<T, K> {
     Attribute _attr;
     String _as;
     SearchCriteria.Op _op;
-    Object _compareTo;
+    String _paramName;
     
     protected Condition(Where<T, K> where, Attribute attr, String as) {
         assert (where != null) : "What am I going to return to the user when Where is null?";
@@ -34,64 +36,66 @@ public class Condition<T, K> {
         _as = as;
     }
     
-    public Where<T, K> eq(String paramName) {
-        _op = Op.EQ;
-        _compareTo = paramName;
-        return _where;
+    protected NextWhere<T, K> set(Op op, String paramName) {
+        _op = op;
+        _paramName = paramName;
+        Where<T, K> where = _where;
+        _where = null;
+        return where;
     }
     
-    public Where<T, K> lt(String paramName) {
-        _op = Op.LT;
-        _compareTo = paramName;
-        return _where;
+    public NextWhere<T, K> eq(String paramName) {
+        return set(Op.EQ, paramName);
     }
     
-    public Where<T, K> lteq(String paramName) {
-        _op = Op.LTEQ;
-        _compareTo = paramName;
-        return _where;
+    public NextWhere<T, K> lt(String paramName) {
+        return set(Op.LT, paramName);
     }
     
-    public Where<T, K> gt(String paramName) {
-        _op = Op.GT;
-        _compareTo = paramName;
-        return _where;
+    public NextWhere<T, K> lteq(String paramName) {
+        return set(Op.LTEQ, paramName);
     }
     
-    public Where<T, K> isNull() {
-        _op = Op.NULL;
-        return _where;
+    public NextWhere<T, K> gt(String paramName) {
+        return set(Op.GT, paramName);
     }
     
-    public Where<T, K> isNotNull() {
-        _op = Op.NNULL;
-        return _where;
+    public NextWhere<T, K> isNull() {
+        return set(Op.NULL, null);
     }
     
-    public Where<T, K> in(String paramName) {
+    public NextWhere<T, K> isNotNull() {
+        return set(Op.NNULL, null);
+    }
+    
+    public NextWhere<T, K> in(String paramName) {
         _op = Op.IN;
-        _compareTo = paramName;
+        _paramName = paramName;
         return _where;
     }
     
     protected String getParamName() {
-        assert (_compareTo instanceof String) : "Well, how can we get back a parameter name if it was not assigned one?";
-        return (String)_compareTo;
+        assert (_paramName instanceof String) : "Well, how can we get back a parameter name if it was not assigned one?";
+        return _paramName;
     }
     
     @Override
     public boolean equals(Object obj) {
-        return _compareTo.equals(obj);
+        return _paramName.equals(obj);
     }
     
     @Override
     public int hashCode() {
-        return _compareTo.hashCode();
+        return _paramName.hashCode();
     }
     
-    @Override
-    public String toString() {
-        // FIXME: fix this
-        return null;
+    public void toSql(StringBuilder builder, HashMap<String, Object[]> values) {
+        if (_as != null) {
+            builder.append(_as);
+        } else {
+            builder.append(_attr.table);
+        }
+        builder.append(".").append(_attr.columnName);
     }
+   
 }
