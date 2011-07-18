@@ -1272,7 +1272,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         try {
             if (id != null) {
                 host = _hostDao.findById(id);
-                if (!_hostDao.directConnect(host, _nodeId, false)) {
+                if (!_hostDao.directConnect(host, _nodeId)) {
                     s_logger.info("MS " + host.getManagementServerId() + " is loading " + host);
                     return null;
                 }
@@ -1285,7 +1285,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
 
             if (host != null) {
-                if (!_hostDao.directConnect(host, _nodeId, true)) {
+                if (!_hostDao.directConnect(host, _nodeId)) {
                     host = _hostDao.findById(id);
                     s_logger.info("MS " + host.getManagementServerId() + " is loading " + host + " after it has been initialized.");
                     return null;
