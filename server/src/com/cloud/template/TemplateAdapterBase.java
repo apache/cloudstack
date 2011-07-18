@@ -125,7 +125,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 		}
 		
         if (isExtractable == null) {
-            isExtractable = Boolean.TRUE;
+            isExtractable = Boolean.FALSE;
         }
 		if ((accountName == null) ^ (domainId == null)) {// XOR - Both have to be passed or don't pass any of them
 			throw new InvalidParameterValueException("Please specify both account and domainId or dont specify any of them");
