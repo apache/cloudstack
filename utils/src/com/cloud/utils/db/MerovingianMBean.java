@@ -29,7 +29,5 @@ public interface MerovingianMBean {
     
     boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key);
     
-    String resetDbConnection();
-
     void cleanupForServer(long msId);
 }

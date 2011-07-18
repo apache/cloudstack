@@ -118,7 +118,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -1663,7 +1662,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             
             if (diskOffering.getDiskSize() > 0) {
                 size = diskOffering.getDiskSize();
-            } 
+            }
 
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb for validation
                 throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
@@ -1677,7 +1676,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             
             if (snapshotCheck.getStatus() != Snapshot.Status.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for volume creation");
-            }  
+            }
             
             diskOfferingId = (cmd.getDiskOfferingId() != null) ? cmd.getDiskOfferingId() : snapshotCheck.getDiskOfferingId();
             zoneId = snapshotCheck.getDataCenterId();
@@ -2602,7 +2601,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             if (assignedPool != null) {
                 Volume.State state = vol.getState();
-                if (state == Volume.State.Allocated) {
+                if (state == Volume.State.Allocated || state == Volume.State.Creating) {
                     recreateVols.add(vol);
                 } else {
                     if (vol.isRecreatable()) {
@@ -2624,7 +2623,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("No need to recreate the volume: "+vol+ ", since it already has a pool assigned: "+vol.getPoolId()+", adding disk to VM");
-                }                
+                }
                 StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                 vm.addDisk(new VolumeTO(vol, pool));
             }
@@ -2689,7 +2688,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             txn.start();
             _volsDao.update(existingVolume, Volume.Event.Destroy);
             
-            Long templateIdToUse = null; 
+            Long templateIdToUse = null;
             Long volTemplateId = existingVolume.getTemplateId();
             long vmTemplateId = vm.getTemplateId();
             if (volTemplateId != null && volTemplateId.longValue() != vmTemplateId) {

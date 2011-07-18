@@ -289,7 +289,7 @@ public abstract class AgentAttache {
                 }
             }
             
-            _agentMgr.notifyAnswersToMonitors(_id, seq, answers); 
+            _agentMgr.notifyAnswersToMonitors(_id, seq, answers);
             
         } finally {
             // we should always trigger next command execution, even in failure cases - otherwise in exception case all the remaining will be stuck in the sync queue forever
@@ -339,7 +339,7 @@ public abstract class AgentAttache {
         if (listener != null) {
             registerListener(seq, listener);
         } else if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(seq, "Routing: "));
+            s_logger.debug(log(seq, "Routed from " + req.getManagementServerId()));
         }
 
         synchronized(this) {
