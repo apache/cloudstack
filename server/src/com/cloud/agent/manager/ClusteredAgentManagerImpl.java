@@ -143,18 +143,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     private void runDirectAgentScanTimerTask() {
-        GlobalLock scanLock = GlobalLock.getInternLock("clustermgr.scan");
-        try {
-            if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
-                try {
-                    scanDirectAgentToLoad();
-                } finally {
-                    scanLock.unlock();
-                }
-            }
-        } finally {
-            scanLock.releaseRef();
-        }
+        scanDirectAgentToLoad();
     }
 
     private void scanDirectAgentToLoad() {
@@ -164,22 +153,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         // for agents that are self-managed, threshold to be considered as disconnected is 3 ping intervals
         long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingInterval * 3);
-        List<HostVO> hosts = _hostDao.findDirectAgentToLoad(cutSeconds, _loadSize);
-        if (hosts != null && hosts.size() == _loadSize) {
-            //if list contains more than one cluster, exclude the last cluster from the list
-            if (hosts.size() > 1 && hosts.get(0).getClusterId().longValue() != hosts.get(hosts.size()-1).getClusterId().longValue()) {
-                Long clusterId = hosts.get((int) (_loadSize - 1)).getClusterId();
-                if (clusterId != null) {
-                    for (int i = (int) (_loadSize - 1); i > 0; i--) {
-                        if (hosts.get(i).getClusterId().longValue() == clusterId.longValue()) {
-                            hosts.remove(i);
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, _loadSize, _nodeId);
+        
         if (hosts != null && hosts.size() > 0) {
             s_logger.debug("Found " + hosts.size() + " unmanaged direct hosts, processing connect for them...");
             for (HostVO host : hosts) {

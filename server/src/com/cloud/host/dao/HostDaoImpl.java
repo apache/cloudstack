@@ -371,12 +371,24 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return search(sc, null);
     }
 
-    @Override
-    public List<HostVO> findDirectAgentToLoad(long lastPingSecondsAfter, Long limit) {
+    @Override @DB
+    public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
     	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
     	sc.setParameters("lastPinged", lastPingSecondsAfter);
         sc.setParameters("statuses", Status.ErrorInMaintenance, Status.Maintenance, Status.PrepareForMaintenance);
-        return search(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit));
+        List<HostVO> hosts = lockRows(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit), true);
+        
+        for (HostVO host : hosts) {
+            host.setManagementServerId(managementServerId);
+            update(host.getId(), host);
+        }
+        
+        txn.commit();
+        
+        return hosts;
     }
 
     @Override
@@ -525,12 +537,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public boolean directConnect(HostVO host, long msId, boolean secondConnect) {
+    public boolean directConnect(HostVO host, long msId) {
         SearchCriteria<HostVO> sc = DirectConnectSearch.create();
         sc.setParameters("id", host.getId());
-        if (secondConnect) {
-            sc.setParameters("server", msId);
-        }
+        sc.setParameters("server", msId);
 
         host.setManagementServerId(msId);
         host.setLastPinged(System.currentTimeMillis() >> 10);
