@@ -102,6 +102,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 
 	Timer _timer;
 	int _cleanupInterval;
+	int _urlExpirationInterval;
 
 	final Map<UploadVO, UploadListener> _listenerMap = new ConcurrentHashMap<UploadVO, UploadListener>();
 
@@ -362,8 +363,10 @@ public class UploadMonitorImpl implements UploadMonitor {
         
         _agentMgr.registerForHostEvents(new UploadListener(this), true, false, false);
         String cleanupInterval = configs.get("extract.url.cleanup.interval");
-        _cleanupInterval = NumbersUtil.parseInt(cleanupInterval, 14400);
+        _cleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);
         
+        String urlExpirationInterval = configs.get("extract.url.expiration.interval");
+        _urlExpirationInterval = NumbersUtil.parseInt(urlExpirationInterval, 14400);
         
         String workers = (String)params.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 1);
@@ -465,7 +468,7 @@ public class UploadMonitorImpl implements UploadMonitor {
     
     public void cleanupStorage() {
 
-        final int EXTRACT_URL_LIFE_LIMIT_IN_SECONDS = 14400;//FIX ME make it configurable.
+        final int EXTRACT_URL_LIFE_LIMIT_IN_SECONDS = _urlExpirationInterval;
         List<UploadVO> extractJobs= _uploadDao.listByModeAndStatus(Mode.HTTP_DOWNLOAD, Status.DOWNLOAD_URL_CREATED);
         
         for (UploadVO extractJob : extractJobs){
@@ -473,8 +476,13 @@ public class UploadMonitorImpl implements UploadMonitor {
                 String path = extractJob.getInstallPath();
                 s_logger.debug("Sending deletion of extract URL "+extractJob.getUploadUrl());
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
-                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl());            
-                long result = send(extractJob.getHostId(), cmd, null);
+                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl());
+                HostVO ssvm = _agentMgr.getSSAgent(ApiDBUtils.findHostById(extractJob.getHostId()));
+                if( ssvm == null ) {
+                	s_logger.warn("There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
+                	continue;
+                }
+                long result = send(ssvm.getId(), cmd, null);
                 if (result == -1){
                     s_logger.warn("Unable to delete the link for " +extractJob.getType()+ " id=" +extractJob.getTypeId()+ " url="+extractJob.getUploadUrl());
                 }else{
