@@ -68,7 +68,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	 */
 	List<HostVO> findDirectlyConnectedHosts();
 
-    List<HostVO> findDirectAgentToLoad(long lastPingSecondsAfter, Long limit);
+    List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
 	/**
 	 * Mark the host as disconnected if it is in one of these states.
 	 * The management server id is set to null.
@@ -165,7 +165,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 
     List<HostVO> listSecondaryStorageHosts(long dataCenterId);
 
-    boolean directConnect(HostVO host, long msId, boolean secondConnect);
+    boolean directConnect(HostVO host, long msId);
     
     List<HostVO> listDirectHostsBy(long msId, Status status);
     
