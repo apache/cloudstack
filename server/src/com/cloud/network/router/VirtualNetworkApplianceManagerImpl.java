@@ -1390,7 +1390,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 
                 cmds.addCommand("dhcp", dhcpCommand);
             }
-	
+    
             if (sendPasswordAndVmData) {
                 String password = (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword);
                 String userData = profile.getVirtualMachine().getUserData();
