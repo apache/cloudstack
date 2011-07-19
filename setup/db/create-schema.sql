@@ -1042,11 +1042,8 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   `capacity_type` int(1) unsigned NOT NULL,
   PRIMARY KEY  (`id`),
   INDEX `i_op_host_capacity__host_type`(`host_id`, `capacity_type`),
-  CONSTRAINT `fk_op_host_capacity__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
   INDEX `i_op_host_capacity__pod_id`(`pod_id`),
-  CONSTRAINT `fk_op_host_capacity__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
   INDEX `i_op_host_capacity__data_center_id`(`data_center_id`),
-  CONSTRAINT `fk_op_host_capacity__cluster_id` FOREIGN KEY `fk_op_host_capacity__cluster_id` (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`) ON DELETE CASCADE,
   INDEX `i_op_host_capacity__cluster_id`(`cluster_id`)  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
