@@ -79,7 +79,6 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -2442,8 +2441,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sshPublicKey = pair.getPublicKey();
         }
 
-       // _accountMgr.checkAccess(caller, template);
-
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
 
@@ -2456,13 +2453,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (network.getDataCenterId() != zone.getId()) {
                 throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
             }
-            
+
             NicProfile profile = null;
             
             //Add requested ips
             if (requestedIps != null && requestedIps.get(network.getId()) != null) {
                 profile = new NicProfile(requestedIps.get(network.getId()));
             } 
+
 
             if (network.isDefault()) {
                 defaultNetworkNumber++;
@@ -2514,6 +2512,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (isIso) {
             vm.setIsoId(template.getId());
         }
+        
+        s_logger.debug("Allocating in the DB for vm");
 
         if (_itMgr.allocate(vm, _templateDao.findById(template.getId()), offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, hypervisorType, owner) == null) {
             return null;
