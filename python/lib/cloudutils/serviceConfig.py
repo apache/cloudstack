@@ -20,6 +20,9 @@ class serviceCfgBase(object):
         result = False
         try:
             result = self.config()
+            if result is None:
+                result = False
+                
             self.status = result
             writeProgressBar(None, result)
             return result
@@ -369,7 +372,9 @@ class securityPolicyConfigRedhat(serviceCfgBase):
             except:
                 raise CloudRuntimeException("Failed to configure selinux, please see the /var/log/cloud/setupAgent.log for detail, \
                                             or you can manually disable it before starting myCloud")
-        
+        else:
+            return True
+    
     def restore(self):
         try:
             bash("setenforce 1")

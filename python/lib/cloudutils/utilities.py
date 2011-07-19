@@ -71,6 +71,7 @@ def initLoging(logFile=None):
         logging.basicConfig(level=logging.DEBUG) 
 
 def writeProgressBar(msg, result):
+    output = "[%-6s]\n"%"Failed"
     if msg is not None:
         output = "%-30s"%msg
     elif result is True:
