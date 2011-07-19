@@ -34,6 +34,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostTagVO;
@@ -42,6 +44,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
+import com.cloud.org.Managed;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
@@ -100,6 +103,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
     protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
     protected final SearchBuilder<HostTransferMapVO> HostTransferSearch;
+    protected final SearchBuilder<ClusterVO> ClusterManagedSearch;
 
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -108,6 +112,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final HostDetailsDaoImpl _detailsDao = ComponentLocator.inject(HostDetailsDaoImpl.class);
     protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
     protected final HostTransferMapDaoImpl _hostTransferDao = ComponentLocator.inject(HostTransferMapDaoImpl.class);
+    protected final ClusterDaoImpl _clusterDao = ComponentLocator.inject(ClusterDaoImpl.class);
+    
 
     public HostDaoImpl() {
 
@@ -234,6 +240,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostTransferSearch = _hostTransferDao.createSearchBuilder();
         HostTransferSearch.and("id", HostTransferSearch.entity().getId(), SearchCriteria.Op.NULL);
         UnmanagedDirectConnectSearch.join("hostTransferSearch", HostTransferSearch, HostTransferSearch.entity().getId(), UnmanagedDirectConnectSearch.entity().getId(), JoinType.LEFTOUTER);
+        ClusterManagedSearch = _clusterDao.createSearchBuilder();
+        ClusterManagedSearch.and("managed", ClusterManagedSearch.entity().getManagedState(), SearchCriteria.Op.EQ);
+        UnmanagedDirectConnectSearch.join("ClusterManagedSearch", ClusterManagedSearch, ClusterManagedSearch.entity().getId(), UnmanagedDirectConnectSearch.entity().getClusterId(), JoinType.INNER);
         UnmanagedDirectConnectSearch.done();
         
 
@@ -372,6 +381,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
     	sc.setParameters("lastPinged", lastPingSecondsAfter);
         sc.setParameters("statuses", Status.ErrorInMaintenance, Status.Maintenance, Status.PrepareForMaintenance);
+        sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
         List<HostVO> hosts = lockRows(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit), true);
         
         for (HostVO host : hosts) {

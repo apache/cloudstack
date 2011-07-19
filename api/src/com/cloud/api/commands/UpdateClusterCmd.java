@@ -18,9 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -28,15 +25,10 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ClusterResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.PodResponse;
-import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 
 @Implementation(description="Updates an existing cluster", responseObject=ClusterResponse.class)
 public class UpdateClusterCmd extends BaseCmd {
@@ -58,6 +50,9 @@ public class UpdateClusterCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;
+    
+    @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
+    private String managedState;
     
     public String getClusterName() {
         return clusterName;
@@ -97,6 +92,14 @@ public class UpdateClusterCmd extends BaseCmd {
     	this.allocationState = allocationState;
     }    
 
+    public String getManagedstate() {
+        return managedState;
+    }
+
+    public void setManagedstate(String managedstate) {
+        this.managedState = managedstate;
+    }
+
     @Override
     public void execute(){
     	Cluster cluster = _resourceService.getCluster(getId());
@@ -104,7 +107,7 @@ public class UpdateClusterCmd extends BaseCmd {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
         }
         
-        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState());
+        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate());
         if (result != null) {
                 ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster);
                 clusterResponse.setResponseName(getCommandName());

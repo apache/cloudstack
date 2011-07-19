@@ -77,7 +77,8 @@ public enum Status {
         RequestAgentRebalance(false, "Request rebalance for the certain host"),
         StartAgentRebalance(false, "Start rebalance for the certain host"),
         RebalanceCompleted(false, "Host is rebalanced successfully"),
-        RebalanceFailed(false, "Failed to rebalance the host");
+        RebalanceFailed(false, "Failed to rebalance the host"),
+        PrepareUnmanaged(true, "prepare for cluster entering unmanaged status");
 
         private final boolean isUserRequest;
         private final String comment;
@@ -138,6 +139,7 @@ public enum Status {
         s_fsm.addTransition(Status.Up, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Up, Event.ManagementServerDown, Status.Disconnected);
         s_fsm.addTransition(Status.Up, Event.StartAgentRebalance, Status.Rebalancing);
+        s_fsm.addTransition(Status.Up, Event.PrepareUnmanaged, Status.Disconnected);
         s_fsm.addTransition(Status.Updating, Event.PingTimeout, Status.Alert);
         s_fsm.addTransition(Status.Updating, Event.Ping, Status.Updating);
         s_fsm.addTransition(Status.Updating, Event.AgentConnected, Status.Connecting);

@@ -18,6 +18,8 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -49,6 +51,10 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
     private String allocationState;
     
+    @SerializedName("managedstate") @Param(description="whether this cluster is managed by cloudstack")
+    private String managedState;
+    
+   
     public Long getId() {
         return id;
     }
@@ -119,5 +125,13 @@ public class ClusterResponse extends BaseResponse {
     
     public void setAllocationState(String allocationState) {
     	this.allocationState = allocationState;
+    }
+
+    public String getManagedState() {
+        return managedState;
+    }
+
+    public void setManagedState(String managedState) {
+        this.managedState = managedState;
     }     
 }

@@ -227,6 +227,7 @@ public class ApiConstants {
     public static final String PRIVATE_NETMASK = "privatenetmask";
     public static final String PRIVATE_NETWORK_ID = "privatenetworkid";
     public static final String ALLOCATION_STATE = "allocationstate";
+    public static final String MANAGED_STATE = "managedstate";
     public static final String STORAGE_ID="storageid";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
     public static final String PING_DIR = "pingdir";

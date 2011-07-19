@@ -25,7 +25,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
@@ -59,6 +58,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -66,6 +66,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
+import com.cloud.org.Managed;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -582,7 +583,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     @Override
     @DB
-    public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState) {
+    public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState, String managedstate) {
 
         ClusterVO cluster = (ClusterVO) clusterToUpdate;
         // Verify cluster information and update the cluster if needed
@@ -630,17 +631,97 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 doUpdate = true;
             }
         }
+        
+        Managed.ManagedState newManagedState = null;
+        Managed.ManagedState oldManagedState = cluster.getManagedState();
+        if (managedstate != null && !managedstate.isEmpty()) {
+            try {
+                newManagedState = Managed.ManagedState.valueOf(managedstate);
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve Managed State '" + managedstate + "' to a supported state");
+            }
+            if (newManagedState == null) {
+                s_logger.error("Unable to resolve Managed State '" + managedstate + "' to a supported state");
+                throw new InvalidParameterValueException("Unable to resolve Managed State '" + managedstate + "' to a supported state");
+            } else {
+                doUpdate = true;
+            }
+        }
+        
         if (doUpdate) {
             Transaction txn = Transaction.currentTxn();
             try {
                 txn.start();
                 _clusterDao.update(cluster.getId(), cluster);
-                txn.commit();
+                txn.commit();               
             } catch (Exception e) {
                 s_logger.error("Unable to update cluster due to " + e.getMessage(), e);
                 throw new CloudRuntimeException("Failed to update cluster. Please contact Cloud Support.");
             }
         }
+        
+        if( newManagedState != null && !newManagedState.equals(oldManagedState)) {
+            Transaction txn = Transaction.currentTxn();
+            if( newManagedState.equals(Managed.ManagedState.Unmanaged) ) {
+                boolean success = true;
+                try {
+                    txn.start();
+                    cluster.setManagedState(Managed.ManagedState.PrepareUnmanaged);
+                    _clusterDao.update(cluster.getId(), cluster);
+                    txn.commit();
+                    List<HostVO>  hosts = _hostDao.listBy(cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
+                    for( HostVO host : hosts ) {
+                        if( !host.getStatus().equals(Status.Down) &&  !host.getStatus().equals(Status.Disconnected) 
+                                && !host.getStatus().equals(Status.Up) && !host.getStatus().equals(Status.Alert) ) {
+                            String msg = "host " + host.getPrivateIpAddress() + " should not be in " + host.getStatus().toString() + " status";
+                            throw new CloudRuntimeException("PrepareUnmanaged Failed due to " + msg);                                   
+                         }
+                    }
+                    
+                    for( HostVO host : hosts ) {
+                        if ( host.getStatus().equals(Status.Up )) {
+                            _agentMgr.disconnect(host.getId());
+                        }
+                    }
+                    int retry = 10;
+                    for ( int i = 0; i < retry; i++) {
+                        success = true;
+                        try {
+                            Thread.sleep(20 * 1000);
+                        } catch (Exception e) {
+                        }
+                        hosts = _hostDao.listBy(cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
+                        for( HostVO host : hosts ) {
+                            if ( !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected) 
+                                    && !host.getStatus().equals(Status.Alert)) {
+                                success = false;
+                                break;
+                            }
+                        }
+                        if( success == true ) {                          
+                            break;
+                        }
+                    }
+                    if ( success == false ) {
+                        throw new CloudRuntimeException("PrepareUnmanaged Failed due to some hosts are still in UP status after 5 Minutes, please try later "); 
+                    }
+                } finally {
+                    if ( success == false ) {
+                        txn.start();
+                        cluster.setManagedState(success? Managed.ManagedState.Unmanaged : Managed.ManagedState.PrepareUnmanagedError);
+                        _clusterDao.update(cluster.getId(), cluster);
+                        txn.commit();
+                    }
+                }
+            } else if( newManagedState.equals(Managed.ManagedState.Managed)) {               
+                txn.start();
+                cluster.setManagedState(Managed.ManagedState.Managed);
+                _clusterDao.update(cluster.getId(), cluster);
+                txn.commit();
+            }
+            
+        }
+        
         return cluster;
     }
 
