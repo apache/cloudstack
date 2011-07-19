@@ -84,16 +84,6 @@ public class ListCapacityCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-
-    @Override
-    public Long getPageSizeVal() {
-        Long pageSizeVal = 100L;
-        Integer pageSize = getPageSize();
-        if (pageSize != null) {
-            pageSizeVal = pageSize.longValue();
-        }
-        return pageSizeVal;
-    }
     
     @Override
     public void execute(){
