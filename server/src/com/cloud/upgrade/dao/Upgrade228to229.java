@@ -66,6 +66,7 @@ public class Upgrade228to229 implements DbUpgrade {
         return null;
     }
     
+
     private void dropKeysIfExist(Connection conn) {
         HashMap<String, List<String>> indexes = new HashMap<String, List<String>>();
         HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();

@@ -3024,6 +3024,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return result;
     }
     
+
     protected String getZoneNetworkDomain(long zoneId) {
         return _dcDao.findById(zoneId).getDomain();
     }
