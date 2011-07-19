@@ -148,7 +148,10 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         for (DomainRouterVO router : routers) {
             if (canHandle(network.getGuestType(), dest.getDataCenter())) {
                 host_id = router.getHostId();
-                _routerMgr.stopRouter(router.getId(), true);
+                if (_routerMgr.stopRouter(router.getId(), false) == null) {
+                    s_logger.warn("Failed to stop virtual router element " + router + " as a part of netowrk " + network + " restart");
+                    ret = false;
+                }
                 result = _routerMgr.destroyRouter(router.getId());
                 if (!result) {
                     s_logger.warn("Failed to destroy virtual router element " + router + " as a part of netowrk " + network + " restart");
