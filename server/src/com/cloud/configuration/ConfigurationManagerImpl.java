@@ -475,10 +475,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         return "Please enter valid hypervisor type";
                     }
                 }
-            } else {
+            }else {
                 String[] options = range.split(",");
                 for (String option : options) {
-                    if (option.trim().equals(value)) {
+                    if (option.trim().equalsIgnoreCase(value)) {
                         return null;
                     }
                 }

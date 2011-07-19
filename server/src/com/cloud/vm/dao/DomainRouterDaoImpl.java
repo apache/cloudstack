@@ -82,7 +82,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         joinStateNetwork.and("guestType", joinStateNetwork.entity().getGuestType(), Op.EQ);
         StateNetworkTypeSearch.join("network", joinStateNetwork, joinStateNetwork.entity().getId(), StateNetworkTypeSearch.entity().getNetworkId(), JoinType.INNER);
         StateNetworkTypeSearch.done();
-
+        
         OutsidePodSearch = createSearchBuilder();
         OutsidePodSearch.and("network", OutsidePodSearch.entity().getNetworkId(), Op.EQ);
         OutsidePodSearch.and("podId", OutsidePodSearch.entity().getPodIdToDeployIn(), Op.NEQ);
