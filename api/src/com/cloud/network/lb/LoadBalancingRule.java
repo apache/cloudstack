@@ -67,6 +67,12 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     }
 
     @Override
+    public List<String> getSourceCidrList() {
+        return lb.getSourceCidrList();
+    }
+    
+
+    @Override
     public String getAlgorithm() {
         return lb.getAlgorithm();
     }

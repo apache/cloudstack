@@ -720,9 +720,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setId(loadBalancer.getId());
         lbResponse.setName(loadBalancer.getName());
         lbResponse.setDescription(loadBalancer.getDescription());
+        List<String> cidrs = ApiDBUtils.findPortForwardingSourceCidrs(loadBalancer.getId());
+        lbResponse.setCidrList(StringUtils.join(cidrs, ","));
 
         IPAddressVO publicIp = ApiDBUtils.findIpAddressById(loadBalancer.getSourceIpAddressId());
-
         lbResponse.setPublicIpId(publicIp.getId());
         lbResponse.setPublicIp(publicIp.getAddress().addr());
         lbResponse.setPublicPort(Integer.toString(loadBalancer.getSourcePortStart()));
