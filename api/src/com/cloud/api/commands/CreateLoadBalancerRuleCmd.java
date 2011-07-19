@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -25,6 +27,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -59,6 +62,9 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
     private Integer publicPort;
+
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
+    private List<String> cidrlist;
 
 
     /////////////////////////////////////////////////////
@@ -100,6 +106,10 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         return loadBalancerRuleName;
     }
 
+    public List<String> getSourceCidrList() {
+        return cidrlist;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -111,6 +121,14 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     
     @Override
     public void execute() {
+        if (cidrlist != null){
+            for (String cidr: cidrlist){
+                if (!NetUtils.isValidCIDR(cidr)){
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Source cidrs formatting error " + cidr); 
+                }
+            }
+        }
+        
         LoadBalancer result = null;
         try {
             result = _lbService.createLoadBalancerRule(this);

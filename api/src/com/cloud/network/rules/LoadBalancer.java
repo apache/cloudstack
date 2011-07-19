@@ -17,6 +17,8 @@
  */
 package com.cloud.network.rules;
 
+import java.util.List;
+
 
 /**
  * Definition for a LoadBalancer 
@@ -32,5 +34,7 @@ public interface LoadBalancer extends FirewallRule {
     int getDefaultPortEnd();
 
     String getAlgorithm();
+    
+    public List<String> getSourceCidrList();
     
 }

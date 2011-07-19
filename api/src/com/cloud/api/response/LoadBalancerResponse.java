@@ -53,6 +53,9 @@ public class LoadBalancerResponse extends BaseResponse {
     @SerializedName("algorithm")
     @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
+    
+    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
+    private String cidrList;
 
     @SerializedName("account")
     @Param(description = "the account of the load balancer rule")
@@ -120,6 +123,14 @@ public class LoadBalancerResponse extends BaseResponse {
 
     public void setPrivatePort(String privatePort) {
         this.privatePort = privatePort;
+    }
+
+    public String getCidrList() {
+        return cidrList;
+    }
+
+    public void setCidrList(String cidrs) {
+        this.cidrList = cidrs;
     }
 
     public String getAlgorithm() {
