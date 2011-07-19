@@ -46,6 +46,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
     protected final SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
+    protected final SearchBuilder<DomainRouterVO> OutsidePodSearch;
     NetworkDaoImpl _networksDao = ComponentLocator.inject(NetworkDaoImpl.class);
 
     protected DomainRouterDaoImpl() {
@@ -82,6 +83,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         StateNetworkTypeSearch.join("network", joinStateNetwork, joinStateNetwork.entity().getId(), StateNetworkTypeSearch.entity().getNetworkId(), JoinType.INNER);
         StateNetworkTypeSearch.done();
 
+        OutsidePodSearch = createSearchBuilder();
+        OutsidePodSearch.and("network", OutsidePodSearch.entity().getNetworkId(), Op.EQ);
+        OutsidePodSearch.and("podId", OutsidePodSearch.entity().getPodIdToDeployIn(), Op.NEQ);
+        OutsidePodSearch.and("state", OutsidePodSearch.entity().getState(), Op.EQ);
+        OutsidePodSearch.done();
     }
 
     @Override
@@ -192,6 +198,15 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         SearchCriteria<DomainRouterVO> sc = StateNetworkTypeSearch.create();
         sc.setParameters("state", state);
         sc.setJoinParameters("network", "guestType", ipType);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state) {
+        SearchCriteria<DomainRouterVO> sc = OutsidePodSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("podId", podId);
+        sc.setParameters("state", state);
         return listBy(sc);
     }
 }

@@ -118,7 +118,9 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-            return _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, true) != null;
+            List<DomainRouterVO> routers = _routerMgr.deployDhcp(network, dest, uservm.getOwner(), uservm.getParameters());                                                                                                                        
+            List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
+            return (rets != null) && (!rets.isEmpty());
         } else {
             return false;
         }

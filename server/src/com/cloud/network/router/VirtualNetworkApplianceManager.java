@@ -66,10 +66,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     
     List<DomainRouterVO> getRouters(long accountId, long zoneId);
 	
-	List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params, boolean isRedundant) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	
 	List<DomainRouterVO> deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
-	List<VirtualRouter> addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
+	List<VirtualRouter> addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
     boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     

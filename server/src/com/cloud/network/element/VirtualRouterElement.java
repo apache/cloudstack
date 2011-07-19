@@ -97,7 +97,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement 
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params);
+        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params, false);
         
         return true;
     }
@@ -112,8 +112,9 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement 
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            
-            return _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, false) != null;
+            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters(), false);
+            List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
+            return (rets != null) && (!rets.isEmpty());
         } else {
             return false;
         }
