@@ -1116,8 +1116,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         buf.append(" template=domP type=" + type);
         buf.append(" name=").append(profile.getHostName());
 
-        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (false) {
+        boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
+        if (isRedundant) {
             buf.append(" redundant_router=1");
         }
         NicProfile controlNic = null;
@@ -1172,7 +1172,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
 
                 controlNic = nic;
-            } else if (nic.getTrafficType() == TrafficType.Guest && false) {
+            } else if (nic.getTrafficType() == TrafficType.Guest && isRedundant) {
                 Network net = _networkMgr.getNetwork(nic.getNetworkId());
                 buf.append(" guestgw=").append(net.getGateway());
                 String brd = NetUtils.long2Ip(NetUtils.ip2Long(nic.getIp4Address()) | ~NetUtils.ip2Long(nic.getNetmask()));

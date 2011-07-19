@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -83,6 +84,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement 
     @Inject LoadBalancerDao _lbDao;
     @Inject AccountManager _accountMgr;
     @Inject HostDao _hostDao;
+    @Inject ConfigurationDao _configDao;
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
@@ -95,13 +97,14 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement 
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
         if (!canHandle(guestConfig.getGuestType(), dest.getDataCenter())) {
             return false;
         }
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params, false);
+        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params, isRedundant);
         
         return true;
     }
@@ -110,13 +113,14 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network.getGuestType(), dest.getDataCenter())) {
+            boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters(), false);
+            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters(), isRedundant);
             List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
             return (rets != null) && (!rets.isEmpty());
         } else {
