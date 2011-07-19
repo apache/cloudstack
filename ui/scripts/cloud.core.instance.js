@@ -75,7 +75,9 @@ function instanceBuildSubMenu() {
     } 	
     else if(isUser()) {	 
 		$("#leftmenu_instance_expandedbox").find("#leftmenu_instances_all_instances_container, #leftmenu_instances_running_instances_container, #leftmenu_instances_stopped_instances_container").show();
-        $.ajax({
+        
+		/*
+		$.ajax({
             cache: false,
             data: createURL("command=listInstanceGroups"),	       
             dataType: "json",
@@ -89,6 +91,7 @@ function instanceBuildSubMenu() {
 	            }
             }
         });  
+        */
     }    
 }
 
