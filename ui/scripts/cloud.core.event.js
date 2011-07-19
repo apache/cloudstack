@@ -93,11 +93,11 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
         $iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");
         
     var firstRowText = fromdb(jsonObj.description);
-    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = fromdb(jsonObj.type);
-    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 

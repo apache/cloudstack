@@ -102,11 +102,11 @@ function networkOfferingToMidmenu(jsonObj, $midmenuItem1) {
     */
    
     var firstRowText = fromdb(jsonObj.name);
-    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = fromdb(jsonObj.availability);
-    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
