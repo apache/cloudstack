@@ -31,6 +31,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
@@ -46,7 +47,9 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
@@ -79,6 +82,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement 
     @Inject DomainRouterDao _routerDao;
     @Inject LoadBalancerDao _lbDao;
     @Inject AccountManager _accountMgr;
+    @Inject HostDao _hostDao;
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
@@ -124,29 +128,36 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement 
     public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         DeployDestination dest = new DeployDestination(dc, null, null, null);
+        
+        NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        
+        // We need to re-implement the network since the redundancy capability may changed
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
         if (routers == null || routers.isEmpty()) {
             s_logger.trace("Can't find virtual router element in network " + network.getId());
             return true;
         }
 
-        VirtualRouter result = null;
+        /* Get the host_id in order to find the cluster */
+        long host_id = 0;
+        boolean result = true;
         boolean ret = true;
         for (DomainRouterVO router : routers) {
             if (canHandle(network.getGuestType(), dest.getDataCenter())) {
-                if (router.getState() == State.Stopped) {
-                    result = _routerMgr.startRouter(router.getId(), false);
-                } else {
-                    result = _routerMgr.rebootRouter(router.getId(), false);
-                }
-                if (result == null) {
-                    s_logger.warn("Failed to restart virtual router element " + router + " as a part of netowrk " + network + " restart");
+                host_id = router.getHostId();
+                _routerMgr.stopRouter(router.getId(), true);
+                result = _routerMgr.destroyRouter(router.getId());
+                if (!result) {
+                    s_logger.warn("Failed to destroy virtual router element " + router + " as a part of netowrk " + network + " restart");
                     ret = false;
                 }
             } else {
                 s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
             }
         }
+        Cluster cluster = _configMgr.getCluster(_hostDao.findById(host_id).getClusterId());
+        dest = new DeployDestination(dc, null, cluster, null);
+        implement(network, networkOffering, dest, context);
         return ret;
     }
 

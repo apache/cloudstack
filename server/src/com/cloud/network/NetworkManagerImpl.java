@@ -2357,11 +2357,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         s_logger.debug("Restarting network " + networkId + "...");
 
+        ReservationContext context = new ReservationContextImpl(null, null, null, caller);
         if (restartElements) {
             s_logger.debug("Restarting network elements for the network " + network);
             for (NetworkElement element : _networkElements) {
                 // stop and start the network element
-                if (!element.restart(network, null)) {
+                if (!element.restart(network, context)) {
                     s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
                     success = false;
                 }
