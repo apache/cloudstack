@@ -967,6 +967,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setHypervisorType(cluster.getHypervisorType().toString());
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
+        clusterResponse.setManagedState(cluster.getManagedState().toString());
         HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
         if (pod != null) {
             clusterResponse.setPodName(pod.getName());

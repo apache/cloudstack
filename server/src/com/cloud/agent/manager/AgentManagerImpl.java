@@ -965,6 +965,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
     }
+    
+    @Override
+    public boolean disconnect(final long hostId) {
+        disconnect(hostId, Event.PrepareUnmanaged, false);
+        return true;
+    }
 
     @Override
     public void updateStatus(HostVO host, Status.Event event) {
@@ -1077,7 +1083,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _hostDao.disconnect(host, event, _nodeId);
 
         host = _hostDao.findById(host.getId());
-        if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
+        if (event.equals(Event.PrepareUnmanaged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
             _haMgr.scheduleRestartForVmsOnHost(host, investigate);
         }
 
@@ -1544,6 +1550,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return maintain(hostId);
         } else if (event == Event.ResetRequested) {
             return cancelMaintenance(hostId);
+        } else if (event == Event.PrepareUnmanaged) {
+            return disconnect(hostId);
         } else if (event == Event.Remove) {
             User caller = _accountMgr.getActiveUser(User.UID_SYSTEM);
             return deleteHost(hostId, false, false, caller);

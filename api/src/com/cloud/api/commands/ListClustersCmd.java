@@ -63,6 +63,9 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="lists clusters by allocation state")
     private String allocationState;
     
+    @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
+    private String managedState;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -95,6 +98,17 @@ public class ListClustersCmd extends BaseListCmd {
     public String getAllocationState() {
     	return allocationState;
     }
+    
+
+    public String getManagedstate() {
+        return managedState;
+    }
+
+    public void setManagedstate(String managedstate) {
+        this.managedState = managedstate;
+    }
+
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

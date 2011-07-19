@@ -280,6 +280,7 @@ CREATE TABLE `cloud`.`cluster` (
   `hypervisor_type` varchar(32),
   `cluster_type` varchar(64) DEFAULT 'CloudManaged',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this cluster enabled for allocation for new resources',
+  `managed_state` varchar(32) NOT NULL DEFAULT 'Managed' COMMENT 'Is this cluster managed by cloudstack',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,

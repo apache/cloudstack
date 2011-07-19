@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
+import com.cloud.org.Managed.ManagedState;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -66,6 +67,10 @@ public class ClusterVO implements Cluster {
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
     
+    @Column(name="managed_state")
+    @Enumerated(value=EnumType.STRING)
+    ManagedState managedState;
+    
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
     
@@ -80,6 +85,7 @@ public class ClusterVO implements Cluster {
         this.name = name;
     	this.clusterType = Cluster.ClusterType.CloudManaged;
     	this.allocationState = Grouping.AllocationState.Enabled;
+    	this.managedState = ManagedState.Managed;
     }
 
     public long getId() {
@@ -114,6 +120,14 @@ public class ClusterVO implements Cluster {
 		this.allocationState = allocationState;
     }
     
+    public ManagedState getManagedState() {
+        return managedState;
+    }
+
+    public void setManagedState(ManagedState managedState) {
+        this.managedState = managedState;
+    }
+
     public ClusterVO(long clusterId) {
         this.id = clusterId;
     }

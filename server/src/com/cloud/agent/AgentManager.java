@@ -173,8 +173,11 @@ public interface AgentManager extends Manager {
      * Obtains statistics for a host; vCPU utilisation, memory utilisation, and network utilisation
      * 
      * @param hostId
-     * @return HostStats
+     * @return HostStat
      */
+    
+    boolean disconnect(long hostId);
+    
     HostStats getHostStatistics(long hostId);
 
     Long getGuestOSCategoryId(long hostId);

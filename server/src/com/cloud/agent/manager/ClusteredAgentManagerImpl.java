@@ -218,6 +218,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return super.cancelMaintenance(hostId);
     }
 
+    @Override
+    public boolean disconnect(final long hostId) {
+        try {
+            Boolean result = _clusterMgr.propagateAgentEvent(hostId, Event.PrepareUnmanaged);
+
+            if (result != null) {
+                return result;
+            }
+        } catch (AgentUnavailableException e) {
+            return false;
+        }
+        return super.disconnect(hostId);
+    }
+
     protected AgentAttache createAttache(long id) {
         s_logger.debug("create forwarding ClusteredAgentAttache for " + id);
         final AgentAttache attache = new ClusteredAgentAttache(this, id);

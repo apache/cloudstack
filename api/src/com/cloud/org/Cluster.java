@@ -22,6 +22,7 @@
 package com.cloud.org;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Managed.ManagedState;
 
 public interface Cluster extends Grouping {
     public static enum ClusterType {
@@ -38,4 +39,5 @@ public interface Cluster extends Grouping {
     HypervisorType getHypervisorType();
     ClusterType getClusterType();
     AllocationState getAllocationState();
+    ManagedState getManagedState();
 }
