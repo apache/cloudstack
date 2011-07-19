@@ -1005,47 +1005,38 @@ public class ManagementServerImpl implements ManagementServer {
         Filter searchFilter = new Filter(ServiceOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long vmId = cmd.getVirtualMachineId();
         Long domainId = cmd.getDomainId();
-        Boolean issystem = cmd.getIsSystem();
+        Boolean isSystem = cmd.getIsSystem();
         String vm_type_str = cmd.getSystemVmType();
 
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
+            throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
+        } 
+        
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this domain
-        if (domainId != null) {
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                if (account.getDomainId() != 1 && issystem){ //NON ROOT admin
-                    throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
-                }
-                return _offeringsDao.findSystemOffering(domainId, issystem, vm_type_str);// no perm check
-            } else {
-                if (issystem){
-                    throw new InvalidParameterValueException("Non root users cannot access system's offering");
-                }
-                // check if the user's domain == so's domain || user's domain is a child of so's domain
-                if (isPermissible(account.getDomainId(), domainId)) {
-                    // perm check succeeded
-                    return _offeringsDao.findSystemOffering(domainId, false, vm_type_str);
-                } else {
-                    throw new PermissionDeniedException("The account:" + account.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
-                }
+        if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            // check if the user's domain == so's domain || user's domain is a child of so's domain
+            if (!isPermissible(caller.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("The account:" + caller.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
             }
         }
 
         // For non-root users
-        if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            if (issystem){
+        if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            if (isSystem){
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
-            return searchServiceOfferingsInternal(account, name, id, vmId, keyword, searchFilter);
+            return searchServiceOfferingsInternal(caller, name, id, vmId, keyword, searchFilter);
         }
 
         // for root users, the existing flow
-        if (account.getDomainId() != 1 && issystem){ //NON ROOT admin
+        if (caller.getDomainId() != 1 && isSystem){ //NON ROOT admin
             throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
         }
 
@@ -1060,8 +1051,8 @@ public class ManagementServerImpl implements ManagementServer {
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                 throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
             }
-            if ((account != null) && !isAdmin(account.getType())) {
-                if (account.getId() != vmInstance.getAccountId()) {
+            if ((caller != null) && !isAdmin(caller.getType())) {
+                if (caller.getId() != vmInstance.getAccountId()) {
                     throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
                 }
             }
@@ -1076,14 +1067,24 @@ public class ManagementServerImpl implements ManagementServer {
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
+        
+        if (isSystem != null) {
+            sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
+        }
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
+        
+        if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+        
         if (vm_type_str != null){
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vm_type_str);
         }
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, issystem);
+
+        sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         sc.addAnd("removed", SearchCriteria.Op.NULL);
         return _offeringsDao.search(sc, searchFilter);
 
