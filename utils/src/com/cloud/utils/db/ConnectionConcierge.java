@@ -57,11 +57,19 @@ public class ConnectionConcierge {
     String _name;
     boolean _keepAlive;
     boolean _autoCommit;
+    int _isolationLevel;
+    int _holdability;
     
     public ConnectionConcierge(String name, Connection conn, boolean autoCommit, boolean keepAlive) {
         _name = name + s_mgr.getNextId();
         _keepAlive = keepAlive;
-        _autoCommit = autoCommit;
+        try {
+            _autoCommit = conn.getAutoCommit();
+            _isolationLevel = conn.getTransactionIsolation();
+            _holdability = conn.getHoldability();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to get information from the connection object", e);
+        }
         reset(conn);
     }
     
@@ -74,6 +82,8 @@ public class ConnectionConcierge {
         _conn = conn;
         try {
             _conn.setAutoCommit(_autoCommit);
+            _conn.setHoldability(_holdability);
+            _conn.setTransactionIsolation(_isolationLevel);
         } catch (SQLException e) {
             s_logger.error("Unable to release a connection", e);
         }
@@ -117,7 +127,7 @@ public class ConnectionConcierge {
             super(ConnectionConciergeMBean.class, false);
             resetKeepAliveTask(20);
             try {
-                JmxUtil.registerMBean("ConnectionConciergeManager", "ConnectionConciergeManager", this);
+                JmxUtil.registerMBean("DB Connections", "DB Connections", this);
             } catch (Exception e) {
                 s_logger.error("Unable to register mbean", e);
             }
