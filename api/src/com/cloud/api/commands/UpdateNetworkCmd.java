@@ -23,11 +23,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,7 +37,7 @@ import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a network", responseObject=NetworkResponse.class)
-public class UpdateNetworkCmd extends BaseCmd {
+public class UpdateNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmd.class.getName());
 
     private static final String s_name = "updatenetworkresponse";
@@ -114,5 +116,14 @@ public class UpdateNetworkCmd extends BaseCmd {
         }else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update network");
         }
+    }
+    
+    public String getEventDescription() {
+        return  "Updating network: " + getId();
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NETWORK_UPDATE;
     }
 }
