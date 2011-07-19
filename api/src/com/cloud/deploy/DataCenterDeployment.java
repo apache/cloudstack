@@ -17,12 +17,15 @@
  */
 package com.cloud.deploy;
 
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+
 public class DataCenterDeployment implements DeploymentPlan {
     long _dcId;
     Long _podId;
     Long _clusterId;
     Long _poolId;
     Long _hostId;
+    ExcludeList _avoids = null;
     boolean _recreateDisks;
     
     public DataCenterDeployment(long dataCenterId) {
@@ -60,5 +63,15 @@ public class DataCenterDeployment implements DeploymentPlan {
     @Override
     public Long getPoolId() {
         return _poolId;
+    }
+
+    @Override
+    public ExcludeList getAvoids() {
+        return _avoids;
+    }
+
+    @Override
+    public void setAvoids(ExcludeList avoids) {
+        _avoids = avoids;
     }
 }

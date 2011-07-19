@@ -79,6 +79,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -86,6 +88,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -138,6 +141,8 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -283,6 +288,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     VMInstanceDao _instanceDao;
     @Inject
     NicDao _nicDao;
+    @Inject
+    VolumeDao _volumeDao = null;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -904,6 +911,61 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return routers;
     }
 
+    private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException {
+        if (router.getRole() == Role.DHCP_USERDATA || !router.getIsRedundantRouter()) {
+            return this.start(router, user, caller, params, null);
+        }
+        
+        DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null);
+        DomainRouterVO result = null;
+        assert router.getIsRedundantRouter();
+        List<DomainRouterVO> routerList = _routerDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn());
+        DomainRouterVO routerToBeAvoid = null;
+        for (DomainRouterVO rrouter : routerList) {
+            if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter()) {
+                if (routerToBeAvoid != null) {
+                    throw new ResourceUnavailableException("There are already two redundant routers with IP " + router.getPublicIpAddress(), this.getClass(), 0);
+                }
+                routerToBeAvoid = rrouter;
+            }
+        }
+        if (routerToBeAvoid == null) {
+           return this.start(router, user, caller, params, null); 
+        }
+        // We would try best to deploy the router to another place
+        int retryIndex = 5;
+        ExcludeList[] avoids = new ExcludeList[5];
+        avoids[0] = new ExcludeList();
+        avoids[0].addPod(routerToBeAvoid.getPodIdToDeployIn());
+        avoids[1] = new ExcludeList();
+        avoids[1].addCluster(_hostDao.findById(routerToBeAvoid.getHostId()).getClusterId());
+        avoids[2] = new ExcludeList();
+        avoids[2].addHost(routerToBeAvoid.getHostId());
+        avoids[3] = new ExcludeList();
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(routerToBeAvoid.getId(), Type.ROOT);
+        if (volumes != null && volumes.size() != 0) {
+            avoids[3].addPool(volumes.get(0).getPoolId());
+        }
+        avoids[4] = new ExcludeList();
+        
+        for (int i = 0; i < retryIndex; i++) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Try to deploy redundant virtual router:" + router.getHostName() + ", for " + i + " time");
+            }
+            plan.setAvoids(avoids[i]);
+            try {
+                result = this.start(router, user, caller, params, plan);
+            } catch (InsufficientServerCapacityException ex) {
+                result = null;
+            }
+            if (result != null) {
+                break;
+            }
+        }
+        return result;
+    }
+    
     @Override
     public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -925,11 +987,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         for (DomainRouterVO router : routers) {
             State state = router.getState();
             if (state != State.Running) {
-                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+                router = startVirtualRouter(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
             }
             runningRouters.add(router);
         }
-
         return runningRouters;
     }
     
@@ -1032,7 +1093,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         for (DomainRouterVO router : routers) {
             State state = router.getState();
             if (state != State.Running) {
-                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+                router = startVirtualRouter(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
             }
             runningRouters.add(router);
         }
@@ -1413,10 +1474,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return result;
     }
 
-    private DomainRouterVO start(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
+    private DomainRouterVO start(DomainRouterVO router, User user, Account caller, Map<Param, Object> params, DeploymentPlan planToDeploy) throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
-        if (_itMgr.start(router, params, user, caller) != null) {
+        if (_itMgr.start(router, params, user, caller, planToDeploy) != null) {
             return _routerDao.findById(router.getId());
         } else {
             return null;
@@ -1661,7 +1722,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         } else {
             params.put(Param.RestartNetwork, false);
         }
-        return this.start(router, user, account, params);
+        return startVirtualRouter(router, user, account, params);
     }
 
     private void createAssociateIPCommands(final DomainRouterVO router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {

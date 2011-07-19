@@ -17,6 +17,8 @@
  */
 package com.cloud.deploy;
 
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+
 /**
  * Describes how a VM should be deployed.  
  */
@@ -49,4 +51,16 @@ public interface DeploymentPlan {
      * @return pool the VM should be created in; null if no preference.
      */
     public Long getPoolId();
+    
+    /**
+     * @param avoids
+     * Set the ExcludeList to avoid for deployment
+     */
+    public void setAvoids(ExcludeList avoids);
+
+    /**
+     * @return
+     * the ExcludeList to avoid for deployment
+     */
+    public ExcludeList getAvoids();
 }

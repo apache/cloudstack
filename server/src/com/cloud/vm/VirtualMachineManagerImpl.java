@@ -597,7 +597,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null);
-        if(planToDeploy != null){
+        if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using that plan to deploy");
             }
@@ -609,15 +609,17 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         try {
             Journal journal = start.second().getJournal();
 
-            ExcludeList avoids = new ExcludeList();
-            if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
-                List<DomainRouterVO> routers = _routerDao.findBy(vm.getAccountId(), vm.getDataCenterIdToDeployIn());
-                for (DomainRouterVO router : routers) {
-                    if (router.hostId != null) {
-                        avoids.addHost(router.hostId);
-                        s_logger.info("Router: try to avoid host " + router.hostId);
-                    }
-                }
+            ExcludeList avoids = null;
+            if (planToDeploy != null) {
+                avoids = planToDeploy.getAvoids();
+            }
+            if (avoids == null) {
+                avoids = new ExcludeList();
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid()
+                        + ", clusters: " + avoids.getClustersToAvoid()
+                        + ", hosts: " + avoids.getHostsToAvoid());
             }
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
@@ -644,7 +646,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         long rootVolDcId = pool.getDataCenterId();
                         Long rootVolPodId = pool.getPodId();
                         Long rootVolClusterId = pool.getClusterId();
-                        if(planToDeploy != null){
+                        if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
                             Long clusterIdSpecified = planToDeploy.getClusterId();
                             if(clusterIdSpecified != null && rootVolClusterId != null){
                                 if(rootVolClusterId.longValue() != clusterIdSpecified.longValue()){
@@ -681,26 +683,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 if (dest == null) {
-                    //see if we can allocate the router without limitation
-                    if (vm.getType().equals(VirtualMachine.Type.DomainRouter)) {
-                        avoids = new ExcludeList();
-                        s_logger.info("Router: cancel avoids ");
-                        for (DeploymentPlanner planner : _planners) {
-                            if (planner.canHandle(vmProfile, plan, avoids)) {
-                                dest = planner.plan(vmProfile, plan, avoids);
-                            } else {
-                                continue;
-                            }
-                            if (dest != null) {
-                                avoids.addHost(dest.getHost().getId());
-                                journal.record("Deployment found ", vmProfile, dest);
-                                break;
-                            }
-                        }
-                    }
-                    if (dest == null) {
                         throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
-                    }
                 }
 
                 long destHostId = dest.getHost().getId();
