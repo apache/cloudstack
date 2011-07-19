@@ -67,7 +67,7 @@ secstorage_svcs() {
 }
 
 routing_svcs() {
-   grep "redundant_router" /var/cache/cloud/cmdline > /dev/null
+   grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
    RROUTER=$?
    chkconfig cloud off
    chkconfig cloud-passwd-srvr on ; 
