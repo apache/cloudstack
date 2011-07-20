@@ -775,6 +775,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
+        if ( guestOsTypeName == null ) {
+            String msg =  " Hypervisor " + this.getClass().getName() + " doesn't support guest OS type " + vmSpec.getOs()
+                    + ". you can choose 'Other install media' to run it as HVM";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();

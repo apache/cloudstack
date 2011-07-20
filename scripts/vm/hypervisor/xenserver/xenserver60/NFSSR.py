@@ -107,7 +107,8 @@ class NFSSR(FileSR.FileSR):
 
     def attach(self, sr_uuid):
         self.validate_remotepath(False)
-        self.remotepath = os.path.join(self.dconf['serverpath'], sr_uuid)
+        #self.remotepath = os.path.join(self.dconf['serverpath'], sr_uuid)
+        self.remotepath = self.dconf['serverpath']
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
         self.mount_remotepath(sr_uuid)
 
@@ -175,20 +176,20 @@ class NFSSR(FileSR.FileSR):
                 pass
             raise exn
 
-        newpath = os.path.join(self.path, sr_uuid)
-        if util.ioretry(lambda: util.pathexists(newpath)):
-            if len(util.ioretry(lambda: util.listdir(newpath))) != 0:
-                self.detach(sr_uuid)
-                raise xs_errors.XenError('SRExists')
-        else:
-            try:
-                util.ioretry(lambda: util.makedirs(newpath))
-            except util.CommandException, inst:
-                if inst.code != errno.EEXIST:
-                    self.detach(sr_uuid)
-                    raise xs_errors.XenError('NFSCreate', 
-                        opterr='remote directory creation error is %d' 
-                        % inst.code)
+        #newpath = os.path.join(self.path, sr_uuid)
+        #if util.ioretry(lambda: util.pathexists(newpath)):
+        #    if len(util.ioretry(lambda: util.listdir(newpath))) != 0:
+        #        self.detach(sr_uuid)
+        #        raise xs_errors.XenError('SRExists')
+        #else:
+        #    try:
+        #        util.ioretry(lambda: util.makedirs(newpath))
+        #    except util.CommandException, inst:
+        #        if inst.code != errno.EEXIST:
+        #            self.detach(sr_uuid)
+        #            raise xs_errors.XenError('NFSCreate', 
+        #                opterr='remote directory creation error is %d' 
+        #                % inst.code)
         self.detach(sr_uuid)
 
     def delete(self, sr_uuid):

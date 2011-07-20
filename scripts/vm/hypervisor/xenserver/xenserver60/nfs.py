@@ -35,7 +35,7 @@ import util, errno, os, xml.dom.minidom
 # (timeo+timeo).
 
 SOFTMOUNT_TIMEOUT  = int((40.0/3.0) * 10.0) # 1/10 s
-SOFTMOUNT_RETRANS  = 0x7fffffff
+SOFTMOUNT_RETRANS  = 0x10
 RPCINFO_BIN = "/usr/sbin/rpcinfo"
 SHOWMOUNT_BIN = "/usr/sbin/showmount"
 

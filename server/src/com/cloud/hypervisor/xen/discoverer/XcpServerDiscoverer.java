@@ -62,6 +62,7 @@ import com.cloud.hypervisor.xen.resource.XcpServerResource;
 import com.cloud.hypervisor.xen.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xen.resource.XenServer56Resource;
 import com.cloud.hypervisor.xen.resource.XenServer56SP2Resource;
+import com.cloud.hypervisor.xen.resource.XenServer60Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -384,6 +385,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
         	return new XenServer56Resource();
         
+        if(prodBrand.equals("XenServer") && prodVersion.equals("5.9.960")) 
+            return new XenServer60Resource();
+        
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
             String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
             if("5.6 SP2".equals(prodVersionTextShort)) {
@@ -524,6 +528,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             resource = XcpServerResource.class.getName();
         } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) {
             resource = XenServer56Resource.class.getName();
+        } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.9.960")) {
+            resource = XenServer60Resource.class.getName();
         } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
             String prodVersionTextShort = details.get("product_version_text_short").trim();
             if("5.6 SP2".equals(prodVersionTextShort)) {
