@@ -182,7 +182,13 @@ function routerJsonToDetailsTab() {
     $thisTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));  
     $thisTab.find("#account").text(fromdb(jsonObj.account));  
-    setDateField(jsonObj.created, $thisTab.find("#created"));	 
+    setDateField(jsonObj.created, $thisTab.find("#created"));	
+        
+    setBooleanReadField(jsonObj.isredundantrouter, $thisTab.find("#isredundantrouter"));
+    if(jsonObj.isredundantrouter == true) {
+    	var t = $thisTab.find("#isredundantrouter").text()+ " (" + fromdb(jsonObj.redundantstate) + ")";
+    	$thisTab.find("#isredundantrouter").text(t);
+    }   
     
     resetViewConsoleAction(jsonObj, $thisTab);   
     
@@ -232,6 +238,8 @@ function routerClearDetailsTab() {
     $thisTab.find("#domain").text("");  
     $thisTab.find("#account").text("");  
     $thisTab.find("#created").text("");   
+    $thisTab.find("#isredundantrouter").text("");
+        
     resetViewConsoleAction(null, $thisTab);       
     
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
