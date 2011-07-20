@@ -118,7 +118,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -336,9 +335,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId) {
         VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(), oldVol.getSize());
         if(templateId != null){
-        	newVol.setTemplateId(templateId);
+            newVol.setTemplateId(templateId);
         }else{
-        	newVol.setTemplateId(oldVol.getTemplateId());
+            newVol.setTemplateId(oldVol.getTemplateId());
         }
         newVol.setDeviceId(oldVol.getDeviceId());
         newVol.setInstanceId(oldVol.getInstanceId());
@@ -357,7 +356,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             return true;
         }
     }
-    
+
     @Override
     public List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type) {
         List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(datacenterId);
@@ -585,7 +584,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         createdVolume = volumeDetails.first();
-       
+
         return createdVolume;
     }
 
@@ -629,7 +628,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 return new Pair<String, String>(null, "Unable to upgrade snapshot from 2.1 to 2.2 for " + snapshot.getId());
             }
         }
-        
+
         if( snapshot.getSwiftName() != null ) {
             _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
         }
@@ -740,7 +739,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         if (created == null) {
-           return null;
+            return null;
         } else {
             volume.setFolder(pool.getPath());
             volume.setPath(created.getPath());
@@ -849,13 +848,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         UpHostsInPoolSearch.done();
 
         StoragePoolSearch = _vmInstanceDao.createSearchBuilder();
-        
+
         SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
         volumeSearch.and("volumeType", volumeSearch.entity().getVolumeType(), SearchCriteria.Op.EQ);
         volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
         StoragePoolSearch.join("vmVolume", volumeSearch, volumeSearch.entity().getInstanceId(), StoragePoolSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         StoragePoolSearch.done();
-        
+
         LocalStorageSearch = _storagePoolDao.createSearchBuilder();
         SearchBuilder<StoragePoolHostVO> storageHostSearch = _storagePoolHostDao.createSearchBuilder();
         storageHostSearch.and("hostId", storageHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -959,7 +958,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         return null;
     }
-    
+
     @Override
     public VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly) {
         List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
@@ -1001,7 +1000,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         int index = rn.nextInt(size);
         return hosts.get(index);
     }
-    
+
     @Override
     public List<HostVO> getSecondaryStorageHosts(long zoneId) {
         List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
@@ -1465,13 +1464,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (answer == null) {
             throw new StorageUnavailableException("Unable to get an answer to the modify storage pool command", pool.getId());
         }
-        
+
         if (!answer.getResult()) {
             String msg = "Add host failed due to ModifyStoragePoolCommand failed" + answer.getDetails();
             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
             throw new StorageUnavailableException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails(), pool.getId());
         }
-        
+
         assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" + pool.getId() + "Host=" + hostId;
         ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
 
@@ -1485,7 +1484,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         pool.setAvailableBytes(mspAnswer.getPoolInfo().getAvailableBytes());
         pool.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
         _storagePoolDao.update(pool.getId(), pool);
-        
+
         s_logger.info("Connection established between " + pool + " host + " + hostId);
     }
 
@@ -1660,7 +1659,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             } else {
                 _configMgr.checkDiskOfferingAccess(account, diskOffering);
             }
-            
+
             if (diskOffering.getDiskSize() > 0) {
                 size = diskOffering.getDiskSize();
             } 
@@ -1674,11 +1673,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             if (snapshotCheck == null) {
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
-            
+
             if (snapshotCheck.getStatus() != Snapshot.Status.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for volume creation");
             }  
-            
+
             diskOfferingId = (cmd.getDiskOfferingId() != null) ? cmd.getDiskOfferingId() : snapshotCheck.getDiskOfferingId();
             zoneId = snapshotCheck.getDataCenterId();
             size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
@@ -2033,7 +2032,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() + " is already in  PrepareForMaintenance mode " );
                 }
             }
-            
+
             if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
                 throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
             }
@@ -2632,10 +2631,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         for (VolumeVO vol : recreateVols) {
             VolumeVO newVol;
-            if (vol.getState() == Volume.State.Allocated) {
+            if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
                 newVol = vol;
             } else {
-            	newVol = switchVolume(vol, vm);
+                newVol = switchVolume(vol, vm);
                 // update the volume->storagePool map since volumeId has changed
                 if (dest.getStorageForDisks() != null && dest.getStorageForDisks().containsKey(vol)) {
                     StoragePool poolWithOldVol = dest.getStorageForDisks().get(vol);
@@ -2688,7 +2687,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         try {
             txn.start();
             _volsDao.update(existingVolume, Volume.Event.Destroy);
-            
+
             Long templateIdToUse = null; 
             Long volTemplateId = existingVolume.getTemplateId();
             long vmTemplateId = vm.getTemplateId();
@@ -2982,9 +2981,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public VMTemplateHostVO findVmTemplateHost(long templateId, StoragePool pool) {
         long dcId = pool.getDataCenterId();
         Long podId = pool.getPodId();
-        
+
         List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
-        
+
         //FIXME, for cloudzone, the local secondary storoge
         if (pool.isLocal() && pool.getPoolType() == StoragePoolType.Filesystem && secHosts.isEmpty()) {
             List<StoragePoolHostVO> sphs = _storagePoolHostDao.listByPoolId(pool.getId());
@@ -2995,7 +2994,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 return null;
             }
         }
-        
+
         if (secHosts.size() == 1) {
             VMTemplateHostVO templateHostVO = _templateHostDao.findByHostTemplate(secHosts.get(0).getId(), templateId);
             return templateHostVO;
@@ -3014,7 +3013,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         return null;
     }
-    
+
 
     @Override
     @DB
