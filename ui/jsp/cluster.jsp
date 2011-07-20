@@ -15,7 +15,13 @@ dictionary = {
 	'message.action.enable.cluster' : '<fmt:message key="message.action.enable.cluster"/>',
 	'label.action.disable.cluster' : '<fmt:message key="label.action.disable.cluster"/>',
 	'label.action.disable.cluster.processing' : '<fmt:message key="label.action.disable.cluster.processing"/>',
-	'message.action.disable.cluster' : '<fmt:message key="message.action.disable.cluster"/>'	
+	'message.action.disable.cluster' : '<fmt:message key="message.action.disable.cluster"/>',
+	'label.action.manage.cluster' : '<fmt:message key="label.action.manage.cluster"/>',	
+	'message.action.manage.cluster' : '<fmt:message key="message.action.manage.cluster"/>',	
+	'label.action.manage.cluster.processing' : '<fmt:message key="label.action.manage.cluster.processing"/>',	
+	'label.action.unmanage.cluster' : '<fmt:message key="label.action.unmanage.cluster"/>',	
+	'message.action.unmanage.cluster' : '<fmt:message key="message.action.unmanage.cluster"/>',	
+	'label.action.unmanage.cluster.processing' : '<fmt:message key="label.action.unmanage.cluster.processing"/>'
 };	
 </script>
 
