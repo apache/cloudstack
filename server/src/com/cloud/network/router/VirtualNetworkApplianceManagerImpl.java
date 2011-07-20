@@ -398,18 +398,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         UserVm userVm = profile.getVirtualMachine();
         String password = (String) profile.getParameter(Param.VmPassword);
         String encodedPassword = PasswordGenerator.rot13(password);
+        DataCenter dc = _dcDao.findById(userVm.getDataCenterIdToDeployIn());
 
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            Commands cmds = new Commands(OnError.Continue);
-            SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), userVm.getHostName());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-            cmds.addCommand("password", cmd);
+            boolean sendPassword = true;
+            if (dc.getNetworkType() == NetworkType.Basic && userVm.getPodIdToDeployIn().longValue() != router.getPodIdToDeployIn().longValue()) {
+                sendPassword = false;
+            }
+            
+            if (sendPassword) {
+                Commands cmds = new Commands(OnError.Continue);
+                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), userVm.getHostName());
+                cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+                cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+                cmds.addCommand("password", cmd);
 
-            result = result && sendCommandsToRouter(router, cmds);
+                result = result && sendCommandsToRouter(router, cmds);
+            }
         }
         return result;
     }
@@ -1706,34 +1714,49 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     private void createVmDataCommands(DomainRouterVO router, Commands cmds) {
         long networkId = router.getNetworkId();
-        List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, State.Starting, State.Running, State.Migrating, State.Stopping);
+        List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, State.Running, State.Migrating, State.Stopping);
+        DataCenterVO dc = _dcDao.findById(router.getDataCenterIdToDeployIn());
         for (UserVmVO vm : vms) {
-            NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
-            if (nic != null) {
-                s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
-                String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
-                String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
-                cmds.addCommand("vmdata",
-                        generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(), vm.getId(), null));
+            boolean createVmData = true;
+            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()) {
+                createVmData = false;
+            }
+            
+            if (createVmData) {
+                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+                if (nic != null) {
+                    s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
+                    String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
+                    String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
+                    cmds.addCommand("vmdata",
+                            generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(), vm.getId(), null));
+                }
             }
         }
     }
 
     private void createDhcpEntriesCommands(DomainRouterVO router, Commands cmds) {
         long networkId = router.getNetworkId();
-        List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, State.Starting, State.Running, State.Migrating, State.Stopping);
+        List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, State.Running, State.Migrating, State.Stopping);
+        DataCenterVO dc = _dcDao.findById(router.getDataCenterIdToDeployIn());
         for (UserVmVO vm : vms) {
-            NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
-            if (nic != null) {
-                s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
+            boolean createDhcp = true;
+            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue() && _dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
+                createDhcp = false;
+            }
+            if (createDhcp) {
+                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+                if (nic != null) {
+                    s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
 
-                DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
-                dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-                dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-                dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+                    DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
+                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                    DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+                    dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
-                cmds.addCommand("dhcp", dhcpCommand);
+                    cmds.addCommand("dhcp", dhcpCommand);
+                }
             }
         }
     }
