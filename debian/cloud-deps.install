@@ -5,7 +5,6 @@
 /usr/share/java/jetty-6.1.26.jar
 /usr/share/java/jetty-util-6.1.26.jar
 /usr/share/java/cloud-httpcore-4.0.jar
-/usr/share/java/cloud-jna.jar
 /usr/share/java/cloud-log4j.jar
 /usr/share/java/cloud-trilead-ssh2-build213.jar
 /usr/share/java/cloud-cglib.jar
