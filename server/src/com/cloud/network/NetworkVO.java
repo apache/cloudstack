@@ -452,6 +452,7 @@ public class NetworkVO implements Network {
         this.created = created;
     }
 
+    @Override
     public boolean isDomainSpecific() {
         return isDomainSpecific;
     }

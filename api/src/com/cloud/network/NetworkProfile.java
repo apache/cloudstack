@@ -51,6 +51,7 @@ public class NetworkProfile implements Network {
     private String networkDomain;
     private boolean isSecurityGroupEnabled;
     private List<String> tags;
+    private boolean isDomainSpecific;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -74,6 +75,7 @@ public class NetworkProfile implements Network {
         this.networkDomain = network.getNetworkDomain();
         this.domainId = network.getDomainId();
         this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
+        this.isDomainSpecific = network.isDomainSpecific();
     }
 
     @Override
@@ -205,4 +207,10 @@ public class NetworkProfile implements Network {
     public boolean isSecurityGroupEnabled() {
         return isSecurityGroupEnabled;
     }
+
+    @Override
+    public boolean isDomainSpecific() {
+        return isDomainSpecific;
+    }
+    
 }

@@ -64,4 +64,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listNetworksBy(boolean isShared);
     
     List<NetworkVO> listByZoneIncludingRemoved(long zoneId);
+    
+    List<NetworkVO> listDomainSpecificNetworks(long domainId, long zoneId, GuestIpType guestType);
 }
