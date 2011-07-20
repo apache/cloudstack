@@ -49,7 +49,13 @@ function hostGetSearchParams() {
 function afterLoadHostJSP() {    
     initDialog("dialog_add_host", 400);    
     initDialog("dialog_update_os");
-         
+    initDialog("dialog_confirmation_remove_host"); 
+	
+	var $dialogRemoveHost = $("#dialog_confirmation_remove_host");
+	if(isAdmin()) {		
+		$dialogRemoveHost.find("#force_remove_host_container").show();		   
+	}  
+    
     // switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm"), $("#tab_statistics")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
@@ -656,13 +662,13 @@ function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){
 function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
-    $("#dialog_confirmation")
-    .text(dictionary["message.action.remove.host"])
+    $("#dialog_confirmation_remove_host")    
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
              var id = jsonObj.id;
-             var apiCommand = "command=deleteHost&id="+id;
+             var isForced = $("#dialog_confirmation_remove_host").find("#force_remove_host").attr("checked").toString();
+             var apiCommand = "command=deleteHost&id="+id+"&forced="+isForced;                
     	     doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
