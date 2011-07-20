@@ -76,7 +76,7 @@ function doEditNetworkOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	
 	var availability = $detailsTab.find("#availability_edit").val();
     array1.push("&availability="+todb(availability));	
-	
+	    
 	$.ajax({
 	    data: createURL("command=updateNetworkOffering&id="+id+array1.join("")),
 		dataType: "json",
@@ -159,7 +159,8 @@ function networkOfferingJsonToDetailsTab() {
      
     $thisTab.find("#availability").text(fromdb(jsonObj.availability));     
     $thisTab.find("#availability_edit").val(fromdb(jsonObj.availability)); 
-     
+         
+    setBooleanReadField(jsonObj.redundantrouter, $thisTab.find("#redundantrouter"));	    
     setBooleanReadField(jsonObj.isdefault, $thisTab.find("#isdefault"));
     setBooleanReadField(jsonObj.specifyvlan, $thisTab.find("#specifyvlan"));
       
@@ -190,7 +191,8 @@ function networkOfferingClearDetailsTab() {
     $thisTab.find("#grid_header_title").text("");
     $thisTab.find("#name").text("");   
     $thisTab.find("#displaytext").text("");
-    $thisTab.find("#displaytext_edit").val("");    
+    $thisTab.find("#displaytext_edit").val("");   
+    $thisTab.find("#redundantrouter").text("");
     $thisTab.find("#disksize").text("");
     $thisTab.find("#tags").text("");   
     $thisTab.find("#domain").text("");   
