@@ -213,6 +213,7 @@ public enum Config {
 	UsageStatsJobExecTime("Premium", ManagementServer.class, String.class, "usage.stats.job.exec.time", "00:15", "The time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am.", null),
     EnableUsageServer("Premium", ManagementServer.class, Boolean.class, "enable.usage.server", "true", "Flag for enabling usage", null),
     DirectNetworkStatsInterval("Premium", ManagementServer.class, Integer.class, "direct.network.stats.interval", "86400", "Interval (in seconds) to collect stats from Traffic Monitor", null),
+    UsageSanityCheckInterval("Premium", ManagementServer.class, Integer.class, "usage.sanity.check.interval", null, "Interval (in days) to check sanity of usage data", null),
     
 	// Hidden
 	UseSecondaryStorageVm("Hidden", ManagementServer.class, Boolean.class, "secondary.storage.vm", "false", "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server", null),
