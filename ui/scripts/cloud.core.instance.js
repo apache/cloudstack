@@ -149,8 +149,7 @@ function afterLoadInstanceJSP() {
 	if(isAdmin()) {		
 		$dialogStopVm.find("#force_stop_instance_container").show();		   
 	}
-	
-	
+		
     $.ajax({
 	    data: createURL("command=listOsTypes"),
 		dataType: "json",
@@ -228,7 +227,7 @@ function bindStopVMButton() {
             $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
             return false;
         }        
-        
+                   
         $("#dialog_confirmation_stop_vm")	
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
@@ -246,13 +245,13 @@ function bindStopVMButton() {
                             vmToRightPanel($midmenuItem1);                                             
                     }
                 }                      
-			    
+			     			    
 			    var isForced = $("#dialog_confirmation_stop_vm").find("#force_stop_instance").attr("checked").toString();
 			    
                 for(var id in selectedItemsInMidMenu) {	
                     var apiCommand = "command=stopVirtualMachine&id="+id+"&forced="+isForced;                                    
                     doActionToMidMenu(id, apiInfo, apiCommand); 	
-                }  			                  
+                }  
                 
                 selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
 		    }, 
@@ -1420,15 +1419,15 @@ function doStartVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
 
 function doStopVM($actionLink, $detailsTab, $midmenuItem1) {   
-	$("#dialog_confirmation_stop_vm")
+    $("#dialog_confirmation_stop_vm")	  
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
 		    
 		    var jsonObj = $midmenuItem1.data("jsonObj");
-		    var id = jsonObj.id;		    
+		    var id = jsonObj.id;
 		    var isForced = $("#dialog_confirmation_stop_vm").find("#force_stop_instance").attr("checked").toString();
-		    var apiCommand = "command=stopVirtualMachine&id="+id+"&forced="+isForced;     		    
+		    var apiCommand = "command=stopVirtualMachine&id="+id+"&forced="+isForced;       
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
 	    }, 
 	    "Cancel": function() { 
