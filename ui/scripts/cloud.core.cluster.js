@@ -73,6 +73,7 @@ function clusterJsonToDetailsTab() {
     $thisTab.find("#hypervisortype").text(fromdb(jsonObj.hypervisortype));
     $thisTab.find("#clustertype").text(fromdb(jsonObj.clustertype));
     $thisTab.find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+    $thisTab.find("#managedstate").text(fromdb(jsonObj.managedstate));
     
     //actions ***   
     clusterBuildActionMenu(jsonObj);        
@@ -105,6 +106,8 @@ function clusterClearDetailsTab() {
     $thisTab.find("#podname").text("");     
     $thisTab.find("#hypervisortype").text("");
     $thisTab.find("#clustertype").text("");
+    $thisTab.find("#allocationstate").text("");
+    $thisTab.find("#managedstate").text("");
     
     //actions ***   
     var $actionMenu = $thisTab.find("#action_link #action_menu");
