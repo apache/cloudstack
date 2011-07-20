@@ -666,8 +666,18 @@ dictionary = {
             <div class="row_celltitles" id="volumename">
             </div>
         </div>
-    </div>
+    </div>  
     <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.state"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="state">
+            </div>
+        </div>
+    </div>    
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <fmt:message key="label.interval.type"/>:</div>
@@ -677,7 +687,7 @@ dictionary = {
             </div>
         </div>
     </div>
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <fmt:message key="label.created"/>:</div>
@@ -687,7 +697,7 @@ dictionary = {
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <fmt:message key="label.account"/>:</div>
@@ -697,7 +707,7 @@ dictionary = {
             </div>
         </div>
     </div>
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <fmt:message key="label.domain"/>:</div>
