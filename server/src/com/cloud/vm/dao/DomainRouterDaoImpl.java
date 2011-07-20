@@ -194,4 +194,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setJoinParameters("network", "guestType", ipType);
         return listBy(sc);
     }
+    
+    @Override
+    public List<DomainRouterVO> listByNetworkAndState(long networkId, State state) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+        return listBy(sc);
+    }
 }
