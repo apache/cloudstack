@@ -932,7 +932,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
         if ((vm.getState() == State.Starting || vm.getState() == State.Stopping || vm.getState() == State.Migrating) && forced) {
             ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
-            if (work != null) {
+            if (work == null) {
                 if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.StopRequested, forced, user, account)) {
                     try {
                         return stateTransitTo(vm, Event.AgentReportStopped, null);
