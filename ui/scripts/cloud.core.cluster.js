@@ -94,6 +94,11 @@ function clusterBuildActionMenu(jsonObj) {
     else if(jsonObj.allocationstate == "Enabled")  
         buildActionLinkForTab("label.action.disable.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
     
+    if(jsonObj.managedstate == "Managed")
+    	buildActionLinkForTab("label.action.unmanage.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+    else //PrepareUnmanaged , PrepareUnmanagedError, Unmanaged 
+    	buildActionLinkForTab("label.action.manage.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+    
     buildActionLinkForTab("label.action.delete.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
 }
 
@@ -134,6 +139,28 @@ var clusterActionMap = {
 	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
 			var jsonObj = json.updateclusterresponse.cluster;
 			$("#right_panel_content").find("#tab_content_details").find("#allocationstate").text(fromdb(jsonObj.allocationstate));
+			clusterBuildActionMenu(jsonObj);				
+	    }
+	}	
+	,
+	"label.action.manage.cluster": {  	              
+	    isAsyncJob: false,      
+	    dialogBeforeActionFn : doUnmanageCluster,   
+	    inProcessText: "label.action.manage.cluster.processing",
+	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+			var jsonObj = json.updateclusterresponse.cluster;
+			$("#right_panel_content").find("#tab_content_details").find("#managedstate").text(fromdb(jsonObj.managedstate));
+			clusterBuildActionMenu(jsonObj);				
+	    }
+	}	
+	,
+	"label.action.unmanage.cluster": {  	              
+	    isAsyncJob: false,      
+	    dialogBeforeActionFn : doUnmanageCluster,   
+	    inProcessText: "label.action.unmanage.cluster.processing",
+	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+			var jsonObj = json.updateclusterresponse.cluster;
+			$("#right_panel_content").find("#tab_content_details").find("#managedstate").text(fromdb(jsonObj.managedstate));
 			clusterBuildActionMenu(jsonObj);				
 	    }
 	}	
@@ -183,6 +210,42 @@ function doDisableCluster($actionLink, $detailsTab, $midmenuItem1) {
 		"Confirm": function() { 			
 			$(this).dialog("close");			
 			var apiCommand = "command=updateCluster&id="+id+"&allocationstate=Disabled";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
+function doManageCluster($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.manage.cluster"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updateCluster&id="+id+"&managedstate=Managed";
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
+function doUnmanageCluster($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.unmanage.cluster"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=updateCluster&id="+id+"&managedstate=Unmanaged";
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
