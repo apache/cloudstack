@@ -278,8 +278,9 @@ def build_db_files ():
 	#bld.install_files_filtered("${SETUPDATADIR}",filelist("*/db/* cloudstack-proprietary/*/db/*",excl=Node.exclude_regs + "\ncloud-gate\ncloud-bridge"))
 	start_path = bld.path.find_dir ("setup/db")
 	bld.substitute('**',"${SETUPDATADIR}", cwd=start_path)
-	start_path = bld.path.find_dir ("cloudstack-proprietary/premium/db")
-	bld.substitute('**',"${SETUPDATADIR}", cwd=start_path)
+	if buildpremium: 
+		start_path = bld.path.find_dir ("cloudstack-proprietary/premium/db")
+		bld.substitute('**',"${SETUPDATADIR}", cwd=start_path)
 
 
 def build_plugins ():
