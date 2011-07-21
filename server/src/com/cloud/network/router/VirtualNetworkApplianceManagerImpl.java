@@ -587,7 +587,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean start() {
-        _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
+    	if (_routerStatsInterval > 0){
+    		_executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
+    	}else{
+    		s_logger.debug("router.stats.interval - " + _routerStatsInterval+ " so not scheduling the router stats thread");
+    	}
         return true;
     }
 
