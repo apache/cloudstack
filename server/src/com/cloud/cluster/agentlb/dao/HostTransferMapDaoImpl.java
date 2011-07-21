@@ -51,6 +51,7 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
         
         IntermediateStateSearch = createSearchBuilder();
         IntermediateStateSearch.and("futureOwner", IntermediateStateSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
+        IntermediateStateSearch.and("initialOwner", IntermediateStateSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
         IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.IN);
         IntermediateStateSearch.done();
         
