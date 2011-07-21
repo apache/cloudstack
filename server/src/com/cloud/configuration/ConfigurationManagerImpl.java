@@ -1009,7 +1009,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")) {
                 selectSql += " AND removed is NULL";
             }
-            
+
             if (tableName.equals("vm_instance")) {
                 selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
             }
@@ -1570,7 +1570,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Please specify a valid domain id");
             }
         }
-        
+
         boolean localStorageRequired = false;
         String storageType = cmd.getStorageType();
         if (storageType == null) {
@@ -1608,7 +1608,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 vm_type = VirtualMachine.Type.DomainRouter;
             }
         }
-        
+
         return createServiceOffering(userId, cmd.getIsSystem(), vm_type, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
                 limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag());
     }
@@ -1642,7 +1642,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         // Verify input parameters
         ServiceOffering offeringHandle = getServiceOffering(id);
-        
+
         if (offeringHandle == null) {
             throw new InvalidParameterValueException("unable to find service offering " + id);
         }
@@ -1837,7 +1837,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (offering == null) {
             throw new InvalidParameterValueException("unable to find service offering " + offeringId);
         } 
-        
+
         if(offering.getDefaultUse()){
             throw new InvalidParameterValueException("Default service offerings cannot be deleted");
         }
@@ -2182,9 +2182,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " in zone " + zone.getName()
                         + " has the same subnet. Please specify a different gateway/netmask.");
             }
-            
+
             boolean vlansUntaggedAndVirtual = (vlanId.equals(Vlan.UNTAGGED) && vlanId.equals(vlan.getVlanTag()) && forVirtualNetwork && vlan.getVlanType() == VlanType.VirtualNetwork);
-            
+
             if (vlansUntaggedAndVirtual && !newVlanSubnet.equals(otherVlanSubnet)) {
                 throw new InvalidParameterValueException("The Untagged ip range with different subnet already exists in zone " + zone.getId());
             }
@@ -2400,9 +2400,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Transaction txn = Transaction.currentTxn();
         txn.start();
         IPRangeConfig config = new IPRangeConfig();
-        config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid);
+        List<String> problemIps = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid);
         txn.commit();
-        return true;
+        return problemIps != null && problemIps.size() == 0;
     }
 
     @DB
@@ -3148,7 +3148,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (offering != null && offering.getRemoved() == null) {
             return offering;
         }
-        
+
         return null;
     }
 
@@ -3181,14 +3181,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         return networkRate;
     }
-    
+
     @Override
     public DiskOffering getDiskOffering(long diskOfferingId) {
         DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
         if (offering != null && offering.getRemoved() == null) {
             return offering;
         }
-        
+
         return null;
     }
 
