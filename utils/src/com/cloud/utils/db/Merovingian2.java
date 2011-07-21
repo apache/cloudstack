@@ -27,16 +27,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.management.StandardMBean;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.time.InaccurateClock;
@@ -62,15 +58,18 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private final long _msId;
 
     private static Merovingian2 s_instance = null;
-    ScheduledExecutorService _executor = null;
-    Connection _conn = null;
+    private ConnectionConcierge _concierge = null;
 
     private Merovingian2(long msId) {
         super(MerovingianMBean.class, false);
         _msId = msId;
-        String result = resetDbConnection();
-        if (!result.equalsIgnoreCase("Success")) {
-            throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes due to " + result);
+        Connection conn = null;
+        try {
+            conn = Transaction.getStandaloneConnectionWithException();
+            _concierge = new ConnectionConcierge("LockMaster", conn, true, true);
+        } catch (SQLException e) {
+            s_logger.error("Unable to get a new db connection", e);
+            throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes: ", e);
         }
     }
 
@@ -88,44 +87,6 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
 
     public static Merovingian2 getLockMaster() {
         return s_instance;
-    }
-
-    @Override
-    public String resetDbConnection() {
-        s_logger.info("Resetting the database connection for locks");
-        if (_conn != null) {
-            try {
-                _conn.close();
-            } catch (Throwable th) {
-                s_logger.error("Unable to close connection", th);
-            }
-        }
-
-        try {
-            _conn = Transaction.getStandaloneConnectionWithException();
-            _conn.setAutoCommit(true);
-            _conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        } catch (SQLException e) {
-            s_logger.error("Unable to get a new db connection", e);
-            return "Unable to initialize a connection to the database for locking purposes: " + e;
-        }
-
-        if (_conn == null) {
-            return "Unable to initialize a connection to the database for locking purposes, shutdown this server!";
-        }
-
-        if (_executor != null) {
-            try {
-                _executor.shutdown();
-            } catch (Throwable th) {
-                s_logger.error("Unable to shutdown the executor", th);
-            }
-        }
-
-        _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("LockMasterConnectionKeepAlive"));
-        _executor.schedule(new KeepAliveTask(), 10, TimeUnit.SECONDS);
-
-        return "Success";
     }
 
     public boolean acquire(String key, int timeInSeconds) {
@@ -162,7 +123,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     protected boolean increment(String key, String threadName, int threadId) {
         PreparedStatement pstmt = null;
         try {
-            pstmt = _conn.prepareStatement(INCREMENT_SQL);
+            pstmt = _concierge.conn().prepareStatement(INCREMENT_SQL);
             pstmt.setString(1, key);
             pstmt.setLong(2, _msId);
             pstmt.setString(3, threadName);
@@ -190,7 +151,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
 
         long startTime = InaccurateClock.getTime();
         try {
-            pstmt = _conn.prepareStatement(ACQUIRE_SQL);
+            pstmt = _concierge.conn().prepareStatement(ACQUIRE_SQL);
             pstmt.setString(1, key);
             pstmt.setLong(2, _msId);
             pstmt.setString(3, threadName);
@@ -228,7 +189,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = _conn.prepareStatement(INQUIRE_SQL);
+            pstmt = _concierge.conn().prepareStatement(INQUIRE_SQL);
             pstmt.setString(1, key);
             rs = pstmt.executeQuery();
             if (!rs.next()) {
@@ -261,8 +222,8 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         s_logger.info("Cleaning up locks for " + msId);
         PreparedStatement pstmt = null;
         try {
-            pstmt = _conn.prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
-            pstmt.setLong(1, msId);
+            pstmt = _concierge.conn().prepareStatement(CLEANUP_MGMT_LOCKS_SQL);
+            pstmt.setLong(1, _msId);
             int rows = pstmt.executeUpdate();
             s_logger.info("Released " + rows + " locks for " + msId);
         } catch (SQLException e) {
@@ -283,7 +244,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         String threadName = th.getName();
         int threadId = System.identityHashCode(th);
         try {
-            pstmt = _conn.prepareStatement(DECREMENT_SQL);
+            pstmt = _concierge.conn().prepareStatement(DECREMENT_SQL);
             pstmt.setString(1, key);
             pstmt.setLong(2, _msId);
             pstmt.setString(3, threadName);
@@ -295,7 +256,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
             if (rows == 1) {
                 pstmt.close();
-                pstmt = _conn.prepareStatement(RELEASE_SQL);
+                pstmt = _concierge.conn().prepareStatement(RELEASE_SQL);
                 pstmt.setString(1, key);
                 pstmt.setLong(2, _msId);
                 int result = pstmt.executeUpdate();
@@ -340,7 +301,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = _conn.prepareStatement(sql);
+            pstmt = _concierge.conn().prepareStatement(sql);
             if (msId != null) {
                 pstmt.setLong(1, msId);
             }
@@ -388,7 +349,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = _conn.prepareStatement(SELECT_THREAD_LOCKS_SQL);
+            pstmt = _concierge.conn().prepareStatement(SELECT_THREAD_LOCKS_SQL);
             pstmt.setLong(1, msId);
             pstmt.setString(2, threadName);
             rs = pstmt.executeQuery();
@@ -415,7 +376,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
 
         PreparedStatement pstmt = null;
         try {
-            pstmt = _conn.prepareStatement(CLEANUP_THREAD_LOCKS_SQL);
+            pstmt = _concierge.conn().prepareStatement(CLEANUP_THREAD_LOCKS_SQL);
             pstmt.setLong(1, _msId);
             pstmt.setString(2, threadName);
             pstmt.setInt(3, threadId);
@@ -438,7 +399,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         s_logger.info("Releasing a lock from jMX lck-" + key);
         PreparedStatement pstmt = null;
         try {
-            pstmt = _conn.prepareStatement(RELEASE_LOCK_SQL);
+            pstmt = _concierge.conn().prepareStatement(RELEASE_LOCK_SQL);
             pstmt.setString(1, key);
             int rows = pstmt.executeUpdate();
             return rows > 0;
@@ -447,25 +408,4 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             return false;
         }
     }
-
-    protected class KeepAliveTask implements Runnable {
-        @Override
-        public void run() {
-            PreparedStatement pstmt = null;  // Should this even be prepared everytime?
-            try {
-                pstmt = _conn.prepareStatement("SELECT 1");
-                pstmt.executeQuery();
-            } catch (Throwable th) {
-                s_logger.error("Unable to keep the db connection alive for locking purposes!", th);
-            } finally {
-                if (pstmt != null) {
-                    try {
-                        pstmt.close();
-                    } catch (SQLException e) {
-                    }
-                }
-            }
-        }
-    }
-
 }
