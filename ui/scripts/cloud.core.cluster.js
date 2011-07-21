@@ -145,7 +145,7 @@ var clusterActionMap = {
 	,
 	"label.action.manage.cluster": {  	              
 	    isAsyncJob: false,      
-	    dialogBeforeActionFn : doUnmanageCluster,   
+	    dialogBeforeActionFn : doManageCluster,   
 	    inProcessText: "label.action.manage.cluster.processing",
 	    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
 			var jsonObj = json.updateclusterresponse.cluster;
