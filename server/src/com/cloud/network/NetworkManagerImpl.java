@@ -1520,41 +1520,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
         List<String> tags = cmd.getTags();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long domainIdForSharedNetwork = null;
+        boolean isDomainSpecific = false;
         
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Only one tag can be specified for a network at this time");
         }
-        
+
+        Transaction txn = Transaction.currentTxn();
+
         // Check if network offering exists
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOffering == null || networkOffering.isSystemOnly()) {
             throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
         }
-        
-        //Transform account specific Guest Virtual network to domain specific Virtaul network if domain level network support is enabled
-        if (_supportDomainLevelVirtualNetwork) {
-            if (networkOffering.getGuestType() == GuestIpType.Virtual && isShared == false) {
-                isShared = true;
-                accountName = null;
-                if (domainId != null) {
-                    domainIdForSharedNetwork = domainId;
-                } else {
-                    domainIdForSharedNetwork = caller.getDomainId();
-                }
-            }
-        }
 
         // Check if the network is domain specific
-        if (domainId != null && accountName == null) {
+        if (cmd.getDomainId() != null && cmd.getAccountName() == null) {
             if (networkOffering.getTrafficType() != TrafficType.Guest) {
                 throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest);
             } else if (isShared == null || !isShared) {
                 throw new InvalidParameterValueException("Network dedicated to domain should be shared");
             } else {
-                DomainVO domain = _domainDao.findById(domainId);
+                DomainVO domain = _domainDao.findById(cmd.getDomainId());
                 if (domain == null) {
                     throw new InvalidParameterValueException("Unable to find domain by id " + cmd.getDomainId());
                 }
@@ -1571,15 +1558,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (!_networksDao.listDomainSpecificNetworks(domain.getId(), zoneId, networkOffering.getGuestType()).isEmpty()) {
                         throw new InvalidParameterValueException("Domain id=" + domain.getId() + " already has Guest Virtual domain level network in zone id" + zoneId);
                     }
-                    
-                    domainIdForSharedNetwork = domainId;
                 }
+                
+                isDomainSpecific = true;
             }
         }
 
         Account owner = null;
-        if (accountName != null && domainId != null) {
-            owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
+        if (cmd.getAccountName() != null && cmd.getDomainId() != null) {
+            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId());
         } else {
             owner = caller;
         }
@@ -1658,11 +1645,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        
-        Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainIdForSharedNetwork, tags);
+        Long domainId = null;
+        if (isDomainSpecific) {
+            domainId = cmd.getDomainId();
+        } else if (!isShared) {
+            if (_supportDomainLevelVirtualNetwork) {
+                throw new InvalidParameterValueException("Account level virtual network is not supported when domain level network support is enabled");
+            }
+        }
+
+        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags);
 
         // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
