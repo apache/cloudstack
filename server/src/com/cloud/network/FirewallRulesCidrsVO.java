@@ -53,6 +53,10 @@ public class FirewallRulesCidrsVO {
     public long getFirewallRuleId() {
         return firewallRuleId;
     }
+    
+    public void setFirewallRuleId(long firewallRuleId){
+        this.firewallRuleId = firewallRuleId;
+    }
 
     public String getCidr() {
         return sourceCidrList;

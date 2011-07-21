@@ -177,12 +177,9 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         txn.start();
         
         PortForwardingRuleVO dbfirewallRule = super.persist(portForwardingRule);
-        
         saveSourceCidrs(portForwardingRule);
-        loadSourceCidrs(dbfirewallRule);
         
         txn.commit();
-     
         return dbfirewallRule;
     }
     
@@ -196,10 +193,9 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         if (!persisted) {
             return persisted;
         }
-        
         saveSourceCidrs(portForwardingRule);
+        
         txn.commit();
-     
         return persisted;
     }
     

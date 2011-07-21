@@ -142,12 +142,9 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         txn.start();
         
         LoadBalancerVO dbfirewallRule = super.persist(loadBalancerRule);
-        
         saveSourceCidrs(loadBalancerRule);
-        loadSourceCidrs(dbfirewallRule);
         
         txn.commit();
-     
         return dbfirewallRule;
     }
     
@@ -161,10 +158,9 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         if (!persisted) {
             return persisted;
         }
-        
         saveSourceCidrs(loadBalancerRule);
+        
         txn.commit();
-     
         return persisted;
     }
     

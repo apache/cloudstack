@@ -18,6 +18,7 @@
 
 package com.cloud.network;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -81,7 +82,6 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     public void setSourceCidrList(List<String> sourceCidrs) {
         this.sourceCidrs=sourceCidrs;
     }
-
     @Override
     public List<String> getSourceCidrList() {
         return sourceCidrs;

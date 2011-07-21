@@ -52,6 +52,7 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -61,6 +62,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -118,6 +120,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     NicDao _nicDao;
     @Inject
     UsageEventDao _usageEventDao;
+    @Inject
+    FirewallRulesCidrsDao _firewallCidrsDao;
 
     @Override
     @DB
@@ -222,7 +226,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 _lb2VmMapDao.persist(map);
                 s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + instanceId);
             }
-
+            
             if (!applyLoadBalancerConfig(loadBalancerId)) {
                 s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
                 throw new CloudRuntimeException("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
@@ -431,7 +435,6 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Override
     public boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
-
         if (lbs != null) {
             return applyLoadBalancerRules(lbs);
         } else {
@@ -462,10 +465,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             txn.start();
             if (lb.getState() == FirewallRule.State.Revoke) {
                 _lbDao.remove(lb.getId());
-                s_logger.debug("LB " + lb.getId() + " is successfully removed");
+                s_logger.warn("LB " + lb.getId() + " is successfully removed");
             } else if (lb.getState() == FirewallRule.State.Add) {
                 lb.setState(FirewallRule.State.Active);
-                s_logger.debug("LB rule " + lb.getId() + " state is set to Active");
+                s_logger.warn("LB rule " + lb.getId() + " state is set to Active");
                 _lbDao.persist(lb);
             }
 
@@ -484,7 +487,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
             if (_lb2VmMapDao.listByLoadBalancerId(lb.getId()).isEmpty()) {
                 lb.setState(FirewallRule.State.Add);
-                _lbDao.persist(lb);
+                _lbDao.persist(lb); 
                 s_logger.debug("LB rule " + lb.getId() + " state is set to Add as there are no more active LB-VM mappings");
             }
 
