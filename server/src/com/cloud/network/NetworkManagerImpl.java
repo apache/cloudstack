@@ -55,13 +55,13 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -207,7 +207,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     NetworkDomainDao _networkDomainDao;
     @Inject
     VMInstanceDao _vmDao;
-    
+
     @Inject DomainRouterDao _routerDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -227,7 +227,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     boolean _allowSubdomainNetworkAccess;
 
     private Map<String, String> _configs;
-    
+
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
@@ -238,7 +238,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @DB
     public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign)
-    throws InsufficientAddressCapacityException {
+            throws InsufficientAddressCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<IPAddressVO> sc = null;
@@ -267,7 +267,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (addrs.size() == 0) {
             if (podId != null) {
-                throw new InsufficientAddressCapacityException("Insufficient address capacity", HostPodDao.class, podId);
+                throw new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
             }
             throw new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
         }
@@ -789,7 +789,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NicForTrafficTypeSearch.done();
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Network-Scavenger"));
-        
+
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
 
         s_logger.info("Network Manager is configured.");
@@ -835,7 +835,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
-    throws ConcurrentOperationException {
+            throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, isShared, isDefault, false, null, null);
     }
 
@@ -1469,7 +1469,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account caller = UserContext.current().getCaller();
         List<String> tags = cmd.getTags();
         boolean isDomainSpecific = false;
-        
+
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Only one tag can be specified for a network at this time");
         }
@@ -1676,7 +1676,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (!NetUtils.verifyDomainName(networkDomain)) {
                     throw new InvalidParameterValueException(
                             "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                            + "and the hyphen ('-'); can't start or end with \"-\"");
+                                    + "and the hyphen ('-'); can't start or end with \"-\"");
                 }
             }
         }
@@ -1756,7 +1756,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long accountId = null;
         String path = null;
         Long sharedNetworkDomainId = null;
-        
+
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
         if ((isSystem == null || caller.getType() == Account.ACCOUNT_TYPE_NORMAL) && id == null) {
@@ -1791,7 +1791,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             accountId = caller.getId();
         }
-        
+
         if ((isSystem == null || !isSystem) && (isShared == null || isShared)) {
             sharedNetworkDomainId = domainId;
         }
@@ -1810,7 +1810,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         SearchBuilder<DataCenterVO> zoneSearch = _dcDao.createSearchBuilder();
         zoneSearch.and("networkType", zoneSearch.entity().getNetworkType(), SearchCriteria.Op.EQ);
         sb.join("zoneSearch", zoneSearch, sb.entity().getDataCenterId(), zoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        
+
         //domain level networks
         if (sharedNetworkDomainId != null) {
             SearchBuilder<NetworkDomainVO> domainNetworkSearch = _networkDomainDao.createSearchBuilder();
@@ -1820,9 +1820,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         sb.and("removed", sb.entity().getRemoved(), Op.NULL);
 
         if (isSystem == null || !isSystem) {
-          //Get domain level + account/zone level networks
+            //Get domain level + account/zone level networks
             List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
-       
+
             if (sharedNetworkDomainId != null) {
                 networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, sharedNetworkDomainId));
             } else {
@@ -1831,22 +1831,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
                 networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, path));
             }
-            
+
             //if domain id is specified - list only domain level networks
             if (accountId != null || (domainId == null && accountName == null)) {
                 networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, accountId, path));
             }
-            
+
             return networksToReturn;
-            
+
         } else {
             return _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter);
         }
     }
-    
+
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String type, Boolean isDefault, String trafficType, Boolean isShared) {
         SearchCriteria<NetworkVO> sc = sb.create();
-        
+
         if (isSystem != null) {
             sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
         }
@@ -1871,21 +1871,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (isDefault != null) {
             sc.addAnd("isDefault", SearchCriteria.Op.EQ, isDefault);
         }
-        
+
         if (trafficType != null) {
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
-        
+
         if (isShared != null) {
             sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
         }
-        
+
         return sc;
     }
 
-    
+
     private List<NetworkVO> listDomainLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, long domainId) {
-        
+
         Set<Long> allowedDomains = new HashSet<Long>();
         if (_allowSubdomainNetworkAccess) {
             allowedDomains = _accountMgr.getDomainParentIds(domainId);
@@ -1896,46 +1896,46 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         sc.addJoinAnd("domainNetworkSearch", "domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
         return _networksDao.search(sc, searchFilter);
     }
-    
+
     private List<NetworkVO> listAccountSpecificAndZoneLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, Long accountId, String path) {
-       
+
 
         SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-        
+
         //account level networks
         SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
         if (accountId != null) {
             accountSC.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
-        
+
         accountSC.addAnd("isShared", SearchCriteria.Op.EQ, false);
         if (path != null) {
             Set<Long> allowedDomains = _accountMgr.getDomainChildrenIds(path);
             accountSC.addAnd("domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
         }
-        
+
         ssc.addOr("id", SearchCriteria.Op.SC, accountSC);
-        
+
         //zone level networks
         SearchCriteria<NetworkVO> zoneSC = _networksDao.createSearchCriteria();
         zoneSC.addAnd("isDomainSpecific", SearchCriteria.Op.EQ, false);
         zoneSC.addAnd("isShared", SearchCriteria.Op.EQ, true);
         ssc.addOr("id", SearchCriteria.Op.SC, zoneSC);
-        
+
         sc.addAnd("id", SearchCriteria.Op.SC, ssc);
-        
+
         return _networksDao.search(sc, searchFilter);
     }
-    
-    
+
+
     private List<NetworkVO> listDomainSpecificNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path) {
-        
+
         if (path != null) {
             sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
             sc.addAnd("isDomainSpecific", SearchCriteria.Op.EQ, true);
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
-        
+
         return _networksDao.search(sc, searchFilter);
     }
 
@@ -1950,7 +1950,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network == null) {
             throw new InvalidParameterValueException("unable to find network " + networkId);
         }
-        
+
         //don't allow to delete system network
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (offering.isSystemOnly()) {
@@ -2436,11 +2436,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service) {
-        
+
         if (!isServiceSupported(networkOfferingId, service)) {
             throw new UnsupportedServiceException("Service " + service.getName() + " is not by the network offering id=" + networkOfferingId);
         }
-        
+
         Map<Service, Map<Capability, String>> networkCapabilities = getZoneCapabilities(zoneId);
         if (networkCapabilities.get(service) == null) {
             throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in zone id=" + zoneId);
@@ -2764,7 +2764,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
 
         IPAddressVO ip = _ipAddressDao.findById(addrId);
-        
+
         if (ip.getAllocatedToAccountId() == null && ip.getAllocatedTime() == null) {
             s_logger.trace("Ip address id=" + addrId + " is already released");
             return ip;
@@ -2807,8 +2807,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
-        
-        
+
+
         Long networkDomainId = null;
         Network network = getNetwork(networkId);
         if (!network.getIsShared()) {
@@ -2823,19 +2823,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             networkDomainId = networkDomainMap.get(0).getDomainId();
         }
-        
+
         if (domainId == networkDomainId.longValue()) {
             return true;
         }
-        
+
         if (_allowSubdomainNetworkAccess) {
             Set<Long> parentDomains = _accountMgr.getDomainParentIds(domainId);
-            
+
             if (parentDomains.contains(domainId)) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -2858,39 +2858,39 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network == null) {
             throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
         }
-        
+
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
         }
-        
+
         // Don't allow to update system network - make an exception for the Guest network in Basic zone
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (offering.isSystemOnly() && network.getTrafficType() != TrafficType.Guest) {
             throw new InvalidParameterValueException("Can't update system networks");
         }
-        
+
         //don't allow to modify network domain if the service is not supported
         if (domainSuffix != null) {
             // validate network domain
             if (!NetUtils.verifyDomainName(domainSuffix)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
-            
-            
+
+
             Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Dns);
             String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
                 throw new InvalidParameterValueException("Domain name change is not supported for network id=" + network.getNetworkOfferingId() + " in zone id=" + network.getDataCenterId());
             }
-            
+
             List<DomainRouterVO> routers = _routerDao.listActive(networkId);
             if (!routers.isEmpty()) {
                 throw new CloudRuntimeException("Unable to update network id=" + networkId + " with new network domain as the network has running network elements");
             }
-            
-            
+
+
             network.setNetworkDomain(domainSuffix);
         }
 
@@ -2903,7 +2903,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (displayText != null) {
             network.setDisplayText(displayText);
         }
-        
+
         if (tags != null) {
             network.setTags(tags);
         }
