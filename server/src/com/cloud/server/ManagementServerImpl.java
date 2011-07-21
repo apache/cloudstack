@@ -3221,7 +3221,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<CapacityVO> listCapacities(ListCapacityCmd cmd) {
 
-        Filter searchFilter = new Filter(CapacityVO.class, "capacityType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(CapacityVO.class, "capacityType", true, null, null);
         SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
         List<CapacityVO> capacities = new LinkedList<CapacityVO>();
 
