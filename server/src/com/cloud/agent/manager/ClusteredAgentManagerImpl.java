@@ -567,7 +567,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         
         //cancel all transfer tasks
         s_transferExecutor.shutdownNow();
-        cleanupTransferMap();
+        cleanupTransferMap(_nodeId);
         
         return super.stop();
     }
@@ -695,6 +695,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         for (ManagementServerHostVO vo : nodeList) {
             s_logger.info("Marking hosts as disconnected on Management server" + vo.getMsid());
             _hostDao.markHostsAsDisconnected(vo.getMsid());
+            s_logger.info("Deleting entries from op_host_transfer table for Management server " + vo.getMsid());
+            cleanupTransferMap(vo.getMsid());
         }
     }
 
@@ -1071,14 +1073,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return true;
     }
     
-    protected void cleanupTransferMap() {
-        List<HostTransferMapVO> hostsJoingingCluster = _hostTransferDao.listHostsJoiningCluster(_nodeId);
+    protected void cleanupTransferMap(long msId) {
+        List<HostTransferMapVO> hostsJoingingCluster = _hostTransferDao.listHostsJoiningCluster(msId);
         
         for (HostTransferMapVO hostJoingingCluster : hostsJoingingCluster) {
             _hostTransferDao.remove(hostJoingingCluster.getId());
         }
         
-        List<HostTransferMapVO> hostsLeavingCluster = _hostTransferDao.listHostsLeavingCluster(_nodeId);
+        List<HostTransferMapVO> hostsLeavingCluster = _hostTransferDao.listHostsLeavingCluster(msId);
         for (HostTransferMapVO hostLeavingCluster : hostsLeavingCluster) {
             _hostTransferDao.remove(hostLeavingCluster.getId());
         }

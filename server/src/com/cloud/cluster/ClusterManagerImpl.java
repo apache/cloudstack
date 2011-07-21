@@ -127,6 +127,9 @@ public class ClusterManagerImpl implements ClusterManager {
     private String _name;
     private String _clusterNodeIP = "127.0.0.1";
     private boolean _agentLBEnabled = false;
+    private double _connectedAgentsThreshold = 0.7;
+    private static boolean _agentLbHappened = false;
+    
     
     public ClusterManagerImpl() {
         clusterPeers = new HashMap<String, ClusterService>();
@@ -607,6 +610,26 @@ public class ClusterManagerImpl implements ClusterManager {
                     }
 
                     peerScan();
+                    
+                    //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
+                    if (_agentLBEnabled && !_agentLbHappened) {
+                        List<HostVO> allManagedRoutingAgents = _hostDao.listManagedRoutingAgents();
+                        List<HostVO> allAgents = _hostDao.listAllRoutingAgents();
+                        double allHostsCount = allAgents.size();
+                        double managedHostsCount = allManagedRoutingAgents.size();
+                        if (allHostsCount > 0.0) {
+                            double load = managedHostsCount/allHostsCount;
+                            if (load >= _connectedAgentsThreshold) {
+                                s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + _connectedAgentsThreshold);
+                                _rebalanceService.scheduleRebalanceAgents();
+                                _agentLbHappened = true;
+                            } else {
+                                s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + _connectedAgentsThreshold);
+                            }
+                        } 
+                    }
+                    
+                    
                 } catch(CloudRuntimeException e) {
                     s_logger.error("Runtime DB exception ", e.getCause());
 
@@ -937,10 +960,6 @@ public class ClusterManagerImpl implements ClusterManager {
             _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
             _notificationExecutor.submit(getNotificationTask());
              
-             //Initiate agent rebalancing after the host is in UP state
-             if (_agentLBEnabled) {
-                 _rebalanceService.scheduleRebalanceAgents();
-             }
 
         } catch (Throwable e) {
             s_logger.error("Unexpected exception : ", e);
@@ -1063,6 +1082,12 @@ public class ClusterManagerImpl implements ClusterManager {
         
         
         _agentLBEnabled = Boolean.valueOf(configDao.getValue(Config.AgentLbEnable.key()));
+        
+        String connectedAgentsThreshold = configs.get("agent.load.threshold");
+        
+        if (connectedAgentsThreshold != null) {
+            _connectedAgentsThreshold = Double.parseDouble(connectedAgentsThreshold);
+        }
 
         this.registerListener(new LockMasterListener(_msId));
 
@@ -1191,5 +1216,4 @@ public class ClusterManagerImpl implements ClusterManager {
     public  boolean isAgentRebalanceEnabled() {
         return _agentLBEnabled;
     }
-
 }

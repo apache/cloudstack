@@ -104,6 +104,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
     protected final SearchBuilder<HostTransferMapVO> HostTransferSearch;
     protected final SearchBuilder<ClusterVO> ClusterManagedSearch;
+    protected final SearchBuilder<HostVO> RoutingSearch;
 
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -294,6 +295,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ManagedRoutingServersSearch.and("server", ManagedRoutingServersSearch.entity().getManagementServerId(), SearchCriteria.Op.NNULL);
         ManagedRoutingServersSearch.and("type", ManagedRoutingServersSearch.entity().getType(), SearchCriteria.Op.EQ);
         ManagedRoutingServersSearch.done();
+        
+        RoutingSearch = createSearchBuilder();
+        RoutingSearch.and("type", RoutingSearch.entity().getType(), SearchCriteria.Op.EQ);
+        RoutingSearch.done();
 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -940,6 +945,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = MsStatusSearch.create();
         sc.setParameters("ms", msId);
         
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<HostVO> listAllRoutingAgents() {
+        SearchCriteria<HostVO> sc = RoutingSearch.create();
+        sc.setParameters("type", Type.Routing);
         return listBy(sc);
     }
 }
