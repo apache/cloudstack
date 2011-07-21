@@ -73,7 +73,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
@@ -1150,23 +1149,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     s_logger.debug("Account specific Virtual IP ranges " + " are successfully deleted as a part of account id=" + accountId + " cleanup.");
                 }
             }
-            
-            //Release ip addresses belonging to shared Domain level Virtual network
-            List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAccount(accountId);
-            Long associatedNetworkId = null;
-            if (!ipsToRelease.isEmpty()) {
-                associatedNetworkId = ipsToRelease.get(0).getAssociatedWithNetworkId();
-                s_logger.debug("Releasing public ip addresses belonging to account id=" + accountId + " and associated with domain level network id=" + associatedNetworkId);
-                for (IPAddressVO ipToRelease : ipsToRelease) {
-                    assert (ipToRelease.getAssociatedWithNetworkId() == associatedNetworkId) : "How come account has ip addresses associated with multiple domain level Virtual Guest Networks?";
-                    if (!_networkMgr.releasePublicIpAddress(ipToRelease.getId(), callerUserId, caller)) {
-                        s_logger.warn("Unable to release public ip address id=" + ipToRelease.getId() + " assocaited with domain level network " + ipToRelease.getId() + " as a part of network cleanup");
-                        accountCleanupNeeded = true;
-                    }
-                }
-                
-            }
-            
 
             return true;
         } finally {

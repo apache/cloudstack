@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 
 public interface NetworkService {
 
-    List<? extends Network> getVirtualNetworksForAccountInZone(String accountName, long domainId, long zoneId);
+    List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId);
 
     List<? extends NetworkOffering> listNetworkOfferings();
 

@@ -23,8 +23,6 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
@@ -36,7 +34,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -54,7 +51,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
-    final SearchBuilder<NetworkVO> DomainSpecificSearch;
 
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
@@ -115,15 +111,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         ZoneSecurityGroupSearch.done();
 
         _tgMacAddress = _tgs.get("macAddress");
-        
-        DomainSpecificSearch = createSearchBuilder();
-        DomainSpecificSearch.and("guestType", DomainSpecificSearch.entity().getGuestType(), Op.EQ);
-        
-        SearchBuilder<NetworkDomainVO> domainNetworkSearch = _domainsDao.createSearchBuilder();
-        domainNetworkSearch.and("domainId", domainNetworkSearch.entity().getDomainId(), Op.EQ);
-        
-        DomainSpecificSearch.join("domainNetworkSearch", domainNetworkSearch, domainNetworkSearch.entity().getNetworkId(), DomainSpecificSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        DomainSpecificSearch.done();
 
     }
 
@@ -319,18 +306,5 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         return listIncludingRemovedBy(sc);
-    }
-    
-    @Override
-    public List<NetworkVO> listDomainSpecificNetworks(long domainId, long zoneId, GuestIpType guestType) {
-        
-        SearchCriteria<NetworkVO> sc = DomainSpecificSearch.create();
-        
-        if (guestType != null) {
-            sc.setParameters("guestType", guestType);
-        }
-        
-        sc.setJoinParameters("domainNetworkSearch", "domainId", domainId);
-        return listBy(sc);
     }
 }

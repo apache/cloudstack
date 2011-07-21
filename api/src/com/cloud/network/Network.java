@@ -232,6 +232,4 @@ public interface Network extends ControlledEntity {
 
     List<String> getTags();
 
-    boolean isDomainSpecific();
-
 }

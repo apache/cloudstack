@@ -232,7 +232,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     String _networkDomain;
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
-    boolean _supportDomainLevelVirtualNetwork;
 
     private Map<String, String> _configs;
 
@@ -375,7 +374,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             IPAddressVO sourceNat = null;
-            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(null, dcId, true, network.getId());
+            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, dcId, null, network.getId());
             if (addrs.size() == 0) {
                 // Check that the maximum number of public IPs for the given accountId will not be exceeded
                 if (_accountMgr.resourceLimitExceeded(owner, ResourceType.public_ip)) {
@@ -383,7 +382,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("assigning a new source nat ip address in " + dcId + " to " + owner + " for the network " + network);
+                    s_logger.debug("assigning a new ip address in " + dcId + " to " + owner);
                 }
 
                 // If account has Account specific ip ranges, try to allocate ip from there
@@ -512,17 +511,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends Network> getVirtualNetworksForAccountInZone(String accountName, long domainId, long zoneId) {
+    public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId) {
         Account owner = _accountMgr.getActiveAccount(accountName, domainId);
         if (owner == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
         }
 
-        if (_supportDomainLevelVirtualNetwork) {
-            return _networksDao.listDomainSpecificNetworks(domainId, zoneId, GuestIpType.Virtual);
-        } else {
-            return _networksDao.listBy(owner.getId(), zoneId, GuestIpType.Virtual);
-        }
+        return _networksDao.listBy(owner.getId(), zoneId, GuestIpType.Virtual);
     }
 
     @Override
@@ -565,8 +560,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Check that network belongs to IP owner - skip this check for Basic zone as there is just one guest network, and it
         // belongs to the system
-        
-        if (!network.getIsShared() && network.getAccountId() != ipOwner.getId()) {
+        if (zone.getNetworkType() != NetworkType.Basic && network.getAccountId() != ipOwner.getId()) {
             throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
 
@@ -816,7 +810,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Network-Scavenger"));
 
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
-        _supportDomainLevelVirtualNetwork = Boolean.valueOf(_configs.get(Config.DomainVirtualNetgwork.key()));
 
         s_logger.info("Network Manager is configured.");
 
@@ -843,13 +836,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(Long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
+    public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
         SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
-        
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-        }
-        
+        sc.setParameters("accountId", accountId);
         sc.setParameters("dataCenterId", dcId);
         if (associatedNetworkId != null) {
             sc.setParameters("associatedWithNetworkId", associatedNetworkId);
@@ -879,7 +868,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         try {
 
-            if (predefined == null || (predefined.getCidr() == null && predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan && !isShared)) {
+            if (predefined == null || (predefined.getCidr() == null && predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
@@ -892,7 +881,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         return configs;
                     }
                 }
-            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null && predefined.getBroadcastUri() == null && !isShared) {
+            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null && predefined.getBroadcastUri() == null) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId(), predefined.getCidr());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
@@ -1536,8 +1525,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Check if the network is domain specific
         if (cmd.getDomainId() != null && cmd.getAccountName() == null) {
-            if (networkOffering.getTrafficType() != TrafficType.Guest) {
-                throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest);
+            if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Direct) {
+                throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest Ip type " + GuestIpType.Direct);
             } else if (isShared == null || !isShared) {
                 throw new InvalidParameterValueException("Network dedicated to domain should be shared");
             } else {
@@ -1546,20 +1535,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw new InvalidParameterValueException("Unable to find domain by id " + cmd.getDomainId());
                 }
                 _accountMgr.checkAccess(caller, domain);
-                
-                if (networkOffering.getGuestType() == GuestIpType.Virtual) {
-                    //1) Don't allow to create domain level virtual network when domain.level.virtual.network is set to false
-                    //2) don't allow to create more than one domain level Virtual network 
-                    
-                    if (!_supportDomainLevelVirtualNetwork) {
-                        throw new InvalidParameterValueException("Domain level virtual network is not supported");
-                    }
-                    
-                    if (!_networksDao.listDomainSpecificNetworks(domain.getId(), zoneId, networkOffering.getGuestType()).isEmpty()) {
-                        throw new InvalidParameterValueException("Domain id=" + domain.getId() + " already has Guest Virtual domain level network in zone id" + zoneId);
-                    }
-                }
-                
                 isDomainSpecific = true;
             }
         }
@@ -1650,10 +1625,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long domainId = null;
         if (isDomainSpecific) {
             domainId = cmd.getDomainId();
-        } else if (!isShared) {
-            if (_supportDomainLevelVirtualNetwork) {
-                throw new InvalidParameterValueException("Account level virtual network is not supported when domain level network support is enabled");
-            }
         }
 
         Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags);
@@ -1698,8 +1669,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 isDefault = true;
             }
-            if (isShared != null && isShared && domainId == null) {
-                throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks and Virtual Domain level networks only");
+            if (isShared != null && isShared) {
+                throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks only");
             }
         } else {
             if (isDefault == null) {
@@ -1707,7 +1678,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        // if network is shared, default its owner to be system
+        // if network is shared, defult its owner to be system
         if (isShared) {
             owner = _accountMgr.getSystemAccount();
         }
@@ -1909,15 +1880,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
 
             if (sharedNetworkDomainId != null) {
-                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, sharedNetworkDomainId, GuestIpType.Virtual));
-                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, sharedNetworkDomainId, GuestIpType.Direct));
-            } else {    
-
+                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, sharedNetworkDomainId));
+            } else {
                 SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
                 domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
                 sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
                 networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, path));
             }
+
             if (accountId != null || (domainId == null && accountName == null)) {
                 networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, accountId, path));
             }
@@ -1970,22 +1940,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     
-    private List<NetworkVO> listDomainLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, long domainId, GuestIpType guestIpType) {
+    private List<NetworkVO> listDomainLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, long domainId) {
         
-        //For direct networks, we list all networks from parent domains (only when _allowSubdomainNetworkAccess is true)
-        //For virtual networks, list only networks belonging to the same domain
         Set<Long> allowedDomains = new HashSet<Long>();
-        if (_allowSubdomainNetworkAccess && guestIpType == GuestIpType.Direct) {
+        if (_allowSubdomainNetworkAccess) {
             allowedDomains = _accountMgr.getDomainParentIds(domainId);
         } else {
             allowedDomains.add(domainId);
         }
 
         sc.addJoinAnd("domainNetworkSearch", "domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
-        sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);     
-        
         return _networksDao.search(sc, searchFilter);
-
     }
 
     private List<NetworkVO> listAccountSpecificAndZoneLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, Long accountId, String path) {
@@ -2645,7 +2610,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.start();
 
         if (network == null) {
-            List<? extends Network> networks = getVirtualNetworksForAccountInZone(owner.getAccountName(), owner.getDomainId(), zoneId);
+            List<? extends Network> networks = getVirtualNetworksOwnedByAccountInZone(owner.getAccountName(), owner.getDomainId(), zoneId);
             if (networks.size() == 0) {
                 createNetwork = true;
             } else {
@@ -2656,13 +2621,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // create new Virtual network for the user if it doesn't exist
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
-            Long domainId = null;
-            boolean isNetworkShared = false;
-            if (isDomainGuestVirtualNetworkSupported()) {
-                domainId = owner.getDomainId();
-                isNetworkShared = true;
-            }
-            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", isNetworkShared, null, zoneId, null, null, null, null, owner, false, domainId, null);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null, zoneId, null, null, null, null, owner, false, null, null);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
@@ -2863,14 +2822,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault, long domainId) {
+    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault) {
         List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
         List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
 
         for (NetworkVO network : zoneNetworks) {
             NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (!no.isSystemOnly()) {
-                if ((network.getIsShared() && !network.isDomainSpecific()) || (network.getIsShared() && network.isDomainSpecific && isNetworkAvailableInDomain(network.getId(), domainId)) || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
+                if (network.getIsShared() || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
                     if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault.booleanValue() == network.isDefault)) {
                         accountNetworks.add(network);
                     }
@@ -2937,15 +2896,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.trace("Network id=" + networkId + " is not shared");
             return false;
         }
-        
-        if (network.isDomainSpecific() && network.getGuestType() == GuestIpType.Virtual && !_supportDomainLevelVirtualNetwork) {
-            s_logger.trace("Network of Guest Virtual Domain specific type is not supported");
-            return false;
-        }
 
         List<NetworkDomainVO> networkDomainMap = _networkDomainDao.listDomainNetworkMapByNetworkId(networkId);
         if (networkDomainMap.isEmpty()) {
-            s_logger.trace("Network id=" + networkId + " is shared, but not domain specific, assuming it's a zone wide network");
+            s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
             return true;
         } else {
             networkDomainId = networkDomainMap.get(0).getDomainId();
@@ -2955,7 +2909,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return true;
         }
         
-        if (_allowSubdomainNetworkAccess && network.getGuestType() == GuestIpType.Direct) {
+        if (_allowSubdomainNetworkAccess) {
             Set<Long> parentDomains = _accountMgr.getDomainParentIds(domainId);
 
             if (parentDomains.contains(domainId)) {
@@ -3176,10 +3130,5 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public String getGlobalGuestDomainSuffix() {
         return _networkDomain;
-    }
-    
-    @Override
-    public boolean isDomainGuestVirtualNetworkSupported() {
-        return _supportDomainLevelVirtualNetwork;
     }
 }

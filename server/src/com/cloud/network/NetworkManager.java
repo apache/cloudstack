@@ -104,7 +104,7 @@ public interface NetworkManager extends NetworkService {
      *            TODO
      * @return - list of IP addresses
      */
-    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(Long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);
+    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
             throws ConcurrentOperationException;
@@ -201,13 +201,11 @@ public interface NetworkManager extends NetworkService {
 
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
 
-    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault, long domainId);
+    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault);
 
     IPAddressVO markIpAsUnavailable(long addrId);
     
     public String acquireGuestIpAddress(Network network, String requestedIp);
 
     String getGlobalGuestDomainSuffix();
-
-    boolean isDomainGuestVirtualNetworkSupported();
 }
