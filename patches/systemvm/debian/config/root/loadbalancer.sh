@@ -64,11 +64,12 @@ fw_entry() {
   for i in $a
   do
     local pubIp=$(echo $i | cut -d: -f1)
-    local dport=$(echo $i | cut -d: -f2)
+    local dport=$(echo $i | cut -d: -f2)    
+    local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
     
     for vif in $VIF_LIST; do 
-      iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
-      iptables -A INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
+      iptables -D INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
+      iptables -A INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT
       
       if [ $? -gt 0 ]
       then
@@ -80,10 +81,11 @@ fw_entry() {
   for i in $r
   do
     local pubIp=$(echo $i | cut -d: -f1)
-    local dport=$(echo $i | cut -d: -f2)
+    local dport=$(echo $i | cut -d: -f2)    
+    local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
     
     for vif in $VIF_LIST; do 
-      iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
+      iptables -D INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT
     done
   done
   

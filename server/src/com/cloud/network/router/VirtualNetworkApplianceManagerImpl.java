@@ -109,6 +109,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -277,6 +278,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     NicDao _nicDao;
     @Inject
     VolumeDao _volumeDao = null;
+    @Inject
+    FirewallRulesCidrsDao _firewallCidrsDao;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1694,11 +1697,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
+            List<String>  sourceCidrs = rule.getSourceCidrList();
 
             String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
-            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
+            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, sourceCidrs, algorithm, revoked, false, destinations);
             lbs[i++] = lb;
         }
 
@@ -1828,10 +1832,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
                         for (LoadBalancerVO lb : lbs) {
                             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                            // load the cidrs, 
+                            lb.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(lb.getId())); 
                             LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
                             lbRules.add(loadBalancing);
                         }
-
                         result = result && applyLBRules(router, lbRules);
                     } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
                         result = result && applyPortForwardingRules(router, (List<PortForwardingRule>) rules);

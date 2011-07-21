@@ -43,7 +43,4 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
     
     List<PortForwardingRuleVO> listByAccount(long accountId);
     
-    void loadSourceCidrs(PortForwardingRuleVO portForwardingRule);
-    
-    void saveSourceCidrs(PortForwardingRuleVO portForwardingRule);
 }
