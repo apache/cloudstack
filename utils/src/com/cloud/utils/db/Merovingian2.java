@@ -55,7 +55,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     
     TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
     
-    private long _msId;
+    private final long _msId;
     
     private static Merovingian2 s_instance = null;
     ConnectionConcierge _concierge = null;
@@ -67,7 +67,8 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         try {
             conn = Transaction.getStandaloneConnectionWithException();
             conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-            _concierge = new ConnectionConcierge("LockMaster", conn, true, true);
+            conn.setAutoCommit(true);
+            _concierge = new ConnectionConcierge("LockMaster", conn, false);
         } catch (SQLException e) {
             s_logger.error("Unable to get a new db connection", e);
             throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes: ", e);
