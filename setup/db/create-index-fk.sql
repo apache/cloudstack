@@ -8,7 +8,6 @@ ALTER TABLE `cloud`.`storage_pool_details` ADD CONSTRAINT `fk_storage_pool_detai
 ALTER TABLE `cloud`.`storage_pool_details` ADD INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128));
 
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__secret_key_removed`(`secret_key`, `removed`);
-ALTER TABLE `cloud`.`user` ADD INDEX `i_user__removed`(`removed`);
 ALTER TABLE `cloud`.`user` ADD UNIQUE `i_user__api_key`(`api_key`);
 ALTER TABLE `cloud`.`user` ADD CONSTRAINT `fk_user__account_id` FOREIGN KEY `fk_user__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__account_id`(`account_id`);
@@ -17,7 +16,6 @@ ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__domain_id` FOREIGN KEY
 ALTER TABLE `cloud`.`account` ADD INDEX `i_account__domain_id`(`domain_id`);
 
 ALTER TABLE `cloud`.`account` ADD INDEX `i_account__cleanup_needed`(`cleanup_needed`);
-ALTER TABLE `cloud`.`account` ADD INDEX `i_account__removed`(`removed`);
 ALTER TABLE `cloud`.`account` ADD INDEX `i_account__account_name__domain_id__removed`(`account_name`, `domain_id`, `removed`); 
 
 ALTER TABLE `cloud`.`resource_limit` ADD CONSTRAINT `fk_resource_limit__domain_id` FOREIGN KEY `fk_resource_limit__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
@@ -31,7 +29,6 @@ ALTER TABLE `cloud`.`event` ADD INDEX `i_event__account_id` (`account_id`);
 ALTER TABLE `cloud`.`event` ADD INDEX `i_event__level_id`(`level`);
 ALTER TABLE `cloud`.`event` ADD INDEX `i_event__type_id`(`type`);
 
-ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__removed`(`removed`);
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__public`(`public`);
 
 
@@ -47,7 +44,6 @@ ALTER TABLE `cloud`.`user_statistics` ADD INDEX `i_user_statistics__account_id_d
 ALTER TABLE `cloud`.`snapshots` ADD CONSTRAINT `fk_snapshots__account_id` FOREIGN KEY `fk_snapshots__account_id` (`account_id`) REFERENCES `account` (`id`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__account_id`(`account_id`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__volume_id`(`volume_id`);
-ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__name`(`name`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__snapshot_type`(`snapshot_type`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__prev_snap_id`(`prev_snap_id`);
@@ -71,7 +67,6 @@ ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__job_cmd`(`job_cmd`);
 ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__created`(`created`);
 ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__last_updated`(`last_updated`);
 ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__last_poll`(`last_polled`);
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__removed`(`removed`);
 
 ALTER TABLE `cloud`.`sync_queue` ADD UNIQUE `i_sync_queue__objtype__objid`(`sync_objtype`, `sync_objid`);
 ALTER TABLE `cloud`.`sync_queue` ADD INDEX `i_sync_queue__created`(`created`);
