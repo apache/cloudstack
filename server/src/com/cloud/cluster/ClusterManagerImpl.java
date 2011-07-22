@@ -477,14 +477,14 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     public void notifyNodeJoined(List<ManagementServerHostVO> nodeList) {
-    	if(s_logger.isDebugEnabled()) {
-    		s_logger.debug("Notify management server node join to listeners.");
-    		
-    		for(ManagementServerHostVO mshost : nodeList) {
-    			s_logger.debug("Joining node, IP: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
-    		}
-    	}
-    	
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Notify management server node join to listeners.");
+
+            for(ManagementServerHostVO mshost : nodeList) {
+                s_logger.debug("Joining node, IP: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
+            }
+        }
+
         synchronized(listeners) {
             for(ClusterManagerListener listener : listeners) {
                 listener.onManagementNodeJoined(nodeList, _mshostId);
@@ -496,14 +496,14 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     public void notifyNodeLeft(List<ManagementServerHostVO> nodeList) {
-    	if(s_logger.isDebugEnabled()) {
-    		s_logger.debug("Notify management server node left to listeners.");
-    		
-    		for(ManagementServerHostVO mshost : nodeList) {
-    			s_logger.debug("Leaving node, IP: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
-    		}
-    	}
-    	
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Notify management server node left to listeners.");
+
+            for(ManagementServerHostVO mshost : nodeList) {
+                s_logger.debug("Leaving node, IP: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
+            }
+        }
+
         synchronized(listeners) {
             for(ClusterManagerListener listener : listeners) {
                 listener.onManagementNodeLeft(nodeList, _mshostId);
@@ -515,9 +515,9 @@ public class ClusterManagerImpl implements ClusterManager {
     }
 
     public void notifyNodeIsolated() {
-    	if(s_logger.isDebugEnabled())
-    		s_logger.debug("Notify management server node isolation to listeners");
-    	
+        if(s_logger.isDebugEnabled())
+            s_logger.debug("Notify management server node isolation to listeners");
+
         synchronized(listeners) {
             for(ClusterManagerListener listener : listeners) {
                 listener.onManagementNodeIsolated();
@@ -673,7 +673,7 @@ public class ClusterManagerImpl implements ClusterManager {
     private Connection getHeartbeatConnection() throws SQLException {
         if(_heartbeatConnection == null) {
             Connection conn = Transaction.getStandaloneConnectionWithException();
-            _heartbeatConnection = new ConnectionConcierge("ClusterManagerHeartBeat", conn, false, false);
+            _heartbeatConnection = new ConnectionConcierge("ClusterManagerHeartBeat", conn, false);
         }
 
         return _heartbeatConnection.conn();
@@ -955,11 +955,10 @@ public class ClusterManagerImpl implements ClusterManager {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Management server (host id : " + _mshostId + ") is being started at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
             }
-                    
+
             // use seperate thread for heartbeat updates
             _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
             _notificationExecutor.submit(getNotificationTask());
-             
 
         } catch (Throwable e) {
             s_logger.error("Unexpected exception : ", e);
@@ -1079,8 +1078,8 @@ public class ClusterManagerImpl implements ClusterManager {
         if(_currentServiceAdapter == null) {
             throw new ConfigurationException("Unable to set current cluster service adapter");
         }
-        
-        
+
+
         _agentLBEnabled = Boolean.valueOf(configDao.getValue(Config.AgentLbEnable.key()));
         
         String connectedAgentsThreshold = configs.get("agent.load.threshold");
@@ -1211,7 +1210,7 @@ public class ClusterManagerImpl implements ClusterManager {
     public boolean rebalanceAgent(long agentId, Event event, long currentOwnerId, long futureOwnerId) throws AgentUnavailableException, OperationTimedoutException {
         return _rebalanceService.executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event);
     }
-    
+
     @Override
     public  boolean isAgentRebalanceEnabled() {
         return _agentLBEnabled;

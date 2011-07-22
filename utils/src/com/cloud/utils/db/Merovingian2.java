@@ -66,7 +66,9 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         Connection conn = null;
         try {
             conn = Transaction.getStandaloneConnectionWithException();
-            _concierge = new ConnectionConcierge("LockMaster", conn, true, true);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            conn.setAutoCommit(true);
+            _concierge = new ConnectionConcierge("LockMaster", conn, false);
         } catch (SQLException e) {
             s_logger.error("Unable to get a new db connection", e);
             throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes: ", e);
