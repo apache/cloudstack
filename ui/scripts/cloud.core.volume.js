@@ -422,8 +422,7 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#name").text(fromdb(jsonObj.name));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));    
     $thisTab.find("#device_id").text(fromdb(jsonObj.deviceid));   
-    $thisTab.find("#state").text(fromdb(jsonObj.state));    
-    $thisTab.find("#storage").text(fromdb(jsonObj.storage));
+    $thisTab.find("#state").text(fromdb(jsonObj.state)); 
     $thisTab.find("#account").text(fromdb(jsonObj.account));  
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
     $thisTab.find("#type").text(fromdb(jsonObj.type) + " (" + fromdb(jsonObj.storagetype) + " storage)");
@@ -433,7 +432,17 @@ function volumeJsonToDetailsTab(){
 	else 
 		$thisTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + fromdb(jsonObj.vmstate) + ")");		
     setDateField(jsonObj.created, $thisTab.find("#created"));	
-       
+     
+    if(isAdmin() || isDomainAdmin()) {
+    	$thisTab.find("#storage").text(fromdb(jsonObj.storage));
+    	$thisTab.find("#storage_container").show();
+    }
+    else {
+    	$thisTab.find("#storage").text("");
+    	$thisTab.find("#storage_container").hide();
+    }
+    
+    
     //actions ***    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();

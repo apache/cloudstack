@@ -169,18 +169,8 @@ dictionary = {
 	                    <div class="row_celltitles" id="created">
 	                    </div>
 	                </div>
-	            </div>
+	            </div>	            
 	            <div class="grid_rows even">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <fmt:message key="label.storage"/>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="storage">
-	                    </div>
-	                </div>
-	            </div>
-	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.account"/>:</div>
@@ -190,7 +180,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>
-				<div class="grid_rows even">
+				<div class="grid_rows odd">
 					<div class="grid_row_cell" style="width: 20%;">
 						<div class="row_celltitles">
 							<fmt:message key="label.domain"/>:</div>
@@ -199,7 +189,19 @@ dictionary = {
 						<div class="row_celltitles" id="domain">
 						</div>
 					</div>
-    			</div>   
+    			</div>  
+    			<div class="grid_rows even" id="storage_container" style="display:none">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.storage"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="storage">
+	                    </div>
+	                </div>
+	            </div>
+    			
+    			
 	        </div>
 	    </div>    
     </div>
