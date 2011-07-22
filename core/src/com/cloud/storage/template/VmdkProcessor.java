@@ -23,6 +23,11 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import org.apache.log4j.Logger;
 
@@ -71,13 +76,60 @@ public class VmdkProcessor implements Processor {
         info.format = ImageFormat.OVA;
         info.filename = templateName + "." + ImageFormat.OVA.getFileExtension();
         info.size = _storage.getSize(templateFilePath);
-        info.virtualSize = info.size;
+
+        // get the virtual size from the OVF file meta data
+    	long virtualSize=0;
+        String ovfFileName = getOVFFilePath(templateFileFullPath);
+        if(ovfFileName == null) {
+            String msg = "Unable to locate OVF file in template package directory: " + templatePath; 
+            s_logger.error(msg);
+            throw new InternalErrorException(msg);
+        }
+        try {
+            Document ovfDoc = null;
+        	ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFileName));
+        	Element disk  = (Element) ovfDoc.getElementsByTagName("Disk").item(0);
+        	virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
+        	String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
+        	if (allocationUnits != null) {
+        		long units = 1;
+        		if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
+        			units = 1024;
+        		} else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
+        			units = 1024 * 1024;
+        		} else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
+        			units = 1024 * 1024 * 1024;
+        		}
+        		virtualSize = virtualSize * units;
+        	}
+        } catch (Exception e) {
+        	String msg = "Unable to parse OVF XML document to get the virtual disk size due to"+e;
+        	s_logger.error(msg);
+        	throw new InternalErrorException(msg);
+        }
+
+        info.virtualSize = virtualSize;
 
         // delete original OVA file
         // templateFile.delete();
         return info;
     }
-    
+
+    private String getOVFFilePath(String srcOVAFileName) {
+        File file = new File(srcOVAFileName);
+        assert(_storage != null);
+        String[] files = _storage.listFiles(file.getParent());
+        if(files != null) {
+            for(String fileName : files) {
+                if(fileName.toLowerCase().endsWith(".ovf")) {
+                    File ovfFile = new File(fileName);
+                    return file.getParent() + File.separator + ovfFile.getName();
+                }
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
