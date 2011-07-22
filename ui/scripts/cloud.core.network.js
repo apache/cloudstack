@@ -1548,6 +1548,10 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
     if (!isValid) 
         return;	
      
+    //updateNetwork is async job
+    var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");   
+    $afterActionInfoContainer.removeClass("errorbox").hide(); 
+    
     var array1 = [];    
     var name = $detailsTab.find("#name_edit").val();
     array1.push("&name="+todb(name));
@@ -1565,13 +1569,45 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
 	    data: createURL("command=updateNetwork&id="+id+array1.join("")),
 		dataType: "json",
 		success: function(json) {	
-		    var jsonObj = json.updatenetworkresponse.network;   
-		    directNetworkToMidmenu(jsonObj, $midmenuItem1);
-		    directNetworkToRightPanel($midmenuItem1);	
-		    
-		    $editFields.hide();      
-            $readonlyFields.show();       
-            $("#save_button, #cancel_button").hide();     	  
+		    var jobId = json.updatenetworkresponse.jobid;				        
+	        var timerKey = "updatenetworkJob_"+jobId;
+				    
+	        $("body").everyTime(2000, timerKey, function() {
+			    $.ajax({
+				    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+				    dataType: "json",
+				    success: function(json) {										       						   
+					    var result = json.queryasyncjobresultresponse;
+					    if (result.jobstatus == 0) {
+						    return; //Job has not completed
+					    } else {											    
+						    $("body").stopTime(timerKey);
+						    if (result.jobstatus == 1) {
+							    // Succeeded		    							    	
+						    	var jsonObj = result.jobresult.network; 
+							    directNetworkToMidmenu(jsonObj, $midmenuItem1);
+							    directNetworkToRightPanel($midmenuItem1);	
+						    	
+							    $editFields.hide();      
+					            $readonlyFields.show();       
+					            $("#save_button, #cancel_button").hide();     
+						    } else if (result.jobstatus == 2) {						    					        
+						    	var errorMsg = dictionary['label.action.edit.network']+ " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
+	                            if($("#middle_menu").css("display") != "none")
+	                                handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, errorMsg);		
+	                            else
+	                                showAfterActionInfoOnTop(false, errorMsg);	  
+						    }
+					    }
+				    },
+				    error: function(XMLHttpResponse) {
+					    $("body").stopTime(timerKey);
+						handleError(XMLHttpResponse, function() {													
+							handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, dictionary['label.action.edit.network'], $afterActionInfoContainer, $midmenuItem1); 		
+						});
+				    }
+			    });
+		    }, 0);		    
 		}
 	});
 }
