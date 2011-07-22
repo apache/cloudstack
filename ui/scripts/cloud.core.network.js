@@ -1547,8 +1547,25 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
     isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"), true);				
     if (!isValid) 
         return;	
-     
-    //updateNetwork is async job
+           
+    var label = "label.action.edit.network";	
+    var label2;
+    if(label in dictionary)
+        label2 = dictionary[label];
+    else
+        label2 = label;    
+           
+    var inProcessText = "label.action.edit.network.processing";	
+    var inProcessText2;
+    if(inProcessText in dictionary)
+        inProcessText2 = dictionary[inProcessText];   
+    else
+        inProcessText2 = inProcessText;        	          
+       
+    var $spinningWheel = $detailsTab.find("#spinning_wheel");
+    $spinningWheel.find("#description").text(inProcessText2);       
+    $spinningWheel.show();      
+
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");   
     $afterActionInfoContainer.removeClass("errorbox").hide(); 
     
@@ -1571,7 +1588,8 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
 		success: function(json) {	
 		    var jobId = json.updatenetworkresponse.jobid;				        
 	        var timerKey = "updatenetworkJob_"+jobId;
-				    
+	        g_nonCompleteAsyncJob[jobId] = label2;
+	        
 	        $("body").everyTime(2000, timerKey, function() {
 			    $.ajax({
 				    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
@@ -1582,6 +1600,9 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
 						    return; //Job has not completed
 					    } else {											    
 						    $("body").stopTime(timerKey);
+						    delete g_nonCompleteAsyncJob[jobId];
+	                        $spinningWheel.hide(); 
+						    
 						    if (result.jobstatus == 1) {
 							    // Succeeded		    							    	
 						    	var jsonObj = result.jobresult.network; 
@@ -1592,7 +1613,7 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
 					            $readonlyFields.show();       
 					            $("#save_button, #cancel_button").hide();     
 						    } else if (result.jobstatus == 2) {						    					        
-						    	var errorMsg = dictionary['label.action.edit.network']+ " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
+						    	var errorMsg = label2+ " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
 	                            if($("#middle_menu").css("display") != "none")
 	                                handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, errorMsg);		
 	                            else
@@ -1603,7 +1624,7 @@ function doEditDirectNetwork2($actionLink, $detailsTab, $midmenuItem1, $readonly
 				    error: function(XMLHttpResponse) {
 					    $("body").stopTime(timerKey);
 						handleError(XMLHttpResponse, function() {													
-							handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, dictionary['label.action.edit.network'], $afterActionInfoContainer, $midmenuItem1); 		
+							handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label2, $afterActionInfoContainer, $midmenuItem1); 		
 						});
 				    }
 			    });
