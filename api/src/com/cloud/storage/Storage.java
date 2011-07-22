@@ -96,7 +96,8 @@ public class Storage {
         LVM(false),    // XenServer local LVM SR
         SharedMountPoint(true),
         VMFS(true),		// VMware VMFS storage
-        PreSetup(true);  // for XenServer, Storage Pool is set up by customers. 
+        PreSetup(true),  // for XenServer, Storage Pool is set up by customers. 
+        EXT(false);    // XenServer local EXT SR
         
         
         boolean shared;
