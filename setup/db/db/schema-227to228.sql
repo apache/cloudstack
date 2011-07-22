@@ -144,3 +144,17 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state', 'Auto', 'console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state.last', 'Auto', 'last console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.message.timeout.seconds', '300', 'Time (in seconds) to wait before a inter-management server message post times out.');
+
+ALTER TABLE `cloud`.`op_host_capacity` DROP FOREIGN KEY `fk_op_host_capacity__pod_id`;
+ALTER TABLE `cloud`.`op_host_capacity` DROP FOREIGN KEY `fk_op_host_capacity__data_center_id`;
+ALTER TABLE `cloud`.`op_host_capacity` DROP FOREIGN KEY `fk_op_host_capacity__cluster_id`;
+
+ALTER TABLE `cloud`.`cluster` ADD INDEX `i_cluster__removed`(`removed`);
+ALTER TABLE `cloud`.`data_center` ADD INDEX `i_data_center__removed`(`removed`);
+ALTER TABLE `cloud`.`host_pod_ref` ADD INDEX `i_host_pod_ref__removed`(`removed`);
+ALTER TABLE `cloud`.`mshost` ADD INDEX `i_mshost__removed`(`removed`);
+ALTER TABLE `cloud`.`template_zone_ref` ADD INDEX `i_template_zone_ref__removed`(`removed`);
+ALTER TABLE `cloud`.`domain` ADD INDEX `i_domain__removed`(`removed`);
+ALTER TABLE `cloud`.`disk_offering` ADD INDEX `i_disk_offering__removed`(`removed`);
+ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__removed`(`removed`);
+ALTER TABLE `cloud`.`instance_group` ADD INDEX `i_instance_group__removed`(`removed`);
