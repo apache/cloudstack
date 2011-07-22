@@ -57,15 +57,14 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
     @Inject NetworkManager _networkManager;
     @Inject ElasticLoadBalancerManager _lbMgr;
     
-    private boolean canHandle(Network config) {
-        DataCenter zone = _configMgr.getZone(config.getDataCenterId());
-        if (config.getGuestType() != Network.GuestIpType.Virtual || config.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("Not handling network with guest Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
+    private boolean canHandle(Network network) {
+       // DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        if (network.getGuestType() != Network.GuestIpType.Direct || network.getTrafficType() != TrafficType.Guest) {
+            s_logger.debug("Not handling network with guest Type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
             return false;
         }
         
-        return (_networkManager.zoneIsConfiguredForExternalNetworking(zone.getId()) && 
-                zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.F5BigIp.getName()));
+        return true;
     }
     
     @Override
