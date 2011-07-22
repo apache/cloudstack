@@ -14,6 +14,7 @@ dictionary = {
 	'label.action.delete.load.balancer' : '<fmt:message key="label.action.delete.load.balancer"/>',
 	'label.action.delete.load.balancer.processing' : '<fmt:message key="label.action.delete.load.balancer.processing"/>',
 	'label.action.edit.network' : '<fmt:message key="label.action.edit.network"/>',
+	'label.action.edit.network.processing' : '<fmt:message key="label.action.edit.network.processing"/>',
 	'label.action.delete.network' : '<fmt:message key="label.action.delete.network"/>',
 	'label.action.delete.network.processing' : '<fmt:message key="label.action.delete.network.processing"/>',
 	'message.action.delete.network' : '<fmt:message key="message.action.delete.network"/>',
