@@ -48,19 +48,19 @@ import com.cloud.utils.mgmt.JmxUtil;
  * your own.
  */
 public class ConnectionConcierge {
-    
+
     static final Logger s_logger = Logger.getLogger(ConnectionConcierge.class);
-    
+
     static final ConnectionConciergeManager s_mgr = new ConnectionConciergeManager();
-    
+
     Connection _conn;
     String _name;
     boolean _keepAlive;
     boolean _autoCommit;
     int _isolationLevel;
     int _holdability;
-    
-    public ConnectionConcierge(String name, Connection conn, boolean autoCommit, boolean keepAlive) {
+
+    public ConnectionConcierge(String name, Connection conn, boolean keepAlive) {
         _name = name + s_mgr.getNextId();
         _keepAlive = keepAlive;
         try {
@@ -72,7 +72,7 @@ public class ConnectionConcierge {
         }
         reset(conn);
     }
-    
+
     public void reset(Connection conn) {
         try {
             release();
@@ -90,11 +90,11 @@ public class ConnectionConcierge {
         s_mgr.register(_name, this);
         s_logger.debug("Registering a database connection for " + _name);
     }
-    
+
     public final Connection conn() {
         return _conn;
     }
-    
+
     public void release() {
         s_mgr.unregister(_name);
         try {
@@ -106,23 +106,23 @@ public class ConnectionConcierge {
             throw new CloudRuntimeException("Problem in closing a connection", e);
         }
     }
-    
+
     @Override
     protected void finalize() throws Exception {
         if (_conn != null) {
             release();
         }
     }
-    
+
     public boolean keepAlive() {
         return _keepAlive;
     }
-    
+
     protected static class ConnectionConciergeManager extends StandardMBean implements ConnectionConciergeMBean {
         ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ConnectionKeeper"));
         final ConcurrentHashMap<String, ConnectionConcierge> _conns = new ConcurrentHashMap<String, ConnectionConcierge>();
         final AtomicInteger _idGenerator = new AtomicInteger();
-        
+
         ConnectionConciergeManager() {
             super(ConnectionConciergeMBean.class, false);
             resetKeepAliveTask(20);
@@ -132,19 +132,19 @@ public class ConnectionConcierge {
                 s_logger.error("Unable to register mbean", e);
             }
         }
-        
+
         public Integer getNextId() {
             return _idGenerator.incrementAndGet();
         }
-        
+
         public void register(String name, ConnectionConcierge concierge) {
             _conns.put(name, concierge);
         }
-        
+
         public void unregister(String name) {
             _conns.remove(name);
         }
-        
+
         protected String testValidity(String name, Connection conn) {
             PreparedStatement pstmt = null;
             try {
@@ -182,12 +182,12 @@ public class ConnectionConcierge {
             if (concierge == null) {
                 return "Not Found";
             }
-            
+
             Connection conn = Transaction.getStandaloneConnection();
             if (conn == null) {
                 return "Unable to get anotehr db connection";
             }
-            
+
             concierge.reset(conn);
             return "Done";
         }
@@ -201,7 +201,7 @@ public class ConnectionConcierge {
                     s_logger.error("Unable to shutdown executor", e);
                 }
             }
-            
+
             _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ConnectionConcierge"));
             _executor.schedule(new Runnable() {
                 @Override
@@ -215,7 +215,7 @@ public class ConnectionConcierge {
                     }
                 }
             }, seconds, TimeUnit.SECONDS);
-            
+
             return "As you wish.";
         }
 

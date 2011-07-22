@@ -40,7 +40,7 @@ import com.cloud.utils.time.InaccurateClock;
 
 public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private static final Logger s_logger = Logger.getLogger(Merovingian2.class);
-    
+
     private static final String ACQUIRE_SQL = "INSERT INTO op_lock (op_lock.key, op_lock.mac, op_lock.ip, op_lock.thread, op_lock.acquired_on, waiters) VALUES (?, ?, ?, ?, ?, 1)";
     private static final String INCREMENT_SQL = "UPDATE op_lock SET waiters=waiters+1 where op_lock.key=? AND op_lock.mac=? AND op_lock.ip=? AND op_lock.thread=?";
     private static final String SELECT_SQL = "SELECT op_lock.key, mac, ip, thread, acquired_on, waiters FROM op_lock";
@@ -52,14 +52,14 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private static final String SELECT_MGMT_LOCKS_SQL = SELECT_SQL + " WHERE mac=?";
     private static final String SELECT_THREAD_LOCKS_SQL = SELECT_SQL + " WHERE mac=? AND ip=?";
     private static final String CLEANUP_THREAD_LOCKS_SQL = "DELETE FROM op_lock WHERE mac=? AND ip=? AND thread=?";
-    
+
     TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
-    
-    private long _msId;
-    
+
+    private final long _msId;
+
     private static Merovingian2 s_instance = null;
     ConnectionConcierge _concierge = null;
-    
+
     private Merovingian2(long msId) {
         super(MerovingianMBean.class, false);
         _msId = msId;
@@ -67,13 +67,14 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         try {
             conn = Transaction.getStandaloneConnectionWithException();
             conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-            _concierge = new ConnectionConcierge("LockMaster", conn, true, true);
+            conn.setAutoCommit(true);
+            _concierge = new ConnectionConcierge("LockMaster", conn, false);
         } catch (SQLException e) {
             s_logger.error("Unable to get a new db connection", e);
             throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes: ", e);
         }
     }
-    
+
     public static synchronized Merovingian2 createLockMaster(long msId) {
         assert s_instance == null : "No lock can serve two masters.  Either he will hate the one and love the other, or he will be devoted to the one and despise the other.";
         s_instance = new Merovingian2(msId);
@@ -85,16 +86,16 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
         return s_instance;
     }
-    
+
     public static Merovingian2 getLockMaster() {
         return s_instance;
     }
-    
+
     public boolean acquire(String key, int timeInSeconds) {
         Thread th = Thread.currentThread();
         String threadName = th.getName();
         int threadId = System.identityHashCode(th);
-        
+
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Acquiring lck-" + key + " with wait time of " + timeInSeconds);
         }
@@ -120,7 +121,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
         return false;
     }
-    
+
     protected boolean increment(String key, String threadName, int threadId) {
         PreparedStatement pstmt = null;
         try {
@@ -146,7 +147,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
-    
+
     protected boolean doAcquire(String key, String threadName, int threadId) {
         PreparedStatement pstmt = null;
 
@@ -181,11 +182,11 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             } catch (SQLException e) {
             }
         }
-            
+
         s_logger.trace("Unable to acquire lck-" + key);
         return false;
     }
-    
+
     protected Map<String, String> isLocked(String key) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -196,7 +197,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             if (!rs.next()) {
                 return null;
             }
-            
+
             return toLock(rs);
         } catch (SQLException e) {
             throw new CloudRuntimeException("SQL Exception on inquiry", e);
@@ -213,7 +214,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
-    
+
     public void cleanupThisServer() {
         cleanupForServer(_msId);
     }
@@ -238,7 +239,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
-    
+
     public boolean release(String key) {
         PreparedStatement pstmt = null;
         Thread th = Thread.currentThread();
@@ -277,7 +278,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
-    
+
     protected Map<String, String> toLock(ResultSet rs) throws SQLException {
         Map<String, String> map = new HashMap<String, String>();
         map.put("key", rs.getString(1));
@@ -287,9 +288,9 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         map.put("date", rs.getString(5));
         map.put("count", Integer.toString(rs.getInt(6)));
         return map;
-        
+
     }
-    
+
     protected List<Map<String, String>> toLocks(ResultSet rs) throws SQLException {
         LinkedList<Map<String, String>> results = new LinkedList<Map<String, String>>();
         while (rs.next()) {
@@ -297,7 +298,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
         return results;
     }
-    
+
     protected List<Map<String, String>> getLocks(String sql, Long msId) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -332,7 +333,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     public List<Map<String, String>> getLocksAcquiredByThisServer() {
         return getLocks(SELECT_MGMT_LOCKS_SQL, _msId);
     }
-    
+
     public int owns(String key) {
         Thread th = Thread.currentThread();
         int threadId = System.identityHashCode(th);
@@ -345,7 +346,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
         return -1;
     }
-    
+
     public List<Map<String, String>> getLocksAcquiredBy(long msId, String threadName) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -369,12 +370,12 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
-    
+
     public void cleanupThread() {
         Thread th = Thread.currentThread();
         String threadName = th.getName();
         int threadId = System.identityHashCode(th);
-                
+
         PreparedStatement pstmt = null;
         try {
             pstmt = _concierge.conn().prepareStatement(CLEANUP_THREAD_LOCKS_SQL);
@@ -394,7 +395,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             }
         }
     }
-    
+
     @Override
     public boolean releaseLockAsLastResortAndIReallyKnowWhatIAmDoing(String key) {
         PreparedStatement pstmt = null;
