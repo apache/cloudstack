@@ -149,7 +149,11 @@ function initAddServiceOfferingDialog() {
 				var tags = $thisDialog.find("#add_service_tags").val();
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));	
-				
+								
+				var hosttags = $thisDialog.find("#add_service_hosttags").val();
+				if(hosttags != null && hosttags.length > 0)
+				    array1.push("&hosttags="+todb(hosttags));	
+								
 				if($thisDialog.find("#cpu_cap_dropdown_container").css("display") != "none") {                
 	                array1.push("&limitcpuuse="+$thisDialog.find("#cpu_cap_dropdown").val());		
 	            }   
