@@ -432,7 +432,7 @@ function hostRouterJSONToTemplate(jsonObj, template) {
     template.find("#id").text(jsonObj.id);
     template.find("#name").text(fromdb(jsonObj.name));	  
     template.find("#publicip").text(fromdb(jsonObj.publicip));   
-    template.find("#privateip").text(fromdb(jsonObj.privateip));
+    template.find("#privateip").text(fromdb(jsonObj.linklocalip));
     template.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress)); 
     template.find("#account").text(fromdb(jsonObj.account));
     template.find("#domain").text(fromdb(jsonObj.domain));
