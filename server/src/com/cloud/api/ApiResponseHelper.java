@@ -1674,10 +1674,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // collect all the capacity types, sum allocated/used and sum total...get one capacity number for each
         for (Capacity capacity : hostCapacities) {
-            if (poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
+            short capacityType = capacity.getCapacityType();
+            
+            //If local storage then ignore
+            if ( (capacityType == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED || capacityType == Capacity.CAPACITY_TYPE_STORAGE) 
+            		&& poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
                 continue;
             }
-            short capacityType = capacity.getCapacityType();
+            
             String key = capacity.getCapacityType() + "_" + capacity.getDataCenterId();
             String keyForPodTotal = key + "_-1";
 
