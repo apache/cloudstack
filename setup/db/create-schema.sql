@@ -286,7 +286,8 @@ CREATE TABLE `cloud`.`cluster` (
   CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
   UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`),
-  INDEX `i_cluster__allocation_state`(`allocation_state`)
+  INDEX `i_cluster__allocation_state`(`allocation_state`),
+  INDEX `i_cluster__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`cluster_details` (
@@ -499,7 +500,8 @@ CREATE TABLE  `cloud`.`data_center` (
   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
   INDEX `i_data_center__domain_id`(`domain_id`),
   INDEX `i_data_center__allocation_state`(`allocation_state`),
-  INDEX `i_data_center__zone_token`(`zone_token`)  
+  INDEX `i_data_center__zone_token`(`zone_token`),
+  INDEX `i_data_center__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
@@ -547,7 +549,9 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`name`, `data_center_id`),
   INDEX `i_host_pod_ref__data_center_id`(`data_center_id`),
-  INDEX `i_host_pod_ref__allocation_state`(`allocation_state`)
+  INDEX `i_host_pod_ref__allocation_state`(`allocation_state`),
+  INDEX `i_host_pod_ref__removed`(`removed`)
+  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
@@ -705,7 +709,8 @@ CREATE TABLE  `cloud`.`mshost` (
   `last_update` DATETIME NULL COMMENT 'Last record update time',
   `removed` datetime COMMENT 'date removed if not null',
   `alert_count` integer NOT NULL DEFAULT 0,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_mshost__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`host_tags` (
@@ -732,7 +737,8 @@ CREATE TABLE  `cloud`.`user` (
   `timezone` varchar(30) default NULL,
   `registration_token` varchar(255) default NULL,
   `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_user__removed`(`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`event` (
@@ -817,7 +823,8 @@ CREATE TABLE  `cloud`.`vm_template` (
   `extractable` int(1) unsigned NOT NULL default 0 COMMENT 'Is this template extractable',
   `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template belongs to',
   `source_template_id` bigint unsigned COMMENT 'Id of the original template, if this template is created from snapshot',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_vm_template__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`vm_instance` (
@@ -956,7 +963,8 @@ CREATE TABLE  `cloud`.`template_zone_ref` (
   CONSTRAINT `fk_template_zone_ref__zone_id` FOREIGN KEY `fk_template_zone_ref__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
   INDEX `i_template_zone_ref__zone_id`(`zone_id`),
   CONSTRAINT `fk_template_zone_ref__template_id` FOREIGN KEY `fk_template_zone_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE,
-  INDEX `i_template_zone_ref__template_id`(`template_id`)
+  INDEX `i_template_zone_ref__template_id`(`template_id`),
+  INDEX `i_template_zone_ref__removed`(`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`console_proxy` (
@@ -998,7 +1006,8 @@ CREATE TABLE  `cloud`.`domain` (
   `network_domain` varchar(255),
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed),
-  INDEX `i_domain__path`(`path`)
+  INDEX `i_domain__path`(`path`),
+  INDEX `i_domain__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`account` (
@@ -1010,7 +1019,8 @@ CREATE TABLE  `cloud`.`account` (
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(255),
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX i_account__removed(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`resource_limit` (
@@ -1084,7 +1094,8 @@ CREATE TABLE `cloud`.`async_job` (
   `last_updated` datetime COMMENT 'date created',
   `last_polled` datetime COMMENT 'date polled',
   `removed` datetime COMMENT 'date removed',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_async_job__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`sync_queue` (
@@ -1136,7 +1147,8 @@ CREATE TABLE `cloud`.`disk_offering` (
   `customized` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 implies not customized by default',
   `removed` datetime COMMENT 'date removed',
   `created` datetime COMMENT 'date the disk offering was created',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_disk_offering__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`service_offering` (
@@ -1212,7 +1224,8 @@ CREATE TABLE  `cloud`.`storage_pool` (
   `removed` datetime COMMENT 'date removed if not null',
   `update_time` DATETIME,
   `status` varchar(32),
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_storage_pool__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`storage_pool_details` (
@@ -1368,7 +1381,8 @@ CREATE TABLE `cloud`.`instance_group` (
   `name` varchar(255) NOT NULL,
   `removed` datetime COMMENT 'date the group was removed',
   `created` datetime COMMENT 'date the group was created',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_instance_group__removed`(`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`instance_group_vm_map` (
