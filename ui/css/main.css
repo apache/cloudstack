@@ -2870,14 +2870,14 @@ a:hover.search_button {
 }
 
 .fixed_gridcontainer {
-	width:100%;
-	height:700px;
-	float:left;
-	overflow-y:scroll;
-	overflow-y:auto;
-	overflow-x:hidden;
-	margin:0;
-	padding:0;
+    width:100%;
+    height:700px;
+    float:left;
+    overflow-y:auto;
+    overflow-x:hidden;
+    position:relative;
+    margin:0;
+    padding:0;
 }
 .grid_rows {
 	width:100%;
