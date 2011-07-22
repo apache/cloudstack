@@ -430,10 +430,10 @@ function listZonesUpdate() {
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
 	    async: false,
-	    success: function(json) {
+	    success: function(json) {    	    
+    	    $("#zone_total").text(json.listzonesresponse.count.toString());		    	
 	        var items = json.listzonesresponse.zone;			
-			if (items != null && items.length > 0) {
-			    $("#zone_total").text(items.length.toString());			   
+			if (items != null && items.length > 0) {			   	   
 			    for(var i=0; i<items.length; i++) {		   			    
 			        $dialogs.find("#zone_dropdown").append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 			    }			         
@@ -1027,7 +1027,7 @@ function resourceCountTotal() {
 	    success: function(json) {
 	        var items = json.listzonesresponse.zone;			
 			if (items != null) {			   			    
-			    $("#zone_total").text(items.length.toString());
+			    $("#zone_total").text(json.listzonesresponse.count.toString());
 			}	
 	    }
 	});
@@ -1039,7 +1039,7 @@ function resourceCountTotal() {
 	    success: function(json) {
 	        var items = json.listpodsresponse.pod;			    			
 			if (items != null) {			   			    
-			    $("#pod_total").text(items.length.toString());
+			    $("#pod_total").text(json.listpodsresponse.count.toString());
 			}	
 	    }
 	});
@@ -1050,7 +1050,7 @@ function resourceCountTotal() {
 	    success: function(json) {
 	        var items = json.listclustersresponse.cluster;		    			
 			if (items != null) {			   			    
-			    $("#cluster_total").text(items.length.toString());
+			    $("#cluster_total").text(json.listclustersresponse.count.toString());
 			}	
 	    }
 	});
@@ -1062,7 +1062,7 @@ function resourceCountTotal() {
         success: function(json) {
             var items = json.listhostsresponse.host;	
             if (items != null) {					    
-                $("#host_total").text(items.length.toString());		                    
+                $("#host_total").text(json.listhostsresponse.count.toString());		                    
             }		    
         }
     });  
@@ -1074,7 +1074,7 @@ function resourceCountTotal() {
         success: function(json) {
             var items = json.liststoragepoolsresponse.storagepool;	
             if (items != null) {					    
-                $("#primarystorage_total").text(items.length.toString());		                    
+                $("#primarystorage_total").text(json.liststoragepoolsresponse.count.toString());		                    
             }		    
         }
     });  
