@@ -45,7 +45,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6"; //clear non-storage and non-secondary_storage capacities
     private static final String CLEAR_NON_STORAGE_CAPACITIES2 = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6 AND capacity_type<>0 AND capacity_type<>1"; //clear non-storage and non-secondary_storage capacities
 
-    private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1 = "SELECT DISTINCT cluster_id  FROM `cloud`.`op_host_capacity` WHERE ";
+    private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1 = "SELECT DISTINCT capacity.cluster_id  FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster` cluster on (cluster.id = capacity.cluster_id AND cluster.removed is NULL) WHERE ";
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART2 = " AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ? " +
     		"AND cluster_id IN (SELECT distinct cluster_id  FROM `cloud`.`op_host_capacity` WHERE ";
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART3 = " AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ?) " +
@@ -156,16 +156,17 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         List<Long> result = new ArrayList<Long>();
 
         StringBuilder sql = new StringBuilder(LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1);
+        
         if(isZone){
-        	sql.append("data_center_id = ?");
+        	sql.append("capacity.data_center_id = ?");
         }else{
-        	sql.append("pod_id = ?");
+        	sql.append("capacity.pod_id = ?");
         }
         sql.append(LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART2);
         if(isZone){
-        	sql.append("data_center_id = ?");
+        	sql.append("capacity.data_center_id = ?");
         }else{
-        	sql.append("pod_id = ?");
+        	sql.append("capacity.pod_id = ?");
         }
         sql.append(LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART3);
 
