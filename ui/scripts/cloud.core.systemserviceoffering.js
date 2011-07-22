@@ -334,7 +334,9 @@ function systemServiceOfferingJsonToDetailsTab() {
     
     $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
-       
+     
+    $thisTab.find("#hosttags").text(fromdb(jsonObj.hosttags)); 
+    
     setBooleanReadField(jsonObj.defaultuse,  $thisTab.find("#defaultuse"));
     
     $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
@@ -377,7 +379,8 @@ function systemServiceOfferingClearDetailsTab() {
     $thisTab.find("#offerha").text("");
     $thisTab.find("#offerha_edit").val("");  
     $thisTab.find("#limitcpuuse").text("");
-    $thisTab.find("#tags").text("");      
+    $thisTab.find("#tags").text(""); 
+    $thisTab.find("#hosttags").text(""); 
     $thisTab.find("#defaultuse").text("");     
     $thisTab.find("#domain").text(""); 
     $thisTab.find("#domain_edit").val("");   

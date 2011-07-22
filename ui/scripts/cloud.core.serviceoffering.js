@@ -335,6 +335,8 @@ function serviceOfferingJsonToDetailsTab() {
     $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
     
+    $thisTab.find("#hosttags").text(fromdb(jsonObj.hosttags)); 
+    
     $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
     $thisTab.find("#domain_edit").val(fromdb(jsonObj.domainid));   
      
@@ -369,6 +371,7 @@ function serviceOfferingClearDetailsTab() {
     $thisTab.find("#offerha_edit").val("");    
     $thisTab.find("#limitcpuuse").text("");
     $thisTab.find("#tags").text("");  
+    $thisTab.find("#hosttags").text(""); 
     $thisTab.find("#domain").text(""); 
     $thisTab.find("#domain_edit").val("");   
     $thisTab.find("#created").text(""); 
