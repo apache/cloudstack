@@ -280,11 +280,11 @@ public class SqlGenerator {
 
     public Attribute findAttribute(String name) {
         for (Attribute attr : _attributes) {
-            if (attr.columnName.equals(GenericDao.REMOVED) && attr.isUpdatable()) {
-                return null;
-            }
-            
-            if (attr.columnName.equals(name)) {
+           
+            if (attr.columnName.equalsIgnoreCase(name)) {
+                if (attr.columnName.equalsIgnoreCase(GenericDao.REMOVED) && attr.isUpdatable()) {
+                    return null;
+                }
                 return attr;
             }
         }
