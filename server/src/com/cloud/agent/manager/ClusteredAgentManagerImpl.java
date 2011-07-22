@@ -113,6 +113,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _peers = new HashMap<String, SocketChannel>(7);
         _sslEngines = new HashMap<String, SSLEngine>(7);
         _nodeId = _clusterMgr.getManagementNodeId();
+        
+        s_logger.info("Configuring ClusterAgentManagerImpl. management server node id(msid): " + _nodeId);
 
         ConfigurationDao configDao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
         Map<String, String> params = configDao.getConfiguration(xmlParams);

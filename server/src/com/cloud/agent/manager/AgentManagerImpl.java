@@ -295,6 +295,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
 
         _nodeId = ManagementServerNode.getManagementServerId();
+        s_logger.info("Configuring AgentManagerImpl. management server node id(msid): " + _nodeId);
+        
 
         _hostDao.markHostsAsDisconnected(_nodeId);
 
