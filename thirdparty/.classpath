@@ -2,5 +2,7 @@
 <classpath>
 	<classpathentry exported="true" kind="lib" path="jnetpcap.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry exported="true" kind="lib" path="selenium-java-client-driver.jar"/>
+	<classpathentry exported="true" kind="lib" path="selenium-server.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

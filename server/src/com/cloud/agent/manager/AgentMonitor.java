@@ -18,6 +18,7 @@
 package com.cloud.agent.manager;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -59,13 +60,13 @@ public class AgentMonitor extends Thread implements Listener {
     private AlertManager _alertMgr;
     private long _msId;
     private ConnectionConcierge _concierge;
-    
+
     protected AgentMonitor() {
     }
-    
+
     public AgentMonitor(long msId, HostDao hostDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {
-    	super("AgentMonitor");
-    	_msId = msId;
+        super("AgentMonitor");
+        _msId = msId;
         _pingTimeout = pingTimeout;
         _hostDao = hostDao;
         _agentMgr = agentMgr;
@@ -74,19 +75,22 @@ public class AgentMonitor extends Thread implements Listener {
         _dcDao = dcDao;
         _podDao = podDao;
         _alertMgr = alertMgr;
-        Connection conn = Transaction.getStandaloneConnection();
-        if (conn == null) {
-            throw new CloudRuntimeException("Unable to get a db connection.");
+        try {
+            Connection conn = Transaction.getStandaloneConnectionWithException();
+            conn.setAutoCommit(true);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            _concierge = new ConnectionConcierge("AgentMonitor", conn, true);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to get a db connection", e);
         }
-        
-        _concierge = new ConnectionConcierge("AgentMonitor", conn, true, true);
+
     }
-    
+
     // TODO : use host machine time is not safe in clustering environment
     @Override
-	public void run() {
+    public void run() {
         s_logger.info("Agent Monitor is started.");
-        
+
         while (!_stop) {
             try {
                 // check every 60 seconds
@@ -94,41 +98,41 @@ public class AgentMonitor extends Thread implements Listener {
             } catch (InterruptedException e) {
                 s_logger.info("Who woke me from my slumber?");
             }
-            
-        	GlobalLock lock = GlobalLock.getInternLock("AgentMonitorLock");
-        	if (lock == null) {
-        		s_logger.error("Unable to acquire lock.  Better luck next time?");
-        		continue;
-        	}
-        	
-        	if (!lock.lock(10)) {
-        		s_logger.info("Someone else is already working on the agents.  Skipping my turn");
-        		continue;
-        	}
-        	
+
+            GlobalLock lock = GlobalLock.getInternLock("AgentMonitorLock");
+            if (lock == null) {
+                s_logger.error("Unable to acquire lock.  Better luck next time?");
+                continue;
+            }
+
+            if (!lock.lock(10)) {
+                s_logger.info("Someone else is already working on the agents.  Skipping my turn");
+                continue;
+            }
+
             try {
                 long time = (System.currentTimeMillis() >> 10) - _pingTimeout;
                 List<HostVO> hosts = _hostDao.findLostHosts(time);
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Found " + hosts.size() + " hosts behind on ping. pingTimeout : " + _pingTimeout + ", mark time : " + time);
                 }
-                
+
                 for (HostVO host : hosts) {
-                	if (host.getType().equals(Host.Type.ExternalFirewall) ||
-                		host.getType().equals(Host.Type.ExternalLoadBalancer) ||
-                		host.getType().equals(Host.Type.TrafficMonitor) ||
-                		host.getType().equals(Host.Type.SecondaryStorage)) {
-                		continue;
-                	}
-                	
-                	if (host.getManagementServerId() == null || host.getManagementServerId() == _msId) {
-	                    if (s_logger.isInfoEnabled()) {
-	                        s_logger.info("Asking agent mgr to investgate why host " + host.getId() + " is behind on ping. last ping time: " + host.getLastPinged());
-	                    }
-	                    _agentMgr.disconnect(host.getId(), Event.PingTimeout, true);
-                	}
+                    if (host.getType().equals(Host.Type.ExternalFirewall) ||
+                            host.getType().equals(Host.Type.ExternalLoadBalancer) ||
+                            host.getType().equals(Host.Type.TrafficMonitor) ||
+                            host.getType().equals(Host.Type.SecondaryStorage)) {
+                        continue;
+                    }
+
+                    if (host.getManagementServerId() == null || host.getManagementServerId() == _msId) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Asking agent mgr to investgate why host " + host.getId() + " is behind on ping. last ping time: " + host.getLastPinged());
+                        }
+                        _agentMgr.disconnect(host.getId(), Event.PingTimeout, true);
+                    }
                 }
-                
+
                 hosts = _hostDao.listByStatus(Status.PrepareForMaintenance, Status.ErrorInMaintenance);
                 for (HostVO host : hosts) {
                     long hostId = host.getId();
@@ -147,13 +151,13 @@ public class AgentMonitor extends Thread implements Listener {
             } catch (Throwable th) {
                 s_logger.error("Caught the following exception: ", th);
             } finally {
-            	lock.unlock();
+                lock.unlock();
             }
         }
-        
+
         s_logger.info("Agent Monitor is leaving the building!");
     }
-    
+
     public void signalStop() {
         _stop = true;
         interrupt();
@@ -193,10 +197,10 @@ public class AgentMonitor extends Thread implements Listener {
         }
         return processed;
     }
-    
+
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-    	return null;
+        return null;
     }
 
     @Override
@@ -207,15 +211,15 @@ public class AgentMonitor extends Thread implements Listener {
     public boolean processDisconnect(long agentId, Status state) {
         return true;
     }
-    
+
     @Override
     public boolean processTimeout(long agentId, long seq) {
-    	return true;
+        return true;
     }
-    
+
     @Override
     public int getTimeout() {
-    	return -1;
+        return -1;
     }
-    
+
 }
