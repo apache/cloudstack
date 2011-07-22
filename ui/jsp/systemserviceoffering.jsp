@@ -265,7 +265,14 @@ dictionary = {
                     <input class="text" type="text" id="add_service_tags" />
                     <div id="add_service_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
-                </li>	               
+                </li>	
+                <li id="add_service_hosttags_container">
+                    <label>
+                        <fmt:message key="label.host.tags"/>:</label>
+                    <input class="text" type="text" id="add_service_hosttags" />
+                    <div id="add_service_hosttags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>
+                </li>         
  				<li>
 				    <label>
 				        <fmt:message key="label.CPU.cap"/>:</label>
