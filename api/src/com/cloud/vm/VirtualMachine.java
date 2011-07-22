@@ -151,6 +151,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
         DomainRouter,
         ConsoleProxy,
         SecondaryStorageVm,
+        ElasticIpVm,
+        ElasticLoadBalancerVm,
         
         /*
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no

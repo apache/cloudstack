@@ -559,6 +559,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (zone.getNetworkType() != NetworkType.Basic && network.getAccountId() != ipOwner.getId()) {
             throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
+        VlanType vlanType = VlanType.VirtualNetwork;
+        boolean assign = false;
+        //For basic zone, if there isn't a public network outside of the guest network, specify the vlan type to be direct attached
+        if (zone.getNetworkType() == NetworkType.Basic) {
+          if (network.getTrafficType() == TrafficType.Guest){
+              vlanType = VlanType.DirectAttached;
+              assign = true;
+          }
+          
+        }
 
         PublicIp ip = null;
 
@@ -601,7 +611,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
 
-            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, VlanType.VirtualNetwork, network.getId(), isSourceNat, false, null);
+            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, vlanType, network.getId(), isSourceNat, assign, null);
 
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
@@ -754,8 +764,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
         NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, false, true, null, null, null, true,
                 Availability.Optional,
-                // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct);
+                // services - all true except for firewall/vpn and gateway services
+                true, true, true, false, false, true, false, GuestIpType.Direct);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();

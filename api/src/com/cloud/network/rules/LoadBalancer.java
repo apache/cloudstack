@@ -32,5 +32,5 @@ public interface LoadBalancer extends FirewallRule {
     int getDefaultPortEnd();
 
     String getAlgorithm();
-    
+        
 }

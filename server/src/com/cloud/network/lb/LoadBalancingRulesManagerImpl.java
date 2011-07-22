@@ -50,12 +50,15 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -118,6 +121,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     NicDao _nicDao;
     @Inject
     UsageEventDao _usageEventDao;
+    @Inject
+    ElasticLoadBalancerManager _elbMgr;
+    @Inject
+    NetworkDao _networkDao;
 
     @Override
     @DB
@@ -346,9 +353,25 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         UserContext caller = UserContext.current();
 
         long ipId = lb.getSourceIpAddressId();
-
-        // make sure ip address exists
         IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
+        Long networkId= ipAddr.getSourceNetworkId();
+        NetworkVO network=_networkDao.findById(networkId);
+        
+        if (network.getGuestType() == GuestIpType.Direct) {
+            LoadBalancerVO lbvo;
+            Account account = caller.getCaller();
+            lbvo = _lbDao.findByAccountAndName(account.getId(), lb.getName());
+            if (lbvo == null) {
+                _elbMgr.deployLoadBalancerVM(networkId, account.getId());
+                IPAddressVO ipvo = _ipAddressDao.findById(ipId);
+                ipvo.setAssociatedWithNetworkId(networkId); 
+                _ipAddressDao.update(ipvo.getId(), ipvo);
+                ipAddr.setAssociatedWithNetworkId(networkId);
+            } else {
+                
+            }
+        }
+        // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
         }
@@ -380,7 +403,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Invalid algorithm: " + lb.getAlgorithm());
         }
 
-        Long networkId = ipAddr.getAssociatedWithNetworkId();
+         networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
             throw new InvalidParameterValueException("Unable to create load balancer rule ; ip id=" + ipId + " is not associated with any network");
 
@@ -389,9 +412,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         _accountMgr.checkAccess(caller.getCaller(), ipAddr);
 
         // verify that lb service is supported by the network
-        Network network = _networkMgr.getNetwork(networkId);
         if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Lb)) {
-            throw new InvalidParameterValueException("LB service is not supported in network id=" + networkId);
+            throw new InvalidParameterValueException("LB service is not supported in network id= " + networkId);
         }
 
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), lb.getAlgorithm(),
