@@ -782,6 +782,20 @@ public class ClusterManagerImpl implements ClusterManager {
         // missed cleanup
         Date cutTime = DateUtil.currentGMTTime();
         List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - heartbeatThreshold));
+       
+        // We don't have foreign key constraints to enforce the mgmt_server_id integrity in host table, when user manually 
+        // remove records from mshost table, this will leave orphan mgmt_serve_id reference in host table.
+        List<Long> orphanList = _mshostDao.listOrphanMsids();
+        if(orphanList.size() > 0) {
+	        for(Long orphanMsid : orphanList) {
+	        	// construct fake ManagementServerHostVO based on orphan MSID
+	        	s_logger.info("Add orphan management server msid found in host table to initial clustering notification, orphan msid: " + orphanMsid);
+	        	inactiveList.add(new ManagementServerHostVO(orphanMsid, 0, "orphan", 0, new Date()));
+	        }
+        } else {
+        	s_logger.info("We are good, no orphan management server msid in host table is found");
+        }
+        
         if(inactiveList.size() > 0) {
         	if(s_logger.isInfoEnabled()) {
         		s_logger.info("Found " + inactiveList.size() + " inactive management server node based on timestamp");

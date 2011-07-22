@@ -43,4 +43,5 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 	void update(long id, long runId, State state, Date lastUpdate);
 	
 	List<ManagementServerHostVO> listBy(ManagementServerHost.State...states);
+	public List<Long> listOrphanMsids();
 }

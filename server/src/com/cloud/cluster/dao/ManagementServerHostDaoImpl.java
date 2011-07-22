@@ -19,7 +19,9 @@
 package com.cloud.cluster.dao;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -231,5 +233,26 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         sc.setParameters("state", (Object[]) states);
         
         return listBy(sc);
+	}
+	
+	@Override
+	public List<Long> listOrphanMsids() {
+		List<Long> orphanList = new ArrayList<Long>();
+		
+	    Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(
+            	"select t.mgmt_server_id from (select mgmt_server_id, count(*) as count from host group by mgmt_server_id) as t WHERE t.count > 0 AND t.mgmt_server_id NOT IN (select msid from mshost)");
+
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()) {
+            	orphanList.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+        }
+        
+        return orphanList;
 	}
 }
