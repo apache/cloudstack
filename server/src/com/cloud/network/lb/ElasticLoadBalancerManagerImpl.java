@@ -163,8 +163,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
             s_logger.debug("ELB  vm = " + elbVm);
             if (elbVm == null) {
-                throw new InvalidParameterValueException("No VM with id '"
-                        + elbVm + "' found.");
+                throw new InvalidParameterValueException("Could not deploy or find existing ELB VM");
             }
             DomainRouterVO elbRouterVm = _routerDao.findById(elbVm.getId());
             String publicIp = elbRouterVm.getGuestIpAddress();
