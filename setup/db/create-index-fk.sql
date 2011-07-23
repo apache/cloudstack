@@ -1,16 +1,5 @@
 # This file is obsolete!  Put what you need into create-schema.sql
 
-ALTER TABLE `cloud`.`storage_pool` ADD CONSTRAINT `fk_storage_pool__pod_id` FOREIGN KEY `fk_storage_pool__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pod_id`(`pod_id`);
-ALTER TABLE `cloud`.`storage_pool` ADD CONSTRAINT `fk_storage_pool__cluster_id` FOREIGN KEY `fk_storage_pool__cluster_id`(`cluster_id`) REFERENCES `cloud`.`cluster`(`id`);
-
-ALTER TABLE `cloud`.`storage_pool_details` ADD INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128));
-
-ALTER TABLE `cloud`.`user` ADD INDEX `i_user__secret_key_removed`(`secret_key`, `removed`);
-ALTER TABLE `cloud`.`user` ADD UNIQUE `i_user__api_key`(`api_key`);
-ALTER TABLE `cloud`.`user` ADD CONSTRAINT `fk_user__account_id` FOREIGN KEY `fk_user__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`user` ADD INDEX `i_user__account_id`(`account_id`);
-
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__domain_id` FOREIGN KEY `fk_account__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
 ALTER TABLE `cloud`.`account` ADD INDEX `i_account__domain_id`(`domain_id`);
 
@@ -29,7 +18,6 @@ ALTER TABLE `cloud`.`event` ADD INDEX `i_event__level_id`(`level`);
 ALTER TABLE `cloud`.`event` ADD INDEX `i_event__type_id`(`type`);
 
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__public`(`public`);
-
 
 ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__host_id` FOREIGN KEY `fk_upload__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`upload` ADD INDEX `i_upload__host_id`(`host_id`);
@@ -58,14 +46,6 @@ ALTER TABLE `cloud`.`snapshot_schedule` ADD INDEX `i_snapshot_schedule__async_jo
 ALTER TABLE `cloud`.`snapshot_schedule` ADD CONSTRAINT `fk__snapshot_schedule_snapshot_id` FOREIGN KEY `fk_snapshot_schedule__snapshot_id` (`snapshot_id`) REFERENCES `snapshots` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`snapshot_schedule` ADD INDEX `i_snapshot_schedule__snapshot_id`(`snapshot_id`);
 ALTER TABLE `cloud`.`snapshot_schedule` ADD INDEX `i_snapshot_schedule__scheduled_timestamp`(`scheduled_timestamp`);
-
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__user_id`(`user_id`);
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__account_id`(`account_id`);
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__instance_type_id`(`instance_type`,`instance_id`);
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__job_cmd`(`job_cmd`);
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__created`(`created`);
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__last_updated`(`last_updated`);
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async__last_poll`(`last_polled`);
 
 ALTER TABLE `cloud`.`sync_queue` ADD UNIQUE `i_sync_queue__objtype__objid`(`sync_objtype`, `sync_objid`);
 ALTER TABLE `cloud`.`sync_queue` ADD INDEX `i_sync_queue__created`(`created`);
