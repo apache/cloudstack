@@ -268,6 +268,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `shared_source_nat_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the shared source nat service',
   `guest_type` char(32) COMMENT 'guest ip type of network offering',
   PRIMARY KEY (`id`),
+  INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -324,7 +325,11 @@ CREATE TABLE  `cloud`.`configuration` (
   `name` varchar(255) NOT NULL,
   `value` varchar(4095),
   `description` varchar(1024),
-  PRIMARY KEY (`name`)
+  PRIMARY KEY (`name`),
+  INDEX `i_configuration__instance`(`instance`),
+  INDEX `i_configuration__name`(`name`),
+  INDEX `i_configuration__category`(`category`),
+  INDEX `i_configuration__component`(`component`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_ha_work` (
@@ -710,7 +715,8 @@ CREATE TABLE  `cloud`.`mshost` (
   `removed` datetime COMMENT 'date removed if not null',
   `alert_count` integer NOT NULL DEFAULT 0,
   PRIMARY KEY  (`id`),
-  INDEX `i_mshost__removed`(`removed`)
+  INDEX `i_mshost__removed`(`removed`),
+  INDEX `i_mshost__last_update`(`last_update`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`host_tags` (
@@ -738,7 +744,11 @@ CREATE TABLE  `cloud`.`user` (
   `registration_token` varchar(255) default NULL,
   `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
   PRIMARY KEY  (`id`),
-  INDEX `i_user__removed`(`removed`)
+  INDEX `i_user__removed`(`removed`),
+  INDEX `i_user__secret_key_removed`(`secret_key`, `removed`),
+  UNIQUE `i_user__api_key`(`api_key`),
+  CONSTRAINT `fk_user__account_id` FOREIGN KEY `fk_user__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  INDEX `i_user__account_id`(`account_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`event` (
@@ -1038,7 +1048,10 @@ CREATE TABLE `cloud`.`resource_count` (
   `domain_id` bigint unsigned,
   `type` varchar(255),
   `count` bigint NOT NULL default '0',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_resource_count__account_id` FOREIGN KEY `fk_resource_count__account_id`(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_resource_count__domain_id` FOREIGN KEY `fk_resource_count__domain_id`(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  INDEX `i_resource_count__type`(`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_host_capacity` (
@@ -1094,8 +1107,15 @@ CREATE TABLE `cloud`.`async_job` (
   `last_updated` datetime COMMENT 'date created',
   `last_polled` datetime COMMENT 'date polled',
   `removed` datetime COMMENT 'date removed',
-  PRIMARY KEY  (`id`),
-  INDEX `i_async_job__removed`(`removed`)
+  PRIMARY KEY (`id`),
+  INDEX `i_async_job__removed`(`removed`),
+  INDEX `i_async__user_id`(`user_id`),
+  INDEX `i_async__account_id`(`account_id`),
+  INDEX `i_async__instance_type_id`(`instance_type`,`instance_id`),
+  INDEX `i_async__job_cmd`(`job_cmd`),
+  INDEX `i_async__created`(`created`),
+  INDEX `i_async__last_updated`(`last_updated`),
+  INDEX `i_async__last_poll`(`last_polled`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`sync_queue` (
@@ -1164,7 +1184,7 @@ CREATE TABLE  `cloud`.`service_offering` (
   `default_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'is this offering a default system offering',
   `vm_type` varchar(32) COMMENT 'type of offering specified for system offerings',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_service_offering__id` FOREIGN KEY (`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_service_offering__id` FOREIGN KEY `fk_service_offering__id`(`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`network_rule_config` (
@@ -1225,6 +1245,9 @@ CREATE TABLE  `cloud`.`storage_pool` (
   `update_time` DATETIME,
   `status` varchar(32),
   PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_storage_pool__pod_id` FOREIGN KEY `fk_storage_pool__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
+  INDEX `i_storage_pool__pod_id`(`pod_id`),
+  CONSTRAINT `fk_storage_pool__cluster_id` FOREIGN KEY `fk_storage_pool__cluster_id`(`cluster_id`) REFERENCES `cloud`.`cluster`(`id`),
   INDEX `i_storage_pool__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1234,7 +1257,8 @@ CREATE TABLE `cloud`.`storage_pool_details` (
   `name` varchar(255) NOT NULL COMMENT 'name of the detail',
   `value` varchar(255) NOT NULL COMMENT 'value of the detail',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_storage_pool_details__pool_id` FOREIGN KEY `fk_storage_pool_details__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_storage_pool_details__pool_id` FOREIGN KEY `fk_storage_pool_details__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE,
+  INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`storage_pool_host_ref` (
