@@ -1229,7 +1229,8 @@ CREATE TABLE `cloud`.`storage_pool_details` (
   `pool_id` bigint unsigned NOT NULL COMMENT 'pool the detail is related to',
   `name` varchar(255) NOT NULL COMMENT 'name of the detail',
   `value` varchar(255) NOT NULL COMMENT 'value of the detail',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_storage_pool_details__pool_id` FOREIGN KEY `fk_storage_pool_details__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`storage_pool_host_ref` (
@@ -1239,7 +1240,9 @@ CREATE TABLE  `cloud`.`storage_pool_host_ref` (
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
   `local_path` varchar(255),
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_storage_pool_host_ref__host_id` FOREIGN KEY `fk_storage_pool_host_ref__host_id`(`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_storage_pool_host_ref__pool_id` FOREIGN KEY `fk_storage_pool_host_ref__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`template_spool_ref` (
@@ -1368,7 +1371,8 @@ CREATE TABLE `cloud`.`op_vm_ruleset_log` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
   `created` datetime NOT NULL COMMENT 'time the entry was requested',
   `logsequence` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies ruleset update',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  INDEX `i_op_vm_ruleset_log__instance_id`(`instance_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`instance_group` (
