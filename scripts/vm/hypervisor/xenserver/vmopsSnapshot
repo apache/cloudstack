@@ -64,7 +64,7 @@ def create_secondary_storage_folder(session, args):
             # Unmount the local folder
             umount(local_mount_path)
             # Remove the local folder
-            os.system("rm -rf " + local_mount_path)
+            os.system("rmdir " + local_mount_path)
         
     return "1"
 
@@ -84,7 +84,8 @@ def delete_secondary_storage_folder(session, args):
             # Delete the specified folder
             folder = local_mount_path + "/" + args["folder"]
             if os.path.isdir(folder):
-                os.system("rm -rf " + folder)
+                os.system("rm -f " + folder + "/*")
+                os.system("rmdir " + folder)
         except OSError, (errno, strerror):
             errMsg = "delete_secondary_storage_folder failed: errno: " + str(errno) + ", strerr: " + strerror
             util.SMlog(errMsg)
@@ -98,7 +99,7 @@ def delete_secondary_storage_folder(session, args):
             # Unmount the local folder
             umount(local_mount_path)
             # Remove the local folder
-            os.system("rm -rf " + local_mount_path)
+            os.system("rmdir " + local_mount_path)
         
     return "1"
      
@@ -154,7 +155,7 @@ def post_create_private_template(session, args):
             # Unmount the local folder
             umount(local_mount_path)
             # Remove the local folder
-            os.system("rm -rf " + local_mount_path)
+            os.system("rmdir " + local_mount_path)
     return "1" 
   
 def isfile(path, isISCSI):
@@ -303,7 +304,7 @@ def umount(localDir):
     except CommandException:
         errMsg = "CommandException raised while trying to umount " + localDir 
         util.SMlog(errMsg)
-        return
+        raise xs_errors.XenError(errMsg)
 
     util.SMlog("Successfully unmounted " + localDir)
     return
@@ -539,33 +540,6 @@ def deleteSnapshotBackup(session, args):
 
     return "1"
    
-def rmtree(path):
-    if os.path.isdir(path):
-        try:
-            shutil.rmtree(path)
-        except OSError, (errno, strerror):
-            errMsg = "Error while deleting " + path + " on secondary storage with errno: " + str(errno) + " and strerr: " + strerror + ". Please delete it manually"
-            util.SMlog(errMsg)
-        util.SMlog("Successfully deleted " + path)
-    else:
-        util.SMlog("Could not find directory with path " + path)
-    return
-
-@echo
-def deleteSnapshotsDir(session, args):
-    util.SMlog("Calling deleteSnapshotsDir with " + str(args))
-    dcId                      = args['dcId']
-    accountId                 = args['accountId']
-    volumeId                  = args['volumeId']
-    secondaryStorageMountPath = args['secondaryStorageMountPath']
-
-    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
-    accountDir = os.path.dirname(backupsDir)
-    util.SMlog("accountDir is " + accountDir)
-    rmtree(accountDir)
-
-    return "1"
-   
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "deleteSnapshotsDir": deleteSnapshotsDir})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir})
 
