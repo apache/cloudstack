@@ -6000,10 +6000,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (uri != null) {
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
 
-            details = deleteSnapshotsDir(conn, dcId, accountId, volumeId, secondaryStorageMountPath);
+            success = deleteSnapshotsDir(conn, dcId, accountId, volumeId, secondaryStorageMountPath);
             success = (details != null && details.equals("1"));
             if (success) {
                 s_logger.debug("Successfully deleted snapshotsDir for volume: " + volumeId);
+            } else {
+                s_logger.debug("Failed to delete snapshotsDir for volume: " + volumeId);
             }
         }
 
@@ -6163,8 +6165,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean deleteSecondaryStorageFolder(Connection conn, String remoteMountPath, String folder) {
-        String result = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder);
-        return (result != null);
+        String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder);
+        return (details != null && details.equals("1"));
     }
 
     protected boolean postCreatePrivateTemplate(Connection conn, String templatePath, String tmpltFilename, String templateName, String templateDescription, String checksum, long size, long virtualSize, long templateId) {
@@ -6237,12 +6239,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return result;
     }
 
-    protected String deleteSnapshotsDir(Connection conn, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath) {
-        // If anybody modifies the formatting below again, I'll skin them
-        String result = callHostPlugin(conn, "vmopsSnapshot", "deleteSnapshotsDir", "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
-                "secondaryStorageMountPath", secondaryStorageMountPath);
-
-        return result;
+    protected boolean deleteSnapshotsDir(Connection conn, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath) {
+        return deleteSecondaryStorageFolder(conn, secondaryStorageMountPath, dcId.toString() + "/" + accountId.toString() + "/" + volumeId.toString());             
     }
 
 
