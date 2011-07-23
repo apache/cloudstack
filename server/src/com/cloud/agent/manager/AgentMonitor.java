@@ -180,7 +180,6 @@ public class AgentMonitor extends Thread implements Listener {
 
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
-        s_logger.debug("Registering agent monitor for " + host.getId());
     }
 
     @Override
