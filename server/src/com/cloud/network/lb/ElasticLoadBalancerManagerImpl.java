@@ -18,6 +18,8 @@
 package com.cloud.network.lb;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,17 +32,25 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.PodVlanMapVO;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.PodVlanMapDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
@@ -51,11 +61,15 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -65,6 +79,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -81,6 +96,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
@@ -131,6 +147,12 @@ public class ElasticLoadBalancerManagerImpl implements
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
     AccountService _accountService;
+    @Inject
+    LoadBalancerDao _lbDao;
+    @Inject
+    VlanDao _vlanDao;
+    @Inject
+    PodVlanMapDao _podVlanMapDao;
 
 
     String _name;
@@ -142,39 +164,41 @@ public class ElasticLoadBalancerManagerImpl implements
     int _elasticLbVmRamSize;
     int _elasticLbvmCpuMHz;
     
+    private Long getPodIdForDirectIp(IPAddressVO ipAddr) {
+        List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ipAddr.getVlanId());
+        if (podVlanMaps.isEmpty()) {
+            return null;
+        } else {
+            return podVlanMaps.get(0).getPodId();
+        }
+    }
 
 
-
-    public long deployLoadBalancerVM(Long networkId, Long accountId) {  /* ELB_TODO :need to remove hardcoded network id,account id,pod id , cluster id */
+    public DomainRouterVO deployLoadBalancerVM(Long networkId, IPAddressVO ipAddr, Long accountId) {  
         NetworkVO network = _networkDao.findById(networkId);
-
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
-
+        Long podId = getPodIdForDirectIp(ipAddr);
+        Pod pod = podId == null?null:_podDao.findById(podId);
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(
                 1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
         Account owner = _accountService.getActiveAccount("system", new Long(1));
-        DeployDestination dest = new DeployDestination(dc, null, null, null);
-
-        s_logger.debug("About to deploy elastic LB vm if necessary");
+        DeployDestination dest = new DeployDestination(dc, pod, null, null);
+        s_logger.debug("About to deploy elastic LB vm ");
 
         try {
-            VirtualRouter elbVm = deployELBVm(network, dest, owner, params);
+            DomainRouterVO elbVm = deployELBVm(network, dest, owner, params);
 
             s_logger.debug("ELB  vm = " + elbVm);
             if (elbVm == null) {
                 throw new InvalidParameterValueException("Could not deploy or find existing ELB VM");
             }
-            DomainRouterVO elbRouterVm = _routerDao.findById(elbVm.getId());
-            String publicIp = elbRouterVm.getGuestIpAddress();
-            IPAddressVO ipvo = _ipAddressDao.findByIpAndSourceNetworkId(networkId, publicIp);
-            ipvo.setAssociatedWithNetworkId(networkId); 
-            _ipAddressDao.update(ipvo.getId(), ipvo);
-            return ipvo.getId();
+            return elbVm;
+           
         } catch (Throwable t) {
             String errorMsg = "Error while deploying Loadbalancer VM:  " + t;
             s_logger.warn(errorMsg);
-            return 0;
+            return null;
         }
 
     }
@@ -245,59 +269,58 @@ public class ElasticLoadBalancerManagerImpl implements
         // Send commands to router
         return sendCommandsToRouter(router, cmds);
     }
+    
+    protected DomainRouterVO findElbVmForLb(FirewallRule lb) {//TODO: use a table to lookup
+        List<DomainRouterVO> elbVms = _routerDao.listByNetworkAndRole(lb.getNetworkId(), Role.LB);
+        if (elbVms != null && elbVms.size() > 0)
+            return elbVms.get(0);
+        
+        return null;
+    }
 
     public boolean applyLoadBalancerRules(Network network,
             List<? extends FirewallRule> rules)
             throws ResourceUnavailableException {
-        DomainRouterVO router = _routerDao.findByNetwork(network.getId());/* ELB_TODO :may have multiple LB's , need to get the correct LB based on network id and account id */
+        if (rules == null || rules.isEmpty()) {
+            return true;
+        }
+        if (rules.get(0).getPurpose() != Purpose.LoadBalancing) {
+            s_logger.warn("Not handling non-LB firewall rules");
+            return false;
+        }
+        
+        DomainRouterVO elbVm = findElbVmForLb(rules.get(0));
                                                                           
-        if (router == null) {
-            s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network "
+        if (elbVm == null) {
+            s_logger.warn("Unable to apply lb rules, ELB vm  doesn't exist in the network "
                     + network.getId());
             throw new ResourceUnavailableException("Unable to apply lb rules",
                     DataCenter.class, network.getDataCenterId());
         }
 
-        if (router.getState() == State.Running) {
-            if (rules != null && !rules.isEmpty()) {
-                if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                    // for elastic load balancer we have to resend all lb rules
-                    // belonging to same sourceIpAddressId for the network
-                    List<LoadBalancerVO> lbs = _loadBalancerDao
-                            .listByNetworkId(network.getId());
-                    List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                    for (LoadBalancerVO lb : lbs) {
-                        if (lb.getSourceIpAddressId() == rules.get(0)
-                                .getSourceIpAddressId()) {
-                            List<LbDestination> dstList = _lbMgr
-                                    .getExistingDestinations(lb.getId());
-                            LoadBalancingRule loadBalancing = new LoadBalancingRule(
-                                    lb, dstList);
-                            lbRules.add(loadBalancing);
-                        }
-                    }
-
-                    return applyLBRules(router, lbRules);
-                } else {
-                    s_logger.warn("Unable to apply rules of purpose: "
-                            + rules.get(0).getPurpose());
-                    return false;
-                }
-            } else {
-                return true;
+        if (elbVm.getState() == State.Running) {
+            //resend all rules for the public ip
+            List<LoadBalancerVO> lbs = _lbDao.listByIpAddress(rules.get(0).getSourceIpAddressId());
+            List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+            for (LoadBalancerVO lb : lbs) {
+                List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                LoadBalancingRule loadBalancing = new LoadBalancingRule(
+                        lb, dstList);
+                lbRules.add(loadBalancing); 
             }
-        } else if (router.getState() == State.Stopped
-                || router.getState() == State.Stopping) {
-            s_logger.debug("Router is in "
-                    + router.getState()
-                    + ", so not sending apply firewall rules commands to the backend");
+            return applyLBRules(elbVm, lbRules);
+        } else if (elbVm.getState() == State.Stopped
+                || elbVm.getState() == State.Stopping) {
+            s_logger.debug("ELB VM is in "
+                    + elbVm.getState()
+                    + ", so not sending apply LoadBalancing rules commands to the backend");
             return true;
         } else {
-            s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state "
-                    + router.getState());
+            s_logger.warn("Unable to apply loadbalancing rules, ELB VM is not in the right state "
+                    + elbVm.getState());
             throw new ResourceUnavailableException(
-                    "Unable to apply firewall rules, virtual router is not in the right state",
-                    VirtualRouter.class, router.getId());
+                    "Unable to apply loadbalancing rules, ELB VM is not in the right state",
+                    VirtualRouter.class, elbVm.getId());
         }
     }
 
@@ -338,6 +361,10 @@ public class ElasticLoadBalancerManagerImpl implements
         return _name;
     }
 
+    private DomainRouterVO findELBVmWithCapacity(Network guestNetwork, IPAddressVO ipAddr) {
+        List<DomainRouterVO> elbVms = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.LB);
+        return null;
+    }
     
     @DB
     public DomainRouterVO deployELBVm(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws
@@ -368,7 +395,7 @@ public class ElasticLoadBalancerManagerImpl implements
                 : "Network is not yet fully implemented: "+ guestNetwork;
 
             DataCenterDeployment plan = null;
-            DomainRouterVO router = null;
+            DomainRouterVO elbVm = null;
             
             //router = _routerDao.findByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.LB);   
             plan = new DataCenterDeployment(dcId, null, null, null, null);
@@ -378,7 +405,7 @@ public class ElasticLoadBalancerManagerImpl implements
             // return null;
             // }
 
-            if (router == null) {
+            if (elbVm == null) {
                 long id = _routerDao.getNextInSequence(Long.class, "id");
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Creating the elastic LB vm " + id);
@@ -396,19 +423,19 @@ public class ElasticLoadBalancerManagerImpl implements
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 
                
-                router = new DomainRouterVO(id, _elasticLbVmOffering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
                         owner.getDomainId(), owner.getId(), guestNetwork.getId(), _elasticLbVmOffering.getOfferHA());
-                router.setRole(Role.LB);
-                router = _itMgr.allocate(router, template, _elasticLbVmOffering, networks, plan, null, owner);
+                elbVm.setRole(Role.LB);
+                elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
             }
 
-            State state = router.getState();
+            State state = elbVm.getState();
             if (state != State.Running) {
-                router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
+                elbVm = this.start(elbVm, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
             }
 
 
-            return router;
+            return elbVm;
         } finally {
             _networkDao.releaseFromLockTable(guestNetworkId);
         }
@@ -422,6 +449,52 @@ public class ElasticLoadBalancerManagerImpl implements
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void handleCreateLoadBalancerRule( LoadBalancer lb, Account account)  {
+        long ipId = lb.getSourceIpAddressId();
+        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
+        Long networkId= ipAddr.getSourceNetworkId();
+        NetworkVO network=_networkDao.findById(networkId);
+        DomainRouterVO elbVm = null;
+        if (network.getGuestType() == GuestIpType.Direct) {
+            LoadBalancerVO lbvo;
+            lbvo = _lbDao.findByAccountAndName(account.getId(), lb.getName());
+            if (lbvo == null) {
+                elbVm = findELBVmWithCapacity(network, ipAddr);
+                if (elbVm == null) {
+                    elbVm = deployLoadBalancerVM(networkId, ipAddr, account.getId());
+                }
+                IPAddressVO ipvo = _ipAddressDao.findById(ipId);
+                ipvo.setAssociatedWithNetworkId(networkId); 
+                _ipAddressDao.update(ipvo.getId(), ipvo);
+                
+            } 
+          
+        }
+        
+    }
+    
+    private void createAssociateIPCommand(final DomainRouterVO router, final Network network, final PublicIp ip, Commands cmds) {
+
+
+        IpAddressTO[] ipsToSend = new IpAddressTO[1];
+
+        IpAddressTO ipTO = new IpAddressTO(ip.getAddress().addr(), true, false, false, ip.getVlanTag(), ip.getVlanGateway(), ip.getVlanNetmask(), ip.getMacAddress(), null, 0);
+        ipTO.setTrafficType(network.getTrafficType());
+        ipTO.setNetworkTags(network.getTags());
+        ipsToSend[0] = ipTO;
+
+        IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+        cmds.addCommand("IPAssocCommand", cmd);
+    
     }
 
 }

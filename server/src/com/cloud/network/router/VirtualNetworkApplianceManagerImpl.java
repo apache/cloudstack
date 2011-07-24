@@ -812,7 +812,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         // In Basic zone and Guest network we have to start domR per pod, not per network
         if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
-            router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
+            List<DomainRouterVO> dhcpServers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.DHCP_USERDATA);
+            if (dhcpServers != null && dhcpServers.size() > 0) {
+                router = dhcpServers.get(0);
+            }
             plan = new DataCenterDeployment(dcId, podId, null, null, null);
         } else {
             router = _routerDao.findByNetwork(guestNetwork.getId());
@@ -852,7 +855,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
             // In Basic zone and Guest network we have to start domR per pod, not per network
             if ((dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest) {
-                router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
+                List<DomainRouterVO> routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.DHCP_USERDATA);
+                if (routers != null && routers.size() > 0)
+                    router = routers.get(0);
                 plan = new DataCenterDeployment(dcId, podId, null, null, null);
             } else {
                 router = _routerDao.findByNetwork(guestNetwork.getId());

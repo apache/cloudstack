@@ -32,15 +32,42 @@ usage() {
 
 # set -x
 
-# check if gateway domain is up and running
-check_gw() {
-  ping -c 1 -n -q $1 > /dev/null
-  if [ $? -gt 0 ]
+# ensure that the nic has the public ip we are load balancing on
+ip_entry() {
+  local added=$1
+  local removed=$2
+  
+  if [ "$added" == "none" ]
   then
-    sleep 1
-    ping -c 1 -n -q $1 > /dev/null
+  	added=""
   fi
-  return $?;
+  
+  if [ "$removed" == "none" ]
+  then
+  	removed=""
+  fi
+  
+  local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
+  local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
+  
+  for i in $a
+  do
+    local pubIp=$(echo $i | cut -d: -f1)
+    for vif in $VIF_LIST; do 
+      ip addr add dev $vif $pubIp/32
+      #ignore error since it is because the ip is already there
+    done      
+  done
+
+  for i in $r
+  do
+    local pubIp=$(echo $i | cut -d: -f1)
+    for vif in $VIF_LIST; do 
+      ip addr del $pubIp/32 dev $vif 
+    done
+  done
+  
+  return 0
 }
 
 # firewall entry to ensure that haproxy can receive on specified port
@@ -117,6 +144,10 @@ get_vif_list() {
       vif_list="$vif_list $vif";
     fi
   done
+  if [ "$vif_list" == "" ]
+  then
+      vif_list="eth0"
+  fi
   
   echo $vif_list
 }
@@ -148,16 +179,18 @@ do
   esac
 done
 
+if [ "$addedIps" == "" ]
+then
+  addedIps="none"
+fi
+
+if [ "$removedIps" == "" ]
+then
+  removedIps="none"
+fi
+
 VIF_LIST=$(get_vif_list)
 
-# hot reconfigure haproxy
-reconfig_lb $cfgfile
-
-if [ $? -gt 0 ]
-then
-  printf "Reconfiguring loadbalancer failed\n"
-  exit 1
-fi
 
 if [ "$addedIps" == "" ]
 then
@@ -167,6 +200,27 @@ fi
 if [ "$removedIps" == "" ]
 then
   removedIps="none"
+fi
+
+#FIXME: make this explicit via check on vm type or passed in flag
+if [ "$VIF_LIST" == "eth0"  ]
+then
+   ip_entry $addedIps $removedIps
+fi
+
+
+# hot reconfigure haproxy
+reconfig_lb $cfgfile
+
+if [ $? -gt 0 ]
+then
+  printf "Reconfiguring loadbalancer failed\n"
+  #FIXME: make this explicit via check on vm type or passed in flag
+  if [ "$VIF_LIST" == "eth0"  ]
+  then
+     ip_entry $removedIps $addedIps
+  fi
+  exit 1
 fi
 
 # iptables entry to ensure that haproxy receives traffic
@@ -179,6 +233,12 @@ then
 
   # Revert iptables rules on DomR, with addedIps and removedIps swapped 
   fw_entry $removedIps $addedIps
+
+  #FIXME: make this explicit via check on vm type or passed in flag
+  if [ "$VIF_LIST" == "eth0"  ]
+  then
+     ip_entry $removedIps $addedIps
+  fi
 
   exit 1
 fi

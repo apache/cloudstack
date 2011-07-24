@@ -353,24 +353,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         UserContext caller = UserContext.current();
 
         long ipId = lb.getSourceIpAddressId();
+
+        
+        _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
+       
+        
         IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
         Long networkId= ipAddr.getSourceNetworkId();
         NetworkVO network=_networkDao.findById(networkId);
-        
-        if (network.getGuestType() == GuestIpType.Direct) {
-            LoadBalancerVO lbvo;
-            Account account = caller.getCaller();
-            lbvo = _lbDao.findByAccountAndName(account.getId(), lb.getName());
-            if (lbvo == null) {
-                _elbMgr.deployLoadBalancerVM(networkId, account.getId());
-                IPAddressVO ipvo = _ipAddressDao.findById(ipId);
-                ipvo.setAssociatedWithNetworkId(networkId); 
-                _ipAddressDao.update(ipvo.getId(), ipvo);
-                ipAddr.setAssociatedWithNetworkId(networkId);
-            } else {
-                
-            }
-        }
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
