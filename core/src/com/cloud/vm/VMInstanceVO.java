@@ -352,7 +352,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     public boolean limitCpuUse() {
         return limitCpuUse;
     }
-    
+
+    public void setLimitCpuUse(boolean value) {
+    	limitCpuUse = value;
+    }
+
     @Override
     public String getPrivateMacAddress() {
         return privateMacAddress;
