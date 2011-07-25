@@ -474,7 +474,8 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
     var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	    
         
     var $midmenuItem1 = $("#midmenuItem_"+id);	
-    $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
+    $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");  //it's being un-selected now because it's in action now
+    uncountTopButtonMapFn($midmenuItem1.data("jsonObj"));  //uncount it from topButtonMap 
     $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
     $midmenuItem1.find("#spinning_wheel").data("inProcessText", inProcessText2);
     $midmenuItem1.find("#info_icon").hide();		  
