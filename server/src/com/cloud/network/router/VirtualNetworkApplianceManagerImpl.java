@@ -1707,6 +1707,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
+        cmd.lbStatsAccessbility = _configDao.getValue(Config.LoadBalancerStats.key());
+        cmd.lbStatsIp = router.getGuestIpAddress();
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
