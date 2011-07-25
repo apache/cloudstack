@@ -65,7 +65,7 @@ function volumeGetSearchParams() {
 }
 
 function afterLoadVolumeJSP() {
-    initDialog("dialog_create_template", 400); 
+    initDialog("dialog_create_template", 420); 
     initDialog("dialog_create_snapshot");        
     initDialog("dialog_recurring_snapshot", 420);	    
     initDialog("dialog_add_volume");	
