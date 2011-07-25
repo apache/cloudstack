@@ -17,9 +17,10 @@
  */
 package com.cloud.agent.manager;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
@@ -40,11 +41,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
-import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -59,7 +57,8 @@ public class AgentMonitor extends Thread implements Listener {
     private HostPodDao _podDao = null;
     private AlertManager _alertMgr;
     private long _msId;
-    private ConnectionConcierge _concierge;
+    // private ConnectionConcierge _concierge;
+    private Map<Long, Long> _pingMap;
 
     protected AgentMonitor() {
     }
@@ -75,15 +74,40 @@ public class AgentMonitor extends Thread implements Listener {
         _dcDao = dcDao;
         _podDao = podDao;
         _alertMgr = alertMgr;
-        try {
-            Connection conn = Transaction.getStandaloneConnectionWithException();
-            conn.setAutoCommit(true);
-            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-            _concierge = new ConnectionConcierge("AgentMonitor", conn, true);
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to get a db connection", e);
-        }
+        _pingMap = new ConcurrentHashMap<Long, Long>(10007);
+        // try {
+        // Connection conn = Transaction.getStandaloneConnectionWithException();
+        // conn.setAutoCommit(true);
+        // conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        // _concierge = new ConnectionConcierge("AgentMonitor", conn, true);
+        // } catch (SQLException e) {
+        // throw new CloudRuntimeException("Unable to get a db connection", e);
+        // }
 
+    }
+
+    /**
+     * Check if the agent is behind on ping
+     * 
+     * @param agentId
+     *            agent or host id.
+     * @return null if the agent is not kept here. true if behind; false if not.
+     */
+    public Boolean isAgentBehindOnPing(long agentId) {
+        Long pingTime = _pingMap.get(agentId);
+        if (pingTime == null) {
+            return null;
+        }
+        return pingTime < (InaccurateClock.getTimeInSeconds() - _pingTimeout);
+    }
+
+    public Long getAgentPingTime(long agentId) {
+        return _pingMap.get(agentId);
+    }
+
+    public void pingBy(long agentId) {
+        Long previousTime = _pingMap.put(agentId, InaccurateClock.getTimeInSeconds());
+        assert (previousTime != null) : "How does agent not have a previous time? " + agentId;
     }
 
     // TODO : use host machine time is not safe in clustering environment
@@ -99,43 +123,15 @@ public class AgentMonitor extends Thread implements Listener {
                 s_logger.info("Who woke me from my slumber?");
             }
 
-            GlobalLock lock = GlobalLock.getInternLock("AgentMonitorLock");
-            if (lock == null) {
-                s_logger.error("Unable to acquire lock.  Better luck next time?");
-                continue;
-            }
-
-            if (!lock.lock(10)) {
-                s_logger.info("Someone else is already working on the agents.  Skipping my turn");
-                continue;
-            }
-
             try {
-                long time = (System.currentTimeMillis() >> 10) - _pingTimeout;
-                List<HostVO> hosts = _hostDao.findLostHosts(time);
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Found " + hosts.size() + " hosts behind on ping. pingTimeout : " + _pingTimeout + ", mark time : " + time);
+
+                List<Long> behindAgents = findAgentsBehindOnPing();
+                for (Long agentId : behindAgents) {
+                    _agentMgr.disconnect(agentId, Event.PingTimeout, true);
                 }
 
+                List<HostVO> hosts = _hostDao.listByStatus(Status.PrepareForMaintenance, Status.ErrorInMaintenance);
                 for (HostVO host : hosts) {
-                    if (host.getType().equals(Host.Type.ExternalFirewall) ||
-                            host.getType().equals(Host.Type.ExternalLoadBalancer) ||
-                            host.getType().equals(Host.Type.TrafficMonitor) ||
-                            host.getType().equals(Host.Type.SecondaryStorage)) {
-                        continue;
-                    }
-
-                    if (host.getManagementServerId() == null || host.getManagementServerId() == _msId) {
-                        if (s_logger.isInfoEnabled()) {
-                            s_logger.info("Asking agent mgr to investgate why host " + host.getId() + " is behind on ping. last ping time: " + host.getLastPinged());
-                        }
-                        _agentMgr.disconnect(host.getId(), Event.PingTimeout, true);
-                    }
-                }
-
-                hosts = _hostDao.listByStatus(Status.PrepareForMaintenance, Status.ErrorInMaintenance);
-                for (HostVO host : hosts) {
-                    long hostId = host.getId();
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                     HostPodVO podVO = _podDao.findById(host.getPodId());
                     String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
@@ -150,8 +146,6 @@ public class AgentMonitor extends Thread implements Listener {
                 }
             } catch (Throwable th) {
                 s_logger.error("Caught the following exception: ", th);
-            } finally {
-                lock.unlock();
             }
         }
 
@@ -178,24 +172,54 @@ public class AgentMonitor extends Thread implements Listener {
         boolean processed = false;
         for (Command cmd : commands) {
             if (cmd instanceof PingCommand) {
-                Transaction txn = Transaction.currentTxn();
-                txn.transitToUserManagedConnection(_concierge.conn());
-                try {
-                    HostVO host = _hostDao.findById(agentId);
-                    if( host == null ) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Cant not find host " + agentId);
-                        }
-                    } else {
-                        _hostDao.updateStatus(host, Event.Ping, _msId);
-                    }
-                    processed = true;
-                } finally {
-                    txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
-                }
+                pingBy(agentId);
             }
         }
         return processed;
+    }
+
+    protected List<Long> findAgentsBehindOnPing() {
+        List<Long> agentsBehind = new ArrayList<Long>();
+        long cutoffTime = InaccurateClock.getTimeInSeconds() - _pingTimeout;
+        for (Map.Entry<Long, Long> entry : _pingMap.entrySet()) {
+            if (entry.getValue() < cutoffTime) {
+                agentsBehind.add(entry.getKey());
+            }
+        }
+
+        return agentsBehind;
+    }
+
+    /**
+     * @deprecated We're using the in-memory
+     */
+    @Deprecated
+    protected List<HostVO> findHostsBehindOnPing() {
+        long time = (System.currentTimeMillis() >> 10) - _pingTimeout;
+        List<HostVO> hosts = _hostDao.findLostHosts(time);
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Found " + hosts.size() + " hosts behind on ping. pingTimeout : " + _pingTimeout +
+                    ", mark time : " + time);
+        }
+
+        for (HostVO host : hosts) {
+            if (host.getType().equals(Host.Type.ExternalFirewall) ||
+                    host.getType().equals(Host.Type.ExternalLoadBalancer) ||
+                    host.getType().equals(Host.Type.TrafficMonitor) ||
+                    host.getType().equals(Host.Type.SecondaryStorage)) {
+                continue;
+            }
+
+            if (host.getManagementServerId() == null || host.getManagementServerId() == _msId) {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Asking agent mgr to investgate why host " + host.getId() +
+                            " is behind on ping. last ping time: " + host.getLastPinged());
+                }
+                _agentMgr.disconnect(host.getId(), Event.PingTimeout, true);
+            }
+        }
+
+        return hosts;
     }
 
     @Override
@@ -205,6 +229,15 @@ public class AgentMonitor extends Thread implements Listener {
 
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
+        if (host.getType().equals(Host.Type.ExternalFirewall) ||
+                host.getType().equals(Host.Type.ExternalLoadBalancer) ||
+                host.getType().equals(Host.Type.TrafficMonitor) ||
+                host.getType().equals(Host.Type.SecondaryStorage)) {
+            return;
+        }
+
+        // NOTE: We don't use pingBy here because we're initiating.
+        _pingMap.put(host.getId(), InaccurateClock.getTimeInSeconds());
     }
 
     @Override
@@ -221,5 +254,4 @@ public class AgentMonitor extends Thread implements Listener {
     public int getTimeout() {
         return -1;
     }
-
 }

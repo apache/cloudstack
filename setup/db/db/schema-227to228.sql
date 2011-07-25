@@ -160,7 +160,7 @@ ALTER TABLE `cloud`.`disk_offering` ADD INDEX `i_disk_offering__removed`(`remove
 ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__removed`(`removed`);
 ALTER TABLE `cloud`.`instance_group` ADD INDEX `i_instance_group__removed`(`removed`);
 
-ALTER TABLE `cloud`.`sync_queue_item__queue_proc_number` ADD INDEX `i_sync_queue_item__queue_proc_number`(`queue_proc_number`);
-ALTER TABLE `cloud`.`sync_queue_item__queue_proc_number` ADD INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`);
+ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue_item__queue_proc_number`(`queue_proc_number`);
+ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`);
 ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__taken`(`taken`);
 
