@@ -187,6 +187,10 @@ public class AgentMonitor extends Thread implements Listener {
             }
         }
 
+        if (agentsBehind.size() > 0) {
+            s_logger.info("Found the following agents behind on ping: " + agentsBehind);
+        }
+
         return agentsBehind;
     }
 
