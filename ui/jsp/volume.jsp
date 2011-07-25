@@ -236,7 +236,9 @@ dictionary = {
 
 <!-- Create Template Dialog -->
 <div id="dialog_create_template" title='<fmt:message key="label.action.create.template"/>' style="display: none">
+    <!--  
     <p><fmt:message key="message.create.template.volume"/></p>
+    -->
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
