@@ -37,6 +37,7 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 public class HAProxyConfigurator implements LoadBalancerConfigurator {
+
 	private static String [] globalSection = {"global",
 			"\tlog 127.0.0.1:3914   local0 warning",
 			"\tmaxconn 4096",
@@ -46,6 +47,17 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 			"\tdaemon"
 	};
 
+ 
+	private static String [] statsSubrule = {
+		"\tmode http",
+		"\toption httpclose",
+        "\tstats enable",
+        "\tstats uri     /admin?stats",
+        "\tstats realm   Haproxy\\ Statistics",
+        "\tstats auth    admin1:AdMiN123"
+     };
+    
+    
 	private static String [] defaultsSection = {"defaults",
 	        "\tlog     global",
 	        "\tmode    tcp",
@@ -62,6 +74,19 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 	        "\ttimeout client     50000",
 	        "\ttimeout server     50000"
 	};
+	
+	private static String [] defaultsSectionWithoutStats = {"defaults",
+        "\tlog     global",
+        "\tmode    tcp",
+        "\toption  dontlognull",
+        "\tretries 3",
+        "\toption redispatch",
+        "\toption forwardfor",
+        "\toption forceclose",
+        "\ttimeout connect    5000",
+        "\ttimeout client     50000",
+        "\ttimeout server     50000"
+    };
 	
 	private static String [] defaultListen = {"listen  vmops 0.0.0.0:9",
         "\toption transparent"
@@ -86,7 +111,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		}
 		
 		List<String> result = new ArrayList<String>();
-		
+ 
 		result.addAll(Arrays.asList(globalSection));
 		result.add(getBlankLine());
 		result.addAll(Arrays.asList(defaultsSection));
@@ -198,8 +223,29 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		
 		result.addAll(Arrays.asList(globalSection));
 		result.add(getBlankLine());
-		result.addAll(Arrays.asList(defaultsSection));
-		result.add(getBlankLine());
+		if (lbCmd.lbStatsAccessbility.equals("accessible"))
+		{
+		    result.addAll(Arrays.asList(defaultsSection));
+		    result.add(getBlankLine());
+		}
+		else
+		{
+			result.addAll(Arrays.asList(defaultsSectionWithoutStats));
+			result.add(getBlankLine());
+			if (lbCmd.lbStatsAccessbility.equals("only-to-guest"))
+			{	 
+				String rule="listen admin_page ";
+				rule=rule.concat(lbCmd.lbStatsIp);
+				rule=rule.concat(":");
+				rule=rule.concat(lbCmd.lbStatsPort);
+				
+			    /*listen admin_page guestip:8081 */   
+				result.add(rule);
+			    result.addAll(Arrays.asList(statsSubrule));
+			    result.add(getBlankLine());
+			}
+		}
+		
 		
 		if (lbCmd.getLoadBalancers().length == 0){
 			//haproxy cannot handle empty listen / frontend or backend, so add a dummy listener 

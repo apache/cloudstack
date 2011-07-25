@@ -25,6 +25,9 @@ import com.cloud.agent.api.to.LoadBalancerTO;
  */
 public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
+    public String lbStatsAccessbility;
+    public String lbStatsIp; /* load balancer listen on this ip for stats */
+    public String lbStatsPort="8080"; /* load balancer listen on this ip for stats */
     
     protected LoadBalancerConfigCommand() {
         
