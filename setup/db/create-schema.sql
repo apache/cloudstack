@@ -1123,7 +1123,11 @@ CREATE TABLE `cloud`.`sync_queue` (
   `queue_proc_time` datetime COMMENT 'last time to process the queue',
   `created` datetime COMMENT 'date created',
   `last_updated` datetime COMMENT 'date created',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  UNIQUE `i_sync_queue__objtype__objid`(`sync_objtype`, `sync_objid`),
+  INDEX `i_sync_queue__created`(`created`),
+  INDEX `i_sync_queue__last_updated`(`last_updated`),
+  INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`stack_maid` (
@@ -1145,7 +1149,12 @@ CREATE TABLE `cloud`.`sync_queue_item` (
   `queue_proc_msid` bigint COMMENT 'owner msid when the queue item is being processed',
   `queue_proc_number` bigint COMMENT 'used to distinguish raw items and items being in process',
   `created` datetime COMMENT 'time created',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_sync_queue_item__queue_id` FOREIGN KEY `fk_sync_queue_item__queue_id` (`queue_id`) REFERENCES `sync_queue` (`id`) ON DELETE CASCADE,
+  INDEX `i_sync_queue_item__queue_id`(`queue_id`),
+  INDEX `i_sync_queue_item__created`(`created`),
+  INDEX `i_sync_queue_item__queue_proc_number`(`queue_proc_number`),
+  INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`disk_offering` (
@@ -1387,7 +1396,10 @@ CREATE TABLE `cloud`.`op_nwgrp_work` (
   `taken` datetime COMMENT 'time it was taken by the management server',
   `step` varchar(32) NOT NULL COMMENT 'Step in the work',
   `seq_no` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies ruleset update',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  INDEX `i_op_nwgrp_work__instance_id`(`instance_id`),
+  INDEX `i_op_nwgrp_work__mgmt_server_id`(`mgmt_server_id`),
+  INDEX `i_op_nwgrp_work__taken`(`taken`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_vm_ruleset_log` (

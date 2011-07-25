@@ -47,14 +47,6 @@ ALTER TABLE `cloud`.`snapshot_schedule` ADD CONSTRAINT `fk__snapshot_schedule_sn
 ALTER TABLE `cloud`.`snapshot_schedule` ADD INDEX `i_snapshot_schedule__snapshot_id`(`snapshot_id`);
 ALTER TABLE `cloud`.`snapshot_schedule` ADD INDEX `i_snapshot_schedule__scheduled_timestamp`(`scheduled_timestamp`);
 
-ALTER TABLE `cloud`.`sync_queue` ADD UNIQUE `i_sync_queue__objtype__objid`(`sync_objtype`, `sync_objid`);
-ALTER TABLE `cloud`.`sync_queue` ADD INDEX `i_sync_queue__created`(`created`);
-ALTER TABLE `cloud`.`sync_queue` ADD INDEX `i_sync_queue__last_updated`(`last_updated`);
-ALTER TABLE `cloud`.`sync_queue` ADD INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`);
-
-ALTER TABLE `cloud`.`sync_queue_item` ADD CONSTRAINT `fk_sync_queue_item__queue_id` FOREIGN KEY `fk_sync_queue_item__queue_id` (`queue_id`) REFERENCES `sync_queue` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue_item__queue_id`(`queue_id`);
-ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue_item__created`(`created`);
 
 ALTER TABLE `cloud`.`stack_maid` ADD INDEX `i_stack_maid_msid_thread_id`(`msid`, `thread_id`);
 ALTER TABLE `cloud`.`stack_maid` ADD INDEX `i_stack_maid_seq`(`msid`, `seq`);
@@ -75,9 +67,6 @@ ALTER TABLE `cloud`.`security_ingress_rule` ADD INDEX `i_security_ingress_rule_a
 
 ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___security_group_id` FOREIGN KEY `fk_security_group_vm_map___security_group_id` (`security_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___instance_id` FOREIGN KEY `fk_security_group_vm_map___instance_id` (`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__instance_id`(`instance_id`);
-ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__mgmt_server_id`(`mgmt_server_id`);
 
 ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `fk_instance_group__account_id` FOREIGN KEY `fk_instance_group__account_id` (`account_id`) REFERENCES `account` (`id`);
 
