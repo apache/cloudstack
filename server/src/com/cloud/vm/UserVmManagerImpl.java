@@ -964,6 +964,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vmForUpdate = _vmDao.createForUpdate();
         vmForUpdate.setServiceOfferingId(serviceOfferingId);
         vmForUpdate.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
+        vmForUpdate.setLimitCpuUse(_serviceOfferingDao.findById(serviceOfferingId).getLimitCpuUse());
         _vmDao.update(vmInstance.getId(), vmForUpdate);
 
         return _vmDao.findById(vmInstance.getId());
