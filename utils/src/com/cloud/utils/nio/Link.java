@@ -502,7 +502,7 @@ public class Link {
                     }
                     // We need more packets to complete this operation
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("SSL: Buffer overflowed, getting more packets");
+                        s_logger.trace("SSL: Buffer underflowed, getting more packets");
                     }
                     tmp_pkgBuf.clear();
                     count = ch.read(tmp_pkgBuf);
