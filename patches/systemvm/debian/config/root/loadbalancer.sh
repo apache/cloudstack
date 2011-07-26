@@ -52,18 +52,20 @@ ip_entry() {
   
   for i in $a
   do
+    logger -t cloud "Adding  public ips for load balancing"  
     local pubIp=$(echo $i | cut -d: -f1)
     for vif in $VIF_LIST; do 
-      ip addr add dev $vif $pubIp/32
+      sudo ip addr add dev $vif $pubIp/32
       #ignore error since it is because the ip is already there
     done      
   done
 
   for i in $r
   do
+    logger -t cloud "Removing  public ips for deleted loadbalancers"  
     local pubIp=$(echo $i | cut -d: -f1)
     for vif in $VIF_LIST; do 
-      ip addr del $pubIp/32 dev $vif 
+      sudo ip addr del $pubIp/32 dev $vif 
     done
   done
   
@@ -87,15 +89,16 @@ fw_entry() {
   
   local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
   local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
-  
+ 
   for i in $a
   do
+    logger -t cloud "Opening up firewall (INPUT chain) for load balancing" 
     local pubIp=$(echo $i | cut -d: -f1)
     local dport=$(echo $i | cut -d: -f2)
     
     for vif in $VIF_LIST; do 
-      iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
-      iptables -A INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
+      sudo iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
+      sudo iptables -A INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
       
       if [ $? -gt 0 ]
       then
@@ -106,11 +109,12 @@ fw_entry() {
 
   for i in $r
   do
+    logger -t cloud "Closing up firewall (INPUT chain) for deleted load balancers" 
     local pubIp=$(echo $i | cut -d: -f1)
     local dport=$(echo $i | cut -d: -f2)
     
     for vif in $VIF_LIST; do 
-      iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
+      sudo iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
     done
   done
   
@@ -125,6 +129,7 @@ reconfig_lb() {
 
 # Restore the HA Proxy to its previous state, and revert iptables rules on DomR
 restore_lb() {
+  logger -t cloud "Restoring HA Proxy to previous state"
   # Copy the old version of haproxy.cfg into the file that reconfigLB.sh uses
   cp /etc/haproxy/haproxy.cfg.old /etc/haproxy/haproxy.cfg.new
    
@@ -228,15 +233,18 @@ fw_entry $addedIps $removedIps
   	
 if [ $? -gt 0 ]
 then
+  logger -t cloud "Failed to apply firewall rules for load balancing, reverting HA Proxy config"
   # Restore the LB
   restore_lb
 
+  logger -t cloud "Reverting firewall config"
   # Revert iptables rules on DomR, with addedIps and removedIps swapped 
   fw_entry $removedIps $addedIps
 
   #FIXME: make this explicit via check on vm type or passed in flag
   if [ "$VIF_LIST" == "eth0"  ]
   then
+     logger -t cloud "Reverting ip address changes to eth0"
      ip_entry $removedIps $addedIps
   fi
 
