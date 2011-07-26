@@ -2,3 +2,4 @@
 
 paths.script=@AGENTLIBDIR@
 mount.parent=@MSMNTDIR@
+cloud-stack-components-specification=@COMPONENTS-SPEC@

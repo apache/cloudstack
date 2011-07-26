@@ -1,13 +1,24 @@
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (1, 'routing', 'SystemVM Template (Simulator)', 0, now(), 'SYSTEM', 0, 64, 1, '', '', 0, 'SystemVM Template (Simulator)', 'VHD', 15, 0, 1, 'Simulator');
-INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (2, 'centos53-x86_64', 'CentOS 5.3(64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, '', '', 0, 'CentOS 5.3(64-bit) no GUI (Simulator)', 'VHD', 12, 1, 1, 'Simulator', 1);
-INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (3, 'win2003sp2', 'Windows 2003 SP2 (64-bit) (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, '', '', 0, 'Windows 2003 SP2 (64-bit) (Simulator)', 'VHD', 51, 1, 1, 'Simulator', 1);
-INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (4, 'winxpsp3', 'Windows XP SP 3 (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, '', '', 0, 'Windows XP SP 3 (Simulator)', 'VHD', 94, 1, 1, 'Simulator', 1);
-INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (5, 'fedora10-x86_64', 'Fedora 10 x86 64 bit (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, '', '', 0, 'Fedora 10 x86 64 bit', 'VHD', 118, 1, 1, 'Simulator', 1);
+    VALUES (1, 'routing-1', 'SystemVM Template (XenServer)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/routing/debian/latest/systemvm.vhd.bz2', 'c33dfaf0937b35c25ef6a0fdd98f24d3', 0, 'SystemVM Template (XenServer)', 'VHD', 15, 0, 1, 'XenServer');
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (2, 'centos53-x86_64', 'CentOS 5.3(64-bit) no GUI (XenServer)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', 'b63d854a9560c013142567bbae8d98cf', 0, 'CentOS 5.3(64-bit) no GUI (XenServer)', 'VHD', 11, 1, 1, 'XenServer');
+
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (3, 'routing-3', 'SystemVM Template (KVM)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/kvm/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2', 'fe80a229e3bf38a702e836236ed07f57', 0, 'SystemVM Template (KVM)', 'QCOW2', 15, 0, 1, 'KVM');
+
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, display_text, enable_password, format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (4, 'centos55-x86_64', 'CentOS 5.5(64-bit) no GUI (KVM)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2', '1da20ae69b54f761f3f733dce97adcc0', 'CentOS 5.5(64-bit) no GUI (KVM)', 0, 'QCOW2', 112, 1, 1, 'KVM');
+
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (7, 'centos53-x64', 'CentOS 5.3(64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova', 'f6f881b7f2292948d8494db837fe0f47', 0, 'CentOS 5.3(64-bit) no GUI (vSphere)', 'OVA', 12, 1, 1, 'VMware');
+
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (8, 'routing-8', 'SystemVM Template (vSphere)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.ova', 'ee3dc55e94e23a0490310bb78cf8cc76', 0, 'SystemVM Template (vSphere)', 'OVA', 15, 0, 1, 'VMware');
+ 
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (9, 'simulator-domR', 'SystemVM Template (simulator)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/routing/debian/latest/systemvm.vhd.bz2', '', 0, 'SystemVM Template (simulator)', 'VHD', 15, 0, 1, 'Simulator');
+INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type)
+    VALUES (10, 'simulator-Centos', 'CentOS 5.3(64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', '', 0, 'CentOS 5.3(64-bit) no GUI (Simulator)', 'VHD', 11, 1, 1, 'Simulator');
 
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (1, 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (2, 'Debian');
@@ -157,7 +168,6 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (134, 3, '
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (135, 3, 'Oracle Enterprise Linux 5.5 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (136, 4, 'Red Hat Enterprise Linux 6.0 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (137, 4, 'Red Hat Enterprise Linux 6.0 (64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None');
 
 
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 4.5 (32-bit)', 1);
