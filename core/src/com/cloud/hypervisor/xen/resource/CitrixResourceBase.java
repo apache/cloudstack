@@ -2138,15 +2138,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
             String snapshotUuid = snapshotvdi.getUuid(conn);
             snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
+            String parentuuid = getVhdParent(conn, pUuid, snapshotUuid, isISCSI);
+            VDI parent = getVDIbyUuid(conn, parentuuid);
+            Long phySize = parent.getPhysicalUtilisation(conn);
             tmpl.destroy(conn);
             poolsr.scan(conn);
             try{
                 Thread.sleep(5000);
             } catch (Exception e) {
             }
-            String parentuuid = getVhdParent(conn, pUuid, snapshotUuid, isISCSI);
-            VDI parent = getVDIbyUuid(conn, parentuuid);
-            Long phySize = parent.getPhysicalUtilisation(conn);
             return new PrimaryStorageDownloadAnswer(snapshotvdi.getUuid(conn), phySize);
         } catch (Exception e) {
             String msg = "Catch Exception " + e.getClass().getName() + " on host:" + _host.uuid + " for template: "
