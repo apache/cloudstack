@@ -37,13 +37,14 @@ create_htaccess() {
   
   local result=0
   
-  entry="RewriteRule ^$file$  ../$folder/%{REMOTE_ADDR}/$file [L,NC,QSA]"
+  entry="RewriteRule ^$file$ ../$folder/%{REMOTE_ADDR}/$file [L,NC,QSA]"
   htaccessFolder="/var/www/html/latest"
   htaccessFile=$htaccessFolder/.htaccess
   mkdir -p $htaccessFolder
   touch $htaccessFile
-  grep -F \"$entry\" $htaccessFile 
-  if [ \$? -gt 0 ]; then 
+  grep -w $file $htaccessFile 
+
+  if [ $? -gt 0 ]; then 
     echo -e $entry >> $htaccessFile; 
   fi
   result=$?
@@ -58,26 +59,6 @@ create_htaccess() {
     result=$?
   fi
 
-  #support access by http://<dhcp server>/latest/<metadata key> (legacy, see above) also
-  # http://<dhcp server>/latest/meta-data/<metadata key> (correct)
-  if [ "$folder" == "metadata" ] || [ "$folder" == "meta-data" ]
-  then
-    entry="RewriteRule ^meta-data/(.+)$  ../$folder/%{REMOTE_ADDR}/\$1 [L,NC,QSA]"
-    htaccessFolder="/var/www/html/latest"
-    htaccessFile=$htaccessFolder/.htaccess
-    grep -F "$entry" $htaccessFile
-    if [ $? -gt 0 ]
-    then
-      echo -e "$entry" >> $htaccessFile
-    fi
-    entry="RewriteRule ^meta-data/$  ../$folder/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
-    grep -F "$entry" $htaccessFile
-    if [ $? -gt 0 ]
-    then
-      echo -e "$entry" >> $htaccessFile
-    fi
-    result=$?
-  fi
   return $result  
 }
 
@@ -140,15 +121,15 @@ done
 [ "$vmIp" == "" ]  || [ "$folder" == "" ] || [ "$file" == "" ] && usage 
 [ "$folder" != "userdata" ] && [ "$folder" != "metadata" ] && usage
 
-create_htaccess $vmIp $folder $file
-
-if [ $? -gt 0 ]
-  then
-    exit 1
-fi
-
 if [ "$dataFile" != "" ]
 then
+  create_htaccess $vmIp $folder $file
+  
+  if [ $? -gt 0 ]
+  then
+    exit 1
+  fi
+  
   copy_vm_data_file $vmIp $folder $file $dataFile
 else
   delete_vm_data_file $vmIp $folder $file
