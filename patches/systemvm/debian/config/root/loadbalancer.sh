@@ -60,6 +60,16 @@ fw_entry() {
   
   local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
   local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
+
+# Flush all the load balancer rules. 
+  for vif in $VIF_LIST; do 
+    iptables -F load_balancer_$vif 2> /dev/null
+    iptables -D INPUT -i $vif -p tcp  -j load_balancer_$vif 2> /dev/null
+    iptables -X load_balancer_$vif 2> /dev/null
+    iptables -N load_balancer_$vif
+    iptables -A INPUT -i $vif -p tcp  -j load_balancer_$vif
+  done
+
   
   for i in $a
   do
@@ -68,8 +78,7 @@ fw_entry() {
     local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
     
     for vif in $VIF_LIST; do 
-      iptables -D INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
-      iptables -A INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT
+      iptables -A load_balancer_$vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT
       
       if [ $? -gt 0 ]
       then
@@ -84,9 +93,6 @@ fw_entry() {
     local dport=$(echo $i | cut -d: -f2)    
     local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
     
-    for vif in $VIF_LIST; do 
-      iptables -D INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT
-    done
   done
   
   return 0
