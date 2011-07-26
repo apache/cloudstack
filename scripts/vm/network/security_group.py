@@ -322,7 +322,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     
     vmchain = vm_name
     
-    delcmd = "iptables -S | grep " +  vmchain + " | grep physdev-is-bridged | sed 's/-A/-D/'"
+    delcmd = "iptables-save | grep " +  vmchain + " | grep physdev-is-bridged | sed 's/-A/-D/'"
     delcmds = execute(delcmd).split('\n')
     delcmds.pop()
     for cmd in delcmds:
