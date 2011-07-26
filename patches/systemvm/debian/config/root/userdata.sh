@@ -46,7 +46,7 @@ create_htaccess() {
   #grep -w $file $htaccessFile
   grep -F `echo $entry` $htaccessFile
   
-  if [ \$? -gt 0 ]; then 
+  if [ $? -gt 0 ]; then 
     echo -e $entry >> $htaccessFile; 
   fi
   result=$?
