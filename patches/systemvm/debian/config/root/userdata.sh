@@ -42,9 +42,11 @@ create_htaccess() {
   htaccessFile=$htaccessFolder/.htaccess
   mkdir -p $htaccessFolder
   touch $htaccessFile
-  grep -w $file $htaccessFile 
-
-  if [ $? -gt 0 ]; then 
+  
+  #grep -w $file $htaccessFile
+  grep -F `echo $entry` $htaccessFile
+  
+  if [ \$? -gt 0 ]; then 
     echo -e $entry >> $htaccessFile; 
   fi
   result=$?
