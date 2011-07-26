@@ -399,7 +399,8 @@ function afterLoadIpJSP() {
     
     createLoadBalancerRow.find("#add_link").bind("click", function(event){		
 	    // validate values		    
-		var isValid = true;					
+		var isValid = true;		
+		isValid &= validateCIDRList("CIDR", createLoadBalancerRow.find("#cidr"), createLoadBalancerRow.find("#cidr_errormsg"), true); //optional		
 		isValid &= validateString("Name", createLoadBalancerRow.find("#name"), createLoadBalancerRow.find("#name_errormsg"));
 		isValid &= validateInteger("Public Port", createLoadBalancerRow.find("#public_port"), createLoadBalancerRow.find("#public_port_errormsg"), 1, 65535);
 		isValid &= validateInteger("Private Port", createLoadBalancerRow.find("#private_port"), createLoadBalancerRow.find("#private_port_errormsg"), 1, 65535);				
@@ -414,17 +415,24 @@ function afterLoadIpJSP() {
 		 			
 		var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");        
         var ipObj = $midmenuItem1.data("jsonObj");
-       	 
-	    var name = createLoadBalancerRow.find("#name").val();  
-	    var publicPort = createLoadBalancerRow.find("#public_port").val();
-	    var privatePort = createLoadBalancerRow.find("#private_port").val();
-	    var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
-	    		   
+       	 	    
 	    var array1 = [];
-        array1.push("&publicipid="+ipObj.id);    
+        array1.push("&publicipid="+ipObj.id);  
+        
+        var cidr = createLoadBalancerRow.find("#cidr").val();
+        if(cidr != null && cidr.length > 0)
+        	array1.push("&cidrlist="+cidr);
+        
+        var name = createLoadBalancerRow.find("#name").val();  
         array1.push("&name="+todb(name));              
+        
+        var publicPort = createLoadBalancerRow.find("#public_port").val();
         array1.push("&publicport="+publicPort);
+        
+        var privatePort = createLoadBalancerRow.find("#private_port").val();
         array1.push("&privateport="+privatePort);
+        
+        var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
         array1.push("&algorithm="+algorithm);
        
         $.ajax({
@@ -1656,7 +1664,10 @@ function ipClearLoadBalancerTab() {
 function loadBalancerJsonToTemplate(jsonObj, $template) {	
     var loadBalancerId = fromdb(jsonObj.id);	    
     $template.attr("id", "loadBalancer_" + loadBalancerId).data("loadBalancerId", loadBalancerId);		    
-    
+       
+    $template.find("#row_container #cidr").text(fromdb(jsonObj.cidrlist));
+    $template.find("#row_container_edit #cidr").text(fromdb(jsonObj.cidrlist));
+        
     $template.find("#row_container #name").text(fromdb(jsonObj.name));
     $template.find("#row_container_edit #name").val(fromdb(jsonObj.name));
     
@@ -1910,6 +1921,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 
 function refreshCreateLoadBalancerRow() {
     var createLoadBalancerRow = $("#tab_content_load_balancer #create_load_balancer_row");
+    createLoadBalancerRow.find("#cidr").val("");  
     createLoadBalancerRow.find("#name").val("");  
     createLoadBalancerRow.find("#public_port").val("");
     createLoadBalancerRow.find("#private_port").val("");

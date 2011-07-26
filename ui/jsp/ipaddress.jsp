@@ -376,53 +376,61 @@ dictionary = {
         </div>        
         <div id="tab_container">
 	        <div class="grid_container">
-	            <div class="grid_header">
-	                <div class="grid_header_cell" style="width: 18%; ">
+	            <div class="grid_header">	            
+	                <div class="grid_header_cell" style="width: 25%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.cidr.list"/></div>
+	                </div>		            
+	                <div class="grid_header_cell" style="width: 14%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.name"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 14%; ">
+	                <div class="grid_header_cell" style="width: 12%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.public.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 14%; ">
+	                <div class="grid_header_cell" style="width: 12%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.private.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%; ">
+	                <div class="grid_header_cell" style="width: 12%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.algorithm"/></div>
 	                </div>	                
-	                <div class="grid_header_cell" style="width: 10%; ">
+	                <div class="grid_header_cell" style="width: 6%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.state"/></div>
 	                </div>	                
-	                <div class="grid_header_cell" style="width: 27%; ">
+	                <div class="grid_header_cell" style="width: 17%; ">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even" id="create_load_balancer_row">
-	                <div class="grid_row_cell" style="width: 18%; ">
+	            <div class="grid_rows even" id="create_load_balancer_row">	            
+	                <div class="grid_row_cell" style="width: 25%; ">  
+	                    <input id="cidr" class="text" type="text" />
+	                    <div id="cidr_errormsg" class="errormsg" style="display: none;"></div>
+	                </div>	            
+	                <div class="grid_row_cell" style="width: 14%; ">
 	                    <input id="name" class="text" style="width: 70%; " type="text" />
-	                    <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                    <div id="name_errormsg" class="errormsg" style="display: none;"></div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 14%;">
+	                <div class="grid_row_cell" style="width: 12%;">
 	                    <input id="public_port" class="text" style="width: 70%; " type="text" />
-	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                    <div id="public_port_errormsg" class="errormsg" style="display: none;"></div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 14%;">
+	                <div class="grid_row_cell" style="width: 12%;">
 	                    <input id="private_port" class="text" style="width: 70%; " type="text" />
-	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                    <div id="private_port_errormsg" class="errormsg" style="display: none;"></div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 12%;">
 	                    <select id="algorithm_select" class="select" style="width: 70%;">   	                      
 	                    </select>
 	                </div>	                
-	                <div class="grid_row_cell" style="width: 10%;">	  
+	                <div class="grid_row_cell" style="width: 6%;">	  
                     	<div class="row_celltitles" style="padding:1px;"></div>         
 	                </div>	                
-	                <div class="grid_row_cell" style="width: 27%; ">
+	                <div class="grid_row_cell" style="width: 17%; ">
 	                    <div class="row_celltitles">
 	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
 	                </div>
@@ -492,27 +500,26 @@ dictionary = {
 
 <!-- Load Balancer Template (begin) -->
 <div class="grid_rows odd" id="load_balancer_template" style="display:none">
-    <div id="row_container">
-        <div class="grid_row_cell" style="width: 18%; ">
-            <div class="row_celltitles" id="name">
-                LB#1</div>
-        </div>
-        <div class="grid_row_cell" style="width: 14%; ">
-            <div class="row_celltitles" id="public_port">
-                8080</div>
-        </div>
-        <div class="grid_row_cell" style="width: 14%; ">
-            <div class="row_celltitles" id="private_port">
-                80</div>
-        </div>
-        <div class="grid_row_cell" style="width: 15%; ">
-            <div class="row_celltitles" id="algorithm">
-                (algorithm)</div>
+    <div id="row_container">        
+        <div class="grid_row_cell" style="width: 25%; ">
+            <div class="row_celltitles" id="cidr" style="padding:1px;"></div>
         </div>        
-        <div class="grid_row_cell" style="width: 10%; ">
+        <div class="grid_row_cell" style="width: 14%; ">
+            <div class="row_celltitles" id="name"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 12%; ">
+            <div class="row_celltitles" id="public_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 12%; ">
+            <div class="row_celltitles" id="private_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 12%; ">
+            <div class="row_celltitles" id="algorithm"></div>
+        </div>        
+        <div class="grid_row_cell" style="width: 6%; ">
             <div class="row_celltitles" id="state" style="padding:1px;"></div>
         </div>  
-        <div class="grid_row_cell" style="width: 27%; ">
+        <div class="grid_row_cell" style="width: 17%; ">
             <div class="row_celltitles">
                 <a id="manage_link" href="#" style="float:left;"><fmt:message key="label.manage"/></a>
                 <a id="edit_link" href="#" style="float:left; margin-left:15px;"><fmt:message key="label.edit"/></a>
@@ -527,25 +534,28 @@ dictionary = {
             </p>
         </div>
     </div> 
-    <div class="grid_rows odd" id="row_container_edit" style="display:none; border-bottom:none;">
-        <div class="grid_row_cell" style="width: 20%; ">
-            <input id="name" class="text" style="width: 70%;" type="text" />
-            <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
-        </div>
+    <div class="grid_rows odd" id="row_container_edit" style="display:none; border-bottom:none;">        
+        <div class="grid_row_cell" style="width: 25%; ">
+            <div class="row_celltitles" id="cidr" style="padding:1px;"></div>
+        </div>       
         <div class="grid_row_cell" style="width: 14%; ">
+            <input id="name" class="text" style="width: 70%;" type="text" />
+            <div id="name_errormsg" class="errormsg" style="display: none;"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 12%; ">
             <div class="row_celltitles" id="public_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 14%; ">
+        <div class="grid_row_cell" style="width: 12%; ">
             <div class="row_celltitles" id="private_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%; ">
+        <div class="grid_row_cell" style="width: 12%; ">
             <select id="algorithm_select" class="select" style="width: 70%;">                 
             </select>
         </div>        
-        <div class="grid_row_cell" style="width: 10%; ">
+        <div class="grid_row_cell" style="width: 6%; ">
             <div class="row_celltitles" id="state"></div>
         </div>        
-        <div class="grid_row_cell" style="width: 25%; ">
+        <div class="grid_row_cell" style="width: 17%; ">
             <div class="row_celltitles">
                 <a id="save_link" href="#" style="float:left;"><fmt:message key="label.save"/></a>
                 <a id="cancel_link" href="#" style="float:left; margin-left:15px; display:inline;"><fmt:message key="label.cancel"/></a>
