@@ -2524,23 +2524,40 @@ function doCreateTemplateFromVM($actionLink, $detailsTab, $midmenuItem1) {
     $dialogCreateTemplate
 	.dialog('option', 'buttons', { 						
 		"Create": function() { 		   
-		    var thisDialog = $(this);
-		    thisDialog.dialog("close"); 
-									
+		    var $thisDialog = $(this);
+		    									
 			// validate values
 	        var isValid = true;					
-	        isValid &= validateString("Name", thisDialog.find("#create_template_name"), thisDialog.find("#create_template_name_errormsg"));
-			isValid &= validateString("Display Text", thisDialog.find("#create_template_desc"), thisDialog.find("#create_template_desc_errormsg"));			
-	        if (!isValid) return;		
+	        isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
+			isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));	
+	        isValid &= validateString("Image Directory", $thisDialog.find("#image_directory"), $thisDialog.find("#image_directory_errormsg"), false); //image directory is required when creating template from VM whose hypervisor is BareMetal
+			if (!isValid) 
+	        	return;		
 	        
-	        var name = trim(thisDialog.find("#create_template_name").val());
-			var desc = trim(thisDialog.find("#create_template_desc").val());
-			var osType = thisDialog.find("#create_template_os_type").val();					
-			var isPublic = thisDialog.find("#create_template_public").val();
-            var password = thisDialog.find("#create_template_password").val();				
+			$thisDialog.dialog("close"); 
 			
-			var id = $midmenuItem1.data("jsonObj").id;			
-			var apiCommand = "command=createTemplate&virtualmachineid="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+			var array1 = [];
+						
+	        var name = $thisDialog.find("#create_template_name").val();
+	        array1.push("&name="+todb(name));
+	        
+			var desc = $thisDialog.find("#create_template_desc").val();
+			array1.push("&displayText="+todb(desc));
+			
+			var osType = $thisDialog.find("#create_template_os_type").val();	
+			array1.push("&osTypeId="+osType);
+			
+			var isPublic = $thisDialog.find("#create_template_public").val();
+			array1.push("&isPublic="+isPublic);
+			
+            var password = $thisDialog.find("#create_template_password").val();		
+            array1.push("&passwordEnabled="+password);
+			
+            var imageDirectory = $thisDialog.find("#image_directory").val();
+	        array1.push("&url="+todb(imageDirectory));
+			
+	        var id = $midmenuItem1.data("jsonObj").id;		
+			var apiCommand = "command=createTemplate&virtualmachineid="+id+array1.join("");
 	    	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);					
 		}, 
 		"Cancel": function() { 

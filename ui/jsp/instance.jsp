@@ -1456,7 +1456,14 @@ dictionary = {
                     <option value="false"><fmt:message key="label.no" /></option>
                     <option value="true"><fmt:message key="label.yes" /></option>
                 </select>
-            </li>
+            </li>            
+            <li id="image_directory_container">
+                <label>
+                    <fmt:message key="image.directory" />:</label>
+                <input class="text" type="text" id="image_directory" />
+                <div id="image_directory_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>           
         </ol>
         </form>
     </div>
