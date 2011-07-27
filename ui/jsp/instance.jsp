@@ -158,8 +158,18 @@ dictionary = {
 	                    <input class="text" id="vmname_edit" style="width: 200px; display: none;" type="text" />
 	                    <div id="vmname_edit_errormsg" style="display:none"></div>
 	                </div>
-	            </div>
+	            </div>	
 	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.hypervisor"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="hypervisor">
+	                    </div>
+	                </div>
+	            </div>	
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.template"/>:</div>
@@ -169,7 +179,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>	            
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.os.type"/>:</div>
@@ -181,7 +191,7 @@ dictionary = {
 	                    </select>
 	                </div>
 	            </div>	            
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.service.offering"/>:</div>
@@ -191,7 +201,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.ha.enabled"/>:</div>
@@ -203,36 +213,6 @@ dictionary = {
 	                        <option value="false"><fmt:message key="label.no"/></option>
 							<option value="true"><fmt:message key="label.yes"/></option>
 	                    </select>
-	                </div>
-	            </div>
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <fmt:message key="label.created"/>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="created">
-	                    </div>
-	                </div>
-	            </div>
-	            <div class="grid_rows even">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <fmt:message key="label.account"/>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="account">
-	                    </div>
-	                </div>
-	            </div>
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <fmt:message key="label.domain"/>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="domain">
-	                    </div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even">
@@ -266,7 +246,37 @@ dictionary = {
 	                    <input class="text" id="group_edit" style="width: 200px; display: none;" type="text" />
 	                    <div id="group_edit_errormsg" style="display:none"></div>
 	                </div>
-	            </div>	
+	            </div>		            
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.domain"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="domain">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.account"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="account">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.created"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="created">
+	                    </div>
+	                </div>
+	            </div>
 	        </div>
 	        
             <div class="grid_botactionpanel">

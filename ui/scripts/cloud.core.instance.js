@@ -1901,6 +1901,7 @@ function vmJsonToDetailsTab(){
 	
 	$thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
 	
+	$thisTab.find("#hypervisor").text(fromdb(jsonObj.hypervisor));	
 	$thisTab.find("#templateName").text(fromdb(jsonObj.templatename));
 
 	$thisTab.find("#ostypename").text(osTypeMap[fromdb(jsonObj.guestosid)]);
@@ -2244,6 +2245,7 @@ function vmJsonClearDetailsTab(){
 	$thisTab.find("#vmname").text("");
 	$thisTab.find("#vmname_edit").val("");	
 	$thisTab.find("#ipaddress").text("");	
+	$thisTab.find("#hypervisor").text("");
 	$thisTab.find("#templateName").text("");
 	$thisTab.find("#ostypename").text("");
     $thisTab.find("#ostypename_edit").val(""); 	
