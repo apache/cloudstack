@@ -863,7 +863,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 return status;
             }
         } catch (AgentUnavailableException e) {
-            s_logger.debug("Agent is unavailable so we move on.");
+            s_logger.debug("Agent is unavailable so we move on. Error: " + e.getMessage());
         } catch (OperationTimedoutException e) {
             s_logger.debug("Timed Out " + e.getMessage());
         }
