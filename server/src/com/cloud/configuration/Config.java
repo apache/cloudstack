@@ -65,6 +65,8 @@ public enum Config {
 	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.vlan.network", "false", "enable/disable vlan remapping of  open vswitch network", null),
 	OvsTunnelNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.tunnel.network", "false", "enable/disable open vswitch tunnel network(no vlan)", null),
 	VmNetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "vm.network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed in User vm's default network.", null),
+	SecurityGroupWorkCleanupInterval("Network", ManagementServer.class, Integer.class, "network.securitygroups.work.cleanup.interval", "120", "Time interval (seconds) in which finished work is cleaned up from the work table", null),
+	SecurityGroupWorkerThreads("Network", ManagementServer.class, Integer.class, "network.securitygroups.workers.pool.size", "50", "Number of worker threads processing the security group update work queue", null),
 
 	// Usage	
 	CapacityCheckPeriod("Usage", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),

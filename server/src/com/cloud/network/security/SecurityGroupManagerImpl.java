@@ -49,6 +49,7 @@ import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteSecurityGroupCmd;
 import com.cloud.api.commands.ListSecurityGroupsCmd;
 import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -76,6 +77,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -144,7 +146,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     private long _serverId;
 
-    private final long _timeBetweenCleanups = 30; // seconds
+    private  int _timeBetweenCleanups = TIME_BETWEEN_CLEANUPS; // seconds
+    private  int _numWorkerThreads = WORKER_THREAD_COUNT;
 
     SecurityGroupListener _answerListener;
 
@@ -736,16 +739,23 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        
+        Map<String, String> configs = _configDao.getConfiguration("Network", params);
+        _numWorkerThreads = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads), WORKER_THREAD_COUNT);
+        _timeBetweenCleanups = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads), TIME_BETWEEN_CLEANUPS);
+
         /* register state listener, no matter security group is enabled or not */
         VirtualMachine.State.getStateMachine().registerListener(this);
 
         _answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
         _agentMgr.registerForHostEvents(_answerListener, true, true, true);
 
+        
         _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
-        _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("NWGRP"));
+        _executorPool = Executors.newScheduledThreadPool(_numWorkerThreads, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
 
+        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + ", time between cleanups=" + _timeBetweenCleanups);
         return true;
     }
 
@@ -1078,7 +1088,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     private void cleanupUnfinishedWork() {
-        Date before = new Date(System.currentTimeMillis() - 30 * 1000l);
+        Date before = new Date(System.currentTimeMillis() - _timeBetweenCleanups* 1000l);
         List<SecurityGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
         if (unfinished.size() > 0) {
             s_logger.info("Network Group Work cleanup found " + unfinished.size() + " unfinished work items older than " + before.toString());
