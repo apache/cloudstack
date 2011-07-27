@@ -391,6 +391,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             }
             String instanceName = ssVm.getInstanceName();
             HostVO host = _hostDao.findByName(instanceName);
+            if ( host == null ) {
+                continue;
+            }
             Answer answer = _agentMgr.easySend(host.getId(), thiscpc);
             if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
