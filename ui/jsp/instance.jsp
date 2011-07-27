@@ -1413,8 +1413,58 @@ dictionary = {
     </div>
 </div>
 
-<!-- Create template of disk volume dialog (begin) -->
-<div id="dialog_create_template" title='<fmt:message key="label.action.create.template" />' style="display: none">
+<!-- Create template from VM dialog (begin) -->
+<div id="dialog_create_template_from_vm" title='<fmt:message key="label.action.create.template.from.vm" />' style="display: none">
+    <p> 
+		<fmt:message key="message.vm.create.template.confirm" />
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <fmt:message key="label.name" />:</label>
+                <input class="text" type="text" name="create_template_name" id="create_template_name" />
+                <div id="create_template_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label>
+                    <fmt:message key="label.display.text" />:</label>
+                <input class="text" type="text" name="create_template_desc" id="create_template_desc" />
+                <div id="create_template_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="create_template_os_type">
+                    <fmt:message key="label.os.type" />:</label>
+                <select class="select" name="create_template_os_type" id="create_template_os_type">
+                </select>
+            </li>
+            <li>
+                <label for="create_template_public">
+                    <fmt:message key="label.public" />:</label>
+                <select class="select" name="create_template_public" id="create_template_public">
+                    <option value="false"><fmt:message key="label.no" /></option>
+                    <option value="true"><fmt:message key="label.yes" /></option>
+                </select>
+            </li>
+            <li>
+                <label>
+                    <fmt:message key="label.password.enabled" />:</label>
+                <select class="select" name="create_template_password" id="create_template_password">
+                    <option value="false"><fmt:message key="label.no" /></option>
+                    <option value="true"><fmt:message key="label.yes" /></option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Create template from VM dialog (end) -->
+
+<!-- Create template from volume dialog (begin) -->
+<div id="dialog_create_template_from_volume" title='<fmt:message key="label.action.create.template.from.volume" />' style="display: none">
     <p> 
 		<fmt:message key="message.volume.create.template.confirm" />
     </p>
@@ -1461,7 +1511,7 @@ dictionary = {
         </form>
     </div>
 </div>
-<!-- Create template of disk volume dialog (end) -->
+<!-- Create template from volume dialog (end) -->
 
 <!-- Confirm to stop VM (begin) -->
 <div id="dialog_confirmation_stop_vm" title='<fmt:message key="label.confirmation"/>' style="display: none">

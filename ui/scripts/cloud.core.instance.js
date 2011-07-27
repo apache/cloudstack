@@ -140,8 +140,9 @@ function afterLoadInstanceJSP() {
     // dialogs
     initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
-    initDialog("dialog_change_service_offering", 600);                
-    initDialog("dialog_create_template", 400);    
+    initDialog("dialog_change_service_offering", 600);     
+    initDialog("dialog_create_template_from_vm", 400); 
+    initDialog("dialog_create_template_from_volume", 400);      
 	initDialog("dialog_migrate_instance", 600);
 	initDialog("dialog_confirmation_stop_vm"); 
 	
@@ -157,13 +158,15 @@ function afterLoadInstanceJSP() {
 		success: function(json) {		    
 			types = json.listostypesresponse.ostype;
 			var osTypeDropdown1 = $("#right_panel_content").find("#tab_content_details").find("#ostypename_edit").empty(); 
-			var osTypeDropdown2 = $("#dialog_create_template #create_template_os_type").empty();
+			var osTypeDropdown2 = $("#dialog_create_template_from_vm #create_template_os_type").empty();
+			var osTypeDropdown3 = $("#dialog_create_template_from_volume #create_template_os_type").empty();
 			if (types != null && types.length > 0) {				
 				for (var i = 0; i < types.length; i++) {
 				    osTypeMap[types[i].id] = fromdb(types[i].description);		
 				    var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";									
 					osTypeDropdown1.append(html);	
-					osTypeDropdown2.append(html);					
+					osTypeDropdown2.append(html);	
+					osTypeDropdown3.append(html);	
 				}
 			}					
 		}
@@ -1386,7 +1389,14 @@ var vmActionMap = {
             var jsonObj = json.changeserviceforvirtualmachineresponse.virtualmachine;       
             vmToMidmenu(jsonObj, $midmenuItem1);           
         }
-    },       
+    },    
+    "label.action.create.template": {
+        isAsyncJob: true,
+        asyncJobResponse: "createtemplateresponse",            
+        dialogBeforeActionFn : doCreateTemplateFromVM,
+        inProcessText: "label.action.create.template.processing",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {}   
+    },    
     "label.action.migrate.instance": {
         isAsyncJob: true,        
 		asyncJobResponse: "migratevirtualmachineresponse", 
@@ -1960,7 +1970,11 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 			buildActionLinkForTab("label.action.detach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 			
 		buildActionLinkForTab("label.action.reset.password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForTab("label.action.change.service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.change.service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+		
+		if(jsonObj.hypervisor == "BareMetal")
+		    buildActionLinkForTab("label.action.create.template", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		    
 		noAvailableActions = false;	
 	} 
 	else if (jsonObj.state == 'Stopped') {	    
@@ -1974,7 +1988,11 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		   buildActionLinkForTab("label.action.detach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
 		
 		buildActionLinkForTab("label.action.reset.password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForTab("label.action.change.service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+		buildActionLinkForTab("label.action.change.service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		
+		if(jsonObj.hypervisor == "BareMetal")
+		    buildActionLinkForTab("label.action.create.template", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		
 		noAvailableActions = false;			    					
 	}
 	else if (jsonObj.state == 'Error') {	
@@ -2459,10 +2477,12 @@ function appendInstanceGroup(groupId, groupName) {
     $("#leftmenu_instance_group_container").append($leftmenuSubmenuTemplate);
 }	
 
-function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {       
+function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {        
+    var $dialogCreateTemplate = $("#dialog_create_template_from_volume");    
+       
     var jsonObj = $subgridItem.data("jsonObj");
     
-	$("#dialog_create_template")
+    $dialogCreateTemplate
 	.dialog('option', 'buttons', { 						
 		"OK": function() { 		
 		    var thisDialog = $(this);		    
@@ -2485,6 +2505,43 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 			var id = $subgridItem.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
 	    	doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);					
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}   
+
+function doCreateTemplateFromVM($actionLink, $detailsTab, $midmenuItem1) {  
+	var $dialogCreateTemplate = $("#dialog_create_template_from_vm");
+	
+	if (getUserPublicTemplateEnabled() == "true" || isAdmin()) {
+		$dialogCreateTemplate.find("#create_template_public_container").show();	
+	}	
+   
+    var jsonObj = $midmenuItem1.data("jsonObj");     
+    
+    $dialogCreateTemplate
+	.dialog('option', 'buttons', { 						
+		"Create": function() { 		   
+		    var thisDialog = $(this);
+		    thisDialog.dialog("close"); 
+									
+			// validate values
+	        var isValid = true;					
+	        isValid &= validateString("Name", thisDialog.find("#create_template_name"), thisDialog.find("#create_template_name_errormsg"));
+			isValid &= validateString("Display Text", thisDialog.find("#create_template_desc"), thisDialog.find("#create_template_desc_errormsg"));			
+	        if (!isValid) return;		
+	        
+	        var name = trim(thisDialog.find("#create_template_name").val());
+			var desc = trim(thisDialog.find("#create_template_desc").val());
+			var osType = thisDialog.find("#create_template_os_type").val();					
+			var isPublic = thisDialog.find("#create_template_public").val();
+            var password = thisDialog.find("#create_template_password").val();				
+			
+			var id = $midmenuItem1.data("jsonObj").id;			
+			var apiCommand = "command=createTemplate&virtualmachineid="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+	    	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);					
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
