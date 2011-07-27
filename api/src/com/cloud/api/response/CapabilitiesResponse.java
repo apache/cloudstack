@@ -30,6 +30,10 @@ public class CapabilitiesResponse extends BaseResponse {
     
     @SerializedName("userpublictemplateenabled") @Param(description="true if user and domain admins can set templates to be shared, false otherwise")
     private boolean userPublicTemplateEnabled;
+    
+    
+    @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
+    private boolean supportELB;
 
     public boolean getSecurityGroupsEnabled() {
         return securityGroupsEnabled;
@@ -53,5 +57,13 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setUserPublicTemplateEnabled(boolean userPublicTemplateEnabled) {
         this.userPublicTemplateEnabled = userPublicTemplateEnabled;
+    }
+
+    public void setSupportELB(boolean supportELB) {
+        this.supportELB = supportELB;
+    }
+
+    public boolean isSupportELB() {
+        return supportELB;
     }
 }

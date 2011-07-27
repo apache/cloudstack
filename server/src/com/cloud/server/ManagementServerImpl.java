@@ -4179,9 +4179,12 @@ public class ManagementServerImpl implements ManagementServer {
         Map<String, Object> capabilities = new HashMap<String, Object>();
 
         boolean securityGroupsEnabled = false;
+        boolean elasticLoadBalancerEnabled = false;
         List<DataCenterVO> dc = _dcDao.listSecurityGroupEnabledZones();
         if (dc != null && !dc.isEmpty()) {
             securityGroupsEnabled = true;
+            String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+            elasticLoadBalancerEnabled = elbEnabled==null?false:Boolean.parseBoolean(elbEnabled);
         }
 
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
@@ -4189,6 +4192,7 @@ public class ManagementServerImpl implements ManagementServer {
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
         capabilities.put("cloudStackVersion", getVersion());
+        capabilities.put("supportELB", elasticLoadBalancerEnabled);
         return capabilities;
     }
 
