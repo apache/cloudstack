@@ -315,7 +315,7 @@ CREATE TABLE `cloud`.`op_lock` (
   `waiters` int NOT NULL DEFAULT 0 COMMENT 'How many have the thread acquired this lock (reentrant)',
   PRIMARY KEY (`key`),
   INDEX `i_op_lock__mac_ip_thread`(`mac`, `ip`, `thread`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=Memory DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`configuration` (
   `category` varchar(255) NOT NULL DEFAULT 'Advanced',
@@ -408,7 +408,8 @@ CREATE TABLE `cloud`.`volumes` (
   CONSTRAINT `fk_volumes__pool_id` FOREIGN KEY `fk_volumes__pool_id` (`pool_id`) REFERENCES `storage_pool` (`id`),
   INDEX `i_volumes__pool_id`(`pool_id`),
   CONSTRAINT `fk_volumes__instance_id` FOREIGN KEY `fk_volumes__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
-  INDEX `i_volumes__instance_id`(`instance_id`)
+  INDEX `i_volumes__instance_id`(`instance_id`),
+  INDEX `i_volumes__state`(`state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (
@@ -1399,7 +1400,9 @@ CREATE TABLE `cloud`.`op_nwgrp_work` (
   PRIMARY KEY (`id`),
   INDEX `i_op_nwgrp_work__instance_id`(`instance_id`),
   INDEX `i_op_nwgrp_work__mgmt_server_id`(`mgmt_server_id`),
-  INDEX `i_op_nwgrp_work__taken`(`taken`)
+  INDEX `i_op_nwgrp_work__taken`(`taken`),
+  INDEX `i_op_nwgrp_work__step`(`step`),
+  INDEX `i_op_nwgrp_work__seq_no`(`seq_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_vm_ruleset_log` (

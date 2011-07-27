@@ -246,6 +246,7 @@ public class AgentMonitor extends Thread implements Listener {
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
+        _pingMap.remove(agentId);
         return true;
     }
 
