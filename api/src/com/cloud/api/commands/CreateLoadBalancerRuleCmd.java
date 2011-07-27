@@ -23,11 +23,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -38,10 +40,11 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
-public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer {
+public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBalancer */{
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "createloadbalancerruleresponse";
@@ -81,12 +84,10 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    @Override
     public String getAlgorithm() {
         return algorithm;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
@@ -180,53 +181,26 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         this.setResponseObject(response);
     }
 
-    @Override
-    public long getId() {
-        throw new UnsupportedOperationException("not supported");
-    }
+  
 
-    @Override
-    public String getXid() {
-        // FIXME: Should fix this.
-        return null;
-    }
-
-    @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return publicIpId;
     }
 
-    @Override
     public int getSourcePortStart() {
         return publicPort.intValue();
     }
 
-    @Override
     public int getSourcePortEnd() {
         return publicPort.intValue();
     }
 
-    @Override
     public String getProtocol() {
         return NetUtils.TCP_PROTO;
     }
 
-    @Override
-    public Purpose getPurpose() {
-        return Purpose.LoadBalancing;
-    }
+   
 
-    @Override
-    public State getState() {
-        throw new UnsupportedOperationException("not supported");
-    }
-
-    @Override
-    public long getNetworkId() {
-        return -1;
-    }
-
-    @Override
     public long getAccountId() {  
         if (publicIpId != null)
             return _networkService.getIp(getPublicIpId()).getAccountId();
@@ -247,7 +221,6 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    @Override
     public long getDomainId() {
         if (publicIpId != null)
             return _networkService.getIp(getPublicIpId()).getDomainId();
@@ -257,12 +230,10 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         return UserContext.current().getCaller().getDomainId();
     }
 
-    @Override
     public int getDefaultPortStart() {
         return privatePort.intValue();
     }
 
-    @Override
     public int getDefaultPortEnd() {
         return privatePort.intValue();
     }
@@ -282,6 +253,22 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
 
     public void setPublicIpId(Long publicIpId) {
         this.publicIpId = publicIpId;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_LOAD_BALANCER_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "creating load balancer: " + getName() + " account: " + getAccountName();
+
+    }
+
+    public String getXid() {
+        /*FIXME*/
+        return null;
     }
 
 }

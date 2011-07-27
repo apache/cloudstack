@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
@@ -349,7 +350,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
-    public LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException {
+    public LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException {
         UserContext caller = UserContext.current();
 
         long ipId = lb.getSourceIpAddressId();

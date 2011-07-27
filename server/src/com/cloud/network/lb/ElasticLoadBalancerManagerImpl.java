@@ -36,6 +36,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -443,7 +444,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
     @Override
     @DB
-    public void handleCreateLoadBalancerRule( LoadBalancer lb, Account account)  {
+    public void handleCreateLoadBalancerRule( CreateLoadBalancerRuleCmd lb, Account account)  {
         
         long ipId = lb.getSourceIpAddressId();
         IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
