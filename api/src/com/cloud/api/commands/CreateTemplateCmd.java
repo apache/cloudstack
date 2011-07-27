@@ -28,6 +28,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
@@ -78,6 +79,14 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
     private Long volumeId;
+    
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
+    private Long vmId;
+    
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
+    private String url;
+    
+    
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -122,7 +131,14 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public Long getVolumeId() {
         return volumeId;
     }
+    
+    public Long getVmId() {
+    	return vmId;
+    }
 
+    public String getUrl() {
+        return url;
+    }
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -186,7 +202,12 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
-        VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
+        VirtualMachineTemplate template = null;
+        if (vmId != null && url != null) {
+            template = _bareMetalVmService.createPrivateTemplate(this);
+        } else {
+            template = _userVmService.createPrivateTemplate(this);
+        }
         if (template != null){
             List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
             TemplateResponse response = new TemplateResponse();
