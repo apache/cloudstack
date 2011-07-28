@@ -741,8 +741,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         
         Map<String, String> configs = _configDao.getConfiguration("Network", params);
-        _numWorkerThreads = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads), WORKER_THREAD_COUNT);
-        _timeBetweenCleanups = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads), TIME_BETWEEN_CLEANUPS);
+        _numWorkerThreads = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads.key()), WORKER_THREAD_COUNT);
+        _timeBetweenCleanups = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkCleanupInterval.key()), TIME_BETWEEN_CLEANUPS);
 
         /* register state listener, no matter security group is enabled or not */
         VirtualMachine.State.getStateMachine().registerListener(this);
