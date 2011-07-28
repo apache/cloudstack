@@ -492,7 +492,7 @@ dictionary = {
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                <fmt:message key="label.add.load.balancer.and.ip"/>
+                <fmt:message key="label.add.load.balancer"/>
             </div>
         </div>
     </div>
@@ -781,7 +781,7 @@ dictionary = {
     </div>
 </div>
 
-<div id="dialog_add_load_balancer_and_ip" title='<fmt:message key="label.add.load.balancer.and.ip"/>' style="display: none">   
+<div id="dialog_add_load_balancer_and_ip" title='<fmt:message key="label.add.load.balancer"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form1">
         <ol>
