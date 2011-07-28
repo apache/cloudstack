@@ -147,13 +147,29 @@ function afterLoadIpJSP() {
 										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
 											    // Succeeded											    	
-										    	var publicipid = result.jobresult.loadbalancer.publicipid;										    	
+										    	var publicipid = result.jobresult.loadbalancer.publicipid;	
+										    	
+										    	var cmd;
+										    	if(g_supportELB == "guest") {
+										    		cmd = "command=listPublicIpAddresses&forvirtualnetwork=false&id="+publicipid;
+										    	}
+										    	else if(g_supportELB == "public") {
+										    		cmd = "command=listPublicIpAddresses&forvirtualnetwork=true&id="+publicipid;
+										    	}
+										    	else {
+										    		if(g_supportELB == null)
+										    	        alert("supportELB should be either guest or public. It should not be null.");
+										    	    else 
+										    	    	alert("supportELB should be either guest or public. It should not be " + g_supportELB);
+										    		return;
+										    	}
+										    		
 										        $.ajax({
-										            data: createURL("command=listPublicIpAddresses&id="+publicipid),
+										            data: createURL(cmd),
 										            dataType: "json",
 										            async: false,
 										            success: function(json) {  
-										                var items = json.listpublicipaddressesresponse.publicipaddress;										               
+										                var items = json.listpublicipaddressesresponse.publicipaddress;	
 										                if(items != null && items.length > 0) {
 										                    ipToMidmenu(items[0], $midmenuItem1);
 										                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
