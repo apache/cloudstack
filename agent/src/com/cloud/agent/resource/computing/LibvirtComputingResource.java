@@ -1936,6 +1936,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	    		} catch (Exception e) {
 	    			
 	    		}
+	    		get_rule_logs_for_vms();
 	    		return new RebootAnswer(cmd, null, bytesSent, bytesReceived, vncPort);
 	    	} else {
 	    		return new RebootAnswer(cmd, result);
@@ -2420,8 +2421,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		    
 		    DiskDef disk = new DiskDef();
 
-	        disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
-	        
+		  
+		    disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
+		
 	        String xml = disk.toString();
 	        return attachOrDetachDevice(conn, attach, vmName, xml);
 		} finally {

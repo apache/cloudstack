@@ -322,7 +322,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     
     vmchain = vm_name
     
-    delcmd = "iptables-save | grep " +  vmchain + " | grep physdev-is-bridged | sed 's/-A/-D/'"
+    delcmd = "iptables-save | grep BF | grep " +  vmchain + " | grep physdev-is-bridged | sed 's/-A/-D/'"
     delcmds = execute(delcmd).split('\n')
     delcmds.pop()
     for cmd in delcmds:
@@ -359,6 +359,89 @@ def get_rule_log_for_vm(vmName):
     
     return ','.join([_vmName, _vmID, _vmIP, _domID, _signature, _seqno])
 
+def check_domid_changed(vmName):
+    curr_domid = '-1'
+    try:
+        curr_domid = getvmId(vmName)
+        if (curr_domid is None) or (not curr_domid.isdigit()):
+            curr_domid = '-1'   
+    except:
+        pass
+    
+    logfilename = "/var/run/cloud/" + vmName +".log"
+    if not os.path.exists(logfilename):
+        return ['-1', curr_domid]
+    
+    lines = (line.rstrip() for line in open(logfilename))
+    
+    [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno] = ['_', '-1', '_', '-1', '_', '-1']
+    for line in lines:
+        [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno] = line.split(',')
+        break
+    
+    return [curr_domid, old_domid]
+def network_rules_for_rebooted_vm(vmName):
+    vm_name = vmName
+    [curr_domid, old_domid] = check_domid_changed(vm_name)
+    
+    if curr_domid == old_domid:
+        return True
+    
+    if old_domid == '-1':
+        return True
+    
+    if curr_domid == '-1':
+        return True
+    
+    logging.debug("Found a rebooted VM -- reprogramming rules for  " + vm_name)
+    
+    delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
+
+    brName = execute("iptables-save  |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $9}'").split("\n")
+    if brName is None:
+        brName = "cloudbr0"
+    else:
+        brName.pop()
+        brName = brName[0].split("-")[1]
+
+    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
+        
+        default_network_rules_systemvm(vm_name, brName)
+        return True
+    
+    vmchain = vm_name
+    vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
+
+    vifs = getVifs(vmName)
+    logging.debug(vifs, brName)
+    for v in vifs:
+        execute("iptables -A " + "BF-" + brName + "-IN " + " -m physdev --physdev-is-bridged --physdev-in " + v + " -j "+ vmchain_default)
+        execute("iptables -A " + "BF-" + brName + "-OUT " + " -m physdev --physdev-is-bridged --physdev-out " + v + " -j "+ vmchain_default)
+
+    #change antispoof rule in vmchain
+    try:
+        delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep physdev | sed 's/-A/-D/'"
+        inscmd = "iptables-save |grep '\-A " +  vmchain_default + "' | grep  physdev | sed -r 's/vnet[0-9]+/ " + vifs[0] + "/' | sed 's/-A/-I/'"
+        ipts = []
+        for cmd in [delcmd, inscmd]:
+            logging.debug(cmd)
+            cmds = execute(cmd).split('\n')
+            cmds.pop()
+            for c in cmds:
+                    ipt = "iptables " + c
+                    ipts.append(ipt)
+        
+        for ipt in ipts:
+            try:
+                execute(ipt)
+            except:
+                logging.debug("Failed to rewrite antispoofing rules for vm " + vm_name)
+    except:
+        logging.debug("No rules found for vm " + vm_name)
+
+    rewrite_rule_log_for_vm(vm_name, curr_domid)
+    return True
+
 def get_rule_logs_for_vms():
     cmd = "virsh list|grep running |awk '{print $2}'"
     vms = bash("-c", cmd).stdout.split("\n")
@@ -369,7 +452,7 @@ def get_rule_logs_for_vms():
             name = name.rstrip()
             if 1 not in [ name.startswith(c) for c in ['r-', 's-', 'v-', 'i-'] ]:
                 continue
-            #network_rules_for_rebooted_vm(session, name)
+            network_rules_for_rebooted_vm(name)
             if name.startswith('i-'):
                 log = get_rule_log_for_vm(name)
                 result.append(log)
