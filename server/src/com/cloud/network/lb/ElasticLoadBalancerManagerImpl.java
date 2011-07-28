@@ -558,6 +558,7 @@ public class ElasticLoadBalancerManagerImpl implements
         account = _accountDao.acquireInLockTable(account.getId());
         if (account == null) {
             s_logger.warn("CreateLoadBalancer: Failed to acquire lock on account");
+            throw new CloudRuntimeException("Failed to acquire lock on account");
         }
         try {
             List<LoadBalancerVO> existingLbs = findExistingLoadBalancers(lb.getName(), lb.getSourceIpAddressId(), lb.getAccountId(), lb.getDomainId(), lb.getSourcePortStart());
