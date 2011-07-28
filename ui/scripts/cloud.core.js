@@ -1509,6 +1509,7 @@ var g_domainid = null;
 var g_enableLogging = false; 
 var g_timezoneoffset = null;
 var g_timezone = null;
+var g_supportELB = null;
 
 // capabilities
 var g_directAttachSecurityGroupsEnabled = "false";

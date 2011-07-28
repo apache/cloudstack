@@ -147,9 +147,20 @@ function afterLoadIpJSP() {
 										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
 											    // Succeeded											    	
-											    ipToMidmenu(result.jobresult.ipaddress, $midmenuItem1);
-							                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
-							                    afterAddingMidMenuItem($midmenuItem1, true);	                            
+										    	var publicipid = result.jobresult.loadbalancer.publicipid;										    	
+										        $.ajax({
+										            data: createURL("command=listPublicIpAddresses&id="+publicipid),
+										            dataType: "json",
+										            async: false,
+										            success: function(json) {  
+										                var items = json.listpublicipaddressesresponse.publicipaddress;										               
+										                if(items != null && items.length > 0) {
+										                    ipToMidmenu(items[0], $midmenuItem1);
+										                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
+										                    afterAddingMidMenuItem($midmenuItem1, true);	
+										                }
+										            }
+										        });                     
 										    } else if (result.jobstatus == 2) {
 										        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));					        							        								   				    
 										    }
@@ -157,8 +168,7 @@ function afterLoadIpJSP() {
 								    },
 								    error: function(XMLHttpResponse) {
 									    $("body").stopTime(timerKey);
-										handleError(XMLHttpResponse, function() {
-											debugger;
+										handleError(XMLHttpResponse, function() {											
 											afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
 										});
 								    }

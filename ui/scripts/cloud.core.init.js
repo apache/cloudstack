@@ -595,6 +595,7 @@ $(document).ready(function() {
 		g_domainid = null;	
 		g_timezoneoffset = null;
 		g_timezone = null;
+		g_supportELB = null;
 		
 		$.cookie('JSESSIONID', null);
 		$.cookie('sessionKey', null);
@@ -605,6 +606,7 @@ $(document).ready(function() {
 		$.cookie('networktype', null); 
 		$.cookie('timezoneoffset', null);
 		$.cookie('timezone', null);
+		$.cookie('supportELB', null);
 		
 		$("body").stopTime();
 		
@@ -691,19 +693,20 @@ $(document).ready(function() {
 				$.cookie('domainid', g_domainid, { expires: 1});				
 				$.cookie('role', g_role, { expires: 1});
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
-				$.cookie('timezone', g_timezone, { expires: 1});  
-				
+				$.cookie('timezone', g_timezone, { expires: 1});  				
+								
 				$.ajax({
 					data: createURL("command=listCapabilities"),
 					dataType: "json",
 					async: false,
-					success: function(json) {					
-					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB;
+					success: function(json) {	
 					    /* g_supportELB: guest — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
 					     * g_supportELB: public  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
 					     * g_supportELB: false – no ELB support
 					     */
-					    					   
+					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB;					    
+					    $.cookie('supportELB', g_supportELB, { expires: 1}); 
+					    
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
@@ -775,8 +778,8 @@ $(document).ready(function() {
 		g_domainid = $.cookie("domainid");
 		g_timezone = $.cookie("timezone");
 		g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
-		g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
-		
+		g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");		
+				
 		if($.cookie("timezoneoffset") != null)
 			g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
 		else
