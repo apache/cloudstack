@@ -23,6 +23,11 @@
   documented, please contact the author.
 -->
 <components.xml>
+    <system-integrity-checker class="com.cloud.upgrade.DatabaseUpgradeChecker">
+        <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
+        <checker name="DatabaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
+    </system-integrity-checker>
+
     <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>
     <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
@@ -101,7 +106,7 @@
 
     </management-server>
 
-    <configuration-server class="com.cloud.server.ConfigurationServerImpl" library="com.cloud.configuration.ConfigurationCompoentLibrary">
+    <configuration-server class="com.cloud.server.ConfigurationServerImpl">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
              <param name="premium">false</param>
         </dao>

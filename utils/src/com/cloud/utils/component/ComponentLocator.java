@@ -94,6 +94,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
+    protected HashMap<String, ComponentInfo<SystemIntegrityChecker>>     _checkerMap;
     protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>    _daoMap;
     protected String                                                    _serverName;
     protected Object                                                    _component;
@@ -123,12 +124,13 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return getLocatorName();
     }
 
-    protected Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> parse2(String filename) {
+    protected Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> parse2(String filename) {
         try {
             SAXParserFactory spfactory = SAXParserFactory.newInstance();
             SAXParser saxParser = spfactory.newSAXParser();
             _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
             _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
+            _checkerMap = new HashMap<String, ComponentInfo<SystemIntegrityChecker>>();
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
             _factories = new HashMap<Class<?>, Class<?>>();
             File file = PropertiesUtil.findConfigFile(filename);
@@ -157,7 +159,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
             }
 
             ComponentLibrary library = null;
-            List<SystemIntegrityChecker> checkers = null;
             if (handler.library != null) {
                 Class<?> clazz = Class.forName(handler.library);
                 library = (ComponentLibrary)clazz.newInstance();
@@ -165,15 +166,14 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _managerMap.putAll(library.getManagers());
                 adapters.putAll(library.getAdapters());
                 _factories.putAll(library.getFactories());
-                checkers = library.getSystemIntegrityCheckers();
             }
 
             _daoMap.putAll(handler.daos);
             _managerMap.putAll(handler.managers);
+            _checkerMap.putAll(handler.checkers);
             adapters.putAll(handler.adapters);
             
-            return new Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>>(handler, adapters, checkers);
-            
+            return new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(handler, adapters);
         } catch (ParserConfigurationException e) {
             s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
             System.exit(1);
@@ -194,7 +194,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     protected void parse(String filename) {
-        Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> result = parse2(filename);
+        Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> result = parse2(filename);
         if (result == null) {
             s_logger.info("Skipping configuration using " + filename);
             return;
@@ -203,11 +203,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         XmlHandler handler = result.first();
         HashMap<String, List<ComponentInfo<Adapter>>> adapters = result.second();
         try {
-            if (result.third() != null) {
-                for (SystemIntegrityChecker checker : result.third()) {
-                    checker.check();
-                }
-            }
+            runCheckers();
             startDaos();    // daos should not be using managers and adapters.
             instantiateAdapters(adapters);
             instantiateManagers();
@@ -227,6 +223,19 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
     }
 
+    protected void runCheckers() {
+        Set<Map.Entry<String, ComponentInfo<SystemIntegrityChecker>>> entries = _checkerMap.entrySet();
+        for (Map.Entry<String, ComponentInfo<SystemIntegrityChecker>> entry : entries) {
+            ComponentInfo<SystemIntegrityChecker> info = entry.getValue();
+            try {
+                info.instance = (SystemIntegrityChecker)createInstance(info.clazz, false, info.singleton);
+                info.instance.check();
+            } catch (Exception e) {
+                s_logger.error("Problems with running checker:" + info.name, e);
+                System.exit(1);
+            }
+        }
+    }
     /**
      * Daos should not refer to any other components so it is safe to start them
      * here.
@@ -848,6 +857,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected class XmlHandler extends DefaultHandler {
         public HashMap<String, List<ComponentInfo<Adapter>>>    adapters;
         public HashMap<String, ComponentInfo<Manager>>          managers;
+        public HashMap<String, ComponentInfo<SystemIntegrityChecker>> checkers;
         public LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>> daos;
         public String                                  parent;
         public String                                  library;
@@ -865,6 +875,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             parse = false;
             adapters = new HashMap<String, List<ComponentInfo<Adapter>>>();
             managers = new HashMap<String, ComponentInfo<Manager>>();
+            checkers = new HashMap<String, ComponentInfo<SystemIntegrityChecker>>();
             daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
             value = null;
             parent = null;
@@ -965,6 +976,12 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 for (String key : info.keys) {
                     daos.put(key, info);
                 }
+                currentInfo = info;
+            } else if (qName.equals("checker")) {
+                ComponentInfo<SystemIntegrityChecker> info = new ComponentInfo<SystemIntegrityChecker>();
+                fillInfo(atts, SystemIntegrityChecker.class, info);
+                checkers.put(info.name, info);
+                s_logger.info("Adding system integrity checker: " + info.name);
                 currentInfo = info;
             } else {
                 // ignore

@@ -29,6 +29,8 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.SystemIntegrityChecker;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -41,8 +43,10 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
     
 	@Override
     public void init() throws ServletException {
-		// Save Configuration Values
-	    //ComponentLocator loc = ComponentLocator.getLocator(ConfigurationServer.Name);
+	    /* System Integrity checker will run before all components really loaded */
+	    ComponentLocator.getComponent(SystemIntegrityChecker.Name);
+	    // Save Configuration Values
+        //ComponentLocator loc = ComponentLocator.getLocator(ConfigurationServer.Name);
 	    ConfigurationServer c = (ConfigurationServer)ComponentLocator.getComponent(ConfigurationServer.Name);
 	    //ConfigurationServer c = new ConfigurationServerImpl();
 	    try {
