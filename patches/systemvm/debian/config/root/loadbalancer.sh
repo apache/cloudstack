@@ -42,7 +42,21 @@ check_gw() {
   fi
   return $?;
 }
-
+fw_remove_backup() {
+  for vif in $VIF_LIST; do 
+    iptables -F back_load_balancer_$vif 2> /dev/null
+    iptables -D INPUT -i $vif -p tcp  -j back_load_balancer_$vif 2> /dev/null
+    iptables -X back_load_balancer_$vif 2> /dev/null
+  done
+}
+fw_restore() {
+  for vif in $VIF_LIST; do 
+    iptables -F load_balancer_$vif 2> /dev/null
+    iptables -D INPUT -i $vif -p tcp  -j load_balancer_$vif 2> /dev/null
+    iptables -X load_balancer_$vif 2> /dev/null
+    iptables -E back_load_balancer_$vif load_balancer_$vif 2> /dev/null
+  done
+}
 # firewall entry to ensure that haproxy can receive on specified port
 fw_entry() {
   local added=$1
@@ -61,16 +75,13 @@ fw_entry() {
   local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
   local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
 
-# Flush all the load balancer rules. 
+# back up the iptable rules by renaming before creating new. 
   for vif in $VIF_LIST; do 
-    iptables -F load_balancer_$vif 2> /dev/null
-    iptables -D INPUT -i $vif -p tcp  -j load_balancer_$vif 2> /dev/null
-    iptables -X load_balancer_$vif 2> /dev/null
-    iptables -N load_balancer_$vif
+    iptables -E load_balancer_$vif back_load_balancer_$vif 2> /dev/null
+    iptables -N load_balancer_$vif 2> /dev/null
     iptables -A INPUT -i $vif -p tcp  -j load_balancer_$vif
   done
 
-  
   for i in $a
   do
     local pubIp=$(echo $i | cut -d: -f1)
@@ -85,14 +96,6 @@ fw_entry() {
         return 1
       fi
     done      
-  done
-
-  for i in $r
-  do
-    local pubIp=$(echo $i | cut -d: -f1)
-    local dport=$(echo $i | cut -d: -f2)    
-    local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
-    
   done
   
   return 0
@@ -185,10 +188,13 @@ then
   # Restore the LB
   restore_lb
 
-  # Revert iptables rules on DomR, with addedIps and removedIps swapped 
-  fw_entry $removedIps $addedIps
+  # Revert iptables rules on DomR
+  fw_restore
 
   exit 1
+else
+  # Remove backedup iptable rules
+  fw_remove_backup
 fi
  
 exit 0
