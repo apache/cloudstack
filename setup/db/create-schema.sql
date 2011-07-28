@@ -598,6 +598,7 @@ CREATE TABLE  `cloud`.`firewall_rules_cidrs` (
   `source_cidr` varchar(18) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_firewall_cidrs_firewall_rules` (`firewall_rule_id`),
+  UNIQUE INDEX  `unique_rule_cidrs` (`firewall_rule_id`, `source_cidr`),
   CONSTRAINT `fk_firewall_cidrs_firewall_rules` FOREIGN KEY (`firewall_rule_id`) REFERENCES `firewall_rules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
