@@ -5717,11 +5717,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
 
             success = deleteSnapshotsDir(conn, dcId, accountId, volumeId, secondaryStorageMountPath);
-            success = (details != null && details.equals("1"));
             if (success) {
-                s_logger.debug("Successfully deleted snapshotsDir for volume: " + volumeId);
+                details = "Successfully deleted snapshotsDir for volume: " + volumeId;
+                s_logger.debug(details);
             } else {
-                s_logger.debug("Failed to delete snapshotsDir for volume: " + volumeId);
+                details = "Failed to delete snapshotsDir for volume: " + volumeId;
+                s_logger.warn(details);
             }
         }
 
