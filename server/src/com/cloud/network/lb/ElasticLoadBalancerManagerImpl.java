@@ -517,6 +517,7 @@ public class ElasticLoadBalancerManagerImpl implements
         }
         Network frontEndNetwork = networks.get(0);
         Transaction txn = Transaction.currentTxn();
+        txn.start();
         PublicIp ip = _networkMgr.assignPublicIpAddress(lb.getZoneId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null);
         IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
         ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId()); 
@@ -534,7 +535,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
     @Override
     @DB
-    public LoadBalancer handleCreateLoadBalancerRule( CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException  {
+    public LoadBalancer handleCreateLoadBalancerRule( CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException, NetworkRuleConflictException  {
         Long ipId = lb.getSourceIpAddressId();
         boolean newIp = false;
         account = _accountDao.acquireInLockTable(account.getId());
@@ -556,7 +557,12 @@ public class ElasticLoadBalancerManagerImpl implements
                         ipId = ip.getId();
                         newIp = true;
                     }
+                } else {
+                    ipId = existingLbs.get(0).getSourceIpAddressId();
                 }
+            } else {
+                s_logger.warn("Found existing load balancers matching requested new LB");
+                throw new NetworkRuleConflictException("Found existing load balancers matching requested new LB");
             }
 
             IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
@@ -570,6 +576,7 @@ public class ElasticLoadBalancerManagerImpl implements
             }
             LoadBalancer result = null;
             try {
+                lb.setSourceIpAddressId(ipId);
                 result = _lbMgr.createLoadBalancer(lb);
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");

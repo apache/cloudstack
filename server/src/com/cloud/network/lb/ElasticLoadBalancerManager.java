@@ -20,13 +20,10 @@ package com.cloud.network.lb;
 import java.util.List;
 
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
@@ -39,6 +36,6 @@ public interface ElasticLoadBalancerManager {
             List<? extends FirewallRule> rules) 
             throws ResourceUnavailableException;
 
-    public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account caller) throws InsufficientAddressCapacityException;
+    public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account caller) throws InsufficientAddressCapacityException, NetworkRuleConflictException;
 
 }

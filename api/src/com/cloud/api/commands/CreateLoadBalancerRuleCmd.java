@@ -233,4 +233,8 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
         return null;
     }
 
+    public void setSourceIpAddressId(Long ipId) {
+        this.publicIpId = ipId;
+    }
+
 }
