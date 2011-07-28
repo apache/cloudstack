@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 
+import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ClusterManagerImpl;
@@ -58,6 +60,7 @@ import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Local(value = {SystemIntegrityChecker.class})
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
 

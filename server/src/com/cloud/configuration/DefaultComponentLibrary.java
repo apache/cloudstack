@@ -162,15 +162,6 @@ import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
-
-    @Override
-    public List<SystemIntegrityChecker> getSystemIntegrityCheckers() {
-        ArrayList<SystemIntegrityChecker> checkers = new ArrayList<SystemIntegrityChecker>();
-        checkers.add(new ManagementServerNode());
-        checkers.add(new DatabaseUpgradeChecker());
-        return checkers;
-    }
-
     protected void populateDaos() {
         addDao("StackMaidDao", StackMaidDaoImpl.class);
         addDao("VMTemplateZoneDao", VMTemplateZoneDaoImpl.class);
