@@ -12,9 +12,9 @@ do
   vlan=$(xe pif-param-get uuid=$tagpif param-name=VLAN)
   for host in $(xe host-list | grep ^uuid | awk '{print $NF}')
   do
-    tagpif=$(xe pif-list network-uuid=$network  host-uuid=$host --minimal)
+    tagpif=$(xe pif-list network-uuid=$network host-uuid=$host --minimal)
     if [ -z $tagpif ]; then
-      pif=$(xe pif-list host-uuid=$host device=$device --minimal)
+      pif=$(xe pif-list host-uuid=$host device=$device VLAN=-1 --minimal)
       xe vlan-create network-uuid=$network pif-uuid=$pif vlan=$vlan
     fi
   done
@@ -34,7 +34,8 @@ fake_pv_driver() {
     echo "Warning VM $vm is HVM, but PV driver is not installed, you may need to stop it manually"
     return 0
   fi
-  make_migratable.sh $vm
+  host=$(xe vm-param-get uuid=$vm param-name=resident-on)
+  xe host-call-plugin host-uuid=$host plugin=vmops fn=preparemigration args:uuid=$vm
 }
 
 
