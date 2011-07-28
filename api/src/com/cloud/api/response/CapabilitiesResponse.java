@@ -33,7 +33,7 @@ public class CapabilitiesResponse extends BaseResponse {
     
     
     @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
-    private boolean supportELB;
+    private String supportELB;
 
     public boolean getSecurityGroupsEnabled() {
         return securityGroupsEnabled;
@@ -59,11 +59,11 @@ public class CapabilitiesResponse extends BaseResponse {
         this.userPublicTemplateEnabled = userPublicTemplateEnabled;
     }
 
-    public void setSupportELB(boolean supportELB) {
+    public void setSupportELB(String supportELB) {
         this.supportELB = supportELB;
     }
 
-    public boolean isSupportELB() {
+    public String getSupportELB() {
         return supportELB;
     }
 }
