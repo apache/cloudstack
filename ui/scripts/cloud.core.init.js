@@ -800,7 +800,10 @@ $(document).ready(function() {
 		g_timezone = g_loginResponse.timezone;								
 		g_timezoneoffset = g_loginResponse.timezoneoffset;
 	}
-		
+	
+	if(g_supportELB == null)
+		g_supportELB = $.cookie("supportELB");
+	
 	$.ajax({
 	    data: createURL("command=listCapabilities"),
 		dataType: "json",
