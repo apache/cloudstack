@@ -30,12 +30,6 @@ import com.cloud.utils.db.GenericDao;
 
 
 public class AgentComponentLibraryBase extends ComponentLibraryBase {
-
-    @Override
-    public List<SystemIntegrityChecker> getSystemIntegrityCheckers() {
-        return null;
-    }
-
     @Override
     public Map<String, ComponentInfo<GenericDao<?, ?>>> getDaos() {
         return null;
