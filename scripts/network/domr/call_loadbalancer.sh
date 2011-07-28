@@ -26,7 +26,7 @@
 #
 
 usage() {
-  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address> -d <removed> -f <load balancer config> \n" $(basename $0) >&2
+  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address> -d <removed> -f <load balancer config> -s <stats guest ip >\n" $(basename $0) >&2
 }
 
 set -x
@@ -55,8 +55,9 @@ iflag=
 aflag=
 dflag=
 fflag=
+sflag=
 
-while getopts 'i:a:d:f:' OPTION
+while getopts 'i:a:d:f:s:' OPTION
 do
   case $OPTION in
   i)	iflag=1
@@ -70,6 +71,9 @@ do
 		;;
   f)	fflag=1
 		cfgfile="$OPTARG"
+		;;
+  s)	sflag=1
+		statsIps="$OPTARG"
 		;;
   ?)	usage
 		exit 2

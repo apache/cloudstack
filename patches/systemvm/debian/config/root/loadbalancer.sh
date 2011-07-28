@@ -27,7 +27,7 @@
 # @VERSION@
 
 usage() {
-  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address> -d <removed> -f <load balancer config> \n" $(basename $0) >&2
+  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address> -d <removed> -f <load balancer config> -s <stats guest ip address> \n" $(basename $0) >&2
 }
 
 # set -x
@@ -48,6 +48,9 @@ fw_remove_backup() {
     iptables -D INPUT -i $vif -p tcp  -j back_load_balancer_$vif 2> /dev/null
     iptables -X back_load_balancer_$vif 2> /dev/null
   done
+  iptables -F back_lb_stats 2> /dev/null
+  iptables -D INPUT -i $STAT_IF -p tcp  -j back_lb_stats 2> /dev/null
+  iptables -X back_lb_stats 2> /dev/null
 }
 fw_restore() {
   for vif in $VIF_LIST; do 
@@ -56,11 +59,16 @@ fw_restore() {
     iptables -X load_balancer_$vif 2> /dev/null
     iptables -E back_load_balancer_$vif load_balancer_$vif 2> /dev/null
   done
+  iptables -F lb_stats 2> /dev/null
+  iptables -D INPUT -i $STAT_IF -p tcp  -j lb_stats 2> /dev/null
+  iptables -X lb_stats 2> /dev/null
+  iptables -E back_lb_stats lb_stats 2> /dev/null
 }
 # firewall entry to ensure that haproxy can receive on specified port
 fw_entry() {
   local added=$1
   local removed=$2
+  local stats=$3
   
   if [ "$added" == "none" ]
   then
@@ -81,6 +89,9 @@ fw_entry() {
     iptables -N load_balancer_$vif 2> /dev/null
     iptables -A INPUT -i $vif -p tcp  -j load_balancer_$vif
   done
+  iptables -E lb_stats back_lb_stats 2> /dev/null
+  iptables -N lb_stats 2> /dev/null
+  iptables -A INPUT -i $STAT_IF -p tcp  -j lb_stats
 
   for i in $a
   do
@@ -97,6 +108,10 @@ fw_entry() {
       fi
     done      
   done
+  local pubIp=$(echo $stats | cut -d: -f1)
+  local dport=$(echo $stats | cut -d: -f2)    
+  local cidrs=$(echo $stats | cut -d: -f3 | sed 's/-/,/')
+  iptables -A lb_stats -s $cidrs -p tcp -m state --state NEW -d $pubIp --dport $dport -j ACCEPT
   
   return 0
 }
@@ -137,8 +152,9 @@ iflag=
 aflag=
 dflag=
 fflag=
+sflag=
 
-while getopts 'i:a:d:f:' OPTION
+while getopts 'i:a:d:f:s:' OPTION
 do
   case $OPTION in
   i)	iflag=1
@@ -153,6 +169,9 @@ do
   f)	fflag=1
 		cfgfile="$OPTARG"
 		;;
+  s)	sflag=1
+		statsIp="$OPTARG"
+		;;
   ?)	usage
 		exit 2
 		;;
@@ -160,6 +179,8 @@ do
 done
 
 VIF_LIST=$(get_vif_list)
+# TODO make the stat interface generic
+STAT_IF="eth0"
 
 # hot reconfigure haproxy
 reconfig_lb $cfgfile
@@ -181,7 +202,7 @@ then
 fi
 
 # iptables entry to ensure that haproxy receives traffic
-fw_entry $addedIps $removedIps
+fw_entry $addedIps $removedIps $statsIp
   	
 if [ $? -gt 0 ]
 then

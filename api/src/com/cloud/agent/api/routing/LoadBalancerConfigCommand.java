@@ -27,7 +27,8 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
     public String lbStatsVisibility;
     public String lbStatsIp; /* load balancer listen on this ip for stats */
-    public String lbStatsPort = "8081"; /*TODO: need to open the firewall port, load balancer listen on this port for stats */
+    public String lbStatsPort = "8081"; /*load balancer listen on this port for stats */
+    public String lbStatsSrcCidrs = "0/0" ; /* TODO : currently there is no filtering based on the source ip */
     public String lbStatsAuth = "admin1:AdMiN123";
     public String lbStatsUri = "/admin?stats";  
     

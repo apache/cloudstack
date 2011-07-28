@@ -201,6 +201,7 @@ public class VirtualRoutingResource implements Manager {
             final String result = setLoadBalancerConfig(cfgFilePath,
                     rules[LoadBalancerConfigurator.ADD],
                     rules[LoadBalancerConfigurator.REMOVE],
+                    rules[LoadBalancerConfigurator.STATS],
                     routerIp);
 
             return new Answer(cmd, result == null, result);
@@ -294,7 +295,7 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private String setLoadBalancerConfig(final String cfgFile,
-            final String[] addRules, final String[] removeRules, String routerIp) {
+            final String[] addRules, final String[] removeRules, final String[] statsRules,String routerIp) {
 
         if (routerIp == null) {
             routerIp = "none";
@@ -321,6 +322,14 @@ public class VirtualRoutingResource implements Manager {
             command.add("-d", sb.toString());
         }
 
+        sb = new StringBuilder();
+        if (statsRules.length > 0) {
+            for (int i=0; i< statsRules.length; i++) {
+                sb.append(statsRules[i]).append(',');
+            }
+            command.add("-s", sb.toString());
+        }
+        
         return command.execute();
     }
 
