@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.CreateAccountCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteAccountCmd;
@@ -909,11 +910,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
 
         for (ControlledEntity entity : entities) {
-            if (entity.getAccountId() != -1 && entity.getDomainId() != -1) {
+        	long domainId = entity.getDomainId();
+        	if (entity.getAccountId() != -1 && domainId == -1){ // If account exists domainId should too so calculate it. This condition might be hit for templates or entities which miss domainId in their tables           
+        		Account account = ApiDBUtils.findAccountById(entity.getAccountId());
+        		domainId = account != null ? account.getDomainId() : -1 ;
+        	}
+        	if (entity.getAccountId() != -1 && domainId != -1) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 if (toBeChecked == null) {
                     toBeChecked = new ArrayList<ControlledEntity>();
-                    domains.put(entity.getDomainId(), toBeChecked);
+                    domains.put(domainId, toBeChecked);
                 }
                 toBeChecked.add(entity);
             }
