@@ -126,8 +126,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     ElasticLoadBalancerManager _elbMgr;
     @Inject
     NetworkDao _networkDao;
-    @Inject(adapter = LoadBalancerElement.class)
-    Adapters<LoadBalancerElement> _lbElements;
+    
     
     @Override
     @DB
@@ -573,7 +572,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         return true;
     }
 
-    @Override
+    @Override 
     public boolean stop() {
         return true;
     }

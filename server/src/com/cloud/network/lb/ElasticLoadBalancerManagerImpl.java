@@ -80,7 +80,6 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.security.SecurityGroupManagerImpl.WorkerThread;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -219,16 +218,16 @@ public class ElasticLoadBalancerManagerImpl implements
 
     }
     
-    private boolean sendCommandsToRouter(final DomainRouterVO router,
+    private boolean sendCommandsToRouter(final DomainRouterVO elbVm,
             Commands cmds) throws AgentUnavailableException {
         Answer[] answers = null;
         try {
-            answers = _agentMgr.send(router.getHostId(), cmds);
+            answers = _agentMgr.send(elbVm.getHostId(), cmds);
         } catch (OperationTimedoutException e) {
             s_logger.warn("Timed Out", e);
             throw new AgentUnavailableException(
-                    "Unable to send commands to virtual router ",
-                    router.getHostId(), e);
+                    "Unable to send commands to virtual elbVm ",
+                    elbVm.getHostId(), e);
         }
 
         if (answers == null) {
@@ -248,7 +247,7 @@ public class ElasticLoadBalancerManagerImpl implements
     }
 
     private void createApplyLoadBalancingRulesCommands(
-            List<LoadBalancingRule> rules, DomainRouterVO router, Commands cmds) {
+            List<LoadBalancingRule> rules, DomainRouterVO elbVm, Commands cmds) {
 
 
         LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
@@ -265,24 +264,24 @@ public class ElasticLoadBalancerManagerImpl implements
             List<LbDestination> destinations = rule.getDestinations();
             LoadBalancerTO lb = new LoadBalancerTO(elbIp, srcPort, protocol,
                     algorithm, revoked, false, destinations);
-            lbs[i++] = lb;
+            lbs[i++] = lb; 
         }
 
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP,
-                router.getPrivateIpAddress());
+                elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,
-                router.getInstanceName());
+                elbVm.getInstanceName());
         cmds.addCommand(cmd);
 
     }
 
-    protected boolean applyLBRules(DomainRouterVO router,
+    protected boolean applyLBRules(DomainRouterVO elbVm,
             List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
-        createApplyLoadBalancingRulesCommands(rules, router, cmds);
-        // Send commands to router
-        return sendCommandsToRouter(router, cmds);
+        createApplyLoadBalancingRulesCommands(rules, elbVm, cmds);
+        // Send commands to elbVm
+        return sendCommandsToRouter(elbVm, cmds);
     }
     
     protected DomainRouterVO findElbVmForLb(FirewallRule lb) {//TODO: use a table to lookup
@@ -464,11 +463,11 @@ public class ElasticLoadBalancerManagerImpl implements
         }
     }
     
-    private DomainRouterVO start(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
+    private DomainRouterVO start(DomainRouterVO elbVm, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("Starting router " + router);
-        if (_itMgr.start(router, params, user, caller) != null) {
-            return _routerDao.findById(router.getId());
+        s_logger.debug("Starting ELB VM " + elbVm);
+        if (_itMgr.start(elbVm, params, user, caller) != null) {
+            return _routerDao.findById(elbVm.getId());
         } else {
             return null;
         }
