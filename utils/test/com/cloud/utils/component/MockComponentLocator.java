@@ -29,6 +29,7 @@ import net.sf.cglib.proxy.NoOp;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.db.DatabaseCallback;
 import com.cloud.utils.db.DatabaseCallbackFilter;
 import com.cloud.utils.db.GenericDao;
@@ -62,10 +63,11 @@ public class MockComponentLocator extends ComponentLocator {
     }
     
     @Override
-    protected Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> parse2(String filename) {
-        Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>> result = new Ternary<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>, List<SystemIntegrityChecker>>(new XmlHandler("fake"), new HashMap<String, List<ComponentInfo<Adapter>>>(), new ArrayList<SystemIntegrityChecker>());
+    protected Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> parse2(String filename) {
+        Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> result = new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(new XmlHandler("fake"), new HashMap<String, List<ComponentInfo<Adapter>>>());
         _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
         _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
+        _checkerMap = new HashMap<String, ComponentInfo<SystemIntegrityChecker>>();
         _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
         _factories = new HashMap<Class<?>, Class<?>>();
         _daoMap.putAll(_library.getDaos());
@@ -88,12 +90,7 @@ public class MockComponentLocator extends ComponentLocator {
     }
     
     protected class MockComponentLibrary extends ComponentLibraryBase implements ComponentLibrary { 
-        
-        @Override
-        public List<SystemIntegrityChecker> getSystemIntegrityCheckers() {
-            return new ArrayList<SystemIntegrityChecker>();
-        }
-        
+                
         @Override
         public Map<String, List<ComponentInfo<Adapter>>> getAdapters() {
             return _adapters;

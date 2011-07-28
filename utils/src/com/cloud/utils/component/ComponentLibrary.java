@@ -33,14 +33,7 @@ import com.cloud.utils.db.GenericDao;
  * within the components.xml overrides the one within ComponentLibrary.
  *
  */
-public interface ComponentLibrary {
-    /**
-     * @return a list of SytemIntegrityCheckers which is run before other
-     * components are started to check if the system are fit to check 
-     * the system.
-     */
-    List<SystemIntegrityChecker> getSystemIntegrityCheckers();
-    
+public interface ComponentLibrary {    
     /**
      * @return all of the daos
      */

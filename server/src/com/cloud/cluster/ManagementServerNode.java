@@ -17,10 +17,13 @@
  */
 package com.cloud.cluster;
 
+import javax.ejb.Local;
+
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
+@Local(value = {SystemIntegrityChecker.class})
 public class ManagementServerNode implements SystemIntegrityChecker {
     private static final long s_nodeId = MacAddress.getMacAddress().toLong();
     
