@@ -1303,7 +1303,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         String[] addRules = rules[LoadBalancerConfigurator.ADD];
         String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
-
+        String[] statRules = rules[LoadBalancerConfigurator.STATS];
+        
         String args = "";
         args += "-i " + routerIp;
         args += " -f " + tmpCfgFilePath;
@@ -1325,7 +1326,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             args += " -d " + sb.toString();
         }
+        
+        sb = new StringBuilder();
+        if (statRules.length > 0) {
+            for (int i = 0; i < statRules.length; i++) {
+                sb.append(statRules[i]).append(',');
+            }
 
+            args += " -s " + sb.toString();
+        }
+        
         result = callHostPlugin(conn, "vmops", "setLoadBalancerRule", "args", args);
 
         if (result == null || result.isEmpty()) {

@@ -244,9 +244,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
 	@Override
 	public String[][] generateFwRules(LoadBalancerConfigCommand lbCmd) {
-		String [][] result = new String [2][];
+		String [][] result = new String [3][];
 		Set<String> toAdd = new HashSet<String>();
 		Set<String> toRemove = new HashSet<String>();
+		Set<String> toStats = new HashSet<String>();
 		
 		for (LoadBalancerTO lbTO: lbCmd.getLoadBalancers()) {
 			
@@ -266,9 +267,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 				toRemove.add(lbRuleEntry);
 			}
 		}
+		StringBuilder sb = new StringBuilder(lbCmd.lbStatsIp).append(":").append(lbCmd.lbStatsPort).append(":").append(lbCmd.lbStatsSrcCidrs).append(":,");
+		toStats.add(sb.toString());
 		toRemove.removeAll(toAdd);
 		result[ADD] = toAdd.toArray(new String[toAdd.size()]);
 		result[REMOVE] = toRemove.toArray(new String[toRemove.size()]);
+		result[STATS] = toStats.toArray(new String[toStats.size()]);
 
 		return result;
 	}
