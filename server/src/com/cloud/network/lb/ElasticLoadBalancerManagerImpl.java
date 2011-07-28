@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -30,17 +33,14 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan.VlanType;
@@ -65,9 +65,9 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -80,6 +80,7 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.security.SecurityGroupManagerImpl.WorkerThread;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -96,11 +97,12 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
@@ -173,6 +175,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
     Account _systemAcct;
     ServiceOfferingVO _elasticLbVmOffering;
+    ScheduledExecutorService _gcThreadPool;
     
     int _elasticLbVmRamSize;
     int _elasticLbvmCpuMHz;
@@ -247,7 +250,6 @@ public class ElasticLoadBalancerManagerImpl implements
     private void createApplyLoadBalancingRulesCommands(
             List<LoadBalancingRule> rules, DomainRouterVO router, Commands cmds) {
 
-        String elbIp = "";
 
         LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
         int i = 0;
@@ -257,7 +259,7 @@ public class ElasticLoadBalancerManagerImpl implements
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
 
-            elbIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress()
+            String elbIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress()
                     .addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
@@ -366,6 +368,8 @@ public class ElasticLoadBalancerManagerImpl implements
                 _frontendTrafficType = TrafficType.Public;
             } else
                 throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
+            _gcThreadPool = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ELBVM-GC"));
+            _gcThreadPool.scheduleAtFixedRate(new CleanupThread(), 30, 30, TimeUnit.SECONDS);
         }
         
 
@@ -467,6 +471,20 @@ public class ElasticLoadBalancerManagerImpl implements
             return _routerDao.findById(router.getId());
         } else {
             return null;
+        }
+    }
+    
+    
+    private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
+        s_logger.debug("Stopping elb vm " + elbVm);
+        try {
+            if (_itMgr.advanceStop( elbVm, forced, user, caller)) {
+                return _routerDao.findById(elbVm.getId());
+            } else {
+                return null;
+            }
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Unable to stop " + elbVm, e);
         }
     }
     
@@ -583,6 +601,7 @@ public class ElasticLoadBalancerManagerImpl implements
                 if (newIp) {
                     releaseIp(ipId, UserContext.current().getCallerUserId(), account);
                 }
+                throw e;
             }
 
             DomainRouterVO elbVm = null;
@@ -614,7 +633,7 @@ public class ElasticLoadBalancerManagerImpl implements
                 return null;
             }
             
-            ElasticLbVmMapVO mapping = new ElasticLbVmMapVO(ipId, elbVm.getId());
+            ElasticLbVmMapVO mapping = new ElasticLbVmMapVO(ipId, elbVm.getId(), result.getId());
             _elbVmMapDao.persist(mapping);
             return result;
             
@@ -626,25 +645,42 @@ public class ElasticLoadBalancerManagerImpl implements
         
     }
     
-    private void createAssociateIPCommand(final DomainRouterVO router, final Network network, final PublicIp ip, Commands cmds) {
-
-
-        IpAddressTO[] ipsToSend = new IpAddressTO[1];
-
-        IpAddressTO ipTO = new IpAddressTO(ip.getAddress().addr(), true, false, false, ip.getVlanTag(), ip.getVlanGateway(), ip.getVlanNetmask(), ip.getMacAddress(), null, 0);
-        ipTO.setTrafficType(network.getTrafficType());
-        ipTO.setNetworkTags(network.getTags());
-        ipsToSend[0] = ipTO;
-
-        IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-        cmds.addCommand("IPAssocCommand", cmd);
-    
+    void garbageCollectUnusedElbVms() {
+        List<DomainRouterVO> unusedElbVms = _elbVmMapDao.listUnusedElbVms();
+        if (unusedElbVms != null && unusedElbVms.size() > 0)
+            s_logger.info("Found " + unusedElbVms.size() + " unused ELB vms");
+        else
+            return;
+        User user = _accountService.getSystemUser();
+        for (DomainRouterVO elbVm : unusedElbVms) {
+            try {
+                s_logger.info("Attempting to stop ELB VM: " + elbVm);
+                stop(elbVm, true, user, _systemAcct);
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Unable to stop unused elb vm " + elbVm + " due to ", e);
+                continue;
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Unable to stop unused elb vm " + elbVm + " due to ", e);
+                continue;
+            }
+            try {
+                s_logger.info("Attempting to destroy ELB VM: " + elbVm);
+                _itMgr.expunge(elbVm, user, _systemAcct);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Unable to destroy unused elb vm " + elbVm + " due to ", e);
+            }
+        }
     }
+    
+    public class CleanupThread implements Runnable {
+        @Override
+        public void run() {
+            garbageCollectUnusedElbVms();
+            
+        }
 
+        CleanupThread() {
+
+        }
+    }
 }

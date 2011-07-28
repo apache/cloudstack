@@ -62,9 +62,10 @@ public class ElasticLbVmMapVO {
     public ElasticLbVmMapVO() {
     }
 
-    public ElasticLbVmMapVO(long ipId, long elbVmId) {
+    public ElasticLbVmMapVO(long ipId, long elbVmId, long lbId) {
         this.ipAddressId = ipId;
         this.elbVmId = elbVmId;
+        this.lbId = lbId;
     }
 
     public Long getId() {

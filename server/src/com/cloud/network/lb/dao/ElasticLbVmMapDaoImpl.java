@@ -23,13 +23,23 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.network.ElasticLbVmMapVO;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.DomainRouterDaoImpl;
 
 @Local(value={ElasticLbVmMapDao.class})
 public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long> implements ElasticLbVmMapDao {
-    private SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
+    protected final DomainRouterDao _routerDao = ComponentLocator.inject(DomainRouterDaoImpl.class);
+    
+    protected final SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
+    protected final SearchBuilder<ElasticLbVmMapVO> UnusedVmSearch;
+
+    protected final SearchBuilder<DomainRouterVO> ElbVmSearch;
    
     protected ElasticLbVmMapDaoImpl() {
         AllFieldsSearch  = createSearchBuilder();
@@ -38,6 +48,14 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         AllFieldsSearch.and("elbVmId", AllFieldsSearch.entity().getElbVmId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
    
+        ElbVmSearch = _routerDao.createSearchBuilder();
+        ElbVmSearch.and("role", ElbVmSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        UnusedVmSearch  = createSearchBuilder();
+        UnusedVmSearch.and("elbVmId", UnusedVmSearch.entity().getElbVmId(), SearchCriteria.Op.NULL);
+        ElbVmSearch.join("UnusedVmSearch", UnusedVmSearch, ElbVmSearch.entity().getId(), UnusedVmSearch.entity().getElbVmId(), JoinType.LEFTOUTER);
+        ElbVmSearch.done();
+        UnusedVmSearch.done();    
+
     }
 
     @Override
@@ -84,5 +102,9 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         return findOneBy(sc);
     }
 
+    public List<DomainRouterVO> listUnusedElbVms() {
+        SearchCriteria<DomainRouterVO> sc = ElbVmSearch.create();
+        return _routerDao.search(sc, null);
+    }
 	
 }

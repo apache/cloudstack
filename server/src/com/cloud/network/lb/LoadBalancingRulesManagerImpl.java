@@ -51,8 +51,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -61,7 +59,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -335,7 +332,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         }
 
         txn.commit();
-
+        
         if (apply) {
             try {
                 if (!applyLoadBalancerConfig(loadBalancerId)) {
