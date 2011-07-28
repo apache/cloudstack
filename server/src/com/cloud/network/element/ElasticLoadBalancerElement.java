@@ -22,25 +22,37 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.dc.DataCenter;
+import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.ElasticLoadBalancerManager;
+import com.cloud.network.lb.LoadBalancerElement;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
@@ -53,12 +65,16 @@ import com.cloud.vm.VirtualMachineProfile;
 public class ElasticLoadBalancerElement extends AdapterBase implements NetworkElement{
     private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
-    @Inject ConfigurationManager _configMgr;
     @Inject NetworkManager _networkManager;
     @Inject ElasticLoadBalancerManager _lbMgr;
+    @Inject ConfigurationDao _configDao;
+    @Inject NetworkOfferingDao _networkOfferingDao;
+    @Inject NetworkDao _networksDao;
+    
+    boolean _enabled;
+    TrafficType _frontEndTrafficType = TrafficType.Guest;
     
     private boolean canHandle(Network network) {
-       // DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         if (network.getGuestType() != Network.GuestIpType.Direct || network.getTrafficType() != TrafficType.Guest) {
             s_logger.debug("Not handling network with guest Type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
             return false;
@@ -139,5 +155,24 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
         }
         
         return _lbMgr.applyLoadBalancerRules(network, rules);
+    }
+
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        
+        super.configure(name, params);
+        String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        _enabled = (enabled == null) ? false: Boolean.parseBoolean(enabled);
+        if (_enabled) {
+            String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+            if ("guest".equalsIgnoreCase(traffType)) {
+                _frontEndTrafficType = TrafficType.Guest;
+            } else if ("public".equalsIgnoreCase(traffType)){
+                _frontEndTrafficType = TrafficType.Public;
+            } else
+                throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
+        }
+        return true;
     }
 }

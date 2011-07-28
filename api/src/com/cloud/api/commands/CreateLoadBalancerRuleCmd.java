@@ -126,55 +126,17 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
         return s_name;
     }
     
-    protected LoadBalancer findExistingLB() {
-       List<? extends LoadBalancer> lbs = _lbService.searchForLoadBalancers(new ListLoadBalancerRulesCmd(getAccountName(), getDomainId(), null, getName(), publicIpId, null, getZoneId()) );
-       if (lbs != null && lbs.size() > 0) {
-           return lbs.get(0);
-       }
-       return null;
-    }
-    
-    protected void allocateIp() throws ResourceAllocationException, ResourceUnavailableException {
-        AssociateIPAddrCmd allocIpCmd = new AssociateIPAddrCmd(getAccountName(), getDomainId(), getZoneId(), null);
-        try {
-            IpAddress ip = _networkService.allocateIP(allocIpCmd);
-            if (ip != null) {
-                this.setPublicIpId(ip.getId());
-                allocIpCmd.setEntityId(ip.getId());
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to allocate ip address");
-            }
-            //UserContext.current().setEventDetails("Ip Id: "+ ip.getId());
-            //IpAddress result = _networkService.associateIP(allocIpCmd);
-        } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } catch (InsufficientAddressCapacityException ex) {
-            s_logger.info(ex);
-            s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
-        }
-    }
-    
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
         LoadBalancer result = null;
         try {
-            if (publicIpId == null) {
-                if (getZoneId() == null ) {
-                    throw new InvalidParameterValueException("Either zone id or public ip id needs to be specified");
-                }
-                LoadBalancer existing = findExistingLB();
-                if (existing == null) {
-                    allocateIp();
-                } else {
-                    this.setPublicIpId(existing.getSourceIpAddressId());
-                }
-            }
             result = _lbService.createLoadBalancerRule(this);
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+        } catch (InsufficientAddressCapacityException e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         }
         LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
         response.setResponseName(getCommandName());

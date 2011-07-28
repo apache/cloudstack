@@ -43,6 +43,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -52,8 +53,10 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -62,6 +65,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.addr.PublicIp;
@@ -86,11 +90,16 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -150,10 +159,17 @@ public class ElasticLoadBalancerManagerImpl implements
     PodVlanMapDao _podVlanMapDao;
     @Inject
     ElasticLbVmMapDao _elbVmMapDao;
+    @Inject 
+    NetworkDao _networksDao;
+    @Inject 
+    AccountDao _accountDao;
 
 
     String _name;
     String _instance;
+    
+    boolean _enabled;
+    TrafficType _frontendTrafficType = TrafficType.Guest;
 
     Account _systemAcct;
     ServiceOfferingVO _elasticLbVmOffering;
@@ -340,6 +356,18 @@ public class ElasticLoadBalancerManagerImpl implements
         _elasticLbVmOffering.setUniqueName("Cloud.Com-ElasticLBVm");
         _elasticLbVmOffering = _serviceOfferingDao.persistSystemServiceOffering(_elasticLbVmOffering);
         
+        String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        _enabled = (enabled == null) ? false: Boolean.parseBoolean(enabled);
+        if (_enabled) {
+            String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+            if ("guest".equalsIgnoreCase(traffType)) {
+                _frontendTrafficType = TrafficType.Guest;
+            } else if ("public".equalsIgnoreCase(traffType)){
+                _frontendTrafficType = TrafficType.Public;
+            } else
+                throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
+        }
+        
 
         return true;
     }
@@ -441,52 +469,153 @@ public class ElasticLoadBalancerManagerImpl implements
             return null;
         }
     }
+    
+    protected List<LoadBalancerVO> findExistingLoadBalancers(String lbName, Long ipId, Long accountId, Long domainId, Integer publicPort) {
+        SearchBuilder<LoadBalancerVO> sb = _lbDao.createSearchBuilder();
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ); 
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("publicPort", sb.entity().getSourcePortStart(), SearchCriteria.Op.EQ);
+        if (ipId != null) {
+            sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
+        }
+        if (domainId != null) {
+            sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+        }
+        if (publicPort != null) {
+            sb.and("publicPort", sb.entity().getSourcePortStart(), SearchCriteria.Op.EQ);
+        }
+        SearchCriteria<LoadBalancerVO> sc = sb.create();
+        sc.setParameters("name", lbName);
+        sc.setParameters("accountId", accountId);
+        if (ipId != null) {
+            sc.setParameters("sourceIpAddress", ipId);
+        } 
+        if (domainId != null) {
+            sc.setParameters("domainId",domainId);
+        }
+        if (publicPort != null) {
+            sc.setParameters("publicPort", publicPort);
+        }
+        List<LoadBalancerVO> lbs = _lbDao.search(sc, null);
+   
+        return lbs == null || lbs.size()==0 ? null: lbs;
+    }
+    
+    @DB
+    public PublicIp allocIp(CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException {
+        //TODO: this only works in the guest network. Handle the public network case also.
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndGuestType(true, _frontendTrafficType, GuestIpType.Direct);
+        if (offerings == null || offerings.size() == 0) {
+            s_logger.warn("Could not find system offering for direct networks of type " + _frontendTrafficType);
+            return null;
+        }
+        NetworkOffering frontEndOffering = offerings.get(0);
+        List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, frontEndOffering.getId(), lb.getZoneId());
+        if (networks == null || networks.size() == 0) {
+            s_logger.warn("Could not find network of offering type " + frontEndOffering +  " in zone " + lb.getZoneId());
+            return null;
+        }
+        Network frontEndNetwork = networks.get(0);
+        Transaction txn = Transaction.currentTxn();
+        PublicIp ip = _networkMgr.assignPublicIpAddress(lb.getZoneId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null);
+        IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
+        ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId()); 
+        _ipAddressDao.update(ipvo.getId(), ipvo);
+        txn.commit();
+        s_logger.info("Acquired public IP for loadbalancing " + ip);
+
+        return ip;
+    }
+    
+    public void releaseIp(long ipId, long userId, Account caller) {
+        s_logger.info("Release public IP for loadbalancing " + ipId);
+       _networkMgr.releasePublicIpAddress(ipId, userId, caller);
+    }
 
     @Override
     @DB
-    public void handleCreateLoadBalancerRule( CreateLoadBalancerRuleCmd lb, Account account)  {
-        
-        long ipId = lb.getSourceIpAddressId();
-        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
-        Long networkId= ipAddr.getSourceNetworkId();
-        NetworkVO network=_networkDao.findById(networkId);
-        
-        if (network.getGuestType() != GuestIpType.Direct) {
-            s_logger.info("Elastic LB Manager: not handling guest traffic of type " + network.getGuestType());
-            return;
+    public LoadBalancer handleCreateLoadBalancerRule( CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException  {
+        Long ipId = lb.getSourceIpAddressId();
+        boolean newIp = false;
+        account = _accountDao.acquireInLockTable(account.getId());
+        if (account == null) {
+            s_logger.warn("CreateLoadBalancer: Failed to acquire lock on account");
         }
-        DomainRouterVO elbVm = null;
+        try {
+            List<LoadBalancerVO> existingLbs = findExistingLoadBalancers(lb.getName(), lb.getSourceIpAddressId(), lb.getAccountId(), lb.getDomainId(), lb.getSourcePortStart());
+            if (existingLbs == null ){
+                existingLbs = findExistingLoadBalancers(lb.getName(), lb.getSourceIpAddressId(), lb.getAccountId(), lb.getDomainId(), null);
+                if (existingLbs == null) {
+                    if (lb.getSourceIpAddressId() != null) {
+                        existingLbs = findExistingLoadBalancers(lb.getName(), null, lb.getAccountId(), lb.getDomainId(), null);
+                        if (existingLbs != null) {
+                            throw new InvalidParameterValueException("Supplied LB name " + lb.getName() + " is not associated with IP " + lb.getSourceIpAddressId() );
+                        } 
+                    } else {
+                        PublicIp ip = allocIp(lb, account);
+                        ipId = ip.getId();
+                        newIp = true;
+                    }
+                }
+            }
 
-        LoadBalancerVO lbvo;
-        lbvo = _lbDao.findByAccountAndName(account.getId(), lb.getName());
-        if (lbvo == null) {
-            elbVm = findELBVmWithCapacity(network, ipAddr);
-            if (elbVm == null) {
-                elbVm = deployLoadBalancerVM(networkId, ipAddr, account.getId());
+            IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
+            Long networkId= ipAddr.getSourceNetworkId();
+            NetworkVO network=_networkDao.findById(networkId);
+
+
+            if (network.getGuestType() != GuestIpType.Direct) {
+                s_logger.info("Elastic LB Manager: not handling guest traffic of type " + network.getGuestType());
+                return null;
+            }
+            LoadBalancer result = null;
+            try {
+                result = _lbMgr.createLoadBalancer(lb);
+            } catch (NetworkRuleConflictException e) {
+                s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
+                if (newIp) {
+                    releaseIp(ipId, UserContext.current().getCallerUserId(), account);
+                }
+            }
+
+            DomainRouterVO elbVm = null;
+
+
+            if (existingLbs == null) {
+                elbVm = findELBVmWithCapacity(network, ipAddr);
                 if (elbVm == null) {
-                    s_logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
-                    return; //TODO: throw exception
+                    elbVm = deployLoadBalancerVM(networkId, ipAddr, account.getId());
+                    if (elbVm == null) {
+                        s_logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
+                        if (newIp)
+                            releaseIp(ipId, UserContext.current().getCallerUserId(), account);
+                       
+                    }
+                }
+
+            } else {
+                ElasticLbVmMapVO elbVmMap = _elbVmMapDao.findOneByIp(ipId);
+                if (elbVmMap != null) {
+                    elbVm = _routerDao.findById(elbVmMap.getElbVmId());
                 }
             }
             
-        } else {
-            ElasticLbVmMapVO elbVmMap = _elbVmMapDao.findOneByIp(lb.getSourceIpAddressId());
-            if (elbVmMap != null) {
-                elbVm = _routerDao.findById(elbVmMap.getElbVmId());
+            if (elbVm == null) {
+                s_logger.warn("No ELB VM can be found or deployed");
+                s_logger.warn("Deleting LB since we failed to deploy ELB VM");
+                _lbDao.remove(result.getId());
+                return null;
+            }
+            
+            ElasticLbVmMapVO mapping = new ElasticLbVmMapVO(ipId, elbVm.getId());
+            _elbVmMapDao.persist(mapping);
+            return result;
+            
+        } finally {
+            if (account != null) {
+                _accountDao.releaseFromLockTable(account.getId());
             }
         }
-        if (elbVm == null) {
-            s_logger.warn("No ELB VM can be found or deployed");
-            return;
-        }
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        IPAddressVO ipvo = _ipAddressDao.findById(ipId);
-        ipvo.setAssociatedWithNetworkId(networkId); 
-        _ipAddressDao.update(ipvo.getId(), ipvo);
-        ElasticLbVmMapVO mapping = new ElasticLbVmMapVO(ipId, elbVm.getId());
-        _elbVmMapDao.persist(mapping);
-        txn.commit();
         
     }
     

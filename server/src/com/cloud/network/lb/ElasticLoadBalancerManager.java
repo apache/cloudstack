@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -38,6 +39,6 @@ public interface ElasticLoadBalancerManager {
             List<? extends FirewallRule> rules) 
             throws ResourceUnavailableException;
 
-    public void handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account caller);
+    public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account caller) throws InsufficientAddressCapacityException;
 
 }

@@ -43,6 +43,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
@@ -60,6 +61,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -72,6 +74,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -126,7 +129,9 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     ElasticLoadBalancerManager _elbMgr;
     @Inject
     NetworkDao _networkDao;
-
+    @Inject(adapter = LoadBalancerElement.class)
+    Adapters<LoadBalancerElement> _lbElements;
+    
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription = "assigning to load balancer", async = true)
@@ -347,26 +352,11 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         return true;
     }
-
+    
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
-    public LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException {
+    public LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException, InsufficientAddressCapacityException {
         UserContext caller = UserContext.current();
-
-        long ipId = lb.getSourceIpAddressId();
-
-        
-        _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
-       
-        
-        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
-        Long networkId= ipAddr.getSourceNetworkId();
-        NetworkVO network=_networkDao.findById(networkId);
-        // make sure ip address exists
-        if (ipAddr == null || !ipAddr.readyToUse()) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
-        }
-
         int srcPortStart = lb.getSourcePortStart();
         int srcPortEnd = lb.getSourcePortEnd();
         int defPortStart = lb.getDefaultPortStart();
@@ -394,6 +384,31 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Invalid algorithm: " + lb.getAlgorithm());
         }
 
+        Long ipId = lb.getSourceIpAddressId();
+        
+        if (ipId == null) {
+            return _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
+
+        } else {
+            return createLoadBalancer(lb);
+        }
+
+    }
+    
+    public LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException {
+        long ipId = lb.getSourceIpAddressId();
+        UserContext caller = UserContext.current();
+        int srcPortStart = lb.getSourcePortStart();
+        int defPortStart = lb.getDefaultPortStart();
+        
+        IPAddressVO ipAddr = _ipAddressDao.findById(lb.getSourceIpAddressId());
+        Long networkId = ipAddr.getSourceNetworkId();
+        NetworkVO network = _networkDao.findById(networkId);
+        // make sure ip address exists
+        if (ipAddr == null || !ipAddr.readyToUse()) {
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
+        }
+        
          networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
             throw new InvalidParameterValueException("Unable to create load balancer rule ; ip id=" + ipId + " is not associated with any network");
