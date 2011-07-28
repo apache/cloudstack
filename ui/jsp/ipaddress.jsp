@@ -486,6 +486,15 @@ dictionary = {
                 <fmt:message key="label.acquire.new.ip"/>
             </div>
         </div>
+    </div>    
+    <div class="actionpanel_button_wrapper" id="add_load_balancer_and_ip_button" style="display:none;">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" /></div>
+            <div class="actionpanel_button_links">
+                <fmt:message key="label.add.load.balancer.and.ip"/>
+            </div>
+        </div>
     </div>
 </div>
 <!--  top buttons (end) -->
@@ -767,6 +776,45 @@ dictionary = {
                     <option value="default"><fmt:message key="label.waiting"/>....</option>
                 </select>
             </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<div id="dialog_add_load_balancer_and_ip" title='<fmt:message key="label.add.load.balancer.and.ip"/>' style="display: none">   
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form1">
+        <ol>
+            <li>
+                <label>
+                    <fmt:message key="label.zone"/>:</label>
+                <select class="select" name="acquire_zone" id="acquire_zone">
+                    <option value="default"><fmt:message key="label.waiting"/>....</option>
+                </select>
+            </li>            
+            <li>
+				<label><fmt:message key="label.name"/>:</label>
+				<input class="text" type="text" id="name"/>
+				<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+			</li>
+			<li>
+				<label><fmt:message key="label.public.port"/>:</label>
+				<input class="text" type="text" id="public_port"/>
+				<div id="public_port_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+			</li>
+			<li>
+				<label><fmt:message key="label.private.port"/>:</label>
+				<input class="text" type="text" id="private_port"/>
+				<div id="private_port_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+			</li>
+			<li>
+                <label><fmt:message key="label.algorithm"/>:</label>
+                <select class="select" id="algorithm_select">
+                    <option value='roundrobin'>roundrobin</option>
+                    <option value='leastconn'>leastconn</option>                            
+                    <option value='source'>source</option>
+                </select>
+            </li>           
         </ol>
         </form>
     </div>

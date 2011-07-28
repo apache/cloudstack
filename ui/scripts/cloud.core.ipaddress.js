@@ -73,327 +73,434 @@ function afterLoadIpJSP() {
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     //***** switch between different tabs (end) **********************************************************************
         
-    //dialogs
-    initDialog("dialog_acquire_public_ip", 325);
-	initDialog("dialog_enable_vpn");
-	initDialog("dialog_disable_vpn");
-	initDialog("dialog_add_vpnuser");
-	initDialog("dialog_confirmation_remove_vpnuser");
-	initDialog("dialog_enable_static_NAT");
-    
-    //*** Acquire New IP (begin) ***
-	$.ajax({
-	    data: createURL("command=listZones&available=true"),
-		dataType: "json",
-		success: function(json) {
-			var zones = json.listzonesresponse.zone;				
-			var zoneSelect = $("#dialog_acquire_public_ip #acquire_zone").empty();	
-			if (zones != null && zones.length > 0) {	
-			    for (var i = 0; i < zones.length; i++) {
-				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
-			    }
-		    }
-		}
-	});
-	    
-    $("#acquire_new_ip_button").unbind("click").bind("click", function(event) {  
-		var submenuContent = $("#submenu_content_network");
-		$("#dialog_acquire_public_ip").dialog('option', 'buttons', {				
-			"Acquire": function() { 
-				var thisDialog = $(this);	
-				thisDialog.dialog("close");
-						
-				var zoneid = thisDialog.find("#acquire_zone").val();				
-				
-				var $midmenuItem1 = beforeAddingMidMenuItem() ;	
-				
-				$.ajax({
-				    data: createURL("command=associateIpAddress&zoneid="+zoneid),
-				    dataType: "json",
-				    success: function(json) {						        
-				        var jobId = json.associateipaddressresponse.jobid;				        
-				        var timerKey = "associateIpJob_"+jobId;
-							    
-				        $("body").everyTime(2000, timerKey, function() {
-						    $.ajax({
-							    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-							    dataType: "json",
-							    success: function(json) {										       						   
-								    var result = json.queryasyncjobresultresponse;
-								    if (result.jobstatus == 0) {
-									    return; //Job has not completed
-								    } else {											    
-									    $("body").stopTime(timerKey);
-									    if (result.jobstatus == 1) {
-										    // Succeeded										    							   
-										    ipToMidmenu(result.jobresult.ipaddress, $midmenuItem1);
-						                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
-						                    afterAddingMidMenuItem($midmenuItem1, true);	                            
-									    } else if (result.jobstatus == 2) {
-									        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));					        							        								   				    
-									    }
-								    }
-							    },
-							    error: function(XMLHttpResponse) {
-								    $("body").stopTime(timerKey);
-									handleError(XMLHttpResponse, function() {
-										afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
-									});
-							    }
-						    });
-					    }, 0);						    					
-				    },
-				    error: function(XMLHttpResponse) {
-						handleError(XMLHttpResponse, function() {
-							afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));	
-						});
+    if(g_supportELB == true) {
+		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
+		$("#tab_content_details").hide();
+		$("#acquire_new_ip_button").hide();
+		$("#add_load_balancer_and_ip_button").show();
+		
+		initDialog("dialog_add_load_balancer_and_ip");
+		
+		$.ajax({
+		    data: createURL("command=listZones&available=true"),
+			dataType: "json",
+			success: function(json) {
+				var zones = json.listzonesresponse.zone;				
+				var zoneSelect = $("#dialog_add_load_balancer_and_ip #acquire_zone").empty();	
+				if (zones != null && zones.length > 0) {	
+				    for (var i = 0; i < zones.length; i++) {
+				    	if(zones[i].networktype == "Basic")
+					        zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 				    }
-			    });
-			},
-			"Cancel": function() { 
-				$(this).dialog("close"); 
+			    }
 			}
-		}).dialog("open");			
-		return false;
-	});
-    //*** Acquire New IP (end) ***
-    
-    //*** Port Range tab (begin) ***
-    var $createPortRangeRow = $("#tab_content_port_range").find("#create_port_range_row");     
-  
-    $createPortRangeRow.find("#add_link").bind("click", function(event){	        
-		var isValid = true;							
-		isValid &= validateInteger("Start Port", $createPortRangeRow.find("#start_port"), $createPortRangeRow.find("#start_port_errormsg"), 1, 65535);
-		isValid &= validateInteger("End Port", $createPortRangeRow.find("#end_port"), $createPortRangeRow.find("#end_port_errormsg"), 1, 65535);				
-		if (!isValid) 
-		    return;			
-	    
-	    var $template = $("#port_range_template").clone();
-	    $("#tab_content_port_range #grid_content").append($template.show());		
-	    
-	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
-	    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
-        $spinningWheel.show();   
-	    	    
-	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
-        var ipObj = $midmenuItem1.data("jsonObj");          	        
-		
-		var startPort = $createPortRangeRow.find("#start_port").val();
-	    var endPort = $createPortRangeRow.find("#end_port").val();
-	    var protocol = $createPortRangeRow.find("#protocol").val();
-	   	    
-	    var array1 = [];
-        array1.push("&ipaddressid="+ipObj.id);           
-        array1.push("&startPort="+startPort);
-        array1.push("&endPort="+endPort);
-        array1.push("&protocol="+protocol);
-                
-        $.ajax({
-            data: createURL("command=createIpForwardingRule"+array1.join("")),
-            dataType: "json",           
-            success: function(json) {                                    	                        
-                var jobId = json.createipforwardingruleresponse.jobid;                  			                        
-                var timerKey = "asyncJob_" + jobId;					                       
-                $("body").everyTime(
-                    10000,
-                    timerKey,
-                    function() {
-                        $.ajax({
-                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-	                        dataType: "json",									                    					                    
-	                        success: function(json) {		                                              							                       
-		                        var result = json.queryasyncjobresultresponse;										                   
-		                        if (result.jobstatus == 0) {
-			                        return; //Job has not completed
-		                        } else {											                    
-			                        $("body").stopTime(timerKey);				                        
-			                        $spinningWheel.hide();  			                                 		                       
-			                        if (result.jobstatus == 1) { // Succeeded 				                            
-	                                    var item = json.queryasyncjobresultresponse.jobresult.ipforwardingrule;		       	        	
-	                                    portRangeJsonToTemplate(item, $template);
-	                                    $spinningWheel.hide();   
-	                                    refreshCreatePortRangeRow();			 
-			                        } else if (result.jobstatus == 2) { // Failed			                            
-				                        $template.slideUp("slow", function() {
-					                        $(this).remove();
-				                        });
-				                        //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
-	                                    var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
-	                                    $("#dialog_error").text(errorMsg).dialog("open");
-			                        }											                    
-		                        }
-	                        },
-	                        error: function(XMLHttpResponse) {	                  
-		                        $("body").stopTime(timerKey);	
-								handleError(XMLHttpResponse, function() {
-					                $template.slideUp("slow", function() {
-						                $(this).remove();
-					                });
-					                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
-		                            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
-				                });								
-	                        }
-                        });
-                    },
-                    0
-                );
-            },
-            error: function(XMLHttpResponse) {	
-                handleError(XMLHttpResponse, function() {
-	                $template.slideUp("slow", function() {
-		                $(this).remove();
-	                });
-	                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
-                    $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
-                });		
-            }
-        });    	    
-	    
-	    return false;
-	});
-    //*** Port Range tab (end) ***
-   
-    //*** Port Forwarding tab (begin) ***
-    var $createPortForwardingRow = $("#tab_content_port_forwarding").find("#create_port_forwarding_row");     
-     
-    // If public end port gets filled, disable private ports and copy public ports over to private ports
-    /*
-    $createPortForwardingRow.find("#public_end_port").bind("keyup", function(event) {
-       	if($(this).val() != null && $(this).val().length > 0) {    		
-       		$createPortForwardingRow.find("#private_port").attr("readonly", true); 
-       		$createPortForwardingRow.find("#private_end_port").attr("readonly", true); 
-       		
-       		$createPortForwardingRow.find("#private_port").val($createPortForwardingRow.find("#public_port").val());
-       		$createPortForwardingRow.find("#private_end_port").val($(this).val());
-       	}
-       	else {    		
-       		$createPortForwardingRow.find("#private_port").removeAttr("readonly");    
-       		$createPortForwardingRow.find("#private_end_port").removeAttr("readonly");  
-       	}       	
-       	return true;
-    });           
-    $createPortForwardingRow.find("#public_port").bind("keyup", function(event) {
-        if($createPortForwardingRow.find("#private_port").attr("readonly") == true)
-        	$createPortForwardingRow.find("#private_port").val($(this).val());       	
-       	return true;
-    });    
-    */
-    
-    $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
-		var isValid = true;		
-	
-		isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
+		});
 				
-		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535, false); //required
-		//isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
-		
-		isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535, false); //required		
-		//isValid &= validateInteger("Private End Port", $createPortForwardingRow.find("#private_end_port"), $createPortForwardingRow.find("#private_end_port_errormsg"), 1, 65535, true); //optional				
-		
-		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
-		if (!isValid) 
-		    return;			
+		$("#add_load_balancer_and_ip_button").unbind("click").bind("click", function(event) {  			
+			$("#dialog_add_load_balancer_and_ip").dialog('option', 'buttons', {				
+				"Acquire": function() { 
+					var $thisDialog = $(this);	
+					
+					var isValid = true;					
+					isValid &= validateString("Name", $thisDialog.find("#name"), $thisDialog.find("#name_errormsg"));
+					isValid &= validateInteger("Public Port", $thisDialog.find("#public_port"), $thisDialog.find("#public_port_errormsg"), 1, 65535);
+					isValid &= validateInteger("Private Port", $thisDialog.find("#private_port"), $thisDialog.find("#private_port_errormsg"), 1, 65535);				
+					if (!isValid) 
+						return;
+															
+					$thisDialog.dialog("close");
+															   
+				    var array1 = [];
+				    
+				    var zoneId = $thisDialog.find("#acquire_zone").val();		
+			        array1.push("&zoneid="+zoneId);    
+			        
+			        var name = $thisDialog.find("#name").val();  
+			        array1.push("&name="+todb(name));    
+			        
+			        var publicPort = $thisDialog.find("#public_port").val();
+			        array1.push("&publicport="+publicPort);
+			        
+			        var privatePort = $thisDialog.find("#private_port").val();
+			        array1.push("&privateport="+privatePort);
+			        
+			        var algorithm = $thisDialog.find("#algorithm_select").val();  
+			        array1.push("&algorithm="+algorithm);
+			       
+			        var $midmenuItem1 = beforeAddingMidMenuItem() ;	
+			        $.ajax({
+				        data: createURL("command=createLoadBalancerRule"+array1.join("")),
+						dataType: "json",
+						success: function(json) {			        	    
+				        	var jobId = json.createloadbalancerruleresponse.jobid;				        
+					        var timerKey = "addLbAndIpJob_"+jobId;
+								    
+					        $("body").everyTime(2000, timerKey, function() {
+							    $.ajax({
+								    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+								    dataType: "json",
+								    success: function(json) {										       						   
+									    var result = json.queryasyncjobresultresponse;
+									    if (result.jobstatus == 0) {
+										    return; //Job has not completed
+									    } else {											    
+										    $("body").stopTime(timerKey);										    
+										    if (result.jobstatus == 1) {
+											    // Succeeded											    	
+											    ipToMidmenu(result.jobresult.ipaddress, $midmenuItem1);
+							                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
+							                    afterAddingMidMenuItem($midmenuItem1, true);	                            
+										    } else if (result.jobstatus == 2) {
+										        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));					        							        								   				    
+										    }
+									    }
+								    },
+								    error: function(XMLHttpResponse) {
+									    $("body").stopTime(timerKey);
+										handleError(XMLHttpResponse, function() {
+											debugger;
+											afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
+										});
+								    }
+							    });
+						    }, 0);		
+						},
+						error: function(XMLHttpResponse) {
+							handleError(XMLHttpResponse, function() {
+								afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));	
+							});
+					    }
+					});  				
+				},
+				"Cancel": function() { 
+					$(this).dialog("close"); 
+				}
+			}).dialog("open");			
+			return false;
+		});		
+	}
+    else {
+	    //dialogs
+	    initDialog("dialog_acquire_public_ip", 325);
+		initDialog("dialog_enable_vpn");
+		initDialog("dialog_disable_vpn");
+		initDialog("dialog_add_vpnuser");
+		initDialog("dialog_confirmation_remove_vpnuser");
+		initDialog("dialog_enable_static_NAT");
 	    
-	    var $template = $("#port_forwarding_template").clone();
-	    $("#tab_content_port_forwarding #grid_content").append($template.show());		
+	    //*** Acquire New IP (begin) ***
+		$.ajax({
+		    data: createURL("command=listZones&available=true"),
+			dataType: "json",
+			success: function(json) {
+				var zones = json.listzonesresponse.zone;				
+				var zoneSelect = $("#dialog_acquire_public_ip #acquire_zone").empty();	
+				if (zones != null && zones.length > 0) {	
+				    for (var i = 0; i < zones.length; i++) {
+					    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+				    }
+			    }
+			}
+		});
+		    
+	    $("#acquire_new_ip_button").unbind("click").bind("click", function(event) {  			
+			$("#dialog_acquire_public_ip").dialog('option', 'buttons', {				
+				"Acquire": function() { 
+					var thisDialog = $(this);	
+					thisDialog.dialog("close");
+							
+					var zoneid = thisDialog.find("#acquire_zone").val();				
+					
+					var $midmenuItem1 = beforeAddingMidMenuItem() ;	
+					
+					$.ajax({
+					    data: createURL("command=associateIpAddress&zoneid="+zoneid),
+					    dataType: "json",
+					    success: function(json) {						        
+					        var jobId = json.associateipaddressresponse.jobid;				        
+					        var timerKey = "associateIpJob_"+jobId;
+								    
+					        $("body").everyTime(2000, timerKey, function() {
+							    $.ajax({
+								    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+								    dataType: "json",
+								    success: function(json) {										       						   
+									    var result = json.queryasyncjobresultresponse;
+									    if (result.jobstatus == 0) {
+										    return; //Job has not completed
+									    } else {											    
+										    $("body").stopTime(timerKey);
+										    if (result.jobstatus == 1) {
+											    // Succeeded										    							   
+											    ipToMidmenu(result.jobresult.ipaddress, $midmenuItem1);
+							                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
+							                    afterAddingMidMenuItem($midmenuItem1, true);	                            
+										    } else if (result.jobstatus == 2) {
+										        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));					        							        								   				    
+										    }
+									    }
+								    },
+								    error: function(XMLHttpResponse) {
+									    $("body").stopTime(timerKey);
+										handleError(XMLHttpResponse, function() {
+											afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
+										});
+								    }
+							    });
+						    }, 0);						    					
+					    },
+					    error: function(XMLHttpResponse) {
+							handleError(XMLHttpResponse, function() {
+								afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));	
+							});
+					    }
+				    });
+				},
+				"Cancel": function() { 
+					$(this).dialog("close"); 
+				}
+			}).dialog("open");			
+			return false;
+		});
+	    //*** Acquire New IP (end) ***
 	    
-	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
-	    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
-        $spinningWheel.show();   
-	    	    
-	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
-        var ipObj = $midmenuItem1.data("jsonObj");            	        
+	    //*** Port Range tab (begin) ***
+	    var $createPortRangeRow = $("#tab_content_port_range").find("#create_port_range_row");     
+	  
+	    $createPortRangeRow.find("#add_link").bind("click", function(event){	        
+			var isValid = true;							
+			isValid &= validateInteger("Start Port", $createPortRangeRow.find("#start_port"), $createPortRangeRow.find("#start_port_errormsg"), 1, 65535);
+			isValid &= validateInteger("End Port", $createPortRangeRow.find("#end_port"), $createPortRangeRow.find("#end_port_errormsg"), 1, 65535);				
+			if (!isValid) 
+			    return;			
+		    
+		    var $template = $("#port_range_template").clone();
+		    $("#tab_content_port_range #grid_content").append($template.show());		
+		    
+		    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
+		    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
+	        $spinningWheel.show();   
+		    	    
+		    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
+	        var ipObj = $midmenuItem1.data("jsonObj");          	        
 			
-        var array1 = [];
-        array1.push("&ipaddressid="+ipObj.id);           
-        
-        var cidr = $createPortForwardingRow.find("#cidr").val();
-        if(cidr != null && cidr.length > 0)
-        	array1.push("&cidrlist="+cidr);
-        
-	    var publicPort = $createPortForwardingRow.find("#public_port").val();
-	    array1.push("&publicport="+publicPort);	    
-	    var publicEndPort = $createPortForwardingRow.find("#public_end_port").val();
-	    if(publicEndPort != null && publicEndPort.length > 0)
-	    	array1.push("&publicendport="+publicEndPort);
-	    
-	    var privatePort = $createPortForwardingRow.find("#private_port").val();
-	    array1.push("&privateport="+privatePort);	    
-	    var privateEndPort = $createPortForwardingRow.find("#private_end_port").val();
-	    if(privateEndPort != null && privateEndPort.length > 0)
-	    	array1.push("&privateendport="+privateEndPort);
-	    
-	    var protocol = $createPortForwardingRow.find("#protocol").val();
-	    array1.push("&protocol="+protocol);
-	    
-	    var virtualMachineId = $createPortForwardingRow.find("#vm").val();	
-        array1.push("&virtualmachineid=" + virtualMachineId);
-        
-        $.ajax({
-            data: createURL("command=createPortForwardingRule"+array1.join("")),
-            dataType: "json",           
-            success: function(json) {	                               	                        
-                var jobId = json.createportforwardingruleresponse.jobid;                  			                        
-                var timerKey = "asyncJob_" + jobId;					                       
-                $("body").everyTime(
-                    10000,
-                    timerKey,
-                    function() {
-                        $.ajax({
-                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-	                        dataType: "json",									                    					                    
-	                        success: function(json) {		                                              							                       
-		                        var result = json.queryasyncjobresultresponse;										                   
-		                        if (result.jobstatus == 0) {
-			                        return; //Job has not completed
-		                        } else {											                    
-			                        $("body").stopTime(timerKey);				                        
-			                        $spinningWheel.hide();  			                                 		                       
-			                        if (result.jobstatus == 1) { // Succeeded 	
-	                                    var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;		       	        	
-	                                    portForwardingJsonToTemplate(item,$template);
-	                                    $spinningWheel.hide();   
-	                                    refreshCreatePortForwardingRow();			 
-			                        } else if (result.jobstatus == 2) { // Failed			                            
-				                        $template.slideUp("slow", function() {
-					                        $(this).remove();
-				                        });
-				                        //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
-	                                    var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
-	                                    $("#dialog_error").text(errorMsg).dialog("open");
-			                        }											                    
+			var startPort = $createPortRangeRow.find("#start_port").val();
+		    var endPort = $createPortRangeRow.find("#end_port").val();
+		    var protocol = $createPortRangeRow.find("#protocol").val();
+		   	    
+		    var array1 = [];
+	        array1.push("&ipaddressid="+ipObj.id);           
+	        array1.push("&startPort="+startPort);
+	        array1.push("&endPort="+endPort);
+	        array1.push("&protocol="+protocol);
+	                
+	        $.ajax({
+	            data: createURL("command=createIpForwardingRule"+array1.join("")),
+	            dataType: "json",           
+	            success: function(json) {                                    	                        
+	                var jobId = json.createipforwardingruleresponse.jobid;                  			                        
+	                var timerKey = "asyncJob_" + jobId;					                       
+	                $("body").everyTime(
+	                    10000,
+	                    timerKey,
+	                    function() {
+	                        $.ajax({
+	                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+		                        dataType: "json",									                    					                    
+		                        success: function(json) {		                                              							                       
+			                        var result = json.queryasyncjobresultresponse;										                   
+			                        if (result.jobstatus == 0) {
+				                        return; //Job has not completed
+			                        } else {											                    
+				                        $("body").stopTime(timerKey);				                        
+				                        $spinningWheel.hide();  			                                 		                       
+				                        if (result.jobstatus == 1) { // Succeeded 				                            
+		                                    var item = json.queryasyncjobresultresponse.jobresult.ipforwardingrule;		       	        	
+		                                    portRangeJsonToTemplate(item, $template);
+		                                    $spinningWheel.hide();   
+		                                    refreshCreatePortRangeRow();			 
+				                        } else if (result.jobstatus == 2) { // Failed			                            
+					                        $template.slideUp("slow", function() {
+						                        $(this).remove();
+					                        });
+					                        //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+		                                    var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
+		                                    $("#dialog_error").text(errorMsg).dialog("open");
+				                        }											                    
+			                        }
+		                        },
+		                        error: function(XMLHttpResponse) {	                  
+			                        $("body").stopTime(timerKey);	
+									handleError(XMLHttpResponse, function() {
+						                $template.slideUp("slow", function() {
+							                $(this).remove();
+						                });
+						                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+			                            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+					                });								
 		                        }
-	                        },
-	                        error: function(XMLHttpResponse) {	                  
-		                        $("body").stopTime(timerKey);	
-								handleError(XMLHttpResponse, function() {
-					                $template.slideUp("slow", function() {
-						                $(this).remove();
-					                });
-					                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
-		                            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
-				                });								
-	                        }
-                        });
-                    },
-                    0
-                );
-            },
-            error: function(XMLHttpResponse) {	
-                handleError(XMLHttpResponse, function() {
-	                $template.slideUp("slow", function() {
-		                $(this).remove();
-	                });
-	                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
-                    $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
-                });		
-            }
-        });    	    
+	                        });
+	                    },
+	                    0
+	                );
+	            },
+	            error: function(XMLHttpResponse) {	
+	                handleError(XMLHttpResponse, function() {
+		                $template.slideUp("slow", function() {
+			                $(this).remove();
+		                });
+		                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+	                    $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+	                });		
+	            }
+	        });    	    
+		    
+		    return false;
+		});
+	    //*** Port Range tab (end) ***
+	   
+	    //*** Port Forwarding tab (begin) ***
+	    var $createPortForwardingRow = $("#tab_content_port_forwarding").find("#create_port_forwarding_row");     
+	     
+	    // If public end port gets filled, disable private ports and copy public ports over to private ports
+	    /*
+	    $createPortForwardingRow.find("#public_end_port").bind("keyup", function(event) {
+	       	if($(this).val() != null && $(this).val().length > 0) {    		
+	       		$createPortForwardingRow.find("#private_port").attr("readonly", true); 
+	       		$createPortForwardingRow.find("#private_end_port").attr("readonly", true); 
+	       		
+	       		$createPortForwardingRow.find("#private_port").val($createPortForwardingRow.find("#public_port").val());
+	       		$createPortForwardingRow.find("#private_end_port").val($(this).val());
+	       	}
+	       	else {    		
+	       		$createPortForwardingRow.find("#private_port").removeAttr("readonly");    
+	       		$createPortForwardingRow.find("#private_end_port").removeAttr("readonly");  
+	       	}       	
+	       	return true;
+	    });           
+	    $createPortForwardingRow.find("#public_port").bind("keyup", function(event) {
+	        if($createPortForwardingRow.find("#private_port").attr("readonly") == true)
+	        	$createPortForwardingRow.find("#private_port").val($(this).val());       	
+	       	return true;
+	    });    
+	    */
 	    
-	    return false;
-	});
-    //*** Port Forwarding tab (end) ***
-    
+	    $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
+			var isValid = true;		
+		
+			isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
+					
+			isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535, false); //required
+			//isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
+			
+			isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535, false); //required		
+			//isValid &= validateInteger("Private End Port", $createPortForwardingRow.find("#private_end_port"), $createPortForwardingRow.find("#private_end_port_errormsg"), 1, 65535, true); //optional				
+			
+			isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
+			if (!isValid) 
+			    return;			
+		    
+		    var $template = $("#port_forwarding_template").clone();
+		    $("#tab_content_port_forwarding #grid_content").append($template.show());		
+		    
+		    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
+		    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
+	        $spinningWheel.show();   
+		    	    
+		    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
+	        var ipObj = $midmenuItem1.data("jsonObj");            	        
+				
+	        var array1 = [];
+	        array1.push("&ipaddressid="+ipObj.id);           
+	        
+	        var cidr = $createPortForwardingRow.find("#cidr").val();
+	        if(cidr != null && cidr.length > 0)
+	        	array1.push("&cidrlist="+cidr);
+	        
+		    var publicPort = $createPortForwardingRow.find("#public_port").val();
+		    array1.push("&publicport="+publicPort);	    
+		    var publicEndPort = $createPortForwardingRow.find("#public_end_port").val();
+		    if(publicEndPort != null && publicEndPort.length > 0)
+		    	array1.push("&publicendport="+publicEndPort);
+		    
+		    var privatePort = $createPortForwardingRow.find("#private_port").val();
+		    array1.push("&privateport="+privatePort);	    
+		    var privateEndPort = $createPortForwardingRow.find("#private_end_port").val();
+		    if(privateEndPort != null && privateEndPort.length > 0)
+		    	array1.push("&privateendport="+privateEndPort);
+		    
+		    var protocol = $createPortForwardingRow.find("#protocol").val();
+		    array1.push("&protocol="+protocol);
+		    
+		    var virtualMachineId = $createPortForwardingRow.find("#vm").val();	
+	        array1.push("&virtualmachineid=" + virtualMachineId);
+	        
+	        $.ajax({
+	            data: createURL("command=createPortForwardingRule"+array1.join("")),
+	            dataType: "json",           
+	            success: function(json) {	                               	                        
+	                var jobId = json.createportforwardingruleresponse.jobid;                  			                        
+	                var timerKey = "asyncJob_" + jobId;					                       
+	                $("body").everyTime(
+	                    10000,
+	                    timerKey,
+	                    function() {
+	                        $.ajax({
+	                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+		                        dataType: "json",									                    					                    
+		                        success: function(json) {		                                              							                       
+			                        var result = json.queryasyncjobresultresponse;										                   
+			                        if (result.jobstatus == 0) {
+				                        return; //Job has not completed
+			                        } else {											                    
+				                        $("body").stopTime(timerKey);				                        
+				                        $spinningWheel.hide();  			                                 		                       
+				                        if (result.jobstatus == 1) { // Succeeded 	
+		                                    var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;		       	        	
+		                                    portForwardingJsonToTemplate(item,$template);
+		                                    $spinningWheel.hide();   
+		                                    refreshCreatePortForwardingRow();			 
+				                        } else if (result.jobstatus == 2) { // Failed			                            
+					                        $template.slideUp("slow", function() {
+						                        $(this).remove();
+					                        });
+					                        //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+		                                    var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
+		                                    $("#dialog_error").text(errorMsg).dialog("open");
+				                        }											                    
+			                        }
+		                        },
+		                        error: function(XMLHttpResponse) {	                  
+			                        $("body").stopTime(timerKey);	
+									handleError(XMLHttpResponse, function() {
+						                $template.slideUp("slow", function() {
+							                $(this).remove();
+						                });
+						                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+			                            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+					                });								
+		                        }
+	                        });
+	                    },
+	                    0
+	                );
+	            },
+	            error: function(XMLHttpResponse) {	
+	                handleError(XMLHttpResponse, function() {
+		                $template.slideUp("slow", function() {
+			                $(this).remove();
+		                });
+		                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+	                    $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+	                });		
+	            }
+	        });    	    
+		    
+		    return false;
+		});
+	    //*** Port Forwarding tab (end) ***
+    }
+        
     //*** Load Balancer tab (begin) ***
     var createLoadBalancerRow = $("#tab_content_load_balancer #create_load_balancer_row");
     

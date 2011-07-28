@@ -693,7 +693,9 @@ $(document).ready(function() {
 					data: createURL("command=listCapabilities"),
 					dataType: "json",
 					async: false,
-					success: function(json) {
+					success: function(json) {					    
+					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB;
+					    					   
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});

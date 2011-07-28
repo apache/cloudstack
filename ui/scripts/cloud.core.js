@@ -1514,8 +1514,10 @@ var g_timezone = null;
 var g_directAttachSecurityGroupsEnabled = "false";
 function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityGroupsEnabled; }
 
-var g_userPublicTemplateEnabled = "true"
+var g_userPublicTemplateEnabled = "true";
 function getUserPublicTemplateEnabled() { return g_userPublicTemplateEnabled; }
+
+var g_supportELB = null;
 
 //keyboard keycode
 var keycode_Enter = 13;
