@@ -663,15 +663,15 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         if( newManagedState != null && !newManagedState.equals(oldManagedState)) {
             Transaction txn = Transaction.currentTxn();
             if( newManagedState.equals(Managed.ManagedState.Unmanaged) ) {
-                boolean success = true;
+                boolean success = false;
                 try {
                     txn.start();
                     cluster.setManagedState(Managed.ManagedState.PrepareUnmanaged);
                     _clusterDao.update(cluster.getId(), cluster);
                     txn.commit();
-                    List<HostVO>  hosts = _hostDao.listBy(cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
+                    List<HostVO>  hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
                     for( HostVO host : hosts ) {
-                        if( !host.getStatus().equals(Status.Down) &&  !host.getStatus().equals(Status.Disconnected) 
+                        if(host.getType().equals(Host.Type.Routing) && !host.getStatus().equals(Status.Down) &&  !host.getStatus().equals(Status.Disconnected) 
                                 && !host.getStatus().equals(Status.Up) && !host.getStatus().equals(Status.Alert) ) {
                             String msg = "host " + host.getPrivateIpAddress() + " should not be in " + host.getStatus().toString() + " status";
                             throw new CloudRuntimeException("PrepareUnmanaged Failed due to " + msg);                                   
@@ -684,21 +684,23 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         }
                     }
                     int retry = 10;
+                    boolean lsuccess = true;
                     for ( int i = 0; i < retry; i++) {
-                        success = true;
+                        lsuccess = true;
                         try {
                             Thread.sleep(20 * 1000);
                         } catch (Exception e) {
                         }
-                        hosts = _hostDao.listBy(cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
+                        hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
                         for( HostVO host : hosts ) {
                             if ( !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected) 
                                     && !host.getStatus().equals(Status.Alert)) {
-                                success = false;
+                                lsuccess = false;
                                 break;
                             }
                         }
-                        if( success == true ) {                          
+                        if( lsuccess == true ) {
+                            success = true;
                             break;
                         }
                     }
@@ -706,12 +708,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         throw new CloudRuntimeException("PrepareUnmanaged Failed due to some hosts are still in UP status after 5 Minutes, please try later "); 
                     }
                 } finally {
-                    if ( success == false ) {
-                        txn.start();
-                        cluster.setManagedState(success? Managed.ManagedState.Unmanaged : Managed.ManagedState.PrepareUnmanagedError);
-                        _clusterDao.update(cluster.getId(), cluster);
-                        txn.commit();
-                    }
+                    txn.start();
+                    cluster.setManagedState(success? Managed.ManagedState.Unmanaged : Managed.ManagedState.PrepareUnmanagedError);
+                    _clusterDao.update(cluster.getId(), cluster);
+                    txn.commit();
                 }
             } else if( newManagedState.equals(Managed.ManagedState.Managed)) {               
                 txn.start();
