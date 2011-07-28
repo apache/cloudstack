@@ -208,9 +208,13 @@ $(document).ready(function() {
 		bindAndListMidMenuItems($("#leftmenu_event"), "listEvents", eventGetSearchParams, "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", volumeGetSearchParams, "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", snapshotGetSearchParams, "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRightPanel, getMidmenuId, false);
-		
-		//bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=true", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false); //remove "&forvirtualnetwork=true" for advanced zone whose security group is enabled
+				
+		if(g_supportELB == "guest")  //ips are allocated on guest network
+			bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=false", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
+		else if(g_supportELB == "public")  //ips are allocated on public network
+			bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=true", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
+		else			
+		    bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false); //remove "&forvirtualnetwork=true" for advanced zone whose security group is enabled
 		
 		bindAndListMidMenuItems($("#leftmenu_security_group"), "listSecurityGroups", securityGroupGetSearchParams, "listsecuritygroupsresponse", "securitygroup", "jsp/securitygroup.jsp", afterLoadSecurityGroupJSP, securityGroupToMidmenu, securityGroupToRightPanel, getMidmenuId, false);
 					 		  
@@ -693,8 +697,12 @@ $(document).ready(function() {
 					data: createURL("command=listCapabilities"),
 					dataType: "json",
 					async: false,
-					success: function(json) {					    
+					success: function(json) {					
 					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB;
+					    /* g_supportELB: guest — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+					     * g_supportELB: public  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+					     * g_supportELB: false – no ELB support
+					     */
 					    					   
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;

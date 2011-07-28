@@ -73,7 +73,7 @@ function afterLoadIpJSP() {
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     //***** switch between different tabs (end) **********************************************************************
         
-    if(g_supportELB == true) {
+    if(g_supportELB == "guest" || g_supportELB == "public") {
 		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
 		$("#tab_content_details").hide();
 		$("#acquire_new_ip_button").hide();
