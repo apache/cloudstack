@@ -174,8 +174,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -325,6 +327,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final SSHKeyPairDao _sshKeyPairDao;
+    private final LoadBalancerDao _loadbalancerDao;
 
     private final KeystoreManager _ksMgr;
 
@@ -338,7 +341,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     private String _hashKey = null;
 
-    protected ManagementServerImpl() {
+    public ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _configDao = locator.getDao(ConfigurationDao.class);
         _routerDao = locator.getDao(DomainRouterDao.class);
@@ -354,6 +357,7 @@ public class ManagementServerImpl implements ManagementServer {
         _clusterDao = locator.getDao(ClusterDao.class);
         _nicDao = locator.getDao(NicDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
+        _loadbalancerDao = locator.getDao(LoadBalancerDao.class);
 
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
@@ -2489,6 +2493,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object address = cmd.getIpAddress();
         Object vlan = cmd.getVlanId();
         Object forVirtualNetwork = cmd.isForVirtualNetwork();
+        Object forLoadBalancing = cmd.isForLoadBalancing();
         Object ipId = cmd.getId();
 
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
@@ -2503,6 +2508,11 @@ public class ManagementServerImpl implements ManagementServer {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getAllocatedInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (forLoadBalancing != null && (Boolean)forLoadBalancing) {
+            SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
+            sb.join("lbSearch", lbSearch, sb.entity().getId(), lbSearch.entity().getSourceIpAddressId(), JoinType.INNER);
         }
 
         if (keyword != null && address == null) {
