@@ -389,7 +389,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             templateStoragePoolRefId = templateStoragePoolRef.getId();
         }
         
-        List<StoragePoolHostVO> vos = _poolHostDao.listByPoolId(poolId);
+        List<StoragePoolHostVO> vos = _poolHostDao.listByHostStatus(poolId, com.cloud.host.Status.Up);
         
         templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, 1200);
         if (templateStoragePoolRef == null) {
