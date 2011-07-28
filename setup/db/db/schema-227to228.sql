@@ -163,4 +163,7 @@ ALTER TABLE `cloud`.`instance_group` ADD INDEX `i_instance_group__removed`(`remo
 ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue_item__queue_proc_number`(`queue_proc_number`);
 ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`);
 ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__taken`(`taken`);
+ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__step`(`step`);
+ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__seq_no`(`seq_no`);
+ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__state`(`state`);
 
