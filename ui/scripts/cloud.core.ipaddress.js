@@ -1930,14 +1930,18 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 										var total_lbrules = $("#tab_content_load_balancer").find("#grid_content").find(".grid_rows").length;
 										$template.slideUp("slow", function() {
 											$(this).remove();	
-											
-											var count_lb = $("div[id*='loadBalancer_']").length;											
-											if(count_lb == 0) {
-												var params = $("#middle_menu_pagination").data("params");
-										        if(params == null)
-										            return;	 										          	    
-										        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
-											}
+																						
+											if(g_supportELB == "guest" || g_supportELB == "public") {
+												var count_lb = $("div[id*='loadBalancer_']").length;											
+												if(count_lb == 0) {
+													var params = $("#middle_menu_pagination").data("params");
+											        if(params == null)
+											            return;	 										          	    
+											        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+											        if($("div[id*='midmenuItem_']").length == 0)
+											        	$("#tab_content_load_balancer").hide();
+												}
+											}											
 										});	
 									} else if (result.jobstatus == 2) { // Failed										
 										var errorMsg = g_dictionary["label.deleting.failed"] + " - " + fromdb(result.jobresult.errortext);	
