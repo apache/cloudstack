@@ -120,6 +120,7 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         this.setResponseObject(response);
     }
 
+    /*
     public ListLoadBalancerRulesCmd(String accountName, Long domainId, Long id, String loadBalancerRuleName, Long publicIpId, Long virtualMachineId, Long zoneId) {
         super();
         this.accountName = accountName;
@@ -130,4 +131,5 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         this.virtualMachineId = virtualMachineId;
         this.zoneId = zoneId;
     }
+    */
 }
