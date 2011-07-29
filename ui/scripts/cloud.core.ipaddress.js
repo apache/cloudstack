@@ -648,7 +648,9 @@ function ipToRightPanel($midmenuItem1) {
     
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
     
-    if(!(g_supportELB == "guest" || g_supportELB == "public"))
+    if(g_supportELB == "guest" || g_supportELB == "public")
+    	$("#tab_load_balancer").click();
+    else
         $("#tab_details").click();        
    
     if(ipObj.isstaticnat == true) {
