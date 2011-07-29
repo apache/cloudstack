@@ -161,7 +161,19 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     public class WorkerThread implements Runnable {
         @Override
         public void run() {
-            work();
+            try {
+                Transaction txn = Transaction.open("SG Work");
+                try {
+                    work();
+                } finally {
+                    txn.close("SG Work");
+                }
+            } catch (Throwable th) {
+                try {
+                    s_logger.error("Problem with SG work", th);
+                } catch (Throwable th2) {
+                }
+            }
         }
 
         WorkerThread() {
@@ -172,8 +184,20 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     public class CleanupThread implements Runnable {
         @Override
         public void run() {
-            cleanupFinishedWork();
-            cleanupUnfinishedWork();
+            try {
+                Transaction txn = Transaction.open("SG Cleanup");
+                try {
+                    cleanupFinishedWork();
+                    cleanupUnfinishedWork();
+                } finally {
+                    txn.close("SG Cleanup");
+                }
+            } catch (Throwable th) {
+                try {
+                    s_logger.error("Problem with SG Cleanup", th);
+                } catch (Throwable th2) {
+                }
+            }
         }
 
         CleanupThread() {
@@ -739,7 +763,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        
+
         Map<String, String> configs = _configDao.getConfiguration("Network", params);
         _numWorkerThreads = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads.key()), WORKER_THREAD_COUNT);
         _timeBetweenCleanups = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkCleanupInterval.key()), TIME_BETWEEN_CLEANUPS);
@@ -750,7 +774,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         _answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
         _agentMgr.registerForHostEvents(_answerListener, true, true, true);
 
-        
+
         _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
         _executorPool = Executors.newScheduledThreadPool(_numWorkerThreads, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
@@ -799,7 +823,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long userVmId = work.getInstanceId();
         UserVm vm = null;
         Long seqnum = null;
-        s_logger.info("Working on " + work.toString());
+        s_logger.debug("Working on " + work);
         final Transaction txn = Transaction.currentTxn();
         txn.start();
         try {
@@ -839,15 +863,14 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             }
             txn.commit();
         }
-
     }
 
     @Override
     @DB
     public boolean addInstanceToGroups(final Long userVmId, final List<Long> groups) {
         if (!isVmSecurityGroupEnabled(userVmId)) {
-           s_logger.warn("User vm " + userVmId + " is not security group enabled, can't add it to security group");
-           return false;
+            s_logger.warn("User vm " + userVmId + " is not security group enabled, can't add it to security group");
+            return false;
         }
         if (groups != null && !groups.isEmpty()) {
 
@@ -899,7 +922,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         final Transaction txn = Transaction.currentTxn();
         txn.start();
         UserVm userVm = _userVMDao.acquireInLockTable(userVmId); // ensures that duplicate entries are not created in
-                                                                 // addInstance
+        // addInstance
         if (userVm == null) {
             s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
         }
@@ -1179,17 +1202,17 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
         return false;
     }
-    
+
     @Override
     public SecurityGroupVO getDefaultSecurityGroup(long accountId) {
         return _securityGroupDao.findByAccountAndName(accountId, DEFAULT_GROUP_NAME);
     }
-    
+
     @Override
     public SecurityGroup getSecurityGroup(String name, long accountId) {
         return _securityGroupDao.findByAccountAndName(accountId, name);
     }
-    
+
     @Override
     public boolean isVmMappedToDefaultSecurityGroup(long vmId) {
         UserVmVO vm = _userVmMgr.getVirtualMachine(vmId);
