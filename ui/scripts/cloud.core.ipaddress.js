@@ -565,26 +565,63 @@ function afterLoadIpJSP() {
         array1.push("&publicport="+publicPort);
         array1.push("&privateport="+privatePort);
         array1.push("&algorithm="+algorithm);
-       
+               
         $.ajax({
 	        data: createURL("command=createLoadBalancerRule"+array1.join("")),
 			dataType: "json",
-			success: function(json) {	
-				var item = json.createloadbalancerruleresponse.loadbalancer;				
-	            loadBalancerJsonToTemplate(item, $template);
-	            $spinningWheel.hide();   
-	            refreshCreateLoadBalancerRow();	            	
+			success: function(json) {			        	    
+	        	var jobId = json.createloadbalancerruleresponse.jobid;				        
+		        var timerKey = "addLbJob_"+jobId;
+					    
+		        $("body").everyTime(2000, timerKey, function() {
+				    $.ajax({
+					    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+					    dataType: "json",
+					    success: function(json) {										       						   
+						    var result = json.queryasyncjobresultresponse;
+						    if (result.jobstatus == 0) {
+							    return; //Job has not completed
+						    } else {											    
+							    $("body").stopTime(timerKey);										    
+							    if (result.jobstatus == 1) {
+								    // Succeeded	
+							    	var item = result.jobresult.loadbalancer;								    				
+						            loadBalancerJsonToTemplate(item, $template);
+						            $spinningWheel.hide();   
+						            refreshCreateLoadBalancerRow();
+							    } else if (result.jobstatus == 2) {
+							    	$template.slideUp("slow", function() {
+										$(this).remove();
+									});
+									var errorMsg = fromdb(result.jobresult.errortext);				
+						            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+							    }
+						    }
+					    },
+					    error: function(XMLHttpResponse) {
+						    $("body").stopTime(timerKey);
+							handleError(XMLHttpResponse, function() {	
+								$template.slideUp("slow", function() {
+									$(this).remove();
+								});
+								var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+					            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");								
+							});
+					    }
+				    });
+			    }, 0);		
 			},
-		    error: function(XMLHttpResponse) {				    
-			    handleError(XMLHttpResponse, function() {
+			error: function(XMLHttpResponse) {
+				handleError(XMLHttpResponse, function() {					
 					$template.slideUp("slow", function() {
 						$(this).remove();
 					});
 					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
-		            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+		            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");					
 				});
-		    }			
-		});  	    
+		    }
+		});  
+       
 	    return false;
 	});
 	//*** Load Balancer tab (end) ***
