@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -104,7 +105,9 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
@@ -114,7 +117,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 
 @Local(value = { ElasticLoadBalancerManager.class })
 public class ElasticLoadBalancerManagerImpl implements
-        ElasticLoadBalancerManager, Manager {
+        ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger
             .getLogger(ElasticLoadBalancerManagerImpl.class);
     
@@ -369,6 +372,8 @@ public class ElasticLoadBalancerManagerImpl implements
                 throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
             _gcThreadPool = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ELBVM-GC"));
             _gcThreadPool.scheduleAtFixedRate(new CleanupThread(), 30, 30, TimeUnit.SECONDS);
+            _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
+
         }
         
 
@@ -682,5 +687,74 @@ public class ElasticLoadBalancerManagerImpl implements
         CleanupThread() {
 
         }
+    }
+
+    @Override
+    public DomainRouterVO findByName(String name) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+    @Override
+    public DomainRouterVO findById(long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+    @Override
+    public DomainRouterVO persist(DomainRouterVO vm) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+    @Override
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, StopAnswer answer) {
+        // TODO Auto-generated method stub
+        
+    }
+
+
+    @Override
+    public void finalizeExpunge(DomainRouterVO vm) {
+        // TODO Auto-generated method stub
+        
+    }
+
+
+    @Override
+    public Long convertToId(String vmName) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

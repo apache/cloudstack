@@ -396,6 +396,24 @@ setup_console_proxy() {
   chkconfig nfs-common off
 }
 
+setup_elbvm() {
+  log_it "Setting up Elastic Load Balancer system vm"
+  local hyp=$1
+  setup_common eth0 eth1 eth2
+  sed -i  /gateway/d /etc/hosts
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH0_IP
+  echo "$public_ip $NAME" >> /etc/hosts
+
+  setup_sshd $ETH0_IP
+  
+  enable_fwding 0
+  enable_svc haproxy 0
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 0
+}
+
 setup_default() {
   cat > /etc/network/interfaces << EOF
 auto lo eth0
@@ -429,6 +447,10 @@ start() {
      consoleproxy)
          [ "$NAME" == "" ] && NAME=consoleproxy
          setup_console_proxy $hyp;
+	  ;;
+     elbvm)
+         [ "$NAME" == "" ] && NAME=elb
+         setup_elbvm
 	  ;;
      unknown)
          [ "$NAME" == "" ] && NAME=systemvm

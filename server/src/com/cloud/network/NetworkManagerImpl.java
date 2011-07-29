@@ -752,7 +752,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, true, false, null, null,
                 null, true, Availability.Required,
                 // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct);
+                true, true, true, false, false, true, false, GuestIpType.Direct);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
 
