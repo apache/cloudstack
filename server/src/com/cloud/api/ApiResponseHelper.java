@@ -1211,6 +1211,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         return vmResponse;
     }
 
+	@Override
+	public Host findHostById(Long hostId) {
+		return ApiDBUtils.findHostById(hostId);
+	}
+	
     @Override
     public User findUserById(Long userId) {
         return ApiDBUtils.findUserById(userId);
@@ -1621,7 +1626,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
-        Long zoneId = null;
         VolumeVO volume = null;
         if (snapshotId != null) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
@@ -1630,6 +1634,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             volume = findVolumeById(volumeId);
         }
         return createTemplateResponses(templateId, volume.getDataCenterId(), readyOnly);
+    }
+    
+    @Override
+    public List<TemplateResponse> createTemplateResponses(long templateId, Long vmId) {
+    	UserVm vm = findUserVmById(vmId);
+    	Long hostId = (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId());
+    	Host host = findHostById(hostId);
+    	return createTemplateResponses(templateId, host.getDataCenterId(), true);
     }
 
     @Override

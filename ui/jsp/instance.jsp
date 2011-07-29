@@ -1448,15 +1448,7 @@ dictionary = {
                     <option value="false"><fmt:message key="label.no" /></option>
                     <option value="true"><fmt:message key="label.yes" /></option>
                 </select>
-            </li>
-            <li>
-                <label>
-                    <fmt:message key="label.password.enabled" />:</label>
-                <select class="select" name="create_template_password" id="create_template_password">
-                    <option value="false"><fmt:message key="label.no" /></option>
-                    <option value="true"><fmt:message key="label.yes" /></option>
-                </select>
-            </li>            
+            </li>                 
             <li id="image_directory_container">
                 <label>
                     <fmt:message key="image.directory" />:</label>
