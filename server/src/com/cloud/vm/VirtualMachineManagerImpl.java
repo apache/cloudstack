@@ -720,8 +720,16 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
                     _agentMgr.send(destHostId, cmds);
                     _workDao.updateStep(work, Step.Started);
-                    Answer startAnswer = cmds.getAnswer(StartAnswer.class);
+                    StartAnswer startAnswer = cmds.getAnswer(StartAnswer.class);
                     if (startAnswer != null && startAnswer.getResult()) {
+                        String host_guid = startAnswer.getHost_guid();
+                        if( host_guid != null ) {
+                            HostVO finalHost = _hostDao.findByGuid(host_guid);
+                            if ( finalHost == null ) {
+                                throw new CloudRuntimeException("Host Guid " + host_guid + " doesn't exist in DB, something wrong here");
+                            }
+                            destHostId = finalHost.getId();
+                        }
                         if (vmGuru.finalizeStart(vmProfile, destHostId, cmds, ctx)) {
                             if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
                                 throw new ConcurrentOperationException("Unable to transition to a new state.");

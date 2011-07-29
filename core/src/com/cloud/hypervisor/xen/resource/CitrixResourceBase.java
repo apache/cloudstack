@@ -1022,13 +1022,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         State state = State.Stopped;
         VM vm = null;
         try {
-            
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if ( vms != null ) {
                 for ( VM v : vms ) {
                     VM.Record vRec = v.getRecord(conn);
                     if ( vRec.powerState == VmPowerState.HALTED ) {
                         v.destroy(conn);
+                    } else if ( vRec.powerState == VmPowerState.RUNNING ) {
+                        String host = vRec.residentOn.getUuid(conn);
+                        String msg = "VM " + vmName + " is runing on host " + host;
+                        s_logger.debug(msg);
+                        return new StartAnswer(cmd, msg, host);
                     } else {
                         String msg = "There is already a VM having the same name " + vmName + " vm record " +  vRec.toString();
                         s_logger.warn(msg);

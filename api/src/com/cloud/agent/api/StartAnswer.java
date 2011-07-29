@@ -25,6 +25,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class StartAnswer extends Answer {
     VirtualMachineTO vm;
+    String host_guid;
     
     protected StartAnswer() {
     }
@@ -42,9 +43,20 @@ public class StartAnswer extends Answer {
     public StartAnswer(StartCommand cmd) {
         super(cmd, true, null);
         this.vm  = cmd.getVirtualMachine();
+        this.host_guid = null;
+    }
+
+    public StartAnswer(StartCommand cmd, String msg, String guid) {
+        super(cmd, true, msg);
+        this.vm  = cmd.getVirtualMachine();
+        this.host_guid = guid;
     }
     
     public VirtualMachineTO getVirtualMachine() {
         return vm;
+    }
+
+    public String getHost_guid() {
+        return host_guid;
     }
 }
