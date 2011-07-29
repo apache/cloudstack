@@ -88,12 +88,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	HostVO findByStorageIpAddressInDataCenter(long dcId, String privateIpAddress);
     HostVO findByPrivateIpAddressInDataCenter(long dcId, String privateIpAddress);
 
-	/**
-	 * find a host by its mac address
-	 * @param macAddress
-	 * @return HostVO or null if not found.
-	 */
-	public HostVO findByGuid(String macAddress);
+	public HostVO findByGuid(String guid);
 
 	public HostVO findByName(String name);
 
