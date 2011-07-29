@@ -74,12 +74,10 @@ function afterLoadIpJSP() {
     //***** switch between different tabs (end) **********************************************************************
         
     if(g_supportELB == "guest" || g_supportELB == "public") {
-		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_vpn").hide();	
-		$("#tab_load_balancer").show();	
-		
+		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
+				
 		$("#tab_content_details").hide();
-		$("#tab_content_load_balancer").show();
-		
+				
 		$("#acquire_new_ip_button").hide();
 		$("#add_load_balancer_and_ip_button").show();
 		
@@ -895,7 +893,7 @@ function ipJsonToLoadBalancerTab() {
     var $thisTab = $("#right_panel_content #tab_content_load_balancer");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-	
+    
 	var networkObj = $midmenuItem1.data("networkObj");   	
     if(networkObj != null) {		
 	    var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);
@@ -1928,10 +1926,19 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 								} else {
 									$("body").stopTime(timerKey);
 									$spinningWheel.hide();   
-									if (result.jobstatus == 1) { // Succeeded												
+									if (result.jobstatus == 1) { // Succeeded	
+										var total_lbrules = $("#tab_content_load_balancer").find("#grid_content").find(".grid_rows").length;
 										$template.slideUp("slow", function() {
-											$(this).remove();													
-										});
+											$(this).remove();	
+											
+											var count_lb = $("div[id*='loadBalancer_']").length;											
+											if(count_lb == 0) {
+												var params = $("#middle_menu_pagination").data("params");
+										        if(params == null)
+										            return;	 										          	    
+										        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+											}
+										});	
 									} else if (result.jobstatus == 2) { // Failed										
 										var errorMsg = g_dictionary["label.deleting.failed"] + " - " + fromdb(result.jobresult.errortext);	
 										$("#dialog_error").text(errorMsg).dialog("open");
