@@ -1309,14 +1309,30 @@ function ipJsonToDetailsTab() {
     
     var networkObj = $midmenuItem1.data("networkObj");
     
-    var id = ipObj.id;   
+    var publicipid = ipObj.id;   
         
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-         
+    
+    
+    var cmd;
+	if(g_supportELB == "guest") {
+		cmd = "command=listPublicIpAddresses&forvirtualnetwork=false&id="+publicipid;
+	}
+	else if(g_supportELB == "public") {
+		cmd = "command=listPublicIpAddresses&forvirtualnetwork=true&id="+publicipid;
+	}
+	else {
+		if(g_supportELB == null)
+	        alert("supportELB should be either guest or public. It should not be null.");
+	    else 
+	    	alert("supportELB should be either guest or public. It should not be " + g_supportELB);
+		return;
+	}		
+    
     $.ajax({
-        data: createURL("command=listPublicIpAddresses&id="+id),
+        data: createURL(cmd),
         dataType: "json",
         async: false,
         success: function(json) {  
