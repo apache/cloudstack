@@ -23,7 +23,10 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.ha.HaWorkVO;
+import com.cloud.ha.dao.HighAvailabilityDaoImpl;
 import com.cloud.network.security.SecurityGroupWorkVO;
 import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.utils.db.DB;
@@ -37,6 +40,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={SecurityGroupWorkDao.class})
 public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO, Long> implements SecurityGroupWorkDao {
+    private static final Logger s_logger = Logger.getLogger(SecurityGroupWorkDaoImpl.class);
+
     private SearchBuilder<SecurityGroupWorkVO> VmIdTakenSearch;
     private SearchBuilder<SecurityGroupWorkVO> VmIdSeqNumSearch;
     private SearchBuilder<SecurityGroupWorkVO> VmIdUnTakenSearch;
@@ -101,22 +106,27 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             final SearchCriteria<SecurityGroupWorkVO> sc = UntakenWorkSearch.create();
             sc.setParameters("step", Step.Scheduled);
 
-            final Filter filter = new Filter(SecurityGroupWorkVO.class, null, true, 0l, 1l);//FIXME: order desc by update time?
-
             txn.start();
-            final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
-            if (vos.size() == 0) {
+            final  SecurityGroupWorkVO vo = this.lockOneRandomRow(sc, true);
+            if (vo == null) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("No security group work items found");
+                }
+                txn.commit();
                 return null;
             }
             SecurityGroupWorkVO work = null;
-            for (SecurityGroupWorkVO w: vos) {       
-            	//ensure that there is no job in Processing state for the same VM
-            	if ( findByVmIdStep(w.getInstanceId(), Step.Processing) == null) {
-            		work = w;
-            		break;
-            	}
+
+            //ensure that there is no job in Processing state for the same VM
+            if ( findByVmIdStep(vo.getInstanceId(), Step.Processing) == null) {
+                work = vo;
             }
+            
             if (work == null) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Found a security group work item in Scheduled and Processing, exiting vm="+vo.getInstanceId());
+                }
+                txn.commit();
             	return null;
             }
             work.setServerId(serverId);
@@ -204,6 +214,13 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 		
 		return result;
 	}
+
+    @Override
+    public List<SecurityGroupWorkVO> findScheduledWork() {
+        final SearchCriteria<SecurityGroupWorkVO> sc = UntakenWorkSearch.create();
+        sc.setParameters("step", Step.Scheduled);
+        return listIncludingRemovedBy(sc);
+    }
 
     
 }

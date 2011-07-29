@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -189,6 +190,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 try {
                     cleanupFinishedWork();
                     cleanupUnfinishedWork();
+                    processScheduledWork();
                 } finally {
                     txn.close("SG Cleanup");
                 }
@@ -362,9 +364,15 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (delayMs == null) {
             delayMs = new Long(100l);
         }
+        
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
+        }
 
         for (Long vmId : affectedVms) {
-
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + vmId);
+            }
             VmRulesetLogVO log = null;
             SecurityGroupWorkVO work = null;
             UserVm vm = null;
@@ -392,6 +400,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 if (work == null) {
                     work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWorkVO.Step.Scheduled, null);
                     work = _workDao.persist(work);
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("Security Group Mgr: created new work item for " + vmId);
+                    }
                 }
 
                 work.setLogsequenceNumber(log.getLogsequence());
@@ -1102,7 +1113,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     public void cleanupFinishedWork() {
-        Date before = new Date(System.currentTimeMillis() - 24 * 3600 * 1000l);
+        Date before = new Date(System.currentTimeMillis() - 6 * 3600 * 1000l);
         int numDeleted = _workDao.deleteFinishedWork(before);
         if (numDeleted > 0) {
             s_logger.info("Network Group Work cleanup deleted " + numDeleted + " finished work items older than " + before.toString());
@@ -1111,7 +1122,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     private void cleanupUnfinishedWork() {
-        Date before = new Date(System.currentTimeMillis() - _timeBetweenCleanups* 1000l);
+        Date before = new Date(System.currentTimeMillis() - _timeBetweenCleanups);
         List<SecurityGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
         if (unfinished.size() > 0) {
             s_logger.info("Network Group Work cleanup found " + unfinished.size() + " unfinished work items older than " + before.toString());
@@ -1123,6 +1134,20 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         } else {
             s_logger.debug("Network Group Work cleanup found no unfinished work items older than " + before.toString());
         }
+    }
+    
+    private void processScheduledWork() {
+        List<SecurityGroupWorkVO> scheduled = _workDao.findScheduledWork();
+        int numJobs = scheduled.size();
+        if (numJobs > 0) {
+            s_logger.debug("Security group work: found scheduled jobs " + numJobs);
+            Random rand = new Random();
+            for (int i=0; i < numJobs; i++) {
+                long delayMs = 100 + 10*rand.nextInt(numJobs);
+                _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
+            }
+        }
+ 
     }
 
     @Override
@@ -1181,10 +1206,19 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
+            }
             handleVmStarted((VMInstanceVO) vm);
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
+            }
             handleVmStopped((VMInstanceVO) vm);
         } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
+            }
             handleVmMigrated((VMInstanceVO) vm);
         }
 
