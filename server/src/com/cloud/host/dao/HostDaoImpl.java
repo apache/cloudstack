@@ -89,7 +89,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> SequenceSearch;
     protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
-    protected final SearchBuilder<HostVO> UnmanagedExternalNetworkApplianceSearch;
+    protected final SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterSearch;
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
@@ -99,6 +99,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> ManagedDirectConnectSearch;
     protected final SearchBuilder<HostVO> ManagedRoutingServersSearch;
     protected final SearchBuilder<HostVO> SecondaryStorageVMSearch;
+    
 
     protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
     protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
@@ -255,12 +256,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         DirectConnectSearch.cp();
         DirectConnectSearch.done();
 
-        UnmanagedExternalNetworkApplianceSearch = createSearchBuilder();
-        UnmanagedExternalNetworkApplianceSearch.and("resource", UnmanagedExternalNetworkApplianceSearch.entity().getResource(), SearchCriteria.Op.NNULL);
-        UnmanagedExternalNetworkApplianceSearch.and("server", UnmanagedExternalNetworkApplianceSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
-        UnmanagedExternalNetworkApplianceSearch.and("types", UnmanagedExternalNetworkApplianceSearch.entity().getType(), SearchCriteria.Op.IN);
-        UnmanagedExternalNetworkApplianceSearch.and("lastPinged", UnmanagedExternalNetworkApplianceSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
-        UnmanagedExternalNetworkApplianceSearch.done();
+        UnmanagedApplianceSearch = createSearchBuilder();
+        UnmanagedApplianceSearch.and("resource", UnmanagedApplianceSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        UnmanagedApplianceSearch.and("server", UnmanagedApplianceSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
+        UnmanagedApplianceSearch.and("types", UnmanagedApplianceSearch.entity().getType(), SearchCriteria.Op.IN);
+        UnmanagedApplianceSearch.and("lastPinged", UnmanagedApplianceSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
+        UnmanagedApplianceSearch.done();
 
         AvailHypevisorInZone = createSearchBuilder();
         AvailHypevisorInZone.and("zoneId", AvailHypevisorInZone.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -397,6 +398,26 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         txn.commit();
         
         return hosts;
+    }
+    
+    @Override @DB
+    public List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId) {
+    	Transaction txn = Transaction.currentTxn();
+    	
+    	txn.start();
+    	SearchCriteria<HostVO> sc = UnmanagedApplianceSearch.create();
+    	sc.setParameters("lastPinged", lastPingSecondsAfter);
+    	sc.setParameters("types", Type.ExternalDhcp, Type.ExternalFirewall, Type.ExternalLoadBalancer, Type.PxeServer);
+    	List<HostVO> hosts = lockRows(sc, null, true);
+    	
+    	for (HostVO host : hosts) {
+    		host.setManagementServerId(managementServerId);
+    		update(host.getId(), host);
+    	}
+    	
+    	txn.commit();
+    	
+    	return hosts;
     }
 
     @Override

@@ -159,6 +159,8 @@ public interface ResponseGenerator {
     Account findAccountByNameDomain(String accountName, Long domainId);
 
     VirtualMachineTemplate findTemplateById(Long templateId);
+    
+    Host findHostById(Long hostId);
 
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
@@ -203,5 +205,7 @@ public interface ResponseGenerator {
     List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
     ProjectResponse createProjectResponse(Project project);
     List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
+
+	List<TemplateResponse> createTemplateResponses(long templateId, Long vmId);
 
 }

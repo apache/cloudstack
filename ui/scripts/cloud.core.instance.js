@@ -2549,10 +2549,7 @@ function doCreateTemplateFromVM($actionLink, $detailsTab, $midmenuItem1) {
 			
 			var isPublic = $thisDialog.find("#create_template_public").val();
 			array1.push("&isPublic="+isPublic);
-			
-            var password = $thisDialog.find("#create_template_password").val();		
-            array1.push("&passwordEnabled="+password);
-			
+			           
             var imageDirectory = $thisDialog.find("#image_directory").val();
 	        array1.push("&url="+todb(imageDirectory));
 			

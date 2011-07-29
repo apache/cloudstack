@@ -187,29 +187,46 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         return AsyncJob.Type.Template;
     }
 
+    private boolean isBareMetal() {
+    	return (this.getVmId() != null && this.getUrl() != null);
+    }
+    
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualMachineTemplate template = null;
-        template = _userVmService.createPrivateTemplateRecord(this);
+		if (isBareMetal()) {
+			_bareMetalVmService.createPrivateTemplateRecord(this);
+			/*Baremetal creates template record after taking image proceeded, use vmId as entity id here*/
+			this.setEntityId(vmId);
+		} else {
+			VirtualMachineTemplate template = null;
+			template = _userVmService.createPrivateTemplateRecord(this);
 
-        if (template != null) {
-            this.setEntityId(template.getId());
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a template");
-        }
+			if (template != null) {
+				this.setEntityId(template.getId());
+			} else {
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR,
+						"Failed to create a template");
+			}
+		}
     }
 
     @Override
     public void execute() {
         UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = null;
-        if (vmId != null && url != null) {
+        if (isBareMetal()) {
             template = _bareMetalVmService.createPrivateTemplate(this);
         } else {
             template = _userVmService.createPrivateTemplate(this);
         }
+        
         if (template != null){
-            List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
+            List<TemplateResponse> templateResponses;
+            if (isBareMetal()) {
+            	templateResponses = _responseGenerator.createTemplateResponses(template.getId(), vmId);
+            } else {
+            	templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
+            }
             TemplateResponse response = new TemplateResponse();
             if (templateResponses != null && !templateResponses.isEmpty()) {
                 response = templateResponses.get(0);

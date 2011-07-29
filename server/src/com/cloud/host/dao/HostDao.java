@@ -186,4 +186,6 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     List<HostVO> listSecondaryStorageVM(long dcId);
     
     List<HostVO> listAllRoutingAgents();
+
+	List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 }
