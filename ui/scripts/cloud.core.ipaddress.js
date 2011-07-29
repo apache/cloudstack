@@ -74,8 +74,12 @@ function afterLoadIpJSP() {
     //***** switch between different tabs (end) **********************************************************************
         
     if(g_supportELB == "guest" || g_supportELB == "public") {
-		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
+		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_vpn").hide();	
+		$("#tab_load_balancer").show();	
+		
 		$("#tab_content_details").hide();
+		$("#tab_content_load_balancer").show();
+		
 		$("#acquire_new_ip_button").hide();
 		$("#add_load_balancer_and_ip_button").show();
 		
@@ -205,7 +209,9 @@ function afterLoadIpJSP() {
 			return false;
 		});		
 	}
-    else {
+    else { 
+    	$("#tab_details,#tab_content_details").show();
+    	
 	    //dialogs
 	    initDialog("dialog_acquire_public_ip", 325);
 		initDialog("dialog_enable_vpn");
@@ -641,7 +647,9 @@ function ipToRightPanel($midmenuItem1) {
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-    $("#tab_details").click();        
+    
+    if(!(g_supportELB == "guest" || g_supportELB == "public"))
+        $("#tab_details").click();        
    
     if(ipObj.isstaticnat == true) {
         $("#tab_port_range").show();	
