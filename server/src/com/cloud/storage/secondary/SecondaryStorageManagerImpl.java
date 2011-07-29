@@ -1090,6 +1090,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     @Override
     public void finalizeExpunge(SecondaryStorageVmVO vm) {
+        vm.setPublicIpAddress(null);
+        vm.setPublicMacAddress(null);
+        vm.setPublicNetmask(null);
+        _secStorageVmDao.update(vm.getId(), vm);
     }
 
     @Override
