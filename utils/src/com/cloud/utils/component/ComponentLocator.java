@@ -87,6 +87,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected static final HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
     protected static Boolean s_once = false;
+    protected static Boolean _hasCheckerRun = false;
     protected static Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback()};
     protected static CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final List<AnnotationInterceptor<?>> s_interceptors = new ArrayList<AnnotationInterceptor<?>>();
@@ -362,6 +363,14 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     public static synchronized Object getComponent(String componentName) {
+    	synchronized(_hasCheckerRun) {
+    		/* System Integrity checker will run before all components really loaded */
+	    	if (!_hasCheckerRun && !componentName.equalsIgnoreCase(SystemIntegrityChecker.Name)) {
+	    	    ComponentLocator.getComponent(SystemIntegrityChecker.Name);
+	    	    _hasCheckerRun = true;
+	    	}
+    	}
+    	
         ComponentLocator locator = s_locators.get(componentName);
         if (locator == null) {
             locator = ComponentLocator.getLocator(componentName);
