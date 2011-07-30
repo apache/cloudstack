@@ -1582,10 +1582,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     // Specify RAW format makes it unusable for snapshots.
                     privateTemplate.setFormat(ImageFormat.RAW);
                 }
-                Transaction txn = Transaction.currentTxn();
+                
                 String checkSum = getChecksum(secondaryStorageHost.getId(), answer.getPath());
+                
+                Transaction txn = Transaction.currentTxn();
 
                 txn.start();
+
                 privateTemplate.setChecksum(checkSum);
                 _templateDao.update(templateId, privateTemplate);
 

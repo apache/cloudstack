@@ -3473,22 +3473,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     
     /*online snapshot supported by enhanced qemu-kvm*/
     private boolean isSnapshotSupported() {
-    	File f =new File("/usr/bin/cloud-qemu-system-x86_64");
-    	if (f.exists()) {
-    		return true;
-    	} 
-
-    	f = new File("/usr/libexec/cloud-qemu-kvm");
-    	if (f.exists()) {
-    		return true;
+    	String result = executeBashScript("qemu-img --help|grep convert |grep snapshot");
+    	if (result != null) {
+    	    return false;
+    	} else {
+    	    return true;
     	}
-    	
-    	f = new File("/usr/bin/cloud-qemu-img");
-    	if (f.exists()) {
-    		return true;
-    	}
-
-    	return false;
     }
     
     private Pair<Double, Double> getNicStats(String nicName) {
