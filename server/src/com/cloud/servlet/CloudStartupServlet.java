@@ -43,8 +43,6 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
     
 	@Override
     public void init() throws ServletException {
-	    /* System Integrity checker will run before all components really loaded */
-	    ComponentLocator.getComponent(SystemIntegrityChecker.Name);
 	    // Save Configuration Values
         //ComponentLocator loc = ComponentLocator.getLocator(ConfigurationServer.Name);
 	    ConfigurationServer c = (ConfigurationServer)ComponentLocator.getComponent(ConfigurationServer.Name);
