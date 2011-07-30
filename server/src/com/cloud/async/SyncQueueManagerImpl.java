@@ -198,6 +198,32 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     }
     
     @Override
+    @DB
+    public void returnItem(long queueItemId) {
+    	Transaction txt = Transaction.currentTxn();
+    	try {
+    		txt.start();
+    		
+			SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
+			if(itemVO != null) {
+				SyncQueueVO queueVO = _syncQueueDao.lockRow(itemVO.getQueueId(), true);
+			
+				itemVO.setLastProcessMsid(null);
+				itemVO.setLastProcessNumber(null);
+				_syncQueueItemDao.update(queueItemId, itemVO);
+				
+				queueVO.setLastProcessTime(null);
+				queueVO.setLastUpdated(DateUtil.currentGMTTime());
+				_syncQueueDao.update(queueVO.getId(), queueVO);
+			}
+    		txt.commit();
+    	} catch(Exception e) {
+    		s_logger.error("Unexpected exception: ", e);
+    		txt.rollback();
+    	}
+    }
+    
+    @Override
 	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive) {
     	return _syncQueueItemDao.getActiveQueueItems(msid, exclusive);
     }
