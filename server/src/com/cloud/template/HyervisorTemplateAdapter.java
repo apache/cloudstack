@@ -107,7 +107,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	public VMTemplateVO create(TemplateProfile profile) {
 		VMTemplateVO template = persistTemplate(profile);
 		
-		_downloadMonitor.downloadTemplateToStorage(profile.getTemplateId(), profile.getZoneId());
+		_downloadMonitor.downloadTemplateToStorage(template, profile.getZoneId());
 		_accountMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 		
         return template;

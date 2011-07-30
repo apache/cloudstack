@@ -34,7 +34,7 @@ import com.cloud.utils.component.Manager;
  */
 public interface DownloadMonitor extends Manager{
 	
-	public boolean downloadTemplateToStorage(Long templateId, Long zoneId);
+	public boolean downloadTemplateToStorage(VMTemplateVO template, Long zoneId);
 	
 	public void cancelAllDownloads(Long templateId);
 

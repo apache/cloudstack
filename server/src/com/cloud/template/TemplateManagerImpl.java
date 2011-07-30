@@ -706,28 +706,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
 
 	@Override
-	public Long createInZone(long zoneId, long userId, String displayText,
-			boolean isPublic, boolean featured, boolean isExtractable, ImageFormat format,
-			TemplateType type, URI url, String chksum, boolean requiresHvm,
-			int bits, boolean enablePassword, long guestOSId, boolean bootable) {
-		Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-
-		UserVO user = _userDao.findById(userId);
-		long accountId = user.getAccountId();
-
-		VMTemplateVO template = new VMTemplateVO(id, displayText, format, isPublic, featured, isExtractable, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, null);
-
-		Long templateId = _tmpltDao.addTemplateToZone(template, zoneId);
-		UserAccount userAccount = _userAccountDao.findById(userId);
-
-		_downloadMonitor.downloadTemplateToStorage(id, zoneId);
-
-		_accountMgr.incrementResourceCount(userAccount.getAccountId(), ResourceType.template);
-
-		return templateId;
-	}
-	
-	@Override
     public boolean templateIsDeleteable(VMTemplateHostVO templateHostRef) {
 		VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templateHostRef.getTemplateId());
 		long templateId = template.getId();
