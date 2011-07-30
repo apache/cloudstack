@@ -256,7 +256,10 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
                 self.syscfg.svo.stopService("NetworkManager")
                 self.syscfg.svo.disableService("NetworkManager")
 
-         
+            cfo = configFileOps("/etc/sysconfig/network", self)
+            cfo.addEntry("NOZEROCONF", "yes")
+            cfo.save()
+
             if not bash("service network restart").isSuccess():
                 raise CloudInternalException("Can't restart network")
             

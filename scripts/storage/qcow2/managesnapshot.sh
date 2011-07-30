@@ -32,6 +32,17 @@ usage() {
   exit 2
 }
 
+qemu_img="cloud-qemu-img"
+which $qemu_img
+if [ $? -gt 0 ]
+then
+   which qemu-img
+   if [ $? -eq 0 ]
+   then
+       qemu_img="qemu-img"
+   fi
+fi
+
 create_snapshot() {
   local disk=$1
   local snapshotname=$2
@@ -44,13 +55,13 @@ create_snapshot() {
      return $failed
   fi
 
-  cloud-qemu-img snapshot -c $snapshotname $disk
+  $qemu_img snapshot -c $snapshotname $disk
   
   if [ $? -gt 0 ]
   then
     failed=2
     printf "***Failed to create snapshot $snapshotname for path $disk\n" >&2
-    cloud-qemu-img snapshot -d $snapshotname $disk
+    $qemu_img snapshot -d $snapshotname $disk
     
     if [ $? -gt 0 ]
     then
@@ -83,7 +94,7 @@ destroy_snapshot() {
      return $failed
   fi
 
-  cloud-qemu-img snapshot -d $snapshotname $disk
+  $qemu_img snapshot -d $snapshotname $disk
   if [ $? -gt 0 ]
   then
      failed=2
@@ -98,7 +109,7 @@ rollback_snapshot() {
   local snapshotname=$2
   local failed=0
 
-  qemu-img snapshot -a $snapshotname $disk
+  $qemu_img snapshot -a $snapshotname $disk
   
   if [ $? -gt 0 ]
   then
@@ -125,14 +136,14 @@ backup_snapshot() {
   fi
 
   # Does the snapshot exist? 
-  cloud-qemu-img snapshot -l $disk|grep -w "$snapshotname" >& /dev/null
+  $qemu_img snapshot -l $disk|grep -w "$snapshotname" >& /dev/null
   if [ $? -gt 0 ]
   then
     printf "there is no $snapshotname on disk $disk" >&2
     return 1
   fi
 
-  cloud-qemu-img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
+  $qemu_img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
   if [ $? -gt 0 ]
   then
     printf "Failed to backup $snapshotname for disk $disk to $destPath" >&2

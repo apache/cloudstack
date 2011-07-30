@@ -29,6 +29,16 @@ usage() {
 
 
 #set -x
+qemu_img="cloud-qemu-img"
+which $qemu_img
+if [ $? -gt 0 ]
+then
+   which qemu-img
+   if [ $? -eq 0 ]
+   then
+       qemu_img="qemu-img"
+   fi
+fi
 
 
 verify_cksum() {
@@ -108,7 +118,7 @@ create_from_snapshot() {
   local tmpltfs=$3
   local tmpltname=$4
 
-  cloud-qemu-img convert -f qcow2 -O qcow2 -s $snapshotName $tmpltImg /$tmpltfs/$tmpltname >& /dev/null
+  $qemu_img convert -f qcow2 -O qcow2 -s $snapshotName $tmpltImg /$tmpltfs/$tmpltname >& /dev/null
   if [ $? -gt 0 ]
   then
      printf "Failed to create template /$tmplfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
