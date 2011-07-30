@@ -190,7 +190,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 try {
                     cleanupFinishedWork();
                     cleanupUnfinishedWork();
-                    processScheduledWork();
+                    //processScheduledWork();
                 } finally {
                     txn.close("SG Cleanup");
                 }
@@ -829,9 +829,20 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
         final SecurityGroupWorkVO work = _workDao.take(_serverId);
         if (work == null) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group work: no work found");
+            }
             return;
         }
         Long userVmId = work.getInstanceId();
+        if (work.getStep() == Step.Done) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Security Group work: found a job in done state, rescheduling for vm: " + userVmId);
+            }
+            Set<Long> affectedVms = new HashSet<Long>();
+            affectedVms.add(userVmId);
+            scheduleRulesetUpdateToHosts(affectedVms, true, _timeBetweenCleanups*1000l);
+        }
         UserVm vm = null;
         Long seqnum = null;
         s_logger.debug("Working on " + work);
