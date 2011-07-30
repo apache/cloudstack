@@ -61,5 +61,6 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
     void deleteByHost(Long hostId);
 
     VMTemplateHostVO findLocalSecondaryStorageByHostTemplate(long hostId, long templateId);
-	
+
+    List<VMTemplateHostVO> listByTemplateHostStatus(long templateId, long hostId, Status... states);
 }

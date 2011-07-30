@@ -53,6 +53,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	protected final SearchBuilder<VMTemplateHostVO> HostSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateSearch;
 	protected final SearchBuilder<VMTemplateHostVO> HostTemplateSearch;
+	protected final SearchBuilder<VMTemplateHostVO> HostTemplateStateSearch;
 	protected final SearchBuilder<VMTemplateHostVO> HostDestroyedSearch;
 	protected final SearchBuilder<VMTemplateHostVO> PoolTemplateSearch;
 	protected final SearchBuilder<VMTemplateHostVO> HostTemplatePoolSearch;
@@ -111,18 +112,24 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		TemplateStatusSearch = createSearchBuilder();
 		TemplateStatusSearch.and("template_id", TemplateStatusSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
 		TemplateStatusSearch.and("download_state", TemplateStatusSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
-		TemplateStatusSearch.done();		
-		
-		TemplateStatesSearch = createSearchBuilder();
-		TemplateStatesSearch.and("template_id", TemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-		TemplateStatesSearch.and("states", TemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
-		TemplateStatesSearch.done();
-		
-		PoolTemplateSearch = createSearchBuilder();
-		PoolTemplateSearch.and("pool_id", PoolTemplateSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-		PoolTemplateSearch.and("template_id", PoolTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-		PoolTemplateSearch.done();
-	}
+		TemplateStatusSearch.done();
+
+        TemplateStatesSearch = createSearchBuilder();
+        TemplateStatesSearch.and("template_id", TemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        TemplateStatesSearch.and("states", TemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
+        TemplateStatesSearch.done();
+
+        HostTemplateStateSearch = createSearchBuilder();
+        HostTemplateStateSearch.and("template_id", HostTemplateStateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        HostTemplateStateSearch.and("host_id", HostTemplateStateSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        HostTemplateStateSearch.and("states", HostTemplateStateSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
+        HostTemplateStateSearch.done();
+
+        PoolTemplateSearch = createSearchBuilder();
+        PoolTemplateSearch.and("pool_id", PoolTemplateSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        PoolTemplateSearch.and("template_id", PoolTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        PoolTemplateSearch.done();
+    }
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -228,9 +235,17 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 			s_logger.warn("Exception: ", e);
 		}
 		return result;
-
 	}
-	
+
+    @Override
+    public List<VMTemplateHostVO> listByTemplateHostStatus(long templateId, long hostId, VMTemplateHostVO.Status... states) {       
+        SearchCriteria<VMTemplateHostVO> sc = HostTemplateStateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("host_id", hostId);
+        sc.setParameters("states", (Object[])states);
+        return search(sc, null);
+    }
+	   
 	@Override
 	public List<VMTemplateHostVO> listByTemplateStatus(long templateId, long datacenterId, long podId, VMTemplateHostVO.Status downloadState) {
         Transaction txn = Transaction.currentTxn();

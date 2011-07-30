@@ -197,9 +197,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	}
 	
 	
-	public boolean isTemplateUpdateable(Long templateId, Long datacenterId) {
+	public boolean isTemplateUpdateable(Long templateId, Long hostId) {
 		List<VMTemplateHostVO> downloadsInProgress =
-			_vmTemplateHostDao.listByTemplateStatus(templateId, datacenterId, VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS);
+			_vmTemplateHostDao.listByTemplateHostStatus(templateId.longValue(), hostId.longValue(), VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS, VMTemplateHostVO.Status.DOWNLOADED);
 		return (downloadsInProgress.size() == 0);
 	}
 	
@@ -355,19 +355,23 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 
 	@Override
-	public boolean downloadTemplateToStorage(Long templateId, Long zoneId) {
+	public boolean downloadTemplateToStorage(VMTemplateVO template, Long zoneId) {
         List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();       
         if (zoneId == null) {
             dcs.addAll(_dcDao.listAll());
         } else {
             dcs.add(_dcDao.findById(zoneId));
         }
+        long templateId = template.getId();
+        boolean isPublic = template.isFeatured() || template.isPublicTemplate(); 
         for ( DataCenterVO dc : dcs ) {
     	    List<HostVO> ssHosts = _hostDao.listAllSecondaryStorageHosts(dc.getId());
     	    for ( HostVO ssHost : ssHosts ) {
         		if (isTemplateUpdateable(ssHost.getId(), templateId)) {
-         
        				initiateTemplateDownload(templateId, ssHost);
+       				if (! isPublic ) {
+       				    break;
+       				}
         		}
     	    }
 	    }
