@@ -248,7 +248,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     public void check() {
         GlobalLock lock = GlobalLock.getInternLock("DatabaseUpgrade");
         try {
-            s_logger.info("Grabbing lock to check for database integrity.");
+            s_logger.info("Grabbing lock to check for database upgrade.");
             if (!lock.lock(20 * 60)) {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
