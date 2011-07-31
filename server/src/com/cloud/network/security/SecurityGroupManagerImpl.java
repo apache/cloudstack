@@ -1133,7 +1133,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     private void cleanupUnfinishedWork() {
-        Date before = new Date(System.currentTimeMillis() - _timeBetweenCleanups);
+        Date before = new Date(System.currentTimeMillis() - 2*_timeBetweenCleanups*1000l);
         List<SecurityGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
         if (unfinished.size() > 0) {
             s_logger.info("Network Group Work cleanup found " + unfinished.size() + " unfinished work items older than " + before.toString());
