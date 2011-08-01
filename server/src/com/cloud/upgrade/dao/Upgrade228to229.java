@@ -64,8 +64,14 @@ public class Upgrade228to229 implements DbUpgrade {
         PreparedStatement pstmt;
         try {
         	/*fk_cluster__data_center_id has been wrongly added in previous upgrade(not sure which one), 228to229 upgrade drops it and re-add again*/
-			pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE;");
+			pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE");
 	        pstmt.executeUpdate();
+	        
+	        pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`)");
+            pstmt.executeUpdate();
+            
+            pstmt.close();
+	        
         } catch (SQLException e) {
         	throw new CloudRuntimeException("Unable to execute cluster update", e);
         }
@@ -82,9 +88,16 @@ public class Upgrade228to229 implements DbUpgrade {
         HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
 
         //indexes to drop
+        
+        //for network_offering
         List<String> keys = new ArrayList<String>();
         keys.add("name");
         indexes.put("network_offerings", keys);
+        
+        //for snapshot
+        keys = new ArrayList<String>();
+        keys.add("i_snapshots__removed");
+        indexes.put("snapshots", keys);
         
         //foreign keys to drop - this key would be re-added later
         keys = new ArrayList<String>();
