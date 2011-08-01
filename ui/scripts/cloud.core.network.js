@@ -124,7 +124,7 @@ function networkPopulateMiddleMenu($leftmenuItem1) {
         listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
     }
     
-	if(showPublicNetwork == true) { //public network           
+	if(showPublicNetwork == true && zoneObj.securitygroupsenabled == false) { //public network           
 	    $midmenuContainer.find("#midmenu_container_no_items_available").remove();  //There is always at least one item (i.e. public network) in middle menu. So, "no items available" shouldn't be in middle menu even there is zero direct network item in middle menu.   
 	    $.ajax({
 	        data: createURL("command=listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
@@ -144,9 +144,33 @@ function networkPopulateMiddleMenu($leftmenuItem1) {
 	        }
 	    });  
 	}
+        else if (showPublicNetwork == true && zoneObj.securitygroupsenabled == true){
+                 $midmenuContainer.find("#midmenu_container_no_items_available").remove();  //There is always at least one item (i.e. public network) in middle menu. So, "no items available" shouldn't be in middle menu even there is zero direct network item in middle menu.   
+	    $.ajax({
+	        data: createURL("command=listNetworks&type=Direct&trafficType=Guest&isSystem=true&zoneId="+zoneObj.id),
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {       
+	            var items = json.listnetworksresponse.network;       
+	            if(items != null && items.length > 0) {
+	                var item = items[0];
+	                var $midmenuItem1 = $("#midmenu_item").clone();                      
+	                $midmenuItem1.data("toRightPanelFn", publicNetworkToRightPanel);                             
+	                publicNetworkToMidmenu(item, $midmenuItem1);    
+	                bindClickToMidMenu($midmenuItem1, publicNetworkToRightPanel, publicNetworkGetMidmenuId);   
+	                $midmenuContainer.prepend($midmenuItem1.show());    //prepend public network on the top of middle menu
+	                $midmenuItem1.click();  
+	            }
+	        }
+	    });  
+        }
 	else {
 		publicNetworkToRightPanel(null);	
 	}
+
+
+
+
 }
 
 //***** Public Network (begin) ******************************************************************************************************
@@ -261,7 +285,7 @@ function publicNetworkJsonToIpAllocationTab() {
     $thisTab.find("#tab_spinning_wheel").show();   
          
     $.ajax({
-		data: createURL("command=listVlanIpRanges&zoneid="+ jsonObj.zoneid+"&forvirtualnetwork=true"), //don't need networkid because one zone has only one public network
+                data: createURL("command=listVlanIpRanges&zoneid="+ jsonObj.zoneid+"&networkId=" + jsonObj.id),     
 		dataType: "json",		
 		success: function(json) {		    
 		    var items = json.listvlaniprangesresponse.vlaniprange;		    
