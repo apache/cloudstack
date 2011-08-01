@@ -11,13 +11,13 @@ cleanup()
   if [ ! -z $snapshotdir ]; then 
     umount $snapshotdir
     if [ $? -eq 0 ];  then
-      rm $snapshotdir -rf
+      rmdir $snapshotdir
     fi
   fi
   if [ ! -z $templatedir ]; then 
     umount $templatedir
     if [ $? -eq 0 ];  then
-      rm $templatedir -rf
+      rmdir $templatedir
     fi
   fi
 }
@@ -48,7 +48,7 @@ fi
 
 mount $snapshoturl $snapshotdir
 if [ $? -ne 0 ]; then
-  rm -rf $snapshotdir
+  rmdir $snapshotdir
   echo "5#can not mount $snapshoturl to $snapshotdir"
   exit 0
 fi
@@ -64,7 +64,7 @@ fi
 
 mount $templateurl $templatedir
 if [ $? -ne 0 ]; then
-  rm -rf $templatedir
+  rmdir $templatedir
   templatedir=""
   cleanup
   echo "7#can not mount $templateurl to $templatedir"
@@ -97,7 +97,7 @@ upgradeSnapshot()
       exit 0
     fi
 
-    rm -rf $parent
+    rm -f $parent
   else
     upgradeSnapshot $parent
   fi

@@ -12,7 +12,7 @@ cleanup()
   if [ ! -z $localmp ]; then 
     umount $localmp
     if [ $? -eq 0 ];  then
-      rm $localmp -rf
+      rmdir $localmp
     fi
   fi
 }
