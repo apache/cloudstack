@@ -33,14 +33,12 @@ ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__state`(`state`);
 
 ALTER TABLE `cloud`.`op_vm_ruleset_log` ADD INDEX `i_op_vm_ruleset_log__instance_id` (`instance_id`);
 
-ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`);
-
 ALTER TABLE `cloud`.`storage_pool_host_ref` ADD CONSTRAINT `fk_storage_pool_host_ref__host_id` FOREIGN KEY `fk_storage_pool_host_ref__host_id`(`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`storage_pool_host_ref` ADD CONSTRAINT `fk_storage_pool_host_ref__pool_id` FOREIGN KEY `fk_storage_pool_host_ref__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`network_offerings` ADD INDEX `i_network_offerings__system_only` (`system_only`);
-ALTER TABLE `cloud`.`resource_count` ADD CONTRAINT `fk_resource_count__account_id` FOREIGN KEY `fk_resource_count__account_id`(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`resource_count` ADD CONTRAINT `fk_resource_count__domain_id` FOREIGN KEY `fk_resource_count__domain_id`(`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`resource_count` ADD CONSTRAINT `fk_resource_count__account_id` FOREIGN KEY `fk_resource_count__account_id`(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`resource_count` ADD CONSTRAINT `fk_resource_count__domain_id` FOREIGN KEY `fk_resource_count__domain_id`(`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`resource_count` ADD INDEX `i_resource_count__type` (`type`);
 
 ALTER TABLE `cloud`.`configuration` ADD INDEX `i_configuration__instance`(`instance`);
