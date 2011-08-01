@@ -33,6 +33,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
@@ -40,6 +41,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -60,6 +62,8 @@ public class AgentMonitor extends Thread implements Listener {
     private AlertManager _alertMgr;
     private long _msId;
     private ConnectionConcierge _concierge;
+    @Inject
+    ClusterDao _clusterDao;
 
     protected AgentMonitor() {
     }
@@ -117,13 +121,6 @@ public class AgentMonitor extends Thread implements Listener {
                 }
 
                 for (HostVO host : hosts) {
-                    if (host.getType().equals(Host.Type.ExternalFirewall) ||
-                            host.getType().equals(Host.Type.ExternalLoadBalancer) ||
-                            host.getType().equals(Host.Type.TrafficMonitor) ||
-                            host.getType().equals(Host.Type.SecondaryStorage)) {
-                        continue;
-                    }
-
                     if (host.getManagementServerId() == null || host.getManagementServerId() == _msId) {
                         if (s_logger.isInfoEnabled()) {
                             s_logger.info("Asking agent mgr to investgate why host " + host.getId() + " is behind on ping. last ping time: " + host.getLastPinged());
@@ -137,10 +134,10 @@ public class AgentMonitor extends Thread implements Listener {
                     long hostId = host.getId();
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                     HostPodVO podVO = _podDao.findById(host.getPodId());
-                    String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+                    String hostDesc = "name: " + host.getName() + " (id:" + hostId + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
 
                     if (host.getType() != Host.Type.Storage) {
-                        List<VMInstanceVO> vos = _vmDao.listByHostId(host.getId());
+                        List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
                         if (vos.size() == 0) {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
                             _hostDao.updateStatus(host, Event.PreparationComplete, _msId);

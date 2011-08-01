@@ -1085,7 +1085,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _hostDao.disconnect(host, event, _nodeId);
 
         host = _hostDao.findById(host.getId());
-        if (event.equals(Event.PrepareUnmanaged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
+        if (!event.equals(Event.PrepareUnmanaged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
             _haMgr.scheduleRestartForVmsOnHost(host, investigate);
         }
 
