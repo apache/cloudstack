@@ -110,14 +110,6 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	List<HostVO> listByType(Type type);
 
 	/**
-	 * Find hosts that have not responded to a ping regardless of state
-	 * @param timeout
-	 * @param type
-	 * @return
-	 */
-	List<HostVO> findLostHosts2(long timeout, Type type);
-
-	/**
 	 * update the host and changes the status depending on the Event and
 	 * the current status.  If the status changed between
 	 * @param host host object to change
