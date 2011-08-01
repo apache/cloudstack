@@ -41,6 +41,9 @@ public interface SecurityGroupWorkDao extends GenericDao<SecurityGroupWorkVO, Lo
 	
 	List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore);
 	
+	List<SecurityGroupWorkVO> findAndCleanupUnfinishedWork(Date timeBefore);
+
+	
 	List<SecurityGroupWorkVO> findScheduledWork();
 
     

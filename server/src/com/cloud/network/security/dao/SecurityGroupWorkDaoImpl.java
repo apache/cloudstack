@@ -210,11 +210,22 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 
 		List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
 		
-		SecurityGroupWorkVO work = createForUpdate();
-		work.setStep(Step.Error);
-		update(work, sc);
-		
 		return result;
+	}
+	
+	@Override
+	public List<SecurityGroupWorkVO> findAndCleanupUnfinishedWork(Date timeBefore) {
+	    final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
+	    sc.setParameters("taken", timeBefore);
+	    sc.setParameters("step", Step.Processing);
+
+	    List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
+
+	    SecurityGroupWorkVO work = createForUpdate();
+	    work.setStep(Step.Error);
+	    update(work, sc);
+
+	    return result;
 	}
 	
 	@Override

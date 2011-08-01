@@ -1140,6 +1140,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             Set<Long> affectedVms = new HashSet<Long>();
             for (SecurityGroupWorkVO work : unfinished) {
                 affectedVms.add(work.getInstanceId());
+                work.setStep(Step.Error);
+                _workDao.update(work.getId(), work);
             }
             scheduleRulesetUpdateToHosts(affectedVms, false, null);
         } else {
