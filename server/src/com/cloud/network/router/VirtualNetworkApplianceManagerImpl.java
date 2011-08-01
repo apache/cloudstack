@@ -70,7 +70,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -935,8 +934,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String dhcpRange = null;
 
         DataCenter dc = dest.getDataCenter();
-        DataCenterVO dcVO = _dcDao.findById(dc.getId());
-        _dcDao.loadDetails(dcVO);
 
         if (dc.getNetworkType() == NetworkType.Advanced) {
             String cidr = network.getCidr();
@@ -1015,10 +1012,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String domain = network.getNetworkDomain();
         if (domain != null) {
             buf.append(" domain=" + domain);
-        }  
-        String domain_suffix = dcVO.getDetail("dns.suffixes");
-        if (domain != null) {
-            buf.append(" domainsuffix=" + domain_suffix);
         }
 
         if (!network.isDefault() && network.getGuestType() == GuestIpType.Direct) {

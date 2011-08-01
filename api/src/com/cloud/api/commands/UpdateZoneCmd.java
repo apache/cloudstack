@@ -18,7 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -77,10 +76,7 @@ public class UpdateZoneCmd extends BaseCmd {
     private Map details;
     
     @Parameter(name=ApiConstants.DHCP_PROVIDER, type=CommandType.STRING, description="the dhcp Provider for the Zone")
-    private String dhcpProvider;  
-    
-    @Parameter(name=ApiConstants.DOMAIN_SUFFIX_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of domain suffixes for dns")
-    private List<String> domainSuffixList;       
+    private String dhcpProvider;       
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -132,11 +128,7 @@ public class UpdateZoneCmd extends BaseCmd {
     
     public String getDhcpProvider() {
         return dhcpProvider;
-    } 
-
-    public List<String> getDomainSuffixList() {
-        return domainSuffixList;
-    }    
+    }        
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
