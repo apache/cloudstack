@@ -255,6 +255,7 @@ setup_dnsmasq() {
   fi
   sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
   sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
+  sed -i s/[#]*dhcp-option=119.*$/dhcp-option=119,\"$DOMAIN_SUFFIX\"/ /etc/dnsmasq.conf
 
 }
 
@@ -489,6 +490,9 @@ for i in $CMDLINE
           ;;
       domain)
           DOMAIN=$VALUE
+          ;;
+      domainsuffix)
+          DOMAIN_SUFFIX=$VALUE
           ;;
       mgmtcidr)
           MGMTNET=$VALUE

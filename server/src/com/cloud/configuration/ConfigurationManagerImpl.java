@@ -120,6 +120,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -1087,6 +1088,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String internalDns2 = cmd.getInternalDns2();
         String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
+        List<String> domainSuffixList = cmd.getDomainSuffixList();
         Long userId = UserContext.current().getCallerUserId();
         int startVnetRange = 0;
         int stopVnetRange = 0;
@@ -1112,7 +1114,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     				}*/
                 newDetails.put(key, value);
             }
-        }        
+        }  
+        
+        // add the domain prefix list to details if not null
+        if (domainSuffixList != null){
+            newDetails.put("dns.suffixes", StringUtils.join(domainSuffixList, ","));
+        }
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
