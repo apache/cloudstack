@@ -2893,7 +2893,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
         }
-        
         _accountMgr.checkAccess(caller, network);
         
         // Don't allow to update system network - make an exception for the Guest network in Basic zone

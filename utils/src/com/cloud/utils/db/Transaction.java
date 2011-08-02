@@ -126,13 +126,13 @@ public class Transaction {
     // the existing DAO features
     //
     public void transitToUserManagedConnection(Connection conn) {
-    	assert(_conn == null /*&& _stack.size() <= 1*/) : "Can't change to a user managed connection unless the stack is empty and the db connection is null: " + toString();
+        assert (_conn == null) : "Can't change to a user managed connection unless the stack is empty and the db connection is null: " + toString();
         _conn = conn;
         _dbId = CONNECTED_DB;
     }
 
     public void transitToAutoManagedConnection(short dbId) {
-        // assert(_stack.size() <= 1) : "Can't change to auto managed connection unless your stack is empty";
+        assert(_stack.size() <= 1) : "Can't change to auto managed connection unless your stack is empty";
         _dbId = dbId;
         _conn = null;
     }
@@ -275,7 +275,7 @@ public class Transaction {
             final StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
             final StringBuilder str = new StringBuilder();
             int i = 3, j = 3;
-            while (j < 7 && i < stacks.length) {
+            while (j < 15 && i < stacks.length) {
                 StackTraceElement element = stacks[i];
                 String filename = element.getFileName();
                 String method = element.getMethodName();

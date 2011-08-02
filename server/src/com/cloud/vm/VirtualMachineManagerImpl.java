@@ -487,7 +487,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @DB
     protected <T extends VMInstanceVO> Ternary<T, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru<T> vmGuru, T vm, User caller, Account account)
-    throws ConcurrentOperationException {
+            throws ConcurrentOperationException {
         long vmId = vm.getId();
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Starting, vm.getType(), vm.getId());
@@ -553,16 +553,19 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         throw new ConcurrentOperationException("Unable to change the state of " + vm);
     }
 
-    @DB
     protected <T extends VMInstanceVO> boolean changeState(T vm, Event event, Long hostId, ItWorkVO work, Step step) throws NoTransitionException {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        if (!stateTransitTo(vm, event, hostId)) {
-            return false;
-        }
+        // FIXME: We should do this better.
+        Step previousStep = work.getStep();
         _workDao.updateStep(work, step);
-        txn.commit();
-        return true;
+        boolean result = false;
+        try {
+            result = stateTransitTo(vm, event, hostId);
+            return result;
+        } finally {
+            if (!result) {
+                _workDao.updateStep(work, previousStep);
+            }
+        }
     }
 
     @Override
@@ -666,7 +669,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         }
                     }
                 }
-                
+
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
@@ -913,7 +916,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             return true;
         }
-        
+
         Long hostId = vm.getHostId();
         if (hostId == null) {
             try {
@@ -1529,15 +1532,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             _alertMgr.sendAlert(alertType, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure",
                     "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
-        
+
         if(trackExternalChange) {
-        	if(vm.getHostId() == null || hostId != vm.getHostId()) {
-        		try {
-        			stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
-        		} catch (NoTransitionException e) {
+            if(vm.getHostId() == null || hostId != vm.getHostId()) {
+                try {
+                    stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+                } catch (NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
-        	}
+            }
         }
 
         // if (serverState == State.Migrating) {
@@ -1601,9 +1604,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } else if (agentState == State.Running) {
             if (serverState == State.Starting) {
                 if (fullSync) {
-                	try {
-                		ensureVmRunningContext(hostId, vm, Event.AgentReportRunning);
-                	} catch (OperationTimedoutException e) {
+                    try {
+                        ensureVmRunningContext(hostId, vm, Event.AgentReportRunning);
+                    } catch (OperationTimedoutException e) {
                         s_logger.error("Exception during update for running vm: " + vm, e);
                         return null;
                     } catch (ResourceUnavailableException e) {
@@ -1623,10 +1626,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
         return command;
     }
-    
+
     private void ensureVmRunningContext(long hostId, VMInstanceVO vm, Event cause) throws OperationTimedoutException, ResourceUnavailableException, NoTransitionException {
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vm);
-    	
+
         s_logger.debug("VM state is starting on full sync so updating it to running");
         vm = findById(vm.getType(), vm.getId());
         try {
@@ -1634,7 +1637,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } catch (NoTransitionException e1) {
             s_logger.warn(e1.getMessage());
         }
-        
+
         s_logger.debug("VM's " + vm + " state is starting on full sync so updating it to Running");
         vm = vmGuru.findById(vm.getId());		// this should ensure vm has the most up to date info
 
@@ -1681,7 +1684,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             } else {
                 castedVm = info.vm;
             }
-            
+
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
 
             Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
@@ -1699,10 +1702,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 } else {
                     HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
                     if(hvGuru.trackVmHostChange()) {
-	                    Command command = compareState(hostId, vm, left, true, true);
-	                    if (command != null) {
-	                        commands.addCommand(command);
-	                    }
+                        Command command = compareState(hostId, vm, left, true, true);
+                        if (command != null) {
+                            commands.addCommand(command);
+                        }
                     } else {
                         s_logger.warn("Stopping a VM that we have no record of: " + left.name);
                         commands.addCommand(cleanup(left.name));
@@ -1780,7 +1783,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }
-        
+
         if (forRebalance) {
             s_logger.debug("Not processing listener " + this + " as connect happens on rebalance process");
             return;
@@ -1864,5 +1867,5 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             this.guru = (VirtualMachineGuru<VMInstanceVO>) guru;
         }
     }
-    
+
 }

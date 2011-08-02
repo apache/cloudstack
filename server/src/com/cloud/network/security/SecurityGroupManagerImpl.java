@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -49,6 +50,7 @@ import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteSecurityGroupCmd;
 import com.cloud.api.commands.ListSecurityGroupsCmd;
 import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -76,6 +78,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -83,6 +86,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -144,7 +148,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     private long _serverId;
 
-    private final long _timeBetweenCleanups = 30; // seconds
+    private  int _timeBetweenCleanups = TIME_BETWEEN_CLEANUPS; // seconds
+    private  int _numWorkerThreads = WORKER_THREAD_COUNT;
+    private  int _globalWorkLockTimeout = 300; // 5 minutes
+
+    private final GlobalLock _workLock = GlobalLock.getInternLock("SecurityGroupWork");
+
+
 
     SecurityGroupListener _answerListener;
 
@@ -158,7 +168,19 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     public class WorkerThread implements Runnable {
         @Override
         public void run() {
-            work();
+            try {
+                Transaction txn = Transaction.open("SG Work");
+                try {
+                    work();
+                } finally {
+                    txn.close("SG Work");
+                }
+            } catch (Throwable th) {
+                try {
+                    s_logger.error("Problem with SG work", th);
+                } catch (Throwable th2) {
+                }
+            }
         }
 
         WorkerThread() {
@@ -169,8 +191,21 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     public class CleanupThread implements Runnable {
         @Override
         public void run() {
-            cleanupFinishedWork();
-            cleanupUnfinishedWork();
+            try {
+                Transaction txn = Transaction.open("SG Cleanup");
+                try {
+                    cleanupFinishedWork();
+                    cleanupUnfinishedWork();
+                    //processScheduledWork();
+                } finally {
+                    txn.close("SG Cleanup");
+                }
+            } catch (Throwable th) {
+                try {
+                    s_logger.error("Problem with SG Cleanup", th);
+                } catch (Throwable th2) {
+                }
+            }
         }
 
         CleanupThread() {
@@ -336,51 +371,75 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             delayMs = new Long(100l);
         }
 
-        for (Long vmId : affectedVms) {
-
-            VmRulesetLogVO log = null;
-            SecurityGroupWorkVO work = null;
-            UserVm vm = null;
-            Transaction txn = null;
-            try {
-                txn = Transaction.currentTxn();
-                txn.start();
-
-                vm = _userVMDao.acquireInLockTable(vmId);
-                if (vm == null) {
-                    s_logger.warn("Failed to acquire lock on vm id " + vmId);
-                    continue;
-                }
-                log = _rulesetLogDao.findByVmId(vmId);
-                if (log == null) {
-                    log = new VmRulesetLogVO(vmId);
-                    log = _rulesetLogDao.persist(log);
-                }
-
-                if (log != null && updateSeqno) {
-                    log.incrLogsequence();
-                    _rulesetLogDao.update(log.getId(), log);
-                }
-                work = _workDao.findByVmIdStep(vmId, Step.Scheduled);
-                if (work == null) {
-                    work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWorkVO.Step.Scheduled, null);
-                    work = _workDao.persist(work);
-                }
-
-                work.setLogsequenceNumber(log.getLogsequence());
-                _workDao.update(work.getId(), work);
-
-            } finally {
-                if (vm != null) {
-                    _userVMDao.releaseFromLockTable(vmId);
-                }
-
-                if (txn != null)
-                    txn.commit();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
+        }
+        if (affectedVms.size() == 0) {
+            return;
+        }
+        boolean locked = _workLock.lock(_globalWorkLockTimeout); 
+        if (locked) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: acquired global work lock");
             }
+            try {
+                for (Long vmId : affectedVms) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("Security Group Mgr: scheduling ruleset update for " + vmId);
+                    }
+                    VmRulesetLogVO log = null;
+                    SecurityGroupWorkVO work = null;
+                    //UserVm vm = null;
+                    Transaction txn = null;
+                    try {
+                        txn = Transaction.currentTxn();
+                        txn.start();
 
-            _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
+                        //vm = _userVMDao.acquireInLockTable(vmId);
+                        //if (vm == null) {
+                        //s_logger.warn("Failed to acquire lock on vm id " + vmId);
+                        //continue;
+                        //}
+                        log = _rulesetLogDao.findByVmId(vmId);
+                        if (log == null) {
+                            log = new VmRulesetLogVO(vmId);
+                            log = _rulesetLogDao.persist(log);
+                        }
 
+                        if (log != null && updateSeqno) {
+                            log.incrLogsequence();
+                            _rulesetLogDao.update(log.getId(), log);
+                        }
+                        work = _workDao.findByVmIdStep(vmId, Step.Scheduled);
+                        if (work == null) {
+                            work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWorkVO.Step.Scheduled, null);
+                            work = _workDao.persist(work);
+                            if (s_logger.isTraceEnabled()) {
+                                s_logger.trace("Security Group Mgr: created new work item for " + vmId);
+                            }
+                        }
+
+                        work.setLogsequenceNumber(log.getLogsequence());
+                        _workDao.update(work.getId(), work);
+
+                    } finally {
+                        //                if (vm != null) {
+                        //                    _userVMDao.releaseFromLockTable(vmId);
+                        //                }
+                        if (txn != null)
+                            txn.commit();
+                    }
+
+                    _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
+                }
+            } finally {
+                _workLock.unlock();
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Security Group Mgr: released global work lock");
+                }
+            }
+        } else {
+            s_logger.warn("Security Group Mgr: failed to acquire global work lock");
         }
     }
 
@@ -736,16 +795,23 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+
+        Map<String, String> configs = _configDao.getConfiguration("Network", params);
+        _numWorkerThreads = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads.key()), WORKER_THREAD_COUNT);
+        _timeBetweenCleanups = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkCleanupInterval.key()), TIME_BETWEEN_CLEANUPS);
+        _globalWorkLockTimeout = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkGlobalLockTimeout.key()), 300);
         /* register state listener, no matter security group is enabled or not */
         VirtualMachine.State.getStateMachine().registerListener(this);
 
         _answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
         _agentMgr.registerForHostEvents(_answerListener, true, true, true);
 
+
         _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
-        _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("NWGRP"));
+        _executorPool = Executors.newScheduledThreadPool(_numWorkerThreads, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
 
+        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + ", time between cleanups=" + _timeBetweenCleanups);
         return true;
     }
 
@@ -784,20 +850,39 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
         final SecurityGroupWorkVO work = _workDao.take(_serverId);
         if (work == null) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group work: no work found");
+            }
             return;
         }
         Long userVmId = work.getInstanceId();
+        if (work.getStep() == Step.Done) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Security Group work: found a job in done state, rescheduling for vm: " + userVmId);
+            }
+            Set<Long> affectedVms = new HashSet<Long>();
+            affectedVms.add(userVmId);
+            scheduleRulesetUpdateToHosts(affectedVms, true, _timeBetweenCleanups*1000l);
+        }
         UserVm vm = null;
         Long seqnum = null;
-        s_logger.info("Working on " + work.toString());
+        s_logger.debug("Working on " + work);
         final Transaction txn = Transaction.currentTxn();
         txn.start();
+        boolean locked = false;
         try {
             vm = _userVMDao.acquireInLockTable(work.getInstanceId());
             if (vm == null) {
+                vm = _userVMDao.findById(work.getInstanceId());
+                if (vm == null) {
+                    s_logger.info("VM " + work.getInstanceId() + " is removed");
+                    locked = true;
+                    return;
+                }
                 s_logger.warn("Unable to acquire lock on vm id=" + userVmId);
                 return;
             }
+            locked = true;
             Long agentId = null;
             VmRulesetLogVO log = _rulesetLogDao.findByVmId(userVmId);
             if (log == null) {
@@ -823,21 +908,20 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 }
             }
         } finally {
-            if (vm != null) {
+            if (locked) {
                 _userVMDao.releaseFromLockTable(userVmId);
                 _workDao.updateStep(work.getId(), Step.Done);
             }
             txn.commit();
         }
-
     }
 
     @Override
     @DB
     public boolean addInstanceToGroups(final Long userVmId, final List<Long> groups) {
         if (!isVmSecurityGroupEnabled(userVmId)) {
-           s_logger.warn("User vm " + userVmId + " is not security group enabled, can't add it to security group");
-           return false;
+            s_logger.warn("User vm " + userVmId + " is not security group enabled, can't add it to security group");
+            return false;
         }
         if (groups != null && !groups.isEmpty()) {
 
@@ -889,7 +973,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         final Transaction txn = Transaction.currentTxn();
         txn.start();
         UserVm userVm = _userVMDao.acquireInLockTable(userVmId); // ensures that duplicate entries are not created in
-                                                                 // addInstance
+        // addInstance
         if (userVm == null) {
             s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
         }
@@ -1069,7 +1153,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     public void cleanupFinishedWork() {
-        Date before = new Date(System.currentTimeMillis() - 24 * 3600 * 1000l);
+        Date before = new Date(System.currentTimeMillis() - 6 * 3600 * 1000l);
         int numDeleted = _workDao.deleteFinishedWork(before);
         if (numDeleted > 0) {
             s_logger.info("Network Group Work cleanup deleted " + numDeleted + " finished work items older than " + before.toString());
@@ -1078,18 +1162,34 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     private void cleanupUnfinishedWork() {
-        Date before = new Date(System.currentTimeMillis() - 30 * 1000l);
+        Date before = new Date(System.currentTimeMillis() - 2*_timeBetweenCleanups*1000l);
         List<SecurityGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
         if (unfinished.size() > 0) {
             s_logger.info("Network Group Work cleanup found " + unfinished.size() + " unfinished work items older than " + before.toString());
             Set<Long> affectedVms = new HashSet<Long>();
             for (SecurityGroupWorkVO work : unfinished) {
                 affectedVms.add(work.getInstanceId());
+                work.setStep(Step.Error);
+                _workDao.update(work.getId(), work);
             }
             scheduleRulesetUpdateToHosts(affectedVms, false, null);
         } else {
             s_logger.debug("Network Group Work cleanup found no unfinished work items older than " + before.toString());
         }
+    }
+
+    private void processScheduledWork() {
+        List<SecurityGroupWorkVO> scheduled = _workDao.findScheduledWork();
+        int numJobs = scheduled.size();
+        if (numJobs > 0) {
+            s_logger.debug("Security group work: found scheduled jobs " + numJobs);
+            Random rand = new Random();
+            for (int i=0; i < numJobs; i++) {
+                long delayMs = 100 + 10*rand.nextInt(numJobs);
+                _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
+            }
+        }
+
     }
 
     @Override
@@ -1148,10 +1248,19 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
+            }
             handleVmStarted((VMInstanceVO) vm);
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
+            }
             handleVmStopped((VMInstanceVO) vm);
         } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
+            }
             handleVmMigrated((VMInstanceVO) vm);
         }
 
@@ -1169,17 +1278,17 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
         return false;
     }
-    
+
     @Override
     public SecurityGroupVO getDefaultSecurityGroup(long accountId) {
         return _securityGroupDao.findByAccountAndName(accountId, DEFAULT_GROUP_NAME);
     }
-    
+
     @Override
     public SecurityGroup getSecurityGroup(String name, long accountId) {
         return _securityGroupDao.findByAccountAndName(accountId, name);
     }
-    
+
     @Override
     public boolean isVmMappedToDefaultSecurityGroup(long vmId) {
         UserVmVO vm = _userVmMgr.getVirtualMachine(vmId);

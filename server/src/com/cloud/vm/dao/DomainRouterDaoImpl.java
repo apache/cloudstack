@@ -75,14 +75,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         joinNetwork.and("guestType", joinNetwork.entity().getGuestType(), Op.EQ);
         HostUpSearch.join("network", joinNetwork, joinNetwork.entity().getId(), HostUpSearch.entity().getNetworkId(), JoinType.INNER);
         HostUpSearch.done();
-        
+
         StateNetworkTypeSearch = createSearchBuilder();
         StateNetworkTypeSearch.and("state", StateNetworkTypeSearch.entity().getState(), Op.EQ);
         SearchBuilder<NetworkVO> joinStateNetwork = _networksDao.createSearchBuilder();
         joinStateNetwork.and("guestType", joinStateNetwork.entity().getGuestType(), Op.EQ);
         StateNetworkTypeSearch.join("network", joinStateNetwork, joinStateNetwork.entity().getId(), StateNetworkTypeSearch.entity().getNetworkId(), JoinType.INNER);
         StateNetworkTypeSearch.done();
-        
+
         OutsidePodSearch = createSearchBuilder();
         OutsidePodSearch.and("network", OutsidePodSearch.entity().getNetworkId(), Op.EQ);
         OutsidePodSearch.and("podId", OutsidePodSearch.entity().getPodIdToDeployIn(), Op.NEQ);
@@ -192,7 +192,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("states", State.Running, State.Migrating, State.Stopping, State.Starting);
         return listBy(sc);
     }
-    
+
     @Override
     public List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType) {
         SearchCriteria<DomainRouterVO> sc = StateNetworkTypeSearch.create();
@@ -207,6 +207,16 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("network", networkId);
         sc.setParameters("podId", podId);
         sc.setParameters("state", state);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listByNetworkAndState(long networkId, State state) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
         return listBy(sc);
     }
 }

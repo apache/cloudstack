@@ -93,4 +93,5 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType);
     
     List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state);
+    List<DomainRouterVO> listByNetworkAndState(long networkId, State state);
 }

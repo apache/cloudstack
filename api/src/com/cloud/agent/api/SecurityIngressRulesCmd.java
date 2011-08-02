@@ -17,128 +17,131 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
 
 public class SecurityIngressRulesCmd extends Command {
-	public static class IpPortAndProto {
-		String proto;
-		int startPort;
-		int endPort;
-		String [] allowedCidrs;
+    public static class IpPortAndProto {
+        String proto;
+        int startPort;
+        int endPort;
+        @LogLevel(Log4jLevel.Trace)
+        String [] allowedCidrs;
 
-		public IpPortAndProto() { }
+        public IpPortAndProto() { }
 
-		public IpPortAndProto(String proto, int startPort, int endPort,
-				String[] allowedCidrs) {
-			super();
-			this.proto = proto;
-			this.startPort = startPort;
-			this.endPort = endPort;
-			this.allowedCidrs = allowedCidrs;
-		}
+        public IpPortAndProto(String proto, int startPort, int endPort,
+                String[] allowedCidrs) {
+            super();
+            this.proto = proto;
+            this.startPort = startPort;
+            this.endPort = endPort;
+            this.allowedCidrs = allowedCidrs;
+        }
 
-		public String[] getAllowedCidrs() {
-			return allowedCidrs;
-		}
+        public String[] getAllowedCidrs() {
+            return allowedCidrs;
+        }
 
-		public void setAllowedCidrs(String[] allowedCidrs) {
-			this.allowedCidrs = allowedCidrs;
-		}
+        public void setAllowedCidrs(String[] allowedCidrs) {
+            this.allowedCidrs = allowedCidrs;
+        }
 
-		public String getProto() {
-			return proto;
-		}
+        public String getProto() {
+            return proto;
+        }
 
-		public int getStartPort() {
-			return startPort;
-		}
+        public int getStartPort() {
+            return startPort;
+        }
 
-		public int getEndPort() {
-			return endPort;
-		}
-		
-	}
-	
-	
-	String guestIp;
-	String vmName;
-	String guestMac;
-	String signature;
-	Long seqNum;
-	Long vmId;
-	IpPortAndProto [] ruleSet;
-	
-	public SecurityIngressRulesCmd() {
-		super();
-	}
+        public int getEndPort() {
+            return endPort;
+        }
 
-	
-	public SecurityIngressRulesCmd(String guestIp, String guestMac, String vmName, Long vmId, String signature, Long seqNum, IpPortAndProto[] ruleSet) {
-		super();
-		this.guestIp = guestIp;
-		this.vmName = vmName;
-		this.ruleSet = ruleSet;
-		this.guestMac = guestMac;
-		this.signature = signature;
-		this.seqNum = seqNum;
-		this.vmId  = vmId;
-	}
+    }
 
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    String guestIp;
+    String vmName;
+    String guestMac;
+    String signature;
+    Long seqNum;
+    Long vmId;
+    IpPortAndProto [] ruleSet;
+
+    public SecurityIngressRulesCmd() {
+        super();
+    }
 
 
-	public IpPortAndProto[] getRuleSet() {
-		return ruleSet;
-	}
+    public SecurityIngressRulesCmd(String guestIp, String guestMac, String vmName, Long vmId, String signature, Long seqNum, IpPortAndProto[] ruleSet) {
+        super();
+        this.guestIp = guestIp;
+        this.vmName = vmName;
+        this.ruleSet = ruleSet;
+        this.guestMac = guestMac;
+        this.signature = signature;
+        this.seqNum = seqNum;
+        this.vmId  = vmId;
+    }
 
 
-	public void setRuleSet(IpPortAndProto[] ruleSet) {
-		this.ruleSet = ruleSet;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
 
-	public String getGuestIp() {
-		return guestIp;
-	}
+    public IpPortAndProto[] getRuleSet() {
+        return ruleSet;
+    }
 
 
-	public String getVmName() {
-		return vmName;
-	}
-	
-	public String stringifyRules() {
-		StringBuilder ruleBuilder = new StringBuilder();
-		for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
-			ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
-			for (String cidr: ipPandP.getAllowedCidrs()) {
-				ruleBuilder.append(cidr).append(",");
-			}
-			ruleBuilder.append("NEXT");
-			ruleBuilder.append(" ");
-		}
-		return ruleBuilder.toString();
-	}
-	
-	public String getSignature() {
-		return signature;
-	}
+    public void setRuleSet(IpPortAndProto[] ruleSet) {
+        this.ruleSet = ruleSet;
+    }
 
 
-	public String getGuestMac() {
-		return guestMac;
-	}
+    public String getGuestIp() {
+        return guestIp;
+    }
 
 
-	public Long getSeqNum() {
-		return seqNum;
-	}
+    public String getVmName() {
+        return vmName;
+    }
+
+    public String stringifyRules() {
+        StringBuilder ruleBuilder = new StringBuilder();
+        for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
+            ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
+            for (String cidr: ipPandP.getAllowedCidrs()) {
+                ruleBuilder.append(cidr).append(",");
+            }
+            ruleBuilder.append("NEXT");
+            ruleBuilder.append(" ");
+        }
+        return ruleBuilder.toString();
+    }
+
+    public String getSignature() {
+        return signature;
+    }
 
 
-	public Long getVmId() {
-		return vmId;
-	}
+    public String getGuestMac() {
+        return guestMac;
+    }
+
+
+    public Long getSeqNum() {
+        return seqNum;
+    }
+
+
+    public Long getVmId() {
+        return vmId;
+    }
 
 }

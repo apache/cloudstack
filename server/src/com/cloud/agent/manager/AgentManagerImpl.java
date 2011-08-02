@@ -152,6 +152,7 @@ import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
+import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
@@ -232,7 +233,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     @Inject
     protected VirtualMachineManager _vmMgr = null;
-    
+
     @Inject StorageService _storageSvr = null;
     @Inject StorageManager _storageMgr = null;
 
@@ -285,7 +286,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _pingTimeout = (long) (multiplier * _pingInterval);
 
         s_logger.info("Ping Timeout is " + _pingTimeout);
-        
+
         value = configs.get(Config.DirectAgentLoadSize.key());
         int threads = NumbersUtil.parseInt(value, 16);
 
@@ -463,7 +464,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance)
-    throws ConnectionException {
+            throws ConnectionException {
         if (startup == null) {
             return null;
         }
@@ -516,7 +517,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
         return null;
     }
-    
+
 
     @Override
     public long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
@@ -682,7 +683,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         }
                         if (!success) {
                             String msg = "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid=" + host.getGuid()
-                            + "in this host " + host.getPrivateIpAddress();
+                                    + "in this host " + host.getPrivateIpAddress();
                             s_logger.warn(msg);
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
                         }
@@ -697,13 +698,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         s_logger.warn("Sending ShutdownCommand failed: ", e);
                     }
                 } else if (host.getHypervisorType() == HypervisorType.BareMetal) {
-                	List<VMInstanceVO> deadVms = _vmDao.listByLastHostId(hostId);
-                	for (VMInstanceVO vm : deadVms) {
-                		if (vm.getState() == State.Running || vm.getHostId() != null) {
-                			throw new CloudRuntimeException("VM " + vm.getId() + "is still running on host " + hostId);
-                		}
-                		_vmDao.remove(vm.getId());
-                	}
+                    List<VMInstanceVO> deadVms = _vmDao.listByLastHostId(hostId);
+                    for (VMInstanceVO vm : deadVms) {
+                        if (vm.getState() == State.Running || vm.getHostId() != null) {
+                            throw new CloudRuntimeException("VM " + vm.getId() + "is still running on host " + hostId);
+                        }
+                        _vmDao.remove(vm.getId());
+                    }
                 }
             }
 
@@ -1037,12 +1038,18 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             } else if (determinedState == Status.Up) {
                 // we effectively pinged from the server here.
                 s_logger.info("Agent is determined to be up and running");
-                _hostDao.updateStatus(host, Event.Ping, _nodeId);
+                _monitor.pingBy(host.getId());
+                // _hostDao.updateStatus(host, Event.Ping, _nodeId);
                 return false;
             } else if (determinedState == Status.Disconnected) {
                 s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
                 if (currentState == Status.Disconnected) {
-                    if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > _alertWait) {
+                    Long hostPingTime = _monitor.getAgentPingTime(host.getId());
+                    if (hostPingTime == null) {
+                        s_logger.error("Host is not on this management server any more: " + host);
+                        return false;
+                    }
+                    if ((InaccurateClock.getTimeInSeconds() - hostPingTime) > _alertWait) {
                         s_logger.warn("Host " + host.getId() + " has been disconnected pass the time it should be disconnected.");
                         event = Event.WaitedTooLong;
                     } else {
@@ -1050,7 +1057,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         return false;
                     }
                 } else if (currentState == Status.Updating) {
-                    if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > _updateWait) {
+                    Long hostPingTime = _monitor.getAgentPingTime(host.getId());
+                    if (hostPingTime == null) {
+                        s_logger.error("Host is not on this management server any more: " + host);
+                        return false;
+                    }
+                    if ((InaccurateClock.getTimeInSeconds() - hostPingTime) > _updateWait) {
                         s_logger.warn("Host " + host.getId() + " has been updating for too long");
 
                         event = Event.WaitedTooLong;
@@ -1252,7 +1264,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             s_logger.warn("Unable to start the resource");
             return false;
         }
-        
+
         if (forRebalance) {
             AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null, true);
             if (attache == null) {
@@ -1759,7 +1771,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     public HostVO createHost(final StartupCommand startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags, String allocationState)
-    throws IllegalArgumentException {
+            throws IllegalArgumentException {
         Host.Type type = null;
 
         if (startup instanceof StartupStorageCommand) {
@@ -1887,7 +1899,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     public HostVO createHost(final StartupCommand[] startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags, String allocationState)
-    throws IllegalArgumentException {
+            throws IllegalArgumentException {
         StartupCommand firstCmd = startup[0];
         HostVO result = createHost(firstCmd, resource, details, directFirst, hostTags, allocationState);
         if (result == null) {

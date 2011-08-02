@@ -70,9 +70,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     public DatabaseUpgradeChecker() {
         _dao = ComponentLocator.inject(VersionDaoImpl.class);
-        _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229()});
-        _upgradeMap.put("2.1.8", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229()});
-        _upgradeMap.put("2.1.9", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229()});
+        _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229() });
+        _upgradeMap.put("2.1.8", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229() });
+        _upgradeMap.put("2.1.9", new DbUpgrade[] { new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229() });
         _upgradeMap.put("2.2.1", new DbUpgrade[] { new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229()});
         _upgradeMap.put("2.2.2", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229()});
         _upgradeMap.put("2.2.3", new DbUpgrade[] { new Upgrade222to224(), new UpgradeSnapshot223to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229()});

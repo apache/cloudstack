@@ -309,14 +309,14 @@ CREATE TABLE `cloud`.`op_host_upgrade` (
 
 CREATE TABLE `cloud`.`op_lock` (
   `key` varchar(128) NOT NULL UNIQUE COMMENT 'primary key of the table',
-  `mac` varchar(17) NOT NULL COMMENT 'mac address of who acquired this lock',
-  `ip` char(40) NOT NULL COMMENT 'ip address of who acquired this lock',
-  `thread` varchar(255) NOT NULL COMMENT 'Thread that acquired this lock',
+  `mac` varchar(17) NOT NULL COMMENT 'management server id of the server that holds this lock',
+  `ip` char(40) NOT NULL COMMENT 'name of the thread that holds this lock',
+  `thread` varchar(255) NOT NULL COMMENT 'Thread id that acquired this lock',
   `acquired_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Time acquired',
-  `waiters` int NOT NULL DEFAULT 0 COMMENT 'How many have waited for this',
+  `waiters` int NOT NULL DEFAULT 0 COMMENT 'How many have the thread acquired this lock (reentrant)',
   PRIMARY KEY (`key`),
   INDEX `i_op_lock__mac_ip_thread`(`mac`, `ip`, `thread`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=Memory DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`configuration` (
   `category` varchar(255) NOT NULL DEFAULT 'Advanced',
@@ -409,7 +409,8 @@ CREATE TABLE `cloud`.`volumes` (
   CONSTRAINT `fk_volumes__pool_id` FOREIGN KEY `fk_volumes__pool_id` (`pool_id`) REFERENCES `storage_pool` (`id`),
   INDEX `i_volumes__pool_id`(`pool_id`),
   CONSTRAINT `fk_volumes__instance_id` FOREIGN KEY `fk_volumes__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
-  INDEX `i_volumes__instance_id`(`instance_id`)
+  INDEX `i_volumes__instance_id`(`instance_id`),
+  INDEX `i_volumes__state`(`state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (
@@ -589,7 +590,8 @@ CREATE TABLE `cloud`.`firewall_rules` (
   CONSTRAINT `fk_firewall_rules__ip_address_id` FOREIGN KEY(`ip_address_id`) REFERENCES `user_ip_address`(`id`),
   CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  INDEX `i_firewall_rules__purpose`(`purpose`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`firewall_rules_cidrs` (
@@ -631,7 +633,8 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
   `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_port_forwarding_rules__instance_id` FOREIGN KEY `fk_port_forwarding_rules__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`host` (
@@ -1404,8 +1407,10 @@ CREATE TABLE `cloud`.`op_nwgrp_work` (
   PRIMARY KEY (`id`),
   INDEX `i_op_nwgrp_work__instance_id`(`instance_id`),
   INDEX `i_op_nwgrp_work__mgmt_server_id`(`mgmt_server_id`),
-  INDEX `i_op_nwgrp_work__taken`(`taken`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  INDEX `i_op_nwgrp_work__taken`(`taken`),
+  INDEX `i_op_nwgrp_work__step`(`step`),
+  INDEX `i_op_nwgrp_work__seq_no`(`seq_no`)
+) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_vm_ruleset_log` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
