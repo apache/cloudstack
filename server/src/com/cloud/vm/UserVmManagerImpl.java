@@ -1641,7 +1641,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (vm != null) {
             if (vm.getState().equals(State.Stopped)) {
                 try {
-                    _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
+                    _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
                 } catch (NoTransitionException e1) {
                     s_logger.warn(e1.getMessage());
                 }
