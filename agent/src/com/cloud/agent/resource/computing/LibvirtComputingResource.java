@@ -2505,8 +2505,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
  
         final List<Object> info = getHostInfo();
-
-        final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM, RouterPrivateIpStrategy.HostLocal, changes);
+        
+        final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM, RouterPrivateIpStrategy.HostLocal);
+        cmd.setStateChanges(changes);
         fillNetworkInformation(cmd);
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.setPool(_pool);
