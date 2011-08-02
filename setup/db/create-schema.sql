@@ -633,7 +633,7 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE,
-  INDEX `i_port_forwarding_rules__instance_id`(`instance_id`)
+  CONSTRAINT `fk_port_forwarding_rules__instance_id` FOREIGN KEY `fk_port_forwarding_rules__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`host` (

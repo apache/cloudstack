@@ -46,6 +46,8 @@ ALTER TABLE `cloud`.`configuration` ADD INDEX `i_configuration__name` (`name`);
 ALTER TABLE `cloud`.`configuration` ADD INDEX `i_configuration__category` (`category`);
 ALTER TABLE `cloud`.`configuration` ADD INDEX `i_configuration__component` (`component`);
 
+ALTER TABLE `cloud`.`port_forwarding_rules` ADD CONSTRAINT `fk_port_forwarding_rules__instance_id` FOREIGN KEY `fk_port_forwarding_rules__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE;
+
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'agent.load.threshold', '0.70', 'Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.visibility', 'global', 'Load Balancer(haproxy) stats visibilty, it can be global,guest-network,disabled');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.uri','/admin?stats','Load Balancer(haproxy) uri.');
