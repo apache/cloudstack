@@ -69,7 +69,12 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Error);
+            
+            // please pay attention about state transition to Error state, there should be only one case (failed in VM creation process)
+            // that can have such transition
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.OperationFailedToError, State.Error);
+            
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Stopped);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportMigrated, State.Stopped);
@@ -141,6 +146,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
     	ExpungeOperation,
     	OperationSucceeded,
     	OperationFailed,
+    	OperationFailedToError,
     	OperationRetry,
     	AgentReportShutdowned,
     	AgentReportMigrated
