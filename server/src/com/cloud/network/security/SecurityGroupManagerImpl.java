@@ -385,6 +385,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         try {
             PreparedStatement pstmt = txn.prepareAutoCloseStatement("LOCK TABLES op_vm_ruleset_log WRITE, op_nwgrp_work WRITE");
             int tablesLocked = pstmt.executeUpdate();
+            if (tablesLocked != 2) {
+                s_logger.warn("Unable to get locks on both tables: " + tablesLocked);
+                return;
+            }
             for (Long vmId : affectedVms) {
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + vmId);
@@ -423,6 +427,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             try {
                 PreparedStatement pstmt = txn.prepareAutoCloseStatement("UNLOCK TABLES");
                 int tablesUnlocked = pstmt.executeUpdate();
+                assert (tablesUnlocked == 2) : "Less than two tables unlocked: " + tablesUnlocked;
             } catch (SQLException e) {
                 s_logger.warn("Unable to unlock tables");
             }

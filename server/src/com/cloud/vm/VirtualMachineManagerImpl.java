@@ -1728,13 +1728,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         for (final Answer answer : answers) {
-            if (answer.getClass() == StopAnswer.class) {
-                if (!answer.getResult()) {
-                    s_logger.warn("Cleanup failed due to " + answer.getDetails());
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Cleanup succeeded. Details " + answer.getDetails());
-                    }
+            if (!answer.getResult()) {
+                s_logger.warn("Cleanup failed due to " + answer.getDetails());
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cleanup succeeded. Details " + answer.getDetails());
                 }
             }
         }
