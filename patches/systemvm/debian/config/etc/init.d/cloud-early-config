@@ -266,6 +266,11 @@ setup_dnsmasq() {
       sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
       echo "dhcp-option=6,$GUEST_GW" >> /etc/dnsmasq.conf
   fi
+  
+  if [ -n "$DOMAIN_SUFFIX" ]
+  then
+    sed -i s/[#]*dhcp-option=119.*$/dhcp-option=119,\"$DOMAIN_SUFFIX\"/ /etc/dnsmasq.conf
+  fi
 }
 
 setup_sshd(){
@@ -530,6 +535,9 @@ for i in $CMDLINE
           ;;
       domain)
           DOMAIN=$VALUE
+          ;;
+      domainsuffix)
+          DOMAIN_SUFFIX=$VALUE
           ;;
       mgmtcidr)
           MGMTNET=$VALUE
