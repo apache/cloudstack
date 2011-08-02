@@ -677,7 +677,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<HostVO> result = new ArrayList<HostVO>();
         ResultSet rs = null;
         try {
-            String sql = "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage') and (h.cluster_id is null or c.managed_state = 'Managed') ;" ;
+            String sql = "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage') and (h.cluster_id is null or c.managed_state = 'Managed') ;" ;
             pstmt = txn.prepareStatement(sql);
             pstmt.setLong(1, timeout);
             rs = pstmt.executeQuery();

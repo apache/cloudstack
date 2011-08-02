@@ -76,6 +76,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.HypervisorVersionChangedException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Pool;
@@ -549,7 +550,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             _hostDao.update(agentId, host);
             String msg = "host " + host.getPrivateIpAddress() + " changed from " + host.getResource() + " to " + resource;
             s_logger.debug(msg);
-            throw new RuntimeException(msg);
+            throw new HypervisorVersionChangedException(msg);
         }
         
         

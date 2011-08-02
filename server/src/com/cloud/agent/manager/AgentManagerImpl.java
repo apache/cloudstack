@@ -146,6 +146,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.HypervisorVersionChangedException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nio.HandlerFactory;
@@ -1085,7 +1086,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _hostDao.disconnect(host, event, _nodeId);
 
         host = _hostDao.findById(host.getId());
-        if (!event.equals(Event.PrepareUnmanaged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
+        if (!event.equals(Event.PrepareUnmanaged) && !event.equals(Event.HypervisorVersionChanged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
             _haMgr.scheduleRestartForVmsOnHost(host, investigate);
         }
 
@@ -1121,6 +1122,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                             handleDisconnect(attache, Event.ShutdownRequested, false);
                             return attache;
                         }
+                    } else if (e instanceof HypervisorVersionChangedException) {
+                        handleDisconnect(attache, Event.HypervisorVersionChanged, false);
+                        throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
                         handleDisconnect(attache, Event.AgentDisconnected, false);
