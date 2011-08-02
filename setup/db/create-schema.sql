@@ -1404,7 +1404,7 @@ CREATE TABLE `cloud`.`op_nwgrp_work` (
   INDEX `i_op_nwgrp_work__taken`(`taken`),
   INDEX `i_op_nwgrp_work__step`(`step`),
   INDEX `i_op_nwgrp_work__seq_no`(`seq_no`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_vm_ruleset_log` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
