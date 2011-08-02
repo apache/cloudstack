@@ -17,8 +17,6 @@
  */
 package com.cloud.network.security;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -369,68 +367,76 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @DB
     public void scheduleRulesetUpdateToHosts(Set<Long> affectedVms, boolean updateSeqno, Long delayMs) {
-        if (affectedVms.size() == 0) {
-            return;
-        }
-
         if (delayMs == null) {
             delayMs = new Long(100l);
         }
-
+        
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
         }
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement("LOCK TABLES op_vm_ruleset_log WRITE, op_nwgrp_work WRITE");
-            int tablesLocked = pstmt.executeUpdate();
-            if (tablesLocked != 2) {
-                s_logger.warn("Unable to get locks on both tables: " + tablesLocked);
-                return;
+        boolean locked = _workLock.lock(_globalWorkLockTimeout); 
+        if (locked) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Security Group Mgr: acquired global work lock");
             }
-            for (Long vmId : affectedVms) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + vmId);
-                }
-                VmRulesetLogVO log = null;
-                SecurityGroupWorkVO work = null;
-                log = _rulesetLogDao.findByVmId(vmId);
-                if (log == null) {
-                    log = new VmRulesetLogVO(vmId);
-                    log = _rulesetLogDao.persist(log);
-                }
-
-                if (log != null && updateSeqno) {
-                    log.incrLogsequence();
-                    _rulesetLogDao.update(log.getId(), log);
-                }
-                work = _workDao.findByVmIdStep(vmId, Step.Scheduled);
-                if (work == null) {
-                    work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWorkVO.Step.Scheduled, null);
-                    work = _workDao.persist(work);
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Security Group Mgr: created new work item for " + vmId);
-                    }
-                }
-
-                work.setLogsequenceNumber(log.getLogsequence());
-                _workDao.update(work.getId(), work);
-
-                _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
-            }
-
-            txn.commit();
-        } catch (SQLException e) {
-            s_logger.error("Unable to execute lock tables routines", e);
-        } finally {
             try {
-                PreparedStatement pstmt = txn.prepareAutoCloseStatement("UNLOCK TABLES");
-                int tablesUnlocked = pstmt.executeUpdate();
-                assert (tablesUnlocked == 2) : "Less than two tables unlocked: " + tablesUnlocked;
-            } catch (SQLException e) {
-                s_logger.warn("Unable to unlock tables");
+                for (Long vmId : affectedVms) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + vmId);
+                    }
+                    VmRulesetLogVO log = null;
+                    SecurityGroupWorkVO work = null;
+                    //UserVm vm = null;
+                    Transaction txn = null;
+                    try {
+                        txn = Transaction.currentTxn();
+                        txn.start();
+
+                        //vm = _userVMDao.acquireInLockTable(vmId);
+                        //if (vm == null) {
+                        //s_logger.warn("Failed to acquire lock on vm id " + vmId);
+                        //continue;
+                        //}
+                        log = _rulesetLogDao.findByVmId(vmId);
+                        if (log == null) {
+                            log = new VmRulesetLogVO(vmId);
+                            log = _rulesetLogDao.persist(log);
+                        }
+
+                        if (log != null && updateSeqno) {
+                            log.incrLogsequence();
+                            _rulesetLogDao.update(log.getId(), log);
+                        }
+                        work = _workDao.findByVmIdStep(vmId, Step.Scheduled);
+                        if (work == null) {
+                            work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWorkVO.Step.Scheduled, null);
+                            work = _workDao.persist(work);
+                            if (s_logger.isTraceEnabled()) {
+                                s_logger.trace("Security Group Mgr: created new work item for " + vmId);
+                            }
+                        }
+
+                        work.setLogsequenceNumber(log.getLogsequence());
+                        _workDao.update(work.getId(), work);
+
+                    } finally {
+                        //                if (vm != null) {
+                        //                    _userVMDao.releaseFromLockTable(vmId);
+                        //                }
+                        if (txn != null)
+                            txn.commit();
+                    }
+
+                    _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
+                }
+            } finally {
+                _workLock.unlock();
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Security Group Mgr: released global work lock");
+                }
             }
+        } else {
+            s_logger.warn("Security Group Mgr: failed to acquire global work lock");
         }
     }
 
@@ -1160,7 +1166,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             s_logger.debug("Network Group Work cleanup found no unfinished work items older than " + before.toString());
         }
     }
-
+    
     private void processScheduledWork() {
         List<SecurityGroupWorkVO> scheduled = _workDao.findScheduledWork();
         int numJobs = scheduled.size();
@@ -1172,7 +1178,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
             }
         }
-
+ 
     }
 
     @Override
