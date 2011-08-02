@@ -18,6 +18,7 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -80,6 +81,9 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
     private String domain;
     
+    @Parameter(name=ApiConstants.DOMAIN_SUFFIX_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of domain suffixes for dns")
+    private List<String> domainSuffixList;   
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -135,7 +139,10 @@ public class UpdateZoneCmd extends BaseCmd {
     public String getDomain() {
         return domain;
     }
-    
+
+    public List<String> getDomainSuffixList() {
+        return domainSuffixList;
+    }   
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
