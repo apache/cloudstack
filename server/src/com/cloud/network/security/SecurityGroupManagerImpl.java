@@ -374,6 +374,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
         }
+        if (affectedVms.size() == 0) {
+            return;
+        }
         boolean locked = _workLock.lock(_globalWorkLockTimeout); 
         if (locked) {
             if (s_logger.isTraceEnabled()) {
@@ -382,7 +385,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             try {
                 for (Long vmId : affectedVms) {
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + vmId);
+                        s_logger.trace("Security Group Mgr: scheduling ruleset update for " + vmId);
                     }
                     VmRulesetLogVO log = null;
                     SecurityGroupWorkVO work = null;
