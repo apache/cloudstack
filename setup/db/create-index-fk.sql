@@ -31,6 +31,7 @@ ALTER TABLE `cloud`.`user_statistics` ADD INDEX `i_user_statistics__account_id_d
 ALTER TABLE `cloud`.`snapshots` ADD CONSTRAINT `fk_snapshots__account_id` FOREIGN KEY `fk_snapshots__account_id` (`account_id`) REFERENCES `account` (`id`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__account_id`(`account_id`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__volume_id`(`volume_id`);
+ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__name`(`name`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__snapshot_type`(`snapshot_type`);
 ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__prev_snap_id`(`prev_snap_id`);
