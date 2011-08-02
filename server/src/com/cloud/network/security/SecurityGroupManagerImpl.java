@@ -370,7 +370,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (delayMs == null) {
             delayMs = new Long(100l);
         }
-        
+
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
         }
@@ -866,12 +866,20 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         s_logger.debug("Working on " + work);
         final Transaction txn = Transaction.currentTxn();
         txn.start();
+        boolean locked = false;
         try {
             vm = _userVMDao.acquireInLockTable(work.getInstanceId());
             if (vm == null) {
+                vm = _userVMDao.findById(work.getInstanceId());
+                if (vm == null) {
+                    s_logger.info("VM " + work.getInstanceId() + " is removed");
+                    locked = true;
+                    return;
+                }
                 s_logger.warn("Unable to acquire lock on vm id=" + userVmId);
                 return;
             }
+            locked = true;
             Long agentId = null;
             VmRulesetLogVO log = _rulesetLogDao.findByVmId(userVmId);
             if (log == null) {
@@ -897,7 +905,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 }
             }
         } finally {
-            if (vm != null) {
+            if (locked) {
                 _userVMDao.releaseFromLockTable(userVmId);
                 _workDao.updateStep(work.getId(), Step.Done);
             }
@@ -1166,7 +1174,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             s_logger.debug("Network Group Work cleanup found no unfinished work items older than " + before.toString());
         }
     }
-    
+
     private void processScheduledWork() {
         List<SecurityGroupWorkVO> scheduled = _workDao.findScheduledWork();
         int numJobs = scheduled.size();
@@ -1178,7 +1186,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
             }
         }
- 
+
     }
 
     @Override
