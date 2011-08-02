@@ -236,12 +236,14 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         
 		if(destTmpltHost != null) {
 		    start();
-		    
+            String sourceChecksum = _vmMgr.getChecksum(srcTmpltHost.getHostId(), srcTmpltHost.getInstallPath());
 			DownloadCommand dcmd =  
-              new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes);
+              new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
+			
 			if (downloadJobExists) {
 				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
-	 		} 
+	 		}
+			dcmd.setChecksum(sourceChecksum); // We need to set the checksum as the source template might be a compressed url and have cksum for compressed image. Bug #10775
             HostVO ssAhost = _agentMgr.getSSAgent(destServer);
             if( ssAhost == null ) {
                  s_logger.warn("There is no secondary storage VM for secondary storage host " + destServer.getName());
