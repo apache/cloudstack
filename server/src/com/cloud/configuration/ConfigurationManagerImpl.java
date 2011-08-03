@@ -1156,7 +1156,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String internalDns2 = cmd.getInternalDns2();
         String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
-        List<String> domainSuffixList = cmd.getDomainSuffixList();
+        List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
         Long userId = UserContext.current().getCallerUserId();
         int startVnetRange = 0;
         int stopVnetRange = 0;
@@ -1186,15 +1186,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }  
         
         // add the domain prefix list to details if not null
-        if (domainSuffixList != null){
-            for(String dom : domainSuffixList){
+        if (dnsSearchOrder != null){
+            for(String dom : dnsSearchOrder){
                 if (!NetUtils.verifyDomainName(dom)) {
                     throw new InvalidParameterValueException(
                             "Invalid network domain suffixes. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                             + "and the hyphen ('-'); can't start or end with \"-\"");
                 }
             }
-            newDetails.put("dns.suffixes", StringUtils.join(domainSuffixList, ","));
+            newDetails.put(ZoneConfig.DnsSearchOrder.getName(), StringUtils.join(dnsSearchOrder, ","));
         }
 
         if (userId == null) {

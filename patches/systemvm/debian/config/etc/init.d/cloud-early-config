@@ -267,9 +267,10 @@ setup_dnsmasq() {
       echo "dhcp-option=6,$GUEST_GW" >> /etc/dnsmasq.conf
   fi
   
-  if [ -n "$DOMAIN_SUFFIX" ]
+  if [ -n "$DNS_SEARCH_ORDER" ]
   then
-    sed -i s/[#]*dhcp-option=119.*$/dhcp-option=119,\"$DOMAIN_SUFFIX\"/ /etc/dnsmasq.conf
+    sed -i -e "/^[#]*dhcp-option=119.*$/d" /etc/dnsmasq.conf
+    echo "dhcp-option=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
   fi
   
   if [ "$USE_EXTERNAL_DNS" == "true" ]
@@ -550,8 +551,8 @@ for i in $CMDLINE
       domain)
           DOMAIN=$VALUE
           ;;
-      domainsuffix)
-          DOMAIN_SUFFIX=$VALUE
+      dnssearchorder)
+          DNS_SEARCH_ORDER=$VALUE
           ;;
       useextdns)
         USE_EXTERNAL_DNS=$VALUE
