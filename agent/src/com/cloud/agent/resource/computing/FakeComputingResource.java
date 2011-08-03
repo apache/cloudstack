@@ -69,6 +69,7 @@ import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
@@ -127,7 +128,7 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
 
     @Override
     public StartupCommand[] initialize() {
-        Map<String, State> changes = null;
+        Map<String, VmState> changes = null;
 
  
         final List<Object> info = getHostInfo();

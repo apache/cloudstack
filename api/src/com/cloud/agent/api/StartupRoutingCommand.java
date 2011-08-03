@@ -26,11 +26,26 @@ import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.vm.VirtualMachine.State;
 
 public class StartupRoutingCommand extends StartupCommand {
+    public class VmState {
+        State state;
+        String host;
+        public VmState(State state, String host) {
+            this.state = state;
+            this.host = host;
+        }
+        public State getState() {
+            return state;
+        }
+        public String getHost() {
+            return host;
+        }
+    }
     int cpus;
     long speed;
     long memory;
     long dom0MinMemory;
-    Map<String, State> vms;
+    boolean poolSync;
+    Map<String, VmState> vms;
     String caps;
     String pool;
     HypervisorType hypervisorType;
@@ -50,20 +65,30 @@ public class StartupRoutingCommand extends StartupCommand {
                                    String caps,
                                    HypervisorType hypervisorType,
                                    RouterPrivateIpStrategy privIpStrategy,
-                                   Map<String, State> vms) {
+                                   Map<String, VmState> vms) {
         this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, vms);
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
     }
+    
+    public StartupRoutingCommand(int cpus,
+            long speed,
+            long memory,
+            long dom0MinMemory,
+            String caps,
+            HypervisorType hypervisorType,
+            RouterPrivateIpStrategy privIpStrategy) {
+this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, new HashMap<String,String>(), new HashMap<String, VmState>());
+getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
+}
     
     public StartupRoutingCommand(int cpus,
     		long speed,
     		long memory,
     		long dom0MinMemory,
     		final String caps,
-    		final HypervisorType hypervisorType,
-    		
+    		final HypervisorType hypervisorType,   		
     		final Map<String, String> hostDetails,
-    		Map<String, State> vms) {
+    		Map<String, VmState> vms) {
     	super(Host.Type.Routing);
     	this.cpus = cpus;
     	this.speed = speed;
@@ -73,17 +98,27 @@ public class StartupRoutingCommand extends StartupCommand {
     	this.hypervisorType = hypervisorType;
     	this.hostDetails = hostDetails;
     	this.caps = caps;
+    	this.poolSync = false;
     }
     
     public StartupRoutingCommand(int cpus2, long speed2, long memory2,
 			long dom0MinMemory2, String caps2, HypervisorType hypervisorType2,
-			Map<String, State> vms2) {
+			Map<String, VmState> vms2) {
 		this(cpus2, speed2, memory2, dom0MinMemory2, caps2, hypervisorType2, new HashMap<String,String>(), vms2);
 	}
-
-	public void setChanges(Map<String, State> vms) {
+    
+	public void setChanges(Map<String, VmState> vms) {
         this.vms = vms;
     }
+	
+	public void setStateChanges(Map<String, State> vms) {
+	    for( String vm_name : vms.keySet() ) {
+	        if( this.vms == null ) {
+	            this.vms = new HashMap<String, VmState>();
+	        }
+	        this.vms.put(vm_name, new VmState(vms.get(vm_name), null));
+	    }
+	}
 
     public int getCpus() {
         return cpus;
@@ -105,7 +140,7 @@ public class StartupRoutingCommand extends StartupCommand {
         return dom0MinMemory;
     }
 
-    public Map<String, State> getVmStates() {
+    public Map<String, VmState> getVmStates() {
         return vms;
     }
     
@@ -137,7 +172,15 @@ public class StartupRoutingCommand extends StartupCommand {
     	this.pool = pool;
     }
 
-	public HypervisorType getHypervisorType() {
+	public boolean isPoolSync() {
+        return poolSync;
+    }
+
+    public void setPoolSync(boolean poolSync) {
+        this.poolSync = poolSync;
+    }
+
+    public HypervisorType getHypervisorType() {
 		return hypervisorType;
 	}
 

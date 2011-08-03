@@ -26,11 +26,18 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.cluster.agentlb.HostTransferMapVO;
+import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.org.Managed;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
@@ -45,6 +52,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
 
+    protected final SearchBuilder<VMInstanceVO> VMClusterSearch;
     protected final SearchBuilder<VMInstanceVO> IdStatesSearch;
     protected final SearchBuilder<VMInstanceVO> AllFieldsSearch;
     protected final SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
@@ -60,11 +68,18 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     protected final Attribute _updateTimeAttr;
 
+    protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
     protected VMInstanceDaoImpl() {
         IdStatesSearch = createSearchBuilder();
         IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);
         IdStatesSearch.and("states", IdStatesSearch.entity().getState(), Op.IN);
         IdStatesSearch.done();
+               
+        VMClusterSearch = createSearchBuilder();
+        SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
+        VMClusterSearch.join("hostSearch", hostSearch, hostSearch.entity().getId(), VMClusterSearch.entity().getHostId(), JoinType.INNER);
+        hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        VMClusterSearch.done();
 
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("host", AllFieldsSearch.entity().getHostId(), Op.EQ);
@@ -159,6 +174,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> listByZoneId(long zoneId) {
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("zone", zoneId);
+
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<VMInstanceVO> listByClusterId(long clusterId) {
+        SearchCriteria<VMInstanceVO> sc = VMClusterSearch.create();
+        sc.setJoinParameters("hostSearch", "clusterId", clusterId);
 
         return listBy(sc);
     }

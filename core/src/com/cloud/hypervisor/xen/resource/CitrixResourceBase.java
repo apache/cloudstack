@@ -120,6 +120,7 @@ import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
@@ -2462,7 +2463,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Com'on no control domain?  What the crap?!#@!##$@");
     }
 
-    protected HashMap<String, State> sync(Connection conn) {
+    protected HashMap<String, State> deltaSync(Connection conn) {
         HashMap<String, State> newStates;
         HashMap<String, State> oldStates = null;
 
@@ -2556,6 +2557,46 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return changes;
     }
 
+
+    protected void fullSync(StartupRoutingCommand cmd, Connection conn) {
+        synchronized (_vms) {
+            _vms.clear();
+        }           
+        try {
+            final HashMap<String, VmState> vmStates = new HashMap<String, VmState>();
+            Map<VM, VM.Record> vmRs = VM.getAllRecords(conn);
+            for (VM.Record record : vmRs.values()) {
+                if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
+                    continue; // Skip DOM0
+                }
+                String vm_name = record.nameLabel;
+                VmPowerState ps = record.powerState;
+                final State state = convertToState(ps);
+                Host host = record.residentOn;
+                String host_uuid = null;
+                if( host != null ) {
+                    host_uuid = host.getUuid(conn);
+                    if( host_uuid.equals(_host.uuid)) {
+                        synchronized (_vms) {
+                            _vms.put(vm_name, state);
+                        }
+                    }
+                }
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("VM " + vm_name + ": powerstate = " + ps + "; vm state=" + state.toString());
+                }          
+                VmState vm_state = cmd.new VmState(state, host_uuid);
+                vmStates.put(vm_name, vm_state);
+            }
+            cmd.setChanges(vmStates);
+        } catch (final Throwable e) {
+            String msg = "Unable to get vms through host " + _host.uuid + " due to to " + e.toString();      
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    
     protected ReadyAnswer execute(ReadyCommand cmd) {
         Connection conn = getConnection();
         Long dcId = cmd.getDataCenterId();
@@ -3733,7 +3774,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     return null;
                 }
             }
-            HashMap<String, State> newStates = sync(conn);
+            HashMap<String, State> newStates = deltaSync(conn);
             if (newStates == null) {
                 s_logger.warn("Unable to get current status from sync");
                 return null;
@@ -3970,25 +4011,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn("Unable to get host information for " + _host.ip);
             return null;
         }
-
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(conn, cmd);
 
-        Map<String, State> changes = null;
-        synchronized (_vms) {
-            _vms.clear();
-            changes = sync(conn);
-        }
-
+        fullSync(cmd, conn);
         cmd.setHypervisorType(HypervisorType.XenServer);
-        cmd.setChanges(changes);
         cmd.setCluster(_cluster);
+        cmd.setPoolSync(true);
 
         StartupStorageCommand sscmd = initializeLocalSR(conn);
         if (sscmd != null) {
             return new StartupCommand[] { cmd, sscmd };
         }
-
         return new StartupCommand[] { cmd };
     }
     
