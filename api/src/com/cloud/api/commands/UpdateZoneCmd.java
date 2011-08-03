@@ -81,8 +81,8 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
     private String domain;
     
-    @Parameter(name=ApiConstants.DOMAIN_SUFFIX_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of domain suffixes for dns")
-    private List<String> domainSuffixList;   
+    @Parameter(name=ApiConstants.DNS_SEARCH_ORDER, type=CommandType.LIST, collectionType = CommandType.STRING, description="the dns search order list")
+    private List<String> dnsSearchOrder;   
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -140,8 +140,8 @@ public class UpdateZoneCmd extends BaseCmd {
         return domain;
     }
 
-    public List<String> getDomainSuffixList() {
-        return domainSuffixList;
+    public List<String> getDnsSearchOrder() {
+        return dnsSearchOrder;
     }   
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

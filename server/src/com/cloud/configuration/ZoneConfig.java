@@ -28,7 +28,8 @@ public enum ZoneConfig {
     MaxVirtualMachines( Long.class, "max.vms", null, "Maximum number of VMs the Zone can have", null),
     ZoneMode( String.class, "zone.mode", null, "Mode of the Zone", "Free,Basic,Advanced"),
     HasNoPublicIp(Boolean.class, "has.no.public.ip", "false", "True if Zone has no public IP", null),
-    DhcpStrategy(String.class, "zone.dhcp.strategy", "cloudstack-systemvm",  "Who controls DHCP", "cloudstack-systemvm,cloudstack-external,external");
+    DhcpStrategy(String.class, "zone.dhcp.strategy", "cloudstack-systemvm",  "Who controls DHCP", "cloudstack-systemvm,cloudstack-external,external"),
+    DnsSearchOrder(String.class, "network.guestnetwork.dns.search.order", null, "Domains list to be used for domain search order", null);
    
 
     private final Class<?> _type;

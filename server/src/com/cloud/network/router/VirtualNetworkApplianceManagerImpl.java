@@ -67,6 +67,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
@@ -1232,9 +1233,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (domain != null) {
             buf.append(" domain=" + domain);
         }  
-        String domain_suffix = dcVO.getDetail("dns.suffixes");
+        String domain_suffix = dcVO.getDetail(ZoneConfig.DnsSearchOrder.getName());
         if (domain_suffix != null) {
-            buf.append(" domainsuffix=").append(domain_suffix);
+            buf.append(" dnssearchorder=").append(domain_suffix);
         }
        
 
