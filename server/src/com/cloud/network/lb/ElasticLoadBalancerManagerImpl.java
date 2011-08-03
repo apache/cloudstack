@@ -206,20 +206,19 @@ public class ElasticLoadBalancerManagerImpl implements
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
         Account owner = _accountService.getActiveAccount("system", new Long(1));
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
-        s_logger.debug("About to deploy elastic LB vm ");
+        s_logger.debug("About to deploy ELB vm ");
 
         try {
             DomainRouterVO elbVm = deployELBVm(network, dest, owner, params);
-
-            s_logger.debug("ELB  vm = " + elbVm);
             if (elbVm == null) {
                 throw new InvalidParameterValueException("Could not deploy or find existing ELB VM");
             }
+            s_logger.debug("Deployed ELB  vm = " + elbVm);
+
             return elbVm;
            
         } catch (Throwable t) {
-            String errorMsg = "Error while deploying Loadbalancer VM:  " + t;
-            s_logger.warn(errorMsg);
+            s_logger.warn("Error while deploying ELB VM:  " + t);
             return null;
         }
 
@@ -563,7 +562,11 @@ public class ElasticLoadBalancerManagerImpl implements
     
     public void releaseIp(long ipId, long userId, Account caller) {
         s_logger.info("Release public IP for loadbalancing " + ipId);
+        IPAddressVO ipvo = _ipAddressDao.findById(ipId);
+        ipvo.setAssociatedWithNetworkId(null); 
+        _ipAddressDao.update(ipvo.getId(), ipvo);
        _networkMgr.releasePublicIpAddress(ipId, userId, caller);
+       _ipAddressDao.unassignIpAddress(ipId);
     }
 
     @Override
@@ -713,5 +716,11 @@ public class ElasticLoadBalancerManagerImpl implements
         CleanupThread() {
 
         }
+    }
+
+    @Override
+    public void handleDeleteLoadBalancerRule(LoadBalancer lb, long userId, Account caller) {
+        s_logger.debug("ELB mgr: releasing ip " + lb.getSourceIpAddressId() + " since the LB rule is deleted");
+       releaseIp(lb.getSourceIpAddressId(), userId, caller);
     }
 }
