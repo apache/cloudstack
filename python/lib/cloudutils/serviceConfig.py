@@ -533,6 +533,8 @@ class firewallConfigAgent(firewallConfigBase):
         self.ports = "22 16509 5900:6100 49152:49216".split()
         if syscfg.env.distribution.getVersion() == "CentOS":
             self.rules = ["-D FORWARD -j RH-Firewall-1-INPUT"]
+        else:
+            self.rules = ["-D FORWARD -j REJECT --reject-with icmp-host-prohibited"]
 
 
 class cloudAgentConfig(serviceCfgBase):
