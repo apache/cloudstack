@@ -424,8 +424,28 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);
-        return _ipAddressDao.update(ipAddress.getId(), ipAddress);
+        if ( _ipAddressDao.update(ipAddress.getId(), ipAddress))
+        {
+        	 List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
+       
+             FirewallRuleVO ruleVO = new FirewallRuleVO(null, ipAddress.getId(), 0, 0, "icmp", 
+                     networkId,vm.getAccountId(), vm.getDomainId(), Purpose.StaticNat);
 
+             staticNatRules.add(new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address()));
+             
+             try {
+            	 if (!applyRules(staticNatRules, true)) {
+                     return false;
+                 }
+
+             } catch (ResourceUnavailableException ex) {
+                 s_logger.warn("Failed to apply icmp firewall rules due to ", ex);
+                 return false;
+             }
+        	 return true;
+        	
+        }
+        return false;
     }
 
     @DB
@@ -1101,7 +1121,29 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.warn("Unable to revoke all static nat rules for ip " + ipAddress);
             success = false;
         }
+        if (success)
+        {
+        	 long vmId = ipAddress.getAssociatedWithVmId();
+        	 Nic guestNic = _networkMgr.getNicInNetwork(vmId, ipAddress.getAssociatedWithNetworkId());
+             if (guestNic == null) {
+                 throw new InvalidParameterValueException("Vm doesn't belong to the network " + ipAddress.getAssociatedWithNetworkId());
+             }
+        	 List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
+             FirewallRuleVO ruleVO = new FirewallRuleVO(null, ipAddress.getId(), 0, 0, "icmp", 
+                   ipAddress.getAssociatedWithNetworkId(),ipAddress.getAccountId(), ipAddress.getDomainId(), Purpose.StaticNat);
 
+             ruleVO.setState(State.Revoke);
+             staticNatRules.add(new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address()));
+             
+             try {
+            	 if (!applyRules(staticNatRules, true)) {
+                     return false;
+                 }
+             } catch (ResourceUnavailableException ex) {
+                 s_logger.warn("Failed to apply icmp firewall rules due to ", ex);
+                 return false;
+             }
+        }
         if (success) {
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);

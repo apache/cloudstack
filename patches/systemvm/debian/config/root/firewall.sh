@@ -126,12 +126,22 @@ one_to_one_fw_entry() {
 
   # shortcircuit the process if error and it is an append operation
   # continue if it is delete
-  (sudo iptables -t nat $op  PREROUTING -i $dev -d $publicIp --proto $proto \
+  if [ $proto == "icmp" ]
+  then
+    (sudo iptables -t nat $op  PREROUTING -i $dev -d $publicIp --proto $proto \
+           -j DNAT \
+           --to-destination $instIp &>>  $OUTFILE || [ "$op" == "-D" ]) &&
+     (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp --proto $proto \
+           -m state \
+           --state NEW -j ACCEPT &>>  $OUTFILE )
+  else
+     (sudo iptables -t nat $op  PREROUTING -i $dev -d $publicIp --proto $proto \
            --destination-port $portRange -j DNAT \
            --to-destination $instIp &>>  $OUTFILE || [ "$op" == "-D" ]) &&
-  (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp --proto $proto \
+     (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp --proto $proto \
            --destination-port $portRange -m state \
            --state NEW -j ACCEPT &>>  $OUTFILE )
+   fi
 
   result=$?
   logger -t cloud "$(basename $0): done firewall entry public ip=$publicIp op=$op result=$result"
