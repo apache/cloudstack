@@ -19,7 +19,6 @@ package com.cloud.api;
 
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Set;
 
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
@@ -43,8 +42,9 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
-import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
+import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
@@ -57,12 +57,13 @@ import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
-import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
@@ -71,6 +72,8 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
@@ -91,7 +94,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 
@@ -159,7 +161,12 @@ public interface ResponseGenerator {
     Host findHostById(Long hostId);
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly);
+    
     List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
+    
+    VpnUsersResponse createVpnUserResponse(VpnUser user);
+
+    RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
     

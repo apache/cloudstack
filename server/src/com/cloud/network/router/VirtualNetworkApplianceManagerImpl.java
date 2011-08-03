@@ -48,10 +48,12 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -106,8 +108,11 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.VpnUser;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -116,6 +121,8 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
@@ -265,6 +272,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     VirtualMachineManager _itMgr;
     @Inject
+    VpnUserDao _vpnUsersDao;
+    @Inject
+    RemoteAccessVpnDao _remoteAccessVpnDao;
+    @Inject
     RulesManager _rulesMgr;
     @Inject
     NetworkDao _networkDao;
@@ -272,6 +283,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     LoadBalancingRulesManager _lbMgr;
     @Inject
     PortForwardingRulesDao _pfRulesDao;
+    @Inject
+    RemoteAccessVpnDao _vpnDao;
     @Inject
     VMInstanceDao _instanceDao;
     @Inject
@@ -1334,12 +1347,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 // Re-apply public ip addresses - should come before PF/LB/VPN
                 createAssociateIPCommands(router, publicIps, cmds, 0);
 
+                List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
                 List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
                 List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
 
                 for (PublicIpAddress ip : publicIps) {
                     pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
                     staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
+
+                    RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
+                    if (vpn != null) {
+                        vpns.add(vpn);
+                    }
                 }
 
                 // Re-apply port forwarding rules
@@ -1356,6 +1375,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         staticNatRules.add(_rulesMgr.buildStaticNatRule(rule));
                     }
                     createApplyStaticNatRulesCommands(staticNatRules, router, cmds);
+                }
+
+                // Re-apply vpn rules
+                s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router + " start.");
+                if (!vpns.isEmpty()) {
+                    for (RemoteAccessVpn vpn : vpns) {
+                        createApplyVpnCommands(vpn, router, cmds);
+                    }
                 }
 
                 // Re-apply load balancing rules
@@ -1410,6 +1437,87 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public void finalizeExpunge(DomainRouterVO vm) {
     }
+
+
+    @Override
+    public boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
+            throw new ResourceUnavailableException("Failed to start remote access VPN: no router found for account and zone", DataCenter.class, network.getDataCenterId());
+        }
+        
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != State.Running) {
+                s_logger.warn("Failed to start remote access VPN: router not in right state " + router.getState());
+                throw new ResourceUnavailableException("Failed to start remote access VPN: router not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+            }
+
+            Commands cmds = new Commands(OnError.Stop);
+
+            createApplyVpnCommands(vpn, router, cmds);
+
+            try {
+                _agentMgr.send(router.getHostId(), cmds);
+            } catch (OperationTimedoutException e) {
+                s_logger.debug("Failed to start remote access VPN: ", e);
+                throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
+            }
+            Answer answer = cmds.getAnswer("users");
+            if (!answer.getResult()) {
+                s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+                        + " due to " + answer.getDetails());
+                throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: "
+                        + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
+            }
+            answer = cmds.getAnswer("startVpn");
+            if (!answer.getResult()) {
+                s_logger.error("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
+                        + answer.getDetails());
+                throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterIdToDeployIn() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+                        + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
+            }
+            
+        }
+        return true;
+    }
+    
+
+    @Override
+    public boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.warn("Failed to delete remote access VPN: no router found for account and zone");
+            throw new ResourceUnavailableException("Failed to delete remote access VPN", DataCenter.class, network.getDataCenterId());
+        }
+        
+        boolean result = true;
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != State.Running) {
+                s_logger.warn("Failed to delete remote access VPN: domR is not in right state " + router.getState());
+                throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+            }
+            Commands cmds = new Commands(OnError.Continue);
+            IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
+
+            RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+            removeVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+            
+            cmds.addCommand(removeVpnCmd);
+
+            result = result && sendCommandsToRouter(router, cmds);
+        }
+        
+        return result;
+    }
+        
 
     private DomainRouterVO start(DomainRouterVO router, User user, Account caller, Map<Param, Object> params, DeploymentPlan planToDeploy) throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -1546,6 +1654,58 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public DomainRouterVO persist(DomainRouterVO router) {
         return _routerDao.persist(router);
+    }
+
+    @Override
+    public String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException {
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
+        }
+        
+        String[] result = new String[users.size()];
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != State.Running) {
+                s_logger.warn("Failed to add/remove VPN users: router not in running state");
+                throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+            }
+
+            Commands cmds = new Commands(OnError.Continue);
+            List<VpnUser> addUsers = new ArrayList<VpnUser>();
+            List<VpnUser> removeUsers = new ArrayList<VpnUser>();
+            for (VpnUser user : users) {
+                if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
+                    addUsers.add(user);
+                } else if (user.getState() == VpnUser.State.Revoke) {
+                    removeUsers.add(user);
+                }
+            }
+
+            VpnUsersCfgCommand cmd = new VpnUsersCfgCommand(addUsers, removeUsers);
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            DataCenterVO dcVo = _dcDao.findById(router.getPodIdToDeployIn());
+            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+            
+            cmds.addCommand(cmd);
+
+            // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
+            // results accordingly
+            boolean agentResult = sendCommandsToRouter(router, cmds);
+            
+            for (int i = 0; i < result.length; i++) {
+                // the result of the command is true only when it got applied successfully on all domain routers
+                if (agentResult && result[i] == null) {
+                    result[i] = null;
+                } else {
+                    result[i] = String.valueOf(agentResult);
+                }
+            }    
+        }
+        
+        return result;
     }
 
     @Override
@@ -1743,6 +1903,36 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
 
+    }
+
+    private void createApplyVpnCommands(RemoteAccessVpn vpn, DomainRouterVO router, Commands cmds) {
+        List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
+        List<VpnUser> addUsers = new ArrayList<VpnUser>();
+        List<VpnUser> removeUsers = new ArrayList<VpnUser>();
+        for (VpnUser user : vpnUsers) {
+            if (user.getState() == VpnUser.State.Add) {
+                addUsers.add(user);
+            } else if (user.getState() == VpnUser.State.Revoke) {
+                removeUsers.add(user);
+            }
+        }
+
+        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(addUsers, removeUsers);
+        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+
+        IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
+
+        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        startVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+        cmds.addCommand("users", addUsersCmd);
+        cmds.addCommand("startVpn", startVpnCmd);
     }
 
     private void createVmDataCommands(DomainRouterVO router, Commands cmds) {
