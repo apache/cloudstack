@@ -22,6 +22,8 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
 /**
  * Reduce bloat inside CitrixResourceBase
  *
@@ -326,29 +328,44 @@ public class CitrixHelper {
         return guestOS;
     }
     
-    public static String getXenServerGuestOsType(String stdType) {
+    public static String getXenServerGuestOsType(String stdType, boolean bootFromCD) {
         String guestOS =  _xenServerGuestOsMap.get(stdType);
         if (guestOS == null) {
-        	s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 guestOS type, start it as HVM guest");
-        	guestOS = "Other install media";
+            if ( !bootFromCD ) {
+        	    s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 guestOS type, start it as HVM guest");
+        	    guestOS = "Other install media";
+            } else {
+                String msg = "XenServer 5.6 doesn't support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
         }
         return guestOS;
     }
     
-    public static String getXenServer56FP1GuestOsType(String stdType) {
+    public static String getXenServer56FP1GuestOsType(String stdType, boolean bootFromCD) {       
         String guestOS =  _xenServer56FP1GuestOsMap.get(stdType);
         if (guestOS == null) {
-            s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-            guestOS = "Other install media";
+            if ( !bootFromCD ) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
+                guestOS = "Other install media";
+            } else {
+                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
         }
         return guestOS;
     }
     
-    public static String getXenServer56FP2GuestOsType(String stdType) {
+    public static String getXenServer56SP2GuestOsType(String stdType, boolean bootFromCD) {
         String guestOS =  _xenServer56FP2GuestOsMap.get(stdType);
         if (guestOS == null) {
-            s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP2 guestOS type, start it as HVM guest");
-            guestOS = "Other install media";
+            if ( !bootFromCD ) {
+                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 SP2 guestOS type, start it as HVM guest");
+                guestOS = "Other install media";
+            } else {
+                String msg = "XenServer 5.6 SP2 DOES NOT support Guest OS type " + stdType;
+                s_logger.warn(msg);
+            }
         }
         return guestOS;
     }
