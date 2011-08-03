@@ -415,16 +415,17 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                     work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWorkVO.Step.Scheduled, null);
                     work = _workDao.persist(work);
                     if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Security Group Mgr: created new work item for " + vmId);
+                        s_logger.trace("Security Group Mgr: created new work item for " + vmId + "; id = " + work.getId());
                     }
                 }
 
                 work.setLogsequenceNumber(log.getLogsequence());
                 _workDao.update(work.getId(), work);
-
-                _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
             }
             txn.commit();
+            for (Long vmId : affectedVms) {
+                _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
+            }
         } finally {
             _workLock.unlock();
             if (s_logger.isTraceEnabled()) {
