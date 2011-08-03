@@ -246,7 +246,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-					cmd.getZoneId(), HypervisorType.None, cmd.getAccountName(), cmd.getDomainId(), null, cmd.isBootable());
+					cmd.getZoneId(), HypervisorType.None, cmd.getAccountName(), cmd.getDomainId(), cmd.getChecksum(), cmd.isBootable());
 	}
 	
 	protected VMTemplateVO persistTemplate(TemplateProfile profile) {

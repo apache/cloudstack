@@ -78,6 +78,9 @@ public class RegisterIsoCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account name. Must be used with domainId.")
     private String accountName;
     
+    @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this ISO")
+    private String checksum;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -126,6 +129,10 @@ public class RegisterIsoCmd extends BaseCmd {
 		return accountName;
 	}
 
+    public String getChecksum() {
+        return checksum;
+    }	
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

@@ -1441,6 +1441,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setCrossZones(iso.isCrossZones());
             isoResponse.setPublic(iso.isPublicTemplate());
             isoResponse.setCreated(iso.getCreated());
+            isoResponse.setChecksum(iso.getChecksum());
             isoResponse.setPasswordEnabled(false);
             Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
             if (owner != null) {
@@ -1485,6 +1486,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setFeatured(iso.isFeatured());
         isoResponse.setCrossZones(iso.isCrossZones());
         isoResponse.setPublic(iso.isPublicTemplate());
+        isoResponse.setChecksum(iso.getChecksum());
 
         // TODO: implement
         GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
