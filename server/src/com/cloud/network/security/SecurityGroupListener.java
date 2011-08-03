@@ -17,8 +17,8 @@
  */
 package com.cloud.network.security;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -75,7 +75,7 @@ public class SecurityGroupListener implements Listener {
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        Set<Long> affectedVms = new HashSet<Long>();
+        List<Long> affectedVms = new ArrayList<Long>();
         int commandNum = 0;
         for (Answer ans: answers) {
             if (ans instanceof SecurityIngressRuleAnswer) {
