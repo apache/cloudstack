@@ -208,4 +208,6 @@ public interface NetworkManager extends NetworkService {
     public String acquireGuestIpAddress(Network network, String requestedIp);
 
     String getGlobalGuestDomainSuffix();
+    
+    String getStartIpAddress(long networkId);
 }

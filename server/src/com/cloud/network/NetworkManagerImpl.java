@@ -3131,4 +3131,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public String getGlobalGuestDomainSuffix() {
         return _networkDomain;
     }
+    
+    @Override
+    public String getStartIpAddress(long networkId) {
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+        if (vlans.isEmpty()) {
+            return null;
+        }
+        
+        String startIP = vlans.get(0).getIpRange().split("-")[0];
+        
+        for (VlanVO vlan : vlans) {
+            String startIP1 = vlan.getIpRange().split("-")[0];
+            long startIPLong = NetUtils.ip2Long(startIP);
+            long startIPLong1 = NetUtils.ip2Long(startIP1);
+            
+            if (startIPLong1 < startIPLong) {
+                startIP = startIP1; 
+            }
+        }
+        
+        return startIP;
+    }
 }
