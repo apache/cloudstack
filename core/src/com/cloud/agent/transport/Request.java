@@ -259,6 +259,11 @@ public class Request {
 
     public static ByteBuffer doDecompress(ByteBuffer buffer, int length) {
         byte[] byteArrayIn = new byte[1024];
+        int allocLength = length;
+        /* Add default length to support 2.2.8 */
+        if (allocLength < 65535) {
+            allocLength = 65535;
+        }
         ByteArrayInputStream byteIn;
         if (buffer.hasArray()) {
             byteIn = new ByteArrayInputStream(buffer.array(),
@@ -269,7 +274,7 @@ public class Request {
             buffer.get(array);
             byteIn = new ByteArrayInputStream(array);
         }
-        ByteBuffer retBuff = ByteBuffer.allocate(length);
+        ByteBuffer retBuff = ByteBuffer.allocate(allocLength);
         int len = 0;
         try {
             GZIPInputStream in = new GZIPInputStream(byteIn);
