@@ -749,36 +749,46 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         private void updateRoutersRedundantState(List<DomainRouterVO> routers) {
+            boolean updated = false;
             for (DomainRouterVO router : routers) {
+                updated = false;
                 if (!router.getIsRedundantRouter()) {
                     continue;
                 }
-                String privateIP = router.getPrivateIpAddress();
-                HostVO host = _hostDao.findById(router.getHostId());
-                /* Only cover hosts managed by this management server */
-                if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
-                    continue;
-                }
-                if (privateIP != null) {
-                    final CheckRouterCommand command = new CheckRouterCommand();
-                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-                    command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                    final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
-                    RedundantState state = RedundantState.UNKNOWN;
-                    if (answer != null && answer.getResult()) {
-                        if (answer.getIsMaster()) {
-                            state = RedundantState.MASTER;
-                        } else {
-                            if (answer.getDetails() != null) {
-                                if (answer.getDetails().equals("Status: BACKUP")) {
-                                    state = RedundantState.BACKUP;
-                                } else if (answer.getDetails().startsWith("Status: FAULT")) {
-                                    state = RedundantState.FAULT;
+                if (router.getState() != State.Running) {
+                    router.setRedundantState(RedundantState.UNKNOWN);
+                    updated = true;
+                } else {
+                    String privateIP = router.getPrivateIpAddress();
+                    HostVO host = _hostDao.findById(router.getHostId());
+                    /* Only cover hosts managed by this management server */
+                    if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                        continue;
+                    }
+                    if (privateIP != null) {
+                        final CheckRouterCommand command = new CheckRouterCommand();
+                        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                        final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
+                        RedundantState state = RedundantState.UNKNOWN;
+                        if (answer != null && answer.getResult()) {
+                            if (answer.getIsMaster()) {
+                                state = RedundantState.MASTER;
+                            } else {
+                                if (answer.getDetails() != null) {
+                                    if (answer.getDetails().equals("Status: BACKUP")) {
+                                        state = RedundantState.BACKUP;
+                                    } else if (answer.getDetails().startsWith("Status: FAULT")) {
+                                        state = RedundantState.FAULT;
+                                    }
                                 }
                             }
                         }
+                        router.setRedundantState(state);
+                        updated = true;
                     }
-                    router.setRedundantState(state);
+                }
+                if (updated) {
                     Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                     try {
                         txn.start();
