@@ -69,7 +69,10 @@ public class Upgrade228to229 implements DbUpgrade {
 
             pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`)");
             pstmt.executeUpdate();
-
+   
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_tags` ADD CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            
             pstmt.close();
 
         } catch (SQLException e) {
@@ -88,7 +91,7 @@ public class Upgrade228to229 implements DbUpgrade {
         HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
 
         //indexes to drop
-
+        
         //for network_offering
         List<String> keys = new ArrayList<String>();
         keys.add("name");
@@ -99,12 +102,33 @@ public class Upgrade228to229 implements DbUpgrade {
         keys.add("i_snapshots__removed");
         indexes.put("snapshots", keys);
 
+        
+        //for domain router
+        keys = new ArrayList<String>();
+        keys.add("i_domain_router__public_ip_address");
+        indexes.put("domain_router", keys);
+        
+        //for user_ip_address
+        keys = new ArrayList<String>();
+        keys.add("i_user_ip_address__public_ip_address");
+        indexes.put("user_ip_address", keys);
+        
+        
         //foreign keys to drop - this key would be re-added later
         keys = new ArrayList<String>();
         keys.add("fk_cluster__data_center_id");
         foreignKeys.put("cluster", keys);
 
-
+        
+        keys = new ArrayList<String>();
+        keys.add("fk_domain_router__public_ip_address");
+        foreignKeys.put("domain_router", keys);
+        
+        //drop foreign key from network tags table - it would be re-added later
+        keys = new ArrayList<String>();
+        keys.add("fk_network_tags__network_id");
+        foreignKeys.put("network_tags", keys);
+                
         // drop all foreign keys first
         s_logger.debug("Dropping keys that don't exist in 2.2.6 version of the DB...");
         for (String tableName : foreignKeys.keySet()) {
