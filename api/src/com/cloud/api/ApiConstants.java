@@ -75,6 +75,7 @@ public class ApiConstants {
     public static final String HA_ENABLE = "haenable";
     public static final String HOST_ID = "hostid";
     public static final String HYPERVISOR = "hypervisor";
+    public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
     public static final String ICMP_CODE = "icmpcode";
     public static final String ICMP_TYPE = "icmptype";

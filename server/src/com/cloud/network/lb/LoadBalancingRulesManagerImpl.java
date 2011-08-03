@@ -450,10 +450,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         for (LoadBalancerVO lb : lbs) {
             List<LbDestination> dstList = getExistingDestinations(lb.getId());
 
-            if (dstList != null && !dstList.isEmpty()) {
-                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                rules.add(loadBalancing);
-            }
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+            rules.add(loadBalancing);
         }
 
         if (!_networkMgr.applyRules(rules, false)) {

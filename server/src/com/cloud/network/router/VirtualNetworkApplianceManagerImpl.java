@@ -2048,13 +2048,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
                         List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
                         for (LoadBalancerVO lb : lbs) {
-                            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                            // load the cidrs, 
-                            lb.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(lb.getId())); 
-                            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                            lbRules.add(loadBalancing);
+                            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());                            
+                            if (dstList != null && !dstList.isEmpty()) {
+                            	// load the cidrs, 
+                                lb.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(lb.getId())); 
+                                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                                lbRules.add(loadBalancing);
+                            }
                         }
-                        result = result && applyLBRules(router, lbRules);
+                        
+                        if (!lbRules.isEmpty()) {
+                        	result = result && applyLBRules(router, lbRules);
+                        }
                     } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
                         result = result && applyPortForwardingRules(router, (List<PortForwardingRule>) rules);
                     } else if (rules.get(0).getPurpose() == Purpose.StaticNat) {

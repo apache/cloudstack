@@ -16,32 +16,12 @@
  * 
  */
 
-/**
- * 
- */
-package com.cloud.vm.dao;
+package com.cloud.network.dao;
 
-import java.util.List;
-
+import com.cloud.network.InlineLoadBalancerNicMapVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.VirtualMachine;
 
-public interface NicDao extends GenericDao<NicVO, Long> {
-    List<NicVO> listByVmId(long instanceId);
-    
-    List<String> listIpAddressInNetwork(long networkConfigId);
-    List<NicVO> listByVmIdIncludingRemoved(long instanceId);
-    
-    List<NicVO> listByNetworkId(long networkId);
-    
-    NicVO findByInstanceIdAndNetworkId(long networkId, long instanceId);
-    
-    NicVO findByInstanceIdAndNetworkIdIncludingRemoved(long networkId, long instanceId);
-
-    void removeNicsForInstance(long instanceId);
-    
-    NicVO findByNetworkIdAndType(long networkId, VirtualMachine.Type vmType);
-    
-    NicVO findByIp4Address(String ip4Address);
+public interface InlineLoadBalancerNicMapDao extends GenericDao<InlineLoadBalancerNicMapVO, Long> {
+	InlineLoadBalancerNicMapVO findByPublicIpAddress(String publicIpAddress);
+	InlineLoadBalancerNicMapVO findByNicId(long nicId);
 }

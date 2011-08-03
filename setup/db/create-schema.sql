@@ -61,6 +61,7 @@ DROP TABLE IF EXISTS `cloud`.`sync_queue`;
 DROP TABLE IF EXISTS `cloud`.`sync_queue_item`;
 DROP TABLE IF EXISTS `cloud`.`security_group_vm_map`;
 DROP TABLE IF EXISTS `cloud`.`load_balancer_vm_map`;
+DROP TABLE IF EXISTS `cloud`.`load_balancer_inline_ip_map`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_host_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_spool_ref`;
@@ -624,6 +625,17 @@ CREATE TABLE `cloud`.`load_balancer_vm_map` (
   UNIQUE KEY (`load_balancer_id`, `instance_id`),
   CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_load_balancer_vm_map__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`inline_load_balancer_nic_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `public_ip_address` char(40) NOT NULL,
+  `nic_id` bigint unsigned NULL COMMENT 'nic id',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`nic_id`),
+  CONSTRAINT `fk_inline_load_balancer_nic_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_inline_load_balancer_nic_map__nic_id` FOREIGN KEY(`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`port_forwarding_rules` (

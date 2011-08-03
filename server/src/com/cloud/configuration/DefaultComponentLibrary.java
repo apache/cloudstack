@@ -74,6 +74,7 @@ import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
+import com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
@@ -268,6 +269,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("SwiftDao", SwiftDaoImpl.class);
         addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
         addDao("ProjectDao", ProjectDaoImpl.class);
+        addDao("InlineLoadBalancerNicMapDao", InlineLoadBalancerNicMapDaoImpl.class);
     }
 
     @Override
