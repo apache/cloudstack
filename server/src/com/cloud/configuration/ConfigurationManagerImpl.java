@@ -1156,7 +1156,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String internalDns2 = cmd.getInternalDns2();
         String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
-        List<String> domainSuffixList = cmd.getDomainSuffixList();
+        List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
         Long userId = UserContext.current().getCallerUserId();
         int startVnetRange = 0;
         int stopVnetRange = 0;
@@ -1186,8 +1186,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }  
         
         // add the domain prefix list to details if not null
-        if (domainSuffixList != null){
-            newDetails.put("dns.suffixes", StringUtils.join(domainSuffixList, ","));
+        if (dnsSearchOrder != null){
+            newDetails.put(ZoneConfig.DnsSearchOrder.getName(), StringUtils.join(dnsSearchOrder, ","));
         }
 
         if (userId == null) {
