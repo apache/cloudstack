@@ -84,7 +84,7 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServerGuestOsType(stdType);
+        return CitrixHelper.getXenServerGuestOsType(stdType, bootFromCD);
     }
 
 
