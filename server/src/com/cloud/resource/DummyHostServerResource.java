@@ -70,8 +70,12 @@ public class DummyHostServerResource extends ServerResourceBase {
 	@Override
 	public StartupCommand[] initialize() {
 		
-        StartupRoutingCommand cmd = new StartupRoutingCommand(1, 1000L, 1000000L,
-        		256L, "hvm", null, null);
+        StartupRoutingCommand cmd = new StartupRoutingCommand();
+        cmd.setCpus(1);
+        cmd.setSpeed(1000L);
+        cmd.setMemory(1000000L);
+        cmd.setDom0MinMemory(256L);
+        cmd.setCaps("hvm");
         cmd.setGuid(_guid);
         cmd.setDataCenter(_zone);
         cmd.setPod(_pod);
