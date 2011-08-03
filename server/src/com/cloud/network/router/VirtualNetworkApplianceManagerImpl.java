@@ -73,7 +73,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -136,8 +135,8 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -1039,7 +1038,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
 
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
-        NicProfile gatewayNic = new NicProfile();
+        
+        String defaultNetworkStartIp = null;
+        if (guestNetwork.getCidr() != null) {
+            String startIp = _networkMgr.getStartIpAddress(guestNetwork.getId());
+            if (_ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                defaultNetworkStartIp = startIp;
+            } else if (s_logger.isDebugEnabled()){
+                s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + " is already allocated, can't use it for domain router; will get random ip address from the range");
+            }
+        }
+
+        NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp);
         gatewayNic.setDefaultNic(true);
         networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
         networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
