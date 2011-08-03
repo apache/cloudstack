@@ -23,6 +23,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.network.ElasticLbVmMapVO;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -104,6 +105,7 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
 
     public List<DomainRouterVO> listUnusedElbVms() {
         SearchCriteria<DomainRouterVO> sc = ElbVmSearch.create();
+        sc.setParameters("role", Role.LB);
         return _routerDao.search(sc, null);
     }
 	

@@ -18,9 +18,13 @@
 package com.cloud.network.lb;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -176,8 +180,11 @@ public class ElasticLoadBalancerManagerImpl implements
     ServiceOfferingVO _elasticLbVmOffering;
     ScheduledExecutorService _gcThreadPool;
     
+    Set<Long> _gcCandidateElbVmIds = Collections.newSetFromMap(new ConcurrentHashMap<Long,Boolean>());
+    
     int _elasticLbVmRamSize;
     int _elasticLbvmCpuMHz;
+    int _elasticLbvmNumCpu;
     
     private Long getPodIdForDirectIp(IPAddressVO ipAddr) {
         List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ipAddr.getVlanId());
@@ -351,14 +358,18 @@ public class ElasticLoadBalancerManagerImpl implements
         }
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
 
-        _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get("elastic.lb.vm.ram.size"), DEFAULT_ELB_VM_RAMSIZE);
-        _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get("elastic.lb.vm.cpu.mhz"), DEFAULT_ELB_VM_CPU_MHZ);
-        _elasticLbVmOffering = new ServiceOfferingVO("System Offering For Elastic LB VM", 1, _elasticLbVmRamSize, _elasticLbvmCpuMHz, 0, 0, true, null, useLocalStorage, true, null, true, VirtualMachine.Type.ElasticLoadBalancerVm, true);
+        _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
+        _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);
+        _elasticLbvmNumCpu = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmNumVcpu.key()), 1);
+        _elasticLbVmOffering = new ServiceOfferingVO("System Offering For Elastic LB VM", _elasticLbvmNumCpu, 
+                _elasticLbVmRamSize, _elasticLbvmCpuMHz, 0, 0, true, null, useLocalStorage, 
+                true, null, true, VirtualMachine.Type.ElasticLoadBalancerVm, true);
         _elasticLbVmOffering.setUniqueName("Cloud.Com-ElasticLBVm");
         _elasticLbVmOffering = _serviceOfferingDao.persistSystemServiceOffering(_elasticLbVmOffering);
         
         String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _enabled = (enabled == null) ? false: Boolean.parseBoolean(enabled);
+        s_logger.info("Elastic Load balancer enabled: " + _enabled);
         if (_enabled) {
             String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
             if ("guest".equalsIgnoreCase(traffType)) {
@@ -367,8 +378,13 @@ public class ElasticLoadBalancerManagerImpl implements
                 _frontendTrafficType = TrafficType.Public;
             } else
                 throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
+            s_logger.info("Elastic Load Balancer: will balance on " + traffType );
+            int gcIntervalMinutes =  NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmGcInterval.key()), 5);
+            if (gcIntervalMinutes < 5) 
+                gcIntervalMinutes = 5;
+            s_logger.info("Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes" );
             _gcThreadPool = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ELBVM-GC"));
-            _gcThreadPool.scheduleAtFixedRate(new CleanupThread(), 30, 30, TimeUnit.SECONDS);
+            _gcThreadPool.scheduleAtFixedRate(new CleanupThread(), gcIntervalMinutes, gcIntervalMinutes, TimeUnit.MINUTES);
         }
         
 
@@ -649,27 +665,42 @@ public class ElasticLoadBalancerManagerImpl implements
         List<DomainRouterVO> unusedElbVms = _elbVmMapDao.listUnusedElbVms();
         if (unusedElbVms != null && unusedElbVms.size() > 0)
             s_logger.info("Found " + unusedElbVms.size() + " unused ELB vms");
-        else
-            return;
+        Set<Long> currentGcCandidates = new HashSet<Long>();
+        for (DomainRouterVO elbVm: unusedElbVms) {
+            currentGcCandidates.add(elbVm.getId());
+        }
+        _gcCandidateElbVmIds.retainAll(currentGcCandidates);
+        currentGcCandidates.removeAll(_gcCandidateElbVmIds);
         User user = _accountService.getSystemUser();
-        for (DomainRouterVO elbVm : unusedElbVms) {
+        for (Long elbVmId : _gcCandidateElbVmIds) {
+            DomainRouterVO elbVm = _routerDao.findById(elbVmId);
+            boolean gceed = false;
+
             try {
                 s_logger.info("Attempting to stop ELB VM: " + elbVm);
                 stop(elbVm, true, user, _systemAcct);
+                gceed = true;
             } catch (ConcurrentOperationException e) {
                 s_logger.warn("Unable to stop unused elb vm " + elbVm + " due to ", e);
-                continue;
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to stop unused elb vm " + elbVm + " due to ", e);
                 continue;
             }
-            try {
-                s_logger.info("Attempting to destroy ELB VM: " + elbVm);
-                _itMgr.expunge(elbVm, user, _systemAcct);
-            } catch (ResourceUnavailableException e) {
-                s_logger.warn("Unable to destroy unused elb vm " + elbVm + " due to ", e);
+            if (gceed) {
+                try {
+                    s_logger.info("Attempting to destroy ELB VM: " + elbVm);
+                    _itMgr.expunge(elbVm, user, _systemAcct);
+                } catch (ResourceUnavailableException e) {
+                    s_logger.warn("Unable to destroy unused elb vm " + elbVm + " due to ", e);
+                    gceed = false;
+                }
             }
+            if (!gceed) {
+                currentGcCandidates.add(elbVm.getId());
+            }
+
         }
+        _gcCandidateElbVmIds = currentGcCandidates;
     }
     
     public class CleanupThread implements Runnable {

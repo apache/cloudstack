@@ -173,6 +173,10 @@ public enum Config {
 	EndpointeUrl("Advanced", ManagementServer.class, String.class, "endpointe.url", "http://localhost:8080/client/api", "Endpointe Url", "The endpoint callback URL"),
 	ElasticLoadBalancerEnabled("Advanced", ManagementServer.class, String.class, "network.loadbalancer.basiczone.elb.enabled", "true", "Whether the load balancing service is enabled for basic zones", "true,false"),
 	ElasticLoadBalancerNetwork("Advanced", ManagementServer.class, String.class, "network.loadbalancer.basiczone.elb.network", "guest", "Whether the elastic load balancing service public ips are taken from the public or guest network", "guest,public"),
+	ElasticLoadBalancerVmMemory("Advanced", ManagementServer.class, Integer.class, "network.loadbalancer.basiczone.elb.vm.ram.size", "128", "Memory in MB for the elastic load balancer vm", null),
+    ElasticLoadBalancerVmCpuMhz("Advanced", ManagementServer.class, Integer.class, "network.loadbalancer.basiczone.elb.vm.cpu.mhz", "128", "CPU speed for the elastic load balancer vm", null),
+    ElasticLoadBalancerVmNumVcpu("Advanced", ManagementServer.class, Integer.class, "network.loadbalancer.basiczone.elb.vm.vcpu.num", "1", "Number of VCPU  for the elastic load balancer vm", null),
+    ElasticLoadBalancerVmGcInterval("Advanced", ManagementServer.class, Integer.class, "network.loadbalancer.basiczone.elb.gc.interval.minutes", "30", "Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5", null),
 
 
 	
