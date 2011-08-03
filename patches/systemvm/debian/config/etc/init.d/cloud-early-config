@@ -268,6 +268,20 @@ setup_dnsmasq() {
   then
     sed -i s/[#]*dhcp-option=119.*$/dhcp-option=119,\"$DOMAIN_SUFFIX\"/ /etc/dnsmasq.conf
   fi
+  
+  if [ "$USE_EXTERNAL_DNS" == "true" ]
+  then
+      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+      if [ -n "$NS1" ]
+      then
+        if [ -n "$NS2" ]
+        then
+            echo "dhcp-option=6,$NS1,$NS2" >> /etc/dnsmasq.conf
+        else
+            echo "dhcp-option=6,$NS1" >> /etc/dnsmasq.conf
+        fi
+      fi
+  fi
 }
 
 setup_sshd(){
@@ -504,6 +518,9 @@ for i in $CMDLINE
           ;;
       domainsuffix)
           DOMAIN_SUFFIX=$VALUE
+          ;;
+      useextdns)
+        USE_EXTERNAL_DNS=$VALUE
           ;;
       mgmtcidr)
           MGMTNET=$VALUE

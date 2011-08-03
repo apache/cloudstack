@@ -1016,6 +1016,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (domain_suffix != null) {
             buf.append(" domainsuffix=").append(domain_suffix);
         }
+       
 
         if (!network.isDefault() && network.getGuestType() == GuestIpType.Direct) {
             buf.append(" defaultroute=false");
@@ -1034,7 +1035,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (defaultDns2 != null) {
             buf.append(" dns2=").append(defaultDns2);
         }
-
+        
+        String use_external_dns =  _configDao.getValue("use.external.dns");
+        if (use_external_dns!=null && use_external_dns.equals("true")){
+            buf.append(" useextdns=").append(use_external_dns);
+        }
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
