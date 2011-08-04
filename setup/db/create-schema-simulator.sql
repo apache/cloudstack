@@ -85,3 +85,13 @@ CREATE TABLE `cloud`.`mockconfiguration` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`mocksecurityrules` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vmid` bigint unsigned,
+  `signature` varchar(255),
+  `ruleset` varchar(4095),
+  `hostid` bigint unsigned,
+  `seqnum` bigint unsigned,
+  `vmname` varchar(255),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
