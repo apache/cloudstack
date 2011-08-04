@@ -160,11 +160,11 @@ public class Upgrade222to224 implements DbUpgrade {
 
     // fixes bug 9597
     private void fixRecreatableVolumesProblem(Connection conn) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id)");
+        PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id) WHERE disk_offering_id != 0");
         pstmt.execute();
         pstmt.close();
 
-        pstmt = conn.prepareStatement("UPDATE volumes SET recreatable=0 WHERE disk_offering_id is NULL");
+        pstmt = conn.prepareStatement("UPDATE volumes SET recreatable=0 WHERE disk_offering_id is NULL or disk_offering_id=0");
         pstmt.execute();
         pstmt.close();
     }
