@@ -2585,7 +2585,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("VM " + vm_name + ": powerstate = " + ps + "; vm state=" + state.toString());
                 }          
-                VmState vm_state = cmd.new VmState(state, host_uuid);
+                VmState vm_state = new StartupRoutingCommand.VmState(state, host_uuid);
                 vmStates.put(vm_name, vm_state);
             }
             cmd.setChanges(vmStates);
