@@ -1484,32 +1484,36 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     if (volume == null) {
                         throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unable to find orignal volume:" + volumeId + ", try it later ");
                     }
-                    VMTemplateVO template = _templateDao.findByIdIncludingRemoved(volume.getTemplateId());
-                    if (template == null) {
-                        throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unalbe to find orignal template :" + volume.getTemplateId() + ", try it later ");
-                    }
-                    Long origTemplateId = template.getId();
-                    Long origTmpltAccountId = template.getAccountId();
-                    if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
-                        throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to volume:" + volumeId + " is being used, try it later ");
-                    }
-                    cmd = new UpgradeSnapshotCommand(null, secondaryStorageURL, dcId, accountId, volumeId, origTemplateId, origTmpltAccountId, null, snapshot.getBackupSnapshotId(),
-                            snapshot.getName(), "2.1");
-                    if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
-                        throw new CloudRuntimeException("Creating template failed due to volume:" + volumeId + " is being used, try it later ");
-                    }
-                    Answer answer = null;
-                    try {
-                        answer = _storageMgr.sendToPool(pool, cmd);
-                        cmd = null;
-                    } catch (StorageUnavailableException e) {
-                    } finally {
-                        _volsDao.unlockFromLockTable(volumeId.toString());
-                    }
-                    if ((answer != null) && answer.getResult()) {
+                    if ( volume.getTemplateId() == null ) {
                         _snapshotDao.updateSnapshotVersion(volumeId, "2.1", "2.2");
                     } else {
-                        throw new CloudRuntimeException("Unable to upgrade snapshot");
+                        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(volume.getTemplateId());
+                        if (template == null) {
+                            throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to unalbe to find orignal template :" + volume.getTemplateId() + ", try it later ");
+                        }
+                        Long origTemplateId = template.getId();
+                        Long origTmpltAccountId = template.getAccountId();
+                        if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
+                            throw new CloudRuntimeException("failed to upgrade snapshot " + snapshotId + " due to volume:" + volumeId + " is being used, try it later ");
+                        }
+                        cmd = new UpgradeSnapshotCommand(null, secondaryStorageURL, dcId, accountId, volumeId, origTemplateId, origTmpltAccountId, null, snapshot.getBackupSnapshotId(),
+                                snapshot.getName(), "2.1");
+                        if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
+                            throw new CloudRuntimeException("Creating template failed due to volume:" + volumeId + " is being used, try it later ");
+                        }
+                        Answer answer = null;
+                        try {
+                            answer = _storageMgr.sendToPool(pool, cmd);
+                            cmd = null;
+                        } catch (StorageUnavailableException e) {
+                        } finally {
+                            _volsDao.unlockFromLockTable(volumeId.toString());
+                        }
+                        if ((answer != null) && answer.getResult()) {
+                            _snapshotDao.updateSnapshotVersion(volumeId, "2.1", "2.2");
+                        } else {
+                            throw new CloudRuntimeException("Unable to upgrade snapshot");
+                        }
                     }
                 }
                 if( snapshot.getSwiftName() != null ) {
