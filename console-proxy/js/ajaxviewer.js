@@ -628,8 +628,12 @@ AjaxViewer.prototype = {
 		
 		keyCodeMap[110] = { code: 190, shift : 0 };								// JP NUM .
 		charCodeMap[46] = { code: 46, shift : 0 };
+
+		keyCodeMap[193] = { code: 220, shift : 0, charCode: 92 };				// JP key left to right shift on JP keyboard
+		shiftedKeyCodeMap[193] = { code: 189, shift: 1, charCode: 64 };
 		
-		keyCodeMap[255] = { code: 125, shift : 0, charCode: 92 };				// JP (|-, key before backspace), Japanese Yen mark
+		keyCodeMap[255] = { code: 220, shift : 0, charCode: 92 };				// JP Japanese Yen mark on JP keyboard
+		shiftedKeyCodeMap[255] = { code: 220, shift: 1, charCode: 95 };
 		
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPAN_EN_OS_TO_JP_VM] = new KeyboardMapper(false, keyCodeMap, shiftedKeyCodeMap, 
 				charCodeMap, shiftedCharCodeMap);
