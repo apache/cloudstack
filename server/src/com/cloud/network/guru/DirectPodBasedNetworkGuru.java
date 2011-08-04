@@ -19,6 +19,7 @@
 package com.cloud.network.guru;
 
 import java.net.URI;
+import java.util.List;
 
 import javax.ejb.Local;
 
@@ -29,14 +30,17 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
+import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.AddressFormat;
@@ -68,6 +72,8 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     IPAddressDao _ipAddressDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    PodVlanMapDao _podVlanDao;
 
     @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
@@ -108,6 +114,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         } else {
             nic.setStrategy(ReservationStrategy.Create);
         }
+        
         if (rsStrategy == ReservationStrategy.Create) {
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(network.getId());
             nic.setMacAddress(mac);
@@ -118,9 +125,31 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        if (nic.getIp4Address() == null) {
+        
+        String oldIp = nic.getIp4Address();
+        boolean getNewIp = false;
+        
+        if (oldIp == null) {
+            getNewIp = true;
+        } else {
+            // we need to get a new ip address if we try to deploy a vm in a different pod
+            IPAddressVO ipVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), oldIp);
+            if (ipVO != null) {
+                List<PodVlanMapVO> mapVO = _podVlanDao.listPodVlanMapsByVlan(ipVO.getVlanId());
+                if (mapVO.get(0).getPodId() != dest.getPod().getId()) {
+                    //release the old ip here
+                    _networkMgr.markIpAsUnavailable(ipVO.getId());
+                    _ipAddressDao.unassignIpAddress(ipVO.getId());
+                    
+                    nic.setIp4Address(null);
+                    getNewIp = true;
+                }
+            }
+        }
+        
+        if (getNewIp) {
+            //we don't set reservationStrategy to Create because we need this method to be called again for the case when vm fails to deploy in Pod1, and we try to redeploy it in Pod2 
             getIp(nic, dest.getPod(), vm, network);
-            nic.setStrategy(ReservationStrategy.Create);
         }
         
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
@@ -148,5 +177,5 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
     }
-
+    
 }
