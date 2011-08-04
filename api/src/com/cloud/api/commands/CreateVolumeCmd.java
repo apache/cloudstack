@@ -55,7 +55,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the disk volume")
     private String volumeName;
 
-    @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size. Mutually exclusive with diskOfferingId")
+    @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size")
     private Long size;
 
     @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
