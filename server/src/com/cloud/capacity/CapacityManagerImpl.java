@@ -540,7 +540,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
             } else if (event == Event.OperationRetry) {
                 releaseVmCapacity(vm, false, false, oldHostId);
             } else if (event == Event.AgentReportStopped) {
-                releaseVmCapacity(vm, false, true, oldHostId);
+                releaseVmCapacity(vm, false, false, oldHostId);
             } else if(event == Event.AgentReportMigrated) {
             	releaseVmCapacity(vm, false, false, oldHostId);
             }
@@ -554,7 +554,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
             if (event == Event.AgentReportStopped) {
                 /* Release capacity from original host */
                 releaseVmCapacity(vm, false, false, vm.getLastHostId());
-                releaseVmCapacity(vm, false, true, oldHostId);
+                releaseVmCapacity(vm, false, false, oldHostId);
             } else if (event == Event.OperationFailed) {
                 /* Release from dest host */
                 releaseVmCapacity(vm, false, false, oldHostId);
@@ -562,8 +562,10 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                 releaseVmCapacity(vm, false, false, vm.getLastHostId());
             }
         } else if (oldState == State.Stopping) {
-            if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
+            if (event == Event.OperationSucceeded) {
                 releaseVmCapacity(vm, false, true, oldHostId);
+            } else if (event == Event.AgentReportStopped) {
+                releaseVmCapacity(vm, false, false, oldHostId);
             } else if(event == Event.AgentReportMigrated) {
                 releaseVmCapacity(vm, false, false, oldHostId);
             }
