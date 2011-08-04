@@ -5,6 +5,7 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import com.cloud.network.ElasticLbVmMapVO;
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DomainRouterVO;
@@ -25,6 +26,17 @@ public class ElbVmMapDaoTest extends TestCase {
         
         List<DomainRouterVO> map = dao.listUnusedElbVms();
         if (map == null) {
+           System.out.println("Not Found");   
+        } else {
+            System.out.println("Found");
+        }
+    }
+    
+    public void testFindLB() {
+        ElasticLbVmMapDaoImpl dao = ComponentLocator.inject(ElasticLbVmMapDaoImpl.class);
+        
+        List<LoadBalancerVO> lbs = dao.listLbsForElbVm(10);
+        if (lbs == null) {
            System.out.println("Not Found");   
         } else {
             System.out.println("Found");

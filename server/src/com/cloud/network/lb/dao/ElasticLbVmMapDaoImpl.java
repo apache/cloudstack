@@ -23,6 +23,10 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.network.ElasticLbVmMapVO;
+import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerDaoImpl;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -35,11 +39,17 @@ import com.cloud.vm.dao.DomainRouterDaoImpl;
 @Local(value={ElasticLbVmMapDao.class})
 public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long> implements ElasticLbVmMapDao {
     protected final DomainRouterDao _routerDao = ComponentLocator.inject(DomainRouterDaoImpl.class);
+    protected final LoadBalancerDao _loadbalancerDao = ComponentLocator.inject(LoadBalancerDaoImpl.class);
+
     
     protected final SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
     protected final SearchBuilder<ElasticLbVmMapVO> UnusedVmSearch;
+    protected final SearchBuilder<ElasticLbVmMapVO> LoadBalancersForElbVmSearch;
+
 
     protected final SearchBuilder<DomainRouterVO> ElbVmSearch;
+    
+    protected final SearchBuilder<LoadBalancerVO> LoadBalancerSearch;
    
     protected ElasticLbVmMapDaoImpl() {
         AllFieldsSearch  = createSearchBuilder();
@@ -55,6 +65,13 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         ElbVmSearch.join("UnusedVmSearch", UnusedVmSearch, ElbVmSearch.entity().getId(), UnusedVmSearch.entity().getElbVmId(), JoinType.LEFTOUTER);
         ElbVmSearch.done();
         UnusedVmSearch.done();    
+        
+        LoadBalancerSearch = _loadbalancerDao.createSearchBuilder();
+        LoadBalancersForElbVmSearch = createSearchBuilder();
+        LoadBalancersForElbVmSearch.and("elbVmId", LoadBalancersForElbVmSearch.entity().getElbVmId(), SearchCriteria.Op.EQ);
+        LoadBalancerSearch.join("LoadBalancersForElbVm", LoadBalancersForElbVmSearch, LoadBalancerSearch.entity().getSourceIpAddressId(), LoadBalancersForElbVmSearch.entity().getIpAddressId(), JoinType.INNER);
+        LoadBalancersForElbVmSearch.done();
+        LoadBalancerSearch.done();
 
     }
 
@@ -105,6 +122,13 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
     public List<DomainRouterVO> listUnusedElbVms() {
         SearchCriteria<DomainRouterVO> sc = ElbVmSearch.create();
         return _routerDao.search(sc, null);
+    }
+    
+    @Override
+    public List<LoadBalancerVO> listLbsForElbVm(long elbVmId) {
+        SearchCriteria<LoadBalancerVO> sc = LoadBalancerSearch.create();
+        sc.setJoinParameters("LoadBalancersForElbVm", "elbVmId", elbVmId);
+        return _loadbalancerDao.search(sc, null);
     }
 	
 }
