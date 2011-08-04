@@ -26,9 +26,11 @@ import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.vm.VirtualMachine.State;
 
 public class StartupRoutingCommand extends StartupCommand {
-    public class VmState {
+    public static class VmState {
         State state;
         String host;
+        public VmState() {
+        }
         public VmState(State state, String host) {
             this.state = state;
             this.host = host;
