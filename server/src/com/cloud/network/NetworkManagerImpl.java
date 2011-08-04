@@ -1297,7 +1297,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     NetworkGuru guru = _networkGurus.get(network.getGuruName());
                     nic.setState(Nic.State.Releasing);
                     _nicDao.update(nic.getId(), nic);
-                    NicProfile profile = new NicProfile(nic, network, null, null, null);
+                    NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null);
                     if (guru.release(profile, vmProfile, nic.getReservationId())) {
                         applyProfileToNicForRelease(nic, profile);
                         nic.setState(Nic.State.Allocated);
