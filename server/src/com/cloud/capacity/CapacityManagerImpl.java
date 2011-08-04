@@ -535,13 +535,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                 + vm.getLastHostId() + " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
 
         if (oldState == State.Starting) {
-            if (event == Event.OperationFailed) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.OperationRetry) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.AgentReportStopped) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if(event == Event.AgentReportMigrated) {
+            if(newState != State.Running) {
             	releaseVmCapacity(vm, false, false, oldHostId);
             }
         } else if (oldState == State.Running) {
