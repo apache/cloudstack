@@ -1441,6 +1441,27 @@ function addZoneWizardSubmit($thisWizard) {
 		    listZonesUpdate();	
 			g_directAttachSecurityGroupsEnabled = true;
 			$("#leftmenu_security_group_container").show();
+					       
+			$.ajax({
+				data: createURL("command=listCapabilities"),
+				dataType: "json",
+				async: false,
+				success: function(json) {	
+				    /* g_supportELB: guest — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+				     * g_supportELB: public  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+				     * g_supportELB: false – no ELB support
+				     */
+				    g_supportELB = json.listcapabilitiesresponse.capability.supportELB;					    
+				    $.cookie('supportELB', g_supportELB, { expires: 1}); 
+				    				    
+				    if(g_supportELB == "guest")  //ips are allocated on guest network
+						bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=false&forloadbalancing=true", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
+					else if(g_supportELB == "public")  //ips are allocated on public network
+						bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=true&forloadbalancing=true", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
+					else			
+					    bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false); //remove "&forvirtualnetwork=true" for advanced zone whose security group is enabled
+				}		
+			});  
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {

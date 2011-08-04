@@ -62,6 +62,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
@@ -70,6 +71,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -612,8 +614,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
         cmd.addVmData("metadata", "local-ipv4", guestIpAddress);
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vmName));
-        cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
-        cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
+        if (dcVo.getNetworkType() == NetworkType.Basic) {
+            cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
+            cmd.addVmData("metadata", "public-hostname",  StringUtils.unicodeEscape(vmName));
+        }else
+        {
+            cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
+            cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
+        }
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
         cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
         cmd.addVmData("metadata", "public-keys", publicKey);
@@ -924,6 +932,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String dhcpRange = null;
 
         DataCenter dc = dest.getDataCenter();
+        DataCenterVO dcVO = _dcDao.findById(dc.getId());
+        _dcDao.loadDetails(dcVO);
 
         if (dc.getNetworkType() == NetworkType.Advanced) {
             String cidr = network.getCidr();
@@ -1002,7 +1012,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String domain = network.getNetworkDomain();
         if (domain != null) {
             buf.append(" domain=" + domain);
+        }  
+        String domain_suffix = dcVO.getDetail(ZoneConfig.DnsSearchOrder.getName());
+        if (domain_suffix != null) {
+            buf.append(" dnssearchorder=").append(domain_suffix);
         }
+       
 
         if (!network.isDefault() && network.getGuestType() == GuestIpType.Direct) {
             buf.append(" defaultroute=false");
@@ -1021,7 +1036,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (defaultDns2 != null) {
             buf.append(" dns2=").append(defaultDns2);
         }
-
+        
+        String use_external_dns =  _configDao.getValue("use.external.dns");
+        if (use_external_dns!=null && use_external_dns.equals("true")){
+            buf.append(" useextdns=").append(use_external_dns);
+        }
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }

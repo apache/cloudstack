@@ -345,6 +345,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         }
 
         _rulesDao.remove(lb.getId());
+        _elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
         s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         return true;
     }

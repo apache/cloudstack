@@ -23,10 +23,12 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.network.ElasticLbVmMapVO;
+<<<<<<< HEAD
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
-import com.cloud.network.router.VirtualRouter.Role;
+=======
+>>>>>>> 2.2.8.nectarine
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;

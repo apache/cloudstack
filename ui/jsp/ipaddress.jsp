@@ -32,7 +32,7 @@ dictionary = {
         </p>
     </div>
     <div class="tabbox" style="margin-top: 15px;">
-        <div class="content_tabs on" id="tab_details">
+        <div class="content_tabs on" id="tab_details" style="display: none">
             <fmt:message key="label.details"/></div>	            
         <div class="content_tabs off" id="tab_port_range" style="display: none">
             <fmt:message key="label.port.range"/></div>            	
@@ -43,7 +43,7 @@ dictionary = {
 		<!-- <div class="content_tabs off" id="tab_vpn" style="display: none">
             <fmt:message key="label.vpn"/></div> -->
     </div>  
-    <div id="tab_content_details">
+    <div id="tab_content_details" style="display: none">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
 	        <div class="rightpanel_mainloaderbox">
 	            <div class="rightpanel_mainloader_animatedicon">
@@ -416,7 +416,10 @@ dictionary = {
 	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <select id="algorithm_select" class="select" style="width: 70%;">   	                      
+	                    <select id="algorithm_select" class="select" style="width: 70%;">   
+	                        <option value='roundrobin'>roundrobin</option>
+			                <option value='leastconn'>leastconn</option>                            
+			                <option value='source'>source</option>    	                      
 	                    </select>
 	                </div>	                
 	                <div class="grid_row_cell" style="width: 10%;">	  
@@ -492,7 +495,7 @@ dictionary = {
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                <fmt:message key="label.add.load.balancer.and.ip"/>
+                <fmt:message key="label.add.load.balancer"/>
             </div>
         </div>
     </div>
@@ -548,7 +551,10 @@ dictionary = {
             <div class="row_celltitles" id="private_port"></div>
         </div>
         <div class="grid_row_cell" style="width: 15%; ">
-            <select id="algorithm_select" class="select" style="width: 70%;">                 
+            <select id="algorithm_select" class="select" style="width: 70%;">    
+                <option value='roundrobin'>roundrobin</option>
+                <option value='leastconn'>leastconn</option>                            
+                <option value='source'>source</option>            
             </select>
         </div>        
         <div class="grid_row_cell" style="width: 10%; ">
@@ -781,7 +787,7 @@ dictionary = {
     </div>
 </div>
 
-<div id="dialog_add_load_balancer_and_ip" title='<fmt:message key="label.add.load.balancer.and.ip"/>' style="display: none">   
+<div id="dialog_add_load_balancer_and_ip" title='<fmt:message key="label.add.load.balancer"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form1">
         <ol>

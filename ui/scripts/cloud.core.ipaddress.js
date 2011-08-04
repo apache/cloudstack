@@ -75,7 +75,9 @@ function afterLoadIpJSP() {
         
     if(g_supportELB == "guest" || g_supportELB == "public") {
 		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
+				
 		$("#tab_content_details").hide();
+				
 		$("#acquire_new_ip_button").hide();
 		$("#add_load_balancer_and_ip_button").show();
 		
@@ -147,13 +149,29 @@ function afterLoadIpJSP() {
 										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
 											    // Succeeded											    	
-										    	var publicipid = result.jobresult.loadbalancer.publicipid;										    	
+										    	var publicipid = result.jobresult.loadbalancer.publicipid;	
+										    	
+										    	var cmd;
+										    	if(g_supportELB == "guest") {
+										    		cmd = "command=listPublicIpAddresses&forvirtualnetwork=false&id="+publicipid;
+										    	}
+										    	else if(g_supportELB == "public") {
+										    		cmd = "command=listPublicIpAddresses&forvirtualnetwork=true&id="+publicipid;
+										    	}
+										    	else {
+										    		if(g_supportELB == null)
+										    	        alert("supportELB should be either guest or public. It should not be null.");
+										    	    else 
+										    	    	alert("supportELB should be either guest or public. It should not be " + g_supportELB);
+										    		return;
+										    	}
+										    		
 										        $.ajax({
-										            data: createURL("command=listPublicIpAddresses&id="+publicipid),
+										            data: createURL(cmd),
 										            dataType: "json",
 										            async: false,
 										            success: function(json) {  
-										                var items = json.listpublicipaddressesresponse.publicipaddress;										               
+										                var items = json.listpublicipaddressesresponse.publicipaddress;	
 										                if(items != null && items.length > 0) {
 										                    ipToMidmenu(items[0], $midmenuItem1);
 										                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
@@ -189,7 +207,9 @@ function afterLoadIpJSP() {
 			return false;
 		});		
 	}
-    else {
+    else { 
+    	$("#tab_details,#tab_content_details").show();
+    	
 	    //dialogs
 	    initDialog("dialog_acquire_public_ip", 325);
 		initDialog("dialog_enable_vpn");
@@ -543,26 +563,63 @@ function afterLoadIpJSP() {
         array1.push("&publicport="+publicPort);
         array1.push("&privateport="+privatePort);
         array1.push("&algorithm="+algorithm);
-       
+               
         $.ajax({
 	        data: createURL("command=createLoadBalancerRule"+array1.join("")),
 			dataType: "json",
-			success: function(json) {	
-				var item = json.createloadbalancerruleresponse.loadbalancer;				
-	            loadBalancerJsonToTemplate(item, $template);
-	            $spinningWheel.hide();   
-	            refreshCreateLoadBalancerRow();	            	
+			success: function(json) {			        	    
+	        	var jobId = json.createloadbalancerruleresponse.jobid;				        
+		        var timerKey = "addLbJob_"+jobId;
+					    
+		        $("body").everyTime(2000, timerKey, function() {
+				    $.ajax({
+					    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+					    dataType: "json",
+					    success: function(json) {										       						   
+						    var result = json.queryasyncjobresultresponse;
+						    if (result.jobstatus == 0) {
+							    return; //Job has not completed
+						    } else {											    
+							    $("body").stopTime(timerKey);										    
+							    if (result.jobstatus == 1) {
+								    // Succeeded	
+							    	var item = result.jobresult.loadbalancer;								    				
+						            loadBalancerJsonToTemplate(item, $template);
+						            $spinningWheel.hide();   
+						            refreshCreateLoadBalancerRow();
+							    } else if (result.jobstatus == 2) {
+							    	$template.slideUp("slow", function() {
+										$(this).remove();
+									});
+									var errorMsg = fromdb(result.jobresult.errortext);				
+						            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+							    }
+						    }
+					    },
+					    error: function(XMLHttpResponse) {
+						    $("body").stopTime(timerKey);
+							handleError(XMLHttpResponse, function() {	
+								$template.slideUp("slow", function() {
+									$(this).remove();
+								});
+								var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+					            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");								
+							});
+					    }
+				    });
+			    }, 0);		
 			},
-		    error: function(XMLHttpResponse) {				    
-			    handleError(XMLHttpResponse, function() {
+			error: function(XMLHttpResponse) {
+				handleError(XMLHttpResponse, function() {					
 					$template.slideUp("slow", function() {
 						$(this).remove();
 					});
 					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
-		            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+		            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");					
 				});
-		    }			
-		});  	    
+		    }
+		});  
+       
 	    return false;
 	});
 	//*** Load Balancer tab (end) ***
@@ -625,7 +682,11 @@ function ipToRightPanel($midmenuItem1) {
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-    $("#tab_details").click();        
+    
+    if(g_supportELB == "guest" || g_supportELB == "public")
+    	$("#tab_load_balancer").click();
+    else
+        $("#tab_details").click();        
    
     if(ipObj.isstaticnat == true) {
         $("#tab_port_range").show();	
@@ -832,7 +893,7 @@ function ipJsonToLoadBalancerTab() {
     var $thisTab = $("#right_panel_content #tab_content_load_balancer");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-	
+    
 	var networkObj = $midmenuItem1.data("networkObj");   	
     if(networkObj != null) {		
 	    var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);
@@ -1293,14 +1354,30 @@ function ipJsonToDetailsTab() {
     
     var networkObj = $midmenuItem1.data("networkObj");
     
-    var id = ipObj.id;   
+    var publicipid = ipObj.id;   
         
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-         
+    
+    
+    var cmd;
+	if(g_supportELB == "guest") {
+		cmd = "command=listPublicIpAddresses&forvirtualnetwork=false&id="+publicipid;
+	}
+	else if(g_supportELB == "public") {
+		cmd = "command=listPublicIpAddresses&forvirtualnetwork=true&id="+publicipid;
+	}
+	else {
+		if(g_supportELB == null)
+	        alert("supportELB should be either guest or public. It should not be null.");
+	    else 
+	    	alert("supportELB should be either guest or public. It should not be " + g_supportELB);
+		return;
+	}		
+    
     $.ajax({
-        data: createURL("command=listPublicIpAddresses&id="+id),
+        data: createURL(cmd),
         dataType: "json",
         async: false,
         success: function(json) {  
@@ -1849,10 +1926,23 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 								} else {
 									$("body").stopTime(timerKey);
 									$spinningWheel.hide();   
-									if (result.jobstatus == 1) { // Succeeded												
+									if (result.jobstatus == 1) { // Succeeded	
+										var total_lbrules = $("#tab_content_load_balancer").find("#grid_content").find(".grid_rows").length;
 										$template.slideUp("slow", function() {
-											$(this).remove();													
-										});
+											$(this).remove();	
+																						
+											if(g_supportELB == "guest" || g_supportELB == "public") {
+												var count_lb = $("div[id*='loadBalancer_']").length;											
+												if(count_lb == 0) {
+													var params = $("#middle_menu_pagination").data("params");
+											        if(params == null)
+											            return;	 										          	    
+											        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+											        if($("div[id*='midmenuItem_']").length == 0)
+											        	$("#tab_content_load_balancer").hide();
+												}
+											}											
+										});	
 									} else if (result.jobstatus == 2) { // Failed										
 										var errorMsg = g_dictionary["label.deleting.failed"] + " - " + fromdb(result.jobresult.errortext);	
 										$("#dialog_error").text(errorMsg).dialog("open");

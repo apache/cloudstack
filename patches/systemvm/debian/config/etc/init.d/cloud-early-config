@@ -256,6 +256,33 @@ setup_dnsmasq() {
   sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
   sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
 
+  if [ "$RROUTER" == "1" ]
+  then
+      sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option=option:router,$GUEST_GW" >> /etc/dnsmasq.conf
+      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option=6,$GUEST_GW" >> /etc/dnsmasq.conf
+  fi
+  
+  if [ -n "$DNS_SEARCH_ORDER" ]
+  then
+    sed -i -e "/^[#]*dhcp-option=119.*$/d" /etc/dnsmasq.conf
+    echo "dhcp-option=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
+  fi
+  
+  if [ "$USE_EXTERNAL_DNS" == "true" ]
+  then
+      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+      if [ -n "$NS1" ]
+      then
+        if [ -n "$NS2" ]
+        then
+            echo "dhcp-option=6,$NS1,$NS2" >> /etc/dnsmasq.conf
+        else
+            echo "dhcp-option=6,$NS1" >> /etc/dnsmasq.conf
+        fi
+      fi
+  fi
 }
 
 setup_sshd(){
@@ -511,6 +538,12 @@ for i in $CMDLINE
           ;;
       domain)
           DOMAIN=$VALUE
+          ;;
+      dnssearchorder)
+          DNS_SEARCH_ORDER=$VALUE
+          ;;
+      useextdns)
+        USE_EXTERNAL_DNS=$VALUE
           ;;
       mgmtcidr)
           MGMTNET=$VALUE

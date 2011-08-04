@@ -2513,6 +2513,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (forLoadBalancing != null && (Boolean)forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
             sb.join("lbSearch", lbSearch, sb.entity().getId(), lbSearch.entity().getSourceIpAddressId(), JoinType.INNER);
+            sb.groupBy(sb.entity().getId());
         }
 
         if (keyword != null && address == null) {

@@ -18,6 +18,7 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -80,6 +81,9 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
     private String domain;
     
+    @Parameter(name=ApiConstants.DNS_SEARCH_ORDER, type=CommandType.LIST, collectionType = CommandType.STRING, description="the dns search order list")
+    private List<String> dnsSearchOrder;   
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -135,7 +139,10 @@ public class UpdateZoneCmd extends BaseCmd {
     public String getDomain() {
         return domain;
     }
-    
+
+    public List<String> getDnsSearchOrder() {
+        return dnsSearchOrder;
+    }   
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
