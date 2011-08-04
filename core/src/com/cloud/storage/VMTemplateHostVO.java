@@ -78,10 +78,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	private String errorString;
 	
 	@Column (name="job_id")
-	private String jobId;
-
-	@Column (name="pool_id")
-	private Long poolId;
+	private String jobId;	
 	
 	@Column (name="install_path")
     private String installPath;
@@ -223,16 +220,8 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof VMTemplateHostVO) {
-		   VMTemplateHostVO other = (VMTemplateHostVO)obj;
-		   if (poolId == null && other.getPoolId() == null) {
-			   return (this.templateId==other.getTemplateId() && this.hostId==other.getHostId());
-		   } else if (poolId == null && other.getPoolId() != null) {
-			   return false;
-		   } else if (poolId != null && other.getPoolId() == null) {
-			   return false;
-		   } else {
-			   return (this.templateId==other.getTemplateId() && this.hostId==other.getHostId() && poolId.longValue() == other.getPoolId().longValue());
-		   }
+			VMTemplateHostVO other = (VMTemplateHostVO)obj;
+			return (this.templateId==other.getTemplateId() && this.hostId==other.getHostId());		   
 		}
 		return false;
 	}
@@ -241,15 +230,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	public int hashCode() {
 		Long tid = new Long(templateId);
 		Long hid = new Long(hostId);
-		return tid.hashCode()+hid.hashCode() + ((poolId != null)?poolId.hashCode():0);
-	}
-
-	public void setPoolId(Long poolId) {
-		this.poolId = poolId;
-	}
-
-	public Long getPoolId() {
-		return poolId;
+		return tid.hashCode()+hid.hashCode();
 	}
 
     public void setSize(long size) {

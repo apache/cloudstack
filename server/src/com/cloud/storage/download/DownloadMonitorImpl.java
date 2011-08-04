@@ -78,6 +78,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
@@ -220,7 +221,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         String url = generateCopyUrl(sourceServer, srcTmpltHost);
 	    if (url == null) {
 			s_logger.warn("Unable to start/resume copy of template " + template.getUniqueName() + " to " + destServer.getName() + ", no secondary storage vm in running state in source zone");
-			throw new StorageUnavailableException("No secondary VM in running state in zone " + sourceServer.getDataCenterId(), srcTmpltHost.getPoolId());
+			throw new CloudRuntimeException("No secondary VM in running state in zone " + sourceServer.getDataCenterId());
 	    }
         destTmpltHost = _vmTemplateHostDao.findByHostTemplate(destServer.getId(), template.getId());
         if (destTmpltHost == null) {
@@ -401,38 +402,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
 		
 		Transaction txn = Transaction.currentTxn();
-        txn.start();
-		
-		if (vmTemplateHost != null) {
-			Long poolId = vmTemplateHost.getPoolId();
-			if (poolId != null) {
-				VMTemplateStoragePoolVO vmTemplatePool = _vmTemplatePoolDao.findByPoolTemplate(poolId, template.getId());
-				StoragePoolHostVO poolHost = _poolHostDao.findByPoolHost(poolId, host.getId());
-				if (vmTemplatePool != null && poolHost != null) {
-					vmTemplatePool.setDownloadPercent(vmTemplateHost.getDownloadPercent());
-					vmTemplatePool.setDownloadState(vmTemplateHost.getDownloadState());
-					vmTemplatePool.setErrorString(vmTemplateHost.getErrorString());
-					String localPath = poolHost.getLocalPath();
-					String installPath = vmTemplateHost.getInstallPath();
-					if (installPath != null) {
-						if (!installPath.startsWith("/")) {
-							installPath = "/" + installPath;
-						}
-						if (!(localPath == null) && !installPath.startsWith(localPath)) {
-							localPath = localPath.replaceAll("/\\p{Alnum}+/*$", ""); //remove instance if necessary
-						}
-						if (!(localPath == null) && installPath.startsWith(localPath)) {
-							installPath = installPath.substring(localPath.length());
-						}
-					}
-					vmTemplatePool.setInstallPath(installPath);
-					vmTemplatePool.setLastUpdated(vmTemplateHost.getLastUpdated());
-					vmTemplatePool.setJobId(vmTemplateHost.getJobId());
-					vmTemplatePool.setLocalDownloadPath(vmTemplateHost.getLocalDownloadPath());
-					_vmTemplatePoolDao.update(vmTemplatePool.getId(),vmTemplatePool);
-				}
-			}
-		}
+        txn.start();		
 
         if (dnldStatus == Status.DOWNLOADED) {
             long size = -1;

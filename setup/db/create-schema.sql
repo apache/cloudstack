@@ -955,7 +955,6 @@ CREATE TABLE  `cloud`.`upload` (
 CREATE TABLE  `cloud`.`template_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
-  `pool_id` bigint unsigned,
   `template_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
