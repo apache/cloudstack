@@ -345,14 +345,13 @@ def get_private_nic(session, args):
     return mgmtnic
 
 def chain_name(vm_name):
-    if vm_name.startswith('i-') or vm_name.startswith('r-') or vm_name.startswith('l-'):
+    if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-1])
-        return '-'.join(vm_name.split('-'))
     return vm_name
 
 def chain_name_def(vm_name):
-    if vm_name.startswith('i-') or vm_name.startswith('r-') or vm_name.startswith('l-'):
+    if vm_name.startswith('i-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-2]) + "-def"
         return '-'.join(vm_name.split('-')[:-1]) + "-def"
@@ -872,7 +871,7 @@ def cleanup_rules(session, args):
             vm = session.xenapi.VM.get_by_name_label(chain)
             if len(vm) != 1:
                 util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
-                cleanup.append(vm_name)
+                cleanup.append(chain)
                 continue
             vm_rec = session.xenapi.VM.get_record(vm[0])
             state = vm_rec.get('power_state')
