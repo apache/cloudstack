@@ -951,7 +951,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<DomainRouterVO> routerList = _routerDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn());
         DomainRouterVO routerToBeAvoid = null;
         for (DomainRouterVO rrouter : routerList) {
-            if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter()) {
+            if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
                 if (routerToBeAvoid != null) {
                     throw new ResourceUnavailableException("There are already two redundant routers with IP " + router.getPublicIpAddress(), this.getClass(), 0);
                 }
