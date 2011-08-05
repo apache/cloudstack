@@ -364,7 +364,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 if (userVmResponse==null){
                     userVmResponse=new UserVmResponse();
                     userVmResponse.setId(userVm.getId());
-                    userVmResponse.setName(userVm.getDisplayName());
+                    userVmResponse.setName(userVm.getInstanceName());
                     userVmResponse.setCreated(userVm.getCreated());
                     userVmResponse.setGuestOsId(userVm.getGuestOSId());
                     userVmResponse.setHaEnable(userVm.isHaEnabled());
