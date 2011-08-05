@@ -474,6 +474,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(2);
                 NicProfile guestNic = new NicProfile();
+                guestNic.setDefaultNic(true);
                 networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
                 networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
                 

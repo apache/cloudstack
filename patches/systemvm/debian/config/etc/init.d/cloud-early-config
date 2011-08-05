@@ -426,7 +426,7 @@ setup_console_proxy() {
 setup_elbvm() {
   log_it "Setting up Elastic Load Balancer system vm"
   local hyp=$1
-  setup_common eth0 eth1 eth2
+  setup_common eth0 eth1
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH0_IP
@@ -447,6 +447,7 @@ setup_elbvm() {
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 0
   chkconfig nfs-common off
+  chkconfig portmap off
 }
 
 setup_default() {
