@@ -13,4 +13,6 @@ ALTER TABLE `cloud`.`domain_router` ADD COLUMN `redundant_state` varchar(64) NOT
 
 ALTER TABLE `cloud`.`cluster` ADD COLUMN  `managed_state` varchar(32) NOT NULL DEFAULT 'Managed' COMMENT 'Is this cluster managed by cloudstack';
 
+ALTER TABLE `cloud`.`host` MODIFY `storage_ip_address` char(40);
+
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.redundantrouter', 'false', 'enable/disable redundant virtual router');
