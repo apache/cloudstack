@@ -119,6 +119,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 	    this.displayName = displayName;
 	}
 	
+	@Override
     public Map<String, String> getDetails() {
         return details;
     }

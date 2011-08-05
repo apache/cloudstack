@@ -19,6 +19,7 @@
 package com.cloud.vm;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.Random;
 
 import javax.persistence.Column;
@@ -393,6 +394,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	
 	public String getReservationId() {
 	    return this.reservationId;
+	}
+	
+	public Map<String, String> getDetails() {
+		return null;
 	}
 
 	transient String toString;
