@@ -21,6 +21,7 @@ package com.cloud.network.lb.dao;
 import java.util.List;
 
 import com.cloud.network.ElasticLbVmMapVO;
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.DomainRouterVO;
 
@@ -33,5 +34,6 @@ public interface ElasticLbVmMapDao extends GenericDao<ElasticLbVmMapVO, Long> {
     List<ElasticLbVmMapVO> listByLbId(long lbId);
     int deleteLB(long lbId);
     List<DomainRouterVO> listUnusedElbVms();
+    List<LoadBalancerVO> listLbsForElbVm(long elbVmId);
 	
 }

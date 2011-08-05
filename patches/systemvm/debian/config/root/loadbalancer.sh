@@ -52,8 +52,8 @@ ip_entry() {
   
   for i in $a
   do
-    logger -t cloud "Adding  public ips for load balancing"  
     local pubIp=$(echo $i | cut -d: -f1)
+    logger -t cloud "Adding  public ip $pubIp for load balancing"  
     for vif in $VIF_LIST; do 
       sudo ip addr add dev $vif $pubIp/32
       #ignore error since it is because the ip is already there
@@ -64,6 +64,7 @@ ip_entry() {
   do
     logger -t cloud "Removing  public ips for deleted loadbalancers"  
     local pubIp=$(echo $i | cut -d: -f1)
+    logger -t cloud "Removing  public ip $pubIp for deleted loadbalancers"  
     for vif in $VIF_LIST; do 
       sudo ip addr del $pubIp/32 dev $vif 
     done
@@ -92,9 +93,9 @@ fw_entry() {
  
   for i in $a
   do
-    logger -t cloud "Opening up firewall (INPUT chain) for load balancing" 
     local pubIp=$(echo $i | cut -d: -f1)
     local dport=$(echo $i | cut -d: -f2)
+    logger -t cloud "Opening up firewall $pubIp:$dport (INPUT chain) for load balancing" 
     
     for vif in $VIF_LIST; do 
       sudo iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
@@ -109,9 +110,9 @@ fw_entry() {
 
   for i in $r
   do
-    logger -t cloud "Closing up firewall (INPUT chain) for deleted load balancers" 
     local pubIp=$(echo $i | cut -d: -f1)
     local dport=$(echo $i | cut -d: -f2)
+    logger -t cloud "Closing up firewall (INPUT chain) $pubIp:$dport for deleted load balancers" 
     
     for vif in $VIF_LIST; do 
       sudo iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
@@ -154,6 +155,7 @@ get_vif_list() {
       vif_list="eth0"
   fi
   
+  logger -t cloud "Loadbalancer public interfaces = $vif_list"
   echo $vif_list
 }
 
@@ -219,7 +221,7 @@ reconfig_lb $cfgfile
 
 if [ $? -gt 0 ]
 then
-  printf "Reconfiguring loadbalancer failed\n"
+  logger -t cloud "Reconfiguring loadbalancer failed"
   #FIXME: make this explicit via check on vm type or passed in flag
   if [ "$VIF_LIST" == "eth0"  ]
   then
