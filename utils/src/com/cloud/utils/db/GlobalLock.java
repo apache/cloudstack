@@ -103,10 +103,12 @@ public class GlobalLock {
 	private static void releaseInternLock(String name) {
 		synchronized(s_lockMap) {
 			GlobalLock lock = s_lockMap.get(name);
-			assert(lock != null);
-			
-			if(lock.referenceCount == 0)
-				s_lockMap.remove(name);
+			if(lock != null) {
+				if(lock.referenceCount == 0)
+					s_lockMap.remove(name);
+			} else {
+				s_logger.warn("Releasing " + name + ", but it is already released.");
+			}
 		}
 	}
 	
