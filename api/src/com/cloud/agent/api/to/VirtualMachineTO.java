@@ -192,4 +192,12 @@ public class VirtualMachineTO {
     public void setVncPassword(String vncPassword) {
     	this.vncPassword = vncPassword;
     }
+    
+    public Map<String, String> getDetails() {
+    	return params;
+    }
+    
+    public void setDetails(Map<String, String> params) {
+    	this.params = params;
+    }
 }

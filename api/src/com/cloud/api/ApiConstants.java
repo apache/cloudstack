@@ -253,4 +253,5 @@ public class ApiConstants {
     public static final String SNAPSHOT_RESERVATION = "snapshotreservation";
     public static final String REDUNDANT_ROUTER = "redundantrouter";
     public static final String IP_NETWORK_LIST = "iptonetworklist";
+    public static final String KEYBOARD="keyboard";
 }

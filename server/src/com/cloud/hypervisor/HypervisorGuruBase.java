@@ -79,6 +79,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         } else {
             to.setArch("x86_64");
         }
+        
+        to.setDetails(vm.getDetails());
 
         return to;
     }
