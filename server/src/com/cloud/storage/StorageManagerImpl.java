@@ -586,8 +586,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         VolumeVO createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId); // Precondition: snapshot is not null and not removed.
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         createdVolume = volumeDetails.first();
 
