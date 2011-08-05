@@ -1631,9 +1631,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setUploadId(uploadId);
         response.setState(uploadInfo.getUploadState().toString());
         response.setAccountId(accountId);
-        // FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
-        // response.setUrl(uploadInfo.getUploadUrl());
-        response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+        response.setUrl(uploadInfo.getUploadUrl());
         return response;
 
     }

@@ -141,8 +141,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 response.setUploadId(uploadId);
                 response.setState(uploadInfo.getUploadState().toString());
                 response.setAccountId(getEntityOwnerId());        
-                //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
-                response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+                response.setUrl(uploadInfo.getUploadUrl());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract volume");
