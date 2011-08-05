@@ -1176,7 +1176,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             // for console proxies, add the active sessions
             if (vm.getType() == Type.ConsoleProxy) {
                 ConsoleProxyVO proxy = ApiDBUtils.findConsoleProxy(vm.getId());
-                vmResponse.setActiveViewerSessions(proxy.getActiveSession());
+                //proxy can be already destroyed
+                if (proxy != null) {
+                    vmResponse.setActiveViewerSessions(proxy.getActiveSession());
+                } 
             }
 
             DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterIdToDeployIn());
