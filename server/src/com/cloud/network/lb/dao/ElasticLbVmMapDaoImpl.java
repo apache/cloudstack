@@ -70,7 +70,7 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         LoadBalancerSearch = _loadbalancerDao.createSearchBuilder();
         LoadBalancersForElbVmSearch = createSearchBuilder();
         LoadBalancersForElbVmSearch.and("elbVmId", LoadBalancersForElbVmSearch.entity().getElbVmId(), SearchCriteria.Op.EQ);
-        LoadBalancerSearch.join("LoadBalancersForElbVm", LoadBalancersForElbVmSearch, LoadBalancerSearch.entity().getSourceIpAddressId(), LoadBalancersForElbVmSearch.entity().getIpAddressId(), JoinType.INNER);
+        LoadBalancerSearch.join("LoadBalancersForElbVm", LoadBalancersForElbVmSearch, LoadBalancerSearch.entity().getId(), LoadBalancersForElbVmSearch.entity().getLbId(), JoinType.INNER);
         LoadBalancersForElbVmSearch.done();
         LoadBalancerSearch.done();
 

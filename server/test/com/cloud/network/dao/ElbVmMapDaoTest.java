@@ -35,11 +35,11 @@ public class ElbVmMapDaoTest extends TestCase {
     public void testFindLB() {
         ElasticLbVmMapDaoImpl dao = ComponentLocator.inject(ElasticLbVmMapDaoImpl.class);
         
-        List<LoadBalancerVO> lbs = dao.listLbsForElbVm(10);
+        List<LoadBalancerVO> lbs = dao.listLbsForElbVm(5);
         if (lbs == null) {
            System.out.println("Not Found");   
         } else {
-            System.out.println("Found");
+            System.out.println("Found " + lbs.size() + " lbs");
         }
     }
 }
