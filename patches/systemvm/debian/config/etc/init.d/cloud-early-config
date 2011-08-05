@@ -432,7 +432,12 @@ setup_elbvm() {
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH0_IP
   echo "$public_ip $NAME" >> /etc/hosts
 
-  setup_sshd $ETH0_IP
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    setup_sshd $ETH0_IP
+  else
+    setup_sshd $ETH1_IP
+  fi
   
   enable_fwding 0
   enable_svc haproxy 0

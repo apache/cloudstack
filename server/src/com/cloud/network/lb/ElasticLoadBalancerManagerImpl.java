@@ -481,7 +481,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
                
                 elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), _elasticLbVmOffering.getOfferHA());
+                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), _elasticLbVmOffering.getOfferHA(), VirtualMachine.Type.ElasticLoadBalancerVm);
                 elbVm.setRole(Role.LB);
                 elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
                 //TODO: create usage stats
@@ -745,12 +745,7 @@ public class ElasticLoadBalancerManagerImpl implements
        releaseIp(lb.getSourceIpAddressId(), userId, caller);
     }
 
-    @Override
-    public DomainRouterVO findByName(String name) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
+ 
     @Override
     public DomainRouterVO findByName(String name) {
         if (!VirtualMachineName.isValidSystemVmName(name, _instance, _elbVmNamePrefix)) {
