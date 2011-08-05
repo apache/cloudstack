@@ -1074,7 +1074,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             String defaultNetworkStartIp = null;
             if (guestNetwork.getCidr() != null) {
                 String startIp = _networkMgr.getStartIpAddress(guestNetwork.getId());
-                if (_ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
                     defaultNetworkStartIp = startIp;
                 } else if (s_logger.isDebugEnabled()){
                     s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + " is already allocated, can't use it for domain router; will get random ip address from the range");
