@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -426,7 +427,10 @@ public class ElasticLoadBalancerManagerImpl implements
     }
 
     private DomainRouterVO findELBVmWithCapacity(Network guestNetwork, IPAddressVO ipAddr) {
-        List<DomainRouterVO> elbVms = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.LB);
+        List<DomainRouterVO> unusedElbVms = _elbVmMapDao.listUnusedElbVms();
+        if (unusedElbVms.size() > 0) {
+            return unusedElbVms.get(new Random().nextInt(unusedElbVms.size()));
+        }
         return null;
     }
     
