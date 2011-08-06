@@ -37,6 +37,7 @@ import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapabilitiesCmd;
+import com.cloud.api.commands.ListCapacityByTypeCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
@@ -299,6 +300,14 @@ public interface ManagementService {
      */
     List<? extends Capacity> listCapacities(ListCapacityCmd cmd);
 
+    /**
+     * lists the capacity rows in capacity operations table
+     * 
+     * @param cmd
+     * @return List of capacities
+     */
+    List<? extends Capacity> listCapacityByType(ListCapacityByTypeCmd cmd);
+    
     /**
      * List the permissions on a template. This will return a list of account names that have been granted permission to launch
      * instances from the template.

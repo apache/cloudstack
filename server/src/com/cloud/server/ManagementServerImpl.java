@@ -75,6 +75,7 @@ import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapabilitiesCmd;
+import com.cloud.api.commands.ListCapacityByTypeCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
@@ -3218,6 +3219,12 @@ public class ManagementServerImpl implements ManagementServer {
         return _alertDao.search(sc, searchFilter);
     }
 
+    @Override
+    public List<CapacityVO> listCapacityByType(ListCapacityByTypeCmd cmd) {
+		return null;
+    	
+    }
+    
     @Override
     public List<CapacityVO> listCapacities(ListCapacityCmd cmd) {
 
