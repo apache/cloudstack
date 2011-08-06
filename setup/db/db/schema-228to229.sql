@@ -62,6 +62,8 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-serv
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.vm.vcpu.num', '1', 'Number of VCPU  for the elastic load balancer vm');
 
 UPDATE `cloud`.`nics` SET strategy='Start' where reserver_name='DirectPodBasedNetworkGuru';
+UPDATE `cloud`.`network_offerings` SET lb_service=1 where unique_name='System-Guest-Network';
+
 
 CREATE TABLE `cloud`.`elastic_lb_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
