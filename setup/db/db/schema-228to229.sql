@@ -53,6 +53,13 @@ INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-serve
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.uri','/admin?stats','Load Balancer(haproxy) uri.');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.auth','admin1:AdMiN123','Load Balancer(haproxy) authetication string in the format username:password');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.port','8081','Load Balancer(haproxy) stats port number.');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'use.external.dns', 'false', 'Bypass the cloudstack DHCP/DNS server vm name service, use zone external dns1 and dns2');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.enabled', 'false', 'Whether the load balancing service is enabled for basic zones');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.gc.interval.minutes', '120', 'Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.network', 'guest', 'Whether the elastic load balancing service public ips are taken from the public or guest network');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.vm.cpu.mhz', '128', 'CPU speed for the elastic load balancer vm');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.vm.ram.size', '128', 'Memory in MB for the elastic load balancer vm');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.vm.vcpu.num', '1', 'Number of VCPU  for the elastic load balancer vm');
 
 UPDATE `cloud`.`nics` SET strategy='Start' where reserver_name='DirectPodBasedNetworkGuru';
 
