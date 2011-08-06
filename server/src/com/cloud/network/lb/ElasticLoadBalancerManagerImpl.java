@@ -429,7 +429,12 @@ public class ElasticLoadBalancerManagerImpl implements
     private DomainRouterVO findELBVmWithCapacity(Network guestNetwork, IPAddressVO ipAddr) {
         List<DomainRouterVO> unusedElbVms = _elbVmMapDao.listUnusedElbVms();
         if (unusedElbVms.size() > 0) {
-            return unusedElbVms.get(new Random().nextInt(unusedElbVms.size()));
+            List<DomainRouterVO> candidateVms = new ArrayList<DomainRouterVO>();
+            for (DomainRouterVO candidateVm: unusedElbVms) {
+                if (candidateVm.getPodIdToDeployIn() == getPodIdForDirectIp(ipAddr))
+                    candidateVms.add(candidateVm);
+            }
+            return candidateVms.size()==0?null:candidateVms.get(new Random().nextInt(candidateVms.size()));
         }
         return null;
     }
