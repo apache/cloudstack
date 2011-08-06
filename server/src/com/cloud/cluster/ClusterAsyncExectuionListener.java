@@ -76,6 +76,5 @@ public class ClusterAsyncExectuionListener implements Listener {
     public int getTimeout() {
     	return -1;
     }
-    
 }
 

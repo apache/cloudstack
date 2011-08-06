@@ -53,6 +53,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         
         return findOneIncludingRemovedBy(sc);
     }
+    
 
     @Override
     public Map<String, String> findDetails(long clusterId) {

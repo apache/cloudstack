@@ -446,5 +446,4 @@ public class UploadListener implements Listener {
 	public void setCurrState(Status uploadState) {
 		this.currState = getState(currState.toString());		
 	}
-	
 }

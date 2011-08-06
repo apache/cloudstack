@@ -32,14 +32,18 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.OCFS2Manager;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.utils.component.Inject;
 
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
 	private final StorageManagerImpl _storageManager;
 	private final StoragePoolDao _poolDao;
+	@Inject OCFS2Manager _ocfs2Mgr;
 	
     public StoragePoolMonitor(StorageManagerImpl mgr, StoragePoolDao poolDao) {
     	this._storageManager = mgr;
@@ -73,6 +77,11 @@ public class StoragePoolMonitor implements Listener {
     			    if (!pool.getPoolType().isShared()) {
     			        continue;
     			    }
+    			    
+    			    if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(pool.getClusterId())) {
+    			        throw new ConnectionException(true, "Unable to prepare OCFS2 nodes for pool " + pool.getId());
+    			    }
+    			    
     				Long hostId = host.getId();
     				s_logger.debug("Host " + hostId + " connected, sending down storage pool information ...");
     				try {
