@@ -245,7 +245,7 @@ public class ElasticLoadBalancerManagerImpl implements
         try {
             answers = _agentMgr.send(elbVm.getHostId(), cmds);
         } catch (OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
+            s_logger.warn("ELB: Timed Out", e);
             throw new AgentUnavailableException(
                     "Unable to send commands to virtual elbVm ",
                     elbVm.getHostId(), e);
@@ -321,7 +321,7 @@ public class ElasticLoadBalancerManagerImpl implements
             return true;
         }
         if (rules.get(0).getPurpose() != Purpose.LoadBalancing) {
-            s_logger.warn("Not handling non-LB firewall rules");
+            s_logger.warn("ELB: Not handling non-LB firewall rules");
             return false;
         }
         
@@ -396,12 +396,12 @@ public class ElasticLoadBalancerManagerImpl implements
             } else if ("public".equalsIgnoreCase(traffType)){
                 _frontendTrafficType = TrafficType.Public;
             } else
-                throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
-            s_logger.info("Elastic Load Balancer: will balance on " + traffType );
+                throw new ConfigurationException("ELB: Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
+            s_logger.info("ELB: Elastic Load Balancer: will balance on " + traffType );
             int gcIntervalMinutes =  NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmGcInterval.key()), 5);
             if (gcIntervalMinutes < 5) 
                 gcIntervalMinutes = 5;
-            s_logger.info("Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes" );
+            s_logger.info("ELB: Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes" );
             _gcThreadPool = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ELBVM-GC"));
             _gcThreadPool.scheduleAtFixedRate(new CleanupThread(), gcIntervalMinutes, gcIntervalMinutes, TimeUnit.MINUTES);
             _itMgr.registerGuru(VirtualMachine.Type.ElasticLoadBalancerVm, this);
@@ -443,7 +443,7 @@ public class ElasticLoadBalancerManagerImpl implements
         guestNetwork = _networkDao.acquireInLockTable(guestNetworkId);
 
         if (guestNetwork == null) {
-            throw new ConcurrentOperationException("Unable to acquire network configuration: " + guestNetworkId);
+            throw new ConcurrentOperationException("Unable to acquire network lock: " + guestNetworkId);
         }
 
         try {
@@ -454,7 +454,7 @@ public class ElasticLoadBalancerManagerImpl implements
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Starting a elastic ip vm for network configurations: " + guestNetwork + " in " + dest);
+                s_logger.debug("Starting a ELB vm for network configurations: " + guestNetwork + " in " + dest);
             }
             assert guestNetwork.getState() == Network.State.Implemented 
                 || guestNetwork.getState() == Network.State.Setup 
@@ -469,7 +469,7 @@ public class ElasticLoadBalancerManagerImpl implements
             if (elbVm == null) {
                 long id = _routerDao.getNextInSequence(Long.class, "id");
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating the elastic LB vm " + id);
+                    s_logger.debug("Creating the ELB vm " + id);
                 }
  
                 List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
@@ -516,7 +516,7 @@ public class ElasticLoadBalancerManagerImpl implements
     
     
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("Stopping elb vm " + elbVm);
+        s_logger.debug("Stopping ELB vm " + elbVm);
         try {
             if (_itMgr.advanceStop( elbVm, forced, user, caller)) {
                 return _routerDao.findById(elbVm.getId());
@@ -564,13 +564,13 @@ public class ElasticLoadBalancerManagerImpl implements
         //TODO: this only works in the guest network. Handle the public network case also.
         List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndGuestType(true, _frontendTrafficType, GuestIpType.Direct);
         if (offerings == null || offerings.size() == 0) {
-            s_logger.warn("Could not find system offering for direct networks of type " + _frontendTrafficType);
+            s_logger.warn("ELB: Could not find system offering for direct networks of type " + _frontendTrafficType);
             return null;
         }
         NetworkOffering frontEndOffering = offerings.get(0);
         List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, frontEndOffering.getId(), lb.getZoneId());
         if (networks == null || networks.size() == 0) {
-            s_logger.warn("Could not find network of offering type " + frontEndOffering +  " in zone " + lb.getZoneId());
+            s_logger.warn("ELB: Could not find network of offering type " + frontEndOffering +  " in zone " + lb.getZoneId());
             return null;
         }
         Network frontEndNetwork = networks.get(0);
@@ -581,28 +581,44 @@ public class ElasticLoadBalancerManagerImpl implements
         ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId()); 
         _ipAddressDao.update(ipvo.getId(), ipvo);
         txn.commit();
-        s_logger.info("Acquired public IP for loadbalancing " + ip);
+        s_logger.info("Acquired frontend IP for ELB " + ip);
 
         return ip;
     }
     
     public void releaseIp(long ipId, long userId, Account caller) {
-        s_logger.info("Release public IP for loadbalancing " + ipId);
+        s_logger.info("ELB: Release public IP for loadbalancing " + ipId);
         IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null); 
         _ipAddressDao.update(ipvo.getId(), ipvo);
        _networkMgr.releasePublicIpAddress(ipId, userId, caller);
        _ipAddressDao.unassignIpAddress(ipId);
     }
+    
+    protected NetworkVO getNetworkToDeployLb(Long ipId) {
+        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
+        Long networkId= ipAddr.getSourceNetworkId();
+        NetworkVO network=_networkDao.findById(networkId);
+
+
+        if (network.getGuestType() != GuestIpType.Direct) {
+            s_logger.info("ELB: not handling guest traffic of type " + network.getGuestType());
+            return null;
+        }
+        return network;
+    }
 
     @Override
     @DB
     public LoadBalancer handleCreateLoadBalancerRule( CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException, NetworkRuleConflictException  {
         Long ipId = lb.getSourceIpAddressId();
+        if (ipId != null && getNetworkToDeployLb(ipId) == null) {
+                return null;
+        }
         boolean newIp = false;
         account = _accountDao.acquireInLockTable(account.getId());
         if (account == null) {
-            s_logger.warn("CreateLoadBalancer: Failed to acquire lock on account");
+            s_logger.warn("ELB: CreateLoadBalancer: Failed to acquire lock on account");
             throw new CloudRuntimeException("Failed to acquire lock on account");
         }
         try {
@@ -616,27 +632,25 @@ public class ElasticLoadBalancerManagerImpl implements
                             throw new InvalidParameterValueException("Supplied LB name " + lb.getName() + " is not associated with IP " + lb.getSourceIpAddressId() );
                         } 
                     } else {
+                        s_logger.debug("Could not find any existing frontend ips for this account for this LB rule, acquiring a new frontent IP for ELB");
                         PublicIp ip = allocIp(lb, account);
                         ipId = ip.getId();
                         newIp = true;
                     }
                 } else {
                     ipId = existingLbs.get(0).getSourceIpAddressId();
+                    s_logger.debug("ELB: Found existing frontend ip for this account for this LB rule " + ipId);
                 }
             } else {
-                s_logger.warn("Found existing load balancers matching requested new LB");
-                throw new NetworkRuleConflictException("Found existing load balancers matching requested new LB");
+                s_logger.warn("ELB: Found existing load balancers matching requested new LB");
+                throw new NetworkRuleConflictException("ELB: Found existing load balancers matching requested new LB");
             }
 
+            NetworkVO network = getNetworkToDeployLb(ipId);
             IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
-            Long networkId= ipAddr.getSourceNetworkId();
-            NetworkVO network=_networkDao.findById(networkId);
+            long networkId = network.getId();
 
-
-            if (network.getGuestType() != GuestIpType.Direct) {
-                s_logger.info("Elastic LB Manager: not handling guest traffic of type " + network.getGuestType());
-                return null;
-            }
+            
             LoadBalancer result = null;
             try {
                 lb.setSourceIpAddressId(ipId);
@@ -710,9 +724,9 @@ public class ElasticLoadBalancerManagerImpl implements
                 stop(elbVm, true, user, _systemAcct);
                 gceed = true;
             } catch (ConcurrentOperationException e) {
-                s_logger.warn("Unable to stop unused elb vm " + elbVm + " due to ", e);
+                s_logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
             } catch (ResourceUnavailableException e) {
-                s_logger.warn("Unable to stop unused elb vm " + elbVm + " due to ", e);
+                s_logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
                 continue;
             }
             if (gceed) {
@@ -720,7 +734,7 @@ public class ElasticLoadBalancerManagerImpl implements
                     s_logger.info("Attempting to destroy ELB VM: " + elbVm);
                     _itMgr.expunge(elbVm, user, _systemAcct);
                 } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Unable to destroy unused elb vm " + elbVm + " due to ", e);
+                    s_logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
                     gceed = false;
                 }
             }
@@ -746,8 +760,11 @@ public class ElasticLoadBalancerManagerImpl implements
 
     @Override
     public void handleDeleteLoadBalancerRule(LoadBalancer lb, long userId, Account caller) {
-        s_logger.debug("ELB mgr: releasing ip " + lb.getSourceIpAddressId() + " since the LB rule is deleted");
-       releaseIp(lb.getSourceIpAddressId(), userId, caller);
+        List<LoadBalancerVO> remainingLbs = _loadBalancerDao.listByIpAddress(lb.getSourceIpAddressId());
+        if (remainingLbs.size() == 0) {
+            s_logger.debug("ELB mgr: releasing ip " + lb.getSourceIpAddressId() + " since  no LB rules remain for this ip address");
+            releaseIp(lb.getSourceIpAddressId(), userId, caller);
+        }
     }
 
  
@@ -802,12 +819,12 @@ public class ElasticLoadBalancerManagerImpl implements
                 //  control command is sent over management network in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Check if we need to add management server explicit route to elb vm. pod cidr: " + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
+                        s_logger.info("Check if we need to add management server explicit route to ELB vm. pod cidr: " + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
                                 + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmtHost);
                     }
 
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Added management server explicit route to elb vm.");
+                        s_logger.debug("Added management server explicit route to ELB vm.");
                     }
                     // always add management explicit route, for basic networking setup
                     buf.append(" mgmtcidr=").append(_mgmtCidr);

@@ -380,16 +380,12 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         if ((lb.getAlgorithm() == null) || !NetUtils.isValidAlgorithm(lb.getAlgorithm())) {
             throw new InvalidParameterValueException("Invalid algorithm: " + lb.getAlgorithm());
         }
-
-        Long ipId = lb.getSourceIpAddressId();
         
-        if (ipId == null) {
-            return _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
-
-        } else {
-            return createLoadBalancer(lb);
-        }
-
+        LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
+        if (result == null){
+            result =  createLoadBalancer(lb);
+        } 
+        return result;
     }
     
     public LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException {
