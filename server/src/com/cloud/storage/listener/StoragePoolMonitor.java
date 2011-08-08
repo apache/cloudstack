@@ -32,22 +32,27 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.OCFS2Manager;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
 	private final StorageManagerImpl _storageManager;
 	private final StoragePoolDao _poolDao;
-	@Inject OCFS2Manager _ocfs2Mgr;
+	OCFS2Manager _ocfs2Mgr;
 	
     public StoragePoolMonitor(StorageManagerImpl mgr, StoragePoolDao poolDao) {
     	this._storageManager = mgr;
     	this._poolDao = poolDao;
+    	
+    	ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+    	this._ocfs2Mgr = locator.getManager(OCFS2Manager.class);
     }
     
     

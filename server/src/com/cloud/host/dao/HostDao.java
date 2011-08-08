@@ -165,5 +165,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     
     long countRoutingHostsByDataCenter(long dcId);
 
-    List<HostVO> listSecondaryStorageHosts(long dataCenterId);    
+    List<HostVO> listSecondaryStorageHosts(long dataCenterId);
+
+    List<HostVO> listByInAllStatus(Type type, Long clusterId, Long podId, long dcId);    
 }
