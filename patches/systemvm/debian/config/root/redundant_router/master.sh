@@ -24,9 +24,26 @@ fi
 
 echo To master called >> /root/keepalived.log
 /root/redundant_router/enable_pubip.sh >> /root/keepalived.log 2>&1
-echo Enable public ip $? >> /root/keepalived.log
+ret=$?
+last_msg=`tail -n 1 /root/keepalived.log`
+echo Enable public ip returned $ret >> /root/keepalived.log
+if [ $ret -ne 0 ]
+then
+    echo Fail to enable public ip! >> /root/keepalived.log
+    ifconfig eth2 down
+    service keepalived stop >> /root/keepalived.log 2>&1
+    service conntrackd stop >> /root/keepalived.log 2>&1
+    echo Status: FAULT \($last_msg\) >> /root/keepalived.log
+    rm $LOCK
+    exit
+fi
 /root/redundant_router/primary-backup.sh primary >> /root/keepalived.log 2>&1
-echo Switch conntrackd mode primary $? >> /root/keepalived.log
+ret=$?
+echo Switch conntrackd mode primary returned $ret >> /root/keepalived.log
+if [ $ret -ne 0 ]
+then
+    echo Fail to switch conntrackd mode, but try to continue working >> /root/keepalived.log
+fi
 echo Status: MASTER >> /root/keepalived.log
 
 rm $LOCK

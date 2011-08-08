@@ -779,7 +779,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                 state = RedundantState.MASTER;
                             } else {
                                 if (answer.getDetails() != null) {
-                                    if (answer.getDetails().equals("Status: BACKUP")) {
+                                    if (answer.getDetails().startsWith("Status: BACKUP")) {
                                         state = RedundantState.BACKUP;
                                     } else if (answer.getDetails().startsWith("Status: FAULT")) {
                                         state = RedundantState.FAULT;
