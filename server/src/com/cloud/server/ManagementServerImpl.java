@@ -341,7 +341,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     private String _hashKey = null;
 
-    public ManagementServerImpl() {
+    protected ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _configDao = locator.getDao(ConfigurationDao.class);
         _routerDao = locator.getDao(DomainRouterDao.class);
