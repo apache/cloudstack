@@ -12,6 +12,9 @@
 
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
+# Fix haproxy directory issue
+mkdir -p /var/lib/haproxy
+
 [ -x /sbin/ifup ] || exit 0
 
 . /lib/lsb/init-functions
