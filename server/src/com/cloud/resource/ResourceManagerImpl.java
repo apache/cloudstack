@@ -361,7 +361,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             allocationState = Host.HostAllocationState.Enabled.toString();
         }
 
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, bareMetalParams, allocationState);
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), allocationState);
     }
 
     @Override

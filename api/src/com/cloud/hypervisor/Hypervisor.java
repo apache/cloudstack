@@ -30,6 +30,7 @@ public class Hypervisor {
     	Parralels,
     	BareMetal,
     	Simulator,
+    	Ovm,
     	
     	Any; /*If you don't care about the hypervisor type*/
 
@@ -56,6 +57,8 @@ public class Hypervisor {
         		return HypervisorType.BareMetal;
     		} else if (hypervisor.equalsIgnoreCase("Simulator")) {
     			return HypervisorType.Simulator;
+    		} else if (hypervisor.equalsIgnoreCase("Ovm")) {
+    			return HypervisorType.Ovm;
     		} else if (hypervisor.equalsIgnoreCase("Any")) {
     			return HypervisorType.Any;
     		} else {

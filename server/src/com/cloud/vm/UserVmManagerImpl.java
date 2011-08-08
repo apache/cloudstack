@@ -2668,20 +2668,23 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (owner.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
-
-        VirtualMachineTemplate template = profile.getTemplate();
+        
         if (vm.getIsoId() != null) {
-            template = _templateDao.findById(vm.getIsoId());
-        }
-        if (template != null && template.getFormat() == ImageFormat.ISO && vm.getIsoId() != null) {
             String isoPath = null;
+            
+            VirtualMachineTemplate template = _templateDao.findById(vm.getIsoId());
+            if (template == null || template.getFormat() != ImageFormat.ISO) {
+                throw new CloudRuntimeException("Can not find ISO in vm_template table for id " + vm.getIsoId());
+            }
             Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vm.getDataCenterIdToDeployIn());
+
             if (isoPathPair == null) {
                 s_logger.warn("Couldn't get absolute iso path");
                 return false;
             } else {
                 isoPath = isoPathPair.first();
             }
+ 
             if (template.isBootable()) {
                 profile.setBootLoaderType(BootloaderType.CD);
             }
@@ -2695,12 +2698,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             iso.setDeviceId(3);
             profile.addDisk(iso);
         } else {
+        	VirtualMachineTemplate template = profile.getTemplate();
             /* create a iso placeholder */
             VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, template.getName(), null, null, 0, null);
             iso.setDeviceId(3);
             profile.addDisk(iso);
         }
-
+        
         return true;
     }
 

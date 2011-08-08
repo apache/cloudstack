@@ -108,6 +108,7 @@ import com.cloud.projects.ProjectManagerImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
+import com.cloud.storage.OCFS2ManagerImpl;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.GuestOSCategoryDaoImpl;
@@ -314,6 +315,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
         addManager("ResourceManager", ResourceManagerImpl.class);
+        addManager("OCFS2Manager", OCFS2ManagerImpl.class);
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);

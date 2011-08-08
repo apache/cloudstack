@@ -451,6 +451,23 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> listByInAllStatus(Host.Type type, Long clusterId, Long podId, long dcId) {
+        SearchCriteria<HostVO> sc = TypePodDcStatusSearch.create();
+        if ( type != null ) {
+            sc.setParameters("type", type.toString());
+        }
+        if (clusterId != null) {
+            sc.setParameters("cluster", clusterId);
+        }
+        if (podId != null ) {
+            sc.setParameters("pod", podId);
+        }
+        sc.setParameters("dc", dcId);
+
+        return listBy(sc);
+    }
+    
+    @Override
     public List<HostVO> listBy(Long clusterId, Long podId, long dcId) {
         SearchCriteria<HostVO> sc = TypePodDcStatusSearch.create();
         if (podId != null) {

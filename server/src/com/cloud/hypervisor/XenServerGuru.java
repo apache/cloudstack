@@ -46,7 +46,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     @Override
     public <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm) {
         BootloaderType bt = BootloaderType.PyGrub;
-        if (vm.getBootLoaderType() != null) {
+        if (vm.getBootLoaderType() == BootloaderType.CD) {
         	 bt = vm.getBootLoaderType();
         }
         VirtualMachineTO to = toVirtualMachineTO(vm);

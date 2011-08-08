@@ -595,6 +595,10 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
 
+%files premium-agent
+%{_javadir}/cloud-agent-extras.jar
+%attr(0755,root,root) %{_bindir}/mycloud-setup-agent
+
 %files console-proxy
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-console*.jar
@@ -635,6 +639,7 @@ fi
 %{_javadir}/%{name}-core-extras.jar
 %{_javadir}/%{name}-server-extras.jar
 %{_javadir}/%{name}-vmware-base.jar
+%{_javadir}/%{name}-ovm.jar
 # maintain the following list in sync with files agent-scripts
 %{_libdir}/%{name}/agent/premium-scripts/*
 %{_sysconfdir}/%{name}/management/commands-ext.properties

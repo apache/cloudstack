@@ -175,4 +175,6 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     List<HostVO> listAllRoutingAgents();
 
 	List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
+
+    List<HostVO> listByInAllStatus(Type type, Long clusterId, Long podId, long dcId);    
 }
