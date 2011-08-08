@@ -39,7 +39,7 @@ public interface Discoverer extends Adapter {
      * @param password
      * @return ServerResource
      */
-    Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password) throws DiscoveryException;
+    Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException;
 
 	void postDiscovery(List<HostVO> hosts, long msId)  throws DiscoveryException;
 	

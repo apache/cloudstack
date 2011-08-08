@@ -124,7 +124,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	@Override
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId,
 			Long podId, Long clusterId, URI uri, String username,
-			String password) throws DiscoveryException {
+			String password, List<String> hostTags) throws DiscoveryException {
 		
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if(cluster == null || cluster.getHypervisorType() != HypervisorType.KVM) {
