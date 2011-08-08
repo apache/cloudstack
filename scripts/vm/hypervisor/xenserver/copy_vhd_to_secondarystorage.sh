@@ -56,7 +56,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount $mountpoint $localmp
+mount -o tcp $mountpoint $localmp
 if [ $? -ne 0 ]; then
   echo "6#can't mount $mountpoint to $localmp"
   exit 0
