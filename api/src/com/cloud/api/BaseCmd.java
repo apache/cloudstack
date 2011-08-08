@@ -39,6 +39,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
@@ -115,6 +116,7 @@ public abstract class BaseCmd {
     public static LoadBalancingRulesService _lbService;
     public static RemoteAccessVpnService _ravService;
     public static BareMetalVmService _bareMetalVmService;
+    public static FirewallService _firewallService;
    
     
     static void setComponents(ResponseGenerator generator) {
@@ -137,6 +139,7 @@ public abstract class BaseCmd {
         _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
         _bareMetalVmService = locator.getManager(BareMetalVmService.class);
+        _firewallService = locator.getManager(FirewallService.class);
     }
     
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException;

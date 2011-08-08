@@ -18,8 +18,6 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 

@@ -134,12 +134,14 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
@@ -154,8 +156,8 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -496,6 +498,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((UpdateHostPasswordCommand)cmd);
         } else if (cmd instanceof CheckRouterCommand) {
             return execute((CheckRouterCommand)cmd);
+        } else if (cmd instanceof SetFirewallRulesCommand) {
+            return execute((SetFirewallRulesCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -6441,4 +6445,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
 	    return new Answer(cmd, success, "");
 	}
+	
+  protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
+        Connection conn = getConnection();
+        
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        for (FirewallRuleTO rule : cmd.getRules()) {
+           //FIXME - Jana, add implementation here
+        }
+
+        return new SetFirewallRulesAnswer(cmd, results);
+  }
+	
 }

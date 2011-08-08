@@ -44,6 +44,7 @@ import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.api.response.FirewallResponse;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
@@ -55,11 +56,10 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
-import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
-import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ResourceCountResponse;
+import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupResultObject;
 import com.cloud.api.response.ServiceOfferingResponse;
@@ -81,9 +81,9 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Configuration;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.configuration.ResourceCount;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -116,7 +116,6 @@ import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -148,12 +147,10 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
-import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -722,7 +719,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setId(loadBalancer.getId());
         lbResponse.setName(loadBalancer.getName());
         lbResponse.setDescription(loadBalancer.getDescription());
-        List<String> cidrs = ApiDBUtils.findPortForwardingSourceCidrs(loadBalancer.getId());
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(loadBalancer.getId());
         lbResponse.setCidrList(StringUtils.join(cidrs, ","));
 
         IPAddressVO publicIp = ApiDBUtils.findIpAddressById(loadBalancer.getSourceIpAddressId());
@@ -991,7 +988,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProtocol(fwRule.getProtocol());
         response.setPublicStartPort(Integer.toString(fwRule.getSourcePortStart()));
         response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
-        List<String> cidrs = ApiDBUtils.findPortForwardingSourceCidrs(fwRule.getId());
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
@@ -2128,5 +2125,41 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             return sg.getId();
         }
+    }
+    
+    @Override
+    public FirewallResponse createFirewallResponse(FirewallRule fwRule) {
+        FirewallResponse response = new FirewallResponse();
+
+        response.setId(fwRule.getId());
+        response.setProtocol(fwRule.getProtocol());
+        if (fwRule.getSourcePortStart() != null) {
+            response.setStartPort(Integer.toString(fwRule.getSourcePortStart()));
+        }
+        
+        if (fwRule.getSourcePortEnd() != null) {
+            response.setEndPort(Integer.toString(fwRule.getSourcePortEnd()));
+        }
+        
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
+
+        IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
+        response.setPublicIpAddressId(ip.getId());
+        response.setPublicIpAddress(ip.getAddress().addr());
+
+        FirewallRule.State state = fwRule.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        
+        response.setIcmpCode(fwRule.getIcmpCode());
+        response.setIcmpType(fwRule.getIcmpType());
+        
+        response.setState(stateToSet);
+        response.setObjectName("firewallrule");
+        return response;
+
     }
 }

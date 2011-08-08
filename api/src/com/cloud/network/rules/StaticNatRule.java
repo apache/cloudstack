@@ -28,9 +28,9 @@ public interface StaticNatRule extends ControlledEntity, FirewallRule{
     
     String getProtocol();
 
-    int getSourcePortStart();
+    Integer getSourcePortStart();
 
-    int getSourcePortEnd();
+    Integer getSourcePortEnd();
     
     Purpose getPurpose();
 

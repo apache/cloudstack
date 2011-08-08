@@ -50,6 +50,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.RulesManager;
@@ -87,6 +88,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Inject RulesManager _rulesMgr;
     @Inject DomainDao _domainDao;
     @Inject FirewallRulesDao _rulesDao;
+    @Inject FirewallManager _firewallMgr;
     
     int _userLimit;
     int _pskLength;
@@ -94,7 +96,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
 
     @Override
-    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange) throws NetworkRuleConflictException {
+    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall) throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
 
@@ -165,7 +167,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         long startIp = NetUtils.ip2Long(range[0]);
         String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
         String sharedSecret = PasswordGenerator.generatePresharedKey(_pskLength);
-        _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT);
+        _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, openFirewall, caller, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT);
         vpnVO = new RemoteAccessVpnVO(ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId(), ipAddr.getAssociatedWithNetworkId(),
                 publicIpId, range[0], newIpRange, sharedSecret);
         return _remoteAccessVpnDao.persist(vpnVO);
@@ -302,7 +304,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     }
 
     @Override
-    public RemoteAccessVpnVO startRemoteAccessVpn(long vpnId) throws ResourceUnavailableException {
+    public RemoteAccessVpnVO startRemoteAccessVpn(long vpnId, boolean openFirewall) throws ResourceUnavailableException {
         Account caller = UserContext.current().getCaller();
 
         RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(vpnId);
@@ -311,18 +313,28 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         _accountMgr.checkAccess(caller, vpn);
+        
+      
 
         Network network = _networkMgr.getNetwork(vpn.getNetworkId());
 
         List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
         boolean started = false;
         try {
-            for (RemoteAccessVpnElement element : elements) {
-                if (element.startVpn(network, vpn)) {
-                    started = true;
-                    break;
+            boolean firewallOpened = true;
+            if (openFirewall) {
+                firewallOpened = _firewallMgr.applyFirewallRules(vpn.getServerAddressId(), caller);
+            }
+            
+            if (firewallOpened) {
+                for (RemoteAccessVpnElement element : elements) {
+                    if (element.startVpn(network, vpn)) {
+                        started = true;
+                        break;
+                    }
                 }
             }
+           
             return vpn;
         } finally {
             if (started) {

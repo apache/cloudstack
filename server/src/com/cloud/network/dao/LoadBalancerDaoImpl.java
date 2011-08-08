@@ -28,9 +28,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -119,49 +117,6 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         sc.setParameters("accountId", accountId);
         sc.setParameters("name", name);
         return findOneBy(sc);
-    }
-
-    public void saveSourceCidrs(LoadBalancerVO loadBalancerRule) {
-        List<String> cidrlist = loadBalancerRule.getSourceCidrList();
-        if (cidrlist == null) {
-            return;
-        }
-        _portForwardingRulesCidrsDao.persist(loadBalancerRule.getId(), cidrlist);
-    }
-    
-
-    public void loadSourceCidrs(LoadBalancerVO loadBalancerRule){
-        List<String> sourceCidrs = _portForwardingRulesCidrsDao.getSourceCidrs(loadBalancerRule.getId());
-        loadBalancerRule.setSourceCidrList(sourceCidrs);
-     }    
-
-    
-    @Override @DB
-    public LoadBalancerVO persist(LoadBalancerVO loadBalancerRule) {        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        LoadBalancerVO dbfirewallRule = super.persist(loadBalancerRule);
-        saveSourceCidrs(loadBalancerRule);
-        
-        txn.commit();
-        return dbfirewallRule;
-    }
-    
-    
-    @Override @DB
-    public boolean update(Long loadBalancerRuleId, LoadBalancerVO loadBalancerRule) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        boolean persisted = super.update(loadBalancerRuleId, loadBalancerRule);
-        if (!persisted) {
-            return persisted;
-        }
-        saveSourceCidrs(loadBalancerRule);
-        
-        txn.commit();
-        return persisted;
     }
     
 }

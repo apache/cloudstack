@@ -267,7 +267,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         firewallCapabilities.put(Capability.PortForwarding, "true");
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.StaticNat, "true");
-        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
+        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         firewallCapabilities.put(Capability.SupportedSourceNatTypes, "per account");
         

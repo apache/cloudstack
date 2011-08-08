@@ -35,6 +35,4 @@ public interface LoadBalancer extends FirewallRule {
 
     String getAlgorithm();
     
-    public List<String> getSourceCidrList();
-    
 }

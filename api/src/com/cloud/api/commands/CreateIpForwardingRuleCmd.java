@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -61,6 +63,9 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the rule. Valid values are TCP or UDP.")
     private String protocol;
     
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
+    private Boolean openFirewall;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -77,6 +82,14 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     public int getEndPort() {
         return endPort;
     }
+    
+    public Boolean getOpenFirewall() {
+        if (openFirewall != null) {
+            return openFirewall;
+        } else {
+            return true;
+        }
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -89,11 +102,16 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 
     @Override
     public void execute() throws ResourceUnavailableException{ 
-        boolean result = false;
+        boolean result = true;
         FirewallRule rule = null;
         try {
             UserContext.current().setEventDetails("Rule Id: "+ getEntityId());
-            result = _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCaller());
+            
+            if (getOpenFirewall()) {
+                result = result && _firewallService.applyFirewallRules(rule.getSourceIpAddressId(), UserContext.current().getCaller());
+            }
+            
+            result = result && _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCaller());
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
             StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule);
             IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
@@ -111,7 +129,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 	public void create() {
 		StaticNatRule rule;
         try {
-            rule = _rulesService.createStaticNatRule(this);
+            rule = _rulesService.createStaticNatRule(this, getOpenFirewall());
         } catch (NetworkRuleConflictException e) {
             s_logger.info("Unable to create Static Nat Rule due to " + e.getMessage());
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
@@ -167,12 +185,12 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public int getSourcePortStart() {
+    public Integer getSourcePortStart() {
         return startPort;
     }
 
     @Override
-    public int getSourcePortEnd() {
+    public Integer getSourcePortEnd() {
         if (endPort == null) {
             return startPort;
         } else {
@@ -234,5 +252,20 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
             throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
         }
         return ip;
+    }
+    
+    @Override
+    public Integer getIcmpCode() {
+        return null;
+    }
+    
+    @Override
+    public Integer getIcmpType() {
+        return null;
+    }
+    
+    @Override
+    public List<String> getSourceCidrList() {
+        return null;
     }
 }

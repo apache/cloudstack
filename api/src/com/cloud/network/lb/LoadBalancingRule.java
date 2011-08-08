@@ -88,12 +88,12 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     }
     
     @Override
-    public int getSourcePortStart() {
+    public Integer getSourcePortStart() {
         return lb.getSourcePortStart();
     }
     
     @Override
-    public int getSourcePortEnd() {
+    public Integer getSourcePortEnd() {
         return lb.getSourcePortEnd();
     }
 
@@ -158,5 +158,15 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         public boolean isRevoked() {
             return revoked;
         }
+    }
+    
+    @Override
+    public Integer getIcmpCode() {
+        return null;
+    }
+    
+    @Override
+    public Integer getIcmpType() {
+        return null;
     }
 }

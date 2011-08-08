@@ -261,3 +261,9 @@ createSSHKeyPair=com.cloud.api.commands.CreateSSHKeyPairCmd;15
 deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
 listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
 
+
+#### 
+createFirewallRule=com.cloud.api.commands.CreateFirewallRuleCmd;15
+deleteFirewallRule=com.cloud.api.commands.DeleteFirewallRuleCmd;15
+listFirewallRules=com.cloud.api.commands.ListFirewallRulesCmd;15
+

@@ -333,7 +333,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             String publicCidr = NetUtils.ipAndNetMaskToCidr(secStorageVm.getPublicIpAddress(), secStorageVm.getPublicNetmask());
             if (NetUtils.isNetworkAWithinNetworkB(privateCidr, publicCidr) || NetUtils.isNetworkAWithinNetworkB(publicCidr, privateCidr)) {
                 s_logger.info("private and public interface overlaps, add a default route through private interface. privateCidr: " + privateCidr + ", publicCidr: " + publicCidr);
-                allowedCidrs.add("0.0.0.0/0");
+                allowedCidrs.add(NetUtils.ALL_CIDRS);
             }
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
         }

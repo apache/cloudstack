@@ -93,13 +93,17 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
@@ -213,6 +217,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     NetworkDomainDao _networkDomainDao;
     @Inject
     VMInstanceDao _vmDao;
+    @Inject
+    FirewallManager _firewallMgr;
+    @Inject 
+    FirewallRulesDao _firewallDao;
 
     @Inject DomainRouterDao _routerDao;
 
@@ -2196,6 +2204,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
             s_logger.warn("Failed to cleanup LB rules as a part of network id=" + networkId + " cleanup");
         }
+        
+        //revoke all firewall rules for the network
+        try {
+            if (_firewallMgr.revokeAllFirewallRulesForNetwork(networkId, callerUserId, caller)) {
+                s_logger.debug("Successfully cleaned up firewallRules rules for network id=" + networkId);
+            } else {
+                success = false;
+                s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup");
+            }
+        } catch (ResourceUnavailableException ex) {
+            success = false;
+            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
+        }
 
         // release all ip addresses
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
@@ -2388,6 +2410,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Failed to apply ip addresses as a part of network id" + networkId + " restart");
             success = false;
         }
+        
+        // apply firewall rules
+        List<FirewallRuleVO> firewallRulesToApply = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
+        if (!_firewallMgr.applyFirewallRules(firewallRulesToApply, false, caller)) {
+            s_logger.warn("Failed to reapply firewall rule(s) as a part of network id=" + networkId + " restart");
+            success = false;
+        }
 
         // apply port forwarding rules
         if (!_rulesMgr.applyPortForwardingRulesForNetwork(networkId, false, caller)) {
@@ -2412,7 +2441,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (vpnsToReapply != null) {
             for (RemoteAccessVpn vpn : vpnsToReapply) {
                 // Start remote access vpn per ip
-                if (_vpnMgr.startRemoteAccessVpn(vpn.getServerAddressId()) == null) {
+                if (_vpnMgr.startRemoteAccessVpn(vpn.getServerAddressId(), false) == null) {
                     s_logger.warn("Failed to reapply vpn rules as a part of network id=" + networkId + " restart");
                     success = false;
                 }
@@ -2756,9 +2785,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private boolean cleanupIpResources(long ipId, long userId, Account caller) {
         boolean success = true;
 
+        
+        //Revoke all PF/Static nat rules for the ip
         try {
-            s_logger.debug("Revoking all PF/StaticNat rules as a part of public IP id=" + ipId + " release...");
-            if (!_rulesMgr.revokeAllRulesForIp(ipId, userId, caller)) {
+            s_logger.debug("Revoking all " + Purpose.PortForwarding + "/" + Purpose.StaticNat + " rules as a part of public IP id=" + ipId + " release...");
+            if (!_rulesMgr.revokeAllPFAndStaticNatRulesForIp(ipId, userId, caller)) {
                 s_logger.warn("Unable to revoke all the port forwarding rules for ip id=" + ipId + " as a part of ip release");
                 success = false;
             }
@@ -2767,7 +2798,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
 
-        s_logger.debug("Revoking all LB rules as a part of public IP id=" + ipId + " release...");
+        s_logger.debug("Revoking all " + Purpose.LoadBalancing + " rules as a part of public IP id=" + ipId + " release...");
         if (!_lbMgr.removeAllLoadBalanacersForIp(ipId, caller, userId)) {
             s_logger.warn("Unable to revoke all the load balancer rules for ip id=" + ipId + " as a part of ip release");
             success = false;
@@ -2782,6 +2813,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _vpnMgr.destroyRemoteAccessVpn(ipId);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
+            success = false;
+        }
+        
+        //Revoke all firewall rules for the ip
+        try {
+            s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of public IP id=" + ipId + " release...");
+            if (!_firewallMgr.revokeFirewallRulesForIp(ipId, userId, caller)) {
+                s_logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of ip release");
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to revoke all firewall rules for ip id=" + ipId + " as a part of ip release", e);
             success = false;
         }
 

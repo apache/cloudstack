@@ -58,11 +58,11 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -122,6 +122,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     UsageEventDao _usageEventDao;
     @Inject
     FirewallRulesCidrsDao _firewallCidrsDao;
+    @Inject
+    FirewallManager _firewallMgr;
 
     @Override
     @DB
@@ -346,7 +348,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
-    public LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException {
+    public LoadBalancer createLoadBalancerRule(LoadBalancer lb, boolean openFirewall) throws NetworkRuleConflictException {
         UserContext caller = UserContext.current();
 
         long ipId = lb.getSourceIpAddressId();
@@ -362,18 +364,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         int defPortStart = lb.getDefaultPortStart();
         int defPortEnd = lb.getDefaultPortEnd();
 
-        if (!NetUtils.isValidPort(srcPortStart)) {
-            throw new InvalidParameterValueException("publicPort is an invalid value: " + srcPortStart);
-        }
-        if (!NetUtils.isValidPort(srcPortEnd)) {
-            throw new InvalidParameterValueException("Public port range is an invalid value: " + srcPortEnd);
-        }
-        if (srcPortStart > srcPortEnd) {
-            throw new InvalidParameterValueException("Public port range is an invalid value: " + srcPortStart + "-" + srcPortEnd);
-        }
-        if (!NetUtils.isValidPort(defPortStart)) {
-            throw new InvalidParameterValueException("privatePort is an invalid value: " + defPortStart);
-        }
+        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol());
+
         if (!NetUtils.isValidPort(defPortEnd)) {
             throw new InvalidParameterValueException("privatePort is an invalid value: " + defPortEnd);
         }
@@ -384,29 +376,27 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Invalid algorithm: " + lb.getAlgorithm());
         }
 
-        Long networkId = ipAddr.getAssociatedWithNetworkId();
-        if (networkId == null) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule ; ip id=" + ipId + " is not associated with any network");
-
-        }
-
-        _accountMgr.checkAccess(caller.getCaller(), ipAddr);
-
         // verify that lb service is supported by the network
-        Network network = _networkMgr.getNetwork(networkId);
+        Network network = _networkMgr.getNetwork(ipAddr.getAssociatedWithNetworkId());
         if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Lb)) {
-            throw new InvalidParameterValueException("LB service is not supported in network id=" + networkId);
+            throw new InvalidParameterValueException("LB service is not supported in network id=" + network.getId());
         }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
+        
+        if (openFirewall) {
+            _firewallMgr.createRuleForAllCidrs(ipId, caller.getCaller(), lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getProtocol(), null, null);
+        }
+        
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), 
-                lb.getSourceCidrList(), lb.getAlgorithm(), networkId, ipAddr.getAccountId(), ipAddr.getDomainId());
+                lb.getSourceCidrList(), lb.getAlgorithm(), network.getId(), ipAddr.getAccountId(), ipAddr.getDomainId());
 
         newRule = _lbDao.persist(newRule);
+        boolean success = true;
 
         try {
-            _rulesMgr.detectRulesConflict(newRule, ipAddr);
+            _firewallMgr.detectRulesConflict(newRule, ipAddr);
             if (!_rulesDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
@@ -415,14 +405,26 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
             txn.commit();
+            
+            // send firewallRule to the backend
+            if (openFirewall) {
+               success = success &&  _firewallMgr.applyFirewallRules(lb.getSourceIpAddressId(), caller.getCaller());
+            }
+            
             return newRule;
         } catch (Exception e) {
-            _lbDao.remove(newRule.getId());
+            success = false;
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
             throw new CloudRuntimeException("Unable to add rule for ip address id=" + newRule.getSourceIpAddressId(), e);
+        } finally {
+            if (!success) {
+                _lbDao.remove(newRule.getId());
+            }
         }
+        
+       
     }
 
     @Override

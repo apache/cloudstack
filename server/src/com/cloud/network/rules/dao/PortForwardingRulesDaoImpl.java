@@ -24,17 +24,13 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
-import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value=PortForwardingRulesDao.class)
@@ -153,50 +149,5 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         
         return listBy(sc);
     }
-    
-
-    public void saveSourceCidrs(PortForwardingRuleVO portForwardingRule) {
-        List<String> cidrlist = portForwardingRule.getSourceCidrList();
-        if (cidrlist == null) {
-            return;
-        }
-        _portForwardingRulesCidrsDao.persist(portForwardingRule.getId(), cidrlist);
-    }
-    
-
-    public void loadSourceCidrs(PortForwardingRuleVO portForwardingRule){
-        List<String> sourceCidrs = _portForwardingRulesCidrsDao.getSourceCidrs(portForwardingRule.getId());
-        portForwardingRule.setSourceCidrList(sourceCidrs);
-     }    
-
-    
-
-    @Override @DB
-    public PortForwardingRuleVO persist(PortForwardingRuleVO portForwardingRule) {        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        PortForwardingRuleVO dbfirewallRule = super.persist(portForwardingRule);
-        saveSourceCidrs(portForwardingRule);
-        
-        txn.commit();
-        return dbfirewallRule;
-    }
-    
-    
-    @Override @DB
-    public boolean update(Long portForwardingRuleId, PortForwardingRuleVO portForwardingRule) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        boolean persisted = super.update(portForwardingRuleId, portForwardingRule);
-        if (!persisted) {
-            return persisted;
-        }
-        saveSourceCidrs(portForwardingRule);
-        
-        txn.commit();
-        return persisted;
-    }
-    
+  
 }

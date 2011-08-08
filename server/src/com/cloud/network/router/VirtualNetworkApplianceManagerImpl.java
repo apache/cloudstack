@@ -50,10 +50,12 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -2084,7 +2086,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         result = result && applyPortForwardingRules(router, (List<PortForwardingRule>) rules);
                     } else if (rules.get(0).getPurpose() == Purpose.StaticNat) {
                         result = result && applyStaticNatRules(router, (List<StaticNatRule>) rules);
-                    } else {
+                    } else if (rules.get(0).getPurpose() == Purpose.Firewall) {
+                        result = result && applyFirewallRules(router, (List<FirewallRule>) rules);
+                    }else {
                         s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
                         result = false;
                     }
@@ -2128,5 +2132,33 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             vrs.add(router);
         }
         return vrs;
+    }
+    
+    private void createFirewallRulesCommands(List<? extends FirewallRule> rules, DomainRouterVO router, Commands cmds) {
+        List<FirewallRuleTO> rulesTO = null;
+        if (rules != null) {
+            rulesTO = new ArrayList<FirewallRuleTO>();
+            for (FirewallRule rule : rules) {
+                IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                FirewallRuleTO ruleTO = new FirewallRuleTO(rule, sourceIp.getAddress().addr());
+                rulesTO.add(ruleTO);
+            }
+        }
+
+        SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand(cmd);
+    }
+    
+    
+    protected boolean applyFirewallRules(DomainRouterVO router, List<FirewallRule> rules) throws ResourceUnavailableException {
+        Commands cmds = new Commands(OnError.Continue);
+        createFirewallRulesCommands(rules, router, cmds);
+        // Send commands to router
+        return sendCommandsToRouter(router, cmds);
     }
 }
