@@ -81,7 +81,9 @@ import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
+import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
+import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
 import com.cloud.network.ovs.OvsNetworkManagerImpl;
 import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.GreTunnelDaoImpl;
@@ -265,6 +267,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DcDetailsDao", DcDetailsDaoImpl.class);
         addDao("SwiftDao", SwiftDaoImpl.class);
         addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
+        addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
+
     }
 
     @Override
@@ -312,6 +316,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
+        addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
     }
 
     @Override

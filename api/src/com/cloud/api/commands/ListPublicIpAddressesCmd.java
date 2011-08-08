@@ -65,6 +65,9 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists all public IP addresses by Zone ID")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.FOR_LOAD_BALANCING, type=CommandType.BOOLEAN, description="list only ips used for load balancing")
+    private Boolean forLoadBalancing;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -128,5 +131,34 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.IpAddress;
+    }
+
+
+    public Boolean isForLoadBalancing() {
+        return forLoadBalancing;
+    }
+
+    public Boolean getAllocatedOnly() {
+        return allocatedOnly;
+    }
+
+    public void setAllocatedOnly(Boolean allocatedOnly) {
+        this.allocatedOnly = allocatedOnly;
+    }
+
+    public Boolean getForVirtualNetwork() {
+        return forVirtualNetwork;
+    }
+
+    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
+        this.forVirtualNetwork = forVirtualNetwork;
+    }
+
+    public Boolean getForLoadBalancing() {
+        return forLoadBalancing;
+    }
+
+    public void setForLoadBalancing(Boolean forLoadBalancing) {
+        this.forLoadBalancing = forLoadBalancing;
     }
 }

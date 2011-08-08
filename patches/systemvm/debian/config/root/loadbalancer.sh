@@ -27,48 +27,15 @@
 # @VERSION@
 
 usage() {
-  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address> -d <removed> -f <load balancer config> -s <stats guest ip address> \n" $(basename $0) >&2
+  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address> -d <removed> -f <load balancer config> \n" $(basename $0) >&2
 }
 
 # set -x
 
-# check if gateway domain is up and running
-check_gw() {
-  ping -c 1 -n -q $1 > /dev/null
-  if [ $? -gt 0 ]
-  then
-    sleep 1
-    ping -c 1 -n -q $1 > /dev/null
-  fi
-  return $?;
-}
-fw_remove_backup() {
-  for vif in $VIF_LIST; do 
-    iptables -F back_load_balancer_$vif 2> /dev/null
-    iptables -D INPUT -i $vif -p tcp  -j back_load_balancer_$vif 2> /dev/null
-    iptables -X back_load_balancer_$vif 2> /dev/null
-  done
-  iptables -F back_lb_stats 2> /dev/null
-  iptables -D INPUT -i $STAT_IF -p tcp  -j back_lb_stats 2> /dev/null
-  iptables -X back_lb_stats 2> /dev/null
-}
-fw_restore() {
-  for vif in $VIF_LIST; do 
-    iptables -F load_balancer_$vif 2> /dev/null
-    iptables -D INPUT -i $vif -p tcp  -j load_balancer_$vif 2> /dev/null
-    iptables -X load_balancer_$vif 2> /dev/null
-    iptables -E back_load_balancer_$vif load_balancer_$vif 2> /dev/null
-  done
-  iptables -F lb_stats 2> /dev/null
-  iptables -D INPUT -i $STAT_IF -p tcp  -j lb_stats 2> /dev/null
-  iptables -X lb_stats 2> /dev/null
-  iptables -E back_lb_stats lb_stats 2> /dev/null
-}
-# firewall entry to ensure that haproxy can receive on specified port
-fw_entry() {
+# ensure that the nic has the public ip we are load balancing on
+ip_entry() {
   local added=$1
   local removed=$2
-  local stats=$3
   
   if [ "$added" == "none" ]
   then
@@ -82,25 +49,57 @@ fw_entry() {
   
   local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
   local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
-
-# back up the iptable rules by renaming before creating new. 
-  for vif in $VIF_LIST; do 
-    iptables -E load_balancer_$vif back_load_balancer_$vif 2> /dev/null
-    iptables -N load_balancer_$vif 2> /dev/null
-    iptables -A INPUT -i $vif -p tcp  -j load_balancer_$vif
-  done
-  iptables -E lb_stats back_lb_stats 2> /dev/null
-  iptables -N lb_stats 2> /dev/null
-  iptables -A INPUT -i $STAT_IF -p tcp  -j lb_stats
-
+  
   for i in $a
   do
     local pubIp=$(echo $i | cut -d: -f1)
-    local dport=$(echo $i | cut -d: -f2)    
-    local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
+    logger -t cloud "Adding  public ip $pubIp for load balancing"  
+    for vif in $VIF_LIST; do 
+      sudo ip addr add dev $vif $pubIp/32
+      #ignore error since it is because the ip is already there
+    done      
+  done
+
+  for i in $r
+  do
+    logger -t cloud "Removing  public ips for deleted loadbalancers"  
+    local pubIp=$(echo $i | cut -d: -f1)
+    logger -t cloud "Removing  public ip $pubIp for deleted loadbalancers"  
+    for vif in $VIF_LIST; do 
+      sudo ip addr del $pubIp/32 dev $vif 
+    done
+  done
+  
+  return 0
+}
+
+# firewall entry to ensure that haproxy can receive on specified port
+fw_entry() {
+  local added=$1
+  local removed=$2
+  
+  if [ "$added" == "none" ]
+  then
+  	added=""
+  fi
+  
+  if [ "$removed" == "none" ]
+  then
+  	removed=""
+  fi
+  
+  local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
+  local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
+ 
+  for i in $a
+  do
+    local pubIp=$(echo $i | cut -d: -f1)
+    local dport=$(echo $i | cut -d: -f2)
+    logger -t cloud "Opening up firewall $pubIp:$dport (INPUT chain) for load balancing" 
     
     for vif in $VIF_LIST; do 
-      iptables -A load_balancer_$vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT
+      sudo iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
+      sudo iptables -A INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
       
       if [ $? -gt 0 ]
       then
@@ -108,10 +107,17 @@ fw_entry() {
       fi
     done      
   done
-  local pubIp=$(echo $stats | cut -d: -f1)
-  local dport=$(echo $stats | cut -d: -f2)    
-  local cidrs=$(echo $stats | cut -d: -f3 | sed 's/-/,/')
-  iptables -A lb_stats -s $cidrs -p tcp -m state --state NEW -d $pubIp --dport $dport -j ACCEPT
+
+  for i in $r
+  do
+    local pubIp=$(echo $i | cut -d: -f1)
+    local dport=$(echo $i | cut -d: -f2)
+    logger -t cloud "Closing up firewall (INPUT chain) $pubIp:$dport for deleted load balancers" 
+    
+    for vif in $VIF_LIST; do 
+      sudo iptables -D INPUT -i $vif -p tcp -d $pubIp --dport $dport -j ACCEPT
+    done
+  done
   
   return 0
 }
@@ -124,6 +130,7 @@ reconfig_lb() {
 
 # Restore the HA Proxy to its previous state, and revert iptables rules on DomR
 restore_lb() {
+  logger -t cloud "Restoring HA Proxy to previous state"
   # Copy the old version of haproxy.cfg into the file that reconfigLB.sh uses
   cp /etc/haproxy/haproxy.cfg.old /etc/haproxy/haproxy.cfg.new
    
@@ -143,7 +150,12 @@ get_vif_list() {
       vif_list="$vif_list $vif";
     fi
   done
+  if [ "$vif_list" == "" ]
+  then
+      vif_list="eth0"
+  fi
   
+  logger -t cloud "Loadbalancer public interfaces = $vif_list"
   echo $vif_list
 }
 
@@ -152,9 +164,8 @@ iflag=
 aflag=
 dflag=
 fflag=
-sflag=
 
-while getopts 'i:a:d:f:s:' OPTION
+while getopts 'i:a:d:f:' OPTION
 do
   case $OPTION in
   i)	iflag=1
@@ -169,27 +180,11 @@ do
   f)	fflag=1
 		cfgfile="$OPTARG"
 		;;
-  s)	sflag=1
-		statsIp="$OPTARG"
-		;;
   ?)	usage
 		exit 2
 		;;
   esac
 done
-
-VIF_LIST=$(get_vif_list)
-# TODO make the stat interface generic
-STAT_IF="eth0"
-
-# hot reconfigure haproxy
-reconfig_lb $cfgfile
-
-if [ $? -gt 0 ]
-then
-  printf "Reconfiguring loadbalancer failed\n"
-  exit 1
-fi
 
 if [ "$addedIps" == "" ]
 then
@@ -201,21 +196,61 @@ then
   removedIps="none"
 fi
 
+VIF_LIST=$(get_vif_list)
+
+
+if [ "$addedIps" == "" ]
+then
+  addedIps="none"
+fi
+
+if [ "$removedIps" == "" ]
+then
+  removedIps="none"
+fi
+
+#FIXME: make this explicit via check on vm type or passed in flag
+if [ "$VIF_LIST" == "eth0"  ]
+then
+   ip_entry $addedIps $removedIps
+fi
+
+
+# hot reconfigure haproxy
+reconfig_lb $cfgfile
+
+if [ $? -gt 0 ]
+then
+  logger -t cloud "Reconfiguring loadbalancer failed"
+  #FIXME: make this explicit via check on vm type or passed in flag
+  if [ "$VIF_LIST" == "eth0"  ]
+  then
+     ip_entry $removedIps $addedIps
+  fi
+  exit 1
+fi
+
 # iptables entry to ensure that haproxy receives traffic
-fw_entry $addedIps $removedIps $statsIp
+fw_entry $addedIps $removedIps
   	
 if [ $? -gt 0 ]
 then
+  logger -t cloud "Failed to apply firewall rules for load balancing, reverting HA Proxy config"
   # Restore the LB
   restore_lb
 
-  # Revert iptables rules on DomR
-  fw_restore
+  logger -t cloud "Reverting firewall config"
+  # Revert iptables rules on DomR, with addedIps and removedIps swapped 
+  fw_entry $removedIps $addedIps
+
+  #FIXME: make this explicit via check on vm type or passed in flag
+  if [ "$VIF_LIST" == "eth0"  ]
+  then
+     logger -t cloud "Reverting ip address changes to eth0"
+     ip_entry $removedIps $addedIps
+  fi
 
   exit 1
-else
-  # Remove backedup iptable rules
-  fw_remove_backup
 fi
  
 exit 0

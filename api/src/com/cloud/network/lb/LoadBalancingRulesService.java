@@ -19,9 +19,11 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
+import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancer;
@@ -32,8 +34,9 @@ public interface LoadBalancingRulesService {
      * Create a load balancer rule from the given ipAddress/port to the given private port
      * @param cmd the command specifying the ip address, public port, protocol, private port, and algorithm
      * @return the newly created LoadBalancerVO if successful, null otherwise
+     * @throws InsufficientAddressCapacityException 
      */
-    LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException;
+    LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException, InsufficientAddressCapacityException;
     
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
     

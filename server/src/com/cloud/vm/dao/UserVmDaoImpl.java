@@ -66,7 +66,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> AccountHostSearch;
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
-    protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
+    protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch = null;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;

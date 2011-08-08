@@ -174,8 +174,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -325,6 +327,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final SSHKeyPairDao _sshKeyPairDao;
+    private final LoadBalancerDao _loadbalancerDao;
 
     private final KeystoreManager _ksMgr;
 
@@ -338,7 +341,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     private String _hashKey = null;
 
-    protected ManagementServerImpl() {
+    public ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _configDao = locator.getDao(ConfigurationDao.class);
         _routerDao = locator.getDao(DomainRouterDao.class);
@@ -354,6 +357,7 @@ public class ManagementServerImpl implements ManagementServer {
         _clusterDao = locator.getDao(ClusterDao.class);
         _nicDao = locator.getDao(NicDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
+        _loadbalancerDao = locator.getDao(LoadBalancerDao.class);
 
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
@@ -2501,6 +2505,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object address = cmd.getIpAddress();
         Object vlan = cmd.getVlanId();
         Object forVirtualNetwork = cmd.isForVirtualNetwork();
+        Object forLoadBalancing = cmd.isForLoadBalancing();
         Object ipId = cmd.getId();
 
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
@@ -2515,6 +2520,12 @@ public class ManagementServerImpl implements ManagementServer {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getAllocatedInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (forLoadBalancing != null && (Boolean)forLoadBalancing) {
+            SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
+            sb.join("lbSearch", lbSearch, sb.entity().getId(), lbSearch.entity().getSourceIpAddressId(), JoinType.INNER);
+            sb.groupBy(sb.entity().getId());
         }
 
         if (keyword != null && address == null) {
@@ -4195,9 +4206,18 @@ public class ManagementServerImpl implements ManagementServer {
         Map<String, Object> capabilities = new HashMap<String, Object>();
 
         boolean securityGroupsEnabled = false;
+        boolean elasticLoadBalancerEnabled = false;
+        String supportELB = "false";
         List<DataCenterVO> dc = _dcDao.listSecurityGroupEnabledZones();
         if (dc != null && !dc.isEmpty()) {
             securityGroupsEnabled = true;
+            String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+            elasticLoadBalancerEnabled = elbEnabled==null?false:Boolean.parseBoolean(elbEnabled);
+            if (elasticLoadBalancerEnabled) {
+                String networkType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+                if (networkType != null)
+                    supportELB = networkType;
+            }
         }
 
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
@@ -4205,6 +4225,7 @@ public class ManagementServerImpl implements ManagementServer {
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
         capabilities.put("cloudStackVersion", getVersion());
+        capabilities.put("supportELB", supportELB);
         return capabilities;
     }
 
