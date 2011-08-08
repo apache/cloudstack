@@ -254,7 +254,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             List<HostVO> hosts = new ArrayList<HostVO>();
             Map<? extends ServerResource, Map<String, String>> resources = null;
-            resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+            resources = discoverer.find(dcId, podId, clusterId, uri, username, password, null);
             
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
@@ -306,12 +306,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         String url = cmd.getUrl();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
-        Long memCapacity = cmd.getMemCapacity();
-        Long cpuSpeed = cmd.getCpuSpeed();
-        Long cpuNum = cmd.getCpuNum();
-        String mac = cmd.getMac();
         List<String> hostTags = cmd.getHostTags();
-        Map<String, String> bareMetalParams = new HashMap<String, String>();
 
         dcId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), dcId);
 
@@ -334,28 +329,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
 
-        if (cmd.getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.BareMetal.toString())) {
-            if (memCapacity == null) {
-                memCapacity = Long.valueOf(0);
-            }
-            if (cpuSpeed == null) {
-                cpuSpeed = Long.valueOf(0);
-            }
-            if (cpuNum == null) {
-                cpuNum = Long.valueOf(0);
-            }
-            if (mac == null) {
-                mac = "unknown";
-            }
-
-            bareMetalParams.put("cpuNum", cpuNum.toString());
-            bareMetalParams.put("cpuCapacity", cpuSpeed.toString());
-            bareMetalParams.put("memCapacity", memCapacity.toString());
-            bareMetalParams.put("mac", mac);
-            if (hostTags != null && hostTags.size() > 0) {
-                bareMetalParams.put("hostTag", hostTags.get(0));
-            }
-        }
         String allocationState = cmd.getAllocationState();
         if (allocationState == null) {
             allocationState = Host.HostAllocationState.Enabled.toString();
@@ -480,7 +453,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             Map<? extends ServerResource, Map<String, String>> resources = null;
 
             try {
-                resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+                resources = discoverer.find(dcId, podId, clusterId, uri, username, password, hostTags);
             } catch(DiscoveryException e) {
             	throw e;
             } catch (Exception e) {

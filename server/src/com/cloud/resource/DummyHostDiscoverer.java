@@ -39,7 +39,7 @@ public class DummyHostDiscoverer implements Discoverer {
     private String _name;
 
     @Override
-    public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password) {
+    public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) {
         if (!url.getScheme().equals("dummy")) {
             return null;
         }
