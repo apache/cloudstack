@@ -47,7 +47,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount $snapshoturl $snapshotdir
+mount -o tcp $snapshoturl $snapshotdir
 if [ $? -ne 0 ]; then
   rmdir $snapshotdir
   echo "5#can not mount $snapshoturl to $snapshotdir"
@@ -63,7 +63,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-mount $templateurl $templatedir
+mount -o tcp $templateurl $templatedir
 if [ $? -ne 0 ]; then
   rmdir $templatedir
   templatedir=""

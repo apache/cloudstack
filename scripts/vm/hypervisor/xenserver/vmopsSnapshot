@@ -286,7 +286,7 @@ def mount(remoteDir, localDir):
     makedirs(localDir)
     
     try: 
-        cmd = ['mount', remoteDir, localDir]
+        cmd = ['mount', '-o', 'tcp', remoteDir, localDir]
         txt = util.pread2(cmd)
     except:
         txt = ''
