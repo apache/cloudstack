@@ -92,9 +92,12 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.user.Account;
@@ -190,6 +193,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     ServiceOfferingDao _offeringDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    StoragePoolDao _storagePoolDao;
 
     private ConsoleProxyListener _listener;
 
@@ -1556,10 +1561,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return false;
         }
 
-        // config var for consoleproxy.restart check
-        String restart = _configDao.getValue("consoleproxy.restart");
-        if (restart != null && restart.equalsIgnoreCase("false")) {
-            s_logger.debug("Capacity scan disabled purposefully, consoleproxy.restart = false. This happens when the primarystorage is in maintenance mode");
+        List<StoragePoolVO> upPools = _storagePoolDao.listByStatus(StoragePoolStatus.Up);
+        if (upPools == null || upPools.size() == 0 ) {
+            s_logger.debug("Skip capacity scan due to there is no Primary Storage UPintenance mode");
             return false;
         }
 

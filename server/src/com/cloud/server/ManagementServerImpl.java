@@ -4228,9 +4228,9 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public long getPsMaintenanceCount(long podId) {
         List<StoragePoolVO> poolsInTransition = new ArrayList<StoragePoolVO>();
-        poolsInTransition.addAll(_poolDao.listPoolsByStatus(StoragePoolStatus.Maintenance));
-        poolsInTransition.addAll(_poolDao.listPoolsByStatus(StoragePoolStatus.PrepareForMaintenance));
-        poolsInTransition.addAll(_poolDao.listPoolsByStatus(StoragePoolStatus.ErrorInMaintenance));
+        poolsInTransition.addAll(_poolDao.listByStatus(StoragePoolStatus.Maintenance));
+        poolsInTransition.addAll(_poolDao.listByStatus(StoragePoolStatus.PrepareForMaintenance));
+        poolsInTransition.addAll(_poolDao.listByStatus(StoragePoolStatus.ErrorInMaintenance));
 
         return poolsInTransition.size();
     }
