@@ -386,6 +386,19 @@ public class LibvirtStorageResource {
         return vol;
     }
     
+    public boolean copyVolume(String srcPath, String destPath, String volumeName, int timeout)  throws InternalErrorException{
+        _storageLayer.mkdirs(destPath);
+        if (!_storageLayer.exists(srcPath)) {
+            throw new InternalErrorException("volume:" + srcPath + " is not exits");
+        }
+        String result = Script.runSimpleBashScript("cp " + srcPath + " " + destPath + File.separator + volumeName, timeout);
+        if (result != null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    
     public LibvirtStoragePoolDef getStoragePoolDef(Connect conn, StoragePool pool) throws LibvirtException {
         String poolDefXML = pool.getXMLDesc(0);
         LibvirtStoragePoolXMLParser parser = new LibvirtStoragePoolXMLParser();
