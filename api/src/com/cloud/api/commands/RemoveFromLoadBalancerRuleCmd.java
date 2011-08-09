@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -109,6 +110,10 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _lbService.findById(id).getNetworkId();
+    	LoadBalancer lb = _lbService.findById(id);
+    	if(lb == null){
+    		throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
+    	}
+        return lb.getNetworkId();
     }
 }
