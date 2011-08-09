@@ -129,7 +129,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         if (lst.contains(listener)) {
-            throw new CloudRuntimeException("Duplicate resource lisener:" + listener.getName());
+            throw new CloudRuntimeException("Duplicate resource lisener:" + listener.getClass().getSimpleName());
         }
         
         lst.add(listener);
@@ -213,7 +213,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 } else {
                     throw new CloudRuntimeException("Unknown resource event:" + event);
                 }
-                s_logger.debug("Sent resource event " + eventName + " to listener " + l.getName());
+                s_logger.debug("Sent resource event " + eventName + " to listener " + l.getClass().getSimpleName());
             }
         }
     }
