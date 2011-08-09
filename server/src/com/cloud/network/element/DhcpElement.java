@@ -197,8 +197,14 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     @Override
     public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
         DeployDestination dest = new DeployDestination(dc, null, null, null);
+        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        
+        if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+            s_logger.trace("Dhcp element doesn't handle network restart for the network " + network);
+            return false;
+        } 
+        
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
         if (routers == null || routers.isEmpty()) {
             s_logger.trace("Can't find dhcp element in network " + network.getId());
@@ -208,19 +214,16 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         VirtualRouter result = null;
         boolean ret = true;
         for (DomainRouterVO router : routers) {
-            if (canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
-                if (router.getState() == State.Stopped) {
-                    result = _routerMgr.startRouter(router.getId(), false);
-                } else {
-                    result = _routerMgr.rebootRouter(router.getId(), false);
-                }
-                if (result == null) {
-                    s_logger.warn("Failed to restart dhcp element " + router + " as a part of netowrk " + network + " restart");
-                    ret = false;
-                }
+            if (router.getState() == State.Stopped) {
+                result = _routerMgr.startRouter(router.getId(), false);
             } else {
-                s_logger.trace("Dhcp element doesn't handle network restart for the network " + network);
+                result = _routerMgr.rebootRouter(router.getId(), false);
             }
+            if (result == null) {
+                s_logger.warn("Failed to restart dhcp element " + router + " as a part of netowrk " + network + " restart");
+                ret = false;
+            }
+          
         }
         return ret;
     }
