@@ -132,8 +132,13 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     @Override
     public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        if (!canHandle(network.getGuestType(), dc)) {
+            s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
+            return false;
+        }
+
         DeployDestination dest = new DeployDestination(dc, null, null, null);
-        
+
         NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         
         // We need to re-implement the network since the redundancy capability may changed
@@ -148,21 +153,20 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         boolean result = true;
         boolean ret = true;
         for (DomainRouterVO router : routers) {
-            if (canHandle(network.getGuestType(), dest.getDataCenter())) {
-                host_id = router.getHostId();
-                if (_routerMgr.stopRouter(router.getId(), false) == null) {
-                    s_logger.warn("Failed to stop virtual router element " + router + " as a part of netowrk " + network + " restart");
-                    ret = false;
-                }
-                result = _routerMgr.destroyRouter(router.getId());
-                if (!result) {
-                    s_logger.warn("Failed to destroy virtual router element " + router + " as a part of netowrk " + network + " restart");
-                    ret = false;
-                }
-            } else {
-                s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
+            host_id = router.getHostId();
+            if (_routerMgr.stopRouter(router.getId(), false) == null) {
+                s_logger.warn("Failed to stop virtual router element " + router + " as a part of netowrk " + network + " restart");
+                ret = false;
             }
+            result = _routerMgr.destroyRouter(router.getId());
+            if (!result) {
+                s_logger.warn("Failed to destroy virtual router element " + router + " as a part of netowrk " + network + " restart");
+                ret = false;
+            }
+           
         }
+        
+        
         Cluster cluster = _configMgr.getCluster(_hostDao.findById(host_id).getClusterId());
         dest = new DeployDestination(dc, null, cluster, null);
         implement(network, networkOffering, dest, context);
