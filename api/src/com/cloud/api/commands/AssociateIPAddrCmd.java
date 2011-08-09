@@ -191,11 +191,4 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         return AsyncJob.Type.IpAddress;
     }
 
-    public AssociateIPAddrCmd(String accountName, Long domainId, Long zoneId, Long networkId) {
-        super();
-        this.accountName = accountName;
-        this.domainId = domainId;
-        this.zoneId = zoneId;
-        this.networkId = networkId;
-    }
 }
