@@ -28,8 +28,10 @@ public interface ResourceManager {
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
      * 
-     * @param type the resource type the listener is responsible to.
+     * @param Event type see ResourceListener.java, allow combination of multiple events.
      * @param listener the listener to notify.
      */
-    void registerForLifeCycleEvents(Host.Type type, ResourceLifeCycleListener listener);
+    public void registerResourceEvent(Integer event, ResourceListener listener);
+    
+    public void unregisterResourceEvent(ResourceListener listener);
 }
