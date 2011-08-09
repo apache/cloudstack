@@ -962,7 +962,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         for (DomainRouterVO rrouter : routerList) {
             if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
                 if (routerToBeAvoid != null) {
-                    throw new ResourceUnavailableException("There are already two redundant routers with IP " + router.getPublicIpAddress(), this.getClass(), 0);
+                    throw new ResourceUnavailableException("There are already two redundant routers with IP " + router.getPublicIpAddress()
+                            + ", they are " + rrouter.getInstanceName() + "(" + rrouter.getId() + ") and "
+                            + routerToBeAvoid.getInstanceName() + "(" + routerToBeAvoid.getId() + ")",
+                            this.getClass(), 0);
                 }
                 routerToBeAvoid = rrouter;
             }
