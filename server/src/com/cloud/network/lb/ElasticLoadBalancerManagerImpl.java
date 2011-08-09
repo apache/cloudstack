@@ -660,7 +660,7 @@ public class ElasticLoadBalancerManagerImpl implements
             LoadBalancer result = null;
             try {
                 lb.setSourceIpAddressId(ipId);
-                result = _lbMgr.createLoadBalancer(lb);
+                result = _lbMgr.createLoadBalancer(lb, false);
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
                 if (newIp) {

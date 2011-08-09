@@ -28,7 +28,7 @@ import com.cloud.user.Account;
 
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
     
-    LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException;
+    LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb, boolean openFirewall) throws NetworkRuleConflictException;
     
     boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
     boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId);

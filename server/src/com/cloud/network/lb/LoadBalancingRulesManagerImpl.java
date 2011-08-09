@@ -358,15 +358,12 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
-    public LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb, , boolean openFirewall) throws NetworkRuleConflictException, InsufficientAddressCapacityException {
+    public LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd lb,  boolean openFirewall) throws NetworkRuleConflictException, InsufficientAddressCapacityException {
         UserContext caller = UserContext.current();
-        int srcPortStart = lb.getSourcePortStart();
-        int srcPortEnd = lb.getSourcePortEnd();
+    
         int defPortStart = lb.getDefaultPortStart();
         int defPortEnd = lb.getDefaultPortEnd();
-
-        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol());
-
+        
         if (!NetUtils.isValidPort(defPortEnd)) {
             throw new InvalidParameterValueException("privatePort is an invalid value: " + defPortEnd);
         }
@@ -379,17 +376,18 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         
         LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
         if (result == null){
-            result =  createLoadBalancer(lb);
+            result =  createLoadBalancer(lb, openFirewall);
         } 
         return result;
     }
     
     @DB
-    public LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException {
+    public LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb, boolean openFirewall) throws NetworkRuleConflictException {
         long ipId = lb.getSourceIpAddressId();
         UserContext caller = UserContext.current();
         int srcPortStart = lb.getSourcePortStart();
         int defPortStart = lb.getDefaultPortStart();
+        int srcPortEnd = lb.getSourcePortEnd();
         
         IPAddressVO ipAddr = _ipAddressDao.findById(lb.getSourceIpAddressId());
         Long networkId = ipAddr.getSourceNetworkId();
@@ -398,6 +396,9 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
         }
+        
+        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol());
+
         
          networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {

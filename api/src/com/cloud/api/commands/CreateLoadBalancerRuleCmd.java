@@ -229,17 +229,12 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
        return getAccountId();
     }
     
-    @Override
     public Integer getIcmpCode() {
         return null;
     }
     
-    @Override
     public Integer getIcmpType() {
         return null;
-    }
-
-}
     }
     
     public String getAccountName() {
