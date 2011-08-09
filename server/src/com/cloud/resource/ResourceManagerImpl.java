@@ -23,6 +23,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.ejb.Local;
@@ -118,11 +119,103 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
 
-    protected HashMap<Host.Type, ResourceLifeCycleListener> _listeners = new HashMap<Host.Type, ResourceLifeCycleListener>();
+    protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
 
+    private void insertListener(Integer event, ResourceListener listener) {
+        List<ResourceListener> lst = _lifeCycleListeners.get(event);
+        if (lst == null) {
+            lst = new ArrayList<ResourceListener>();
+            _lifeCycleListeners.put(event, lst);
+        }
+        
+        if (lst.contains(listener)) {
+            throw new CloudRuntimeException("Duplicate resource lisener:" + listener.getName());
+        }
+        
+        lst.add(listener);
+    }
+    
     @Override
-    public void registerForLifeCycleEvents(Host.Type type, ResourceLifeCycleListener listener) {
-        _listeners.put(type, listener);
+    public void registerResourceEvent(Integer event, ResourceListener listener) {
+        synchronized (_lifeCycleListeners) {
+            if ((event & ResourceListener.EVENT_DISCOVER_BEFORE) == 1) {
+                insertListener(ResourceListener.EVENT_DISCOVER_BEFORE, listener);
+            }
+            if ((event & ResourceListener.EVENT_DISCOVER_AFTER) == 1) {
+                insertListener(ResourceListener.EVENT_DISCOVER_AFTER, listener);
+            }
+            if ((event & ResourceListener.EVENT_DELETE_HOST_BEFORE) == 1) {
+                insertListener(ResourceListener.EVENT_DELETE_HOST_BEFORE, listener);
+            }
+            if ((event & ResourceListener.EVENT_DELETE_HOST_AFTER) == 1) {
+                insertListener(ResourceListener.EVENT_DELETE_HOST_AFTER, listener);
+            }
+            if ((event & ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE) == 1) {
+                insertListener(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE, listener);
+            }
+            if ((event & ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER) == 1) {
+                insertListener(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, listener);
+            }
+            if ((event & ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE) == 1) {
+                insertListener(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, listener);
+            }
+            if ((event & ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER) == 1) {
+                insertListener(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, listener);
+            }
+        }
+    }
+    
+    @Override
+    public void unregisterResourceEvent(ResourceListener listener) {
+        synchronized (_lifeCycleListeners) {
+            Iterator it = _lifeCycleListeners.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Integer, List<ResourceListener>> items = (Map.Entry<Integer, List<ResourceListener>>)it.next();
+                List<ResourceListener> lst = items.getValue();
+                lst.remove(listener);
+            }
+        }
+    }
+    
+    protected void processResourceEvent(Integer event, Object...params) {
+        synchronized (_lifeCycleListeners) {
+            List<ResourceListener> lst = _lifeCycleListeners.get(event);
+            if (lst == null || lst.size() == 0) {
+                return;
+            }
+            
+            String eventName;
+            for (ResourceListener l : lst) {
+                if (event == ResourceListener.EVENT_DISCOVER_BEFORE) {
+                    l.processDiscoverEventBefore((Long)params[0], (Long)params[1], (Long)params[2], (URI)params[3], (String)params[4], (String)params[5], (List<String>)params[6]);
+                    eventName = "EVENT_DISCOVER_BEFORE";
+                } else if (event == ResourceListener.EVENT_DISCOVER_AFTER) {
+                    l.processDiscoverEventAfter((Map<? extends ServerResource, Map<String, String>>)params[0]);
+                    eventName = "EVENT_DISCOVER_AFTER";
+                } else if (event == ResourceListener.EVENT_DELETE_HOST_BEFORE) {
+                    l.processDeleteHostEventBefore((HostVO)params[0]);
+                    eventName = "EVENT_DELETE_HOST_BEFORE";
+                } else if (event == ResourceListener.EVENT_DELETE_HOST_AFTER) {
+                    l.processDeletHostEventAfter((HostVO)params[0]);
+                    eventName = "EVENT_DELETE_HOST_AFTER";
+                } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE) {
+                    l.processCancelMaintenaceEventBefore((Long)params[0]);
+                    eventName = "EVENT_CANCEL_MAINTENANCE_BEFORE";
+                } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER) {
+                    l.processCancelMaintenaceEventAfter((Long)params[0]);
+                    eventName = "EVENT_CANCEL_MAINTENANCE_AFTER";
+                } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE) {
+                    l.processPrepareMaintenaceEventBefore((Long)params[0]);
+                    eventName = "EVENT_PREPARE_MAINTENANCE_BEFORE";
+                } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER) {
+                    l.processPrepareMaintenaceEventAfter((Long)params[0]);
+                    eventName = "EVENT_PREPARE_MAINTENANCE_AFTER";
+                } else {
+                    throw new CloudRuntimeException("Unknown resource event:" + event);
+                }
+                s_logger.debug("Send resource event " + eventName + " to listener " + l.getName());
+            }
+        }
     }
 
     @Override
@@ -452,6 +545,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             isHypervisorTypeSupported = true;
             Map<? extends ServerResource, Map<String, String>> resources = null;
 
+            processResourceEvent(ResourceListener.EVENT_DISCOVER_BEFORE, dcId, podId, clusterId, uri, username, password, hostTags);
             try {
                 resources = discoverer.find(dcId, podId, clusterId, uri, username, password, hostTags);
             } catch(DiscoveryException e) {
@@ -459,6 +553,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             } catch (Exception e) {
                 s_logger.info("Exception in host discovery process with discoverer: " + discoverer.getName() + ", skip to another discoverer if there is any");
             }
+            processResourceEvent(ResourceListener.EVENT_DISCOVER_AFTER, resources);
+            
+            //TODO: move this out using resource listener
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
@@ -511,12 +608,17 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
         }
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
+        
+        processResourceEvent(ResourceListener.EVENT_DELETE_HOST_BEFORE, host);
+        boolean res = false;
         if (Host.Type.SecondaryStorage.equals(host.getType())) {
             _secondaryStorageMgr.deleteHost(hostId);
-            return true;
+            res = true;
         } else {
-            return _agentMgr.deleteHost(hostId, isForced, forceDestroy, caller);
+            res = _agentMgr.deleteHost(hostId, isForced, forceDestroy, caller);
         }
+        processResourceEvent(ResourceListener.EVENT_DELETE_HOST_AFTER, host);
+        return res;
     }
 
     @Override
@@ -708,7 +810,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
 
+        processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE, hostId);
         boolean success = _agentMgr.cancelMaintenance(hostId);
+        processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
         if (!success) {
             throw new CloudRuntimeException("Internal error cancelling maintenance.");
         }
@@ -750,7 +854,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
 
         try {
+            processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, hostId);
             if (_agentMgr.maintain(hostId)) {
+                processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
                 return _hostDao.findById(hostId);
             } else {
                 throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
