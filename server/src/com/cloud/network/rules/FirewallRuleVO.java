@@ -89,22 +89,7 @@ public class FirewallRuleVO implements FirewallRule {
     
     @Column(name="icmp_type")
     Integer icmpType;
-    
-    // This is a delayed load value.  If the value is null,
-    // then this field has not been loaded yet.
-    // Call firewallrules dao to load it.
-    @Transient
-    List<String> sourceCidrs;
-
-
-    public void setSourceCidrList(List<String> sourceCidrs) {
-        this.sourceCidrs=sourceCidrs;
-    }
-
-    @Override
-    public List<String> getSourceCidrList() {
-        return sourceCidrs;
-    }
+  
 
     @Override
     public long getAccountId() {
@@ -172,7 +157,7 @@ public class FirewallRuleVO implements FirewallRule {
     protected FirewallRuleVO() {
     }
     
-    public FirewallRuleVO(String xId, long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType) {
+    public FirewallRuleVO(String xId, long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, Integer icmpCode, Integer icmpType) {
         this.xId = xId;
         if (xId == null) {
             this.xId = UUID.randomUUID().toString();
@@ -188,11 +173,10 @@ public class FirewallRuleVO implements FirewallRule {
         this.state = State.Staged;
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
-        this.sourceCidrs = sourceCidrs;
     }
     
-    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType) {
-        this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType);
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, Integer icmpCode, Integer icmpType) {
+        this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, icmpCode, icmpType);
     }
     
     @Override

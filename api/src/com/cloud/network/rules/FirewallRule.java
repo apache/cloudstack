@@ -74,5 +74,4 @@ public interface FirewallRule extends ControlledEntity {
 
     Integer getIcmpType();
 
-    List<String> getSourceCidrList();
 }

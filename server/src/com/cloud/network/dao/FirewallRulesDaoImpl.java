@@ -176,26 +176,6 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         return listBy(sc);
     }
     
-    @Override @DB
-    public FirewallRuleVO persist(FirewallRuleVO firewallRule) {        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        FirewallRuleVO dbfirewallRule = super.persist(firewallRule);
-        saveSourceCidrs(firewallRule);
-        
-        txn.commit();
-        return dbfirewallRule;
-    }
-    
-    
-    public void saveSourceCidrs(FirewallRuleVO firewallRule) {
-        List<String> cidrlist = firewallRule.getSourceCidrList();
-        if (cidrlist == null) {
-            return;
-        }
-        _firewallRulesCidrsDao.persist(firewallRule.getId(), cidrlist);
-    }
     
     @Override
     public List<FirewallRuleVO> listByIpPurposeAndProtocolAndNotRevoked(long ipAddressId, Integer startPort, Integer endPort, String protocol, FirewallRule.Purpose purpose) {

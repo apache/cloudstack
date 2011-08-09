@@ -264,8 +264,4 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         return null;
     }
     
-    @Override
-    public List<String> getSourceCidrList() {
-        return null;
-    }
 }

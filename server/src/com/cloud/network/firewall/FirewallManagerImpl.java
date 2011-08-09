@@ -99,13 +99,13 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     public FirewallRule createFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
 
-        return createFirewallRule(rule.getSourceIpAddressId(), caller, rule.getXid(), rule.getSourcePortStart() ,rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(), rule.getIcmpCode(), rule.getIcmpType());    
+        return createFirewallRule(rule.getSourceIpAddressId(), caller, rule.getXid(), rule.getSourcePortStart() ,rule.getSourcePortEnd(), rule.getProtocol(), rule.getIcmpCode(), rule.getIcmpType());    
     }
     
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewll rule", create = true)
-    public FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart,Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType) throws NetworkRuleConflictException{
+    public FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart,Integer portEnd, String protocol, Integer icmpCode, Integer icmpType) throws NetworkRuleConflictException{
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
         
         // Validate ip address
@@ -128,7 +128,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        FirewallRuleVO newRule = new FirewallRuleVO (xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId, accountId, domainId, Purpose.Firewall, sourceCidrList, icmpCode, icmpType);
+        FirewallRuleVO newRule = new FirewallRuleVO (xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId, accountId, domainId, Purpose.Firewall, icmpCode, icmpType);
         newRule = _firewallDao.persist(newRule);
 
         detectRulesConflict(newRule, ipAddress);
@@ -334,12 +334,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             return true;
         }
         
-        for (FirewallRuleVO rule: rules){
-            // load cidrs if any
-            rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));  
-        }
-        
-
         if (caller != null) {
             _accountMgr.checkAccess(caller, rules.toArray(new FirewallRuleVO[rules.size()]));
         }
@@ -463,10 +457,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         if (!rules.isEmpty()) {
             return rules.get(0);
         }
-        
-        List<String> oneCidr = new ArrayList<String>();
-        oneCidr.add(NetUtils.ALL_CIDRS);
-        return createFirewallRule(ipAddrId, caller, null, startPort, endPort, protocol, oneCidr, icmpCode, icmpType);
+        return createFirewallRule(ipAddrId, caller, null, startPort, endPort, protocol, icmpCode, icmpType);
     }
     
     @Override

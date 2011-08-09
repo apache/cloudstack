@@ -72,9 +72,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
     private Integer publicPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
-    private List<String> cidrlist;
-    
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
     private Boolean openFirewall;
 
@@ -120,10 +117,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
     public String getName() {
         return loadBalancerRuleName;
     }
-
-    public List<String> getSourceCidrList() {
-        return cidrlist;
-    }
     
     public Boolean getOpenFirewall() {
         if (openFirewall != null) {
@@ -143,15 +136,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
     }
     
     @Override
-    public void execute() throws ResourceAllocationException, ResourceUnavailableException {
-        if (cidrlist != null){
-            for (String cidr: cidrlist){
-                if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Source cidrs formatting error " + cidr); 
-                }
-            }
-        }
-        
+    public void execute() throws ResourceAllocationException, ResourceUnavailableException {        
         LoadBalancer result = null;
         try {
             result = _lbService.createLoadBalancerRule(this, getOpenFirewall());

@@ -207,7 +207,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
-                rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), rule.getSourceCidrList(), networkId, accountId, domainId, vmId);
+                rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
         newRule = _forwardingDao.persist(newRule);
 
         try {
@@ -265,7 +265,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
-                networkId, accountId, domainId, rule.getPurpose(), null, null, null);
+                networkId, accountId, domainId, rule.getPurpose(), null, null);
         newRule = _firewallDao.persist(newRule);
 
         try {
@@ -571,11 +571,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (rules.size() == 0) {
             s_logger.debug("There are no firwall rules to apply for ip id=" + ipId);
             return true;
-        }
-        
-        for (PortForwardingRuleVO rule: rules){
-            // load cidrs if any
-            rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));  
         }
         
 
@@ -909,7 +904,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null);
             }
             
-            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null);
+            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null);
             rules[i] = _firewallDao.persist(rules[i]);
         }
         txn.commit();

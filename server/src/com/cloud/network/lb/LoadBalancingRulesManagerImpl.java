@@ -421,7 +421,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         }
         
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), 
-                lb.getSourceCidrList(), lb.getAlgorithm(), network.getId(), ipAddr.getAccountId(), ipAddr.getDomainId());
+                lb.getAlgorithm(), network.getId(), ipAddr.getAccountId(), ipAddr.getDomainId());
 
         newRule = _lbDao.persist(newRule);
         boolean success = true;

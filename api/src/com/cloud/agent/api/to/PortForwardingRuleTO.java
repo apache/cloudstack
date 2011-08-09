@@ -33,7 +33,6 @@ import com.cloud.utils.net.NetUtils;
 public class PortForwardingRuleTO extends FirewallRuleTO {
     String dstIp;
     int[] dstPortRange;
-    List<String>  sourceCidrs;
     
     protected PortForwardingRuleTO() {
         super();
@@ -43,7 +42,6 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
         super(rule, srcIp);
         this.dstIp = rule.getDestinationIpAddress().addr();
         this.dstPortRange = new int[] { rule.getDestinationPortStart(), rule.getDestinationPortEnd() };
-        this.sourceCidrs = rule.getSourceCidrList();
     }
     
     protected PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
@@ -63,13 +61,5 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
     public String getStringDstPortRange() {
         return NetUtils.portRangeToString(dstPortRange);
     }
-    
-    public List<String> getSourceCidrs(){
-        return sourceCidrs;
-    }
-    
-    public String getStringSourceCidrs(){
-        return StringUtils.join(sourceCidrs, ",");
-    }    
     
 }

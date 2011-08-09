@@ -65,12 +65,7 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     public int getDefaultPortEnd() {
         return lb.getDefaultPortEnd();
     }
-
-    @Override
-    public List<String> getSourceCidrList() {
-        return lb.getSourceCidrList();
-    }
-    
+  
 
     @Override
     public String getAlgorithm() {

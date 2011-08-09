@@ -284,8 +284,7 @@ public class ElasticLoadBalancerManagerImpl implements
                     .addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
-            LoadBalancerTO lb = new LoadBalancerTO(elbIp, srcPort, protocol, null,
-                    algorithm, revoked, false, destinations);
+            LoadBalancerTO lb = new LoadBalancerTO(elbIp, srcPort, protocol, algorithm, revoked, false, destinations);
             lbs[i++] = lb; 
         }
 

@@ -118,8 +118,4 @@ public class StaticNatRuleImpl implements StaticNatRule{
         return null;
     }
     
-    @Override
-    public List<String> getSourceCidrList() {
-        return null;
-    }
 }

@@ -48,7 +48,7 @@ public interface FirewallManager extends FirewallService{
      */
     boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId);
 
-    FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType)
+    FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, Integer icmpCode, Integer icmpType)
             throws NetworkRuleConflictException;
 
     FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType) throws NetworkRuleConflictException;

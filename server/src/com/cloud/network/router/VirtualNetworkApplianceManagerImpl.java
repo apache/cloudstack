@@ -1912,12 +1912,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
-            List<String>  sourceCidrs = rule.getSourceCidrList();
-
             String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
-            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, sourceCidrs, algorithm, revoked, false, destinations);
+            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
             lbs[i++] = lb;
         }
 
@@ -2083,8 +2081,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
                         for (LoadBalancerVO lb : lbs) {
                             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                            // load the cidrs, 
-                            lb.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(lb.getId())); 
                             LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
                             lbRules.add(loadBalancing);
                         }
