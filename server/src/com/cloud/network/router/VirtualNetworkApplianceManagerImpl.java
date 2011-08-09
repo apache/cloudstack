@@ -1859,7 +1859,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rulesTO = new ArrayList<PortForwardingRuleTO>();
             for (PortForwardingRule rule : rules) {
                 IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, sourceIp.getAddress().addr());
+                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, null, sourceIp.getAddress().addr());
                 rulesTO.add(ruleTO);
             }
         }
@@ -1880,7 +1880,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rulesTO = new ArrayList<StaticNatRuleTO>();
             for (StaticNatRule rule : rules) {
                 IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, sourceIp.getAddress().addr(), rule.getDestIpAddress());
+                StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getDestIpAddress());
                 rulesTO.add(ruleTO);
             }
         }
@@ -2142,7 +2142,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
                 IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                FirewallRuleTO ruleTO = new FirewallRuleTO(rule, sourceIp.getAddress().addr());
+                FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
                 rulesTO.add(ruleTO);
             }
         }

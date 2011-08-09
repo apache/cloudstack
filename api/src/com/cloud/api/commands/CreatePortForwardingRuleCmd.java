@@ -214,6 +214,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     public Ip getDestinationIpAddress() {
         return null;
     }
+    
+    @Override
+    public void setDestinationIpAddress(Ip destinationIpAddress) {
+    	return;
+    }
 
     @Override
     public int getDestinationPortStart() {

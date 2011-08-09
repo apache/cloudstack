@@ -35,14 +35,14 @@ public class StaticNatRuleTO extends FirewallRuleTO{
     protected StaticNatRuleTO() {
     }
     
-    public StaticNatRuleTO(StaticNatRule rule, String scrIp, String dstIp) {
-        super(rule.getId(), scrIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(),rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose());
+    public StaticNatRuleTO(StaticNatRule rule, String srcVlanTag, String srcIp, String dstIp) {
+        super(rule.getId(), srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(),rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose());
         this.dstIp = dstIp;
     }
     
     
-    protected StaticNatRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
-        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.StaticNat);
+    protected StaticNatRuleTO(long id, String srcVlanTag, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
+        super(id, srcVlanTag, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.StaticNat);
         this.dstIp = dstIp;
     }
 

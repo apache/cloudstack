@@ -68,6 +68,11 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     public Ip getDestinationIpAddress() {
         return destinationIpAddress;
     }
+    
+    @Override
+    public void setDestinationIpAddress(Ip destinationIpAddress) {
+    	this.destinationIpAddress = destinationIpAddress;
+    }
 
     @Override
     public int getDestinationPortStart() {
@@ -83,5 +88,7 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     public long getVirtualMachineId() {
         return virtualMachineId;
     }
+    
+    
 }
 
