@@ -164,8 +164,9 @@ iflag=
 aflag=
 dflag=
 fflag=
+sflag=
 
-while getopts 'i:a:d:f:' OPTION
+while getopts 'i:a:d:f:s:' OPTION
 do
   case $OPTION in
   i)	iflag=1
@@ -180,6 +181,8 @@ do
   f)	fflag=1
 		cfgfile="$OPTARG"
 		;;
+
+  s)	sflag=1;;
   ?)	usage
 		exit 2
 		;;

@@ -1092,13 +1092,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (_canBridgeFirewall) {
                 String result = null;
                 if (vmSpec.getType() != VirtualMachine.Type.User) {
-                    result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
-                    
-                    if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                        s_logger.warn("Failed to program default network rules for " + vmName);
-                    } else {
-                        s_logger.info("Programmed default network rules for " + vmName);
+                    NicTO[] nics = vmSpec.getNics();
+                    boolean secGrpEnabled = false;
+                    for (NicTO nic : nics) {
+                        if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                            secGrpEnabled = true;
+                            break;
+                        }
                     }
+                    if (secGrpEnabled) {
+                        result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
+                        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                            s_logger.warn("Failed to program default network rules for " + vmName);
+                        } else {
+                            s_logger.info("Programmed default network rules for " + vmName);
+                        }
+                    }
+
                 } else {
                 	//For user vm, program the rules for each nic if the isolation uri scheme is ec2
                 	NicTO[] nics = vmSpec.getNics();

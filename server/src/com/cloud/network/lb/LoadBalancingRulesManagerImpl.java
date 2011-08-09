@@ -391,7 +391,6 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         
         IPAddressVO ipAddr = _ipAddressDao.findById(lb.getSourceIpAddressId());
         Long networkId = ipAddr.getSourceNetworkId();
-        NetworkVO network = _networkDao.findById(networkId);
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
@@ -405,6 +404,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Unable to create load balancer rule ; ip id=" + ipId + " is not associated with any network");
 
         }
+        NetworkVO network = _networkDao.findById(networkId);
 
         _accountMgr.checkAccess(caller.getCaller(), ipAddr);
 
