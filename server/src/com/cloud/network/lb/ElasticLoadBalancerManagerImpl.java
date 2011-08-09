@@ -87,6 +87,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.dao.ElasticLbVmMapDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -233,7 +234,7 @@ public class ElasticLoadBalancerManagerImpl implements
             return elbVm;
            
         } catch (Throwable t) {
-            s_logger.warn("Error while deploying ELB VM:  " + t);
+            s_logger.warn("Error while deploying ELB VM:  ", t);
             return null;
         }
 
@@ -491,7 +492,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
                
                 elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), _elasticLbVmOffering.getOfferHA(), VirtualMachine.Type.ElasticLoadBalancerVm);
+                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), VirtualMachine.Type.ElasticLoadBalancerVm);
                 elbVm.setRole(Role.LB);
                 elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
                 //TODO: create usage stats

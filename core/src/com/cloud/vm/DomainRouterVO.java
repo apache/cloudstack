@@ -94,10 +94,16 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long domainId,
             long accountId,
             long networkId,
+            boolean isRedundantRouter,
+            int priority,
+            RedundantState redundantState,
             boolean haEnabled,
             VirtualMachine.Type vmType) {
         super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
+        this.isRedundantRouter = isRedundantRouter;
+        this.priority = priority;
+        this.redundantState = redundantState;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
