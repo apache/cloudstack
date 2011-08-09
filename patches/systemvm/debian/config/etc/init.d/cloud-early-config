@@ -244,6 +244,9 @@ setup_common() {
           ip route add default via $GW dev $3
       fi
   fi
+ 
+  # a hacking way to activate vSwitch under VMware
+  ping -n -c 3 $GW
 }
 
 setup_dnsmasq() {
