@@ -351,7 +351,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
     
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {
-    	List<StoragePoolVO> pools = _poolDao.listPoolsByStatus(StoragePoolStatus.Up);
+    	List<StoragePoolVO> pools = _poolDao.listByStatus(StoragePoolStatus.Up);
     	for(final StoragePoolVO pool : pools) {
     		if(pool.getDataCenterId() == zoneId) {
     			s_logger.info("Schedule to preload template " + template.getId() + " into primary storage " + pool.getId());
