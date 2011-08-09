@@ -1242,7 +1242,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         pool.setStatus(StoragePoolStatus.Up);
         pool = _storagePoolDao.persist(pool, details);
 
-        if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(allHosts, pool, cmd.getFullUrlParams())) {
+        if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(allHosts, pool)) {
             s_logger.warn("Can not create storage pool " + pool + " on cluster " + clusterId);
             _storagePoolDao.expunge(pool.getId());
             return null;

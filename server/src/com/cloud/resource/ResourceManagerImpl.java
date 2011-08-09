@@ -582,7 +582,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
             processResourceEvent(ResourceListener.EVENT_DISCOVER_AFTER, resources);
             
-            //TODO: move this out using resource listener
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
