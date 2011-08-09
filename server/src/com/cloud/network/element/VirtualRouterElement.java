@@ -51,7 +51,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
@@ -62,7 +61,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -85,7 +83,6 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
     @Inject LoadBalancerDao _lbDao;
-    @Inject AccountManager _accountMgr;
     @Inject HostDao _hostDao;
     @Inject ConfigurationDao _configDao;
     
@@ -107,7 +104,8 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params, isRedundant);
+
+        _routerMgr.deployVirtualRouter(guestConfig, dest, _accountMgr.getAccount(guestConfig.getAccountId()), params, isRedundant);
         
         return true;
     }
@@ -123,7 +121,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters(), isRedundant);
+            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), isRedundant);
             List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
             return (rets != null) && (!rets.isEmpty());
         } else {

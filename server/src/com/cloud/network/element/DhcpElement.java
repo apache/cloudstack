@@ -47,6 +47,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -75,6 +76,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     @Inject DomainRouterDao _routerDao;
     @Inject ConfigurationManager _configMgr;
     @Inject HostPodDao _podDao;
+    @Inject AccountManager _accountMgr;
      
     private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
         DataCenter dc = dest.getDataCenter();
@@ -102,7 +104,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-        _routerMgr.deployDhcp(network, dest, context.getAccount(), params);
+        _routerMgr.deployDhcp(network, dest, _accountMgr.getAccount(network.getAccountId()), params);
         return true;
     }
 
@@ -118,7 +120,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-            List<DomainRouterVO> routers = _routerMgr.deployDhcp(network, dest, uservm.getOwner(), uservm.getParameters());                                                                                                                        
+            List<DomainRouterVO> routers = _routerMgr.deployDhcp(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters());                                                                                                                        
             List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
             return (rets != null) && (!rets.isEmpty());
         } else {
