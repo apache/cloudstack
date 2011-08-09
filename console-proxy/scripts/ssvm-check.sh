@@ -24,12 +24,8 @@
 # /proc/cmdline can have a different number of arguments depending on whether or not a second
 # DNS server is specified.
 
-if [ -f /proc/cmdline ]
-then
-    CMDLINE=/proc/cmdline
-else
-    CMDLINE=/var/run/cloud/cmd_line
-fi
+
+CMDLINE=/var/cache/cloud/cmdline
 
 
 # ping dns server
