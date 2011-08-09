@@ -29,10 +29,17 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = { CapacityDao.class })
@@ -53,6 +60,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     
     private SearchBuilder<CapacityVO> _hostIdTypeSearch;
 	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
+    protected GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapactySearch;
 	
 	private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
 			"AND (a.total_capacity * ? - a.used_capacity) >= ? and a.capacity_type = 1) " +
@@ -67,6 +75,44 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	_hostOrPoolIdSearch = createSearchBuilder();
     	_hostOrPoolIdSearch.and("hostId", _hostOrPoolIdSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
     	_hostOrPoolIdSearch.done();
+    }
+    
+    @Override
+    public  List<SummedCapacity> findCapacityByType(short capacityType, Long zoneId, Long podId, Long clusterId, Long startIndex, Long pageSize){
+    	
+    	SummedCapactySearch = createSearchBuilder(SummedCapacity.class);
+        SummedCapactySearch.select("sumUsed", Func.SUM, SummedCapactySearch.entity().getUsedCapacity());
+        SummedCapactySearch.select("sumTotal", Func.SUM, SummedCapactySearch.entity().getTotalCapacity());
+        SummedCapactySearch.select("clusterId", Func.NATIVE, SummedCapactySearch.entity().getClusterId());
+        SummedCapactySearch.select("podId", Func.NATIVE, SummedCapactySearch.entity().getPodId());
+        
+        SummedCapactySearch.and("dcId", SummedCapactySearch.entity().getDataCenterId(), Op.EQ);
+        SummedCapactySearch.and("capacityType", SummedCapactySearch.entity().getCapacityType(), Op.EQ);
+        SummedCapactySearch.groupBy(SummedCapactySearch.entity().getClusterId());
+        
+        if (podId != null){
+        	SummedCapactySearch.and("podId", SummedCapactySearch.entity().getPodId(), Op.EQ);
+        }
+        if (clusterId != null){
+        	SummedCapactySearch.and("clusterId", SummedCapactySearch.entity().getClusterId(), Op.EQ);
+        }
+        SummedCapactySearch.done();
+        
+        
+        SearchCriteria<SummedCapacity> sc = SummedCapactySearch.create();
+        sc.setParameters("dcId", zoneId);
+        sc.setParameters("capacityType", capacityType);
+        if (podId != null){
+        	sc.setParameters("podId", podId);
+        }
+        if (clusterId != null){
+        	sc.setParameters("clusterId", clusterId);
+        }
+        
+        Filter filter = new Filter(CapacityVO.class, null, true, startIndex, pageSize);
+        List<SummedCapacity> results = customSearchIncludingRemoved(sc, filter);
+        return results;        
+    	
     }
     
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {
@@ -232,4 +278,13 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
     }
+    
+	public static class SummedCapacity {
+	    public long sumUsed;
+	    public long sumTotal;
+	    public long clusterId;
+	    public long podId;
+	    public SummedCapacity() {
+	    }
+	}
 }

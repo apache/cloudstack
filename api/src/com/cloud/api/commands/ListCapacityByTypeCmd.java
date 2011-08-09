@@ -52,7 +52,7 @@ public class ListCapacityByTypeCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;    
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="lists capacity by the Zone ID")
     private Long zoneId;
 
 

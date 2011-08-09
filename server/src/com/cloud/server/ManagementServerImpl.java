@@ -126,6 +126,7 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
@@ -3221,7 +3222,12 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<CapacityVO> listCapacityByType(ListCapacityByTypeCmd cmd) {
-		return null;
+    	
+    	List<SummedCapacity> results = _capacityDao.findCapacityByType(cmd.getType().shortValue(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(), cmd.getStartIndex(), cmd.getPageSizeVal());
+    	for (SummedCapacity sum : results){
+    		s_logger.info("Total - " +sum.sumTotal+ " Used - " +sum.sumUsed+ " cluster " +sum.clusterId+ " pod " +sum.podId);
+    	}
+    	return null;
     	
     }
     
