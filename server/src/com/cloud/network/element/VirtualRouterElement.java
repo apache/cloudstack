@@ -83,7 +83,6 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
     @Inject LoadBalancerDao _lbDao;
-    @Inject AccountManager _accountMgr;
     @Inject HostDao _hostDao;
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
@@ -103,8 +102,9 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params, offering.getRedundantRouter());
-        
+
+        _routerMgr.deployVirtualRouter(guestConfig, dest, _accountMgr.getAccount(guestConfig.getAccountId()), params, offering.getRedundantRouter());
+
         return true;
     }
     
@@ -118,9 +118,11 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+
             NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, uservm.getOwner(), uservm.getParameters(), offering.getRedundantRouter());
+            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), offering.getRedundantRouter());
             List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);
+
             return (rets != null) && (!rets.isEmpty());
         } else {
             return false;
