@@ -25,39 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-<<<<<<< HEAD
 
-import org.apache.log4j.Logger;
-
-import com.cloud.configuration.ConfigurationService;
-import com.cloud.consoleproxy.ConsoleProxyService;
-import com.cloud.dao.EntityManager;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.NetworkService;
-import com.cloud.network.VirtualNetworkApplianceService;
-import com.cloud.network.lb.LoadBalancingRulesService;
-import com.cloud.network.rules.RulesService;
-import com.cloud.network.security.SecurityGroupService;
-import com.cloud.network.vpn.RemoteAccessVpnService;
-import com.cloud.projects.ProjectService;
-import com.cloud.resource.ResourceService;
-import com.cloud.server.ManagementService;
-import com.cloud.storage.StorageService;
-import com.cloud.storage.snapshot.SnapshotService;
-import com.cloud.template.TemplateService;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.UserContext;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.BareMetalVmService;
-import com.cloud.vm.UserVmService;
-=======
 
 import org.apache.log4j.Logger;
 
@@ -77,6 +45,7 @@ import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageService;
@@ -87,9 +56,9 @@ import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.UserVmService;
 import com.cloud.vm.BareMetalVmService;
->>>>>>> 32445e6... bug 10561: intermidiate checkin for FirewallRuleFeature
+import com.cloud.vm.UserVmService;
+
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
