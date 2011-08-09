@@ -1254,9 +1254,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -p ").append(rule.getStringSrcPortRange());
             args.append(" -r ").append(rule.getDstIp());
             args.append(" -d ").append(rule.getStringDstPortRange());
-            if (rule.getSourceCidrs() != null && rule.getSourceCidrs().size() > 0){
-                args.append(" -s " + rule.getStringSourceCidrs());
-            }
+            
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
 
             results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;

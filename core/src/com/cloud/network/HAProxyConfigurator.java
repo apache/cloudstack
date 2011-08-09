@@ -254,12 +254,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 			StringBuilder sb = new StringBuilder();
 			sb.append(lbTO.getSrcIp()).append(":");
 			sb.append(lbTO.getSrcPort()).append(":");
-			if (lbTO.getSourceCidrs() != null && lbTO.getSourceCidrs().size() > 0){
-	            sb.append(lbTO.getStringSourceCidrs()).append(":");
-	        }
-			else {
-			    sb.append("0/0:");
-			}
 			String lbRuleEntry = sb.toString();
 			if (!lbTO.isRevoked()) {	
 				toAdd.add(lbRuleEntry);
