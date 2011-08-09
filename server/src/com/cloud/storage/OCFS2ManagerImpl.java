@@ -14,15 +14,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareOCFS2NodesCommand;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.dao.StoragePoolDetailsDao;
-import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -88,43 +84,31 @@ public class OCFS2ManagerImpl implements OCFS2Manager {
         return true;
     }
     
+    private String getClusterName(Long clusterId) {
+        ClusterVO cluster = _clusterDao.findById(clusterId);
+        if (cluster == null) {
+            throw new CloudRuntimeException("Cannot get cluster for id " + clusterId);
+        }
+        
+        String clusterName = cluster.getName(); 
+        if (clusterName == null) {
+            clusterName = "cluster" + cluster.getId();
+        }
+        
+        return clusterName;
+    }
+    
     @Override
-    public boolean prepareNodes(List<HostVO> hosts, StoragePool pool, Map<String, String> params) {
+    public boolean prepareNodes(List<HostVO> hosts, StoragePool pool) {
         if (pool.getPoolType() != StoragePoolType.OCFS2) {
             throw new CloudRuntimeException("None OCFS2 storage pool is getting into OCFS2 manager!");
         }
         
-        /*
-        String clusterName = params.get(OCFS2Manager.CLUSTER_NAME);
-        if (clusterName == null) {
-            throw new CloudRuntimeException("Cannot get OCFS2 cluster name");
-        }
-        */
-        String clusterName = "ofcs2";
-        
-        Map<String, String> details = _clusterDetailsDao.findDetails(pool.getClusterId());
-        String currentClusterName = details.get(OCFS2Manager.CLUSTER_NAME);
-        if (currentClusterName == null) {
-            details.put(OCFS2Manager.CLUSTER_NAME, clusterName);
-            /* This is actual _clusterDetailsDao.update() */
-            _clusterDetailsDao.persist(pool.getClusterId(), details);
-        } else {
-            if (!currentClusterName.equals(clusterName)) {
-                throw new CloudRuntimeException("Cluster already has name " + currentClusterName + " while name you giving is " + clusterName);
-            }
-        }
-        
-        return prepareNodes(clusterName, hosts);
+        return prepareNodes(getClusterName(pool.getClusterId()), hosts);
     }
 
     @Override
-    public boolean prepareNodes(Long clusterId) {
-        Map<String, String> details = _clusterDetailsDao.findDetails(clusterId);
-        String clusterName = details.get(OCFS2Manager.CLUSTER_NAME);
-        if (clusterName == null) {
-            throw new CloudRuntimeException("Cannot find OCFS2 cluster name for cluster " + clusterId);
-        }
-        
+    public boolean prepareNodes(Long clusterId) {    
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null) {
             throw new CloudRuntimeException("Cannot find cluster for ID " + clusterId);
@@ -135,6 +119,6 @@ public class OCFS2ManagerImpl implements OCFS2Manager {
             throw new CloudRuntimeException("No host up to associate a storage pool with in cluster " + clusterId);
         }
         
-        return prepareNodes(clusterName, hosts);
+        return prepareNodes(getClusterName(clusterId), hosts);
     }
 }
