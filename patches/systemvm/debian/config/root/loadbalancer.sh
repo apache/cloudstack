@@ -27,7 +27,7 @@
 # @VERSION@
 
 usage() {
-  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address> -d <removed> -f <load balancer config> \n" $(basename $0) >&2
+  printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address ip:port> -d <removed ip:port> -f <load balancer config> -s <stats ip ip:port:cidr>  \n" $(basename $0) >&2
 }
 
 # set -x
@@ -74,25 +74,25 @@ ip_entry() {
 }
 fw_remove_backup() {
   for vif in $VIF_LIST; do 
-    iptables -F back_load_balancer_$vif 2> /dev/null
-    iptables -D INPUT -i $vif -p tcp  -j back_load_balancer_$vif 2> /dev/null
-    iptables -X back_load_balancer_$vif 2> /dev/null
+    sudo iptables -F back_load_balancer_$vif 2> /dev/null
+    sudo iptables -D INPUT -i $vif -p tcp  -j back_load_balancer_$vif 2> /dev/null
+    sudo iptables -X back_load_balancer_$vif 2> /dev/null
   done
-  iptables -F back_lb_stats 2> /dev/null
-  iptables -D INPUT -i $STAT_IF -p tcp  -j back_lb_stats 2> /dev/null
-  iptables -X back_lb_stats 2> /dev/null
+  sudo iptables -F back_lb_stats 2> /dev/null
+  sudo iptables -D INPUT -i $STAT_IF -p tcp  -j back_lb_stats 2> /dev/null
+  sudo iptables -X back_lb_stats 2> /dev/null
 }
 fw_restore() {
   for vif in $VIF_LIST; do 
-    iptables -F load_balancer_$vif 2> /dev/null
-    iptables -D INPUT -i $vif -p tcp  -j load_balancer_$vif 2> /dev/null
-    iptables -X load_balancer_$vif 2> /dev/null
-    iptables -E back_load_balancer_$vif load_balancer_$vif 2> /dev/null
+    sudo iptables -F load_balancer_$vif 2> /dev/null
+    sudo iptables -D INPUT -i $vif -p tcp  -j load_balancer_$vif 2> /dev/null
+    sudo iptables -X load_balancer_$vif 2> /dev/null
+    sudo iptables -E back_load_balancer_$vif load_balancer_$vif 2> /dev/null
   done
-  iptables -F lb_stats 2> /dev/null
-  iptables -D INPUT -i $STAT_IF -p tcp  -j lb_stats 2> /dev/null
-  iptables -X lb_stats 2> /dev/null
-  iptables -E back_lb_stats lb_stats 2> /dev/null
+  sudo iptables -F lb_stats 2> /dev/null
+  sudo iptables -D INPUT -i $STAT_IF -p tcp  -j lb_stats 2> /dev/null
+  sudo iptables -X lb_stats 2> /dev/null
+  sudo iptables -E back_lb_stats lb_stats 2> /dev/null
 }
 # firewall entry to ensure that haproxy can receive on specified port
 fw_entry() {
@@ -115,26 +115,25 @@ fw_entry() {
 
 # back up the iptable rules by renaming before creating new. 
   for vif in $VIF_LIST; do 
-    iptables -E load_balancer_$vif back_load_balancer_$vif 2> /dev/null
-    iptables -N load_balancer_$vif 2> /dev/null
-    iptables -A INPUT -i $vif -p tcp  -j load_balancer_$vif
+    sudo iptables -E load_balancer_$vif back_load_balancer_$vif 2> /dev/null
+    sudo iptables -N load_balancer_$vif 2> /dev/null
+    sudo iptables -A INPUT -i $vif -p tcp  -j load_balancer_$vif
   done
-  iptables -E lb_stats back_lb_stats 2> /dev/null
-  iptables -N lb_stats 2> /dev/null
-  iptables -A INPUT -i $STAT_IF -p tcp  -j lb_stats
+  sudo iptables -E lb_stats back_lb_stats 2> /dev/null
+  sudo iptables -N lb_stats 2> /dev/null
+  sudo iptables -A INPUT -i $STAT_IF -p tcp  -j lb_stats
 
   for i in $a
   do
     local pubIp=$(echo $i | cut -d: -f1)
     local dport=$(echo $i | cut -d: -f2)    
-    local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
     
     for vif in $VIF_LIST; do 
 
 #TODO : The below delete will be used only when we upgrade the from older verion to the newer one , the below delete become obsolute in the future.
-      iptables -D INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
+      sudo iptables -D INPUT -i $vif  -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
 
-      iptables -A load_balancer_$vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT
+      sudo iptables -A load_balancer_$vif  -p tcp -d $pubIp --dport $dport -j ACCEPT
       
       if [ $? -gt 0 ]
       then
@@ -145,7 +144,7 @@ fw_entry() {
   local pubIp=$(echo $stats | cut -d: -f1)
   local dport=$(echo $stats | cut -d: -f2)    
   local cidrs=$(echo $stats | cut -d: -f3 | sed 's/-/,/')
-  iptables -A lb_stats -s $cidrs -p tcp -m state --state NEW -d $pubIp --dport $dport -j ACCEPT
+  sudo iptables -A lb_stats -s $cidrs -p tcp -m state --state NEW -d $pubIp --dport $dport -j ACCEPT
  
 
 #TODO : The below delete in the for-loop  will be used only when we upgrade the from older verion to the newer one , the below delete become obsolute in the future.
@@ -153,10 +152,9 @@ fw_entry() {
   do
     local pubIp=$(echo $i | cut -d: -f1)
     local dport=$(echo $i | cut -d: -f2)    
-    local cidrs=$(echo $i | cut -d: -f3 | sed 's/-/,/')
     
     for vif in $VIF_LIST; do 
-      iptables -D INPUT -i $vif -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
+      sudo iptables -D INPUT -i $vif  -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
     done
   done
  
