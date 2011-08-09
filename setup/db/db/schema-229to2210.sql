@@ -17,3 +17,4 @@ ALTER TABLE `cloud`.`host` MODIFY `storage_ip_address` char(40);
 
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.redundantrouter', 'false', 'enable/disable redundant virtual router');
 INSERT IGNORE INTO configuration VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.pool.max.waitseconds', '3600', 'Timeout (in seconds) to synchronize storage pool operations.');
+INSERT IGNORE INTO configuration VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.template.cleanup.enabled', 'true', 'Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled');
