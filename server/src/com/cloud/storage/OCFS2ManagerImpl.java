@@ -1,5 +1,6 @@
 package com.cloud.storage;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,13 +19,16 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceListener;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value ={OCFS2Manager.class})
-public class OCFS2ManagerImpl implements OCFS2Manager {
+public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
     String _name;
     private static final Logger s_logger = Logger.getLogger(OCFS2ManagerImpl.class);
     
@@ -32,6 +36,7 @@ public class OCFS2ManagerImpl implements OCFS2Manager {
     @Inject AgentManager _agentMgr;
     @Inject HostDao _hostDao;
     @Inject ClusterDao _clusterDao;
+    @Inject ResourceManager _resourceMgr;
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -41,11 +46,13 @@ public class OCFS2ManagerImpl implements OCFS2Manager {
 
     @Override
     public boolean start() {
+        _resourceMgr.registerResourceEvent(ResourceListener.EVENT_DELETE_HOST_AFTER, this);
         return true;
     }
 
     @Override
     public boolean stop() {
+        _resourceMgr.unregisterResourceEvent(this);
         return true;
     }
 
@@ -116,9 +123,65 @@ public class OCFS2ManagerImpl implements OCFS2Manager {
         
         List<HostVO> hosts = _hostDao.listByInAllStatus(Host.Type.Routing, clusterId, cluster.getPodId(), cluster.getDataCenterId());
         if (hosts.isEmpty()) {
-            throw new CloudRuntimeException("No host up to associate a storage pool with in cluster " + clusterId);
+            s_logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");
+            return true;
         }
         
         return prepareNodes(getClusterName(clusterId), hosts);
+    }
+
+    @Override
+    public void processDiscoverEventBefore(Long dcid, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void processDiscoverEventAfter(Map<? extends ServerResource, Map<String, String>> resources) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void processDeleteHostEventBefore(HostVO host) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void processDeletHostEventAfter(HostVO host) {
+        String errMsg = String.format("Prepare OCFS2 nodes failed after delete host %1$s (zone:%2$s, pod:%3$s, cluster:%4$s", host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId());
+        try {
+            if (!prepareNodes(host.getClusterId())) {
+                s_logger.warn(errMsg);
+            }
+        } catch (Exception e) {
+            s_logger.error(errMsg, e);
+        }
+        
+    }
+
+    @Override
+    public void processCancelMaintenaceEventBefore(Long hostId) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void processCancelMaintenaceEventAfter(Long hostId) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void processPrepareMaintenaceEventBefore(Long hostId) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void processPrepareMaintenaceEventAfter(Long hostId) {
+        // TODO Auto-generated method stub
+        
     }
 }

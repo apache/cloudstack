@@ -138,28 +138,28 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Override
     public void registerResourceEvent(Integer event, ResourceListener listener) {
         synchronized (_lifeCycleListeners) {
-            if ((event & ResourceListener.EVENT_DISCOVER_BEFORE) == 1) {
+            if ((event & ResourceListener.EVENT_DISCOVER_BEFORE) != 0) {
                 insertListener(ResourceListener.EVENT_DISCOVER_BEFORE, listener);
             }
-            if ((event & ResourceListener.EVENT_DISCOVER_AFTER) == 1) {
+            if ((event & ResourceListener.EVENT_DISCOVER_AFTER) != 0) {
                 insertListener(ResourceListener.EVENT_DISCOVER_AFTER, listener);
             }
-            if ((event & ResourceListener.EVENT_DELETE_HOST_BEFORE) == 1) {
+            if ((event & ResourceListener.EVENT_DELETE_HOST_BEFORE) != 0) {
                 insertListener(ResourceListener.EVENT_DELETE_HOST_BEFORE, listener);
             }
-            if ((event & ResourceListener.EVENT_DELETE_HOST_AFTER) == 1) {
+            if ((event & ResourceListener.EVENT_DELETE_HOST_AFTER) != 0) {
                 insertListener(ResourceListener.EVENT_DELETE_HOST_AFTER, listener);
             }
-            if ((event & ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE) == 1) {
+            if ((event & ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE) != 0) {
                 insertListener(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE, listener);
             }
-            if ((event & ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER) == 1) {
+            if ((event & ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER) != 0) {
                 insertListener(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, listener);
             }
-            if ((event & ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE) == 1) {
+            if ((event & ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE) != 0) {
                 insertListener(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, listener);
             }
-            if ((event & ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER) == 1) {
+            if ((event & ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER) != 0) {
                 insertListener(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, listener);
             }
         }
@@ -213,7 +213,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 } else {
                     throw new CloudRuntimeException("Unknown resource event:" + event);
                 }
-                s_logger.debug("Send resource event " + eventName + " to listener " + l.getName());
+                s_logger.debug("Sent resource event " + eventName + " to listener " + l.getName());
             }
         }
     }
