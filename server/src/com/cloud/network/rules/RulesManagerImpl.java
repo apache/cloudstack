@@ -352,6 +352,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);
         return _ipAddressDao.update(ipAddress.getId(), ipAddress);
+
     }
 
 
@@ -976,6 +977,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.warn("Unable to revoke all static nat rules for ip " + ipAddress);
             success = false;
         }
+
         if (success) {
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
