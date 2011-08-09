@@ -7,4 +7,6 @@ public interface InaccurateClockMBean {
     String restart();
 
     String turnOff();
+
+    long[] getCurrentTimes();
 }

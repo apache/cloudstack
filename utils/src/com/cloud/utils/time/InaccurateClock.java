@@ -48,6 +48,14 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
         }
     }
 
+    @Override public long[] getCurrentTimes() {
+        long[] results = new long[2];
+        results[0] = time;
+        results[1] = System.currentTimeMillis();
+
+        return results;
+    }
+
     @Override
     public synchronized String restart() {
         turnOff();
