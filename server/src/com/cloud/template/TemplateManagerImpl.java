@@ -25,6 +25,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -43,10 +45,12 @@ import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.PrepareTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -74,6 +78,7 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Type;
@@ -111,6 +116,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -159,6 +165,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject UsageEventDao _usageEventDao;
     @Inject HypervisorGuruManager _hvGuruMgr;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
+    
+    int _storagePoolMaxWaitSeconds = 3600;
+    ExecutorService _preloadExecutor;
     
     @Inject (adapter=TemplateAdapter.class)
     protected Adapters<TemplateAdapter> _adapters;
@@ -219,6 +228,17 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
         // FIXME: async job needs fixing
         return extract(account, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
+    }
+    
+    @Override
+    public VirtualMachineTemplate prepareTemplate(PrepareTemplateCmd cmd) {
+    	
+    	VMTemplateVO vmTemplate = _tmpltDao.findById(cmd.getTemplateId());
+    	if(vmTemplate == null)
+    		throw new InvalidParameterValueException("Unable to find template " + cmd.getTemplateId());
+    	
+    	prepareTemplateInAllStoragePools(vmTemplate, cmd.getZoneId());
+    	return vmTemplate;
     }
 
     private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
@@ -328,7 +348,33 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }else{
             return null;
         }
-    }    
+    }
+    
+    public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {
+    	List<StoragePoolVO> pools = _poolDao.listPoolsByStatus(StoragePoolStatus.Up);
+    	for(final StoragePoolVO pool : pools) {
+    		if(pool.getDataCenterId() == zoneId) {
+    			s_logger.info("Schedule to preload template " + template.getId() + " into primary storage " + pool.getId());
+	    		this._preloadExecutor.execute(new Runnable() {
+	    			public void run() {
+	    				try {
+	    					reallyRun();
+	    				} catch(Throwable e) {
+	    					s_logger.warn("Unexpected exception ", e);
+	    				}
+	    			}
+	    			
+	    			private void reallyRun() {
+	        			s_logger.info("Start to preload template " + template.getId() + " into primary storage " + pool.getId());
+	    				prepareTemplateForCreate(template, pool);
+	        			s_logger.info("End of preloading template " + template.getId() + " into primary storage " + pool.getId());
+	    			}
+	    		});
+    		} else {
+    			s_logger.info("Skip loading template " + template.getId() + " into primary storage " + pool.getId() + " as pool zone " + pool.getDataCenterId() + " is ");
+    		}
+    	}
+    }
     
     @Override @DB
     public VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool) {
@@ -391,7 +437,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         List<StoragePoolHostVO> vos = _poolHostDao.listByHostStatus(poolId, com.cloud.host.Status.Up);
         
-        templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, 1200);
+        templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, _storagePoolMaxWaitSeconds);
         if (templateStoragePoolRef == null) {
             throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templateStoragePoolRefId);
         }
@@ -699,6 +745,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         HostSearch.done();
         HostTemplateStatesSearch.done();
         
+        _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
         return false;
     }
     
