@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -65,6 +64,9 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
+    
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
+    private Boolean openFirewall;
 
 
     /////////////////////////////////////////////////////
@@ -109,6 +111,14 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     public List<String> getSourceCidrList() {
         return cidrlist;
     }
+    
+    public Boolean getOpenFirewall() {
+        if (openFirewall != null) {
+            return openFirewall;
+        } else {
+            return true;
+        }
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -131,7 +141,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         
         LoadBalancer result = null;
         try {
-            result = _lbService.createLoadBalancerRule(this);
+            result = _lbService.createLoadBalancerRule(this, getOpenFirewall());
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
@@ -158,12 +168,12 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     }
 
     @Override
-    public int getSourcePortStart() {
+    public Integer getSourcePortStart() {
         return publicPort.intValue();
     }
 
     @Override
-    public int getSourcePortEnd() {
+    public Integer getSourcePortEnd() {
         return publicPort.intValue();
     }
 
@@ -211,4 +221,15 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     public long getEntityOwnerId() {
        return getAccountId();
     }
+    
+    @Override
+    public Integer getIcmpCode() {
+        return null;
+    }
+    
+    @Override
+    public Integer getIcmpType() {
+        return null;
+    }
+
 }

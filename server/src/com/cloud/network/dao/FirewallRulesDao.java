@@ -39,10 +39,12 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     
     boolean releasePorts(long ipAddressId, String protocol, FirewallRule.Purpose purpose, int[] ports);
     
-    List<? extends FirewallRule> listByIpAndPurpose(long ipAddressId, FirewallRule.Purpose purpose);
+    List<FirewallRuleVO> listByIpAndPurpose(long ipAddressId, FirewallRule.Purpose purpose);
     
     List<FirewallRuleVO> listByNetworkAndPurpose(long networkId, FirewallRule.Purpose purpose);
     
     List<FirewallRuleVO> listStaticNatByVmId(long vmId);
+    
+    List<FirewallRuleVO> listByIpPurposeAndProtocolAndNotRevoked(long ipAddressId, Integer startPort, Integer endPort, String protocol, FirewallRule.Purpose purpose);
 
 }

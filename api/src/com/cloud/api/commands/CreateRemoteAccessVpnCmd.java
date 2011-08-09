@@ -27,6 +27,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -58,6 +59,9 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the VPN. If the account parameter is used, domainId must also be used.")
     private Long domainId;
     
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
+    private Boolean openFirewall;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,13 +86,20 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 		this.ipRange = ipRange;
 	}
 	
+	public Boolean getOpenFirewall() {
+	    if (openFirewall != null) {
+	        return openFirewall;
+	    } else {
+	        return true;
+	    }
+    }
+	
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-   
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
@@ -125,7 +136,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() {
         try {
-            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange);
+            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall());
             if (vpn != null) {
                 this.setEntityId(vpn.getServerAddressId());
             } else {
@@ -141,7 +152,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         try {
-            RemoteAccessVpn result = _ravService.startRemoteAccessVpn(publicIpId);
+            RemoteAccessVpn result = _ravService.startRemoteAccessVpn(publicIpId, getOpenFirewall());
             if (result != null) {
                 RemoteAccessVpnResponse response = _responseGenerator.createRemoteAccessVpnResponse(result);
                 response.setResponseName(getCommandName());

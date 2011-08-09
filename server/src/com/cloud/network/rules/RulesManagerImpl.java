@@ -43,14 +43,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -98,48 +96,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     UsageEventDao _usageEventDao;
     @Inject
     DomainDao _domainDao;
+    @Inject
+    FirewallManager _firewallMgr;
 
-    @Override
-    public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
-        assert newRule.getSourceIpAddressId() == ipAddress.getId() : "You passed in an ip address that doesn't match the address in the new rule";
 
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(newRule.getSourceIpAddressId(), null);
-        assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for network conflicts so we should at least have one rule at this point.";
-
-        for (FirewallRuleVO rule : rules) {
-            if (rule.getId() == newRule.getId()) {
-                continue; // Skips my own rule.
-            }
-
-            if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
-                throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" + newRule.getSourceIpAddressId());
-            } else if (rule.getPurpose() != Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat) {
-                throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id=" + newRule.getSourceIpAddressId());
-            }
-
-            if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
-                throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
-            }
-
-            if ((rule.getSourcePortStart() <= newRule.getSourcePortStart() && rule.getSourcePortEnd() >= newRule.getSourcePortStart())
-                    || (rule.getSourcePortStart() <= newRule.getSourcePortEnd() && rule.getSourcePortEnd() >= newRule.getSourcePortEnd())
-                    || (newRule.getSourcePortStart() <= rule.getSourcePortStart() && newRule.getSourcePortEnd() >= rule.getSourcePortStart())
-                    || (newRule.getSourcePortStart() <= rule.getSourcePortEnd() && newRule.getSourcePortEnd() >= rule.getSourcePortEnd())) {
-
-                // we allow port forwarding rules with the same parameters but different protocols
-                boolean allowPf = (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
-                boolean allowStaticNat = (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
-                if (!(allowPf || allowStaticNat)) {
-                    throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() + ", conflicts with rule " + rule.getId()
-                            + " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd());
-                }
-            }
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
-        }
-    }
 
     @Override
     public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) {
@@ -190,38 +150,29 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating forwarding rule", create = true)
-    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException {
+    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, boolean openFirewall) throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
-        Long networkId = null;
-        Long accountId = null;
-        Long domainId = null;
 
         Long ipAddrId = rule.getSourceIpAddressId();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
-
+        
         // Validate ip address
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " doesn't exist in the system");
         } else if (ipAddress.isOneToOneNat()) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
-        } else {
-            _accountMgr.checkAccess(caller, ipAddress);
-
-            networkId = ipAddress.getAssociatedWithNetworkId();
-            if (networkId == null) {
-                throw new InvalidParameterValueException("Unable to create port forwarding rule ; ip id=" + ipAddrId + " is not associated with any network");
-
-            }
-            // get account/domain info from the ip address (can't get it from the network as the network can be shared between
-            // accounts)
-            accountId = ipAddress.getAccountId();
-            domainId = ipAddress.getDomainId();
-        }
-
+        } 
+        
+        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol());
+        
+        Long networkId = ipAddress.getAssociatedWithNetworkId();
+        Long accountId = ipAddress.getAccountId();
+        Long domainId = ipAddress.getDomainId();
+        
         // start port can't be bigger than end port
-        if (rule.getDestinationPortStart() > rule.getDestinationPortEnd() || rule.getSourcePortStart() > rule.getSourcePortEnd()) {
+        if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
             throw new InvalidParameterValueException("Start port can't be bigger than end port");
         }
         
@@ -229,17 +180,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if ((rule.getDestinationPortEnd() - rule.getDestinationPortStart()) != (rule.getSourcePortEnd() - rule.getSourcePortStart())) {
             throw new InvalidParameterValueException("Source port and destination port ranges should be of equal sizes.");
         }
-
-        Network network = _networkMgr.getNetwork(networkId);
-        assert network != null : "Can't create port forwarding rule as network associated with public ip address is null...how is it possible?";
-
-        // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> firewallCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
-        String supportedProtocols = firewallCapabilities.get(Capability.SupportedProtocols).toLowerCase();
-        if (!supportedProtocols.contains(rule.getProtocol().toLowerCase())) {
-            throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
-        }
-
+        
         // validate user VM exists
         UserVm vm = _vmDao.findById(vmId);
         if (vm == null) {
@@ -260,12 +201,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
+        //create firewallRule for 0.0.0.0/0 cidr
+        if (openFirewall) {
+            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null);
+        }
+        
         PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
                 rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), rule.getSourceCidrList(), networkId, accountId, domainId, vmId);
         newRule = _forwardingDao.persist(newRule);
 
         try {
-            detectRulesConflict(newRule, ipAddress);
+            _firewallMgr.detectRulesConflict(newRule, ipAddress);
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
@@ -285,64 +231,45 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating static nat rule", create = true)
-    public StaticNatRule createStaticNatRule(StaticNatRule rule) throws NetworkRuleConflictException {
+    public StaticNatRule createStaticNatRule(StaticNatRule rule, boolean openFirewall) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
-        Long networkId = null;
-        Long accountId = null;
-        Long domainId = null;
 
         Long ipAddrId = rule.getSourceIpAddressId();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
-
-        // Verify ip address existst and if 1-1 nat is enabled for it
+        
+        // Validate ip address
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to create static nat rule; ip id=" + ipAddrId + " doesn't exist in the system");
         } else if (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getAssociatedWithVmId() == null) {
             throw new NetworkRuleConflictException("Can't do static nat on ip address: " + ipAddress.getAddress());
-        } else {
-            _accountMgr.checkAccess(caller, ipAddress);
-
-            networkId = ipAddress.getAssociatedWithNetworkId();
-            if (networkId == null) {
-                throw new InvalidParameterValueException("Unable to create static nat rule ; ip id=" + ipAddrId + " is not associated with any network");
-
-            }
-            // get account/domain info from the ip address (can't get it from the network as the network can be shared between
-            // accounts)
-            accountId = ipAddress.getAccountId();
-            domainId = ipAddress.getDomainId();
-        }
-
-        Network network = _networkMgr.getNetwork(networkId);
-        assert network != null : "Can't create static nat rule as network associated with public ip address is null...how is it possible?";
+        } 
+        
+        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol());
+        
+        Long networkId = ipAddress.getAssociatedWithNetworkId();
+        Long accountId = ipAddress.getAccountId();
+        Long domainId = ipAddress.getDomainId();
 
         // Get nic IP4 address
         Nic guestNic = _networkMgr.getNicInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
         assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
         String dstIp = guestNic.getIp4Address();
 
-        // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> firewallCapability = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
-        String supportedProtocols = firewallCapability.get(Capability.SupportedProtocols).toLowerCase();
-        if (!supportedProtocols.contains(rule.getProtocol().toLowerCase())) {
-            throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
-        }
-
-        // start port can't be bigger than end port
-        if (rule.getSourcePortStart() > rule.getSourcePortEnd()) {
-            throw new InvalidParameterValueException("Start port can't be bigger than end port");
-        }
-
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
+        //create firewallRule for 0.0.0.0/0 cidr
+        if (openFirewall) {
+            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null);
+        }
+        
         FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
-                networkId, accountId, domainId, rule.getPurpose());
+                networkId, accountId, domainId, rule.getPurpose(), null, null, null);
         newRule = _firewallDao.persist(newRule);
 
         try {
-            detectRulesConflict(newRule, ipAddress);
+            _firewallMgr.detectRulesConflict(newRule, ipAddress);
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
@@ -424,68 +351,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);
-        if ( _ipAddressDao.update(ipAddress.getId(), ipAddress))
-        {
-        	 List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
-       
-             FirewallRuleVO ruleVO = new FirewallRuleVO(null, ipAddress.getId(), 0, 0, "icmp", 
-                     networkId,vm.getAccountId(), vm.getDomainId(), Purpose.StaticNat);
-
-             staticNatRules.add(new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address()));
-             
-             try {
-            	 if (!applyRules(staticNatRules, true)) {
-                     return false;
-                 }
-
-             } catch (ResourceUnavailableException ex) {
-                 s_logger.warn("Failed to apply icmp firewall rules due to ", ex);
-                 return false;
-             }
-        	 return true;
-        	
-        }
-        return false;
+        return _ipAddressDao.update(ipAddress.getId(), ipAddress);
     }
 
-    @DB
-    protected void revokeRule(FirewallRuleVO rule, Account caller, long userId) {
-        if (caller != null) {
-            _accountMgr.checkAccess(caller, rule);
-        }
-
-        Transaction txn = Transaction.currentTxn();
-        boolean generateUsageEvent = false;
-
-        txn.start();
-        if (rule.getState() == State.Staged) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
-            }
-            _firewallDao.remove(rule.getId());
-            generateUsageEvent = true;
-        } else if (rule.getState() == State.Add || rule.getState() == State.Active) {
-            rule.setState(State.Revoke);
-            _firewallDao.update(rule.getId(), rule);
-            generateUsageEvent = true;
-        }
-
-        if (generateUsageEvent) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
-            _usageEventDao.persist(usageEvent);
-        }
-
-        // Save and create the event
-        String ruleName = rule.getPurpose() == Purpose.Firewall ? "Firewall" : (rule.getPurpose() == FirewallRule.Purpose.StaticNat ? "ip forwarding" : "port forwarding");
-        StringBuilder description = new StringBuilder("deleted ").append(ruleName).append(" rule [ipAddressId=").append(rule.getSourceIpAddressId()).append(":").append(rule.getSourcePortStart())
-                .append("-").append(rule.getSourcePortEnd()).append("]");
-        if (rule.getPurpose() == Purpose.PortForwarding) {
-            PortForwardingRuleVO pfRule = (PortForwardingRuleVO) rule;
-            description.append("->[").append(pfRule.getDestinationIpAddress()).append(":").append(pfRule.getDestinationPortStart()).append("-").append(pfRule.getDestinationPortEnd()).append("]");
-        }
-        description.append(" ").append(rule.getProtocol());
-        txn.commit();
-    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_DELETE, eventDescription = "revoking forwarding rule", async = true)
@@ -506,7 +374,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     private boolean revokePortForwardingRuleInternal(long ruleId, Account caller, long userId, boolean apply) {
         PortForwardingRuleVO rule = _forwardingDao.findById(ruleId);
 
-        revokeRule(rule, caller, userId);
+        _firewallMgr.revokeRule(rule, caller, userId, true);
 
         boolean success = false;
 
@@ -538,7 +406,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     private boolean revokeStaticNatRuleInternal(long ruleId, Account caller, long userId, boolean apply) {
         FirewallRuleVO rule = _firewallDao.findById(ruleId);
 
-        revokeRule(rule, caller, userId);
+        _firewallMgr.revokeRule(rule, caller, userId, true);
 
         boolean success = false;
 
@@ -716,7 +584,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!applyRules(rules, continueOnError)) {
+            if (!_firewallMgr.applyRules(rules, continueOnError)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -764,7 +632,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!applyRules(staticNatRules, continueOnError)) {
+            if (!_firewallMgr.applyRules(staticNatRules, continueOnError)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -788,7 +656,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!applyRules(rules, continueOnError)) {
+            if (!_firewallMgr.applyRules(rules, continueOnError)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -818,7 +686,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!applyRules(staticNatRules, continueOnError)) {
+            if (!_firewallMgr.applyRules(staticNatRules, continueOnError)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -827,24 +695,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         return true;
-    }
-
-    private boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
-        if (!_networkMgr.applyRules(rules, continueOnError)) {
-            s_logger.warn("Rules are not completely applied");
-            return false;
-        } else {
-            for (FirewallRule rule : rules) {
-                if (rule.getState() == FirewallRule.State.Revoke) {
-                    _firewallDao.remove(rule.getId());
-                } else if (rule.getState() == FirewallRule.State.Add) {
-                    FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
-                    ruleVO.setState(FirewallRule.State.Active);
-                    _firewallDao.update(ruleVO.getId(), ruleVO);
-                }
-            }
-            return true;
-        }
     }
 
     @Override
@@ -934,7 +784,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean revokeAllRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException {
+    public boolean revokeAllPFAndStaticNatRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException {
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
         List<PortForwardingRuleVO> pfRules = _forwardingDao.listByIpAndNotRevoked(ipId);
@@ -1048,13 +898,18 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     @DB
-    public FirewallRuleVO[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, int... ports) throws NetworkRuleConflictException {
+    public FirewallRuleVO[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, boolean openFirewall, Account caller, int... ports) throws NetworkRuleConflictException {
         FirewallRuleVO[] rules = new FirewallRuleVO[ports.length];
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
         for (int i = 0; i < ports.length; i++) {
-            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose);
+            
+            if (openFirewall) {
+                _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null);
+            }
+            
+            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null);
             rules[i] = _firewallDao.persist(rules[i]);
         }
         txn.commit();
@@ -1062,7 +917,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         boolean success = false;
         try {
             for (FirewallRuleVO newRule : rules) {
-                detectRulesConflict(newRule, ip);
+                _firewallMgr.detectRulesConflict(newRule, ip);
             }
             success = true;
             return rules;
@@ -1117,32 +972,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("One to one nat is not enabled for the ip id=" + ipId);
         }
 
-        if (!revokeAllRulesForIp(ipId, UserContext.current().getCallerUserId(), caller)) {
+        if (!revokeAllPFAndStaticNatRulesForIp(ipId, UserContext.current().getCallerUserId(), caller)) {
             s_logger.warn("Unable to revoke all static nat rules for ip " + ipAddress);
             success = false;
-        }
-        if (success)
-        {
-        	 long vmId = ipAddress.getAssociatedWithVmId();
-        	 Nic guestNic = _networkMgr.getNicInNetwork(vmId, ipAddress.getAssociatedWithNetworkId());
-             if (guestNic == null) {
-                 throw new InvalidParameterValueException("Vm doesn't belong to the network " + ipAddress.getAssociatedWithNetworkId());
-             }
-        	 List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
-             FirewallRuleVO ruleVO = new FirewallRuleVO(null, ipAddress.getId(), 0, 0, "icmp", 
-                   ipAddress.getAssociatedWithNetworkId(),ipAddress.getAccountId(), ipAddress.getDomainId(), Purpose.StaticNat);
-
-             ruleVO.setState(State.Revoke);
-             staticNatRules.add(new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address()));
-             
-             try {
-            	 if (!applyRules(staticNatRules, true)) {
-                     return false;
-                 }
-             } catch (ResourceUnavailableException ex) {
-                 s_logger.warn("Failed to apply icmp firewall rules due to ", ex);
-                 return false;
-             }
         }
         if (success) {
             ipAddress.setOneToOneNat(false);
@@ -1178,5 +1010,5 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address());
     }
-
+    
 }

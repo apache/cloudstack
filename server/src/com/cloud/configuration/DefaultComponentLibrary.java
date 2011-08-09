@@ -82,6 +82,7 @@ import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
+import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.ovs.OvsNetworkManagerImpl;
 import com.cloud.network.ovs.OvsTunnelManagerImpl;
@@ -316,6 +317,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
         addManager("ResourceManager", ResourceManagerImpl.class);
         addManager("OCFS2Manager", OCFS2ManagerImpl.class);
+        addManager("FirewallManager", FirewallManagerImpl.class);
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);

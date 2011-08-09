@@ -17,6 +17,8 @@
  */
 package com.cloud.network.rules;
 
+import java.util.List;
+
 import com.cloud.acl.ControlledEntity;
 
 public interface FirewallRule extends ControlledEntity {
@@ -48,12 +50,12 @@ public interface FirewallRule extends ControlledEntity {
     /**
      * @return first port of the source port range.
      */
-    int getSourcePortStart();
+    Integer getSourcePortStart();
     
     /**
      * @return last port of the source prot range.  If this is null, that means only one port is mapped.
      */
-    int getSourcePortEnd();
+    Integer getSourcePortEnd();
 
     /**
      * @return protocol to open these ports for.
@@ -67,4 +69,10 @@ public interface FirewallRule extends ControlledEntity {
     long getNetworkId();
     
     long getSourceIpAddressId();
+
+    Integer getIcmpCode();
+
+    Integer getIcmpType();
+
+    List<String> getSourceCidrList();
 }

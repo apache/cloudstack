@@ -44,6 +44,7 @@ import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.api.response.FirewallResponse;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
@@ -720,7 +721,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setId(loadBalancer.getId());
         lbResponse.setName(loadBalancer.getName());
         lbResponse.setDescription(loadBalancer.getDescription());
-        List<String> cidrs = ApiDBUtils.findPortForwardingSourceCidrs(loadBalancer.getId());
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(loadBalancer.getId());
         lbResponse.setCidrList(StringUtils.join(cidrs, ","));
 
         IPAddressVO publicIp = ApiDBUtils.findIpAddressById(loadBalancer.getSourceIpAddressId());
@@ -989,7 +990,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProtocol(fwRule.getProtocol());
         response.setPublicStartPort(Integer.toString(fwRule.getSourcePortStart()));
         response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
-        List<String> cidrs = ApiDBUtils.findPortForwardingSourceCidrs(fwRule.getId());
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
@@ -2145,6 +2146,39 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomain(domain.getName());
         
         response.setObjectName("project");
+        return response;
+    }
+    public FirewallResponse createFirewallResponse(FirewallRule fwRule) {
+        FirewallResponse response = new FirewallResponse();
+
+        response.setId(fwRule.getId());
+        response.setProtocol(fwRule.getProtocol());
+        if (fwRule.getSourcePortStart() != null) {
+            response.setStartPort(Integer.toString(fwRule.getSourcePortStart()));
+        }
+        
+        if (fwRule.getSourcePortEnd() != null) {
+            response.setEndPort(Integer.toString(fwRule.getSourcePortEnd()));
+        }
+        
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
+
+        IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
+        response.setPublicIpAddressId(ip.getId());
+        response.setPublicIpAddress(ip.getAddress().addr());
+
+        FirewallRule.State state = fwRule.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        
+        response.setIcmpCode(fwRule.getIcmpCode());
+        response.setIcmpType(fwRule.getIcmpType());
+        
+        response.setState(stateToSet);
+        response.setObjectName("firewallrule");
         return response;
     }
 }

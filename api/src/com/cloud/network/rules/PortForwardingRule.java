@@ -17,8 +17,6 @@
  */
 package com.cloud.network.rules;
 
-import java.util.List;
-
 import com.cloud.utils.net.Ip;
 
 /**
@@ -45,8 +43,4 @@ public interface PortForwardingRule extends FirewallRule {
      */
     long getVirtualMachineId();  
     
-    /**
-     * @return source cidr to forward
-     */
-    List<String> getSourceCidrList();
 }

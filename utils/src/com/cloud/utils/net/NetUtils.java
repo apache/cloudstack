@@ -54,6 +54,8 @@ public class NetUtils {
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
     public final static String ALL_PROTO = "all";
+    
+    public final static String ALL_CIDRS = "0.0.0.0/0";
 
     private final static Random _rand = new Random(System.currentTimeMillis());
 

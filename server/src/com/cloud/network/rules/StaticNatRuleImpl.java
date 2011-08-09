@@ -18,6 +18,8 @@
 
 package com.cloud.network.rules;
 
+import java.util.List;
+
 
 public class StaticNatRuleImpl implements StaticNatRule{
     long id;
@@ -52,7 +54,7 @@ public class StaticNatRuleImpl implements StaticNatRule{
     }
 
     @Override
-    public int getSourcePortEnd() {
+    public Integer getSourcePortEnd() {
         return portEnd;
     }
     
@@ -87,7 +89,7 @@ public class StaticNatRuleImpl implements StaticNatRule{
     }
 
     @Override
-    public int getSourcePortStart() {
+    public Integer getSourcePortStart() {
         return portStart;
     }
 
@@ -104,5 +106,20 @@ public class StaticNatRuleImpl implements StaticNatRule{
     @Override
     public String getXid() {
         return xid;
+    }
+    
+    @Override
+    public Integer getIcmpCode() {
+        return null;
+    }
+    
+    @Override
+    public Integer getIcmpType() {
+        return null;
+    }
+    
+    @Override
+    public List<String> getSourceCidrList() {
+        return null;
     }
 }

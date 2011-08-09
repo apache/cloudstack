@@ -592,7 +592,7 @@ public class ApiDBUtils {
         return _consoleProxyDao.findById(id);
     }
     
-    public static List<String> findPortForwardingSourceCidrs(long id){
+    public static List<String> findFirewallSourceCidrs(long id){
         return _firewallCidrsDao.getSourceCidrs(id);  
     }
     

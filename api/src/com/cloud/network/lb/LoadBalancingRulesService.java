@@ -30,10 +30,11 @@ import com.cloud.uservm.UserVm;
 public interface LoadBalancingRulesService {
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port
+     * @param openFirewall TODO
      * @param cmd the command specifying the ip address, public port, protocol, private port, and algorithm
      * @return the newly created LoadBalancerVO if successful, null otherwise
      */
-    LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException;
+    LoadBalancer createLoadBalancerRule(LoadBalancer lb, boolean openFirewall) throws NetworkRuleConflictException;
     
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
     

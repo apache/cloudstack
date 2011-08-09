@@ -17,6 +17,9 @@
  */
 package com.cloud.agent.api.to;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.utils.net.NetUtils;
@@ -53,10 +56,25 @@ public class FirewallRuleTO {
     protected FirewallRuleTO() {
     }
     
-    public FirewallRuleTO(long id, String srcIp, String protocol, int srcPortStart, int srcPortEnd, boolean revoked, boolean alreadyAdded, FirewallRule.Purpose purpose) {
+    public FirewallRuleTO(long id, String srcIp, String protocol, Integer srcPortStart, Integer srcPortEnd, boolean revoked, boolean alreadyAdded, FirewallRule.Purpose purpose) {
         this.srcIp = srcIp;
         this.protocol = protocol;
-        this.srcPortRange = new int[] {srcPortStart, srcPortEnd};
+        
+        if (srcPortStart != null) {
+            List<Integer> portRange = new ArrayList<Integer>();
+            portRange.add(srcPortStart);
+            if (srcPortEnd != null) {
+                portRange.add(srcPortEnd);
+            }
+            
+            srcPortRange = new int[portRange.size()];
+            int i = 0;
+            for (Integer port : portRange) {
+                srcPortRange[i] = port.intValue();
+                i ++;
+            }   
+        } 
+        
         this.revoked = revoked;
         this.alreadyAdded = alreadyAdded;
         this.purpose = purpose;
