@@ -32,7 +32,7 @@ dictionary = {
         </p>
     </div>
     <div class="tabbox" style="margin-top: 15px;">
-        <div class="content_tabs on" id="tab_details">
+        <div class="content_tabs on" id="tab_details" style="display: none">
             <fmt:message key="label.details"/></div>	            
         <div class="content_tabs off" id="tab_port_range" style="display: none">
             <fmt:message key="label.port.range"/></div>            	
@@ -43,7 +43,7 @@ dictionary = {
 		<div class="content_tabs off" id="tab_vpn" style="display: none">
             <fmt:message key="label.vpn"/></div>
     </div>  
-    <div id="tab_content_details">
+    <div id="tab_content_details" style="display: none">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
 	        <div class="rightpanel_mainloaderbox">
 	            <div class="rightpanel_mainloader_animatedicon">
@@ -423,8 +423,11 @@ dictionary = {
 	                    <input id="private_port" class="text" style="width: 70%; " type="text" />
 	                    <div id="private_port_errormsg" class="errormsg" style="display: none;"></div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 12%;">
-	                    <select id="algorithm_select" class="select" style="width: 70%;">   	                      
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <select id="algorithm_select" class="select" style="width: 70%;">   
+	                        <option value='roundrobin'>roundrobin</option>
+			                <option value='leastconn'>leastconn</option>                            
+			                <option value='source'>source</option>    	                      
 	                    </select>
 	                </div>	                
 	                <div class="grid_row_cell" style="width: 6%;">	  
@@ -494,6 +497,15 @@ dictionary = {
                 <fmt:message key="label.acquire.new.ip"/>
             </div>
         </div>
+    </div>    
+    <div class="actionpanel_button_wrapper" id="add_load_balancer_and_ip_button" style="display:none;">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" /></div>
+            <div class="actionpanel_button_links">
+                <fmt:message key="label.add.load.balancer"/>
+            </div>
+        </div>
     </div>
 </div>
 <!--  top buttons (end) -->
@@ -548,8 +560,11 @@ dictionary = {
         <div class="grid_row_cell" style="width: 12%; ">
             <div class="row_celltitles" id="private_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 12%; ">
-            <select id="algorithm_select" class="select" style="width: 70%;">                 
+        <div class="grid_row_cell" style="width: 15%; ">
+            <select id="algorithm_select" class="select" style="width: 70%;">    
+                <option value='roundrobin'>roundrobin</option>
+                <option value='leastconn'>leastconn</option>                            
+                <option value='source'>source</option>            
             </select>
         </div>        
         <div class="grid_row_cell" style="width: 6%; ">
@@ -777,6 +792,45 @@ dictionary = {
                     <option value="default"><fmt:message key="label.waiting"/>....</option>
                 </select>
             </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<div id="dialog_add_load_balancer_and_ip" title='<fmt:message key="label.add.load.balancer"/>' style="display: none">   
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form1">
+        <ol>
+            <li>
+                <label>
+                    <fmt:message key="label.zone"/>:</label>
+                <select class="select" name="acquire_zone" id="acquire_zone">
+                    <option value="default"><fmt:message key="label.waiting"/>....</option>
+                </select>
+            </li>            
+            <li>
+				<label><fmt:message key="label.name"/>:</label>
+				<input class="text" type="text" id="name"/>
+				<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+			</li>
+			<li>
+				<label><fmt:message key="label.public.port"/>:</label>
+				<input class="text" type="text" id="public_port"/>
+				<div id="public_port_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+			</li>
+			<li>
+				<label><fmt:message key="label.private.port"/>:</label>
+				<input class="text" type="text" id="private_port"/>
+				<div id="private_port_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+			</li>
+			<li>
+                <label><fmt:message key="label.algorithm"/>:</label>
+                <select class="select" id="algorithm_select">
+                    <option value='roundrobin'>roundrobin</option>
+                    <option value='leastconn'>leastconn</option>                            
+                    <option value='source'>source</option>
+                </select>
+            </li>           
         </ol>
         </form>
     </div>

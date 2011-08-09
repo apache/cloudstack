@@ -20,26 +20,23 @@ package com.cloud.network.lb;
 import java.util.List;
 
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.Network;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
+public interface ElasticLoadBalancerManager {
+    public static final int DEFAULT_ELB_VM_RAMSIZE = 128;            // 512 MB
+    public static final int DEFAULT_ELB_VM_CPU_MHZ = 256;               // 500 MHz
+
+    public boolean applyLoadBalancerRules(Network network, 
+            List<? extends FirewallRule> rules) 
+            throws ResourceUnavailableException;
+
+    public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account caller) throws InsufficientAddressCapacityException, NetworkRuleConflictException;
     
-    LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb) throws NetworkRuleConflictException;
-    
-    boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
-    boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId);
-    List<LbDestination> getExistingDestinations(long lbId);
-    
-    /**
-     * Remove vm from all load balancers
-     * @param vmId
-     * @return true if removal is successful
-     */
-    boolean removeVmFromLoadBalancers(long vmId);
-    
-    boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
+    public void handleDeleteLoadBalancerRule(LoadBalancer lb, long callerUserId, Account caller);
 }

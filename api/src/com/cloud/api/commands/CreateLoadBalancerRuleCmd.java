@@ -23,19 +23,26 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
-public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer {
+public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBalancer */{
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "createloadbalancerruleresponse";
@@ -56,8 +63,11 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
     private Integer privatePort;
 
-    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id from where the network traffic will be load balanced from")
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=false, description="public ip address id from where the network traffic will be load balanced from")
     private Long publicIpId;
+    
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="public ip address id from where the network traffic will be load balanced from")
+    private Long zoneId;
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
     private Integer publicPort;
@@ -68,17 +78,20 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
     private Boolean openFirewall;
 
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the load balancer. Must be used with the domainId parameter.")
+    private String accountName;
 
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the load balancer")
+    private Long domainId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    @Override
     public String getAlgorithm() {
         return algorithm;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
@@ -94,7 +107,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     public Long getPublicIpId() {
         IpAddress ipAddr = _networkService.getIp(publicIpId);
         if (ipAddr == null || !ipAddr.readyToUse()) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipAddr.getId());
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
         }
         
         return publicIpId;
@@ -130,7 +143,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     }
     
     @Override
-    public void execute() {
+    public void execute() throws ResourceAllocationException, ResourceUnavailableException {
         if (cidrlist != null){
             for (String cidr: cidrlist){
                 if (!NetUtils.isValidCIDR(cidr)){
@@ -145,74 +158,68 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+        } catch (InsufficientAddressCapacityException e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         }
         LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 
-    @Override
-    public long getId() {
-        throw new UnsupportedOperationException("not supported");
-    }
+  
 
-    @Override
-    public String getXid() {
-        // FIXME: Should fix this.
-        return null;
-    }
-
-    @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return publicIpId;
     }
 
-    @Override
     public Integer getSourcePortStart() {
         return publicPort.intValue();
     }
 
-    @Override
     public Integer getSourcePortEnd() {
         return publicPort.intValue();
     }
 
-    @Override
     public String getProtocol() {
         return NetUtils.TCP_PROTO;
     }
 
-    @Override
-    public Purpose getPurpose() {
-        return Purpose.LoadBalancing;
-    }
+   
 
-    @Override
-    public State getState() {
-        throw new UnsupportedOperationException("not supported");
-    }
-
-    @Override
-    public long getNetworkId() {
-        return -1;
-    }
-
-    @Override
     public long getAccountId() {  
-        return _networkService.getIp(getPublicIpId()).getAccountId();
+        if (publicIpId != null)
+            return _networkService.getIp(getPublicIpId()).getAccountId();
+        Account account = UserContext.current().getCaller();
+        if ((account == null) ) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    @Override
     public long getDomainId() {
-        return _networkService.getIp(getPublicIpId()).getDomainId();
+        if (publicIpId != null)
+            return _networkService.getIp(getPublicIpId()).getDomainId();
+        if (domainId != null) {
+            return domainId;
+        }
+        return UserContext.current().getCaller().getDomainId();
     }
 
-    @Override
     public int getDefaultPortStart() {
         return privatePort.intValue();
     }
 
-    @Override
     public int getDefaultPortEnd() {
         return privatePort.intValue();
     }
@@ -230,6 +237,41 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     @Override
     public Integer getIcmpType() {
         return null;
+    }
+
+}
+    }
+    
+    public String getAccountName() {
+        return accountName;
+    }
+    
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public void setPublicIpId(Long publicIpId) {
+        this.publicIpId = publicIpId;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_LOAD_BALANCER_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "creating load balancer: " + getName() + " account: " + getAccountName();
+
+    }
+
+    public String getXid() {
+        /*FIXME*/
+        return null;
+    }
+
+    public void setSourceIpAddressId(Long ipId) {
+        this.publicIpId = ipId;
     }
 
 }

@@ -99,6 +99,10 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _lbService.findById(id).getNetworkId();
+        LoadBalancer lb = _lbService.findById(id);
+        if (lb == null) {
+            return null;
+        }
+        return lb.getNetworkId();
     }
 }

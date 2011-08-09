@@ -219,4 +219,21 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         }
         return listBy(sc);
     }
+
+    @Override
+    public List<DomainRouterVO> listByNetworkAndPodAndRole(long networkId, long podId, Role role) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("podId", podId);
+        sc.setParameters("role", role);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listByNetworkAndRole(long networkId, Role role) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("role", role);
+        return listBy(sc);
+    }
 }

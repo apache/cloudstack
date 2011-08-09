@@ -78,6 +78,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -663,8 +664,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
         cmd.addVmData("metadata", "local-ipv4", guestIpAddress);
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vmName));
-        cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
-        cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
+        if (dcVo.getNetworkType() == NetworkType.Basic) {
+            cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
+            cmd.addVmData("metadata", "public-hostname",  StringUtils.unicodeEscape(vmName));
+        }else
+        {
+            cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
+            cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
+        }
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
         cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
         cmd.addVmData("metadata", "public-keys", publicKey);
@@ -1046,7 +1053,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             // In Basic zone and Guest network we have to start domR per pod, not per network
             if (isPodBased) {
-                routers = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
+                routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.DHCP_USERDATA);
                 plan = new DataCenterDeployment(dcId, podId, null, null, null);
             } else {
                 routers = _routerDao.findByNetwork(guestNetwork.getId());

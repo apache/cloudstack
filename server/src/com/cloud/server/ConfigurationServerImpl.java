@@ -810,7 +810,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 true, false, null, null, null, true, 
                 Availability.Required, 
                 true, true, true, //services - all true except for lb/vpn and gateway
-                false, true, false, false, GuestIpType.Direct);
+                false, true, true, false, GuestIpType.Direct);
 
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         
@@ -830,7 +830,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 false, true, null, null, null, true, 
                 Availability.Optional, 
                 true, true, true, //services - all true except for firewall/lb/vpn and gateway
-                false, false, false, false, GuestIpType.Direct);
+                false, false, true, false, GuestIpType.Direct);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
     }
     
