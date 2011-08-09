@@ -940,6 +940,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             txn.commit();
+        } catch (InsufficientCapacityException ex) {
+            s_logger.error("Fail to create the virtual router!", ex);
+            throw ex;
+        } catch (Exception ex) {
+            s_logger.error("Fail to create the virtual router due to error: " + ex.getMessage());
         } finally {
             if (network != null) {
                 _networkDao.releaseFromLockTable(network.getId());
@@ -1018,10 +1023,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
         List<DomainRouterVO> routers = findOrCreateVirtualRouters(guestNetwork, dest, owner, isRedundant);
-        List<DomainRouterVO> runningRouters = null;
+        List<DomainRouterVO> runningRouters = new ArrayList<DomainRouterVO>();
         
-        if (routers != null) {
-            runningRouters = new ArrayList<DomainRouterVO>();
+        if (routers == null) {
+            return runningRouters;
         }
         
         for (DomainRouterVO router : routers) {
@@ -1118,7 +1123,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             txn.commit();
-
+        } catch (InsufficientCapacityException ex) {
+            s_logger.error("Fail to create the virtual router!", ex);
+            throw ex;
+        } catch (Exception ex) {
+            s_logger.error("Fail to create the virtual router due to error: " + ex.getMessage());
         } finally {
             if (network != null) {
                 _networkDao.releaseFromLockTable(network.getId());
