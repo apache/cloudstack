@@ -4207,7 +4207,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
-        String supportELB = "false";
+        String supportELB = "public";
         List<DataCenterVO> dc = _dcDao.listSecurityGroupEnabledZones();
         if (dc != null && !dc.isEmpty()) {
             securityGroupsEnabled = true;
