@@ -203,7 +203,7 @@ public class ConnectionConcierge {
             }
 
             _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ConnectionConcierge"));
-            _executor.schedule(new Runnable() {
+            _executor.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     s_logger.trace("connection concierge keep alive task");
@@ -214,7 +214,7 @@ public class ConnectionConcierge {
                         }
                     }
                 }
-            }, seconds, TimeUnit.SECONDS);
+            }, 0, seconds, TimeUnit.SECONDS);
 
             return "As you wish.";
         }
