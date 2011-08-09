@@ -138,6 +138,8 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -894,6 +896,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                return execute((NetworkRulesSystemVmCommand)cmd);
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
                return execute((CleanupNetworkRulesCmd)cmd);
+            } else if (cmd instanceof CopyVolumeCommand) {
+               return execute((CopyVolumeCommand)cmd);
             } else {
         		s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -904,7 +908,47 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	
-	protected Answer execute(DeleteStoragePoolCommand cmd) {
+	private CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
+	    boolean copyToSecondary = cmd.toSecondaryStorage();
+	    String volumePath = cmd.getVolumePath();
+	    StorageFilerTO pool = cmd.getPool();
+	    String secondaryStorageUrl = cmd.getSecondaryStorageURL();
+	    StoragePool primaryPool = null;
+	    Connect conn;
+        try {
+            conn = LibvirtConnection.getConnection();
+            primaryPool = _storageResource.getStoragePool(conn, pool.getUuid());
+            LibvirtStoragePoolDef primary = _storageResource.getStoragePoolDef(conn, primaryPool);
+            String primaryMountPath = primary.getTargetPath();
+            
+            StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(secondaryStorageUrl));
+            LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
+            String ssPmountPath = spd.getTargetPath();
+            
+            String volumeName = UUID.randomUUID().toString();
+            
+            if (copyToSecondary) {
+                StorageVol volume = _storageResource.getVolume(conn, primaryPool, volumePath);
+                String volumeDestPath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator;
+                _storageResource.copyVolume(volumePath, volumeDestPath, volumeName, _cmdsTimeout);
+                return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
+            } else {
+                volumePath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator + volumePath;
+                _storageResource.copyVolume(volumePath, primaryMountPath, volumeName, _cmdsTimeout);
+                return new CopyVolumeAnswer(cmd, true, null, null, primaryMountPath + File.separator + volumeName);
+            }
+           
+        } catch (LibvirtException e) {
+            return new CopyVolumeAnswer(cmd, false, e.toString(), null, null);
+        } catch (URISyntaxException e) {
+            return new CopyVolumeAnswer(cmd, false, e.toString(), null, null);
+        } catch (InternalErrorException e) {
+            return new CopyVolumeAnswer(cmd, false, e.toString(), null, null);
+        }
+       
+    }
+
+    protected Answer execute(DeleteStoragePoolCommand cmd) {
 		try {
 			Connect conn = LibvirtConnection.getConnection();
 			_storageResource.deleteStoragePool(conn, cmd.getPool());
