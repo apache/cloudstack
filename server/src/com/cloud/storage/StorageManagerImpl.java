@@ -1259,11 +1259,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } else {
             createCapacityEntry(pool);
         }
-
-        // ensures cpvm is restarted even if the existing pools in system are in maintenance, hence flag below was hitherto in
-        // false state
-        _configMgr.updateConfiguration(UserContext.current().getCallerUserId(), "consoleproxy.restart", "true");
-
         return pool;
     }
 
@@ -2048,7 +2043,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             // check to see if other ps exist
             // if they do, then we can migrate over the system vms to them
             // if they dont, then just stop all vms on this one
-            List<StoragePoolVO> upPools = _storagePoolDao.listPoolsByStatus(StoragePoolStatus.Up);
+            List<StoragePoolVO> upPools = _storagePoolDao.listByStatus(StoragePoolStatus.Up);
 
             if (upPools == null || upPools.size() == 0) {
                 restart = false;
@@ -2097,11 +2092,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
                 // if the instance is of type consoleproxy, call the console proxy
                 if (vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
-                    // make sure it is not restarted again, update config to set flag to false
-                    if (!restart) {
-                        _configMgr.updateConfiguration(userId, "consoleproxy.restart", "false");
-                    }
-
                     // call the consoleproxymanager
                     ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(vmInstance.getId());
                     if (!_vmMgr.advanceStop(consoleProxy, true, user, account)) {
@@ -2115,8 +2105,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     }
 
                     if (restart) {
-                        // Restore config val for consoleproxy.restart to true
-                        _configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
 
                         if (_vmMgr.advanceStart(consoleProxy, null, user, account) == null) {
                             String errorMsg = "There was an error starting the console proxy id: " + vmInstance.getId() + " on another storage pool, cannot enable primary storage maintenance";
@@ -2349,20 +2337,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     }
                 }
             }
-
-            // Restore config val for consoleproxy.restart to true
-            try {
-                _configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
-            } catch (InvalidParameterValueException e) {
-                String msg = "Error changing consoleproxy.restart back to false at end of cancel maintenance:";
-                s_logger.warn(msg, e);
-                throw new ExecutionException(msg);
-            } catch (CloudRuntimeException e) {
-                String msg = "Error changing consoleproxy.restart back to false at end of cancel maintenance:";
-                s_logger.warn(msg, e);
-                throw new ExecutionException(msg);
-            }
-
             return primaryStorage;
         } catch (Exception e) {
             setPoolStateToError(primaryStorage);
