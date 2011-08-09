@@ -32,7 +32,7 @@ import com.cloud.network.rules.FirewallRule;
 
 @Implementation(description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
 public class ListFirewallRulesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
 
     private static final String s_name = "listfirewallrulesresponse";
 
@@ -48,7 +48,7 @@ public class ListFirewallRulesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists port forwarding rules for the specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists firewall rules for the specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
