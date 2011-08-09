@@ -57,6 +57,7 @@ createSnapshotPolicy=com.cloud.api.commands.CreateSnapshotPolicyCmd;15
 deleteSnapshotPolicies=com.cloud.api.commands.DeleteSnapshotPoliciesCmd;15
 listSnapshotPolicies=com.cloud.api.commands.ListSnapshotPoliciesCmd;15
 
+
 #### template commands
 createTemplate=com.cloud.api.commands.CreateTemplateCmd;15
 registerTemplate=com.cloud.api.commands.RegisterTemplateCmd;15
@@ -67,6 +68,7 @@ listTemplates=com.cloud.api.commands.ListTemplatesCmd;15
 updateTemplatePermissions=com.cloud.api.commands.UpdateTemplatePermissionsCmd;15
 listTemplatePermissions=com.cloud.api.commands.ListTemplatePermissionsCmd;15
 extractTemplate=com.cloud.api.commands.ExtractTemplateCmd;15
+prepareTemplate=com.cloud.api.commands.PrepareTemplateCmd;1
 
 #### iso commands
 attachIso=com.cloud.api.commands.AttachIsoCmd;15

@@ -54,6 +54,7 @@ public enum Config {
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", null),
 	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume (in GB).", null),
 	TotalRetries("Storage", AgentManager.class, Integer.class, "total.retries", "4", "The number of times each command sent to a host should be retried in case of failure.", null),
+	StoragePoolMaxWaitSeconds("Storage", ManagementServer.class, Integer.class, "storage.pool.max.waitseconds", "3600", "Timeout (in seconds) to synchronize storage pool operations.", null),
 	
 	// Network
 	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, it can be global,guest-network,disabled", null),

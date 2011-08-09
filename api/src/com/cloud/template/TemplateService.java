@@ -26,6 +26,7 @@ import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.PrepareTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
@@ -39,6 +40,8 @@ public interface TemplateService {
     VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;
 
     VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
+    
+    VirtualMachineTemplate prepareTemplate(PrepareTemplateCmd cmd) ;
 
     boolean detachIso(DetachIsoCmd cmd);
 
