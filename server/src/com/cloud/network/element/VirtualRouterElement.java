@@ -152,7 +152,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         long host_id = 0;
         for (DomainRouterVO router : routers) {
             host_id = router.getHostId();
-            /* TODO it's not completely safe to ignore these failure, but we would try to push on now */
+            /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
             if (_routerMgr.stopRouter(router.getId(), false) == null) {
                 s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
             }

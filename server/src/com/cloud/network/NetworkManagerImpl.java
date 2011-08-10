@@ -2408,11 +2408,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Restarting network elements for the network " + network);
             for (NetworkElement element : _networkElements) {
                 // stop and start the network element
-                if (!element.restart(network, context)) {
-                    s_logger.warn("Failed to restart network element(s) as a part of network id" + networkId + " restart");
+                try {
+                    boolean supported = element.restart(network, context);
+                    if (!supported) {
+                        s_logger.trace("Network element(s) " + element.getName() + " doesn't support network id" + networkId + " restart");
+                    }
+                } catch (Exception ex) {
+                    s_logger.warn("Failed to restart network element" + element.getName() + " as a part of network id" + networkId + " restart", ex);
                     success = false;
                 }
+
             }
+        }
+
+        if (!success) {
+            return false;
         }
 
         // associate all ip addresses
