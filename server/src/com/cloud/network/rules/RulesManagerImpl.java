@@ -165,7 +165,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
         } 
         
-        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol());
+        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.PortForwarding);
         
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         Long accountId = ipAddress.getAccountId();
@@ -245,7 +245,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new NetworkRuleConflictException("Can't do static nat on ip address: " + ipAddress.getAddress());
         } 
         
-        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol());
+        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat);
         
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         Long accountId = ipAddress.getAccountId();

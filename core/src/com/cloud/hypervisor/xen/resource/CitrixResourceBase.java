@@ -156,7 +156,6 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -6479,7 +6478,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 		callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
 
 		if (callResult == null || callResult.isEmpty()) {
-		    //FIXME - in the future we have to process each rule separately; now we temporarely set every rule to be false if single rule fails
+		    //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
 		    for (int i=0; i < results.length; i++) {
 		        results[i] = "Failed";
 		    }
