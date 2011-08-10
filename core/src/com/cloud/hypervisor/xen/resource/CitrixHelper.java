@@ -38,67 +38,80 @@ public class CitrixHelper {
 
 
     static {
-    	_xcpGuestOsMap.put("CentOS 4.5 (32-bit)", "CentOS 4.5");
-    	_xcpGuestOsMap.put("CentOS 4.6 (32-bit)", "CentOS 4.6");
-    	_xcpGuestOsMap.put("CentOS 4.7 (32-bit)", "CentOS 4.7");
-    	_xcpGuestOsMap.put("CentOS 4.8 (32-bit)", "CentOS 4.8");
-    	_xcpGuestOsMap.put("CentOS 5.0 (32-bit)", "CentOS 5.0");
-    	_xcpGuestOsMap.put("CentOS 5.0 (64-bit)", "CentOS 5.0 x64");
-    	_xcpGuestOsMap.put("CentOS 5.1 (32-bit)", "CentOS 5.1");
-    	_xcpGuestOsMap.put("CentOS 5.1 (64-bit)", "CentOS 5.1 x64");
-    	_xcpGuestOsMap.put("CentOS 5.2 (32-bit)", "CentOS 5.2");
-    	_xcpGuestOsMap.put("CentOS 5.2 (64-bit)", "CentOS 5.2 x64");
-    	_xcpGuestOsMap.put("CentOS 5.3 (32-bit)", "CentOS 5.3");
-    	_xcpGuestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5.3 x64");
-    	_xcpGuestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5.4");
-    	_xcpGuestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5.4 x64");
-    	_xcpGuestOsMap.put("Debian GNU/Linux 5.0 (32-bit)", "Debian Lenny 5.0 (32-bit)");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5.0");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5.0 x64");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5.1");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.1 (64-bit)", "Oracle Enterprise Linux 5.1 x64");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.2 (32-bit)", "Oracle Enterprise Linux 5.2");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.2 (64-bit)", "Oracle Enterprise Linux 5.2 x64");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.3 (32-bit)", "Oracle Enterprise Linux 5.3");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.3 (64-bit)", "Oracle Enterprise Linux 5.3 x64");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.4 (32-bit)", "Oracle Enterprise Linux 5.4");
-    	_xcpGuestOsMap.put("Oracle Enterprise Linux 5.4 (64-bit)", "Oracle Enterprise Linux 5.4 x64");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5.0");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5.0 x64");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5.1");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.1 (64-bit)", "Red Hat Enterprise Linux 5.1 x64");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5.2");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5.2 x64");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5.3");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5.3 x64");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5.4");
-    	_xcpGuestOsMap.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5.4 x64");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", "SUSE Linux Enterprise Server 9 SP4");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 x64");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", "SUSE Linux Enterprise Server 10 SP2");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", "SUSE Linux Enterprise Server 10 SP2 x64");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", "Other install media");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 11 (32-bit)", "SUSE Linux Enterprise Server 11");
-    	_xcpGuestOsMap.put("SUSE Linux Enterprise Server 11 (64-bit)", "SUSE Linux Enterprise Server 11 x64");
-    	_xcpGuestOsMap.put("Windows 7 (32-bit)", "Windows 7");
-    	_xcpGuestOsMap.put("Windows 7 (64-bit)", "Windows 7 x64");
-    	_xcpGuestOsMap.put("Windows Server 2003 (32-bit)", "Windows Server 2003");
-    	_xcpGuestOsMap.put("Windows Server 2003 (64-bit)", "Windows Server 2003 x64");
-    	_xcpGuestOsMap.put("Windows Server 2008 (32-bit)", "Windows Server 2008");
-    	_xcpGuestOsMap.put("Windows Server 2008 (64-bit)", "Windows Server 2008 x64");
-    	_xcpGuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 x64");
-    	_xcpGuestOsMap.put("Windows 2000 SP4 (32-bit)", "Windows 2000 SP4");
-    	_xcpGuestOsMap.put("Windows Vista (32-bit)", "Windows Vista");
-    	_xcpGuestOsMap.put("Windows XP SP2 (32-bit)", "Windows XP SP2");
-    	_xcpGuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3");
-    	_xcpGuestOsMap.put("Other install media", "Other install media");
-    	_xcpGuestOsMap.put("Other PV (32-bit)", "CentOS 5.5 (32-bit)");
-    	_xcpGuestOsMap.put("Other PV (64-bit)", "CentOS 5.5 (64-bit)");
+        _xcpGuestOsMap.put("CentOS 4.5 (32-bit)", "CentOS 4.5 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 4.6 (32-bit)", "CentOS 4.6 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 4.7 (32-bit)", "CentOS 4.7 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 4.8 (32-bit)", "CentOS 4.8 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 5.0 (32-bit)", "CentOS 5 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 5.0 (64-bit)", "CentOS 5 (64-bit)");
+        _xcpGuestOsMap.put("CentOS 5.1 (32-bit)", "CentOS 5 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 5.1 (64-bit)", "CentOS 5 (64-bit)");
+        _xcpGuestOsMap.put("CentOS 5.2 (32-bit)", "CentOS 5 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 5.2 (64-bit)", "CentOS 5 (64-bit)");
+        _xcpGuestOsMap.put("CentOS 5.3 (32-bit)", "CentOS 5 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5 (64-bit)");
+        _xcpGuestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5 (64-bit)");
+        _xcpGuestOsMap.put("CentOS 5.5 (32-bit)", "CentOS 5 (32-bit)");
+        _xcpGuestOsMap.put("CentOS 5.5 (64-bit)", "CentOS 5 (64-bit)");
+        _xcpGuestOsMap.put("Debian GNU/Linux 5.0 (32-bit)", "Debian Lenny 5.0 (32-bit)");
+        _xcpGuestOsMap.put("Debian GNU/Linux 6(32-bit)", "Debian Squeeze 6.0 (32-bit)");
+        _xcpGuestOsMap.put("Debian GNU/Linux 6(64-bit)", "Debian Squeeze 6.0 (64-bit) (experimental)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.1 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.2 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.2 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.3 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.3 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.4 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.4 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.5 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Oracle Enterprise Linux 5.5 (64-bit)", "Oracle Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.1 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.5 (32-bit)", "Red Hat Enterprise Linux 5 (32-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 5.5 (64-bit)", "Red Hat Enterprise Linux 5 (64-bit)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6 (32-bit) (experimental)");
+        _xcpGuestOsMap.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6 (64-bit) (experimental)");
+        ;
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", "SUSE Linux Enterprise Server 9 SP4");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 x64");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", "SUSE Linux Enterprise Server 10 SP2");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", "SUSE Linux Enterprise Server 10 SP2 x64");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", "Other install media");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 11 (32-bit)", "SUSE Linux Enterprise Server 11");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 11 (64-bit)", "SUSE Linux Enterprise Server 11 x64");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", "SUSE Linux Enterprise Server 11 SP1 (32-bit)");
+        _xcpGuestOsMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", "SUSE Linux Enterprise Server 11 SP1 (64-bit)");
+        _xcpGuestOsMap.put("Windows 7 (32-bit)", "Windows 7 (32-bit)");
+        _xcpGuestOsMap.put("Windows 7 (64-bit)", "Windows 7 (64-bit)");
+        _xcpGuestOsMap.put("Windows Server 2003 (32-bit)", "Windows Server 2003 (32-bit)");
+        _xcpGuestOsMap.put("Windows Server 2003 (64-bit)", "Windows Server 2003 (64-bit)");
+        _xcpGuestOsMap.put("Windows Server 2008 (32-bit)", "Windows Server 2008 (32-bit)");
+        _xcpGuestOsMap.put("Windows Server 2008 (64-bit)", "Windows Server 2008 (64-bit)");
+        _xcpGuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 (64-bit)");
+        _xcpGuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
+        _xcpGuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
+        _xcpGuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
+        _xcpGuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
+        _xcpGuestOsMap.put("Other install media", "Other install media");
+        _xcpGuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
+        _xcpGuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
     
     static {
@@ -163,8 +176,6 @@ public class CitrixHelper {
     	_xenServerGuestOsMap.put("Other install media", "Other install media");
     	_xenServerGuestOsMap.put("Other PV (32-bit)", "CentOS 5.4 (32-bit)");
     	_xenServerGuestOsMap.put("Other PV (64-bit)", "CentOS 5.4 (64-bit)");
-//        _xenServerGuestOsMap.put("Ubuntu 10.04 (32-bit)", "CentOS 5.3 (32-bit");
-//        _xenServerGuestOsMap.put("Ubuntu 10.04 (64-bit)", "CentOS 5.3 (64-bit");
     }
     
     static {
@@ -238,8 +249,8 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
         _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
         _xenServer56FP1GuestOsMap.put("Other install media", "Other install media");
-        _xenServer56FP1GuestOsMap.put("Other PV (32-bit)", "CentOS 5.5 (32-bit)");
-        _xenServer56FP1GuestOsMap.put("Other PV (64-bit)", "CentOS 5.5 (64-bit)");
+        _xenServer56FP1GuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP1GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
     
     
@@ -314,8 +325,8 @@ public class CitrixHelper {
         _xenServer56FP2GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
         _xenServer56FP2GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
         _xenServer56FP2GuestOsMap.put("Other install media", "Other install media");
-        _xenServer56FP2GuestOsMap.put("Other PV (32-bit)", "CentOS 5.5 (32-bit)");
-        _xenServer56FP2GuestOsMap.put("Other PV (64-bit)", "CentOS 5.5 (64-bit)");
+        _xenServer56FP2GuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
+        _xenServer56FP2GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
     
     
