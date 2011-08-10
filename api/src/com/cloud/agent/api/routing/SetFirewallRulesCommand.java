@@ -17,9 +17,13 @@
  */
 package com.cloud.agent.api.routing;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.agent.api.to.FirewallRuleTO;
+import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.utils.StringUtils;
 
 /**
  * SetFirewallRulesCommand is the transport for firewall rules.
@@ -40,4 +44,46 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
     public FirewallRuleTO[] getRules() {
         return rules;
     }
+
+	public String[][] generateFwRules() {
+		String [][] result = new String [2][];
+		Set<String> toAdd = new HashSet<String>();
+
+		
+		for (FirewallRuleTO fwTO: rules) {
+			if (fwTO.revoked() == true) continue;
+			
+			List<String> cidr;
+			StringBuilder sb = new StringBuilder();
+			sb.append(fwTO.getProtocol()).append(":");
+			if ("icmp".compareTo(fwTO.getProtocol()) == 0)
+			{
+				sb.append(fwTO.getIcmpType()).append(":").append(fwTO.getIcmpCode()).append(":");
+				
+			}else if (fwTO.getStringSrcPortRange() == null)
+				sb.append("0:0").append(":");
+			else
+			    sb.append(fwTO.getStringSrcPortRange()).append(":");
+			cidr = fwTO.getSourceCidrList();
+			if (cidr == null || cidr.isEmpty())
+			{
+				sb.append("0.0.0.0/0");
+			}else{
+				Boolean firstEntry = true;
+	            for (String tag : cidr) {
+	            	if (!firstEntry) sb.append("-"); 
+	        	   sb.append(tag);
+	        	   firstEntry = false;
+	            }
+			}
+			sb.append(":");
+			String fwRuleEntry = sb.toString();
+		
+			toAdd.add(fwRuleEntry);
+			
+		}
+		result[0] = toAdd.toArray(new String[toAdd.size()]);
+		
+		return result;
+	}
 }
