@@ -1573,8 +1573,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         Long memory = cmd.getMemory();
-        if ((memory == null) || (memory.intValue() <= 0) || (memory.intValue() > 2147483647)) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 1 and 2147483647");
+        if ((memory == null) || (memory.intValue() < 32) || (memory.intValue() > 2147483647)) {
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 32 and 2147483647 MB");
         }
 
         // check if valid domain

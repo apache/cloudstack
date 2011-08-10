@@ -275,7 +275,7 @@ public class StatsCollector {
                     GetStorageStatsCommand command = new GetStorageStatsCommand(host.getStorageUrl());
                     HostVO ssAhost = _agentMgr.getSSAgent(host);
                     if (ssAhost == null) {
-                        s_logger.warn("There is no secondary storage VM for secondary storage host " + host.getName());
+                        s_logger.debug("There is no secondary storage VM for secondary storage host " + host.getName());
                         continue;
                     }
                     long hostId = host.getId();

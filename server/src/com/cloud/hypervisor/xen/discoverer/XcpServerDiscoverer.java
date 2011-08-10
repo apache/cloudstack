@@ -380,7 +380,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         String prodBrand = record.softwareVersion.get("product_brand").trim();
         String prodVersion = record.softwareVersion.get("product_version").trim();
         
-        if(prodBrand.equals("XenCloudPlatform") && prodVersion.equals("0.1.1")) 
+        if(prodBrand.equals("XCP") && prodVersion.equals("1.0.0")) 
         	return new XcpServerResource();
         
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
@@ -398,7 +398,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         }
         
-        String msg = "Only support XCP 0.1.1, XenServer 5.6,  XenServer 5.6 FP1 and XenServer 5.6 SP2, but this one is " + prodBrand + " " + prodVersion;
+        String msg = "Only support XCP 1.0.0, XenServer 5.6,  XenServer 5.6 FP1 and XenServer 5.6 SP2, but this one is " + prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);
@@ -525,7 +525,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         String prodBrand = details.get("product_brand").trim();
         String prodVersion = details.get("product_version").trim();
         
-        if(prodBrand.equals("XenCloudPlatform") && prodVersion.equals("0.1.1")) {
+        if(prodBrand.equals("XCP") && prodVersion.equals("1.0.0")) {
             resource = XcpServerResource.class.getName();
         } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) {
             resource = XenServer56Resource.class.getName();
@@ -540,7 +540,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         }
         if( resource == null ){
-            String msg = "Only support XCP 0.1.1, XenServer 5.6,  XenServer 5.6 FP1 and XenServer 5.6 SP2, but this one is " + prodBrand + " " + prodVersion;
+            String msg = "Only support XCP 1.0.0, XenServer 5.6,  XenServer 5.6 FP1 and XenServer 5.6 SP2, but this one is " + prodBrand + " " + prodVersion;
             s_logger.debug(msg);
             throw new RuntimeException(msg);
         }

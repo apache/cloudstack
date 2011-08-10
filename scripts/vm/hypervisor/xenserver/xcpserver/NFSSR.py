@@ -24,9 +24,10 @@ import vhdutil
 from lock import Lock
 import cleanup
 
-CAPABILITIES = ["SR_PROBE","SR_UPDATE", \
+CAPABILITIES = ["SR_PROBE","SR_UPDATE", "SR_CACHING", \
                 "VDI_CREATE","VDI_DELETE","VDI_ATTACH","VDI_DETACH", \
-                "VDI_UPDATE", "VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE","VDI_RESIZE_ONLINE"]
+                "VDI_UPDATE", "VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE", \
+                "VDI_RESIZE_ONLINE", "VDI_RESET_ON_BOOT", "ATOMIC_PAUSE"]
 
 CONFIGURATION = [ [ 'server', 'hostname or IP address of NFS server (required)' ], \
                   [ 'serverpath', 'path on remote server (required)' ] ]
@@ -59,6 +60,7 @@ class NFSSR(FileSR.FileSR):
 
 
     def load(self, sr_uuid):
+        self.ops_exclusive = FileSR.OPS_EXCLUSIVE
         self.lock = Lock(vhdutil.LOCK_TYPE_SR, self.uuid)
         self.sr_vditype = SR.DEFAULT_TAP
         if not self.dconf.has_key('server'):
@@ -99,12 +101,10 @@ class NFSSR(FileSR.FileSR):
             raise xs_errors.XenError('NFSMount', opterr=exc.errstr)
 
 
-    @FileSR.locking("SRUnavailable")
     def attach(self, sr_uuid):
         self.validate_remotepath(False)
         #self.remotepath = os.path.join(self.dconf['serverpath'], sr_uuid)
         self.remotepath = self.dconf['serverpath']
-
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
         self.mount_remotepath(sr_uuid)
 
@@ -117,7 +117,6 @@ class NFSSR(FileSR.FileSR):
         return super(NFSSR, self).attach(sr_uuid)
 
 
-    @FileSR.locking("SRUnavailable")
     def probe(self):
         # Verify NFS target and port
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
@@ -137,7 +136,6 @@ class NFSSR(FileSR.FileSR):
                 pass
 
 
-    @FileSR.locking("SRUnavailable")
     def detach(self, sr_uuid):
         """Detach the SR: Unmounts and removes the mountpoint"""
         if not self._checkmount():
@@ -156,7 +154,6 @@ class NFSSR(FileSR.FileSR):
         return super(NFSSR, self).detach(sr_uuid)
         
 
-    @FileSR.locking("SRUnavailable")
     def create(self, sr_uuid, size):
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
         self.validate_remotepath(True)
@@ -191,7 +188,6 @@ class NFSSR(FileSR.FileSR):
         #                % inst.code)
         self.detach(sr_uuid)
 
-    @FileSR.locking("SRUnavailable")
     def delete(self, sr_uuid):
         # try to remove/delete non VDI contents first
         super(NFSSR, self).delete(sr_uuid)
@@ -215,7 +211,7 @@ class NFSSR(FileSR.FileSR):
 
     def vdi(self, uuid, loadLocked = False):
         if not loadLocked:
-            return NFSFileVDINolock(self, uuid)
+            return NFSFileVDI(self, uuid)
         return NFSFileVDI(self, uuid)
     
     def _checkmount(self):
@@ -252,11 +248,6 @@ class NFSFileVDI(FileSR.FileVDI):
             timestamp_after += 1
             os.utime(self.sr.path, (timestamp_after, timestamp_after))
         return ret
-
-class NFSFileVDINolock(NFSFileVDI):
-    def load(self, vdi_uuid):
-        self.lock = self.sr.lock
-        self._load(vdi_uuid)
 
 
 if __name__ == '__main__':

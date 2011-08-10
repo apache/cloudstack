@@ -333,7 +333,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
     
     protected boolean isRefNull(XenAPIObject object) {
-        return (object == null || object.toWireString().equals("OpaqueRef:NULL"));
+        return (object == null || object.toWireString().equals("OpaqueRef:NULL") || object.toWireString().equals("<not in database>"));
     }
 
     @Override
@@ -2578,7 +2578,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 final State state = convertToState(ps);
                 Host host = record.residentOn;
                 String host_uuid = null;
-                if( host != null ) {
+                if( ! isRefNull(host) ) {
                     host_uuid = host.getUuid(conn);
                     if( host_uuid.equals(_host.uuid)) {
                         synchronized (_vms) {
