@@ -3,7 +3,5 @@
 ifconfig eth2 down && \
 ifconfig eth2 hw ether [ETH2MAC] && \
 ifconfig eth2 up && \
-sleep 3 && \
 ip route add 0/0 via [GATEWAY] && \
-sleep 3 && \
 service dnsmasq restart

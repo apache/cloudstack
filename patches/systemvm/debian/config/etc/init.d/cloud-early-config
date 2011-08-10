@@ -162,7 +162,10 @@ setup_interface() {
   fi
 
   ifdown $intf
-  ifup $intf
+  if [ "$RROUTER" != "1" -o "$1" != "2" ]
+  then
+	  ifup $intf
+  fi
 }
 
 enable_fwding() {
@@ -197,7 +200,7 @@ setup_common() {
   init_interfaces $1 $2 $3
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
-  if [ -n "$ETH2_IP" -a "$RROUTER" != "1" ]
+  if [ -n "$ETH2_IP" ]
   then
   	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
   fi
@@ -325,12 +328,10 @@ setup_router() {
   log_it "Setting up virtual router system vm"
   if [ -n "$ETH2_IP" ]
   then
+      setup_common eth0 eth1 eth2
       if [ "$RROUTER" == "1" ]
       then
-  	    setup_common eth0 eth1
         setup_redundant_router
-      else
-  	    setup_common eth0 eth1 eth2
       fi
   else
   	setup_common eth0 eth1
