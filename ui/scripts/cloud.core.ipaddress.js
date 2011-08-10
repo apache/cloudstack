@@ -795,8 +795,10 @@ function ipJsonToPortRangeTab() {
                 var protocols = supportedProtocolsCapabilityObj.value.toUpperCase();  //e.g. "tcp,udp" => "TCP,UDP"         
                 var array1 = protocols.split(",");
                 var $protocolField = $("#create_port_range_row").find("#protocol").empty();
-                for(var i=0; i<array1.length; i++)
-                    $protocolField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+                for(var i=0; i<array1.length; i++) {
+                	if(array1[i] != "ICMP")
+                        $protocolField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+                }
             }  
         }
     }  
@@ -849,8 +851,10 @@ function ipJsonToPortForwardingTab() {
                 var protocols = supportedProtocolsCapabilityObj.value.toUpperCase();  //e.g. "tcp,udp" => "TCP,UDP"         
                 var array1 = protocols.split(",");
                 var $protocolField = $("#create_port_forwarding_row").find("#protocol").empty();
-                for(var i=0; i<array1.length; i++)
-                    $protocolField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+                for(var i=0; i<array1.length; i++) {
+                	if(array1[i] != "ICMP")
+                        $protocolField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+                }
             }  
         }
     }  
