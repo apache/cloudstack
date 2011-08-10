@@ -234,6 +234,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         }
 
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
+        if (srcTmpltHost.getSize() > maxTemplateSizeInBytes){
+        	throw new CloudRuntimeException("Cant copy the template as the template's size " +srcTmpltHost.getSize()+
+        			" is greater than max.template.iso.size " + maxTemplateSizeInBytes);
+        }
         
 		if(destTmpltHost != null) {
 		    start();
