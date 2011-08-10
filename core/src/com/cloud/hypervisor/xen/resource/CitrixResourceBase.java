@@ -6454,35 +6454,34 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	    return new Answer(cmd, success, "");
 	}
 	
-  protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
-	  String[] results = new String[cmd.getRules().length];
-	  String ret;
-	  Connection conn = getConnection();
-      String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+	protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
+		String[] results = new String[cmd.getRules().length+1];
+		String callResult;
+		Connection conn = getConnection();
+		String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
-      if (routerIp == null) {
-        	 return new SetFirewallRulesAnswer(cmd, false, results);
-      }
+		if (routerIp == null) {
+			return new SetFirewallRulesAnswer(cmd, false, results);
+		}
 
-      String[][] rules = cmd.generateFwRules();
-      String args = "";
-      args +=  routerIp+" -F ";
-      StringBuilder sb = new StringBuilder();
-      String[] addRules = rules[0];
-      if (addRules.length > 0) {
-          for (int i = 0; i < addRules.length; i++) {
-                sb.append(addRules[i]).append(',');
-           }
-           args += " -a " + sb.toString();
-      }
+		String[][] rules = cmd.generateFwRules();
+		String args = "";
+		args += routerIp + " -F ";
+		StringBuilder sb = new StringBuilder();
+		String[] fwRules = rules[0];
+		if (fwRules.length > 0) {
+			for (int i = 0; i < fwRules.length; i++) {
+				sb.append(fwRules[i]).append(',');
+			}
+			args += " -a " + sb.toString();
+		}
 
-      ret = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
-   
-      if (ret == null || ret.isEmpty()) { 
-            return new SetFirewallRulesAnswer(cmd,false, results);
-      }
-      return new SetFirewallRulesAnswer(cmd, true, results);
+		callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
 
-  }
-	
+		if (callResult == null || callResult.isEmpty()) {
+			results[cmd.getRules().length] = "failed";
+			return new SetFirewallRulesAnswer(cmd, false, results);
+		}
+		return new SetFirewallRulesAnswer(cmd, true, results);
+	}
 }
