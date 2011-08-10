@@ -155,7 +155,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         if (nic.getIp4Address() == null) {
             nic.setStrategy(ReservationStrategy.Start);
         } else {
-            nic.setStrategy(ReservationStrategy.Create);
+            nic.setStrategy(ReservationStrategy.Managed);
         }
 
         return nic;
@@ -182,7 +182,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
         IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
-        if (ip != null) {
+        if (ip != null && nic.getReservationStrategy() != ReservationStrategy.Managed) {
             _networkMgr.markIpAsUnavailable(ip.getId());
             _ipAddressDao.unassignIpAddress(ip.getId());
         }
