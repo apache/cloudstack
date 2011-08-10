@@ -83,7 +83,7 @@ public interface Nic {
     }
 
     public enum ReservationStrategy {
-        PlaceHolder, Create, Start;
+        PlaceHolder, Create, Start, Managed;
     }
 
     /**
