@@ -71,8 +71,7 @@ function afterLoadIpJSP() {
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_port_range"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer"), $("#tab_content_vpn")];
     var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToPortRangeTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab, ipJsonToVPNTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
-    //***** switch between different tabs (end) **********************************************************************
-        
+    //***** switch between different tabs (end) **********************************************************************  
     if(g_supportELB == "guest" || g_supportELB == "public") {
 		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
 				
@@ -1385,12 +1384,8 @@ function ipJsonToDetailsTab() {
 	else if(g_supportELB == "public") {
 		cmd = "command=listPublicIpAddresses&forvirtualnetwork=true&id="+publicipid;
 	}
-	else {
-		if(g_supportELB == null)
-	        alert("supportELB should be either guest or public. It should not be null.");
-	    else 
-	    	alert("supportELB should be either guest or public. It should not be " + g_supportELB);
-		return;
+	else { //g_supportELB == "false"
+		cmd = "command=listPublicIpAddresses&id="+publicipid;
 	}		
     
     $.ajax({
