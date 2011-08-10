@@ -246,7 +246,7 @@ setup_common() {
   fi
  
   # a hacking way to activate vSwitch under VMware
-  ping -n -c 3 -deadline 5 $GW
+  ping -n -c 3 -w 5 $GW
 }
 
 setup_dnsmasq() {
