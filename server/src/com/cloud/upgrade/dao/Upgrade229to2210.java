@@ -19,6 +19,8 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
@@ -55,6 +57,15 @@ public class Upgrade229to2210 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        PreparedStatement pstmt;
+        try {
+            pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` (category, instance, name, value, description) VALUES ('Network', 'DEFAULT', 'firewall.rule.ui.enabled', 'true', 'enable/disable UI that separates firewall rules from NAT/LB rules')");
+            pstmt.execute();
+            
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to perform data migration", e);
+        }
     }
 
     @Override
