@@ -150,27 +150,21 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
 
         /* Get the host_id in order to find the cluster */
         long host_id = 0;
-        boolean result = true;
-        boolean ret = true;
         for (DomainRouterVO router : routers) {
             host_id = router.getHostId();
+            /* TODO it's not completely safe to ignore these failure, but we would try to push on now */
             if (_routerMgr.stopRouter(router.getId(), false) == null) {
-                s_logger.warn("Failed to stop virtual router element " + router + " as a part of netowrk " + network + " restart");
-                ret = false;
+                s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
             }
-            result = _routerMgr.destroyRouter(router.getId());
-            if (!result) {
-                s_logger.warn("Failed to destroy virtual router element " + router + " as a part of netowrk " + network + " restart");
-                ret = false;
+            if (!_routerMgr.destroyRouter(router.getId())) {
+                s_logger.warn("Failed to destroy virtual router element " + router + " as a part of network " + network + " restart");
             }
-           
         }
         
-        
+        /* The cluster here is only used to determine hypervisor type, not the real deployment */
         Cluster cluster = _configMgr.getCluster(_hostDao.findById(host_id).getClusterId());
         dest = new DeployDestination(dc, null, cluster, null);
-        implement(network, networkOffering, dest, context);
-        return ret;
+        return implement(network, networkOffering, dest, context);
     }
 
     @Override
