@@ -125,15 +125,15 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     public void execute() throws ResourceUnavailableException {
         UserContext callerContext = UserContext.current();
         boolean success = true;
-        PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
+        PortForwardingRule rule = null;
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyFirewallRules(rule.getSourceIpAddressId(), callerContext.getCaller());
+                success = success && _firewallService.applyFirewallRules(ipAddressId, callerContext.getCaller());
             }
             
-            success = success && _rulesService.applyPortForwardingRules(rule.getSourceIpAddressId(), callerContext.getCaller());
+            success = success && _rulesService.applyPortForwardingRules(ipAddressId, callerContext.getCaller());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());

@@ -112,7 +112,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
             UserContext.current().setEventDetails("Rule Id: "+ getEntityId());
             
             if (getOpenFirewall()) {
-                result = result && _firewallService.applyFirewallRules(rule.getSourceIpAddressId(), UserContext.current().getCaller());
+                result = result && _firewallService.applyFirewallRules(ipAddressId, UserContext.current().getCaller());
             }
             
             result = result && _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCaller());
