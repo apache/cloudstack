@@ -2066,6 +2066,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.warn("Unable to associate ip addresses, virtual router is not in the right state " + router.getState());
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
             }
+            
+            //If rules fail to apply on one domR, no need to proceed with the rest
+            if (!result) {
+                throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+            }
+            
         }
         return result;
     }
@@ -2103,6 +2109,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         result = false;
                     }
                 }
+                
+                //If rules fail to apply on one domR, no need to proceed with the rest
+                if (!result) {
+                    throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+                }
+                
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
                 s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
             } else {
@@ -2110,6 +2122,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 throw new ResourceUnavailableException("Unable to apply firewall rules, virtual router is not in the right state", VirtualRouter.class, router.getId());
             }
         }
+        
         return result;
     }
 
