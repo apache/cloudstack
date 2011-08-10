@@ -418,7 +418,7 @@ function afterLoadIpJSP() {
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;		
 	
-		isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
+		//isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
 				
 		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535, false); //required
 		isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
@@ -426,17 +426,9 @@ function afterLoadIpJSP() {
 		isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535, false); //required		
 		isValid &= validateInteger("Private End Port", $createPortForwardingRow.find("#private_end_port"), $createPortForwardingRow.find("#private_end_port_errormsg"), 1, 65535, true); //optional				
 		
-			isValid &= validateCIDRList("CIDR", $createPortForwardingRow.find("#cidr"), $createPortForwardingRow.find("#cidr_errormsg"), true); //optional		
-					
-			isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535, false); //required
-			//isValid &= validateInteger("Public End Port", $createPortForwardingRow.find("#public_end_port"), $createPortForwardingRow.find("#public_end_port_errormsg"), 1, 65535, true); //optional
-			
-			isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535, false); //required		
-			//isValid &= validateInteger("Private End Port", $createPortForwardingRow.find("#private_end_port"), $createPortForwardingRow.find("#private_end_port_errormsg"), 1, 65535, true); //optional				
-			
-			isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
-			if (!isValid) 
-			    return;			
+	    isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));	
+		if (!isValid) 
+		    return;			
 		    
 		    var $template = $("#port_forwarding_template").clone();
 		    $("#tab_content_port_forwarding #grid_content").append($template.show());		
@@ -450,11 +442,7 @@ function afterLoadIpJSP() {
 				
 	        var array1 = [];
 	        array1.push("&ipaddressid="+ipObj.id);           
-	        
-	        var cidr = $createPortForwardingRow.find("#cidr").val();
-	        if(cidr != null && cidr.length > 0)
-	        	array1.push("&cidrlist="+cidr);
-	        
+	        	      
 		    var publicPort = $createPortForwardingRow.find("#public_port").val();
 		    array1.push("&publicport="+publicPort);	    
 		    var publicEndPort = $createPortForwardingRow.find("#public_end_port").val();
@@ -1718,9 +1706,7 @@ function ipClearPortForwardingTab() {
 
 function portForwardingJsonToTemplate(jsonObj, $template) {				        
     $template.attr("id", "portForwarding_" + fromdb(jsonObj.id)).data("portForwardingId", fromdb(jsonObj.id));	
-    
-    $template.find("#cidr").text(fromdb(jsonObj.cidrlist));
-    
+       
     var publicPort = fromdb(jsonObj.publicport);
     if(jsonObj.publicendport != null && jsonObj.publicendport.length > 0)
     	publicPort += (" - " + fromdb(jsonObj.publicendport));    
