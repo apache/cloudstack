@@ -31,8 +31,11 @@ import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -132,7 +135,9 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_adminCommands = null;
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
-
+    private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private HashMap<Long, String> usedSignatures = new HashMap<Long, String>(); 
+    
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
     static {
@@ -546,6 +551,9 @@ public class ApiServer implements HttpRequestHandler {
 
             Collections.sort(parameterNames);
 
+            String signatureVersion = null;
+            String expires = null;
+            
             for (String paramName : parameterNames) {
                 // parameters come as name/value pairs in the form String/String[]
                 String paramValue = ((String[]) requestParameters.get(paramName))[0];
@@ -556,7 +564,12 @@ public class ApiServer implements HttpRequestHandler {
                     if ("apikey".equalsIgnoreCase(paramName)) {
                         apiKey = paramValue;
                     }
-
+                    else if ("signatureversion".equalsIgnoreCase(paramName)) {
+                    	signatureVersion = paramValue;
+                    } else if ("expires".equalsIgnoreCase(paramName)) {
+                    	expires = paramValue;
+                    }
+                    
                     if (unsignedRequest == null) {
                         unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
                     } else {
@@ -573,6 +586,27 @@ public class ApiServer implements HttpRequestHandler {
                 return false; // no signature, bad request
             }
 
+            Date expiresTS = null;
+            if("3".equals(signatureVersion)){
+            	// New signature authentication. Check for expire parameter and its validity
+            	if(expires == null){
+            		s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+            		return false;
+            	}
+            	synchronized (_dateFormat) {
+            		expiresTS = _dateFormat.parse(expires);
+            	}
+            	Date now = new Date(System.currentTimeMillis());
+            	if(expiresTS.before(now)){
+            		s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+            		return false;
+            	}
+            	if(usedSignatures.containsValue(signature)){
+            		s_logger.info("Duplicate signature -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+            		return false;
+            	}
+            }
+            
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
             User user = null;
@@ -617,6 +651,11 @@ public class ApiServer implements HttpRequestHandler {
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+            } else {
+            	if("3".equals(signatureVersion)){
+            		//Add signature and expires timestamp to in-memory cache
+            		usedSignatures.put(expiresTS.getTime(), signature);
+            	}
             }
             return equalSig;
         } catch (Exception ex) {
