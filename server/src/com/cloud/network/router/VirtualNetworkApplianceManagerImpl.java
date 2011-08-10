@@ -78,7 +78,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -1068,11 +1067,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             if (!routers.isEmpty()) {
-                //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
-                if (isPodBased) {
-                    List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(guestNetwork.getId(), podId, State.Running);
-                    routers.addAll(allRunningRoutersOutsideThePod);
-                }
                 return routers;
             }
 
@@ -1128,6 +1122,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 _networkDao.releaseFromLockTable(network.getId());
             }
         }
+        
         return routers;
     }
 
@@ -1587,21 +1582,27 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         List<VirtualRouter> rets = new ArrayList<VirtualRouter>(routers.size());
+        
+        boolean sendPasswordAndVmData = true;
+        boolean sendDnsDhcpData = true;
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
+        
+        DataCenter dc = dest.getDataCenter();
+        String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
+        String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
+        boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
 
         for (DomainRouterVO router : routers) {
             if (router.getState() != State.Running) {
                 s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is not in Running state");
                 continue;
             }
-            boolean sendPasswordAndVmData = true;
-            boolean sendDnsDhcpData = true;
-            _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
             
             //for basic zone: 
             //1) send vm data/password information only to the dhcp in the same pod
             //2) send dhcp/dns information to all routers in the cloudstack only when _dnsBasicZoneUpdates is set to "all" value
-            DataCenter dc = dest.getDataCenter();
-            if (dc.getNetworkType() == NetworkType.Basic) {
+           
+            if (isZoneBasic) {
                 Long podId = dest.getPod().getId();
                 if (router.getPodIdToDeployIn().longValue() != podId.longValue()) {
                     sendPasswordAndVmData = false;
@@ -1650,8 +1651,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     cmds.addCommand("password", cmd);
                 }
 
-                String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
-                String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
+                
 
                 cmds.addCommand(
                         "vmdata",
@@ -2184,4 +2184,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         // Send commands to router
         return sendCommandsToRouter(router, cmds);
     }
+    
+    @Override
+    public String getDnsBasicZoneUpdate() {
+        return _dnsBasicZoneUpdates;
+    }
+    
 }

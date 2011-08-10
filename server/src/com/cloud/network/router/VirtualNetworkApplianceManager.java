@@ -72,7 +72,6 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	
 	List<DomainRouterVO> deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
-
 	List<VirtualRouter> addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 	
     boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
@@ -88,4 +87,6 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException;
     
     VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    String getDnsBasicZoneUpdate();
 }
