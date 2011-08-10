@@ -828,15 +828,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         @Override
         public void run() {
-            
-            final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
-            s_logger.debug("Found " + routers.size() + " running routers. ");
+            try {
+                final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
+                s_logger.debug("Found " + routers.size() + " running routers. ");
 
-            updateRoutersRedundantState(routers);
-            
-            /* FIXME assumed the a pair of redundant routers managed by same mgmt server,
-             * then the update above can get the latest status */
-            checkDuplicateMaster(routers);
+                updateRoutersRedundantState(routers);
+
+                /* FIXME assumed the a pair of redundant routers managed by same mgmt server,
+                 * then the update above can get the latest status */
+                checkDuplicateMaster(routers);
+            } catch (Exception ex) {
+                s_logger.error("Fail to complete the CheckRouterTask! ", ex);
+            }
         }
     }
 
