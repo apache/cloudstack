@@ -265,7 +265,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
-                networkId, accountId, domainId, rule.getPurpose(), null, null);
+                networkId, accountId, domainId, rule.getPurpose(), null, null, null);
         newRule = _firewallDao.persist(newRule);
 
         try {
@@ -904,7 +904,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null);
             }
             
-            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null);
+            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null);
             rules[i] = _firewallDao.persist(rules[i]);
         }
         txn.commit();
