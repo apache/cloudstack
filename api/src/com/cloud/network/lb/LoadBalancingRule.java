@@ -164,4 +164,9 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     public Integer getIcmpType() {
         return null;
     }
+
+    @Override
+    public List<String> getSourceCidrList() {
+        return null;
+    }
 }
