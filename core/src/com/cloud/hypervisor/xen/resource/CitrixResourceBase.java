@@ -6455,7 +6455,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	}
 	
 	protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
-		String[] results = new String[cmd.getRules().length+1];
+		String[] results = new String[cmd.getRules().length];
 		String callResult;
 		Connection conn = getConnection();
 		String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -6479,7 +6479,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 		callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
 
 		if (callResult == null || callResult.isEmpty()) {
-			results[cmd.getRules().length] = "failed";
+		    //FIXME - in the future we have to process each rule separately; now we temporarely set every rule to be false if single rule fails
+		    for (int i=0; i < results.length; i++) {
+		        results[i] = "Failed";
+		    }
 			return new SetFirewallRulesAnswer(cmd, false, results);
 		}
 		return new SetFirewallRulesAnswer(cmd, true, results);

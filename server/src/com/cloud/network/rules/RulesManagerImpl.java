@@ -225,7 +225,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
-            throw new CloudRuntimeException("Unable to add rule for the ip id=" + newRule.getSourceIpAddressId(), e);
+            throw new CloudRuntimeException("Unable to add rule for the ip id=" + ipAddrId, e);
         }
     }
 

@@ -66,6 +66,9 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
     private Boolean openFirewall;
     
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
+    private List<String> cidrlist;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -102,6 +105,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 
     @Override
     public void execute() throws ResourceUnavailableException{ 
+        
         boolean result = true;
         FirewallRule rule = null;
         try {
@@ -127,15 +131,19 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 
 	@Override
 	public void create() {
-		StaticNatRule rule;
+	    
+	    //cidr list parameter is deprecated
+        if (cidrlist != null) {
+            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+        }
+	    
         try {
-            rule = _rulesService.createStaticNatRule(this, getOpenFirewall());
+            StaticNatRule rule = _rulesService.createStaticNatRule(this, getOpenFirewall());
+            this.setEntityId(rule.getId());
         } catch (NetworkRuleConflictException e) {
-            s_logger.info("Unable to create Static Nat Rule due to " + e.getMessage());
+            s_logger.info("Unable to create Static Nat Rule due to ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
-        
-        this.setEntityId(rule.getId());
 	}
 
     @Override
@@ -263,8 +271,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     public Integer getIcmpType() {
         return null;
     }
-
-    @Override
+    
     public List<String> getSourceCidrList() {
         return null;
     }
