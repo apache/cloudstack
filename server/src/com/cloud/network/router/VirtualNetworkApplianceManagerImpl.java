@@ -981,12 +981,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         avoids[1] = new ExcludeList();
         avoids[1].addCluster(_hostDao.findById(routerToBeAvoid.getHostId()).getClusterId());
         avoids[2] = new ExcludeList();
-        avoids[2].addHost(routerToBeAvoid.getHostId());
-        avoids[3] = new ExcludeList();
         List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(routerToBeAvoid.getId(), Type.ROOT);
         if (volumes != null && volumes.size() != 0) {
-            avoids[3].addPool(volumes.get(0).getPoolId());
+            avoids[2].addPool(volumes.get(0).getPoolId());
         }
+        avoids[2].addHost(routerToBeAvoid.getHostId());
+        avoids[3] = new ExcludeList();
+        avoids[3].addHost(routerToBeAvoid.getHostId());
         avoids[4] = new ExcludeList();
         
         for (int i = 0; i < retryIndex; i++) {
