@@ -1177,6 +1177,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         try {
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows);
+            mc.setHostGuid(dest.getHost().getGuid());
+            
             try {
                 MigrateAnswer ma = (MigrateAnswer) _agentMgr.send(vm.getLastHostId(), mc);
                 if (!ma.getResult()) {

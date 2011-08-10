@@ -20,6 +20,7 @@ package com.cloud.agent.api;
 public class MigrateCommand extends Command {
     String vmName;
     String destIp;
+    String hostGuid;
     boolean isWindows;
 
 
@@ -42,6 +43,14 @@ public class MigrateCommand extends Command {
     
     public String getVmName() {
         return vmName;
+    }
+    
+    public void setHostGuid(String guid) {
+        this.hostGuid = guid;
+    }
+    
+    public String getHostGuid() {
+        return this.hostGuid;
     }
 
     @Override
