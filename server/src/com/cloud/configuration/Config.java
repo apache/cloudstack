@@ -70,6 +70,7 @@ public enum Config {
 	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.vlan.network", "false", "enable/disable vlan remapping of  open vswitch network", null),
 	OvsTunnelNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.tunnel.network", "false", "enable/disable open vswitch tunnel network(no vlan)", null),
 	VmNetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "vm.network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed in User vm's default network.", null),
+	FirewallRuleUiEnabled("Network", ManagementServer.class, Boolean.class, "firewall.rule.ui.enabled", "true", "enable/disable UI that separates firewall rules from NAT/LB rules", null),
 	
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),
