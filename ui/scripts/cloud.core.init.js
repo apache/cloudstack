@@ -596,6 +596,7 @@ $(document).ready(function() {
 		g_timezoneoffset = null;
 		g_timezone = null;
 		g_supportELB = null;
+		g_firewallRuleUiEnabled = null;
 		
 		$.cookie('JSESSIONID', null);
 		$.cookie('sessionKey', null);
@@ -607,6 +608,7 @@ $(document).ready(function() {
 		$.cookie('timezoneoffset', null);
 		$.cookie('timezone', null);
 		$.cookie('supportELB', null);
+		$.cookie('firewallRuleUiEnabled', null);
 		
 		$("body").stopTime();
 		
@@ -706,7 +708,10 @@ $(document).ready(function() {
 					     */
 					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB;					    
 					    $.cookie('supportELB', g_supportELB, { expires: 1}); 
-					    
+					    					    
+					    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled;					    
+					    $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1}); 
+					    			    
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
@@ -803,6 +808,9 @@ $(document).ready(function() {
 	
 	if(g_supportELB == null)
 		g_supportELB = $.cookie("supportELB");
+		
+	if(g_firewallRuleUiEnabled == null)
+		g_firewallRuleUiEnabled = $.cookie("firewallRuleUiEnabled");
 	
 	$.ajax({
 	    data: createURL("command=listCapabilities"),

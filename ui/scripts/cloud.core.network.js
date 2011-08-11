@@ -1519,13 +1519,11 @@ var directNetworkActionMap = {
         dialogBeforeActionFn : doDeleteDirectNetwork,        
         inProcessText: "label.action.delete.network.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();                
-                if(id.toString() == $("#right_panel_content").find("#direct_network_page").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    directNetworkClearRightPanel();
-                }                
-            });              
+            $midmenuItem1.remove();                             
+            if(id.toString() == $("#right_panel_content").find("#direct_network_page").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                directNetworkClearRightPanel();
+            }           
         }
     }    
 }  
