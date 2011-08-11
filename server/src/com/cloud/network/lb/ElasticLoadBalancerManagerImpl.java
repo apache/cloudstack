@@ -299,6 +299,7 @@ public class ElasticLoadBalancerManagerImpl implements
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsIp = elbVm.getGuestIpAddress();
         cmds.addCommand(cmd);
 
     }
