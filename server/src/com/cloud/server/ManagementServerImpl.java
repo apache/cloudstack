@@ -4219,13 +4219,15 @@ public class ManagementServerImpl implements ManagementServer {
                     supportELB = networkType;
             }
         }
-
+        
+        String firewallRuleUiEnabled = _configs.get(Config.FirewallRuleUiEnabled.key());
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
         capabilities.put("cloudStackVersion", getVersion());
         capabilities.put("supportELB", supportELB);
+        capabilities.put("firewallRuleUiEnabled", (firewallRuleUiEnabled != null && firewallRuleUiEnabled.equals("true")) ? true : false);
         return capabilities;
     }
 
