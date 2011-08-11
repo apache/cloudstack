@@ -198,7 +198,8 @@ function snapshotClearDetailsTab() {
     var $thisTab = $("#right_panel_content #tab_content_details");   
     $thisTab.find("#id").text("");
     $thisTab.find("#name").text("");
-    $thisTab.find("#volume_name").text("");
+    $thisTab.find("#volume_name").text("");    
+    $thisTab.find("#state").text("");
     $thisTab.find("#interval_type").text("");
     $thisTab.find("#account").text("");
     $thisTab.find("#domain").text("");      
@@ -220,13 +221,11 @@ var snapshotActionMap = {
 		dialogBeforeActionFn : doSnapshotDelete,
         inProcessText: "label.action.delete.snapshot.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){   
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();                
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    snapshotClearRightPanel();
-                }
-            });            
+    		$midmenuItem1.remove();                                   
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                snapshotClearRightPanel();
+            }                      
         }
     } 
     ,

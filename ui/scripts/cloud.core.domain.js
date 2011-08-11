@@ -717,13 +717,11 @@ var domainActionMap = {
         asyncJobResponse: "deletedomainresponse",          
         inProcessText: "label.action.delete.domain.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {        
-            $midmenuItem1.slideUp(function() {                
-                $(this).remove();   
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    domainJsonClearRightPanel();
-                }                
-            });                
+    		$midmenuItem1.remove();   	
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                domainJsonClearRightPanel();
+            }            
         }
     }    
 } 

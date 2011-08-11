@@ -1718,14 +1718,11 @@ var ipActionMap = {
         dialogBeforeActionFn : doReleaseIp,
         inProcessText: "label.action.release.ip.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
-            $midmenuItem1.slideUp("slow", function(){
-                $(this).remove();                    
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    ipClearRightPanel();
-                }
-            });  
-            
+			$midmenuItem1.remove();   
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                ipClearRightPanel();
+            }
         }
     },
     "label.action.enable.static.NAT": {                      
