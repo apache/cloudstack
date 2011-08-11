@@ -10,6 +10,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListFirewallRulesCmd;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -72,6 +74,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     NetworkManager _networkMgr;
     @Inject 
     UsageEventDao _usageEventDao;
+    @Inject
+    ConfigurationDao _configDao;
+    
+    private boolean _elbEnabled=false;
     
     
     @Override
@@ -92,6 +98,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        _elbEnabled = Boolean.parseBoolean(elbEnabledString);
         return true;
     }
     
@@ -296,7 +304,9 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         Map<Network.Capability, String> protocolCapabilities = null;
         
         if (purpose == Purpose.LoadBalancing) {
-            protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Lb);
+            if (!_elbEnabled) {
+                protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Lb);
+            }
         } else {
             protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
         }
