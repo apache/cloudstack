@@ -52,8 +52,6 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
-import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
@@ -123,48 +121,12 @@ public class VirtualRoutingResource implements Manager {
                 return execute ((VmDataCommand)cmd);
             } else if (cmd instanceof CheckRouterCommand) {
                 return execute ((CheckRouterCommand)cmd);
-            } else if (cmd instanceof SetFirewallRulesCommand) {
-                return execute((SetFirewallRulesCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         }
-    }
-
-    private Answer execute(SetFirewallRulesCommand cmd) {
-        String[] results = new String[cmd.getRules().length];
-        for (int i =0; i < cmd.getRules().length; i++) {
-            results[i] = "Failed";
-        }
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        if (routerIp == null) {
-            return new SetFirewallRulesAnswer(cmd, false, results);
-        }
-
-        String[][] rules = cmd.generateFwRules();
-        final Script command = new Script(_firewallPath, _timeout, s_logger);
-        command.add(routerIp);
-        command.add("-F");
-        
-        StringBuilder sb = new StringBuilder();
-        String[] fwRules = rules[0];
-        if (fwRules.length > 0) {
-            for (int i = 0; i < fwRules.length; i++) {
-                sb.append(fwRules[i]).append(',');
-            }
-            command.add("-a", sb.toString());
-        }
-       
-        String result = command.execute();
-        if (result != null) {
-            return new SetFirewallRulesAnswer(cmd, false, results);
-        }
-        return new SetFirewallRulesAnswer(cmd, true, null);
-        
-        
     }
 
     private Answer execute(SetPortForwardingRulesCommand cmd) {
