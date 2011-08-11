@@ -72,15 +72,16 @@ routing_svcs() {
    chkconfig cloud off
    chkconfig cloud-passwd-srvr on ; 
    chkconfig haproxy on ; 
-   chkconfig dnsmasq on
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
    if [ $RROUTER -eq 0 ]
    then
+       chkconfig dnsmasq off
        chkconfig postinit on
        echo "postinit" > /var/cache/cloud/enabled_svcs
    else
+       chkconfig dnsmasq on
        chkconfig keepalived off
        chkconfig conntrackd off
    fi
