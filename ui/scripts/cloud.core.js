@@ -1527,6 +1527,7 @@ var g_enableLogging = false;
 var g_timezoneoffset = null;
 var g_timezone = null;
 var g_supportELB = null;
+var g_firewallRuleUiEnabled = null; //true or false
 
 // capabilities
 var g_directAttachSecurityGroupsEnabled = "false";
@@ -1534,8 +1535,6 @@ function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityG
 
 var g_userPublicTemplateEnabled = "true";
 function getUserPublicTemplateEnabled() { return g_userPublicTemplateEnabled; }
-
-var g_supportELB = null;
 
 //keyboard keycode
 var keycode_Enter = 13;

@@ -65,7 +65,6 @@ function ipGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-var firewallTabIsShownInAdvancedZone = true;
 function afterLoadIpJSP() {
     //***** switch between different tabs (begin) ********************************************************************
     var tabArray = [$("#tab_details"), $("#tab_firewall"), $("#tab_port_range"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
@@ -463,7 +462,7 @@ function afterLoadIpJSP() {
 	        array1.push("&endPort="+endPort);
 	        array1.push("&protocol="+protocol);
 	           
-	        if(firewallTabIsShownInAdvancedZone == true)
+	        if(g_firewallRuleUiEnabled == true)
 	        	array1.push("&openfirewall=false");
 	        
 	        $.ajax({
@@ -604,7 +603,7 @@ function afterLoadIpJSP() {
 		    var virtualMachineId = $createPortForwardingRow.find("#vm").val();	
 	        array1.push("&virtualmachineid=" + virtualMachineId);
 	        
-	        if(firewallTabIsShownInAdvancedZone == true)
+	        if(g_firewallRuleUiEnabled == true)
 	        	array1.push("&openfirewall=false");
 	        
 	        $.ajax({
@@ -710,7 +709,7 @@ function afterLoadIpJSP() {
         var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
         array1.push("&algorithm="+algorithm);
         
-        if(firewallTabIsShownInAdvancedZone == true)
+        if(g_firewallRuleUiEnabled == true)
         	array1.push("&openfirewall=false");
         
         $.ajax({
@@ -838,7 +837,7 @@ function ipToRightPanel($midmenuItem1) {
         $("#tab_details").click();        
    
     if(ipObj.isstaticnat == true) {
-    	if(firewallTabIsShownInAdvancedZone == true) {
+    	if(g_firewallRuleUiEnabled == true) {
             $("#tab_port_range").hide();	
     	} 
     	else {
@@ -850,7 +849,7 @@ function ipToRightPanel($midmenuItem1) {
         $("#tab_port_range").hide();
         if(ipObj.forvirtualnetwork == true) { //(public network)            
             if(isIpManageable(ipObj.domainid, ipObj.account) == true) {      
-            	if(firewallTabIsShownInAdvancedZone == true)
+            	if(g_firewallRuleUiEnabled == true)
             	    $("#tab_firewall").show();
             	else
             		$("#tab_firewall").hide();
@@ -1167,7 +1166,7 @@ function showEnableVPNDialog($thisTab) {
 			array1.push("&account="+ipObj.account);
 			array1.push("&domainid="+ipObj.domainid);
 			array1.push("&zoneid="+ipObj.zoneid);	
-			if(firewallTabIsShownInAdvancedZone == true)
+			if(g_firewallRuleUiEnabled == true)
 		        array1.push("&openfirewall=true");
 			
 			$.ajax({
