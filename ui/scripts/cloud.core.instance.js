@@ -2209,13 +2209,13 @@ function vmJsonToStatisticsTab() {
     $thisTab.find("#percentused").text(jsonObj.cpuused); 
     
 	var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
-	if(networkKbsRead == 0)
+	if(jsonObj.networkkbsread == 0)
 		$thisTab.find("#networkkbsread").text("N/A");
 	else
 	    $thisTab.find("#networkkbsread").text(networkKbsRead);
 	
 	var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
-	if(networkKbsWrite == 0)
+	if(jsonObj.networkkbswrite == 0)
 		$thisTab.find("#networkkbswrite").text("N/A");
 	else	
 	    $thisTab.find("#networkkbswrite").text(networkKbsWrite);	
