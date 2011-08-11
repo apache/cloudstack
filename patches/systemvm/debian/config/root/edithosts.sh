@@ -25,6 +25,9 @@
 # $2 : the associated ip address
 # $3 : the hostname
 
+grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
+no_redundant=$?
+
 wait_for_dnsmasq () {
   local _pid=$(pidof dnsmasq)
   for i in 0 1 2 3 4 5 6 7 8 9 10
@@ -34,9 +37,11 @@ wait_for_dnsmasq () {
     [ "$_pid" != "" ] && break;
   done
   [ "$_pid" != "" ] && return 0;
-  echo "edithosts: timed out waiting for dnsmasq to start"
+  logger -t cloud "edithosts: timed out waiting for dnsmasq to start"
   return 1
 }
+
+logger -t cloud "edithosts: update $1 $2 $3 to hosts"
 
 [ ! -f /etc/dhcphosts.txt ] && touch /etc/dhcphosts.txt
 [ ! -f /var/lib/misc/dnsmasq.leases ] && touch /var/lib/misc/dnsmasq.leases
@@ -68,7 +73,12 @@ if [ "$pid" != "" ]
 then
   service dnsmasq restart
 else
-  wait_for_dnsmasq
+  if [ $no_redundant -eq 1 ]
+  then
+      wait_for_dnsmasq
+  else
+      logger -t cloud "edithosts: skip wait dnsmasq due to redundant virtual router"
+  fi
 fi
 
 exit $?
