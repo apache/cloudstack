@@ -19,7 +19,7 @@
 #
 #
 # @VERSION@
-echo $* >> /tmp/jana.log 
+
 usage() {
   printf "Usage: %s:  -a <public ip address:protocol:startport:endport:sourcecidrs>  \n" $(basename $0) >&2
   printf "sourcecidrs format:  cidr1-cidr2-cidr3-...\n"
