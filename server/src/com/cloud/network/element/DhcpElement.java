@@ -45,6 +45,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.AccountManager;
@@ -244,5 +245,10 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
  
         return _routerMgr.savePasswordToRouter(network, nic, uservm);
+    }
+    
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        return false;
     }
 }

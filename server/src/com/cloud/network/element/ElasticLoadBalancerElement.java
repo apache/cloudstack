@@ -42,6 +42,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.ElasticLoadBalancerManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.AdapterBase;
@@ -165,5 +166,10 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
                 throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
         }
         return true;
+    }
+    
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        return false;
     }
 }

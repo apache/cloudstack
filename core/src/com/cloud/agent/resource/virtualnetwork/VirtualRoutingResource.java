@@ -193,6 +193,7 @@ public class VirtualRoutingResource implements Manager {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             String result = null;
             final Script command = new Script(_firewallPath, _timeout, s_logger);
@@ -207,10 +208,15 @@ public class VirtualRoutingResource implements Manager {
             command.add(" -G ") ;
             
             result = command.execute();
-            results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetStaticNatRulesAnswer(cmd, results);
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
     
 

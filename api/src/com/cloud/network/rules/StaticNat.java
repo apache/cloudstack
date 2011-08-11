@@ -15,24 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.Answer;
+package com.cloud.network.rules;
 
-public class SetStaticNatRulesAnswer extends Answer {
-    String[] results;
-    protected SetStaticNatRulesAnswer() {
-        super();
-    }
+
+public interface StaticNat{
     
-    public SetStaticNatRulesAnswer(SetStaticNatRulesCommand cmd, String[] results, Boolean success) {
-        super(cmd, success, null);
-        
-        assert(cmd.getRules().length == results.length) : "Shouldn't the results match the commands?";
-        this.results = results;
-    }
+    long getAccountId();
     
-    String[] getResults() {
-        return results;
-    }
+    long getDomainId();
+    
+    long getNetworkId();
+    
+    long getSourceIpAddressId();
+
+    String getDestIpAddress();
+
+    boolean isForRevoke();
 }

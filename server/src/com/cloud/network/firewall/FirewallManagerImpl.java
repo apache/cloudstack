@@ -317,7 +317,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
                 throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
             }
         }
-        
     }
     
     @Override
@@ -516,4 +515,5 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         return rules.size() == 0;
     }
+    
 }

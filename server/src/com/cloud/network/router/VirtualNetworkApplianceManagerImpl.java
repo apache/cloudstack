@@ -135,6 +135,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
@@ -2087,8 +2088,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
-            throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
+            s_logger.warn("Unable to apply firewall rules, virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to apply firewall rules", DataCenter.class, network.getDataCenterId());
         }
 
         boolean result = true;
@@ -2197,4 +2198,62 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return _dnsBasicZoneUpdates;
     }
     
+    
+    @Override
+    public boolean applyStaticNats(Network network, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.warn("Unable to create static nat, virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to create static nat", DataCenter.class, network.getDataCenterId());
+        }
+
+        boolean result = true;
+        for (DomainRouterVO router : routers) {
+            if (router.getState() == State.Running) {
+                s_logger.debug("Applying " + rules.size() + " static nat in network " + network);
+                result = applyStaticNat(router, rules);
+                
+                //If rules fail to apply on one domR, no need to proceed with the rest
+                if (!result) {
+                    throw new ResourceUnavailableException("Unable to apply static nat on router ", VirtualRouter.class, router.getId());
+                }
+                
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
+            } else {
+                s_logger.warn("Unable to apply static nat, virtual router is not in the right state " + router.getState());
+                throw new ResourceUnavailableException("Unable to apply static nat, virtual router is not in the right state", VirtualRouter.class, router.getId());
+            }
+        }
+        
+        return result;
+    }
+    
+    
+    protected boolean applyStaticNat(DomainRouterVO router, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        Commands cmds = new Commands(OnError.Continue);
+        createApplyStaticNatCommands(rules, router, cmds);
+        // Send commands to router
+        return sendCommandsToRouter(router, cmds);
+    }
+    
+    private void createApplyStaticNatCommands(List<? extends StaticNat> rules, DomainRouterVO router, Commands cmds) {
+        List<StaticNatRuleTO> rulesTO = null;
+        if (rules != null) {
+            rulesTO = new ArrayList<StaticNatRuleTO>();
+            for (StaticNat rule : rules) {
+                IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                rulesTO.add(ruleTO);
+            }
+        }
+
+        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand(cmd);
+    }
 }

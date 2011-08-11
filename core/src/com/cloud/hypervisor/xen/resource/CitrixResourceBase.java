@@ -1269,6 +1269,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         //String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             //1:1 NAT needs instanceip;publicip;domrip;op
             StringBuilder args = new StringBuilder();
@@ -1276,15 +1277,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(rule.revoked() ? " -D " : " -A ");
             args.append(" -l ").append(rule.getSrcIp());
             args.append(" -r ").append(rule.getDstIp());
-            args.append(" -P ").append(rule.getProtocol().toLowerCase());
+            if (rule.getProtocol() != null) {
+                args.append(" -P ").append(rule.getProtocol().toLowerCase());
+            }
+           
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
            
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
-            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetStaticNatRulesAnswer(cmd, results);
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
     protected Answer execute(final LoadBalancerConfigCommand cmd) {

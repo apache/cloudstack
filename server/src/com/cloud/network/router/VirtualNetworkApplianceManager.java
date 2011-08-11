@@ -30,6 +30,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
@@ -89,4 +90,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException, ResourceUnavailableException;
 
     String getDnsBasicZoneUpdate();
+    
+    boolean applyStaticNats(Network network, List<? extends StaticNat> rules) throws ResourceUnavailableException;
+
 }

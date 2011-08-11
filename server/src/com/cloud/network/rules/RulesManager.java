@@ -66,6 +66,8 @@ public interface RulesManager extends RulesService {
 	boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int... ports);
 	
 	List<PortForwardingRuleVO> listByNetworkId(long networkId);
+
+    boolean applyStaticNat(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
 	
 	
 }

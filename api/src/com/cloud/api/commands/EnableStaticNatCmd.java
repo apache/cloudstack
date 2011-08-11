@@ -80,7 +80,7 @@ public class EnableStaticNatCmd extends BaseCmd{
     @Override
     public void execute(){ 
         try {
-            boolean result = _rulesService.enableOneToOneNat(ipAddressId, virtualMachineId);
+            boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

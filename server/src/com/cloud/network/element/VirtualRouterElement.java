@@ -49,6 +49,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -283,5 +284,22 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         capabilities.put(Service.Gateway, null);
         
         return capabilities;
+    }
+    
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        DataCenter dc = _configMgr.getZone(config.getDataCenterId());
+        if (canHandle(config.getGuestType(),dc)) {
+            long networkId = config.getId();
+            List<DomainRouterVO> routers = _routerDao.findByNetwork(networkId);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual router doesn't exist in the network " + config.getId());
+                return true;
+            }
+            
+            return _routerMgr.applyStaticNats(config, rules);
+        } else {
+            return true;
+        }
     }
 }

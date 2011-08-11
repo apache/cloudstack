@@ -291,7 +291,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean enableOneToOneNat(long ipId, long vmId) throws NetworkRuleConflictException {
+    public boolean enableStaticNat(long ipId, long vmId) throws NetworkRuleConflictException {
 
         Account caller = UserContext.current().getCaller();
 
@@ -351,7 +351,22 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);
-        return _ipAddressDao.update(ipAddress.getId(), ipAddress);
+        if (_ipAddressDao.update(ipAddress.getId(), ipAddress)) {
+            //enable static nat on the backend
+            s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
+            if (applyStaticNat(ipId, false, caller, false)) {
+                return true;
+            } else {
+                ipAddress.setOneToOneNat(false);
+                ipAddress.setAssociatedWithVmId(null);
+                _ipAddressDao.update(ipAddress.getId(), ipAddress);
+                s_logger.warn("Failed to enable static nat rule for ip address " + ipId + " on the backend");
+                return false;
+            }
+        } else {
+            s_logger.warn("Failed to update ip address " + ipAddress + " in the DB as a part of enableStaticNat");
+            return false;
+        }
     }
 
 
@@ -797,10 +812,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.debug("Releasing " + staticNatRules.size() + " static nat rules for ip id=" + ipId);
         }
 
+        
         for (FirewallRuleVO rule : staticNatRules) {
             // Mark all static nat rules as Revoke, but don't revoke them yet
             revokeStaticNatRuleInternal(rule.getId(), caller, userId, false);
         }
+        
+        //revoke static nat for the ip address
+        boolean staticNatRevoked = applyStaticNat(ipId, false, caller, true);
 
         // revoke all port forwarding rules
         applyPortForwardingRules(ipId, true, caller);
@@ -816,7 +835,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.debug("Successfully released rules for ip id=" + ipId + " and # of rules now = " + rules.size());
         }
 
-        return rules.size() == 0;
+        return (rules.size() == 0 && staticNatRevoked);
     }
 
     @Override
@@ -955,7 +974,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean disableOneToOneNat(long ipId) throws ResourceUnavailableException {
+    public boolean disableStaticNat(long ipId) throws ResourceUnavailableException {
         boolean success = true;
 
         Account caller = UserContext.current().getCaller();
@@ -1005,6 +1024,52 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Nic guestNic = _networkMgr.getNicInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
 
         return new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address());
+    }
+    
+    @Override
+    public boolean applyStaticNat(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
+        
+        List<StaticNat> staticNats = new ArrayList<StaticNat>();
+        IpAddress sourceIp = _ipAddressDao.findById(sourceIpId);
+        
+        Long networkId = sourceIp.getAssociatedWithNetworkId();
+        if (networkId == null) {
+            throw new CloudRuntimeException("Ip address is not associated with any network");
+        }
+        
+        UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
+        Network network = _networkMgr.getNetwork(networkId);
+        if (network == null) {
+            throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
+        }
+
+        if (!sourceIp.isOneToOneNat()) {
+            s_logger.debug("Source ip id=" + sourceIpId + " is not one to one nat");
+            return true;
+        }
+        
+        if (caller != null) {
+            _accountMgr.checkAccess(caller, sourceIp);
+        }
+
+        //create new static nat rule
+        // Get nic IP4 address
+        Nic guestNic = _networkMgr.getNicInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
+        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
+        String dstIp = guestNic.getIp4Address();
+        StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAccountId(), sourceIp.getDomainId(), networkId, sourceIpId, dstIp, forRevoke);
+        staticNats.add(staticNat);
+        
+        try {
+            if (!_networkMgr.applyStaticNats(staticNats, continueOnError)) {
+                return false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to create static nat rule due to ", ex);
+            return false;
+        }
+
+        return true;
     }
     
 }
