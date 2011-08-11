@@ -1168,7 +1168,7 @@ function showEnableVPNDialog($thisTab) {
 			array1.push("&domainid="+ipObj.domainid);
 			array1.push("&zoneid="+ipObj.zoneid);	
 			if(firewallTabIsShownInAdvancedZone == true)
-		        array1.push("&openfirewall=false");
+		        array1.push("&openfirewall=true");
 			
 			$.ajax({
 				data: createURL("command=createRemoteAccessVpn"+array1.join("")),
