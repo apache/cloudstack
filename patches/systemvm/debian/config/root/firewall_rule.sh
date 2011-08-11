@@ -64,33 +64,27 @@ fw_entry_for_public_ip() {
   logger -t cloud "$(basename $0): enter apply firewall rules for public ip $pubIp:$prot:$sport:$eport:$scidrs"  
 
 
-  # note that rules are inserted after the RELATED,ESTABLISHED rule but before the DROP rule
+  # note that rules are inserted after the RELATED,ESTABLISHED rule 
+  # but before the DROP rule
   for src in $scidrs
   do
-    if [ "$prot" == "reverted" ]
-    then
-      continue;
-    fi
+    [ "$prot" == "reverted" ] && continue;
     if [ "$prot" == "icmp" ]
     then
-    # TODO  icmp code need to be implemented
-    # sport is icmpType , dport is icmpcode 
-      if [ "$sport" == "-1" ]
-      then
-           sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot  -j RETURN
-       else
-           if ["$eport" == "-1"]
-           then
-               sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --icmp-type $sport  -j RETURN
-           else
-               sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --icmp-type $sport/$eport  -j RETURN
-           fi
-       fi
+      typecode="$sport/$eport"
+      [ "$eport" == "-1" ] && typecode="$sport"
+      [ "$sport" == "-1" ] && typecode="any"
+      sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot \
+                    --icmp-type $typecode  -j RETURN
     else
-       sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --dport $sport:$eport -j RETURN
-  fi
+       sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot \
+                    --dport $sport:$eport -j RETURN
+    fi
+    result=$?
+    [ $result -gt 0 ] && 
+       logger -t cloud "Error adding iptables entry for $pubIp:$prot:$sport:$eport:$src" &&
+       break
   done
-  result=$?
       
   logger -t cloud "$(basename $0): exit apply firewall rules for public ip $pubIp"  
   return $result
