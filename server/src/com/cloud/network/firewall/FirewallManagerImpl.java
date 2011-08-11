@@ -119,8 +119,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         // Validate ip address
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " doesn't exist in the system");
-        } else if (ipAddress.isOneToOneNat()) {
-            throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
         } 
         
         validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall);
