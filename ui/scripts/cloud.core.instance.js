@@ -2202,33 +2202,23 @@ function vmJsonToStatisticsTab() {
 	}
 
     var $thisTab = $("#right_panel_content #tab_content_statistics");  	
-	
-	
-	/*
-	var $barChartContainer = $thisTab.find("#cpu_barchart");
-		 
-	var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
-	$barChartContainer.find("#cpunumber").text(cpuNumber);
-	
-	var cpuSpeed = ((jsonObj.cpuspeed==null)? "":convertHz(jsonObj.cpuspeed)) ;
-	$barChartContainer.find("#cpuspeed").text(cpuSpeed);
-	
-	$barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
-	$barChartContainer.find("#percentused").text("");   
-	if(jsonObj.cpuused!=null)
-		drawBarChart($barChartContainer, jsonObj.cpuused);		
-	*/
-    
+	    
     $thisTab.find("#cpunumber").text(fromdb(jsonObj.cpunumber));
     $thisTab.find("#cpuspeed").text(convertHz(jsonObj.cpuspeed));
     
     $thisTab.find("#percentused").text(jsonObj.cpuused); 
     
 	var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
-	$thisTab.find("#networkkbsread").text(networkKbsRead);
+	if(networkKbsRead == 0)
+		$thisTab.find("#networkkbsread").text("N/A");
+	else
+	    $thisTab.find("#networkkbsread").text(networkKbsRead);
 	
 	var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
-	$thisTab.find("#networkkbswrite").text(networkKbsWrite);	
+	if(networkKbsWrite == 0)
+		$thisTab.find("#networkkbswrite").text("N/A");
+	else	
+	    $thisTab.find("#networkkbswrite").text(networkKbsWrite);	
 }
 
 function vmJsonClearStatisticsTab() {       
