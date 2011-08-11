@@ -295,13 +295,23 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
         
         // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> firewallCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
-        String supportedProtocols = firewallCapabilities.get(Capability.SupportedProtocols).toLowerCase();
-        if (!supportedProtocols.contains(proto.toLowerCase())) {
-            throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
-        } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {
-            throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
+        Map<Network.Capability, String> protocolCapabilities = null;
+        
+        if (purpose == Purpose.LoadBalancing) {
+            protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Lb);
+        } else {
+            protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
         }
+        
+        if (protocolCapabilities != null) {
+            String supportedProtocols = protocolCapabilities.get(Capability.SupportedProtocols).toLowerCase();
+            if (!supportedProtocols.contains(proto.toLowerCase())) {
+                throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
+            } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {
+                throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
+            }
+        }
+        
     }
     
     @Override
