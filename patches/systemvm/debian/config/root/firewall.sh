@@ -138,6 +138,56 @@ one_to_one_fw_entry() {
   return $result
 }
 
+fw_chain_for_ip() {
+  local pubIp=$1
+  if  iptables -t mangle -N FIREWALL_$pubIp &> /dev/null
+  then
+    logger -t cloud "created a fw chain for $pubIp to DROP by default"
+    (sudo iptables -t mangle -A FIREWALL_$pubIp -j DROP) &&
+    (sudo iptables -t mangle -I FIREWALL_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT ) &&
+    (sudo iptables -t mangle -I PREROUTING -d $pubIp -j FIREWALL_$pubIp)
+    return $?
+  fi
+  logger -t cloud "fw chain for $pubIp already exists"
+  return 0
+}
+
+static_nat() {
+  local publicIp=$1
+  local instIp=$2  
+  local op=$3
+  local op2="-D"
+  local rulenum=
+  logger -t cloud "$(basename $0): static nat: public ip=$publicIp \
+  instance ip=$instIp  op=$op"
+  
+  #TODO check error below
+  fw_chain_for_ip $publicIp
+
+  #if adding, this might be a duplicate, so delete the old one first
+  [ "$op" == "-A" ] && static_nat $publicIp $instIp  "-D" 
+  # the delete operation may have errored out but the only possible reason is 
+  # that the rules didn't exist in the first place
+  [ "$op" == "-A" ] && rulenum=1
+  [ "$op" == "-A" ] && op2="-I"
+
+  local dev=$(ip_to_dev $publicIp)
+  [ $? -ne 0 ] && echo "Could not find device associated with $publicIp" && return 1
+
+  # shortcircuit the process if error and it is an append operation
+  # continue if it is delete
+  (sudo iptables -t nat $op  PREROUTING -i $dev -d $publicIp -j DNAT \
+           --to-destination $instIp &>>  $OUTFILE || [ "$op" == "-D" ]) &&
+  (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp  -m state \
+           --state NEW -j ACCEPT &>>  $OUTFILE || [ "$op" == "-D" ]) &&
+  (sudo iptables -t nat $op2 POSTROUTING $rulenum -s $instIp -j SNAT \
+           --to-source $publicIp &>> $OUTFILE || [ "$op" == "-D" ])
+
+  result=$?
+  logger -t cloud "$(basename $0): done static nat entry public ip=$publicIp op=$op result=$result"
+  return $result
+}
+
 
 
 rflag=
@@ -192,7 +242,12 @@ OUTFILE=$(mktemp)
 #Firewall ports for one-to-one/static NAT
 if [ "$Gflag" == "1" ]
 then
-  one_to_one_fw_entry $publicIp $instanceIp  $protocol $dport $op
+  if [ "$protocol" == "" ] 
+  then
+    static_nat $publicIp $instanceIp  $op
+  else
+    one_to_one_fw_entry $publicIp $instanceIp  $protocol $dport $op
+  fi
   result=$?
   [ "$result" -ne 0 ] && cat $OUTFILE >&2
   rm -f $OUTFILE
