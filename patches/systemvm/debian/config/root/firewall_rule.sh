@@ -67,6 +67,10 @@ fw_entry_for_public_ip() {
   # note that rules are inserted after the RELATED,ESTABLISHED rule but before the DROP rule
   for src in $scidrs
   do
+    if [ "$prot" == "reverted" ]
+    then
+      continue;
+    fi
     if [ "$prot" == "icmp" ]
     then
     # TODO  icmp code need to be implemented
@@ -75,7 +79,12 @@ fw_entry_for_public_ip() {
       then
            sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot  -j RETURN
        else
-           sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --icmp-type $sport  -j RETURN
+           if ["$eport" == "-1"]
+           then
+               sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --icmp-type $sport  -j RETURN
+           else
+               sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --icmp-type $sport/$eport  -j RETURN
+           fi
        fi
     else
        sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --dport $sport:$eport -j RETURN
@@ -127,7 +136,9 @@ then
 fi
 
 #-a 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,172.16.92.44:tcp:222:222:192.168.10.0/24-75.57.23.0/22-88.100.33.1/32
-
+#    if any entry is reverted , entry will be in the format <ip>:reverted:0:0:0
+# example : 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,200.1.1.2:reverted:0:0:0 
+# The reverted entries will fix the following partially 
 #FIXME: rule leak: when there are multiple ip address, there will chance that entry will be left over if the ipadress  does not appear in the current execution when compare to old one 
 # example :  In the below first transaction have 2 ip's whereas in second transaction it having one ip, so after the second trasaction 200.1.2.3 ip will have rules in mangle table.
 #  1)  -a 172.16.92.44:tcp:80:80:0.0.0.0/0:,200.16.92.44:tcp:220:220:0.0.0.0/0:,

@@ -29,7 +29,7 @@ usage() {
   printf "Usage for other purposes : %s: <domR eth1 ip> (-A|-D) -i <domR eth1 ip>  -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> [-f <firewall ip> -u <firewall user> -y <firewall password> -z <firewall enable password> ] \n" $(basename $0) >&2
 }
 
- set -x
+# set -x
 
 # check if gateway domain is up and running
 check_gw() {
