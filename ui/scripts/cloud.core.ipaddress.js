@@ -65,7 +65,7 @@ function ipGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-var firewallTabIsShown = true;
+var firewallTabIsShownInAdvancedZone = true;
 function afterLoadIpJSP() {
     //***** switch between different tabs (begin) ********************************************************************
     var tabArray = [$("#tab_details"), $("#tab_firewall"), $("#tab_port_range"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
@@ -129,8 +129,7 @@ function afterLoadIpJSP() {
 			        var algorithm = $thisDialog.find("#algorithm_select").val();  
 			        array1.push("&algorithm="+algorithm);
 			       
-			        if(firewallTabIsShown == true)
-			        	array1.push("&openfirewall=false");
+			        array1.push("&openfirewall=false"); //elasticLB(basicZone) has nothing to do with firewall, so do not open firewall  when creating LB rule in elasticLB(basicZone).
 			        
 			        var $midmenuItem1 = beforeAddingMidMenuItem() ;	
 			        $.ajax({
@@ -213,7 +212,7 @@ function afterLoadIpJSP() {
     else { 
     	$("#tab_details,#tab_content_details").show();
     	
-    	if(firewallTabIsShown == true)
+    	if(firewallTabIsShownInAdvancedZone == true)
     	    $("#tab_firewall").show();
     	else
     		$("#tab_firewall").hide();
@@ -467,7 +466,7 @@ function afterLoadIpJSP() {
 	        array1.push("&endPort="+endPort);
 	        array1.push("&protocol="+protocol);
 	           
-	        if(firewallTabIsShown == true)
+	        if(firewallTabIsShownInAdvancedZone == true)
 	        	array1.push("&openfirewall=false");
 	        
 	        $.ajax({
@@ -608,7 +607,7 @@ function afterLoadIpJSP() {
 		    var virtualMachineId = $createPortForwardingRow.find("#vm").val();	
 	        array1.push("&virtualmachineid=" + virtualMachineId);
 	        
-	        if(firewallTabIsShown == true)
+	        if(firewallTabIsShownInAdvancedZone == true)
 	        	array1.push("&openfirewall=false");
 	        
 	        $.ajax({
@@ -714,7 +713,7 @@ function afterLoadIpJSP() {
         var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
         array1.push("&algorithm="+algorithm);
         
-        if(firewallTabIsShown == true)
+        if(firewallTabIsShownInAdvancedZone == true)
         	array1.push("&openfirewall=false");
         
         $.ajax({
@@ -842,7 +841,12 @@ function ipToRightPanel($midmenuItem1) {
         $("#tab_details").click();        
    
     if(ipObj.isstaticnat == true) {
-        $("#tab_port_range").show();	
+    	if(firewallTabIsShownInAdvancedZone == true) {
+            $("#tab_port_range").hide();	
+    	} 
+    	else {
+    		$("#tab_port_range").show();
+    	}
         $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	
     }
     else { //ipObj.isstaticnat == false  
@@ -1162,7 +1166,7 @@ function showEnableVPNDialog($thisTab) {
 			array1.push("&account="+ipObj.account);
 			array1.push("&domainid="+ipObj.domainid);
 			array1.push("&zoneid="+ipObj.zoneid);	
-			if(firewallTabIsShown == true)
+			if(firewallTabIsShownInAdvancedZone == true)
 		        array1.push("&openfirewall=false");
 			
 			$.ajax({
