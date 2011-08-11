@@ -1,0 +1,11 @@
+CloudStack Test Client
+1. generate Cloudstack API python code from an API XML spec file
+   python codegenerator.py  -o where-to-put-the-cloudstack-api -s where-the-spec-file
+
+2. Facility it provides:
+  1. very handy cloudstack API python wrapper
+  2. support async job executing in parallel
+  3. remote ssh login/execute command
+  4. mysql query 
+
+3. sample code is under unitTest 
