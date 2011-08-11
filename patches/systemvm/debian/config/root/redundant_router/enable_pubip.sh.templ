@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ifdown eth2 && \
+ifconfig eth2 down && \
 ifconfig eth2 hw ether [ETH2MAC] && \
 ifup eth2 && \
 ip route add default via [GATEWAY] dev eth2 && \
