@@ -19,30 +19,30 @@
 #
 #
 # @VERSION@
- 
+echo $* >> /tmp/jana.log 
 usage() {
   printf "Usage: %s:  -a <public ip address:protocol:startport:endport:sourcecidrs>  \n" $(basename $0) >&2
   printf "sourcecidrs format:  cidr1-cidr2-cidr3-...\n"
 }
-
+#set -x
 #FIXME: eating up the error code during execution of iptables
 fw_remove_backup() {
   local pubIp=$1
   sudo iptables -t mangle -F _FIREWALL_$pubIp 2> /dev/null
-  sudo iptables -t mangle -D PREROUTING   -j _FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -D PREROUTING   -j _FIREWALL_$pubIp -d $pubIp 2> /dev/null
   sudo iptables -t mangle -X _FIREWALL_$pubIp 2> /dev/null
 }
 
 fw_restore() {
   local pubIp=$1
   sudo iptables -t mangle -F FIREWALL_$pubIp 2> /dev/null
-  sudo iptables -t mangle -D PREROUTING   -j FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -D PREROUTING   -j FIREWALL_$pubIp -d  $pubIp 2> /dev/null
   sudo iptables -t mangle -X FIREWALL_$pubIp 2> /dev/null
   sudo iptables -t mangle -E _FIREWALL_$pubIp FIREWALL_$pubIp 2> /dev/null
 }
-
 fw_chain_for_ip () {
   local pubIp=$1
+  fw_remove_backup $1
   sudo iptables -t mangle -E FIREWALL_$pubIp _FIREWALL_$pubIp 2> /dev/null
   sudo iptables -t mangle -N FIREWALL_$pubIp 2> /dev/null
   # drop if no rules match (this will be the last rule in the chain)
@@ -128,6 +128,11 @@ fi
 
 #-a 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,172.16.92.44:tcp:222:222:192.168.10.0/24-75.57.23.0/22-88.100.33.1/32
 
+#FIXME: rule leak: when there are multiple ip address, there will chance that entry will be left over if the ipadress  does not appear in the current execution when compare to old one 
+# example :  In the below first transaction have 2 ip's whereas in second transaction it having one ip, so after the second trasaction 200.1.2.3 ip will have rules in mangle table.
+#  1)  -a 172.16.92.44:tcp:80:80:0.0.0.0/0:,200.16.92.44:tcp:220:220:0.0.0.0/0:,
+#  2)  -a 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,
+
 
 success=0
 publicIps=
@@ -166,14 +171,11 @@ then
       logger -t cloud "$(basename $0): restoring from backup for ip: $p"
       fw_restore $p
     done
-else 
-    for p in $unique_ips
-    do
-      logger -t cloud "$(basename $0): deleting backup for ip: $p"
-      fw_remove_backup $p
-    done
-fi
-
-exit 0
-  	
+fi 
+for p in $unique_ips
+do
+   logger -t cloud "$(basename $0): deleting backup for ip: $p"
+   fw_remove_backup $p
+done
+exit $success
 

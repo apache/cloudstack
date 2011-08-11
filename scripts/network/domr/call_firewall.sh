@@ -24,7 +24,6 @@
 # firewall.sh -- allow some ports / protocols to vm instances
 #
 #
-echo $* >> /tmp/jana.log
 usage() {
   printf "Usage for Firewall rule  : %s: <domR eth1 ip> -F " $(basename $0) >&2
   printf "Usage for other purposes : %s: <domR eth1 ip> (-A|-D) -i <domR eth1 ip>  -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> [-f <firewall ip> -u <firewall user> -y <firewall password> -z <firewall enable password> ] \n" $(basename $0) >&2
