@@ -5698,7 +5698,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // copy volume to template SR
             VDI tmpltVDI = cloudVDIcopy(conn, volume, tmpltSR);
-            
+            // scan makes XenServer pick up VDI physicalSize
+            tmpltSR.scan(conn);
             if (userSpecifiedName != null) {
                 tmpltVDI.setNameLabel(conn, userSpecifiedName);
             }
