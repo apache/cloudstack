@@ -49,6 +49,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setSecurityGroupsEnabled((Boolean)capabilities.get("securityGroupsEnabled"));
         response.setCloudStackVersion((String)capabilities.get("cloudStackVersion"));
         response.setUserPublicTemplateEnabled((Boolean)capabilities.get("userPublicTemplateEnabled"));
+        response.setFirewallRuleUiEnabled((Boolean) capabilities.get("firewallRuleUiEnabled"));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

@@ -30,6 +30,9 @@ public class CapabilitiesResponse extends BaseResponse {
     
     @SerializedName("userpublictemplateenabled") @Param(description="true if user and domain admins can set templates to be shared, false otherwise")
     private boolean userPublicTemplateEnabled;
+    
+    @SerializedName("firewallRuleUiEnabled") @Param(description="true if the firewall rule UI is enabled")
+    private boolean firewallRuleUiEnabled;
 
     public boolean getSecurityGroupsEnabled() {
         return securityGroupsEnabled;
@@ -53,5 +56,13 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setUserPublicTemplateEnabled(boolean userPublicTemplateEnabled) {
         this.userPublicTemplateEnabled = userPublicTemplateEnabled;
+    }
+    
+    public void setFirewallRuleUiEnabled(boolean firewallRuleUiEnabled) {
+    	this.firewallRuleUiEnabled = firewallRuleUiEnabled;
+    }
+    
+    public boolean getFirewallRuleUiEnabled() {
+    	return firewallRuleUiEnabled;
     }
 }
