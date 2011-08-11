@@ -29,11 +29,10 @@ usage() {
   printf "Usage for other purposes : %s: <domR eth1 ip> (-A|-D) -i <domR eth1 ip>  -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> [-f <firewall ip> -u <firewall user> -y <firewall password> -z <firewall enable password> ] \n" $(basename $0) >&2
 }
 
-# set -x
+#set -x
 
 # check if gateway domain is up and running
 check_gw() {
-# return 0;
   ping -c 1 -n -q $1 > /dev/null
   if [ $? -gt 0 ]
   then
@@ -54,11 +53,12 @@ then
   exit 1
 fi
 fflag=
-while getopts 'F:' OPTION
+while getopts ':F' OPTION
 do
   case $OPTION in 
   F)    fflag=1
                 ;;
+  \?)  ;;
   esac
 done
 
