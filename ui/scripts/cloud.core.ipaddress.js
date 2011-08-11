@@ -211,12 +211,7 @@ function afterLoadIpJSP() {
 	}
     else { 
     	$("#tab_details,#tab_content_details").show();
-    	
-    	if(firewallTabIsShownInAdvancedZone == true)
-    	    $("#tab_firewall").show();
-    	else
-    		$("#tab_firewall").hide();
-    	
+    	    	
 	    //dialogs
 	    initDialog("dialog_acquire_public_ip", 325);
 		initDialog("dialog_enable_vpn");
@@ -304,7 +299,9 @@ function afterLoadIpJSP() {
 	    //*** Firewall tab (begin) ***
 	    var $createFirewallRow = $("#tab_content_firewall").find("#create_firewall_row");     
 	  
-	    $createFirewallRow.find("#protocol").bind("click", function(event) {	    	
+	    $createFirewallRow.find("#protocol").bind("click", function(event) {	
+	    	if($(this).val() == null)
+	    		return true;
 	    	var protocol = $(this).val().toLowerCase();	    
 	    	if(protocol == "tcp" || protocol == "udp") {
 	    		$createFirewallRow.find("#start_port,#end_port").removeAttr("disabled");
@@ -852,7 +849,11 @@ function ipToRightPanel($midmenuItem1) {
     else { //ipObj.isstaticnat == false  
         $("#tab_port_range").hide();
         if(ipObj.forvirtualnetwork == true) { //(public network)            
-            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {           
+            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {      
+            	if(firewallTabIsShownInAdvancedZone == true)
+            	    $("#tab_firewall").show();
+            	else
+            		$("#tab_firewall").hide();
 	            //Port Forwarding tab
 	            if(networkObj != null) {
 	                var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
@@ -915,12 +916,12 @@ function ipToRightPanel($midmenuItem1) {
 		            $("#tab_vpn").hide();
 		        }          
             } 
-            else { 
-	            $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
+            else {             	
+	            $("#tab_firewall, #tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
             }
         }
         else { //ipObj.forvirtualnetwork == false (direct network)
-            $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
+            $("#tab_firewall, #tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
         }            
     }        
 }
