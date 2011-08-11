@@ -876,7 +876,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
             }
 
-            if (routers.size() == routerCount) {
+            /* If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1 */
+            if (routers.size() >= routerCount) {
                 return routers;
             }
 
