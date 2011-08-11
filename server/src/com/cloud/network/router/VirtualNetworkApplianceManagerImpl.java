@@ -764,7 +764,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     String privateIP = router.getPrivateIpAddress();
                     HostVO host = _hostDao.findById(router.getHostId());
                     /* Only cover hosts managed by this management server */
-                    if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                    if (host == null || host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
                         continue;
                     }
                     if (privateIP != null) {
