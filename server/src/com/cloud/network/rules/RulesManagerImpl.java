@@ -1061,6 +1061,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
         IpAddress sourceIp = _ipAddressDao.findById(sourceIpId);
         
+        if (!sourceIp.isOneToOneNat()) {
+            s_logger.debug("Source ip id=" + sourceIpId + " is not one to one nat");
+            return true;
+        }
+        
         Long networkId = sourceIp.getAssociatedWithNetworkId();
         if (networkId == null) {
             throw new CloudRuntimeException("Ip address is not associated with any network");
@@ -1070,11 +1075,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Network network = _networkMgr.getNetwork(networkId);
         if (network == null) {
             throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
-        }
-
-        if (!sourceIp.isOneToOneNat()) {
-            s_logger.debug("Source ip id=" + sourceIpId + " is not one to one nat");
-            return true;
         }
         
         if (caller != null) {
