@@ -33,7 +33,9 @@ dictionary = {
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details" style="display: none">
-            <fmt:message key="label.details"/></div>	            
+            <fmt:message key="label.details"/></div>	
+        <div class="content_tabs off" id="tab_firewall" style="display: none">
+            <fmt:message key="label.firewall"/></div>	
         <div class="content_tabs off" id="tab_port_range" style="display: none">
             <fmt:message key="label.port.range"/></div>            	
 		<div class="content_tabs off" id="tab_port_forwarding" style="display: none">
@@ -43,6 +45,8 @@ dictionary = {
 		<div class="content_tabs off" id="tab_vpn" style="display: none">
             <fmt:message key="label.vpn"/></div>
     </div>  
+    
+    <!-- Details starts here-->
     <div id="tab_content_details" style="display: none">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
 	        <div class="rightpanel_mainloaderbox">
@@ -215,6 +219,86 @@ dictionary = {
         </div>        
     </div>
     <!-- Details ends here-->
+    
+    <!-- Firewall start here-->
+    <div id="tab_content_firewall" style="display:none">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
+                </div>
+                <p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
+            </div>
+        </div>        
+        <div id="tab_container">
+	        <div class="grid_container" id="grid_container">
+	            <div class="grid_header">	                
+	                <div class="grid_header_cell" style="width: 30%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.cidr.list"/></div>
+	                </div>	 
+	                <div class="grid_header_cell" style="width: 10%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.start.port"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 10%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.end.port"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.protocol"/></div>
+	                </div>		                
+	                <div class="grid_header_cell" style="width: 10%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="ICMP.type"/></div>
+	                </div>
+	                 <div class="grid_header_cell" style="width: 10%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="ICMP.code"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 10%; ">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.actions"/></div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even" id="create_firewall_row">	            
+	                <div class="grid_row_cell" style="width: 30%; ">  
+	                    <input id="cidr" class="text" type="text" />
+	                    <div id="cidr_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>	            
+	                <div class="grid_row_cell" style="width: 10%; ">
+	                    <input id="start_port" class="text" style="width: 70%;" type="text" disabled="disabled" />
+	                    <div id="start_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 10%; ">
+	                    <input id="end_port" class="text" style="width: 70%;" type="text" disabled="disabled" />
+	                    <div id="end_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%; ">  
+	                   <select class="select" id="protocol" style="width:70%;">	                  
+	                   </select>
+	                </div>	 	                
+	                <div class="grid_row_cell" style="width: 10%; ">
+	                    <input id="ICMP_type" class="text" style="width: 70%;" type="text" disabled="disabled" />
+	                    <div id="ICMP_type_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 10%; ">
+	                    <input id="ICMP_code" class="text" style="width: 70%;" type="text" disabled="disabled" />
+	                    <div id="ICMP_code_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 10%; ">
+	                    <div class="row_celltitles">
+	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
+	                </div>
+	            </div>              
+	            <div id="grid_content">
+	            </div>            
+	        </div>
+        </div>      
+    </div>
+    <!-- Firewall ends here-->
+    
     <!-- Port Range start here-->
     <div id="tab_content_port_range" style="display:none">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -494,6 +578,43 @@ dictionary = {
     </div>
 </div>
 <!--  top buttons (end) -->
+
+<!-- Firewall template (begin) -->
+<div class="grid_rows odd" id="firewall_template" style="display: none">    
+    <div id="row_container">        
+        <div class="grid_row_cell" style="width: 30%; ">
+           <div class="row_celltitles" id="cidr" style="padding:1px;"></div>
+        </div>        
+        <div class="grid_row_cell" style="width: 10%; ">
+            <div class="row_celltitles" id="start_port" style="padding:1px;"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 10%; ">
+            <div class="row_celltitles" id="end_port" style="padding:1px;"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%; ">
+            <div class="row_celltitles" id="protocol"></div>
+        </div>  
+        <div class="grid_row_cell" style="width: 10%; ">
+            <div class="row_celltitles" id="ICMP_type" style="padding:1px;"></div>
+        </div>
+         <div class="grid_row_cell" style="width: 10%; ">
+            <div class="row_celltitles" id="ICMP_code" style="padding:1px;"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 10%; ">
+            <div class="row_celltitles">
+                <a id="delete_link" href="#" style="float:left;"><fmt:message key="label.delete"/> </a>                            
+            </div>
+        </div>
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p id="description">
+                <fmt:message key="label.waiting"/>  &hellip;
+            </p>
+        </div>
+    </div>    
+</div>
+<!-- Firewall template (end) -->
 
 <!-- Load Balancer Template (begin) -->
 <div class="grid_rows odd" id="load_balancer_template" style="display:none">

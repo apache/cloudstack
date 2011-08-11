@@ -65,15 +65,16 @@ function ipGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
+var firewallTabIsShown = true;
 function afterLoadIpJSP() {
     //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = [$("#tab_details"), $("#tab_port_range"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_port_range"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer"), $("#tab_content_vpn")];
-    var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToPortRangeTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab, ipJsonToVPNTab];
+    var tabArray = [$("#tab_details"), $("#tab_firewall"), $("#tab_port_range"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_firewall"), $("#tab_content_port_range"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer"), $("#tab_content_vpn")];
+    var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToFirewallTab, ipJsonToPortRangeTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab, ipJsonToVPNTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     //***** switch between different tabs (end) **********************************************************************  
     if(g_supportELB == "guest" || g_supportELB == "public") {
-		$("#tab_details,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
+		$("#tab_details,#tab_firewall,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
 				
 		$("#tab_content_details").hide();
 				
@@ -128,6 +129,9 @@ function afterLoadIpJSP() {
 			        var algorithm = $thisDialog.find("#algorithm_select").val();  
 			        array1.push("&algorithm="+algorithm);
 			       
+			        if(firewallTabIsShown == true)
+			        	array1.push("&openfirewall=false");
+			        
 			        var $midmenuItem1 = beforeAddingMidMenuItem() ;	
 			        $.ajax({
 				        data: createURL("command=createLoadBalancerRule"+array1.join("")),
@@ -208,6 +212,11 @@ function afterLoadIpJSP() {
 	}
     else { 
     	$("#tab_details,#tab_content_details").show();
+    	
+    	if(firewallTabIsShown == true)
+    	    $("#tab_firewall").show();
+    	else
+    		$("#tab_firewall").hide();
     	
 	    //dialogs
 	    initDialog("dialog_acquire_public_ip", 325);
@@ -293,6 +302,141 @@ function afterLoadIpJSP() {
 		});
 	    //*** Acquire New IP (end) ***
 	    
+	    //*** Firewall tab (begin) ***
+	    var $createFirewallRow = $("#tab_content_firewall").find("#create_firewall_row");     
+	  
+	    $createFirewallRow.find("#protocol").bind("click", function(event) {	    	
+	    	var protocol = $(this).val().toLowerCase();	    
+	    	if(protocol == "tcp" || protocol == "udp") {
+	    		$createFirewallRow.find("#start_port,#end_port").removeAttr("disabled");
+	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").attr("disabled", "disabled");
+	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").val("")
+	    	}
+	    	else { //protocol == icmp
+	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").removeAttr("disabled");
+	    		$createFirewallRow.find("#start_port,#end_port").attr("disabled", "disabled");
+	    		$createFirewallRow.find("#start_port,#end_port").val("");
+	    	}	    	
+	    	return true;
+	    });
+	    	    
+	    $createFirewallRow.find("#add_link").bind("click", function(event){	  	 	
+	    	var isValid = true;		
+			isValid &= validateCIDRList("Source CIDR", $createFirewallRow.find("#cidr"), $createFirewallRow.find("#cidr_errormsg"), true); //optional								
+			if($createFirewallRow.find("#start_port").attr("disabled") == false)
+			    isValid &= validateInteger("Start Port", $createFirewallRow.find("#start_port"), $createFirewallRow.find("#start_port_errormsg"), 1, 65535);
+			if($createFirewallRow.find("#end_port").attr("disabled") == false)
+			    isValid &= validateInteger("End Port", $createFirewallRow.find("#end_port"), $createFirewallRow.find("#end_port_errormsg"), 1, 65535);				
+			if($createFirewallRow.find("#ICMP_type").attr("disabled") == false) 
+				isValid &= validateInteger("ICMP type", $createFirewallRow.find("#ICMP_type"), $createFirewallRow.find("#ICMP_type_errormsg"), null, null);
+			if($createFirewallRow.find("#ICMP_code").attr("disabled") == false) 
+				isValid &= validateInteger("ICMP code", $createFirewallRow.find("#ICMP_code"), $createFirewallRow.find("#ICMP_code_errormsg"), null, null);
+			if (!isValid) 
+			    return;			
+		    
+		    var $template = $("#firewall_template").clone();
+		    $("#tab_content_firewall #grid_content").append($template.show());		
+		    
+		    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
+		    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
+	        $spinningWheel.show();   
+		    	    
+		    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
+	        var ipObj = $midmenuItem1.data("jsonObj");          	        
+				   	    
+		    var array1 = [];
+		    array1.push("&ipaddressid="+ipObj.id);    
+		    
+		    var cidr = $createFirewallRow.find("#cidr").val();
+	        if(cidr != null && cidr.length > 0)
+	        	array1.push("&cidrlist="+cidr);
+		    
+	        if($createFirewallRow.find("#start_port").attr("disabled") == false) {
+		        var startPort = $createFirewallRow.find("#start_port").val();       
+		        array1.push("&startPort="+startPort);
+	        }
+	        
+	        if($createFirewallRow.find("#end_port").attr("disabled") == false) {
+		        var endPort = $createFirewallRow.find("#end_port").val();
+		        array1.push("&endPort="+endPort);
+	        }
+	        
+	        var protocol = $createFirewallRow.find("#protocol").val();
+	        array1.push("&protocol="+protocol);
+	         
+	        if($createFirewallRow.find("#ICMP_type").attr("disabled") == false) {
+		        var ICMPType = $createFirewallRow.find("#ICMP_type").val();       
+		        array1.push("&icmptype="+ICMPType);
+	        }
+	        if($createFirewallRow.find("#ICMP_code").attr("disabled") == false) {
+		        var ICMPCode = $createFirewallRow.find("#ICMP_code").val();       
+		        array1.push("&icmpcode="+ICMPCode);
+	        }
+	        
+	        $.ajax({
+	            data: createURL("command=createFirewallRule"+array1.join("")),
+	            dataType: "json",           
+	            success: function(json) {                      
+	                var jobId = json.createfirewallruleresponse.jobid;                  			                        
+	                var timerKey = "asyncJob_" + jobId;					                       
+	                $("body").everyTime(
+	                    10000,
+	                    timerKey,
+	                    function() {
+	                        $.ajax({
+	                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+		                        dataType: "json",									                    					                    
+		                        success: function(json) {		                                              							                       
+			                        var result = json.queryasyncjobresultresponse;										                   
+			                        if (result.jobstatus == 0) {
+				                        return; //Job has not completed
+			                        } else {											                    
+				                        $("body").stopTime(timerKey);				                        
+				                        $spinningWheel.hide();  			                                 		                       
+				                        if (result.jobstatus == 1) { // Succeeded 					                       		                            
+		                                    var item = json.queryasyncjobresultresponse.jobresult.firewallrule;		       	        	
+		                                    firewallJsonToTemplate(item, $template);
+		                                    $spinningWheel.hide();   
+		                                    refreshCreateFirewallRow();			 
+				                        } else if (result.jobstatus == 2) { // Failed			                            
+					                        $template.slideUp("slow", function() {
+						                        $(this).remove();
+					                        });
+					                        var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
+		                                    $("#dialog_error").text(errorMsg).dialog("open");
+				                        }											                    
+			                        }
+		                        },
+		                        error: function(XMLHttpResponse) {	                  
+			                        $("body").stopTime(timerKey);	
+									handleError(XMLHttpResponse, function() {
+						                $template.slideUp("slow", function() {
+							                $(this).remove();
+						                });
+						                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+			                            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+					                });								
+		                        }
+	                        });
+                        },
+	                    0
+	                );
+	            },
+	            error: function(XMLHttpResponse) {	
+	                handleError(XMLHttpResponse, function() {
+		                $template.slideUp("slow", function() {
+			                $(this).remove();
+		                });
+		                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+	                    $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+	                });		
+	            }
+	        });    	    
+		    
+		    return false;
+		});
+	    //*** Firewall tab (end) ***
+	    
 	    //*** Port Range tab (begin) ***
 	    var $createPortRangeRow = $("#tab_content_port_range").find("#create_port_range_row");     
 	  
@@ -322,7 +466,10 @@ function afterLoadIpJSP() {
 	        array1.push("&startPort="+startPort);
 	        array1.push("&endPort="+endPort);
 	        array1.push("&protocol="+protocol);
-	                
+	           
+	        if(firewallTabIsShown == true)
+	        	array1.push("&openfirewall=false");
+	        
 	        $.ajax({
 	            data: createURL("command=createIpForwardingRule"+array1.join("")),
 	            dataType: "json",           
@@ -461,6 +608,9 @@ function afterLoadIpJSP() {
 		    var virtualMachineId = $createPortForwardingRow.find("#vm").val();	
 	        array1.push("&virtualmachineid=" + virtualMachineId);
 	        
+	        if(firewallTabIsShown == true)
+	        	array1.push("&openfirewall=false");
+	        
 	        $.ajax({
 	            data: createURL("command=createPortForwardingRule"+array1.join("")),
 	            dataType: "json",           
@@ -563,7 +713,10 @@ function afterLoadIpJSP() {
         
         var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
         array1.push("&algorithm="+algorithm);
-               
+        
+        if(firewallTabIsShown == true)
+        	array1.push("&openfirewall=false");
+        
         $.ajax({
 	        data: createURL("command=createLoadBalancerRule"+array1.join("")),
 			dataType: "json",
@@ -768,6 +921,61 @@ function ipToRightPanel($midmenuItem1) {
     }        
 }
 
+function ipJsonToFirewallTab() {   
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+   
+    if($midmenuItem1 == null) {
+        ipClearFirewallTab();
+        return;    
+    }
+        
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null) {
+        ipClearFirewallTab();
+        return;   
+    }
+    
+    var $thisTab = $("#right_panel_content #tab_content_firewall");  
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   		
+    
+    var networkObj = $midmenuItem1.data("networkObj");   
+    if(networkObj != null) {
+        var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
+        if(firewallServiceObj != null) {
+	        var supportedProtocolsCapabilityObj = ipFindCapabilityByName("SupportedProtocols", firewallServiceObj);    
+            if(supportedProtocolsCapabilityObj != null) {
+                var protocols = supportedProtocolsCapabilityObj.value.toUpperCase();  //e.g. "tcp,udp" => "TCP,UDP"         
+                var array1 = protocols.split(",");
+                var $protocolField = $("#create_firewall_row").find("#protocol").empty();
+                for(var i=0; i<array1.length; i++) {
+                	$protocolField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+                }
+            }  
+        }
+    }  
+ 
+    refreshCreateFirewallRow();         
+           		
+    $.ajax({
+        data: createURL("command=listFirewallRules&ipaddressid=" + ipObj.id),
+        dataType: "json",        
+        success: function(json) {	    
+            var items = json.listfirewallrulesresponse.firewallrule;              
+            var $grid = $thisTab.find("#grid_content").empty();                       		    		      	    		
+            if (items != null && items.length > 0) {				        			        
+                for (var i = 0; i < items.length; i++) {
+	                var $template = $("#firewall_template").clone(true);
+	                firewallJsonToTemplate(items[i], $template); 
+	                $grid.append($template.show());						   
+                }			    
+            } 	
+            $thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();           	      		    						
+        }
+    });      
+}
+
 function ipJsonToPortRangeTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
    
@@ -948,9 +1156,17 @@ function showEnableVPNDialog($thisTab) {
 			
 			var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 			var ipObj = $midmenuItem1.data("jsonObj");
-						
+			
+			var array1 = [];			
+			array1.push("&publicipid="+ipObj.id);
+			array1.push("&account="+ipObj.account);
+			array1.push("&domainid="+ipObj.domainid);
+			array1.push("&zoneid="+ipObj.zoneid);	
+			if(firewallTabIsShown == true)
+		        array1.push("&openfirewall=false");
+			
 			$.ajax({
-				data: createURL("command=createRemoteAccessVpn&publicipid="+ipObj.id+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
+				data: createURL("command=createRemoteAccessVpn"+array1.join("")),
 				dataType: "json",
 				success: function(json) {
 					var jobId = json.createremoteaccessvpnresponse.jobid;
@@ -1621,6 +1837,88 @@ function ipSetRuleState(stateValue, $stateField) {
     else //gray
         $stateField.removeClass("status_red status_green").addClass("status_gray");
 }
+
+//***** Firewall tab (begin) ********************************************************************************************************
+function ipClearFirewallTab() {
+   $("#tab_firewall #grid_content").empty(); 
+    refreshCreateFirewallRow(); 
+}    
+
+function firewallJsonToTemplate(jsonObj, $template) {	     
+    $template.attr("id", "firewall_" + fromdb(jsonObj.id)).data("firewallId", fromdb(jsonObj.id));    	    
+    $template.find("#row_container #cidr").text(fromdb(jsonObj.cidrlist));     
+    $template.find("#row_container #start_port").text(fromdb(jsonObj.startport));        
+    $template.find("#row_container #end_port").text(fromdb(jsonObj.endport));        
+    $template.find("#row_container #protocol").text(fromdb(jsonObj.protocol)); 
+    $template.find("#row_container #ICMP_type").text(fromdb(jsonObj.icmptype));        
+    $template.find("#row_container #ICMP_code").text(fromdb(jsonObj.icmpcode));    
+               
+    $template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
+        var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");		
+        $spinningWheel.find("#description").text(g_dictionary["label.deleting.processing"]);	
+        $spinningWheel.show();   
+             
+        $.ajax({
+            data: createURL("command=deleteFirewallRule&id="+fromdb(jsonObj.id)),
+            dataType: "json",           
+            success: function(json) {	                                  	                        
+                var jobId = json.deletefirewallruleresponse.jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                                                     							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {
+			                        $("body").stopTime(timerKey);
+			                        $spinningWheel.hide();   
+									if (result.jobstatus == 1) { // Succeeded										   
+										$template.slideUp("slow", function() {
+											$(this).remove();													
+										});									
+									} else if (result.jobstatus == 2) { // Failed	
+									     var errorMsg = g_dictionary["label.deleting.failed"] + " - " + fromdb(result.jobresult.errortext);		
+									    $("#dialog_error").text(errorMsg).dialog("open");											
+									}							                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {	 
+		                        $("body").stopTime(timerKey);
+								$spinningWheel.hide();   
+								handleError(XMLHttpResponse);		         
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {				
+				$spinningWheel.hide();   
+				handleError(XMLHttpResponse);				
+            }
+        });    
+                 
+        return false;
+    }); 
+}	  
+
+function refreshCreateFirewallRow() {  
+	var $createFirewallRow = $("#tab_content_firewall").find("#create_firewall_row");    
+	$createFirewallRow.find("#cidr").text("");     
+	$createFirewallRow.find("#start_port").text("");           
+	$createFirewallRow.find("#end_port").text("");    
+	$createFirewallRow.find("#ICMP_type").text("");          
+	$createFirewallRow.find("#ICMP_code").text("");    
+	$createFirewallRow.find("#protocol").click();
+}
+
+//***** Firewall tab (end) **********************************************************************************************************
 
 //***** Port Range tab (begin) ********************************************************************************************************
 function ipClearPortRangeTab() {
