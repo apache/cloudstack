@@ -31,6 +31,9 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName("userpublictemplateenabled") @Param(description="true if user and domain admins can set templates to be shared, false otherwise")
     private boolean userPublicTemplateEnabled;
     
+    @SerializedName("firewallRuleUiEnabled") @Param(description="true if the firewall rule UI is enabled")
+    private boolean firewallRuleUiEnabled;
+    
     
     @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
     private String supportELB;
@@ -65,5 +68,13 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public String getSupportELB() {
         return supportELB;
+    }
+    
+    public void setFirewallRuleUiEnabled(boolean firewallRuleUiEnabled) {
+    	this.firewallRuleUiEnabled = firewallRuleUiEnabled;
+    }
+    
+    public boolean getFirewallRuleUiEnabled() {
+    	return firewallRuleUiEnabled;
     }
 }
