@@ -1,83 +1,86 @@
 #!/usr/bin/env bash
- 
-# $Id: firewall.sh 9947 2010-06-25 19:34:24Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/patches/xenserver/root/loadbalancer.sh $
+#
+# Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+# 
+# This software is licensed under the GNU General Public License v3 or later.
+# 
+# It is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# firewall_rule.sh -- allow some ports / protocols to vm instances
 #
 #
 # @VERSION@
-echo $* >> /tmp/jana.log
+ 
 usage() {
-  printf "Usage: %s: -F  -a <added public ip address protocol:startport:endport:sourcecidr>  \n" $(basename $0) >&2
-# scourcecidrs format:  n1-n2-n3-n4
+  printf "Usage: %s:  -a <public ip address:protocol:startport:endport:sourcecidrs>  \n" $(basename $0) >&2
+  printf "sourcecidrs format:  cidr1-cidr2-cidr3-...\n"
 }
-
-# set -x
 
 #FIXME: eating up the error code during execution of iptables
 fw_remove_backup() {
-  for vif in $VIF_LIST; do 
-    sudo iptables -F back_firewall_rules_$vif 2> /dev/null
-    sudo iptables -D INPUT -i $vif  -j back_firewall_rules_$vif 2> /dev/null
-    sudo iptables -X back_firewall_rules_$vif 2> /dev/null
-  done
+  local pubIp=$1
+  sudo iptables -t mangle -F _FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -D PREROUTING   -j _FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -X _FIREWALL_$pubIp 2> /dev/null
 }
+
 fw_restore() {
-  for vif in $VIF_LIST; do 
-    sudo iptables -F firewall_rules_$vif 2> /dev/null
-    sudo iptables -D INPUT -i $vif   -j firewall_rules_$vif 2> /dev/null
-    sudo iptables -X firewall_rules_$vif 2> /dev/null
-    sudo iptables -E back_firewall_rules_$vif firewall_rules_$vif 2> /dev/null
-  done
+  local pubIp=$1
+  sudo iptables -t mangle -F FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -D PREROUTING   -j FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -X FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -E _FIREWALL_$pubIp FIREWALL_$pubIp 2> /dev/null
 }
-# firewall entry to ensure that haproxy can receive on specified port
-fw_entry() {
-  local added=$1
-  
-  if [ "$added" == "none" ]
-  then
-  	added=""
-  fi
-  
-  
-  local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
 
-# back up the iptable rules by renaming before creating new. 
-  for vif in $VIF_LIST; do 
-    sudo iptables -E firewall_rules_$vif back_firewall_rules_$vif 2> /dev/null
-    sudo iptables -N firewall_rules_$vif 2> /dev/null
-    sudo iptables -A INPUT -i $vif -j firewall_rules_$vif
-  done
+fw_chain_for_ip () {
+  local pubIp=$1
+  sudo iptables -t mangle -E FIREWALL_$pubIp _FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -N FIREWALL_$pubIp 2> /dev/null
+  sudo iptables -t mangle -A FIREWALL_$pubIp -j DROP> /dev/null
+  sudo iptables -t mangle -I PREROUTING -d $pubIp -j FIREWALL_$pubIp
+}
 
-  for i in $a
+fw_entry_for_public_ip() {
+  local rules=$1
+
+  local pubIp=$(echo $rules | cut -d: -f1)
+  local prot=$(echo $rules | cut -d: -f2)
+  local sport=$(echo $rules | cut -d: -f3)    
+  local eport=$(echo $rules | cut -d: -f4)    
+  local scidrs=$(echo $rules | cut -d: -f5 | sed 's/-/ /g')
+  
+  logger -t cloud "$(basename $0): enter apply firewall rules for public ip $pubIp:$prot:$sport:$eport:$scidrs"  
+
+
+  for src in $scidrs
   do
-    local prot=$(echo $i | cut -d: -f1)
-    local sport=$(echo $i | cut -d: -f2)    
-    local eport=$(echo $i | cut -d: -f3)    
-    local scidrs=$(echo $i | cut -d: -f4 | sed 's/-/,/g')
- 
-    
-    for vif in $VIF_LIST; do 
-      if [ "$prot" == "icmp" ]
+    if [ "$prot" == "icmp" ]
+    then
+    # TODO  icmp code need to be implemented
+    # sport is icmpType , dport is icmpcode 
+      if [ "$sport" == "-1" ]
       then
-# TODO  icmp code need to be implemented
-# sport is icmpType , dport is icmpcode 
-	 if [ "$sport" == "-1" ]
-         then
-             sudo iptables -A firewall_rules_$vif -s $scidrs -p $prot  -j ACCEPT
-         else
-             sudo iptables -A firewall_rules_$vif -s $scidrs -p $prot --icmp-type $sport  -j ACCEPT
-         fi
-      else
-         sudo iptables -A firewall_rules_$vif -s $scidrs -p $prot --dport $sport:$eport -j ACCEPT
-      fi
-      
-      if [ $? -gt 0 ]
-      then
-        return 1
-      fi
-    done      
+           sudo iptables -t mangle -I FIREWALL_$pubIp -s $src -p $prot  -j RETURN
+       else
+           sudo iptables -t mangle -I FIREWALL_$pubIp -s $src -p $prot --icmp-type $sport  -j RETURN
+       fi
+    else
+       sudo iptables -t mangle -I FIREWALL_$pubIp -s $src -p $prot --dport $sport:$eport -j RETURN
+  fi
   done
- 
-  return 0
+  result=$?
+      
+  logger -t cloud "$(basename $0): exit apply firewall rules for public ip $pubIp"  
+  return $result
 }
 
 get_vif_list() {
@@ -99,6 +102,7 @@ get_vif_list() {
 }
 
 shift 
+rules=
 while getopts 'a:' OPTION
 do
   case $OPTION in
@@ -118,21 +122,54 @@ then
   rules="none"
 fi
 
-# iptables entry to ensure that haproxy receives traffic
-fw_entry $rules 
-  	
-if [ $? -gt 0 ]
-then
-  logger -t cloud "Reverting firewall config"
-  # Revert iptables rules on DomR
-  fw_restore
+#-a 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,172.16.92.44:tcp:222:222:192.168.10.0/24-75.57.23.0/22-88.100.33.1/32
 
-  exit 1
-else
-  # Remove backedup iptable rules
-  fw_remove_backup
+
+success=0
+publicIps=
+rules_list=$(echo $rules | cut -d, -f1- --output-delimiter=" ")
+for r in $rules_list
+do
+  pubIp=$(echo $r | cut -d: -f1)
+  publicIps="$pubIp $publicIps"
+done
+
+unique_ips=$(echo $publicIps| tr " " "\n" | sort | uniq | tr "\n" " ")
+
+for u in $unique_ips
+do
+  fw_chain_for_ip $u
+done
+
+for r in $rules_list
+do
+  pubIp=$(echo $r | cut -d: -f1)
+  fw_entry_for_public_ip $r
+  success=$?
+  if [ $success -gt 0 ]
+  then
+    logger -t cloud "$(basename $0): failure to apply fw rules for ip $pubIp"
+    break
+  else
+    logger -t cloud "$(basename $0): successful in applying fw rules for ip $pubIp"
+  fi
+done
+
+if [ $success -gt 0 ]
+then
+    for p in $unique_ips
+    do
+      logger -t cloud "$(basename $0): restoring from backup for ip: $p"
+      fw_restore $p
+    done
+else 
+    for p in $unique_ips
+    do
+      logger -t cloud "$(basename $0): deleting backup for ip: $p"
+      fw_remove_backup $p
+    done
 fi
- 
+
 exit 0
   	
 

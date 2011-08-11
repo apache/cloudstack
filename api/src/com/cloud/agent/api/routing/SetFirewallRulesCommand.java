@@ -55,7 +55,7 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
 			
 			List<String> cidr;
 			StringBuilder sb = new StringBuilder();
-			sb.append(fwTO.getProtocol()).append(":");
+			sb.append(fwTO.getSrcIp()).append(":").append(fwTO.getProtocol()).append(":");
 			if ("icmp".compareTo(fwTO.getProtocol()) == 0)
 			{
 				sb.append(fwTO.getIcmpType()).append(":").append(fwTO.getIcmpCode()).append(":");
