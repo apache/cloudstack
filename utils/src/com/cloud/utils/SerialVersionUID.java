@@ -64,5 +64,6 @@ public interface SerialVersionUID {
     public static final long VirtualMachineMigrationException = Base | 0x24;
     public static final long DiscoveredWithErrorException = Base | 0x25;
     public static final long NoTransitionException = Base | 0x26;
-    public static final long CallFailedException = Base | 0x26;
+    public static final long CloudExecutionException = Base | 0x27;
+    public static final long CallFailedException = Base | 0x28;
 }

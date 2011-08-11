@@ -52,29 +52,37 @@ public interface NetworkGuru extends Adapter {
      * @return NetworkConfiguration
      */
     Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner);
-    
+
     /**
-     * allocate a nic in this network.  This method implementation cannot take a long time as 
-     * it is meant to allocate for the DB.
-     * @param network configuration to allocate the nic in.
-     * @param nic user specified 
-     * @param vm virtual machine the network configuraiton will be in.
+     * allocate a nic in this network. This method implementation cannot take a long time as it is meant to allocate for
+     * the DB.
+     * 
+     * @param network
+     *            configuration to allocate the nic in.
+     * @param nic
+     *            user specified
+     * @param vm
+     *            virtual machine the network configuration will be in.
      * @return NicProfile.
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
     NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
-    
+
     /**
      * Fully implement the network configuration as specified.
-     * @param network network configuration 
-     * @param offering offering that the network configuration was based on.
-     * @param destination where were deploying to.
+     * 
+     * @param network
+     *            network configuration
+     * @param offering
+     *            offering that the network configuration was based on.
+     * @param destination
+     *            where were deploying to.
      * @return a fully implemented NetworkConfiguration.
-     * @throws InsufficientVirtualNetworkCapcityException TODO
+     * @throws InsufficientVirtualNetworkCapcityException
      */
     Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException;
-    
+
     /**
      * reserve a nic for this VM in this network.
      * @param nic
@@ -89,13 +97,20 @@ public interface NetworkGuru extends Adapter {
     void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId);
-    
+
     void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
-    
+
+    /**
+     * @deprecated This method should not be here in the first place. What does this really mean? Is it always persisted
+     *             in the nic? When is it persisted in the nic? When is it called? No Idea.
+     * @param profile
+     * @param network
+     */
+    @Deprecated
     void updateNicProfile(NicProfile profile, Network network);
-    
+
     void shutdown(NetworkProfile network, NetworkOffering offering);
-    
+
     /**
      * Throw away the design.
      * @param network
@@ -104,7 +119,7 @@ public interface NetworkGuru extends Adapter {
      * @return
      */
     boolean trash(Network network, NetworkOffering offering, Account owner);
-    
+
     void updateNetworkProfile(NetworkProfile networkProfile);
-    
+
 }
