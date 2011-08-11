@@ -45,7 +45,10 @@ fw_chain_for_ip () {
   local pubIp=$1
   sudo iptables -t mangle -E FIREWALL_$pubIp _FIREWALL_$pubIp 2> /dev/null
   sudo iptables -t mangle -N FIREWALL_$pubIp 2> /dev/null
+  # drop if no rules match (this will be the last rule in the chain)
   sudo iptables -t mangle -A FIREWALL_$pubIp -j DROP> /dev/null
+  # ensure outgoing connections are maintained (first rule in chain)
+  sudo iptables -t mangle -I FIREWALL_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT> /dev/null
   sudo iptables -t mangle -I PREROUTING -d $pubIp -j FIREWALL_$pubIp
 }
 
@@ -61,6 +64,7 @@ fw_entry_for_public_ip() {
   logger -t cloud "$(basename $0): enter apply firewall rules for public ip $pubIp:$prot:$sport:$eport:$scidrs"  
 
 
+  # note that rules are inserted after the RELATED,ESTABLISHED rule but before the DROP rule
   for src in $scidrs
   do
     if [ "$prot" == "icmp" ]
@@ -69,12 +73,12 @@ fw_entry_for_public_ip() {
     # sport is icmpType , dport is icmpcode 
       if [ "$sport" == "-1" ]
       then
-           sudo iptables -t mangle -I FIREWALL_$pubIp -s $src -p $prot  -j RETURN
+           sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot  -j RETURN
        else
-           sudo iptables -t mangle -I FIREWALL_$pubIp -s $src -p $prot --icmp-type $sport  -j RETURN
+           sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --icmp-type $sport  -j RETURN
        fi
     else
-       sudo iptables -t mangle -I FIREWALL_$pubIp -s $src -p $prot --dport $sport:$eport -j RETURN
+       sudo iptables -t mangle -I FIREWALL_$pubIp 2 -s $src -p $prot --dport $sport:$eport -j RETURN
   fi
   done
   result=$?
