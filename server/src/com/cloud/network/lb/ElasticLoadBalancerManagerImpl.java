@@ -293,6 +293,13 @@ public class ElasticLoadBalancerManagerImpl implements
                 elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,
                 elbVm.getInstanceName());
+        //FIXME: why are we setting attributes directly? Ick!! There should be accessors and
+        //the constructor should set defaults.
+        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
+        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
+        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
+        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsIp = elbVm.getGuestIpAddress();
         cmds.addCommand(cmd);
 
     }

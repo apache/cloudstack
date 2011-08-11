@@ -38,6 +38,9 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
     private String supportELB;
 
+    @SerializedName("firewallRuleUiEnabled") @Param(description="true if the firewall rule UI is enabled")
+    private boolean firewallRuleUiEnabled;
+
     public boolean getSecurityGroupsEnabled() {
         return securityGroupsEnabled;
     }

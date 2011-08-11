@@ -81,6 +81,9 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the load balancer")
     private Long domainId;
     
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
+    private List<String> cidrlist;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -125,6 +128,14 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
             return true;
         }
     }
+    
+    public List<String> getSourceCidrList() {
+        if (cidrlist != null) {
+            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+        }
+        return null;
+    }
+    
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -137,9 +148,17 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
     
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {        
-        LoadBalancer result = null;
+        
+        //cidr list parameter is deprecated
+        if (cidrlist != null) {
+            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+        }
+        
         try {
-            result = _lbService.createLoadBalancerRule(this, getOpenFirewall());
+            LoadBalancer result = _lbService.createLoadBalancerRule(this, getOpenFirewall());
+            LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
@@ -147,9 +166,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         }
-        LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 
   

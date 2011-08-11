@@ -38,6 +38,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -142,5 +143,10 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 			throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
+	
+   @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        return false;
+    }
 
 }

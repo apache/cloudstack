@@ -78,7 +78,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -136,6 +135,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
@@ -1076,11 +1077,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             if (!routers.isEmpty()) {
-                //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
-                if (isPodBased) {
-                    List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(guestNetwork.getId(), podId, State.Running);
-                    routers.addAll(allRunningRoutersOutsideThePod);
-                }
                 return routers;
             }
 
@@ -1136,6 +1132,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 _networkDao.releaseFromLockTable(network.getId());
             }
         }
+        
         return routers;
     }
 
@@ -1397,7 +1394,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
                 List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
                 List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
+                List<StaticNat> staticNats = new ArrayList<StaticNat>();
 
+                //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
                 for (PublicIpAddress ip : publicIps) {
                     pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
                     staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
@@ -1406,6 +1405,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     if (vpn != null) {
                         vpns.add(vpn);
                     }
+                    
+                    if (ip.isOneToOneNat()) {
+                        String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), networkId);
+                        StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), networkId, ip.getId(), dstIp, false);
+                        staticNats.add(staticNat);
+                    }
+                }
+                
+                //Re-apply static nats
+                s_logger.debug("Found " + staticNats.size() + " static nat(s) to apply as a part of domR " + router + " start.");
+                if (!staticNats.isEmpty()) {
+                    createApplyStaticNatCommands(staticNats, router, cmds);
                 }
 
                 // Re-apply port forwarding rules
@@ -1596,20 +1607,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         List<VirtualRouter> rets = new ArrayList<VirtualRouter>(routers.size());
 
+        boolean sendPasswordAndVmData = true;
+        boolean sendDnsDhcpData = true;
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
+        
+        DataCenter dc = dest.getDataCenter();
+        String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
+        String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
+        boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+
         for (DomainRouterVO router : routers) {
             if (router.getState() != State.Running) {
                 s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is not in Running state");
                 continue;
             }
-            boolean sendPasswordAndVmData = true;
-            boolean sendDnsDhcpData = true;
-            _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
             
             //for basic zone: 
             //1) send vm data/password information only to the dhcp in the same pod
             //2) send dhcp/dns information to all routers in the cloudstack only when _dnsBasicZoneUpdates is set to "all" value
-            DataCenter dc = dest.getDataCenter();
-            if (dc.getNetworkType() == NetworkType.Basic) {
+           
+            if (isZoneBasic) {
                 Long podId = dest.getPod().getId();
                 if (router.getPodIdToDeployIn().longValue() != podId.longValue()) {
                     sendPasswordAndVmData = false;
@@ -1658,8 +1675,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     cmds.addCommand("password", cmd);
                 }
 
-                String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
-                String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
+                
 
                 cmds.addCommand(
                         "vmdata",
@@ -2074,6 +2090,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.warn("Unable to associate ip addresses, virtual router is not in the right state " + router.getState());
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
             }
+            
+            //If rules fail to apply on one domR, no need to proceed with the rest
+            if (!result) {
+                throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+            }
+            
         }
         return result;
     }
@@ -2082,8 +2104,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
-            throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
+            s_logger.warn("Unable to apply firewall rules, virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to apply firewall rules", DataCenter.class, network.getDataCenterId());
         }
 
         boolean result = true;
@@ -2111,6 +2133,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         result = false;
                     }
                 }
+                
+                //If rules fail to apply on one domR, no need to proceed with the rest
+                if (!result) {
+                    throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+                }
+                
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
                 s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
             } else {
@@ -2118,6 +2146,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 throw new ResourceUnavailableException("Unable to apply firewall rules, virtual router is not in the right state", VirtualRouter.class, router.getId());
             }
         }
+        
         return result;
     }
 
@@ -2178,5 +2207,69 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         createFirewallRulesCommands(rules, router, cmds);
         // Send commands to router
         return sendCommandsToRouter(router, cmds);
+    }
+    
+    @Override
+    public String getDnsBasicZoneUpdate() {
+        return _dnsBasicZoneUpdates;
+    }
+    
+    
+    @Override
+    public boolean applyStaticNats(Network network, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.warn("Unable to create static nat, virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to create static nat", DataCenter.class, network.getDataCenterId());
+        }
+
+        boolean result = true;
+        for (DomainRouterVO router : routers) {
+            if (router.getState() == State.Running) {
+                s_logger.debug("Applying " + rules.size() + " static nat in network " + network);
+                result = applyStaticNat(router, rules);
+                
+                //If rules fail to apply on one domR, no need to proceed with the rest
+                if (!result) {
+                    throw new ResourceUnavailableException("Unable to apply static nat on router ", VirtualRouter.class, router.getId());
+                }
+                
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
+            } else {
+                s_logger.warn("Unable to apply static nat, virtual router is not in the right state " + router.getState());
+                throw new ResourceUnavailableException("Unable to apply static nat, virtual router is not in the right state", VirtualRouter.class, router.getId());
+            }
+        }
+        
+        return result;
+    }
+    
+    
+    protected boolean applyStaticNat(DomainRouterVO router, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        Commands cmds = new Commands(OnError.Continue);
+        createApplyStaticNatCommands(rules, router, cmds);
+        // Send commands to router
+        return sendCommandsToRouter(router, cmds);
+    }
+    
+    private void createApplyStaticNatCommands(List<? extends StaticNat> rules, DomainRouterVO router, Commands cmds) {
+        List<StaticNatRuleTO> rulesTO = null;
+        if (rules != null) {
+            rulesTO = new ArrayList<StaticNatRuleTO>();
+            for (StaticNat rule : rules) {
+                IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                rulesTO.add(ruleTO);
+            }
+        }
+
+        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand(cmd);
     }
 }

@@ -36,13 +36,13 @@ public class StaticNatRuleTO extends FirewallRuleTO{
     }
     
     public StaticNatRuleTO(StaticNatRule rule, String scrIp, String dstIp) {
-        super(rule.getId(), scrIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(),rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose());
+        super(rule.getId(), scrIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(),rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(), null,0,0);
         this.dstIp = dstIp;
     }
     
     
-    protected StaticNatRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
-        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.StaticNat);
+    public StaticNatRuleTO(long id, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd, String protocol, boolean revoked, boolean alreadyAdded) {
+        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.StaticNat, null,0,0);
         this.dstIp = dstIp;
     }
 

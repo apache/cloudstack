@@ -45,7 +45,7 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
     }
     
     protected PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
-        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.PortForwarding);
+        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.PortForwarding, null,0,0);
         this.dstIp = dstIp;
         this.dstPortRange = new int[] { dstPortStart, dstPortEnd };
     }

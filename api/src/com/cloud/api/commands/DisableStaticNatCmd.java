@@ -76,7 +76,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ResourceUnavailableException {
-        boolean result = _rulesService.disableOneToOneNat(ipAddressId);
+        boolean result = _rulesService.disableStaticNat(ipAddressId);
         
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

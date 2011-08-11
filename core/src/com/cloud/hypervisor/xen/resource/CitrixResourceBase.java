@@ -156,7 +156,6 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -1270,6 +1269,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         //String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             //1:1 NAT needs instanceip;publicip;domrip;op
             StringBuilder args = new StringBuilder();
@@ -1277,15 +1277,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(rule.revoked() ? " -D " : " -A ");
             args.append(" -l ").append(rule.getSrcIp());
             args.append(" -r ").append(rule.getDstIp());
+            if (rule.getProtocol() != null) {
             args.append(" -P ").append(rule.getProtocol().toLowerCase());
+            }
+           
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
            
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
-            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetStaticNatRulesAnswer(cmd, results);
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
@@ -6456,16 +6464,36 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	}
 	
   protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
+		String[] results = new String[cmd.getRules().length];
+		String callResult;
         Connection conn = getConnection();
-        
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String[] results = new String[cmd.getRules().length];
-        int i = 0;
-        for (FirewallRuleTO rule : cmd.getRules()) {
-           //FIXME - Jana, add implementation here
+
+		if (routerIp == null) {
+			return new SetFirewallRulesAnswer(cmd, false, results);
         }
 
-        return new SetFirewallRulesAnswer(cmd, results);
+		String[][] rules = cmd.generateFwRules();
+		String args = "";
+		args += routerIp + " -F ";
+		StringBuilder sb = new StringBuilder();
+		String[] fwRules = rules[0];
+		if (fwRules.length > 0) {
+			for (int i = 0; i < fwRules.length; i++) {
+				sb.append(fwRules[i]).append(',');
+			}
+			args += " -a " + sb.toString();
   }
 	
+		callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
+
+		if (callResult == null || callResult.isEmpty()) {
+		    //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+		    for (int i=0; i < results.length; i++) {
+		        results[i] = "Failed";
+		    }
+			return new SetFirewallRulesAnswer(cmd, false, results);
+		}
+		return new SetFirewallRulesAnswer(cmd, true, results);
+	}
 }

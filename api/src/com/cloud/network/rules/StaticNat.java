@@ -15,23 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.Answer;
+package com.cloud.network.rules;
 
-public class SetFirewallRulesAnswer extends Answer {
-    String[] results;
+
+public interface StaticNat{
     
-    protected SetFirewallRulesAnswer() {
-    }
+    long getAccountId();
     
-    public SetFirewallRulesAnswer(SetFirewallRulesCommand cmd, Boolean success, String[] results) {
-        super(cmd, success, null);
-        assert (cmd.getRules().length == results.length) : "rules and their results should be the same length don't you think?";
-        this.results = results;
-    }
+    long getDomainId();
     
-    public String[] getResults() {
-        return results;
-    }
+    long getNetworkId();
+    
+    long getSourceIpAddressId();
+
+    String getDestIpAddress();
+
+    boolean isForRevoke();
 }

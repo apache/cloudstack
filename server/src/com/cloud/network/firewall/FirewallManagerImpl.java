@@ -10,6 +10,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListFirewallRulesCmd;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -72,6 +74,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     NetworkManager _networkMgr;
     @Inject 
     UsageEventDao _usageEventDao;
+    @Inject
+    ConfigurationDao _configDao;
+    
+    private boolean _elbEnabled=false;
     
     
     @Override
@@ -92,6 +98,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        _elbEnabled = Boolean.parseBoolean(elbEnabledString);
         return true;
     }
     
@@ -111,14 +119,17 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         // Validate ip address
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " doesn't exist in the system");
-        } else if (ipAddress.isOneToOneNat()) {
-            throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
         } 
         
-        validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol);
+        validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall);
 
+        //icmp code and icmp type can't be passed in for any other protocol rather than icmp
         if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
             throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
+        }
+        
+        if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
+            throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
         }
         
         Long networkId = ipAddress.getAssociatedWithNetworkId();
@@ -215,25 +226,26 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(newRule.getSourceIpAddressId(), null);
         assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for network conflicts so we should at least have one rule at this point.";
 
-        
-        
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
                 continue; // Skips my own rule.
             }
 
+            
+            boolean allowFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && newRule.getPurpose() != rule.getPurpose());
+            
+            if (!allowFirewall) {
             if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
                 throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" + newRule.getSourceIpAddressId());
             } else if (rule.getPurpose() != Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat) {
                 throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id=" + newRule.getSourceIpAddressId());
+            }
             }
 
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
             }
             
-            boolean allowFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && newRule.getPurpose() != rule.getPurpose());
-
             boolean notNullPorts = (newRule.getSourcePortStart() != null && newRule.getSourcePortEnd() != null && rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null);
             if (!allowFirewall && notNullPorts && ((rule.getSourcePortStart() <= newRule.getSourcePortStart() && rule.getSourcePortEnd() >= newRule.getSourcePortStart())
                     || (rule.getSourcePortStart() <= newRule.getSourcePortEnd() && rule.getSourcePortEnd() >= newRule.getSourcePortEnd())
@@ -251,15 +263,12 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             }
             
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
-                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() || newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() || newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
+                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
                     throw new InvalidParameterValueException("New rule conflicts with existing rule id=" + rule.getId());
                 }
-                
             }
         }
         
-        
-
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
         }
@@ -267,7 +276,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
     
     @Override
-    public void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto) {
+    public void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose) {
         // Validate ip address
         _accountMgr.checkAccess(caller, ipAddress);
 
@@ -293,10 +302,23 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
         
         // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> firewallCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
-        String supportedProtocols = firewallCapabilities.get(Capability.SupportedProtocols).toLowerCase();
+        Map<Network.Capability, String> protocolCapabilities = null;
+        
+        if (purpose == Purpose.LoadBalancing) {
+            if (!_elbEnabled) {
+                protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Lb);
+            }
+        } else {
+            protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
+        }
+        
+        if (protocolCapabilities != null) {
+            String supportedProtocols = protocolCapabilities.get(Capability.SupportedProtocols).toLowerCase();
         if (!supportedProtocols.contains(proto.toLowerCase())) {
             throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
+            } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {
+                throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
+            }
         }
     }
     
@@ -496,4 +518,5 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         return rules.size() == 0;
     }
+    
 }

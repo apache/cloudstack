@@ -102,6 +102,7 @@ import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
@@ -2431,6 +2432,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
         
+        // apply static nat
+        if (!_rulesMgr.applyStaticNatsForNetwork(networkId, false, caller)) {
+            s_logger.warn("Failed to apply static nats a part of network id" + networkId + " restart");
+            success = false;
+        }
+        
         // apply firewall rules
         List<FirewallRuleVO> firewallRulesToApply = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
         if (!_firewallMgr.applyFirewallRules(firewallRulesToApply, false, caller)) {
@@ -2629,6 +2636,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
         return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+    }
+
+    @Override
+    public String getIpInNetwork(long vmId, long networkId) {
+        Nic guestNic = getNicInNetwork(vmId, networkId);
+        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
+        return guestNic.getIp4Address();
     }
 
     @Override
@@ -3189,5 +3203,30 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return startIP;
+    }
+    
+    @Override
+    public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException {
+        if (staticNats == null || staticNats.size() == 0) {
+            s_logger.debug("There are no static nat rules for the network elements");
+            return true;
+        }
+
+        boolean success = true;
+        Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
+        for (NetworkElement ne : _networkElements) {
+            try {
+                boolean handled = ne.applyStaticNats(network, staticNats);
+                s_logger.debug("Static Nat for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
+            } catch (ResourceUnavailableException e) {
+                if (!continueOnError) {
+                    throw e;
+                }
+                s_logger.warn("Problems with " + ne.getName() + " but pushing on", e);
+                success = false;
+            }
+        }
+
+        return success;
     }
 }
