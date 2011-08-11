@@ -251,10 +251,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long accountId = ipAddress.getAccountId();
         Long domainId = ipAddress.getDomainId();
 
-        // Get nic IP4 address
-        Nic guestNic = _networkMgr.getNicInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
-        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
-        String dstIp = guestNic.getIp4Address();
+        String dstIp = _networkMgr.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -354,7 +351,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (_ipAddressDao.update(ipAddress.getId(), ipAddress)) {
             //enable static nat on the backend
             s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
-            if (applyStaticNat(ipId, false, caller, false)) {
+            if (applyStaticNatForIp(ipId, false, caller, false)) {
                 return true;
             } else {
                 ipAddress.setOneToOneNat(false);
@@ -706,6 +703,38 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return true;
     }
+    
+    @Override
+    public boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller) {
+        List<IPAddressVO> ips = _ipAddressDao.listStaticNatPublicIps(networkId);
+        if (ips.isEmpty()) {
+            s_logger.debug("There are no static nat to apply for network id=" + networkId);
+            return true;
+        }
+        
+        if (caller != null) {
+            _accountMgr.checkAccess(caller, ips.toArray(new IPAddressVO[ips.size()]));
+        }
+        
+        List<StaticNat> staticNats = new ArrayList<StaticNat>();
+        for (IPAddressVO ip : ips) {
+            // Get nic IP4 address
+            String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), networkId);
+            StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), networkId, ip.getId(), dstIp, false);
+            staticNats.add(staticNat);
+        }
+        
+        try {
+            if (!_networkMgr.applyStaticNats(staticNats, continueOnError)) {
+                return false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to create static nat rule due to ", ex);
+            return false;
+        }
+
+        return true;
+    }
 
     @Override
     public List<? extends FirewallRule> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId) {
@@ -819,7 +848,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         //revoke static nat for the ip address
-        boolean staticNatRevoked = applyStaticNat(ipId, false, caller, true);
+        boolean staticNatRevoked = applyStaticNatForIp(ipId, false, caller, true);
 
         // revoke all port forwarding rules
         applyPortForwardingRules(ipId, true, caller);
@@ -1021,13 +1050,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Source ip address of the rule id=" + rule.getId() + " is not static nat enabled");
         }
 
-        Nic guestNic = _networkMgr.getNicInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
+        String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
 
-        return new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address());
+        return new StaticNatRuleImpl(ruleVO, dstIp);
     }
     
     @Override
-    public boolean applyStaticNat(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
+    public boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
         
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
         IpAddress sourceIp = _ipAddressDao.findById(sourceIpId);
@@ -1054,9 +1083,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         //create new static nat rule
         // Get nic IP4 address
-        Nic guestNic = _networkMgr.getNicInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
-        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
-        String dstIp = guestNic.getIp4Address();
+        String dstIp = _networkMgr.getIpInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
         StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAccountId(), sourceIp.getDomainId(), networkId, sourceIpId, dstIp, forRevoke);
         staticNats.add(staticNat);
         

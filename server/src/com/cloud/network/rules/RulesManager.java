@@ -67,7 +67,8 @@ public interface RulesManager extends RulesService {
 	
 	List<PortForwardingRuleVO> listByNetworkId(long networkId);
 
-    boolean applyStaticNat(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
-	
-	
+    boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
+    
+    boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
+
 }

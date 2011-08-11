@@ -2432,6 +2432,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
         
+        // apply static nat
+        if (!_rulesMgr.applyStaticNatsForNetwork(networkId, false, caller)) {
+            s_logger.warn("Failed to apply static nats a part of network id" + networkId + " restart");
+            success = false;
+        }
+        
         // apply firewall rules
         List<FirewallRuleVO> firewallRulesToApply = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
         if (!_firewallMgr.applyFirewallRules(firewallRulesToApply, false, caller)) {
@@ -2630,6 +2636,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
         return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+    }
+    
+    @Override
+    public String getIpInNetwork(long vmId, long networkId) {
+        Nic guestNic = getNicInNetwork(vmId, networkId);
+        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null...how is it possible?";
+        return guestNic.getIp4Address();
     }
 
     @Override

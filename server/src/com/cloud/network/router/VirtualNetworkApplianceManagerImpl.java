@@ -136,6 +136,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
@@ -1392,7 +1393,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
                 List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
                 List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
+                List<StaticNat> staticNats = new ArrayList<StaticNat>();
 
+                //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
                 for (PublicIpAddress ip : publicIps) {
                     pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
                     staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
@@ -1401,6 +1404,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     if (vpn != null) {
                         vpns.add(vpn);
                     }
+                    
+                    if (ip.isOneToOneNat()) {
+                        String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), networkId);
+                        StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), networkId, ip.getId(), dstIp, false);
+                        staticNats.add(staticNat);
+                    }
+                }
+                
+                //Re-apply static nats
+                s_logger.debug("Found " + staticNats.size() + " static nat(s) to apply as a part of domR " + router + " start.");
+                if (!staticNats.isEmpty()) {
+                    createApplyStaticNatCommands(staticNats, router, cmds);
                 }
 
                 // Re-apply port forwarding rules
