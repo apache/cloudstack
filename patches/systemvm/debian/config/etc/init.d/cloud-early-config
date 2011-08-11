@@ -250,6 +250,10 @@ setup_common() {
  
   # a hacking way to activate vSwitch under VMware
   ping -n -c 3 -w 5 $GW
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+      ping -n -c 3 -w 5 $LOCAL_GW
+  fi
 }
 
 setup_dnsmasq() {
