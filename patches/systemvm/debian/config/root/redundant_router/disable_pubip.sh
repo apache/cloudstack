@@ -1,4 +1,4 @@
 #!/bin/bash
 
-ifconfig eth2 down
+ifdown eth2
 service dnsmasq stop
