@@ -350,6 +350,8 @@ function podClearDetailsTab() {
     
     $thisTab.find("#gateway").text(""); 
     $thisTab.find("#gateway_edit").val(""); 
+    
+    $thisTab.find("#allocationstate").text(""); 
 }
 	
 function getIpRange(startip, endip) {
@@ -1132,13 +1134,11 @@ var podActionMap = {
         dialogBeforeActionFn : doDeletePod,        
         inProcessText: "label.action.delete.pod.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();                
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    podClearRightPanel();
-                }                
-            });           
+            $midmenuItem1.remove();                             
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                podClearRightPanel();
+            }       
         }
     }
 }

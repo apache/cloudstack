@@ -586,13 +586,11 @@ var hostActionMap = {
         dialogBeforeActionFn: doRemoveHost,
         inProcessText: "label.action.remove.host.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {    
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    hostClearRightPanel();
-                }               
-            });         
+            $midmenuItem1.remove();               
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                hostClearRightPanel();
+            }                         
         }
     },    
     "label.action.update.OS.preference": {              
