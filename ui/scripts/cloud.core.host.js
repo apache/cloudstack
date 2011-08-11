@@ -128,7 +128,8 @@ function hostJsonToDetailsTab() {
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
-        
+    $thisTab.find("#hosttags").text(fromdb(jsonObj.hosttags));    
+    
     setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));
     
     
