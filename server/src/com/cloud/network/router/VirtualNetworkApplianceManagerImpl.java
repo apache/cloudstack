@@ -867,6 +867,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 routerCount = 2;
             }
 
+            /* If it is the single router network, then keep it untouched */
+            for (DomainRouterVO router : routers) {
+                if (!router.getIsRedundantRouter()) {
+                    routerCount = 1;
+                }
+            }
+
             if (routers.size() == routerCount) {
                 return routers;
             }
