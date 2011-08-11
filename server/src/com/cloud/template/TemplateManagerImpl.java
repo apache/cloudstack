@@ -588,6 +588,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
   
     
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_COPY, eventDescription = "copying template", async = true)
     public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
     	Long templateId = cmd.getId();
     	Long userId = UserContext.current().getCallerUserId();

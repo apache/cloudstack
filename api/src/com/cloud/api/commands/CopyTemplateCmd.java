@@ -36,6 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Copies a template from one zone to another.", responseObject=TemplateResponse.class)
 public class CopyTemplateCmd extends BaseAsyncCmd {
@@ -117,6 +118,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceAllocationException{
         try {
+        	UserContext.current().setEventDetails(getEventDescription());
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
             
             if (template != null){
