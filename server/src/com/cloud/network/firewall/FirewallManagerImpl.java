@@ -220,8 +220,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(newRule.getSourceIpAddressId(), null);
         assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for network conflicts so we should at least have one rule at this point.";
 
-        
-        
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
                 continue; // Skips my own rule.
@@ -256,7 +254,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             }
             
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
-                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() || newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() || newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
+                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
                     throw new InvalidParameterValueException("New rule conflicts with existing rule id=" + rule.getId());
                 }
             }
