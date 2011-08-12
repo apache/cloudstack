@@ -221,7 +221,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             txn.commit();
             return newRule;
         } catch (Exception e) {
+            
+            txn.start();
+            
+            _firewallDao.remove(_firewallDao.findByRelatedId(newRule.getId()).getId());
             _forwardingDao.remove(newRule.getId());
+            
+            txn.commit();
+            
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
@@ -280,7 +287,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
             return staticNatRule;
         } catch (Exception e) {
-            _forwardingDao.remove(newRule.getId());
+            
+            txn.start();
+            _firewallDao.remove(_firewallDao.findByRelatedId(newRule.getId()).getId());
+            _forwardingDao.remove(newRule.getId()); 
+            txn.commit();
+            
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
