@@ -42,18 +42,26 @@ iptables_() {
    local subnet_if="eth0"
    local subnet_ip=$(get_intf_ip $subnet_if)
 
-   iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 500 -j ACCEPT
-   iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 4500 -j ACCEPT
-   iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 1701 -j ACCEPT
-   iptables $op INPUT -i eth2 -p ah -j ACCEPT
-   iptables $op INPUT -i eth2 -p esp -j ACCEPT
-   iptables $op FORWARD -i ppp+ -o $subnet_if -j ACCEPT 
-   iptables $op FORWARD -i $subnet_if -o ppp+ -j ACCEPT 
-   iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT 
-   iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
+   sudo iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 500 -j ACCEPT
+   sudo iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 4500 -j ACCEPT
+   sudo iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 1701 -j ACCEPT
+   sudo iptables $op INPUT -i eth2 -p ah -j ACCEPT
+   sudo iptables $op INPUT -i eth2 -p esp -j ACCEPT
+   sudo iptables $op FORWARD -i ppp+ -o $subnet_if -j ACCEPT 
+   sudo iptables $op FORWARD -i $subnet_if -o ppp+ -j ACCEPT 
+   sudo iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT 
+   sudo iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
+   sudo iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $subnet_ip
 
+   if sudo iptables -t mangle -N FIREWALL_$public_ip &> /dev/null
+   then
+     logger -t cloud "$(basename $0): created firewall chain in PREROUTING mangle"
+   fi
+   op2="-D"
+   [ "$op" == "-A" ] && op2="-I"
+   sudo iptables -t mangle $op FIREWALL_$public_ip  -p ah -j ACCEPT
+   sudo iptables -t mangle $op FIREWALL_$public_ip  -p esp -j ACCEPT
 
-   iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $subnet_ip
    
 }
 
