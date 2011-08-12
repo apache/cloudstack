@@ -347,7 +347,7 @@ dictionary = {
 	                   </select>
 	                </div>	                
 	                <div class="grid_row_cell" style="width: 15%; ">   
-	                    <div class="row_celltitles" id="state"></div>
+	                    <div class="row_celltitles" id="state" style="padding:1px;"></div>
 	                </div>  
 	                <div class="grid_row_cell" style="width: 15%; ">
 	                    <div class="row_celltitles">
