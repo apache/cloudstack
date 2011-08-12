@@ -17,6 +17,7 @@
  */
 package com.cloud.network.vpn;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +54,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -228,24 +230,51 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             }
         } finally {        
             if (success) {
+                //Cleanup corresponding ports
+                List<? extends FirewallRule> vpnFwRules = _rulesDao.listByIpAndPurpose(ipId, Purpose.Vpn);
                 Transaction txn = Transaction.currentTxn();
-                try {
-                    txn.start();
-                    _remoteAccessVpnDao.remove(ipId);
-                    
-                    //Cleanup corresponding ports
-                    List<? extends FirewallRule> ports = _rulesDao.listByIpAndPurpose(ipId, Purpose.Vpn);
-                    if (ports != null) {
-                        for (FirewallRule port : ports) {
-                            _rulesDao.remove(port.getId());
-                            s_logger.debug("Successfully removed firewall rule with ip id=" + port.getSourceIpAddressId() + " and port " + port.getSourcePortStart() + " as a part of vpn cleanup");
-                        }
-                    }
-                    txn.commit();   
-                } catch (Exception ex) {
-                    txn.rollback();
-                    s_logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
+                
+                boolean applyFirewall = false;
+                List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
+                //if related firewall rule is created for the first vpn port, it would be created for the 2 other ports as well, so need to cleanup the backend
+                if (_rulesDao.findByRelatedId(vpnFwRules.get(0).getId()) != null) {
+                    applyFirewall = true;
                 }
+                
+                if (applyFirewall) {
+                    txn.start();
+                    
+                    for (FirewallRule vpnFwRule : vpnFwRules) {
+                        //don't apply on the backend yet; send all 3 rules in a banch 
+                        _rulesMgr.revokeRelatedFirewallRule(vpnFwRule.getId(), false);
+                        fwRules.add(_rulesDao.findByRelatedId(vpnFwRule.getId()));
+                    }
+                    
+                    txn.commit();
+                    
+                    //now apply vpn rules on the backend
+                    s_logger.debug("Applying " + fwRules.size() + " firewall rules as a part of disable remote access vpn");
+                    success = _firewallMgr.applyFirewallRules(fwRules, false, caller);
+                }
+                
+                if (success) {
+                   
+                    try {
+                        txn.start();
+                        _remoteAccessVpnDao.remove(ipId);
+                        if (vpnFwRules != null) {
+                            for (FirewallRule vpnFwRule : vpnFwRules) {
+                                _rulesDao.remove(vpnFwRule.getId());
+                                s_logger.debug("Successfully removed firewall rule with ip id=" + vpnFwRule.getSourceIpAddressId() + " and port " + vpnFwRule.getSourcePortStart() + " as a part of vpn cleanup");
+                            }
+                        }
+                        txn.commit();   
+                    } catch (Exception ex) {
+                        txn.rollback();
+                        s_logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
+                    }
+                }
+                
             }
         }
     }

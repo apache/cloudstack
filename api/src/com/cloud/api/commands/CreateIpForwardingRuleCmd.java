@@ -124,6 +124,11 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         } finally {
             if (!result || rule == null) {
                 _rulesService.revokeStaticNatRule(getEntityId(), true);
+                
+                if (getOpenFirewall()) {
+                    _rulesService.revokeRelatedFirewallRule(getEntityId(), true);
+                }
+                
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error in creating ip forwarding rule on the domr");
             }
         }
@@ -273,6 +278,11 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
     
     public List<String> getSourceCidrList() {
+        return null;
+    }
+    
+    @Override
+    public Long getRelated() {
         return null;
     }
     

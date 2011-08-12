@@ -88,9 +88,10 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     }
 	
     @Override
-    public void execute() throws ResourceUnavailableException {
+    public void execute(){
         UserContext.current().setEventDetails("Rule Id: "+id);
         boolean result = _rulesService.revokePortForwardingRule(id, true);
+        result = result && _rulesService.revokeRelatedFirewallRule(id, true);
         
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

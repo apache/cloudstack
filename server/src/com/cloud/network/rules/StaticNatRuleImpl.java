@@ -123,4 +123,9 @@ public class StaticNatRuleImpl implements StaticNatRule{
         return null;
     }
     
+    @Override
+    public Long getRelated() {
+        return null;
+    }
+    
 }

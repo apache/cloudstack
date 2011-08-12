@@ -14,8 +14,8 @@ public class DbUpgradeUtils {
 
     public static void dropKeysIfExist(Connection conn, String tableName, List<String> keys, boolean isForeignKey) {
         for (String key : keys) {
+            PreparedStatement pstmt = null;
             try {
-                PreparedStatement pstmt = null;
                 if (isForeignKey) {
                     pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + key);
                 } else {
@@ -23,10 +23,17 @@ public class DbUpgradeUtils {
                 }
                 pstmt.executeUpdate();
                 s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
-                pstmt.close();
             } catch (SQLException e) {
                 // do nothing here
+                
                 continue;
+            } finally {
+                try {
+                    if (pstmt != null) {
+                        pstmt.close();
+                    }
+                } catch (SQLException e) {
+                }
             }
         }
     }
@@ -39,7 +46,6 @@ public class DbUpgradeUtils {
                 try {
                     pstmt = conn.prepareStatement("SELECT " + column + " FROM " + tableName);
                     pstmt.executeQuery();
-
                 } catch (SQLException e) {
                     // if there is an exception, it means that field doesn't exist, so do nothing here
                     s_logger.trace("Field " + column + " doesn't exist in " + tableName);
@@ -49,11 +55,17 @@ public class DbUpgradeUtils {
                 pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + column);
                 pstmt.executeUpdate();
                 s_logger.debug("Column " + column + " is dropped successfully from the table " + tableName);
-                pstmt.close();
             }
         } catch (SQLException e) {
             s_logger.warn("Unable to drop columns using query " + pstmt + " due to exception", e);
             throw new CloudRuntimeException("Unable to drop columns due to ", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
         }
     }
 }

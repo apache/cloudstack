@@ -169,4 +169,9 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     public List<String> getSourceCidrList() {
         return null;
     }
+    
+    @Override
+    public Long getRelated() {
+        return null;
+    }
 }

@@ -416,14 +416,16 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(ipId, caller.getCaller(), lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getProtocol(), null, null);
-        }
         
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(), 
                 lb.getAlgorithm(), network.getId(), ipAddr.getAccountId(), ipAddr.getDomainId());
 
         newRule = _lbDao.persist(newRule);
+        
+        if (openFirewall) {
+            _firewallMgr.createRuleForAllCidrs(ipId, caller.getCaller(), lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getProtocol(), null, null, newRule.getId());
+        }
+        
         boolean success = true;
 
         try {
