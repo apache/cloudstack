@@ -18,6 +18,9 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
+
 
 public class ManageSnapshotCommand extends Command {
     // XXX: Should be an enum
@@ -29,7 +32,8 @@ public class ManageSnapshotCommand extends Command {
     
     // Information about the volume that the snapshot is based on
     private String _volumePath = null;
-    
+	StorageFilerTO _pool;
+
     // Information about the snapshot
     private String _snapshotPath = null;
     private String _snapshotName = null;
@@ -38,9 +42,10 @@ public class ManageSnapshotCommand extends Command {
 
     public ManageSnapshotCommand() {}
 
-    public ManageSnapshotCommand(long snapshotId, String volumePath, String preSnapshotPath ,String snapshotName, String vmName) {
+    public ManageSnapshotCommand(long snapshotId, String volumePath, StoragePool pool, String preSnapshotPath ,String snapshotName, String vmName) {
         _commandSwitch = ManageSnapshotCommand.CREATE_SNAPSHOT;
         _volumePath = volumePath;
+        _pool = new StorageFilerTO(pool);        
         _snapshotPath = preSnapshotPath;
         _snapshotName = snapshotName;
         _snapshotId = snapshotId;
@@ -64,6 +69,10 @@ public class ManageSnapshotCommand extends Command {
     
     public String getVolumePath() {
         return _volumePath;
+    }
+    
+    public StorageFilerTO getPool() {
+        return _pool;
     }
     
     public String getSnapshotPath() {
