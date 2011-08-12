@@ -53,8 +53,8 @@ import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -73,7 +73,6 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -132,6 +131,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     ElasticLoadBalancerManager _elbMgr;
     @Inject
     NetworkDao _networkDao;
+    @Inject
+    FirewallRulesDao _firewallDao;
     
     
     @Override
@@ -453,6 +454,12 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new CloudRuntimeException("Unable to add rule for ip address id=" + newRule.getSourceIpAddressId(), e);
         } finally {
             if (!success) {
+                
+                txn.start();
+                _firewallDao.remove(_firewallDao.findByRelatedId(newRule.getId()).getId());
+                _lbDao.remove(newRule.getId());
+                txn.commit();
+                
                 _lbDao.remove(newRule.getId());
             }
         }
