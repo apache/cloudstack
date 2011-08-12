@@ -2578,8 +2578,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }           
         try {
             final HashMap<String, VmState> vmStates = new HashMap<String, VmState>();
-            Map<VM, VM.Record> vmRs = VM.getAllRecords(conn);
-            for (VM.Record record : vmRs.values()) {
+            Host lhost = Host.getByUuid(conn, _host.uuid);
+            Set<VM> vms = lhost.getResidentVMs(conn);
+            for (VM vm: vms) {
+                VM.Record record = vm.getRecord(conn);
                 if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
                     continue; // Skip DOM0
                 }
