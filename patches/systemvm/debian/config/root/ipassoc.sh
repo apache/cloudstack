@@ -30,6 +30,69 @@ usage() {
   printf " %s -D  -l <public-ip-address>  -c <dev> [-f] \n" $(basename $0) >&2
 }
 
+add_fw_chain_for_ip () {
+  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
+  if sudo iptables -t mangle -N FIREWALL_$pubIp &> /dev/null
+  then
+    logger -t cloud "$(basename $0): created firewall chain for $pubIp"
+    #drop if no rules match (this will be the last rule in the chain)
+    sudo iptables -t mangle -A FIREWALL_$pubIp -j DROP> /dev/null
+    #ensure outgoing connections are maintained (first rule in chain)
+    sudo iptables -t mangle -I FIREWALL_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT> /dev/null
+    #ensure that this table is after VPN chain
+    sudo iptables -t mangle -I PREROUTING 2 -d $pubIp -j FIREWALL_$pubIp
+    return $?
+  fi
+  logger -t cloud "$(basename $0): firewall chain for $pubIp already exists"
+}
+
+add_vpn_chain_for_ip () {
+  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
+  if sudo iptables -t mangle -N VPN_$pubIp &> /dev/null
+  then
+    logger -t cloud "$(basename $0): created VPN chain for $pubIp"
+    #ensure outgoing connections are maintained (first rule in chain)
+    sudo iptables -t mangle -I VPN_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT
+    sudo iptables -t mangle -A VPN_$pubIp -j RETURN
+    #ensure that this table is the first
+    sudo iptables -t mangle -I PREROUTING 1 -d $pubIp -j VPN_$pubIp
+    return $?
+  fi
+  logger -t cloud "$(basename $0): VPN chain for $pubIp already exists"
+}
+
+del_fw_chain_for_ip () {
+  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
+  if ! sudo iptables -t mangle -N FIREWALL_$pubIp &> /dev/null
+  then
+    logger -t cloud "$(basename $0): destroying firewall chain for $pubIp"
+    sudo iptables -t mangle -D PREROUTING  -d $pubIp -j FIREWALL_$pubIp
+    sudo iptables -t mangle -F FIREWALL_$pubIp
+    sudo iptables -t mangle -X FIREWALL_$pubIp 
+    return $?
+  fi
+  # firewall chain got created as a result of testing for the chain, cleanup
+  sudo iptables -t mangle -F FIREWALL_$pubIp
+  sudo iptables -t mangle -X FIREWALL_$pubIp
+  logger -t cloud "$(basename $0): firewall chain did not exist for $pubIp, cleaned up"
+}
+
+del_vpn_chain_for_ip () {
+  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
+  if ! sudo iptables -t mangle -N VPN_$pubIp &> /dev/null
+  then
+    logger -t cloud "$(basename $0): destroying vpn chain for $pubIp"
+    sudo iptables -t mangle -D PREROUTING  -d $pubIp -j VPN_$pubIp
+    sudo iptables -t mangle -F VPN_$pubIp
+    sudo iptables -t mangle -X VPN_$pubIp 
+    return $?
+  fi
+  # vpn chain got created as a result of testing for the chain, cleanup
+  sudo iptables -t mangle -F VPN_$pubIp
+  sudo iptables -t mangle -X VPN_$pubIp
+  logger -t cloud "$(basename $0): vpn chain did not exist for $pubIp, cleaned up"
+}
+
 add_nat_entry() {
   local pubIp=$1
   logger -t cloud "$(basename $0):Adding nat entry for ip $pubIp on interface $ethDev"
@@ -195,25 +258,31 @@ fi
 
 if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
 then
-  add_nat_entry  $publicIp 
+  add_nat_entry  $publicIp  &&
+  add_vpn_chain_for_ip $publicIp &&
+  add_fw_chain_for_ip $publicIp 
   exit $?
 fi
 
 if [ "$Aflag" == "1" ]
 then  
-  add_an_ip  $publicIp 
+  add_an_ip  $publicIp  &&
+  add_fw_chain_for_ip $publicIp 
   exit $?
 fi
 
 if [ "$fflag" == "1" ] && [ "$Dflag" == "1" ]
 then
-  del_nat_entry  $publicIp 
+  del_nat_entry  $publicIp &&
+  del_fw_chain_for_ip $publicIp &&
+  del_vpn_chain_for_ip $publicIp
   exit $?
 fi
 
 if [ "$Dflag" == "1" ]
 then
-  remove_an_ip  $publicIp 
+  remove_an_ip  $publicIp &&
+  del_fw_chain_for_ip $publicIp 
   exit $?
 fi
 

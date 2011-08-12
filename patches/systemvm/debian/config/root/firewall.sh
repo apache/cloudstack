@@ -142,10 +142,10 @@ fw_chain_for_ip() {
   local pubIp=$1
   if  iptables -t mangle -N FIREWALL_$pubIp &> /dev/null
   then
-    logger -t cloud "created a fw chain for $pubIp to DROP by default"
+    logger -t cloud "$(basename $0): created a firewall chain for $pubIp"
     (sudo iptables -t mangle -A FIREWALL_$pubIp -j DROP) &&
     (sudo iptables -t mangle -I FIREWALL_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT ) &&
-    (sudo iptables -t mangle -I PREROUTING -d $pubIp -j FIREWALL_$pubIp)
+    (sudo iptables -t mangle -I PREROUTING 2 -d $pubIp -j FIREWALL_$pubIp)
     return $?
   fi
   logger -t cloud "fw chain for $pubIp already exists"

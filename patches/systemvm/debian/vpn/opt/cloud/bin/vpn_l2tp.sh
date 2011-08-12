@@ -53,16 +53,16 @@ iptables_() {
    sudo iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
    sudo iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $subnet_ip
 
-   if sudo iptables -t mangle -N FIREWALL_$public_ip &> /dev/null
+   if sudo iptables -t mangle -N VPN_$public_ip &> /dev/null
    then
-     logger -t cloud "$(basename $0): created firewall chain in PREROUTING mangle"
+     logger -t cloud "$(basename $0): created VPN chain in PREROUTING mangle"
+     sudo iptables -t mangle -I PREROUTING -d $public_ip -j VPN_$public_ip
+     sudo iptables -t mangle -A VPN_$public_ip -j RETURN
    fi
    op2="-D"
    [ "$op" == "-A" ] && op2="-I"
-   sudo iptables -t mangle $op FIREWALL_$public_ip  -p ah -j ACCEPT
-   sudo iptables -t mangle $op FIREWALL_$public_ip  -p esp -j ACCEPT
-
-   
+   sudo iptables -t mangle $op VPN_$public_ip  -p ah -j ACCEPT
+   sudo iptables -t mangle $op VPN_$public_ip  -p esp -j ACCEPT
 }
 
 ipsec_server() {

@@ -29,17 +29,18 @@ usage() {
 fw_remove_backup() {
   local pubIp=$1
   sudo iptables -t mangle -F _FIREWALL_$pubIp 2> /dev/null
-  sudo iptables -t mangle -D PREROUTING   -j _FIREWALL_$pubIp -d $pubIp 2> /dev/null
+  sudo iptables -t mangle -D PREROUTING  -d $pubIp -j _FIREWALL_$pubIp  2> /dev/null
   sudo iptables -t mangle -X _FIREWALL_$pubIp 2> /dev/null
 }
 
 fw_restore() {
   local pubIp=$1
   sudo iptables -t mangle -F FIREWALL_$pubIp 2> /dev/null
-  sudo iptables -t mangle -D PREROUTING   -j FIREWALL_$pubIp -d  $pubIp 2> /dev/null
+  sudo iptables -t mangle -D PREROUTING  -d $pubIp  -j FIREWALL_$pubIp  2> /dev/null
   sudo iptables -t mangle -X FIREWALL_$pubIp 2> /dev/null
   sudo iptables -t mangle -E _FIREWALL_$pubIp FIREWALL_$pubIp 2> /dev/null
 }
+
 fw_chain_for_ip () {
   local pubIp=$1
   fw_remove_backup $1
@@ -49,7 +50,8 @@ fw_chain_for_ip () {
   sudo iptables -t mangle -A FIREWALL_$pubIp -j DROP> /dev/null
   # ensure outgoing connections are maintained (first rule in chain)
   sudo iptables -t mangle -I FIREWALL_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT> /dev/null
-  sudo iptables -t mangle -I PREROUTING -d $pubIp -j FIREWALL_$pubIp
+  #ensure that this table is after VPN chain
+  sudo iptables -t mangle -I PREROUTING 2 -d $pubIp -j FIREWALL_$pubIp
 }
 
 fw_entry_for_public_ip() {
