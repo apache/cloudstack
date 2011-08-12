@@ -265,7 +265,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 preSnapshotPath = preSnapshotVO.getPath();
             }
         }
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshotId, volume.getPath(), preSnapshotPath, snapshot.getName(), vmName);
+        StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
+        ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshotId, volume.getPath(), srcPool, preSnapshotPath, snapshot.getName(), vmName);
 
         ManageSnapshotAnswer answer = (ManageSnapshotAnswer) sendToPool(volume, cmd);
         // Update the snapshot in the database
@@ -557,7 +558,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
             boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
             String vmName = _storageMgr.getVmNameOnVolume(volume);
-            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), snapshotUuid,
+            StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
+            BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
                     snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName);
 
             if ( swift != null ) {
