@@ -53,6 +53,10 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
+
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -135,8 +139,7 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_adminCommands = null;
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
-    private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private HashMap<Long, String> usedSignatures = new HashMap<Long, String>(); 
+    private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -155,6 +158,7 @@ public class ApiServer implements HttpRequestHandler {
         if (s_instance == null) {
             s_instance = new ApiServer();
             s_instance.init(apiConfig);
+            s_instance.createCache();
         }
     }
 
@@ -601,7 +605,7 @@ public class ApiServer implements HttpRequestHandler {
             		s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
             		return false;
             	}
-            	if(usedSignatures.containsValue(signature)){
+            	if(_cache.isKeyInCache(signature)){
             		s_logger.info("Duplicate signature -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
             		return false;
             	}
@@ -653,8 +657,8 @@ public class ApiServer implements HttpRequestHandler {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             } else {
             	if("3".equals(signatureVersion)){
-            		//Add signature and expires timestamp to in-memory cache
-            		usedSignatures.put(expiresTS.getTime(), signature);
+            		//Add signature along with its time to live calculated based on expires timestamp
+            		_cache.put(new Element(signature, "", false, 0, (int)(expiresTS.getTime() - System.currentTimeMillis())/1000));
             	}
             }
             return equalSig;
@@ -929,5 +933,16 @@ public class ApiServer implements HttpRequestHandler {
         }
         return responseText;
     }
-    
+
+    protected Cache _cache;
+    protected void createCache() {
+    	final CacheManager cm = CacheManager.create();
+    	//ToDo: Make following values configurable
+    	final int maxElements = 100;
+    	final int live = 300;
+    	final int idle = 300;
+    	_cache = new Cache("signaturesCache", maxElements, false, false, live, idle);
+    	cm.addCache(_cache);
+    	s_logger.info("Cache created: " + _cache.toString());
+    }
 }
