@@ -1410,11 +1410,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
                 List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
                 List<StaticNat> staticNats = new ArrayList<StaticNat>();
+                List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
 
                 //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
                 for (PublicIpAddress ip : publicIps) {
                     pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
                     staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
+                    firewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
 
                     RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
                     if (vpn != null) {
@@ -1432,6 +1434,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.debug("Found " + staticNats.size() + " static nat(s) to apply as a part of domR " + router + " start.");
                 if (!staticNats.isEmpty()) {
                     createApplyStaticNatCommands(staticNats, router, cmds);
+                }
+                
+                //Re-apply firewall rules
+                s_logger.debug("Found " + staticNats.size() + " firewall rule(s) to apply as a part of domR " + router + " start.");
+                if (!firewallRules.isEmpty()) {
+                    createFirewallRulesCommands(firewallRules, router, cmds);
                 }
 
                 // Re-apply port forwarding rules
@@ -1892,7 +1900,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 String vmGuestAddress = null;
 
-                IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate);
+                IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate, ipAddr.isOneToOneNat());
                 ip.setTrafficType(network.getTrafficType());
                 ip.setNetworkTags(network.getTags());
                 ipsToSend[i++] = ip;
