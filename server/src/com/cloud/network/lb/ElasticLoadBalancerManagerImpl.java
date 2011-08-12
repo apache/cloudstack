@@ -772,6 +772,9 @@ public class ElasticLoadBalancerManagerImpl implements
 
     @Override
     public void handleDeleteLoadBalancerRule(LoadBalancer lb, long userId, Account caller) {
+        if (!_enabled) {
+            return;
+        }
         List<LoadBalancerVO> remainingLbs = _loadBalancerDao.listByIpAddress(lb.getSourceIpAddressId());
         if (remainingLbs.size() == 0) {
             s_logger.debug("ELB mgr: releasing ip " + lb.getSourceIpAddressId() + " since  no LB rules remain for this ip address");
