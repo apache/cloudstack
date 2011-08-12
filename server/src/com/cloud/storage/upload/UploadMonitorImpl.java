@@ -194,26 +194,13 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    
 	    String errorString = "";
 	    boolean success = false;
-	    List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
-	    if(storageServers == null || storageServers.size() == 0) {
-            throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);
-        }
-	    
+	    Host secStorage = ApiDBUtils.findHostById(vmTemplateHost.getHostId());	    
 	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 	    
-	    List<HostVO> storageServerVMs = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorageVM, dataCenterId);
-        //Check if one ssvm is up
-        boolean no_vm_up = true;
-        HostVO use_ssvm = null;
-        for (HostVO ssvm: storageServerVMs){
-            if(ssvm.getStatus() == com.cloud.host.Status.Up){
-                no_vm_up = false;
-                use_ssvm = ssvm;
-                break;
-            }  
-        }
-        if(no_vm_up){
-            throw new CloudRuntimeException("Couldnt create extract link - Secondary Storage Vm is not up");
+        //Check if ssvm is up
+        HostVO ssvm = _agentMgr.getSSAgent(ApiDBUtils.findHostById(vmTemplateHost.getHostId()));
+        if( ssvm == null ) {
+            throw new CloudRuntimeException("There is no secondary storage VM for secondary storage host " + secStorage.getId());
         }
 	    
 	    //Check if it already exists.
@@ -223,7 +210,7 @@ public class UploadMonitorImpl implements UploadMonitor {
         }
 	    
 	    // It doesn't exist so create a DB entry.	    
-	    UploadVO uploadTemplateObj = new UploadVO(use_ssvm.getId(), template.getId(), new Date(), 
+	    UploadVO uploadTemplateObj = new UploadVO(vmTemplateHost.getHostId(), template.getId(), new Date(), 
 	                                                Status.DOWNLOAD_URL_NOT_CREATED, 0, type, Mode.HTTP_DOWNLOAD); 
 	    uploadTemplateObj.setInstallPath(vmTemplateHost.getInstallPath());	                                                
 	    _uploadDao.persist(uploadTemplateObj);
@@ -231,8 +218,8 @@ public class UploadMonitorImpl implements UploadMonitor {
     	    // Create Symlink at ssvm
 	    	String path = vmTemplateHost.getInstallPath();
 	    	String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
-	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(storageServers.get(0).getParent(), path, uuid);
-    	    long result = send(use_ssvm.getId(), cmd, null);
+	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(secStorage.getParent(), path, uuid);
+    	    long result = send(ssvm.getId(), cmd, null);
     	    if (result == -1){
     	        errorString = "Unable to create a link for " +type+ " id:"+template.getId();
                 s_logger.error(errorString);
@@ -474,10 +461,11 @@ public class UploadMonitorImpl implements UploadMonitor {
         for (UploadVO extractJob : extractJobs){
             if( getTimeDiff(extractJob.getLastUpdated()) > EXTRACT_URL_LIFE_LIMIT_IN_SECONDS ){                           
                 String path = extractJob.getInstallPath();
+                HostVO secStorage = ApiDBUtils.findHostById(extractJob.getHostId());
                 s_logger.debug("Sending deletion of extract URL "+extractJob.getUploadUrl());
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
-                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl());
-                HostVO ssvm = _agentMgr.getSSAgent(ApiDBUtils.findHostById(extractJob.getHostId()));
+                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl(), secStorage.getParent());
+                HostVO ssvm = _agentMgr.getSSAgent(secStorage);
                 if( ssvm == null ) {
                 	s_logger.warn("There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
                 	continue;

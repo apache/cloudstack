@@ -411,7 +411,7 @@ public class UploadManagerImpl implements UploadManager {
         if(cmd.getType() == Upload.Type.VOLUME){
             command = new Script("/bin/bash", s_logger);
             command.add("-c");
-            command.add("rm -f " + parentDir +File.separator+ path);
+            command.add("rm -f /mnt/SecStorage/" + cmd.getParentPath() +File.separator+ path);
             s_logger.warn(" " +parentDir +File.separator+ path);
             result = command.execute();
             if (result != null) {
