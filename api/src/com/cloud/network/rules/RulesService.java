@@ -70,5 +70,7 @@ public interface RulesService {
     StaticNatRule buildStaticNatRule(FirewallRule rule);
     
     List<String> getSourceCidrs(long ruleId);
+    
+    boolean revokeRelatedFirewallRule(long ruleId, boolean apply);
   
 }

@@ -35,11 +35,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.NetUtils;
 
 @Implementation(description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
@@ -146,6 +146,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         } finally {
             if (!success || rule == null) {
                 _rulesService.revokePortForwardingRule(getEntityId(), true);
+                
+                if (getOpenFirewall()) {
+                    _rulesService.revokeRelatedFirewallRule(getEntityId(), true);
+                }
+                
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply port forwarding rule");
             }
         }
@@ -284,6 +289,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     
     @Override
     public Integer getIcmpType() {
+        return null;
+    }
+    
+    @Override
+    public Long getRelated() {
         return null;
     }
 

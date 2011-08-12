@@ -47,8 +47,8 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
@@ -203,7 +203,11 @@ public class VirtualRoutingResource implements Manager {
             //1:1 NAT needs instanceip;publicip;domrip;op
             command.add(" -l ", rule.getSrcIp());
             command.add(" -r ", rule.getDstIp());
-            command.add(" -P ", rule.getProtocol().toLowerCase());
+            
+            if (rule.getProtocol() != null) { 
+                command.add(" -P ", rule.getProtocol().toLowerCase());
+            }
+            
             command.add(" -d ", rule.getStringSrcPortRange());
             command.add(" -G ") ;
             

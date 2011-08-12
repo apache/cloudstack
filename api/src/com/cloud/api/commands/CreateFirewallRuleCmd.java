@@ -279,5 +279,10 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         }
         return null;
     }
+    
+    @Override
+    public Long getRelated() {
+        return null;
+    }
 
 }

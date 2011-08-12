@@ -70,6 +70,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public void execute(){
         UserContext.current().setEventDetails("Rule Id: "+id);
     	boolean result = _rulesService.revokeStaticNatRule(id, true);
+    	result = result && _rulesService.revokeRelatedFirewallRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -201,14 +201,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        //create firewallRule for 0.0.0.0/0 cidr
-        if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null);
-        }
-        
         PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
                 rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
         newRule = _forwardingDao.persist(newRule);
+        
+        //create firewallRule for 0.0.0.0/0 cidr
+        if (openFirewall) {
+            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null, newRule.getId());
+        }
 
         try {
             _firewallMgr.detectRulesConflict(newRule, ipAddress);
@@ -256,14 +256,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
+        FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
+                networkId, accountId, domainId, rule.getPurpose(), null, null, null, null);
+        newRule = _firewallDao.persist(newRule);
+        
         //create firewallRule for 0.0.0.0/0 cidr
         if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null);
+            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null, newRule.getId());
         }
         
-        FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(), 
-                networkId, accountId, domainId, rule.getPurpose(), null, null, null);
-        newRule = _firewallDao.persist(newRule);
 
         try {
             _firewallMgr.detectRulesConflict(newRule, ipAddress);
@@ -948,12 +949,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         txn.start();
         for (int i = 0; i < ports.length; i++) {
             
-            if (openFirewall) {
-                _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null);
-            }
-            
-            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null);
+            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null, null);
             rules[i] = _firewallDao.persist(rules[i]);
+            
+            if (openFirewall) {
+                _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null, rules[i].getId());
+            }
         }
         txn.commit();
 
@@ -1097,6 +1098,20 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         return true;
+    }
+    
+    @Override
+    public boolean revokeRelatedFirewallRule(long ruleId, boolean apply) {
+        FirewallRule fwRule = _firewallDao.findByRelatedId(ruleId);
+        
+        if (fwRule == null) {
+            s_logger.trace("No related firewall rule exists for rule id=" + ruleId + " so returning true here");
+            return true;
+        }
+        
+        s_logger.debug("Revoking Firewall rule id=" + fwRule.getId() + " as a part of rule delete id=" + ruleId + " with apply=" + apply);
+        return _firewallMgr.revokeFirewallRule(fwRule.getId(), apply);
+        
     }
     
 }
