@@ -17,7 +17,9 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.storage.StoragePool;
 
 /**
  * When a snapshot of a VDI is taken, it creates two new files,
@@ -33,7 +35,8 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     private String vmName;
     private Long snapshotId;
     private SwiftTO swift;
-    
+    StorageFilerTO pool;
+
     protected BackupSnapshotCommand() {
         
     }
@@ -55,6 +58,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
                                  Long   volumeId,
                                  Long   snapshotId,
                                  String volumePath,
+                                 StoragePool pool,
                                  String snapshotUuid,
                                  String snapshotName,
                                  String prevSnapshotUuid,
@@ -68,6 +72,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         this.prevBackupUuid = prevBackupUuid;
         this.isVolumeInactive = isVolumeInactive;
         this.vmName = vmName;
+        this.pool = new StorageFilerTO(pool);
         setVolumePath(volumePath);
     }
     
@@ -97,5 +102,9 @@ public class BackupSnapshotCommand extends SnapshotCommand {
 
     public Long getSnapshotId() {
         return snapshotId;
+    }
+
+    public StorageFilerTO getPool() {
+        return pool;
     }
 }
