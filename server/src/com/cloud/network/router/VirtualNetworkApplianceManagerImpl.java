@@ -98,6 +98,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
@@ -766,7 +767,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     String privateIP = router.getPrivateIpAddress();
                     HostVO host = _hostDao.findById(router.getHostId());
                     /* Only cover hosts managed by this management server */
-                    if (host == null || host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                    if (host == null || host.getStatus() != Status.Up ||
+                            host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
                         continue;
                     }
                     if (privateIP != null) {
