@@ -760,6 +760,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (!router.getIsRedundantRouter()) {
                     continue;
                 }
+                RedundantState prevState = router.getRedundantState();
                 if (router.getState() != State.Running) {
                     router.setRedundantState(RedundantState.UNKNOWN);
                     updated = true;
@@ -805,6 +806,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         s_logger.warn("Unable to update router status for account: " + router.getAccountId());
                     } finally {
                         txn.close();
+                    }
+                }
+                RedundantState currState = router.getRedundantState();
+                if (prevState != currState) {
+                    String title = "Redundant virtual router " + router.getInstanceName() +
+                                " just switch from " + prevState + " to " + currState;
+                    String context =  "Redundant virtual router (name: " + router.getHostName() + ", id: " + router.getId() + ") " +
+                                " just switch from " + prevState + " to " + currState;
+                    s_logger.info(context);
+                    if (currState == RedundantState.MASTER) {
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                                router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
                     }
                 }
             }
