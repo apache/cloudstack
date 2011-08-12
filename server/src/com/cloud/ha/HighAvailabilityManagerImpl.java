@@ -56,6 +56,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -185,6 +186,12 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         if (host.getType() != Host.Type.Routing) {
             return;
         }
+        
+        if(host.getHypervisorType() == HypervisorType.VMware) {
+            s_logger.warn("Skip HA for VMware host " + host.getId());
+        	return;
+        }
+        	
         s_logger.warn("Scheduling restart for VMs on host " + host.getId());
 
         final List<VMInstanceVO> vms = _instanceDao.listByHostId(host.getId());
@@ -267,6 +274,12 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     	    }
     	    return;
     	}
+    	
+    	if(vm.getHypervisorType() == HypervisorType.VMware) {
+    		s_logger.info("Skip HA for VMware VM " + vm.getInstanceName());
+    		return;
+    	}
+    	
         if (!investigate) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM does not require investigation so I'm marking it as Stopped: " + vm.toString());
