@@ -232,7 +232,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             }
 
             
-            boolean allowFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && newRule.getPurpose() != rule.getPurpose());
+            boolean allowFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && ((newRule.getPurpose() != rule.getPurpose()) || (!newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()))));
+            
             
             if (!allowFirewall) {
                 if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
