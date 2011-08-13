@@ -104,10 +104,12 @@ public class Upgrade229to2210 implements DbUpgrade {
                 pstmt.executeUpdate();
                 
                 //get new FirewallRule update
-                pstmt = conn.prepareStatement("SELECT id from firewall_rules where purpose='Firewall' and start_port=? and end_port=? and protocol=?");
+                pstmt = conn.prepareStatement("SELECT id from firewall_rules where purpose='Firewall' and start_port=? and end_port=? and protocol=? and ip_address_id=? and network_id=?");
                 pstmt.setInt(1, startPort);
                 pstmt.setInt(2, endPort);
                 pstmt.setString(3, protocol);
+                pstmt.setLong(4, ipId);
+                pstmt.setLong(5, networkId);
                 
                 ResultSet rs1 = pstmt.executeQuery();
                 
