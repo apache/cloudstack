@@ -116,7 +116,7 @@ public class Upgrade229to2210 implements DbUpgrade {
                 if (rs1.next()) {
                     firewallRuleId = rs1.getLong(1);
                 } else {
-                    throw new CloudRuntimeException("Unable to find just inserted firewall rule for ptocol " + protocol + ", start_port " + startPort + " and end_port " + endPort);
+                    throw new CloudRuntimeException("Unable to find just inserted firewall rule for ptocol " + protocol + ", start_port " + startPort + " and end_port " + endPort + " and ip address id=" + ipId);
                 }
                 
                 pstmt = conn.prepareStatement("select id from firewall_rules_cidrs where firewall_rule_id=?");
