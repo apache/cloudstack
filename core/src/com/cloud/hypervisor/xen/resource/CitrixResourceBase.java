@@ -1244,6 +1244,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        
+        boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             StringBuilder args = new StringBuilder();
             args.append(routerIp);
@@ -1256,10 +1258,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
 
-            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetPortForwardingRulesAnswer(cmd, results);
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
     
     protected SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
