@@ -25,7 +25,7 @@ public class SetStaticNatRulesAnswer extends Answer {
         super();
     }
     
-    public SetStaticNatRulesAnswer(SetStaticNatRulesCommand cmd, String[] results, Boolean success) {
+    public SetStaticNatRulesAnswer(SetStaticNatRulesCommand cmd, String[] results, boolean success) {
         super(cmd, success, null);
         
         assert(cmd.getRules().length == results.length) : "Shouldn't the results match the commands?";
