@@ -1053,14 +1053,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         
         for (DomainRouterVO router : routers) {
-            boolean skip = false;
-            if (router.getHostId() != null) {
-                HostVO host = _hostDao.findById(router.getHostId());
-                if (host == null || host.getStatus() != Status.Up) {
-                    skip = true;
-                }
-            }
-            if (!skip) {
+
+            HostVO host = _hostDao.findById(router.getHostId());
+            if (host != null && host.getStatus() == Status.Up) {
+
                 State state = router.getState();
                 if (state != State.Running) {
                     router = startVirtualRouter(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
