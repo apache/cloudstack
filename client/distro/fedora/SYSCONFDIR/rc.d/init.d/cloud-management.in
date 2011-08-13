@@ -49,13 +49,13 @@ stop() {
 			let count="${count}+1"
 		done
 		if [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ]; then
-			log_success_msg "Stopping Cloud-management"
+			log_success_msg "Stopping cloud-management:"
 		else
-			log_failure_msg "Stopping Cloud-management"
+			log_failure_msg "Stopping cloud-management:"
 		fi
 	else
 		echo "Cannot find PID file of Cloud-management"
-		log_failure_msg "Stopping Cloud-management"
+		log_failure_msg "Stopping cloud-management:"
 	fi
 }
 
