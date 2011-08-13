@@ -215,4 +215,6 @@ public interface NetworkManager extends NetworkService {
     boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException;
     
     String getIpInNetwork(long vmId, long networkId);
+
+    String getIpInNetworkIncludingRemoved(long vmId, long networkId);
 }
