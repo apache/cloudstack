@@ -2641,7 +2641,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public String getIpInNetwork(long vmId, long networkId) {
         Nic guestNic = getNicInNetwork(vmId, networkId);
-        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null?";
+        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null";
+        return guestNic.getIp4Address();
+    }
+    
+    @Override
+    public String getIpInNetworkIncludingRemoved(long vmId, long networkId) {
+        Nic guestNic = getNicInNetworkIncludingRemoved(vmId, networkId);
+        assert (guestNic != null && guestNic.getIp4Address() != null) : "Vm doesn't belong to network associated with ipAddress or ip4 address is null";
         return guestNic.getIp4Address();
     }
 

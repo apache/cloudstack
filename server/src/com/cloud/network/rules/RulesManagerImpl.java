@@ -1096,7 +1096,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         //create new static nat rule
         // Get nic IP4 address
-        String dstIp = _networkMgr.getIpInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
+        
+        String dstIp;
+        if (forRevoke) {
+            dstIp = _networkMgr.getIpInNetworkIncludingRemoved(sourceIp.getAssociatedWithVmId(), networkId);
+        } else {
+            dstIp = _networkMgr.getIpInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
+        }
+        
         StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAccountId(), sourceIp.getDomainId(), networkId, sourceIpId, dstIp, forRevoke);
         staticNats.add(staticNat);
         
