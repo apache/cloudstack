@@ -288,7 +288,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
         
         Network network = _networkMgr.getNetwork(networkId);
-        assert network != null : "Can't create port forwarding rule as network associated with public ip address is null...how is it possible?";
+        assert network != null : "Can't create port forwarding rule as network associated with public ip address is null?";
         
         if (portStart != null && !NetUtils.isValidPort(portStart)) {
             throw new InvalidParameterValueException("publicPort is an invalid value: " + portStart);
