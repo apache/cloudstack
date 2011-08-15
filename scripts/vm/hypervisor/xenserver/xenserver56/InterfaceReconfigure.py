@@ -375,8 +375,7 @@ class DatabaseCache(object):
 
     def __get_vlan_records_from_xapi(self, session):
         self.__vlans = {}
-        for v in session.xenapi.VLAN.get_all():
-            rec = session.xenapi.VLAN.get_record(v)
+        for (v,rec) in session.xenapi.VLAN.get_all_records().items():
             if not self.__pif_on_host(rec['untagged_PIF']):
                 continue
             self.__vlans[v] = {}
@@ -385,8 +384,7 @@ class DatabaseCache(object):
 
     def __get_bond_records_from_xapi(self, session):
         self.__bonds = {}
-        for b in session.xenapi.Bond.get_all():
-            rec = session.xenapi.Bond.get_record(b)
+        for (b,rec) in session.xenapi.Bond.get_all_records().items():
             if not self.__pif_on_host(rec['master']):
                 continue
             self.__bonds[b] = {}
@@ -395,8 +393,7 @@ class DatabaseCache(object):
 
     def __get_network_records_from_xapi(self, session):
         self.__networks = {}
-        for n in session.xenapi.network.get_all():
-            rec = session.xenapi.network.get_record(n)
+        for (n,rec) in session.xenapi.network.get_all_records().items():
             self.__networks[n] = {}
             for f in _NETWORK_ATTRS:
                 if f == "PIFs":
