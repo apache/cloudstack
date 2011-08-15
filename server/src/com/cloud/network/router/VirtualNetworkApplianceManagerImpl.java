@@ -76,6 +76,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -1618,8 +1619,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //1) send vm data/password information only to the dhcp in the same pod
             //2) send dhcp/dns information to all routers in the cloudstack only when _dnsBasicZoneUpdates is set to "all" value
             DataCenter dc = dest.getDataCenter();
+            Long podId = null;
             if (dc.getNetworkType() == NetworkType.Basic) {
-                Long podId = dest.getPod().getId();
+                podId = dest.getPod().getId();
                 if (router.getPodIdToDeployIn().longValue() != podId.longValue()) {
                     sendPasswordAndVmData = false;
                     if (_dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
@@ -1677,6 +1679,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             if (cmds.size() > 0) {
+                boolean podLevelException = false;
+                //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
+                if (dc.getNetworkType() == NetworkType.Basic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Direct) {
+                    podLevelException = true;
+                }
                 try {
                     _agentMgr.send(router.getHostId(), cmds);
                 } catch (OperationTimedoutException e) {
@@ -1686,18 +1693,27 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 Answer answer = cmds.getAnswer("dhcp");
                 if (!answer.getResult()) {
                     s_logger.error("Unable to set dhcp entry for " + profile + " on domR: " + router.getHostName() + " due to " + answer.getDetails());
+                    if (podLevelException) {
+                        throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), Pod.class, podId);
+                    }
                     throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
                 }
 
                 answer = cmds.getAnswer("password");
                 if (answer != null && !answer.getResult()) {
                     s_logger.error("Unable to set password for " + profile + " due to " + answer.getDetails());
+                    if (podLevelException) {
+                        throw new ResourceUnavailableException("Unable to set password due to " + answer.getDetails(), Pod.class, podId);
+                    }
                     throw new ResourceUnavailableException("Unable to set password due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
                 }
 
                 answer = cmds.getAnswer("vmdata");
                 if (answer != null && !answer.getResult()) {
                     s_logger.error("Unable to set VM data for " + profile + " due to " + answer.getDetails());
+                    if (podLevelException) {
+                        throw new ResourceUnavailableException("Unable to set VM data due to " + answer.getDetails(), Pod.class, podId);
+                    }
                     throw new ResourceUnavailableException("Unable to set VM data due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
                 }
             }
