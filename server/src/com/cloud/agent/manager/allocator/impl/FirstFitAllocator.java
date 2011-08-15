@@ -19,10 +19,8 @@ package com.cloud.agent.manager.allocator.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -30,17 +28,16 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -52,17 +49,12 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.capacity.CapacityManager;
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
