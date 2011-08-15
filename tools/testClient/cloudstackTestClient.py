@@ -1,5 +1,4 @@
 import cloudstackConnection
-import remoteSSHClient
 import asyncJobMgr
 import dbConnection
 from cloudstackAPI import * 
@@ -20,17 +19,6 @@ class cloudstackTestClient(object):
     
     def getDbConnection(self):
         return self.dbConnection
-    
-    def remoteSSHConfigure(self, host, port, user, passwd):
-        self.ssh = remoteSSHClient.remoteSSHClient(host, port, user, passwd)
-
-    def executeViaSSH(self, command):
-        if self.ssh is None:
-            return None
-        return self.ssh.execute(command)
-        
-    def getSSHClient(self):
-        return self.ssh
 
     def executeSql(self, sql=None):
         if sql is None or self.dbConnection is None:
