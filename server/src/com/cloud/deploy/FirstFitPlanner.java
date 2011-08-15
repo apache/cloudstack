@@ -235,7 +235,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
             }else{
                 s_logger.debug("The specified cluster cannot be found, returning.");
-                avoid.addPod(plan.getClusterId());
+                avoid.addCluster(plan.getClusterId());
                 return null;
             }
         }else if (plan.getPodId() != null) {
