@@ -92,15 +92,18 @@ class codeGenerator:
         self.code += "\n"
         self.code += 'class %sResponse (baseResponse):\n'%self.cmd.name
         self.code += self.space + "def __init__(self):\n"
-        for res in self.cmd.response:
-            if res.desc is not None:
-                self.code += self.space + self.space + '"""%s"""\n'%res.desc
+        if len(self.cmd.response) == 0:
+            self.code += self.space + self.space + "pass"
+        else:
+            for res in self.cmd.response:
+                if res.desc is not None:
+                    self.code += self.space + self.space + '"""%s"""\n'%res.desc
             
-            if len(res.subProperties) > 0:
-                self.code += self.space + self.space + 'self.%s = []\n'%res.name
-                self.generateSubClass(res.name, res.subProperties)
-            else:
-                self.code += self.space + self.space + 'self.%s = None\n'%res.name
+                if len(res.subProperties) > 0:
+                    self.code += self.space + self.space + 'self.%s = []\n'%res.name
+                    self.generateSubClass(res.name, res.subProperties)
+                else:
+                    self.code += self.space + self.space + 'self.%s = None\n'%res.name
         self.code += '\n'
         
         for subclass in self.subclass:
