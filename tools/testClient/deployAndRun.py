@@ -9,6 +9,7 @@ if __name__ == "__main__":
     parser.add_option("-d", "--directory", dest="testCaseFolder", help="the test case directory")
     parser.add_option("-r", "--result", dest="result", help="test result log file")
     parser.add_option("-t", dest="testcaselog", help="test case log file")
+    parser.add_option("-l", "--load", dest="load", action="store_true", help="only load config, do not deploy, it will only run testcase")
     (options, args) = parser.parse_args()
     if options.testCaseFolder is None:
         parser.print_usage()
@@ -22,7 +23,10 @@ if __name__ == "__main__":
     if options.testcaselog is not None:
         testCaseLogFile = options.testcaselog
     deploy = deployDataCenter.deployDataCenters(options.config)    
-    deploy.deploy()
+    if options.load:
+        deploy.loadCfg()
+    else:
+        deploy.deploy()
     
     testcaseEngine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, options.testCaseFolder, testCaseLogFile, testResultLogFile)
     testcaseEngine.run()

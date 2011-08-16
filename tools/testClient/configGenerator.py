@@ -184,7 +184,7 @@ class secondaryStorage():
 def describe_setup_in_basic_mode():
     zs = cloudstackConfiguration()
     
-    for l in range(2):
+    for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
         z.dns2 = "4.4.4.4"
@@ -194,7 +194,7 @@ def describe_setup_in_basic_mode():
         z.networktype = 'Basic'
     
         '''create 10 pods'''
-        for i in range(5):
+        for i in range(2):
             p = pod()
             p.name = "test" +str(l) + str(i)
             p.gateway = "192.168.%d.1"%i
@@ -203,7 +203,7 @@ def describe_setup_in_basic_mode():
             p.endip = "192.168.%d.220"%i
         
             '''add two pod guest ip ranges'''
-            for j in range(5):
+            for j in range(2):
                 ip = iprange()
                 ip.gateway = p.gateway
                 ip.netmask = p.netmask
@@ -213,14 +213,14 @@ def describe_setup_in_basic_mode():
                 p.guestIpRanges.append(ip)
         
             '''add 10 clusters'''
-            for j in range(5):
+            for j in range(2):
                 c = cluster()
                 c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
             
                 '''add 10 hosts'''
-                for k in range(5):
+                for k in range(2):
                     h = host()
                     h.username = "root"
                     h.password = "password"
