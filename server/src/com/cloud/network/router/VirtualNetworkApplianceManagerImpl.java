@@ -1061,7 +1061,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (state != State.Running) {
                     router = startVirtualRouter(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
                 }
-                runningRouters.add(router);
+                if (router != null) {
+                    runningRouters.add(router);
+                }
             }
         }
         return runningRouters;
