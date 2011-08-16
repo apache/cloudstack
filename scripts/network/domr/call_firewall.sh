@@ -24,12 +24,12 @@
 # firewall.sh -- allow some ports / protocols to vm instances
 #
 #
-
 usage() {
-  printf "Usage: %s: (-A|-D) -i <domR eth1 ip>  -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> [-f <firewall ip> -u <firewall user> -y <firewall password> -z <firewall enable password> ] \n" $(basename $0) >&2
+  printf "Usage for Firewall rule  : %s: <domR eth1 ip> -F " $(basename $0) >&2
+  printf "Usage for other purposes : %s: <domR eth1 ip> (-A|-D) -i <domR eth1 ip>  -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> [-f <firewall ip> -u <firewall user> -y <firewall password> -z <firewall enable password> ] \n" $(basename $0) >&2
 }
 
-# set -x
+#set -x
 
 # check if gateway domain is up and running
 check_gw() {
@@ -52,9 +52,22 @@ if [ $? -gt 0 ]
 then
   exit 1
 fi
+fflag=
+while getopts ':F' OPTION
+do
+  case $OPTION in 
+  F)    fflag=1
+                ;;
+  \?)  ;;
+  esac
+done
 
-
-ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewall.sh $*"
+if [ -n "$fflag" ]
+then
+	ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewall_rule.sh $*"
+else
+	ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewall.sh $*"
+fi
 exit $?
 
 

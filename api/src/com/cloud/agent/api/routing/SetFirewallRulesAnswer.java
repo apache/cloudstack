@@ -25,9 +25,8 @@ public class SetFirewallRulesAnswer extends Answer {
     protected SetFirewallRulesAnswer() {
     }
     
-    public SetFirewallRulesAnswer(SetFirewallRulesCommand cmd, String[] results) {
-        super(cmd, true, null);
-        
+    public SetFirewallRulesAnswer(SetFirewallRulesCommand cmd, boolean success, String[] results) {
+        super(cmd, success, null);
         assert (cmd.getRules().length == results.length) : "rules and their results should be the same length don't you think?";
         this.results = results;
     }

@@ -156,7 +156,6 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -6508,17 +6507,37 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	    return new Answer(cmd, success, "");
 	}
 	
-  protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
-        Connection conn = getConnection();
-        
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String[] results = new String[cmd.getRules().length];
-        int i = 0;
-        for (FirewallRuleTO rule : cmd.getRules()) {
-           //FIXME - Jana, add implementation here
-        }
+	protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
+		String[] results = new String[cmd.getRules().length];
+		String callResult;
+		Connection conn = getConnection();
+		String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
-        return new SetFirewallRulesAnswer(cmd, results);
-  }
-	
+		if (routerIp == null) {
+			return new SetFirewallRulesAnswer(cmd, false, results);
+		}
+
+		String[][] rules = cmd.generateFwRules();
+		String args = "";
+		args += routerIp + " -F ";
+		StringBuilder sb = new StringBuilder();
+		String[] fwRules = rules[0];
+		if (fwRules.length > 0) {
+			for (int i = 0; i < fwRules.length; i++) {
+				sb.append(fwRules[i]).append(',');
+			}
+			args += " -a " + sb.toString();
+		}
+
+		callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
+
+		if (callResult == null || callResult.isEmpty()) {
+		    //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+		    for (int i=0; i < results.length; i++) {
+		        results[i] = "Failed";
+		    }
+			return new SetFirewallRulesAnswer(cmd, false, results);
+		}
+		return new SetFirewallRulesAnswer(cmd, true, results);
+	}
 }
