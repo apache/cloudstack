@@ -21,7 +21,7 @@ do
   do
     tagpif=$(xe pif-list network-uuid=$vlan_network host-uuid=$host --minimal)
     if [ -z $tagpif ]; then
-      pif=$(xe pif-list host-uuid=$host network_uuid=$untagged_network --minimal)
+      pif=$(xe pif-list host-uuid=$host network-uuid=$untagged_network --minimal)
       xe vlan-create network-uuid=$vlan_network pif-uuid=$pif vlan=$vlan
     fi
   done
