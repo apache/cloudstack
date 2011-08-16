@@ -47,7 +47,7 @@ public class SSHKeyPairVO implements SSHKeyPair {
     @Column(name="fingerprint")
     private String fingerprint;
     
-    @Column(name="public_key")
+    @Column(name="public_key", length=5120)
     private String publicKey;
     
     @Transient
