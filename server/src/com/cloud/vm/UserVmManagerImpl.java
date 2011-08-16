@@ -2252,7 +2252,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
 
                 } else if (defaultNetworks.size() > 1) {
-                    throw new InvalidParameterValueException("More than 1 default network is found for accoun " + owner);
+                    throw new InvalidParameterValueException("More than 1 default network is found for account " + owner);
                 } else {
                     defaultNetwork = defaultNetworks.get(0);
                 }
