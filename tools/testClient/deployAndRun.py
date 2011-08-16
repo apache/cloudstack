@@ -22,7 +22,7 @@ if __name__ == "__main__":
     if options.testcaselog is not None:
         testCaseLogFile = options.testcaselog
     deploy = deployDataCenter.deployDataCenters(options.config)    
-    deploy.loadCfg()
+    deploy.deploy()
     
     testcaseEngine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, options.testCaseFolder, testCaseLogFile, testResultLogFile)
     testcaseEngine.run()
