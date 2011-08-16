@@ -19,7 +19,6 @@ INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-serve
 INSERT IGNORE INTO configuration VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.pool.max.waitseconds', '3600', 'Timeout (in seconds) to synchronize storage pool operations.');
 INSERT IGNORE INTO configuration VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.template.cleanup.enabled', 'true', 'Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled');
 
-
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.';
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.';
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `related` bigint unsigned COMMENT 'related to what other firewall rule';
@@ -58,3 +57,13 @@ CREATE TABLE IF NOT exists `cloud`.`elastic_lb_vm_map` (
 
 UPDATE `cloud`.`network_offerings` SET lb_service=1 where unique_name='System-Guest-Network';
 
+UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-xenserver-2.2.10';
+UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-kvm-2.2.10';
+UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-vSphere-2.2.10';
+
+UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.10' AND removed IS NULL) where vm_template_id=1;
+UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-kvm-2.2.10' AND removed IS NULL) where vm_template_id=3;
+UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-vSphere-2.2.10' AND removed IS NULL) where vm_template_id=8;
+
+-- Update system Vms using systemvm-xenserver-2.2.4 template;
+UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.10' AND removed IS NULL) where vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.4' AND removed IS NULL);
