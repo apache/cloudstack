@@ -1,5 +1,6 @@
 import json
 import os
+from optparse import OptionParser
 class Struct:
     '''The recursive class for building and representing objects with.'''
     def __init__(self, obj):
@@ -63,7 +64,7 @@ class dbServer():
         self.dbSvr = None
         self.port = 3306
         self.user = "cloud"
-        self.passwd = ""
+        self.passwd = "cloud"
         self.db = "cloud"
 
 class configuration():
@@ -115,7 +116,6 @@ class pod():
         self.clusters = []
         '''Used in basic network mode'''
         self.guestIpRanges = []
-        self.primaryStorages = []
 
 class cluster():
     def __init__(self):
@@ -128,6 +128,7 @@ class cluster():
         self.url = None
         self.username = None
         self.hosts = []
+        self.primaryStorages = []
   
 class host():
     def __init__(self):
@@ -183,68 +184,67 @@ class secondaryStorage():
 def describe_setup_in_basic_mode():
     zs = cloudstackConfiguration()
     
-    z = zone()
-    z.dns1 = "8.8.8.8"
-    z.dns2 = "4.4.4.4"
-    z.internaldns1 = "192.168.110.254"
-    z.internaldns2 = "192.168.110.253"
-    z.guestcidraddress = "10.1.1.0/24"
-    z.name = "test"
-    z.networktype = 'Basic'
+    for l in range(2):
+        z = zone()
+        z.dns1 = "8.8.8.8"
+        z.dns2 = "4.4.4.4"
+        z.internaldns1 = "192.168.110.254"
+        z.internaldns2 = "192.168.110.253"
+        z.name = "test"+str(l)
+        z.networktype = 'Basic'
     
-    '''create 10 pods'''
-    for i in range(1):
-        p = pod()
-        p.name = "test" +str(i)
-        p.gateway = "192.168.%d.1"%i
-        p.netmask = "255.255.255.0"
-        p.startip = "192.168.%d.200"%i
-        p.endip = "192.168.%d.220"%i
+        '''create 10 pods'''
+        for i in range(5):
+            p = pod()
+            p.name = "test" +str(l) + str(i)
+            p.gateway = "192.168.%d.1"%i
+            p.netmask = "255.255.255.0"
+            p.startip = "192.168.%d.200"%i
+            p.endip = "192.168.%d.220"%i
         
-        '''add two pod guest ip ranges'''
-        for j in range(1):
-            ip = iprange()
-            ip.gateway = p.gateway
-            ip.netmask = p.netmask
-            ip.startip = "192.168.%d.2"%i
-            ip.endip = "192.168.%d.100"%i
+            '''add two pod guest ip ranges'''
+            for j in range(5):
+                ip = iprange()
+                ip.gateway = p.gateway
+                ip.netmask = p.netmask
+                ip.startip = "192.168.%d.%d"%(i,j*20)
+                ip.endip = "192.168.%d.%d"%(i,j*20+10)
             
-            p.guestIpRanges.append(ip)
+                p.guestIpRanges.append(ip)
         
-        '''add 10 clusters'''
-        for j in range(1):
-            c = cluster()
-            c.clustername = "test"+str(i) + str(j)
-            c.clustertype = "CloudManaged"
-            c.hypervisor = "Simulator"
+            '''add 10 clusters'''
+            for j in range(5):
+                c = cluster()
+                c.clustername = "test"+str(l)+str(i) + str(j)
+                c.clustertype = "CloudManaged"
+                c.hypervisor = "Simulator"
             
-            '''add 10 hosts'''
-            for k in range(1):
-                h = host()
-                h.clustername = "host"+str(i) + str(j) + str(k)
-                h.username = "root"
-                h.password = "password"
-                h.url = "http://Sim"
-                c.hosts.append(h)
+                '''add 10 hosts'''
+                for k in range(5):
+                    h = host()
+                    h.username = "root"
+                    h.password = "password"
+                    h.url = "http://Sim/%d%d%d%d"%(l,i,j,k)
+                    c.hosts.append(h)
                 
-            p.clusters.append(c)
-            
-        '''add 2 primary storages'''
-        for j in range(2):
-            primary = primaryStorage()
-            primary.name = "primary"+str(j)
-            primary.url = "nfs://localhost/path"+str(i) + str(j)
-            p.primaryStorages.append(primary)
-            
-        z.pods.append(p)
-            
-    '''add two secondary'''
-    for i in range(2):
-        secondary = secondaryStorage()
-        secondary.url = "nfs://localhost/path"+str(i)
-        z.secondaryStorages.append(secondary)
+                '''add 2 primary storages'''
+                for m in range(2):
+                    primary = primaryStorage()
+                    primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
+                    primary.url = "nfs://localhost/path"+str(l) + str(i) + str(j) + str(m)
+                    c.primaryStorages.append(primary)
         
-    zs.zones.append(z)
+                p.clusters.append(c)
+            
+            z.pods.append(p)
+            
+        '''add two secondary'''
+        for i in range(5):
+            secondary = secondaryStorage()
+            secondary.url = "nfs://localhost/path"+str(l) + str(i)
+            z.secondaryStorages.append(secondary)
+        
+        zs.zones.append(z)
     
     '''Add one mgt server'''
     mgt = managementServer()
@@ -260,11 +260,11 @@ def describe_setup_in_basic_mode():
     ''''add loggers'''
     testClientLogger = logger()
     testClientLogger.name = "TestClient"
-    testClientLogger.file = "/var/log/cloud/testclient.log"
+    testClientLogger.file = "/tmp/testclient.log"
     
     testCaseLogger = logger()
     testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/var/log/cloud/testcase.log"
+    testCaseLogger.file = "/tmp/testcase.log"
     
     zs.logger.append(testClientLogger)
     zs.logger.append(testCaseLogger)
@@ -287,7 +287,13 @@ def get_setup_config(file):
     config = cloudstackConfiguration()
     fp = open(file, 'r')
     config = json.load(fp)
-    return config
+    return Struct(config)
 
 if __name__ == "__main__":
-    generate_setup_config(describe_setup_in_basic_mode, "/tmp/x.json")
+    parser = OptionParser()
+  
+    parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
+    
+    (options, args) = parser.parse_args()
+
+    generate_setup_config(describe_setup_in_basic_mode, options.output)

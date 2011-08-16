@@ -5,17 +5,17 @@ import cloudstackTestClient
 import sys
 import logging
 from cloudstackAPI import * 
+from optparse import OptionParser
 class deployDataCenters():
     def __init__(self, cfgFile):
         self.configFile = cfgFile
     
-    def addHosts(self, hosts, zoneId, podId, clusterId):
+    def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
         if hosts is None:
             return
         for host in hosts:
             hostcmd = addHost.addHostCmd()
             hostcmd.clusterid = clusterId
-            hostcmd.clustername = host.clustername
             hostcmd.cpunumber = host.cpunumer
             hostcmd.cpuspeed = host.cpuspeed
             hostcmd.hostmac = host.hostmac
@@ -27,6 +27,7 @@ class deployDataCenters():
             hostcmd.url = host.url
             hostcmd.username = host.username
             hostcmd.zoneid = zoneId
+            hostcmd.hypervisor = hypervisor
             self.apiClient.addHost(hostcmd)
             
     def createClusters(self, clusters, zoneId, podId):
@@ -44,22 +45,22 @@ class deployDataCenters():
             clustercmd.username = cluster.username
             clustercmd.zoneid = zoneId
             clusterresponse = self.apiClient.addCluster(clustercmd)
-            clusterId = clusterresponse.id
+            clusterId = clusterresponse[0].id
             
-            self.addhosts(cluster.hosts, zoneId, podId, clusterId)
-            
-    def createPrimaryStorages(self, primaryStorages, zoneId, podId):
+            self.addHosts(cluster.hosts, zoneId, podId, clusterId, cluster.hypervisor)
+            self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId, clusterId)
+    def createPrimaryStorages(self, primaryStorages, zoneId, podId, clusterId):
         if primaryStorages is None:
             return
         for primary in primaryStorages:
             primarycmd = createStoragePool.createStoragePoolCmd()
-            primarycmd.clusterid = primary.clusterid
             primarycmd.details = primary.details
             primarycmd.name = primary.name
             primarycmd.podid = podId
             primarycmd.tags = primary.tags
             primarycmd.url = primary.url
             primarycmd.zoneid = zoneId
+            primarycmd.clusterid = clusterId
             self.apiClient.createStoragePool(primarycmd)
             
     def createpods(self, pods, zone, zoneId):
@@ -80,7 +81,7 @@ class deployDataCenters():
                 self.createipRanges("Basic", pod.guestIpRanges, zoneId, podId)
                 
             self.createClusters(pod.clusters, zoneId, podId)
-            self.createPrimaryStorages(pod.primaryStorages, zoneId, podId)
+            
             
     def createipRanges(self, mode, ipranges, zoneId, podId=None, networkId=None):
         if ipranges is None:
@@ -146,8 +147,8 @@ class deployDataCenters():
             createzone.internaldns1 = zone.internaldns1
             createzone.internaldns2 = zone.internaldns2
             createzone.name = zone.name
-            createzone.guestcidraddress = zone.guestcidraddress
             createzone.securitygroupenabled = zone.securitygroupenabled
+            createzone.networktype = zone.networktype
             createzone.vlan = zone.vlan
             
             zoneresponse = self.apiClient.createZone(createzone)
@@ -163,21 +164,28 @@ class deployDataCenters():
             self.createnetworks(zone.networks, zoneId)
             '''create secondary storage'''
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-            
-    def deploy(self):
+    
+    def loadCfg(self):
         try:
-            config =  configGenerator.get_setup_config(self.configFile)
+            self.config =  configGenerator.get_setup_config(self.configFile)
         except:
             raise cloudstackException.InvalidParameterException("Failed to load cofig" + sys.exc_value)
+
+        mgt = self.config.mgtSvr[0]
         
-        mgt = config.mgtSvr[0]
-        
-        loggers = config.logger
+        loggers = self.config.logger
         testClientLogFile = None
+        self.testCaseLogFile = None
+        self.testResultLogFile = None
         if loggers is not None and len(loggers) > 0:
             for log in loggers:
                 if log.name == "TestClient":
                     testClientLogFile = log.file
+                elif log.name == "TestCase":
+                    self.testCaseLogFile = log.file
+                elif log.name == "TestResult":
+                    self.testResultLogFile = log.file
+                
         testClientLogger = None
         if testClientLogFile is not None:
             testClientLogger = logging.getLogger("testClient")
@@ -188,9 +196,33 @@ class deployDataCenters():
         self.testClient = cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, mgt.apiKey, mgt.securityKey, logging=testClientLogger)
         
         '''config database'''
-        dbSvr = config.dbSvr
+        dbSvr = self.config.dbSvr
         self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, dbSvr.passwd, dbSvr.db)
         self.apiClient = self.testClient.getApiClient()
+    def deploy(self):
+        self.loadCfg()
+        self.createZones(self.config.zones)
         
-        self.createZones(config.zones)
-            
+if __name__ == "__main__":
+    
+    parser = OptionParser()
+  
+    parser.add_option("-i", "--intput", action="store", default="./datacenterCfg", dest="input", help="the path where the json config file generated, by default is ./datacenterCfg")
+    
+    (options, args) = parser.parse_args()
+    
+    deploy = deployDataCenters(options.input)    
+    deploy.deploy()   
+    
+    '''
+    create = createStoragePool.createStoragePoolCmd()
+    create.clusterid = 1
+    create.podid = 2
+    create.name = "fdffdf"
+    create.url = "nfs://jfkdjf/fdkjfkd"
+    create.zoneid = 2
+    
+    deploy = deployDataCenters("./datacenterCfg")
+    deploy.loadCfg()
+    deploy.apiClient.createStoragePool(create)
+    '''
