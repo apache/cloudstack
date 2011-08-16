@@ -34,9 +34,9 @@ fake_pv_driver() {
     echo "Warning VM $vm is HVM, but PV driver is not installed, you may need to stop it manually"
     return 0
   fi
-  make_migratable.sh $vm
+  host=$(xe vm-param-get uuid=$vm param-name=resident-on)
+  xe host-call-plugin host-uuid=$host plugin=vmops fn=preparemigration args:uuid=$vm
 }
-
 
 vms=$(xe vm-list is-control-domain=false| grep ^uuid | awk '{print $NF}')
 for vm in $vms
