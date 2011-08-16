@@ -1556,6 +1556,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
 
+        // during VM migration time, don't sync state will agent status update
+        if (serverState == State.Migrating) {
+        	s_logger.debug("Skipping vm in migrating state: " + vm);
+        	return null;
+        }
+        
         if(trackExternalChange) {
         	if(serverState == State.Starting) {
         		if(vm.getHostId() != null && vm.getHostId() != hostId) {
@@ -1572,11 +1578,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
             }
         }
-
-        // if (serverState == State.Migrating) {
-        // s_logger.debug("Skipping vm in migrating state: " + vm);
-        // return null;
-        // }
 
         if (agentState == serverState) {
             if (s_logger.isDebugEnabled()) {
@@ -1650,8 +1651,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 s_logger.debug("Scheduling a stop command for " + vm);
                 _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
             } else {
-                s_logger.debug("VM state is in stopped so stopping it on the agent");
-                command = cleanup(agentName);
+                s_logger.debug("server VM state " + serverState + " does not meet expectation of a running VM report from agent");
+                
+                // just be careful not to stop VM for things we don't handle
+                // command = cleanup(agentName);
             }
         }
         return command;
