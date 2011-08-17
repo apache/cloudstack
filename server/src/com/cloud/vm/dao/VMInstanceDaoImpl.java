@@ -329,4 +329,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 		sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
         return customSearch(sc, null).get(0);
     }
+    
+    @Override
+    public List<VMInstanceVO> listVmsMigratingFromHost(Long hostId) {
+        SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("state", State.Migrating);
+        return listBy(sc);
+    }
 }
