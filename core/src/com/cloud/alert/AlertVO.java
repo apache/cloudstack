@@ -48,7 +48,7 @@ public class AlertVO implements Alert{
     @Column(name="data_center_id")
     private long dataCenterId = 0;
 
-    @Column(name="subject")
+    @Column(name="subject", length=999)
     private String subject;
 
     @Column(name="sent_count")

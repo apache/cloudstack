@@ -18,8 +18,6 @@
 
 package com.cloud.network;
 
-import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -39,7 +37,7 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     @Column(name="name")
     private String name;
 
-    @Column(name="description")
+    @Column(name="description", length=4096)
     private String description;
 
     @Column(name="algorithm")
