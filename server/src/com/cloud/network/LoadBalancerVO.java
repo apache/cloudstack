@@ -39,7 +39,7 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     @Column(name="name")
     private String name;
 
-    @Column(name="description")
+    @Column(name="description", length=4096)
     private String description;
 
     @Column(name="algorithm")

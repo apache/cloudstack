@@ -73,7 +73,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="service_offering_id")
     Long serviceOfferingId;
     
-    @Column(name="tags")
+    @Column(name="tags", length=4096)
     String tags;
    
     @Column(name="default")

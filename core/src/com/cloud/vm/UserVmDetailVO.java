@@ -39,7 +39,7 @@ public class UserVmDetailVO {
     @Column(name="name")
     private String name;
     
-    @Column(name="value")
+    @Column(name="value", length=1024)
     private String value;
     
     public UserVmDetailVO() {}
