@@ -1634,10 +1634,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
 
             List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());
-
+            List<Long> upHosts = _hostDao.listBy( host.getDataCenterId(), host.getPodId(), host.getClusterId(), Host.Type.Routing, Status.Up);
             for (final VMInstanceVO vm : vms) {
-                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate()) {
-                    // for the last host in this cluster, stop all the VMs
+                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate() || upHosts == null || upHosts.size() == 0) {
+                    // for the last valid host in this cluster, stop all the VMs
                     _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                 } else {
                     _haMgr.scheduleMigration(vm);
