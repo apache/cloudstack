@@ -62,13 +62,13 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="name")
     private String name = null;
 
-    @Column(name="display_text")
+    @Column(name="display_text", length=4096)
     private String displayText = null;
 
     @Column(name="disk_size")
     long diskSize;
 
-    @Column(name="tags")
+    @Column(name="tags", length=4096)
     String tags;
     
     @Column(name="type")

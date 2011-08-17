@@ -51,7 +51,7 @@ public class EventVO implements Event {
 	@Column(name="state")
     private State state = State.Completed;
 
-	@Column(name="description")
+	@Column(name="description", length=1024)
 	private String description;
 
 	@Column(name=GenericDao.CREATED_COLUMN)
@@ -78,7 +78,7 @@ public class EventVO implements Event {
 	@Column(name="start_id")
     private long startId;
 
-	@Column(name="parameters")
+	@Column(name="parameters", length=1024)
 	private String parameters;
 
 	@Transient

@@ -116,7 +116,7 @@ public class NetworkVO implements Network {
     @Transient
     long macAddress = 1;
 
-    @Column(name="guru_data")
+    @Column(name="guru_data", length=1024)
     String guruData;
 
     @Column(name="dns2")

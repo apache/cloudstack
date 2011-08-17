@@ -87,7 +87,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name="checksum")
     private String checksum;    
     
-    @Column(name="display_text")
+    @Column(name="display_text", length=4096)
     private String displayText;
     
     @Column(name="enable_password")
