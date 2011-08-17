@@ -17,10 +17,15 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 
@@ -32,6 +37,8 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClientException;
 
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.APIVersion;
 import com.xensource.xenapi.Connection;
@@ -40,17 +47,42 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.Types.UuidInvalid;
+import com.xensource.xenapi.Types.XenAPIException;
 
 public class XenServerConnectionPool {
-    private static final Logger s_logger = Logger
-            .getLogger(XenServerConnectionPool.class);
+    private static final Logger s_logger = Logger.getLogger(XenServerConnectionPool.class);
     protected HashMap<String /* poolUuid */, XenServerConnection> _conns = new HashMap<String, XenServerConnection>();
     protected int _retries;
     protected int _interval;
-
+    protected static boolean s_managePool = true;
+    protected static long s_sleepOnError = 10 * 1000; // in ms
     static {
+        File file = PropertiesUtil.findConfigFile("environment.properties");
+        if (file == null) {
+            s_logger.debug("Unable to find environment.properties");
+        } else {
+            FileInputStream finputstream;
+            try {
+                finputstream = new FileInputStream(file);
+                final Properties props = new Properties();
+                props.load(finputstream);
+                finputstream.close();
+                String search = props.getProperty("manage.xenserver.pool.master");
+                if (search != null) {
+                    s_managePool = Boolean.parseBoolean(search);
+                }
+                search = props.getProperty("sleep.interval.on.error");
+                if (search != null) {
+                    s_sleepOnError = NumbersUtil.parseInterval(search,  10) * 1000;
+                }
+                s_logger.info("XenServer Connection Pool Configs: manage.xenserver.pool.master=" + s_managePool + "; sleep.interval.on.error=" + s_sleepOnError);
+            } catch (FileNotFoundException e) {
+                s_logger.debug("File is not found", e);
+            } catch (IOException e) {
+                s_logger.debug("IO Exception while reading file", e);
+            }
+        }
         try {
             javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1]; 
             javax.net.ssl.TrustManager tm = new TrustAllManager(); 
@@ -59,6 +91,7 @@ public class XenServerConnectionPool {
             sc.init(null, trustAllCerts, null); 
             javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
             HostnameVerifier hv = new HostnameVerifier() {
+                @Override
                 public boolean verify(String hostName, SSLSession session) {
                     return true;
                 }
@@ -340,6 +373,17 @@ public class XenServerConnectionPool {
     }
 
     void PoolEmergencyTransitionToMaster(String slaveIp, String username, Queue<String> password) {
+        if (!s_managePool) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Don't manage pool on error so sleeping for " + s_sleepOnError);
+                try {
+                    Thread.sleep(s_sleepOnError);
+                } catch (InterruptedException ie) {
+                }
+            }
+            return;
+        }
+        
         Connection slaveConn = null;
         Connection c = null;
         try{
@@ -380,8 +424,18 @@ public class XenServerConnectionPool {
         
     }
 
-    private void PoolEmergencyResetMaster(String slaveIp, String masterIp,
-        String username, Queue<String> password) {
+    private void PoolEmergencyResetMaster(String slaveIp, String masterIp, String username, Queue<String> password) {
+        if (!s_managePool) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Don't manage pool on error so sleeping for " + s_sleepOnError);
+                try {
+                    Thread.sleep(s_sleepOnError);
+                } catch (InterruptedException ie) {
+                }
+            }
+            return;
+        }
+        
         Connection slaveConn = null;
         try {
             s_logger.debug("Trying to reset master of slave " + slaveIp
@@ -506,7 +560,9 @@ public class XenServerConnectionPool {
             if (mConn != null){
                 try{
                     Host host = Host.getByUuid(mConn, hostUuid);
-                    host.enable(mConn);                   
+                    if (s_managePool) {
+                        host.enable(mConn);
+                    }
                     return mConn;
                 } catch (Types.SessionInvalid e) {
                     s_logger.debug("Session thgrough ip " + mConn.getIp() + " is invalid for pool(" + poolUuid + ") due to " + e.toString());
@@ -520,17 +576,17 @@ public class XenServerConnectionPool {
                         mConn = null;
                     }
                 } catch (Types.CannotContactHost e ) {
-                    String msg = "Catch Exception: " + e.getClass().getName() + " Can't connect host " + ipAddress + " due to " + e.toString();
                     if (s_logger.isDebugEnabled()) {
+                        String msg = "Catch Exception: " + e.getClass().getName() + " Can't connect host " + ipAddress + " due to " + e.toString();
                         s_logger.debug(msg);
                     }  
                     PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
                     return mConn;
                 } catch (Types.HostOffline e ) {
-                    String msg = "Catch Exception: " + e.getClass().getName() + " Host is offline " + ipAddress + " due to " + e.toString();
                     if (s_logger.isDebugEnabled()) {
+                        String msg = "Catch Exception: " + e.getClass().getName() + " Host is offline " + ipAddress + " due to " + e.toString();
                         s_logger.debug(msg);
-                    } 
+                    }
                     PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
                     return mConn;
                 } catch (Types.HostNotLive e ) {
@@ -592,7 +648,9 @@ public class XenServerConnectionPool {
                         }
                         throw new CloudRuntimeException(msg);
                     } else {
-                        ensurePoolIntegrity(mConn, ipAddress, username, password,  wait);
+                        if (s_managePool) {
+                            ensurePoolIntegrity(mConn, ipAddress, username, password,  wait);
+                        }
                         addConnect(poolUuid, mConn);
                         return mConn;
                     }
@@ -903,6 +961,7 @@ public class XenServerConnectionPool {
     }
     
     public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
+        @Override
         public java.security.cert.X509Certificate[] getAcceptedIssuers() {
             return null;
         }
@@ -915,11 +974,13 @@ public class XenServerConnectionPool {
             return true;
         }
         
+        @Override
         public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType)
             throws java.security.cert.CertificateException {
             return;
         }
         
+        @Override
         public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType)
             throws java.security.cert.CertificateException {
             return;
