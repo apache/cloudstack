@@ -139,7 +139,8 @@ public class AgentMonitor extends Thread implements Listener {
 
                     if (host.getType() != Host.Type.Storage) {
                         List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
-                        if (vos.size() == 0) {
+                        List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
+                        if (vos.isEmpty() && vosMigrating.isEmpty()) {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
                             _hostDao.updateStatus(host, Event.PreparationComplete, _msId);
                         }
