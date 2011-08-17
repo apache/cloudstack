@@ -271,8 +271,8 @@ def describe_setup_in_basic_mode():
     
     return zs
 
-def generate_setup_config(func, file=None):
-    describe = func()
+def generate_setup_config(config, file=None):
+    describe = config
     if file is None:
         return json.dumps(json_repr(describe))
     else:
@@ -295,5 +295,5 @@ if __name__ == "__main__":
     parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
     
     (options, args) = parser.parse_args()
-
-    generate_setup_config(describe_setup_in_basic_mode, options.output)
+    config = describe_setup_in_basic_mode()
+    generate_setup_config(config, options.output)
