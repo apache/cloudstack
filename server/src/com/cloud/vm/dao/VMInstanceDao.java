@@ -81,5 +81,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByAccountId(long accountId);
     public Long countAllocatedVirtualRoutersForAccount(long accountId);
 
-    List<VMInstanceVO> listByClusterId(long clusterId);    
+    List<VMInstanceVO> listByClusterId(long clusterId);
+    List<VMInstanceVO> listVmsMigratingFromHost(Long hostId);
 }
