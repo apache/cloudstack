@@ -224,14 +224,19 @@ def describe_setup_in_basic_mode():
                     h = host()
                     h.username = "root"
                     h.password = "password"
+                    memory = 8*1024*1024*1024
+                    localstorage=1*1024*1024*1024*1024
+                    #h.url = "http://Sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
                     h.url = "http://Sim/%d%d%d%d"%(l,i,j,k)
                     c.hosts.append(h)
                 
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
+                    size=1*1024*1024*1024*1024
                     primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
-                    primary.url = "nfs://localhost/path"+str(l) + str(i) + str(j) + str(m)
+                    #primary.url = "nfs://localhost/path%s/size=%d"%(str(l) + str(i) + str(j) + str(m), size)
+                    primary.url = "nfs://localhost/path%s"%(str(l) + str(i) + str(j) + str(m))
                     c.primaryStorages.append(primary)
         
                 p.clusters.append(c)
@@ -256,6 +261,17 @@ def describe_setup_in_basic_mode():
     db.dbSvr = "localhost"
     
     zs.dbSvr = db
+    
+    '''add global configuration'''
+    global_settings = {'expunge.delay': '60',
+                       'expunge.interval': '60',
+                       'expunge.workers': '3',
+                       }
+    for k,v in global_settings.iteritems():
+        cfg = configuration()
+        cfg.name = k
+        cfg.value = v
+        zs.globalConfig.append(cfg)
     
     ''''add loggers'''
     testClientLogger = logger()
