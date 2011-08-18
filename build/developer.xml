@@ -228,6 +228,31 @@
     </chmod>
   </target>
   
+  <target name="deploydb-simulator">
+    <condition property="server-setup.file" value="override/server-setup.xml" else="server-setup.xml">
+      <available file="${setup.db.dir}/override/server-setup.xml" />
+    </condition>
+
+    <condition property="templates.file" value="override/templates.sql" else="templates.sql" >
+    	<available file="${setup.db.dir}/override/templates.sql" />
+    </condition>
+  	
+    <echo message="deploydb ${server-setup.file} ${templates.file} ${DBROOTPW}" />
+    <exec dir="${db.scripts.dir}" executable="bash">
+      <arg value="deploy-db-simulator.sh" />
+      <arg value="${server-setup.file}" />
+      <arg value="${templates.file}" />
+      <arg value="${DBROOTPW}" />
+      <env key="CATALINA_HOME" value="${tomcat.home}"/>
+    </exec>
+    
+    <chmod perm="666">
+      <fileset dir="${db.scripts.dir}">
+        <include name="**/*"/>
+      </fileset>
+    </chmod>
+  </target>
+
   <path id="test.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath"/>
