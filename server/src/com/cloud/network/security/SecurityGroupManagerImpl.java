@@ -764,33 +764,18 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         return createSecurityGroup(cmd.getSecurityGroupName(), cmd.getDescription(), owner.getDomainId(), owner.getAccountId(), owner.getAccountName());
     }
 
-    @DB
     @Override
     public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName) {
-        final Transaction txn = Transaction.currentTxn();
-        AccountVO account = null;
-        txn.start();
-        try {
-            account = _accountDao.acquireInLockTable(accountId); // to ensure duplicate group names are not created.
-            if (account == null) {
-                s_logger.warn("Failed to acquire lock on account");
-                return null;
-            }
-            SecurityGroupVO group = _securityGroupDao.findByAccountAndName(accountId, name);
-            if (group == null) {
-                group = new SecurityGroupVO(name, description, domainId, accountId);
-                group = _securityGroupDao.persist(group);
-            }
-
+        SecurityGroupVO group = _securityGroupDao.findByAccountAndName(accountId, name);
+        if (group == null) {
+            group = new SecurityGroupVO(name, description, domainId, accountId);
+            group = _securityGroupDao.persist(group);
             s_logger.debug("Created security group " + group + " for account id=" + accountId);
-            return group;
-        } finally {
-            if (account != null) {
-                _accountDao.releaseFromLockTable(accountId);
-            }
-            txn.commit();
+        } else {
+            s_logger.debug("Returning existing security group " + group + " for account id=" + accountId);
         }
 
+        return group;
     }
 
     @Override
