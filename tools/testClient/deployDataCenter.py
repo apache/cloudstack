@@ -169,7 +169,7 @@ class deployDataCenters():
         try:
             self.config =  configGenerator.get_setup_config(self.configFile)
         except:
-            raise cloudstackException.InvalidParameterException("Failed to load cofig" + sys.exc_value)
+            raise cloudstackException.InvalidParameterException("Failed to load cofig" + sys.exc_info())
 
         mgt = self.config.mgtSvr[0]
         
@@ -199,9 +199,21 @@ class deployDataCenters():
         dbSvr = self.config.dbSvr
         self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, dbSvr.passwd, dbSvr.db)
         self.apiClient = self.testClient.getApiClient()
+    
+    def updateConfiguration(self, globalCfg):
+        if len(globalCfg) == 0:
+            return None
+        
+        for config in globalCfg:
+            updateCfg = updateConfiguration.updateConfigurationCmd()
+            updateCfg.name = config.name
+            updateCfg.value = config.value
+            self.apiClient.updateConfiguration(updateCfg)
+            
     def deploy(self):
         self.loadCfg()
         self.createZones(self.config.zones)
+        self.updateConfiguration(self.config.globalConfig)
         
 if __name__ == "__main__":
     
