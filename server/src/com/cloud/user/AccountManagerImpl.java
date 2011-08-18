@@ -106,6 +106,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
@@ -1219,6 +1220,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
+    @DB
     public UserAccount createAccount(CreateAccountCmd cmd) {
         Long accountId = null;
         String username = cmd.getUsername();
@@ -1323,10 +1325,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + username + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timezone);
         }
-
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         UserVO dbUser = _userDao.persist(user);
-
         _networkGroupMgr.createDefaultSecurityGroup(accountId);
+        txn.commit();
 
         if (!user.getPassword().equals(dbUser.getPassword())) {
             throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
