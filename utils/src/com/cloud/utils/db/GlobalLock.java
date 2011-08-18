@@ -132,15 +132,20 @@ public class GlobalLock {
 					if(ownerThread != null) {
 						profiler.start();
 						try {
-							wait(((long)timeoutSeconds)*1000L);
+							wait((long)remainingMilliSeconds);
 						} catch (InterruptedException e) {
 							interrupted = true;
 						}
 						profiler.stop();
 						
 						remainingMilliSeconds -= profiler.getDuration();
-						if(remainingMilliSeconds < 0)
+						//if equal to zero, then it could come back to the wait and wait
+						//forever since wait(0) waits till interrupted or notified.
+						if (remainingMilliSeconds <= 0) {
+						    if (s_logger.isTraceEnabled())
+						        s_logger.trace("timed out waiting for " + name + " last wait duration=" + profiler.getDuration());
 							return false;
+						}
 						
 						continue;
 					} else {
