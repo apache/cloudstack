@@ -872,7 +872,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId);
                 agentId = vm.getHostId();
                 if (agentId != null) {
-                    _rulesetLogDao.findByVmId(work.getInstanceId());
                     SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(rules), seqnum,
                             rules);
                     Commands cmds = new Commands(cmd);
