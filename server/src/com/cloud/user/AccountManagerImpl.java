@@ -54,10 +54,9 @@ import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
@@ -68,11 +67,9 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -109,6 +106,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
@@ -122,7 +120,6 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -1223,6 +1220,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
+    @DB
     public UserAccount createAccount(CreateAccountCmd cmd) {
         Long accountId = null;
         String username = cmd.getUsername();
@@ -1327,10 +1325,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + username + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timezone);
         }
-
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         UserVO dbUser = _userDao.persist(user);
-
         _networkGroupMgr.createDefaultSecurityGroup(accountId);
+        txn.commit();
 
         if (!user.getPassword().equals(dbUser.getPassword())) {
             throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
