@@ -118,7 +118,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -2978,7 +2977,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
         
-        //FIXME, for cloudzone, the local secondary storoge
+        //FIXME, for cloudzone, the local secondary storage
         if (pool.isLocal() && pool.getPoolType() == StoragePoolType.Filesystem && secHosts.isEmpty()) {
             List<StoragePoolHostVO> sphs = _storagePoolHostDao.listByPoolId(pool.getId());
             if (!sphs.isEmpty()) {

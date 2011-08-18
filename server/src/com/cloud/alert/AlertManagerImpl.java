@@ -68,10 +68,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmDao;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -92,10 +88,6 @@ public class AlertManagerImpl implements AlertManager {
     @Inject protected StorageManager _storageMgr;
     @Inject private ServiceOfferingDao _offeringsDao;
     @Inject private CapacityDao _capacityDao;
-    @Inject private DomainRouterDao _routerDao;
-    @Inject private ConsoleProxyDao _consoleProxyDao;
-    @Inject private SecondaryStorageVmDao _secStorgaeVmDao;
-    @Inject private UserVmDao _userVmDao;
     @Inject private DataCenterDao _dcDao;
     @Inject private HostPodDao _podDao;
     @Inject private VolumeDao _volumeDao;
@@ -247,12 +239,10 @@ public class AlertManagerImpl implements AlertManager {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("recalculating system capacity");
         }
-        List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
 
         // get all hosts..
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
         sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-        List<HostVO> hosts = _hostDao.search(sc, null);
 
         // prep the service offerings
         List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();

@@ -38,7 +38,6 @@ import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;

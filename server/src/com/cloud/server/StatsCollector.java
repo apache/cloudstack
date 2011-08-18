@@ -39,7 +39,6 @@ import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.manager.Commands;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -82,7 +81,6 @@ public class StatsCollector {
 	private final HostDao _hostDao;
 	private final UserVmDao _userVmDao;
 	private final VolumeDao _volsDao;
-	private final CapacityDao _capacityDao;
 	private final StoragePoolDao _storagePoolDao;
 	private final StorageManager _storageManager;
     private final StoragePoolHostDao _storagePoolHostDao;
@@ -117,7 +115,6 @@ public class StatsCollector {
 		_hostDao = locator.getDao(HostDao.class);
 		_userVmDao = locator.getDao(UserVmDao.class);
 		_volsDao = locator.getDao(VolumeDao.class);
-		_capacityDao = locator.getDao(CapacityDao.class);
 		_storagePoolDao = locator.getDao(StoragePoolDao.class);
 		_storageManager = locator.getManager(StorageManager.class);
         _storagePoolHostDao  = locator.getDao(StoragePoolHostDao.class);

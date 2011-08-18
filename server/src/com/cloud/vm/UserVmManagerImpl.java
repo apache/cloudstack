@@ -18,10 +18,8 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -725,15 +723,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             vmId = volume.getInstanceId();
         } else {
             vmId = cmmd.getVirtualMachineId();
-        }
-
-        boolean isAdmin;
-        if (account == null) {
-            // Admin API call
-            isAdmin = true;
-        } else {
-            // User API call
-            isAdmin = isAdmin(account.getType());
         }
 
         // Check that the volume ID is valid
