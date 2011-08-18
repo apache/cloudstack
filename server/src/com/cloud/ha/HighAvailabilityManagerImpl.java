@@ -188,10 +188,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         }
         
         if(host.getHypervisorType() == HypervisorType.VMware) {
-            s_logger.warn("Skip HA for VMware host " + host.getId());
+            s_logger.info("Don't restart for VMs on host " + host.getId() + " as the host is VMware host");
         	return;
         }
-        	
+        
         s_logger.warn("Scheduling restart for VMs on host " + host.getId());
 
         final List<VMInstanceVO> vms = _instanceDao.listByHostId(host.getId());
