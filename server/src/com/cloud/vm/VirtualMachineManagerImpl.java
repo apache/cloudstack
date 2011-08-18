@@ -1299,7 +1299,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         DeployDestination dest = null;
         while (true) {
             for (DeploymentPlanner planner : _planners) {
-                dest = planner.plan(profile, plan, excludes);
+                if (planner.canHandle(profile, plan, excludes)) {
+                    dest = planner.plan(profile, plan, excludes);
+                } else {
+                    continue;
+                }
+                
                 if (dest != null) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Planner " + planner + " found " + dest + " for migrating to.");
