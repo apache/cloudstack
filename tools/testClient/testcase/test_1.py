@@ -1,8 +1,6 @@
-import unittest
-import random
-from cloudstackAPI import *
+from cloudstackTestCase import *
 
-class TestCase1(unittest.case.TestCase):
+class TestCase1(cloudstackTestCase):
 
     def test_cloudstackapi(self):
         apiClient = self.testClient.getApiClient()
