@@ -58,6 +58,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
+import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
@@ -162,6 +163,9 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.dao.UserVmData;
+import com.cloud.vm.dao.UserVmData.NicData;
+import com.cloud.vm.dao.UserVmData.SecurityGroupData;
 import com.cloud.vm.VmStats;
 
 public class ApiResponseHelper implements ResponseGenerator {
@@ -1057,7 +1061,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         for (UserVm userVm : userVms) {
-            UserVmResponse  userVmResponse = ApiDBUtils.listVmDetails(userVm, (((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)));
+            UserVmData  userVmData = ApiDBUtils.listVmDetails(userVm, (((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)));
+            UserVmResponse userVmResponse = newUserVmResponse(userVmData);
             // stats calculation
             String cpuUsed = null;
             VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
@@ -2253,4 +2258,83 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("firewallrule");
         return response;
     }
+    
+    public UserVmResponse newUserVmResponse(UserVmData userVmData){
+        UserVmResponse userVmResponse = new UserVmResponse();
+        userVmResponse.setHypervisor(userVmData.getHypervisor());
+        userVmResponse.setId(userVmData.getId());
+        userVmResponse.setName(userVmData.getName());
+        userVmResponse.setDisplayName(userVmData.getDisplayName());
+        userVmResponse.setIpAddress(userVmData.getIpAddress());
+        userVmResponse.setAccountName(userVmData.getAccountName());
+        userVmResponse.setDomainId(userVmData.getDomainId());
+        userVmResponse.setDomainName(userVmData.getDomainName());
+        userVmResponse.setCreated(userVmData.getCreated());
+        userVmResponse.setState(userVmData.getState());
+        userVmResponse.setHaEnable(userVmData.getHaEnable());
+        userVmResponse.setGroupId(userVmData.getGroupId());
+        userVmResponse.setGroup(userVmData.getGroup());
+        userVmResponse.setZoneId(userVmData.getZoneId());
+        userVmResponse.setZoneName(userVmData.getZoneName());
+        userVmResponse.setHostId(userVmData.getHostId());
+        userVmResponse.setHostName(userVmData.getHostName());
+        userVmResponse.setTemplateId(userVmData.getTemplateId());
+        userVmResponse.setTemplateName(userVmData.getTemplateName());
+        userVmResponse.setTemplateDisplayText(userVmData.getTemplateDisplayText());
+        userVmResponse.setPasswordEnabled(userVmData.getPasswordEnabled());
+        userVmResponse.setIsoId(userVmData.getIsoId());
+        userVmResponse.setIsoName(userVmData.getIsoName());
+        userVmResponse.setIsoDisplayText(userVmData.getIsoDisplayText());
+        userVmResponse.setServiceOfferingId(userVmData.getServiceOfferingId());
+        userVmResponse.setServiceOfferingName(userVmData.getServiceOfferingName());
+        userVmResponse.setCpuNumber(userVmData.getCpuNumber());
+        userVmResponse.setCpuSpeed(userVmData.getCpuSpeed());
+        userVmResponse.setMemory(userVmData.getMemory());
+        userVmResponse.setCpuUsed(userVmData.getCpuUsed());
+        userVmResponse.setNetworkKbsRead(userVmData.getNetworkKbsRead());
+        userVmResponse.setNetworkKbsWrite(userVmData.getNetworkKbsWrite());
+        userVmResponse.setGuestOsId(userVmData.getGuestOsId());
+        userVmResponse.setRootDeviceId(userVmData.getRootDeviceId());
+        userVmResponse.setRootDeviceType(userVmData.getRootDeviceType());
+        userVmResponse.setPassword(userVmData.getPassword());
+        userVmResponse.setJobId(userVmData.getJobId());
+        userVmResponse.setJobStatus(userVmData.getJobStatus());
+        userVmResponse.setForVirtualNetwork(userVmData.getForVirtualNetwork());
+
+        Set<SecurityGroupResponse> securityGroupResponse = new HashSet<SecurityGroupResponse>();
+        for (SecurityGroupData sgd: userVmData.getSecurityGroupList()){
+            SecurityGroupResponse sgr = new SecurityGroupResponse();
+            sgr.setId(sgd.getId());
+            sgr.setName(sgd.getName());
+            sgr.setDescription(sgd.getDescription());
+            sgr.setAccountName(sgd.getAccountName());
+            sgr.setDomainId(sgd.getDomainId());
+            sgr.setDomainName(sgd.getDomainName());
+            sgr.setObjectName(sgd.getObjectName());
+            securityGroupResponse.add(sgr);
+        }
+        userVmResponse.setSecurityGroupList(new ArrayList<SecurityGroupResponse>(securityGroupResponse));
+        
+        Set<NicResponse> nicResponses = new HashSet<NicResponse>();
+        for (NicData nd: userVmData.getNics()){
+            NicResponse nr = new NicResponse();
+            nr.setId(nd.getId());
+            nr.setNetworkid(nd.getNetworkid());
+            nr.setNetmask(nd.getNetmask());
+            nr.setGateway(nd.getGateway());
+            nr.setIpaddress(nd.getIpaddress());
+            nr.setIsolationUri(nd.getIsolationUri());
+            nr.setBroadcastUri(nd.getBroadcastUri());
+            nr.setTrafficType(nd.getTrafficType());
+            nr.setType(nd.getType());
+            nr.setIsDefault(nd.getIsDefault());
+            nr.setMacAddress(nd.getMacAddress());
+            nr.setObjectName(nd.getObjectName());
+            nicResponses.add(nr);
+        }
+        userVmResponse.setNics(new ArrayList<NicResponse>(nicResponses));
+        
+        return userVmResponse;
+    }
+    
 }
