@@ -486,8 +486,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // Check that the volume is stored on shared storage
-        if (!Volume.State.Allocated.equals(volume.getState()) && !_storageMgr.volumeOnSharedStoragePool(volume)) {
+        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
             throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        }
+        
+        if (!(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState()))) {
+            throw new InvalidParameterValueException("Volume state must be in Allocated or Ready state");
         }
 
         // Check that the volume is not currently attached to any VM
