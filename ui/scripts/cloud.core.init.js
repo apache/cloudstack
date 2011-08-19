@@ -702,23 +702,23 @@ $(document).ready(function() {
 					dataType: "json",
 					async: false,
 					success: function(json) {	
-					    /* g_supportELB: guest — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
-					     * g_supportELB: public  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
-					     * g_supportELB: false – no ELB support
+					    /* g_supportELB: "guest"   — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+					     * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+					     * g_supportELB: "false"   – no ELB support
 					     */
-					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB;					    
+					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean				    
 					    $.cookie('supportELB', g_supportELB, { expires: 1}); 
 					    					    
-					    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled;					    
+					    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean						    
 					    $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1}); 
 					    			    
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
+							g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
 						}
 						
 						if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-							g_directAttachSecurityGroupsEnabled = ""+json.listcapabilitiesresponse.capability.securitygroupsenabled;
+							g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
 							$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
 						}
 						
@@ -790,10 +790,10 @@ $(document).ready(function() {
 		else
 			g_timezoneoffset = null;
 			
-		if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
+		if (g_directAttachSecurityGroupsEnabled == null || g_directAttachSecurityGroupsEnabled.length == 0) 		
 			g_directAttachSecurityGroupsEnabled = "false";	
 			
-		if (!g_userPublicTemplateEnabled || g_userPublicTemplateEnabled.length == 0) 		
+		if (g_userPublicTemplateEnabled == null || g_userPublicTemplateEnabled.length == 0) 		
 			g_userPublicTemplateEnabled = "true";
 	} else {
 		g_mySession = $.cookie('JSESSIONID');
@@ -816,16 +816,26 @@ $(document).ready(function() {
 	    data: createURL("command=listCapabilities"),
 		dataType: "json",
 		async: false,
-		success: function(json) {
+		success: function(json) {		 
+			/* g_supportELB: "guest"   — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+		     * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+		     * g_supportELB: "false"   – no ELB support
+		     */
+		    g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean				    
+		    $.cookie('supportELB', g_supportELB, { expires: 1}); 
+		    					    
+		    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean						    
+		    $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1}); 
+		    			    
 			if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-				g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
+				g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
 				$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
 			}
 			
 			if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-				g_directAttachSecurityGroupsEnabled = ""+json.listcapabilitiesresponse.capability.securitygroupsenabled;
+				g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
 				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
-			}
+			}				    		
 						
 			buildSecondLevelNavigation();
 			$("#main_username").text(g_username);
