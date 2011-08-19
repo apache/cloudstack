@@ -312,13 +312,13 @@ function afterLoadIpJSP() {
 	    		return true;
 	    	var protocol = $(this).val().toLowerCase();	    
 	    	if(protocol == "tcp" || protocol == "udp") {
-	    		$createFirewallRow.find("#start_port,#end_port").removeAttr("disabled");
-	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").attr("disabled", "disabled");
+	    		$createFirewallRow.find("#start_port,#end_port").show();
+	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").hide();
 	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").val("")
 	    	}
 	    	else { //protocol == icmp
-	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").removeAttr("disabled");
-	    		$createFirewallRow.find("#start_port,#end_port").attr("disabled", "disabled");
+	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").show();
+	    		$createFirewallRow.find("#start_port,#end_port").hide();
 	    		$createFirewallRow.find("#start_port,#end_port").val("");
 	    	}	    	
 	    	return true;
@@ -327,13 +327,13 @@ function afterLoadIpJSP() {
 	    $createFirewallRow.find("#add_link").bind("click", function(event){	  	 	
 	    	var isValid = true;		
 			isValid &= validateCIDRList("Source CIDR", $createFirewallRow.find("#cidr"), $createFirewallRow.find("#cidr_errormsg"), true); //optional								
-			if($createFirewallRow.find("#start_port").attr("disabled") == false)
+			if($createFirewallRow.find("#start_port").css("display") != "none")
 			    isValid &= validateInteger("Start Port", $createFirewallRow.find("#start_port"), $createFirewallRow.find("#start_port_errormsg"), 1, 65535);
-			if($createFirewallRow.find("#end_port").attr("disabled") == false)
+			if($createFirewallRow.find("#end_port").css("display") != "none")
 			    isValid &= validateInteger("End Port", $createFirewallRow.find("#end_port"), $createFirewallRow.find("#end_port_errormsg"), 1, 65535);				
-			if($createFirewallRow.find("#ICMP_type").attr("disabled") == false) 
+			if($createFirewallRow.find("#ICMP_type").css("display") != "none") 
 				isValid &= validateInteger("ICMP type", $createFirewallRow.find("#ICMP_type"), $createFirewallRow.find("#ICMP_type_errormsg"), null, null);
-			if($createFirewallRow.find("#ICMP_code").attr("disabled") == false) 
+			if($createFirewallRow.find("#ICMP_code").css("display") != "none") 
 				isValid &= validateInteger("ICMP code", $createFirewallRow.find("#ICMP_code"), $createFirewallRow.find("#ICMP_code_errormsg"), null, null);
 			if (!isValid) 
 			    return;			
@@ -355,12 +355,12 @@ function afterLoadIpJSP() {
 	        if(cidr != null && cidr.length > 0)
 	        	array1.push("&cidrlist="+cidr);
 		    
-	        if($createFirewallRow.find("#start_port").attr("disabled") == false) {
+	        if($createFirewallRow.find("#start_port").css("display") != "none") {
 		        var startPort = $createFirewallRow.find("#start_port").val();       
 		        array1.push("&startPort="+startPort);
 	        }
 	        
-	        if($createFirewallRow.find("#end_port").attr("disabled") == false) {
+	        if($createFirewallRow.find("#end_port").css("display") != "none") {
 		        var endPort = $createFirewallRow.find("#end_port").val();
 		        array1.push("&endPort="+endPort);
 	        }
@@ -368,11 +368,11 @@ function afterLoadIpJSP() {
 	        var protocol = $createFirewallRow.find("#protocol").val();
 	        array1.push("&protocol="+protocol);
 	         
-	        if($createFirewallRow.find("#ICMP_type").attr("disabled") == false) {
+	        if($createFirewallRow.find("#ICMP_type").css("display") != "none") {
 		        var ICMPType = $createFirewallRow.find("#ICMP_type").val();       
 		        array1.push("&icmptype="+ICMPType);
 	        }
-	        if($createFirewallRow.find("#ICMP_code").attr("disabled") == false) {
+	        if($createFirewallRow.find("#ICMP_code").css("display") != "none") {
 		        var ICMPCode = $createFirewallRow.find("#ICMP_code").val();       
 		        array1.push("&icmpcode="+ICMPCode);
 	        }
