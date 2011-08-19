@@ -66,12 +66,13 @@ function ipGetSearchParams() {
 }
 
 function afterLoadIpJSP() {
-    //***** switch between different tabs (begin) ********************************************************************
+    // switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_firewall"), $("#tab_port_range"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_firewall"), $("#tab_content_port_range"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer"), $("#tab_content_vpn")];
     var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToFirewallTab, ipJsonToPortRangeTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab, ipJsonToVPNTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
-    //***** switch between different tabs (end) **********************************************************************  
+      
+    //****** Basic Zone, support Elastic Load Balancer (begin) *****************************************************************************************
     if(g_supportELB == "guest" || g_supportELB == "public") {
 		$("#tab_details,#tab_firewall,#tab_port_range,#tab_port_forwarding,#tab_load_balancer,#tab_vpn").hide();	
 				
@@ -208,7 +209,15 @@ function afterLoadIpJSP() {
 			return false;
 		});		
 	}
-    else { 
+    //****** Basic Zone, support Elastic Load Balancer (end) *****************************************************************************************
+    
+    //****** Advanced Zone (begin) *******************************************************************************************************************
+    else {  
+    	if(g_firewallRuleUiEnabled == true)
+    	    $("#tab_firewall").show();
+    	else
+    		$("#tab_firewall").hide();
+    	
     	$("#tab_details,#tab_content_details").show();
     	    	
 	    //dialogs
@@ -770,7 +779,8 @@ function afterLoadIpJSP() {
        
 	    return false;
 	});
-	//*** Load Balancer tab (end) ***
+	//*** Load Balancer tab (end) ***    
+    //****** Advanced Zone (end) *******************************************************************************************************************
 }
 
 function ipGetMidmenuId(jsonObj) {   
@@ -847,8 +857,8 @@ function ipToRightPanel($midmenuItem1) {
     }
     else { //ipObj.isstaticnat == false  
         $("#tab_port_range").hide();
-        if(ipObj.forvirtualnetwork == true) { //(public network)            
-            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {      
+        if(ipObj.forvirtualnetwork == true) {  // Public network            
+            if(isIpManageable(ipObj.domainid, ipObj.account) == true) { // IP is managable     
             	if(g_firewallRuleUiEnabled == true)
             	    $("#tab_firewall").show();
             	else
@@ -915,11 +925,11 @@ function ipToRightPanel($midmenuItem1) {
 		            $("#tab_vpn").hide();
 		        }          
             } 
-            else {             	
+            else { // IP is not managable              	
 	            $("#tab_firewall, #tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
             }
         }
-        else { //ipObj.forvirtualnetwork == false (direct network)
+        else { // Direct Network (ipObj.forvirtualnetwork == false)
             $("#tab_firewall, #tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
         }            
     }        
