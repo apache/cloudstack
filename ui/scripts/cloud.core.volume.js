@@ -433,7 +433,7 @@ function volumeJsonToDetailsTab(){
 		$thisTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + fromdb(jsonObj.vmstate) + ")");		
     setDateField(jsonObj.created, $thisTab.find("#created"));	
      
-    if(isAdmin() || isDomainAdmin()) {
+    if(isAdmin()) {
     	$thisTab.find("#storage").text(fromdb(jsonObj.storage));
     	$thisTab.find("#storage_container").show();
     }
