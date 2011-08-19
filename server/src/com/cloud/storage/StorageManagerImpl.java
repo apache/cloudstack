@@ -1754,7 +1754,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
         volume.setDomainId((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
-        volume.setState(Volume.State.Allocated);
+        if (cmd.getSnapshotId() == null) {
+            volume.setState(Volume.State.Allocated);
+        } else {
+            volume.setState(Volume.State.Creating);
+        }
         volume = _volsDao.persist(volume);
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
         _usageEventDao.persist(usageEvent);
