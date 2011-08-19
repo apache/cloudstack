@@ -145,6 +145,16 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
+    public List<DomainRouterVO> listVirtualByHostId(Long hostId) {
+        SearchCriteria<DomainRouterVO> sc = HostUpSearch.create();
+        if (hostId != null) {
+            sc.setParameters("host", hostId);
+        }
+        sc.setJoinParameters("network", "guestType", GuestIpType.Virtual);
+        return listBy(sc);
+    }
+    
+    @Override
     public List<DomainRouterVO> listVirtualUpByHostId(Long hostId) {
         SearchCriteria<DomainRouterVO> sc = HostUpSearch.create();
         if (hostId != null) {

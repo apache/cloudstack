@@ -846,8 +846,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         @Override
         public void run() {
             try {
-                final List<DomainRouterVO> routers = _routerDao.listVirtualUpByHostId(null);
-                s_logger.debug("Found " + routers.size() + " running routers. ");
+                final List<DomainRouterVO> routers = _routerDao.listVirtualByHostId(null);
+                s_logger.debug("Found " + routers.size() + " routers. ");
 
                 updateRoutersRedundantState(routers);
 
