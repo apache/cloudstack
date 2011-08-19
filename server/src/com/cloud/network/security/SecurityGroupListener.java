@@ -150,7 +150,6 @@ public class SecurityGroupListener implements Listener {
         return true;
     }
 
-
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return true;

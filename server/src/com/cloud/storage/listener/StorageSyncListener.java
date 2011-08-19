@@ -79,6 +79,5 @@ public class StorageSyncListener implements Listener {
     @Override
     public int getTimeout() {
     	return -1;
-    }
-    
+    }    
 }

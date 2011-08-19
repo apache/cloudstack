@@ -595,6 +595,5 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
-    }
-    
+    }    
 }

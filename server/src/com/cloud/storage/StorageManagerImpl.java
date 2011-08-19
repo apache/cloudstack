@@ -280,8 +280,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected StoragePoolWorkDao _storagePoolWorkDao;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+
     @Inject
     protected VolumeDao _volumeDao;
+
+    @Inject
+    protected OCFS2Manager _ocfs2Mgr;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -1188,6 +1192,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             pool = new StoragePoolVO(StoragePoolType.ISO, storageHost, port, hostPath);
         } else if (scheme.equalsIgnoreCase("vmfs")) {
             pool = new StoragePoolVO(StoragePoolType.VMFS, "VMFS datastore: " + hostPath, 0, hostPath);
+        } else if (scheme.equalsIgnoreCase("ocfs2")) {
+            port = 7777;
+            pool = new StoragePoolVO(StoragePoolType.OCFS2, "clustered", port, hostPath);
         } else {
             s_logger.warn("Unable to figure out the scheme for URI: " + uri);
             throw new IllegalArgumentException("Unable to figure out the scheme for URI: " + uri);
@@ -1235,6 +1242,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         pool.setStatus(StoragePoolStatus.Up);
         pool = _storagePoolDao.persist(pool, details);
 
+        if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(allHosts, pool, cmd.getFullUrlParams())) {
+            s_logger.warn("Can not create storage pool " + pool + " on cluster " + clusterId);
+            _storagePoolDao.expunge(pool.getId());
+            return null;
+        }
+            
         boolean success = false;
         for (HostVO h : allHosts) {
             success = createStoragePool(h.getId(), pool);
@@ -1422,7 +1435,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
-                && pool.getPoolType() != StoragePoolType.PreSetup) {
+                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }

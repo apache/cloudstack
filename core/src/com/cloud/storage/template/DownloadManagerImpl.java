@@ -793,7 +793,11 @@ public class DownloadManagerImpl implements DownloadManager {
         processor = new VmdkProcessor();
         processor.configure("VMDK Processor", params);
         processors.add(new ComponentInfo<Adapter>("VMDK Processor", VmdkProcessor.class, processor));
-
+        
+        processor = new RawImageProcessor();
+        processor.configure("Raw Image Processor", params);
+        processors.add(new ComponentInfo<Adapter>("Raw Image Processor", RawImageProcessor.class, processor));
+        
         _processors = new Adapters<Processor>("processors", processors);
 
         _templateDir = (String) params.get("public.templates.root.dir");
