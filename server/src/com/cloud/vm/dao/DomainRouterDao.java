@@ -63,6 +63,15 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     public List<DomainRouterVO> listByLastHostId(Long hostId);
     
     /**
+     * list virtual machine routers by host id.
+     * pass in null to get all
+     * virtual machine routers.
+     * @param hostId id of the host.  null if to get all.
+     * @return list of DomainRouterVO
+     */
+    public List<DomainRouterVO> listVirtualByHostId(Long hostId);
+    
+    /**
      * list virtual machine routers by host id.  exclude destroyed, stopped, expunging VM, 
      * pass in null to get all
      * virtual machine routers.
