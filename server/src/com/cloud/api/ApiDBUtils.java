@@ -119,6 +119,7 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmData;
 
 public class ApiDBUtils {
     private static ManagementServer _ms;
@@ -592,7 +593,7 @@ public class ApiDBUtils {
         return _firewallCidrsDao.getSourceCidrs(id);  
     }
     
-    public static UserVmResponse listVmDetails(UserVm userVm, boolean show_host){
+    public static UserVmData listVmDetails(UserVm userVm, boolean show_host){
         return _userVmDao.listVmDetails(userVm, show_host);
     }
 

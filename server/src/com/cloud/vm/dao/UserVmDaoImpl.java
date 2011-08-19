@@ -31,9 +31,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.response.NicResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.response.UserVmResponse;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
@@ -50,6 +47,8 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmData.NicData;
+import com.cloud.vm.dao.UserVmData.SecurityGroupData;
 
 @Local(value={UserVmDao.class})
 public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements UserVmDao {
@@ -343,7 +342,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public UserVmResponse listVmDetails(UserVm userVm, boolean show_host){
+    public UserVmData listVmDetails(UserVm userVm, boolean show_host){
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
 
@@ -355,12 +354,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             
             ResultSet rs = pstmt.executeQuery();
             boolean is_data_center_security_group_enabled=false;
-            Set<SecurityGroupResponse> securityGroupResponse = new HashSet<SecurityGroupResponse>();
-            Set<NicResponse> nicResponses = new HashSet<NicResponse>();
-            UserVmResponse userVmResponse = null;
+            Set<SecurityGroupData> securityGroupResponse = new HashSet<SecurityGroupData>();
+            Set<NicData> nicResponses = new HashSet<NicData>();
+            UserVmData userVmResponse = null;
             while (rs.next()) {
                 if (userVmResponse==null){
-                    userVmResponse=new UserVmResponse();
+                    userVmResponse=new UserVmData();
                     userVmResponse.setId(userVm.getId());
                     userVmResponse.setName(userVm.getInstanceName());
                     userVmResponse.setCreated(userVm.getCreated());
@@ -451,7 +450,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 
                 //security_group.id, security_group.name, security_group.description, , data_center.is_security_group_enabled
                 if (is_data_center_security_group_enabled){
-                    SecurityGroupResponse resp = new SecurityGroupResponse();
+                    SecurityGroupData resp = userVmResponse.newSecurityGroupData();
                     resp.setId(rs.getLong("security_group.id"));
                     resp.setName(rs.getString("security_group.name"));
                     resp.setDescription(rs.getString("security_group.description"));
@@ -464,7 +463,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 //"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance, "
                 long nic_id = rs.getLong("nics.id");
                 if (nic_id > 0){
-                    NicResponse nicResponse = new NicResponse();
+                    NicData nicResponse = userVmResponse.newNicData();
                     nicResponse.setId(nic_id);
                     nicResponse.setIpaddress(rs.getString("nics.ip4_address"));
                     nicResponse.setGateway(rs.getString("nics.gateway"));
@@ -487,8 +486,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 }
                 
             }
-            userVmResponse.setSecurityGroupList(new ArrayList<SecurityGroupResponse>(securityGroupResponse));
-            userVmResponse.setNics(new ArrayList<NicResponse>(nicResponses));
+            userVmResponse.setSecurityGroupList(new ArrayList<SecurityGroupData>(securityGroupResponse));
+            userVmResponse.setNics(new ArrayList<NicData>(nicResponses));
             rs.close();
             pstmt.close();
             return userVmResponse;
