@@ -848,9 +848,11 @@ function ipToRightPanel($midmenuItem1) {
    
     if(ipObj.isstaticnat == true) {
     	if(g_firewallRuleUiEnabled == true) {
+    		$("#tab_firewall").show();
             $("#tab_port_range").hide();	
     	} 
     	else {
+    		$("#tab_firewall").hide();
     		$("#tab_port_range").show();
     	}
         $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	
