@@ -50,6 +50,8 @@ import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.IngressRuleResultObject;
+import com.cloud.api.response.EgressRuleResponse;
+import com.cloud.api.response.EgressRuleResultObject;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
@@ -115,6 +117,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.security.IngressRule;
+import com.cloud.network.security.EgressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.offering.DiskOffering;
@@ -1988,7 +1991,76 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         return response;
     }
+    
+    @Override
+    public SecurityGroupResponse createSecurityGroupResponseFromEgressRule(List<? extends EgressRule> egressRules) {
+        SecurityGroupResponse response = new SecurityGroupResponse();
+        Map<Long, Account> securiytGroupAccounts = new HashMap<Long, Account>();
+        Map<Long, SecurityGroup> allowedSecurityGroups = new HashMap<Long, SecurityGroup>();
+        Map<Long, Account> allowedSecuriytGroupAccounts = new HashMap<Long, Account>();
 
+        if ((egressRules != null) && !egressRules.isEmpty()) {
+            SecurityGroup securityGroup = ApiDBUtils.findSecurityGroupById(egressRules.get(0).getSecurityGroupId());
+            response.setId(securityGroup.getId());
+            response.setName(securityGroup.getName());
+            response.setDescription(securityGroup.getDescription());
+
+            Account account = securiytGroupAccounts.get(securityGroup.getAccountId());
+
+            if (account == null) {
+                account = ApiDBUtils.findAccountById(securityGroup.getAccountId());
+                securiytGroupAccounts.put(securityGroup.getAccountId(), account);
+            }
+
+            response.setAccountName(account.getAccountName());
+            response.setDomainId(account.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(securityGroup.getDomainId()).getName());
+
+            List<EgressRuleResponse> responses = new ArrayList<EgressRuleResponse>();
+            for (EgressRule egressRule : egressRules) {
+                EgressRuleResponse egressData = new EgressRuleResponse();
+
+                egressData.setRuleId(egressRule.getId());
+                egressData.setProtocol(egressRule.getProtocol());
+                if ("icmp".equalsIgnoreCase(egressRule.getProtocol())) {
+                    egressData.setIcmpType(egressRule.getStartPort());
+                    egressData.setIcmpCode(egressRule.getEndPort());
+                } else {
+                    egressData.setStartPort(egressRule.getStartPort());
+                    egressData.setEndPort(egressRule.getEndPort());
+                }
+
+                Long allowedSecurityGroupId = egressRule.getAllowedNetworkId();
+                if (allowedSecurityGroupId != null) {
+                    SecurityGroup allowedSecurityGroup = allowedSecurityGroups.get(allowedSecurityGroupId);
+                    if (allowedSecurityGroup == null) {
+                        allowedSecurityGroup = ApiDBUtils.findSecurityGroupById(allowedSecurityGroupId);
+                        allowedSecurityGroups.put(allowedSecurityGroupId, allowedSecurityGroup);
+                    }
+
+                    egressData.setSecurityGroupName(allowedSecurityGroup.getName());
+
+                    Account allowedAccount = allowedSecuriytGroupAccounts.get(allowedSecurityGroup.getAccountId());
+                    if (allowedAccount == null) {
+                        allowedAccount = ApiDBUtils.findAccountById(allowedSecurityGroup.getAccountId());
+                        allowedSecuriytGroupAccounts.put(allowedAccount.getId(), allowedAccount);
+                    }
+
+                    egressData.setAccountName(allowedAccount.getAccountName());
+                } else {
+                    egressData.setCidr(egressRule.getAllowedDestinationIpCidr());
+                }
+
+                egressData.setObjectName("egressrule");
+                responses.add(egressData);
+            }
+            response.setEgressRules(responses);
+            response.setObjectName("securitygroup");
+
+        }
+        return response;
+    }
+    
     @Override
     public NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering) {
         NetworkOfferingResponse response = new NetworkOfferingResponse();

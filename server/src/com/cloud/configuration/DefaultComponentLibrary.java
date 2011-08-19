@@ -98,6 +98,7 @@ import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl;
 import com.cloud.network.security.dao.IngressRuleDaoImpl;
+import com.cloud.network.security.dao.EgressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
@@ -203,6 +204,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DataCenterIpAddressDao", DataCenterIpAddressDaoImpl.class);
         addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         addDao("IngressRuleDao", IngressRuleDaoImpl.class);
+        addDao("EgressRuleDao", EgressRuleDaoImpl.class);
         addDao("SecurityGroupVMMapDao", SecurityGroupVMMapDaoImpl.class);
         addDao("SecurityGroupRulesDao", SecurityGroupRulesDaoImpl.class);
         addDao("SecurityGroupWorkDao", SecurityGroupWorkDaoImpl.class);

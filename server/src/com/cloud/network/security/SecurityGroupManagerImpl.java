@@ -43,12 +43,16 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SecurityIngressRulesCmd.IpPortAndProto;
+import com.cloud.agent.api.SecurityEgressRulesCmd;
+import com.cloud.agent.api.SecurityEgressRulesCmd.EgressIpPortAndProto;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;
+import com.cloud.api.commands.AuthorizeSecurityGroupEgressCmd;
 import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteSecurityGroupCmd;
 import com.cloud.api.commands.ListSecurityGroupsCmd;
 import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
+import com.cloud.api.commands.RevokeSecurityGroupEgressCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -64,6 +68,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
+import com.cloud.network.security.dao.EgressRuleDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupRulesDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
@@ -109,6 +114,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     SecurityGroupDao _securityGroupDao;
     @Inject
     IngressRuleDao _ingressRuleDao;
+    @Inject
+    EgressRuleDao _egressRuleDao;
     @Inject
     SecurityGroupVMMapDao _securityGroupVMMapDao;
     @Inject
@@ -281,8 +288,41 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
     }
+    protected Map<PortAndProto, Set<String>> generateEgressRulesForVM(Long userVmId) {
 
-    protected Map<PortAndProto, Set<String>> generateRulesForVM(Long userVmId) {
+        Map<PortAndProto, Set<String>> allowed = new TreeMap<PortAndProto, Set<String>>();
+
+        List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVmId);
+        for (SecurityGroupVMMapVO mapVO : groupsForVm) {
+            List<EgressRuleVO> rules = _egressRuleDao.listBySecurityGroupId(mapVO.getSecurityGroupId());
+            for (EgressRuleVO rule : rules) {
+                PortAndProto portAndProto = new PortAndProto(rule.getProtocol(), rule.getStartPort(), rule.getEndPort());
+                Set<String> cidrs = allowed.get(portAndProto);
+                if (cidrs == null) {
+                    cidrs = new TreeSet<String>(new CidrComparator());
+                }
+                if (rule.getAllowedNetworkId() != null) {
+                    List<SecurityGroupVMMapVO> allowedInstances = _securityGroupVMMapDao.listBySecurityGroup(rule.getAllowedNetworkId(), State.Running);
+                    for (SecurityGroupVMMapVO ngmapVO : allowedInstances) {
+                        Nic defaultNic = _networkMgr.getDefaultNic(ngmapVO.getInstanceId());
+                        if (defaultNic != null) {
+                            String cidr = defaultNic.getIp4Address();
+                            cidr = cidr + "/32";
+                            cidrs.add(cidr);
+                        }
+                    }
+                } else if (rule.getAllowedDestinationIpCidr() != null) {
+                    cidrs.add(rule.getAllowedDestinationIpCidr());
+                }
+                if (cidrs.size() > 0) {
+                    allowed.put(portAndProto, cidrs);
+                }
+            }
+        }
+
+        return allowed;
+    }
+    protected Map<PortAndProto, Set<String>> generateIngressRulesForVM(Long userVmId) {
 
         Map<PortAndProto, Set<String>> allowed = new TreeMap<PortAndProto, Set<String>>();
 
@@ -422,7 +462,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         return affectedVms;
     }
 
-    protected SecurityIngressRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum, Map<PortAndProto, Set<String>> rules) {
+    protected SecurityIngressRulesCmd generateIngressRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum, Map<PortAndProto, Set<String>> rules) {
         List<IpPortAndProto> result = new ArrayList<IpPortAndProto>();
         for (PortAndProto pAp : rules.keySet()) {
             Set<String> cidrs = rules.get(pAp);
@@ -433,7 +473,19 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
         return new SecurityIngressRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, result.toArray(new IpPortAndProto[result.size()]));
     }
-
+    
+    protected SecurityEgressRulesCmd generateEgressRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum, Map<PortAndProto, Set<String>> rules) {
+        List<EgressIpPortAndProto> result = new ArrayList<EgressIpPortAndProto>();
+        for (PortAndProto pAp : rules.keySet()) {
+            Set<String> cidrs = rules.get(pAp);
+            if (cidrs.size() > 0) {
+            	EgressIpPortAndProto ipPortAndProto = new SecurityEgressRulesCmd.EgressIpPortAndProto(pAp.getProto(), pAp.getStartPort(), pAp.getEndPort(), cidrs.toArray(new String[cidrs.size()]));
+                result.add(ipPortAndProto);
+            }
+        }
+        return new SecurityEgressRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, result.toArray(new EgressIpPortAndProto[result.size()]));
+    }
+    
     protected void handleVmStopped(VMInstanceVO vm) {
         if (vm.getType() != VirtualMachine.Type.User || !isVmSecurityGroupEnabled(vm.getId()))
             return;
@@ -689,7 +741,232 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
     }
+    @Override
+    @DB
+    @SuppressWarnings("rawtypes")
+    public List<EgressRuleVO> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd) {
+        Long securityGroupId = cmd.getSecurityGroupId();
+        String protocol = cmd.getProtocol();
+        Integer startPort = cmd.getStartPort();
+        Integer endPort = cmd.getEndPort();
+        Integer icmpType = cmd.getIcmpType();
+        Integer icmpCode = cmd.getIcmpCode();
+        List<String> cidrList = cmd.getCidrList();
+        Map groupList = cmd.getUserSecurityGroupList();
+        Integer startPortOrType = null;
+        Integer endPortOrCode = null;
 
+        // Validate parameters
+        SecurityGroup securityGroup = _securityGroupDao.findById(securityGroupId);
+        if (securityGroup == null) {
+            throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
+        }
+
+        if (cidrList == null && groupList == null) {
+            throw new InvalidParameterValueException("At least one cidr or at least one security group needs to be specified");
+        }
+
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
+
+        if (owner == null) {
+            throw new InvalidParameterValueException("Unable to find security group owner by id=" + securityGroup.getAccountId());
+        }
+
+        // Verify permissions
+        _accountMgr.checkAccess(caller, securityGroup);
+        Long domainId = owner.getDomainId();
+
+        if (protocol == null) {
+            protocol = NetUtils.ALL_PROTO;
+        }
+
+        if (!NetUtils.isValidSecurityGroupProto(protocol)) {
+            throw new InvalidParameterValueException("Invalid protocol " + protocol);
+        }
+        if ("icmp".equalsIgnoreCase(protocol)) {
+            if ((icmpType == null) || (icmpCode == null)) {
+                throw new InvalidParameterValueException("Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
+            }
+            if (icmpType == -1 && icmpCode != -1) {
+                throw new InvalidParameterValueException("Invalid icmp type range");
+            }
+            if (icmpCode > 255) {
+                throw new InvalidParameterValueException("Invalid icmp code ");
+            }
+            startPortOrType = icmpType;
+            endPortOrCode = icmpCode;
+        } else if (protocol.equals(NetUtils.ALL_PROTO)) {
+            if ((startPort != null) || (endPort != null)) {
+                throw new InvalidParameterValueException("Cannot specify startPort or endPort without specifying protocol");
+            }
+            startPortOrType = 0;
+            endPortOrCode = 0;
+        } else {
+            if ((startPort == null) || (endPort == null)) {
+                throw new InvalidParameterValueException("Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort);
+            }
+            if (startPort == 0 && endPort == 0) {
+                endPort = 65535;
+            }
+            if (startPort > endPort) {
+                throw new InvalidParameterValueException("Invalid port range " + startPort + ":" + endPort);
+            }
+            if (startPort > 65535 || endPort > 65535 || startPort < -1 || endPort < -1) {
+                throw new InvalidParameterValueException("Invalid port numbers " + startPort + ":" + endPort);
+            }
+
+            if (startPort < 0 || endPort < 0) {
+                throw new InvalidParameterValueException("Invalid port range " + startPort + ":" + endPort);
+            }
+            startPortOrType = startPort;
+            endPortOrCode = endPort;
+        }
+
+        protocol = protocol.toLowerCase();
+
+        List<SecurityGroupVO> authorizedGroups = new ArrayList<SecurityGroupVO>();
+        if (groupList != null) {
+            Collection userGroupCollection = groupList.values();
+            Iterator iter = userGroupCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap userGroup = (HashMap) iter.next();
+                String group = (String) userGroup.get("group");
+                String authorizedAccountName = (String) userGroup.get("account");
+
+                if ((group == null) || (authorizedAccountName == null)) {
+                    throw new InvalidParameterValueException(
+                            "Invalid user group specified, fields 'group' and 'account' cannot be null, please specify groups in the form:  userGroupList[0].group=XXX&userGroupList[0].account=YYY");
+                }
+
+                Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
+                if (authorizedAccount == null) {
+                    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize ingress for " + securityGroupId + ":" + protocol + ":"
+                            + startPortOrType + ":" + endPortOrCode);
+                }
+
+                SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
+                if (groupVO == null) {
+                    throw new InvalidParameterValueException("Nonexistent group " + group + " for account " + authorizedAccountName + "/" + domainId + " is given, unable to authorize ingress.");
+                }
+
+                // Check permissions
+                _accountMgr.checkAccess(caller, groupVO);
+
+                authorizedGroups.add(groupVO);
+            }
+        }
+
+        final Transaction txn = Transaction.currentTxn();
+        final Set<SecurityGroupVO> authorizedGroups2 = new TreeSet<SecurityGroupVO>(new SecurityGroupVOComparator());
+
+        authorizedGroups2.addAll(authorizedGroups); // Ensure we don't re-lock the same row
+        txn.start();
+
+        // Prevents other threads/management servers from creating duplicate ingress rules
+        securityGroup = _securityGroupDao.acquireInLockTable(securityGroupId);
+        if (securityGroup == null) {
+            s_logger.warn("Could not acquire lock on network security group: id= " + securityGroupId);
+            return null;
+        }
+        List<EgressRuleVO> newRules = new ArrayList<EgressRuleVO>();
+        try {
+            for (final SecurityGroupVO ngVO : authorizedGroups2) {
+                final Long ngId = ngVO.getId();
+                // Don't delete the referenced group from under us
+                if (ngVO.getId() != securityGroup.getId()) {
+                    final SecurityGroupVO tmpGrp = _securityGroupDao.lockRow(ngId, false);
+                    if (tmpGrp == null) {
+                        s_logger.warn("Failed to acquire lock on security group: " + ngId);
+                        txn.rollback();
+                        return null;
+                    }
+                }
+                EgressRuleVO egressRule = _egressRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocol, startPortOrType, endPortOrCode, ngVO.getId());
+                if (egressRule != null) {
+                    continue; // rule already exists.
+                }
+                egressRule = new EgressRuleVO(securityGroup.getId(), startPortOrType, endPortOrCode, protocol, ngVO.getId());
+                egressRule = _egressRuleDao.persist(egressRule);
+                newRules.add(egressRule);
+            }
+            if (cidrList != null) {
+                for (String cidr : cidrList) {
+                    EgressRuleVO egressRule = _egressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(), protocol, startPortOrType, endPortOrCode, cidr);
+                    if (egressRule != null) {
+                        continue;
+                    }
+                    egressRule = new EgressRuleVO(securityGroup.getId(), startPortOrType, endPortOrCode, protocol, cidr);
+                    egressRule = _egressRuleDao.persist(egressRule);
+                    newRules.add(egressRule);
+                }
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Added " + newRules.size() + " rules to security group " + securityGroup.getName());
+            }
+            txn.commit();
+            final Set<Long> affectedVms = new HashSet<Long>();
+            affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
+            scheduleRulesetUpdateToHosts(affectedVms, true, null);
+            return newRules;
+        } catch (Exception e) {
+            s_logger.warn("Exception caught when adding ingress rules ", e);
+            throw new CloudRuntimeException("Exception caught when adding ingress rules", e);
+        } finally {
+            if (securityGroup != null) {
+                _securityGroupDao.releaseFromLockTable(securityGroup.getId());
+            }
+        }
+    }
+
+    @Override
+    @DB
+    public boolean revokeSecurityGroupEgress(RevokeSecurityGroupEgressCmd cmd) {
+        // input validation
+        Account caller = UserContext.current().getCaller();
+        Long id = cmd.getId();
+
+        IngressRuleVO rule = _ingressRuleDao.findById(id);
+        if (rule == null) {
+            s_logger.debug("Unable to find ingress rule with id " + id);
+            throw new InvalidParameterValueException("Unable to find ingress rule with id " + id);
+        }
+
+        // Check permissions
+        SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
+        _accountMgr.checkAccess(caller, securityGroup);
+
+        SecurityGroupVO groupHandle = null;
+        final Transaction txn = Transaction.currentTxn();
+
+        try {
+            txn.start();
+            // acquire lock on parent group (preserving this logic)
+            groupHandle = _securityGroupDao.acquireInLockTable(rule.getSecurityGroupId());
+            if (groupHandle == null) {
+                s_logger.warn("Could not acquire lock on security group id: " + rule.getSecurityGroupId());
+                return false;
+            }
+
+            _ingressRuleDao.remove(id);
+            s_logger.debug("revokeSecurityGroupIngress succeeded for ingress rule id: " + id);
+
+            final Set<Long> affectedVms = new HashSet<Long>();
+            affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(groupHandle.getId()));
+            scheduleRulesetUpdateToHosts(affectedVms, true, null);
+
+            return true;
+        } catch (Exception e) {
+            s_logger.warn("Exception caught when deleting ingress rules ", e);
+            throw new CloudRuntimeException("Exception caught when deleting ingress rules", e);
+        } finally {
+            if (groupHandle != null) {
+                _securityGroupDao.releaseFromLockTable(groupHandle.getId());
+            }
+            txn.commit();
+        }
+
+    }
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_CREATE, eventDescription = "creating security group")
     public SecurityGroupVO createSecurityGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
@@ -791,12 +1068,23 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             seqnum = log.getLogsequence();
 
             if (vm != null && vm.getState() == State.Running) {
-                Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId);
+                Map<PortAndProto, Set<String>> ingressRules = generateIngressRulesForVM(userVmId);
+                Map<PortAndProto, Set<String>> egressRules = generateEgressRulesForVM(userVmId);
                 agentId = vm.getHostId();
                 if (agentId != null) {
                     _rulesetLogDao.findByVmId(work.getInstanceId());
-                    SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(rules), seqnum,
-                            rules);
+                    SecurityIngressRulesCmd ingressCmd = generateIngressRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(ingressRules), seqnum,
+                    		ingressRules);
+                    Commands ingressCmds = new Commands(ingressCmd);
+                    try {
+                        _agentMgr.send(agentId, ingressCmds, _answerListener);
+                    } catch (AgentUnavailableException e) {
+                        s_logger.debug("Unable to send updates for vm: " + userVmId + "(agentid=" + agentId + ")");
+                        _workDao.updateStep(work.getInstanceId(), seqnum, Step.Done);
+                    }
+                    
+                    SecurityEgressRulesCmd cmd = generateEgressRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(egressRules), seqnum,
+                    		egressRules);
                     Commands cmds = new Commands(cmd);
                     try {
                         _agentMgr.send(agentId, cmds, _answerListener);
