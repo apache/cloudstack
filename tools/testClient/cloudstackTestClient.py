@@ -4,7 +4,7 @@ import dbConnection
 from cloudstackAPI import * 
 
 class cloudstackTestClient(object):
-    def __init__(self, mgtSvr, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600, defaultWorkerThreads=10, logging=None):
+    def __init__(self, mgtSvr=None, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600, defaultWorkerThreads=10, logging=None):
         self.connection = cloudstackConnection.cloudConnection(mgtSvr, port, apiKey, securityKey, asyncTimeout, logging)
         self.apiClient = cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
@@ -15,7 +15,7 @@ class cloudstackTestClient(object):
         
     def dbConfigure(self, host="localhost", port=3306, user='cloud', passwd='cloud', db='cloud'):
         self.dbConnection = dbConnection.dbConnection(host, port, user, passwd, db)
-        self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
+        
     
     def getDbConnection(self):
         return self.dbConnection
@@ -36,10 +36,10 @@ class cloudstackTestClient(object):
     
     def submitCmdsAndWait(self, cmds):
         if self.asyncJobMgr is None:
-            return None
+            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
         return self.asyncJobMgr.submitCmdsAndWait(cmds)
     
     def submitJobs(self, job, ntimes=1, nums_threads=10, interval=1):
         if self.asyncJobMgr is None:
-            return None
+            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
         self.asyncJobMgr.submitJobs(job, ntimes, nums_threads, interval)
