@@ -189,14 +189,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		return true;
 	}
 	
-	
-	public boolean isTemplateUpdateable(Long templateId) {
-		List<VMTemplateHostVO> downloadsInProgress =
-			_vmTemplateHostDao.listByTemplateStatus(templateId, VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS);
-		return (downloadsInProgress.size() == 0);
-	}
-	
-	
 	public boolean isTemplateUpdateable(Long templateId, Long hostId) {
 		List<VMTemplateHostVO> downloadsInProgress =
 			_vmTemplateHostDao.listByTemplateHostStatus(templateId.longValue(), hostId.longValue(), VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS, VMTemplateHostVO.Status.DOWNLOADED);
@@ -367,7 +359,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         for ( DataCenterVO dc : dcs ) {
     	    List<HostVO> ssHosts = _hostDao.listAllSecondaryStorageHosts(dc.getId());
     	    for ( HostVO ssHost : ssHosts ) {
-        		if (isTemplateUpdateable(ssHost.getId(), templateId)) {
+        		if (isTemplateUpdateable(templateId, ssHost.getId())) {
        				initiateTemplateDownload(templateId, ssHost);
        				if (! isPublic ) {
        				    break;
