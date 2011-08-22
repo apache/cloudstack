@@ -221,12 +221,12 @@ dictionary = {
 		<form action="#" method="post" id="form_acquire">
 			<ol>
 				<li>
-					<label for="user_name"><fmt:message key="label.name"/>:</label>
+					<label><fmt:message key="label.name"/>:</label>
 					<input class="text" type="text" name="add_service_name" id="add_service_name"/>
 					<div id="add_service_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="user_name"><fmt:message key="label.display.text"/>:</label>
+					<label><fmt:message key="label.display.text"/>:</label>
 					<input class="text" type="text" name="add_service_display" id="add_service_display"/>
 					<div id="add_service_display_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
@@ -238,20 +238,25 @@ dictionary = {
 					</select>
 				</li>		
 				<li>
-					<label for="user_name"><fmt:message key="label.num.cpu.cores"/>:</label>
+					<label><fmt:message key="label.num.cpu.cores"/>:</label>
 					<input class="text" type="text" name="add_service_cpucore" id="add_service_cpucore"/>
 					<div id="add_service_cpucore_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="user_name"><fmt:message key="label.cpu.mhz"/>:</label>
+					<label><fmt:message key="label.cpu.mhz"/>:</label>
 					<input class="text" type="text" name="add_service_cpu" id="add_service_cpu"/>
 					<div id="add_service_cpu_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="user_name"><fmt:message key="label.memory.mb"/>:</label>
+					<label><fmt:message key="label.memory.mb"/>:</label>
 					<input class="text" type="text" name="add_service_memory" id="add_service_memory"/>
 					<div id="add_service_memory_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>				
+				</li>					
+				<li>
+					<label><fmt:message key="network.rate"/>:</label>
+					<input class="text" type="text" id="network_rate"/>
+					<div id="network_rate_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>	
 				<li id="add_service_offerha_container">
 					<label><fmt:message key="label.offer.ha"/>:</label>
 					<select class="select" id="add_service_offerha">						
