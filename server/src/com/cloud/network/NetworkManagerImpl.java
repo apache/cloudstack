@@ -1831,16 +1831,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (isSystem != null && isSystem && (accountName != null || domainId != null)) {
             throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
         }
+        
+        DomainVO domain = null;
+        if (domainId != null) {
+            domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist in the system");
+            }
+
+            _accountMgr.checkAccess(caller, domain);
+        }
 
         if (_accountMgr.isAdmin(caller.getType())) {
             if (domainId != null) {
-                DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist in the system");
-                }
-
-                _accountMgr.checkAccess(caller, domain);
-
                 if (accountName != null) {
                     Account owner = _accountMgr.getActiveAccount(accountName, domainId);
                     if (owner == null) {
@@ -1849,11 +1852,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     accountId = owner.getId();
                 }
             }
-            DomainVO domain = _domainDao.findById(caller.getDomainId());
-            path = domain.getPath();
-
         } else {
             accountId = caller.getId();
+        }
+        
+        path = _domainDao.findById(caller.getDomainId()).getPath();
+        
+        if (domainId == null) {
+            domainId = caller.getDomainId();
         }
 
         if ((isSystem == null || !isSystem) && (isShared == null || isShared)) {
@@ -1896,8 +1902,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, path));
             }
 
-            //if domain id is specified - list only domain level networks
-            if (accountId != null || (domainId == null && accountName == null)) {
+            //if user requested only domain specific networks, don't return account/zone wide networks
+            if (!(isShared != null && isShared && cmd.getDomainId() != null) && (accountId != null || (domainId == null && accountName == null))) {
                 networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, accountId, path));
             }
 
