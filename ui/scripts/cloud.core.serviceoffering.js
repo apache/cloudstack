@@ -82,6 +82,7 @@ function initAddServiceOfferingDialog() {
 		$dialogAddService.find("#add_service_cpucore").val("");
 		$dialogAddService.find("#add_service_cpu").val("");
 		$dialogAddService.find("#add_service_memory").val("");
+		$dialogAddService.find("#network_rate").val("");
 		$dialogAddService.find("#add_service_offerha").val("false");
 			
 		$dialogAddService
@@ -96,10 +97,11 @@ function initAddServiceOfferingDialog() {
 				isValid &= validateInteger("# of CPU Core", $thisDialog.find("#add_service_cpucore"), $thisDialog.find("#add_service_cpucore_errormsg"), 1, 1000);		
 				isValid &= validateInteger("CPU", $thisDialog.find("#add_service_cpu"), $thisDialog.find("#add_service_cpu_errormsg"), 100, 100000);		
 				isValid &= validateInteger("Memory", $thisDialog.find("#add_service_memory"), $thisDialog.find("#add_service_memory_errormsg"), 64, 1000000);	
+				isValid &= validateInteger("Network Rate", $thisDialog.find("#network_rate"), $thisDialog.find("#network_rate_errormsg"), null, null, true); //optional	
 				isValid &= validateString("Tags", $thisDialog.find("#add_service_tags"), $thisDialog.find("#add_service_tags_errormsg"), true);	//optional							
 				
 				if($thisDialog.find("#domain_container").css("display") != "none") {
-				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
+				    isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false); //required	
 				    var domainName = $thisDialog.find("#domain").val();
 				    var domainId;
 				    if(domainName != null && domainName.length > 0) { 				    
@@ -143,6 +145,10 @@ function initAddServiceOfferingDialog() {
 				var memory = $thisDialog.find("#add_service_memory").val();
 				array1.push("&memory="+memory);	
 					
+				var networkRate = $thisDialog.find("#network_rate").val();
+				if(networkRate != null && networkRate.length > 0)
+				    array1.push("&networkrate="+networkRate);									
+				
 				var offerha = $thisDialog.find("#add_service_offerha").val();	
 				array1.push("&offerha="+offerha);								
 									
@@ -326,6 +332,7 @@ function serviceOfferingJsonToDetailsTab() {
     $thisTab.find("#storagetype").text(fromdb(jsonObj.storagetype));
     $thisTab.find("#cpu").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));
     $thisTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
+    $thisTab.find("#network_rate").text(fromdb(jsonObj.networkrate));
     
     setBooleanReadField(jsonObj.offerha, $thisTab.find("#offerha"));	
     setBooleanEditField(jsonObj.offerha, $thisTab.find("#offerha_edit"));
@@ -391,13 +398,11 @@ var serviceOfferingActionMap = {
         dialogBeforeActionFn : doDeleteServiceOffering,               
         inProcessText: "label.action.delete.service.offering.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();                
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    serviceOfferingClearRightPanel();
-                }                
-            });    
+    		$midmenuItem1.remove();    
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                serviceOfferingClearRightPanel();
+            }                  
         }
     }    
 }  

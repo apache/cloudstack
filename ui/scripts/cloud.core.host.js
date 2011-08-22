@@ -128,7 +128,8 @@ function hostJsonToDetailsTab() {
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
-        
+    $thisTab.find("#hosttags").text(fromdb(jsonObj.hosttags));    
+    
     setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));
     
     
@@ -585,13 +586,11 @@ var hostActionMap = {
         dialogBeforeActionFn: doRemoveHost,
         inProcessText: "label.action.remove.host.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {    
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    hostClearRightPanel();
-                }               
-            });         
+            $midmenuItem1.remove();               
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                hostClearRightPanel();
+            }                         
         }
     },    
     "label.action.update.OS.preference": {              

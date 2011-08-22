@@ -1318,7 +1318,7 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 }
 
 function bindAndListMidMenuItems($leftmenu, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
-	$leftmenu.bind("click", function(event) {
+	$leftmenu.unbind().bind("click", function(event) {
 		selectLeftSubMenu($(this));		
         listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"), null);
         return false;
@@ -1526,12 +1526,14 @@ var g_domainid = null;
 var g_enableLogging = false; 
 var g_timezoneoffset = null;
 var g_timezone = null;
+var g_supportELB = null;
+var g_firewallRuleUiEnabled = null; //true or false
 
 // capabilities
 var g_directAttachSecurityGroupsEnabled = "false";
 function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityGroupsEnabled; }
 
-var g_userPublicTemplateEnabled = "true"
+var g_userPublicTemplateEnabled = "true";
 function getUserPublicTemplateEnabled() { return g_userPublicTemplateEnabled; }
 
 //keyboard keycode

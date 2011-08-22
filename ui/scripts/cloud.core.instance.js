@@ -1960,7 +1960,10 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		buildActionLinkForTab("label.action.stop.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.reboot.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		if (isAdmin() && (jsonObj.rootdevicetype == 'NetworkFilesystem' || jsonObj.rootdevicetype == 'IscsiLUN' || jsonObj.rootdevicetype == 'PreSetup') && jsonObj.hypervisor == 'XenServer') {
+		if (isAdmin() 
+			&& (jsonObj.rootdevicetype == 'NetworkFilesystem' || jsonObj.rootdevicetype == 'IscsiLUN' || jsonObj.rootdevicetype == 'PreSetup')
+			&& (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == 'VMware')) 
+		{
 			buildActionLinkForTab("label.action.migrate.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		}
 		
@@ -2202,33 +2205,21 @@ function vmJsonToStatisticsTab() {
 	}
 
     var $thisTab = $("#right_panel_content #tab_content_statistics");  	
-	
-	
-	/*
-	var $barChartContainer = $thisTab.find("#cpu_barchart");
-		 
-	var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
-	$barChartContainer.find("#cpunumber").text(cpuNumber);
-	
-	var cpuSpeed = ((jsonObj.cpuspeed==null)? "":convertHz(jsonObj.cpuspeed)) ;
-	$barChartContainer.find("#cpuspeed").text(cpuSpeed);
-	
-	$barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
-	$barChartContainer.find("#percentused").text("");   
-	if(jsonObj.cpuused!=null)
-		drawBarChart($barChartContainer, jsonObj.cpuused);		
-	*/
-    
+	    
     $thisTab.find("#cpunumber").text(fromdb(jsonObj.cpunumber));
     $thisTab.find("#cpuspeed").text(convertHz(jsonObj.cpuspeed));
     
     $thisTab.find("#percentused").text(jsonObj.cpuused); 
-    
-	var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
-	$thisTab.find("#networkkbsread").text(networkKbsRead);
-	
-	var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
-	$thisTab.find("#networkkbswrite").text(networkKbsWrite);	
+    	
+	if(jsonObj.networkkbsread == null || jsonObj.networkkbsread == 0)
+		$thisTab.find("#networkkbsread").text("N/A");
+	else
+	    $thisTab.find("#networkkbsread").text(convertBytes(jsonObj.networkkbsread * 1024));
+		
+	if(jsonObj.networkkbswrite == null || jsonObj.networkkbswrite == 0)
+		$thisTab.find("#networkkbswrite").text("N/A");
+	else	
+	    $thisTab.find("#networkkbswrite").text(convertBytes(jsonObj.networkkbswrite * 1024));	
 }
 
 function vmJsonClearStatisticsTab() {       

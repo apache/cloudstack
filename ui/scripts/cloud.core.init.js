@@ -208,9 +208,13 @@ $(document).ready(function() {
 		bindAndListMidMenuItems($("#leftmenu_event"), "listEvents", eventGetSearchParams, "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", volumeGetSearchParams, "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", snapshotGetSearchParams, "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRightPanel, getMidmenuId, false);
-		
-		//bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=true", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false); //remove "&forvirtualnetwork=true" for advanced zone whose security group is enabled
+				
+		if(g_supportELB == "guest")  //ips are allocated on guest network
+			bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=false&forloadbalancing=true", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
+		else if(g_supportELB == "public")  //ips are allocated on public network
+			bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses&forvirtualnetwork=true&forloadbalancing=true", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
+		else			
+		    bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false); //remove "&forvirtualnetwork=true" for advanced zone whose security group is enabled
 		
 		bindAndListMidMenuItems($("#leftmenu_security_group"), "listSecurityGroups", securityGroupGetSearchParams, "listsecuritygroupsresponse", "securitygroup", "jsp/securitygroup.jsp", afterLoadSecurityGroupJSP, securityGroupToMidmenu, securityGroupToRightPanel, getMidmenuId, false);
 					 		  
@@ -591,6 +595,8 @@ $(document).ready(function() {
 		g_domainid = null;	
 		g_timezoneoffset = null;
 		g_timezone = null;
+		g_supportELB = null;
+		g_firewallRuleUiEnabled = null;
 		
 		$.cookie('JSESSIONID', null);
 		$.cookie('sessionKey', null);
@@ -601,6 +607,8 @@ $(document).ready(function() {
 		$.cookie('networktype', null); 
 		$.cookie('timezoneoffset', null);
 		$.cookie('timezone', null);
+		$.cookie('supportELB', null);
+		$.cookie('firewallRuleUiEnabled', null);
 		
 		$("body").stopTime();
 		
@@ -687,20 +695,30 @@ $(document).ready(function() {
 				$.cookie('domainid', g_domainid, { expires: 1});				
 				$.cookie('role', g_role, { expires: 1});
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
-				$.cookie('timezone', g_timezone, { expires: 1});  
-				
+				$.cookie('timezone', g_timezone, { expires: 1});  				
+								
 				$.ajax({
 					data: createURL("command=listCapabilities"),
 					dataType: "json",
 					async: false,
-					success: function(json) {
+					success: function(json) {	
+					    /* g_supportELB: "guest"   — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+					     * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+					     * g_supportELB: "false"   – no ELB support
+					     */
+					    g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean				    
+					    $.cookie('supportELB', g_supportELB, { expires: 1}); 
+					    					    
+					    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean						    
+					    $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1}); 
+					    			    
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
+							g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
 						}
 						
 						if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-							g_directAttachSecurityGroupsEnabled = ""+json.listcapabilitiesresponse.capability.securitygroupsenabled;
+							g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
 							$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
 						}
 						
@@ -765,17 +783,17 @@ $(document).ready(function() {
 		g_domainid = $.cookie("domainid");
 		g_timezone = $.cookie("timezone");
 		g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
-		g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
-		
+		g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");		
+				
 		if($.cookie("timezoneoffset") != null)
 			g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
 		else
 			g_timezoneoffset = null;
 			
-		if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
+		if (g_directAttachSecurityGroupsEnabled == null || g_directAttachSecurityGroupsEnabled.length == 0) 		
 			g_directAttachSecurityGroupsEnabled = "false";	
 			
-		if (!g_userPublicTemplateEnabled || g_userPublicTemplateEnabled.length == 0) 		
+		if (g_userPublicTemplateEnabled == null || g_userPublicTemplateEnabled.length == 0) 		
 			g_userPublicTemplateEnabled = "true";
 	} else {
 		g_mySession = $.cookie('JSESSIONID');
@@ -787,21 +805,37 @@ $(document).ready(function() {
 		g_timezone = g_loginResponse.timezone;								
 		g_timezoneoffset = g_loginResponse.timezoneoffset;
 	}
+	
+	if(g_supportELB == null)
+		g_supportELB = $.cookie("supportELB");
 		
+	if(g_firewallRuleUiEnabled == null)
+		g_firewallRuleUiEnabled = $.cookie("firewallRuleUiEnabled");
+	
 	$.ajax({
 	    data: createURL("command=listCapabilities"),
 		dataType: "json",
 		async: false,
-		success: function(json) {
+		success: function(json) {		 
+			/* g_supportELB: "guest"   — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+		     * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+		     * g_supportELB: "false"   – no ELB support
+		     */
+		    g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean				    
+		    $.cookie('supportELB', g_supportELB, { expires: 1}); 
+		    					    
+		    g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean						    
+		    $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1}); 
+		    			    
 			if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-				g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
+				g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
 				$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
 			}
 			
 			if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-				g_directAttachSecurityGroupsEnabled = ""+json.listcapabilitiesresponse.capability.securitygroupsenabled;
+				g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
 				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
-			}
+			}				    		
 						
 			buildSecondLevelNavigation();
 			$("#main_username").text(g_username);

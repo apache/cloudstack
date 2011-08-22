@@ -384,7 +384,7 @@ function accountJsonToDetailsTab() {
         accountClearDetailsTab();
         return;
     }
-   
+
     $.ajax({
         data: createURL("command=listAccounts&id="+jsonObj.id),
         dataType: "json",
@@ -614,14 +614,12 @@ var accountActionMap = {
         asyncJobResponse: "deleteaccountresponse",
         dialogBeforeActionFn : doDeleteAccount,
         inProcessText: "label.action.delete.account.processing",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {    
-            $midmenuItem1.slideUp("slow", function() {                
-                $(this).remove();  
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    accountClearRightPanel();
-                }                
-            });
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+    	    $midmenuItem1.remove();
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                accountClearRightPanel();
+            }   
         }
     }          
 }; 

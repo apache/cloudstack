@@ -433,7 +433,7 @@ function volumeJsonToDetailsTab(){
 		$thisTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + fromdb(jsonObj.vmstate) + ")");		
     setDateField(jsonObj.created, $thisTab.find("#created"));	
      
-    if(isAdmin() || isDomainAdmin()) {
+    if(isAdmin()) {
     	$thisTab.find("#storage").text(fromdb(jsonObj.storage));
     	$thisTab.find("#storage_container").show();
     }
@@ -449,7 +449,9 @@ function volumeJsonToDetailsTab(){
         
     buildActionLinkForTab("label.action.take.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show take snapshot
     buildActionLinkForTab("label.action.recurring.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show Recurring Snapshot
-    buildActionLinkForTab("label.action.download.volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    
+    if(jsonObj.state != "Allocated")
+        buildActionLinkForTab("label.action.download.volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
@@ -601,13 +603,11 @@ var volumeActionMap = {
         dialogBeforeActionFn : doDeleteVolume,      
         inProcessText: "label.action.delete.volume.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();                
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    volumeClearRightPanel();
-                }
-            });          
+    	    $midmenuItem1.remove();
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                volumeClearRightPanel();
+            }                      
         }
     },
     "label.action.take.snapshot": {

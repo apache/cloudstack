@@ -396,13 +396,11 @@ var zoneActionMap = {
         dialogBeforeActionFn : doDeleteZone,  
         inProcessText: "label.action.delete.zone.processing",
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
-            $leftmenuItem1.slideUp(function() {
-                $(this).remove();                                
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                    clearRightPanel();
-                    zoneJsonClearRightPanel();
-                }                
-            });            
+            $leftmenuItem1.remove();                                         
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                zoneJsonClearRightPanel();
+            }          
         }
     }
 }
