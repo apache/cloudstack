@@ -78,6 +78,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
     
+    @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed.")
+    private Integer networkRate;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -132,6 +135,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public String getSystemVmType() {
         return systemVmType;
+    }
+    
+    public Integer getNetworkRate() {
+        return networkRate;
     }
 
     /////////////////////////////////////////////////////
