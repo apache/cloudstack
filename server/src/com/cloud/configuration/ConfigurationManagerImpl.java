@@ -1624,15 +1624,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         return createServiceOffering(userId, cmd.getIsSystem(), vm_type, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
-                limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag());
+                limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, 
-            boolean offerHA, boolean limitResourceUse, String tags,  Long domainId, String hostTag) {
+            boolean offerHA, boolean limitResourceUse, String tags,  Long domainId, String hostTag, Integer networkRate) {
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, vm_type, domainId, hostTag);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, vm_type, domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());
@@ -2789,6 +2789,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
         String guestIpTypeString = cmd.getGuestIpType();
+        Integer networkRate = cmd.getNetworkRate();
 
         TrafficType trafficType = null;
         GuestIpType guestIpType = null;
@@ -2829,15 +2830,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         Integer maxConnections = cmd.getMaxconnections();
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, networkRate);
     }
 
     @Override
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
-            Availability availability, GuestIpType guestIpType) {
-        String networkRateStr = _configDao.getValue("network.throttling.rate");
+            Availability availability, GuestIpType guestIpType, Integer networkRate) {
+        
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
-        int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
