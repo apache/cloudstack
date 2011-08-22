@@ -445,6 +445,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             offeringResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
             offeringResponse.setDomainId(offering.getDomainId());
         }
+        offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setObjectName("serviceoffering");
 

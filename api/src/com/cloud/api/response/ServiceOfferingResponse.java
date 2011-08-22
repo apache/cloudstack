@@ -74,6 +74,9 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.SYSTEM_VM_TYPE) @Param(description="is this a the systemvm type for system vm offering")
     private String vm_type;
+    
+    @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
+    private Integer networkRate;
 
 
     public Long getId() {
@@ -215,4 +218,7 @@ public class ServiceOfferingResponse extends BaseResponse {
 		this.hostTag = hostTag;
 	}
 
+    public void setNetworkRate(Integer networkRate) {
+        this.networkRate = networkRate;
+    }
 }
