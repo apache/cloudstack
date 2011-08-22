@@ -332,6 +332,7 @@ function serviceOfferingJsonToDetailsTab() {
     $thisTab.find("#storagetype").text(fromdb(jsonObj.storagetype));
     $thisTab.find("#cpu").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));
     $thisTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
+    $thisTab.find("#network_rate").text(jsonObj.networkrate);
     
     setBooleanReadField(jsonObj.offerha, $thisTab.find("#offerha"));	
     setBooleanEditField(jsonObj.offerha, $thisTab.find("#offerha_edit"));
