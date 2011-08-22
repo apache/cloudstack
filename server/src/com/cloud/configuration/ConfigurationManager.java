@@ -58,7 +58,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
 	/**
 	 * Creates a new service offering
-	 * @param id
 	 * @param name
 	 * @param cpu
 	 * @param ramSize
@@ -66,12 +65,14 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param displayText
 	 * @param localStorageRequired
 	 * @param offerHA
-	 * @param useVirtualNetwork
 	 * @param domainId
 	 * @param hostTag
+	 * @param networkRate TODO
+	 * @param id
+	 * @param useVirtualNetwork
 	 * @return ID
 	 */
-	ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag);
+	ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate);
 	
 	/**
 	 * Creates a new disk offering
@@ -171,11 +172,12 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param tags
 	 * @param maxConnections
 	 * @param guestIpType TODO
+	 * @param networkRate TODO
 	 * @param id
 	 * @param specifyVlan;
      * @return network offering object
      */
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, GuestIpType guestIpType);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, GuestIpType guestIpType, Integer networkRate);
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     
