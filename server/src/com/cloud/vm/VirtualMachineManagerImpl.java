@@ -1654,7 +1654,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         s_logger.warn(e.getMessage());
                     }
                 }
-            } else if (serverState == State.Stopping) {
+            } else if (serverState == State.Stopping || serverState == State.Stopped || serverState == State.Expunging || serverState == State.Destroyed || serverState == State.Error) {
                 s_logger.debug("Scheduling a stop command for " + vm);
                 _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
             } else {
