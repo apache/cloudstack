@@ -26,8 +26,9 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.ha.HaWorkVO;
+import com.cloud.network.security.SecurityGroupWork;
 import com.cloud.network.security.SecurityGroupWorkVO;
-import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -91,7 +92,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
     @Override
-    public SecurityGroupWorkVO findByVmId(long vmId, boolean taken) {
+    public SecurityGroupWork findByVmId(long vmId, boolean taken) {
         SearchCriteria<SecurityGroupWorkVO> sc = taken?VmIdTakenSearch.create():VmIdUnTakenSearch.create();
         sc.setParameters("vmId", vmId);
         return findOneIncludingRemovedBy(sc);
@@ -130,9 +131,9 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             if (processing) {
                 //the caller to take() should check the step and schedule another work item to come back
                 //and take a look.
-                work.setStep(SecurityGroupWorkVO.Step.Done);
+                work.setStep(SecurityGroupWork.Step.Done);
             } else {
-                work.setStep(SecurityGroupWorkVO.Step.Processing);
+                work.setStep(SecurityGroupWork.Step.Processing);
             }
 
             update(work.getId(), work);

@@ -64,7 +64,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupRulesDao;
@@ -355,7 +355,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         return allowed;
     }
 
-    private String generateRulesetSignature(Map<PortAndProto, Set<String>> allowed) {
+    protected String generateRulesetSignature(Map<PortAndProto, Set<String>> allowed) {
         String ruleset = allowed.toString();
         return DigestUtils.md5Hex(ruleset);
     }
@@ -412,7 +412,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 }
                 work = _workDao.findByVmIdStep(vmId, Step.Scheduled);
                 if (work == null) {
-                    work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWorkVO.Step.Scheduled, null);
+                    work = new SecurityGroupWorkVO(vmId, null, null, SecurityGroupWork.Step.Scheduled, null);
                     work = _workDao.persist(work);
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("Security Group Mgr: created new work item for " + vmId + "; id = " + work.getId());
