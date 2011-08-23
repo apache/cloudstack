@@ -18,6 +18,12 @@ class dbConnection(object):
     def __copy__(self):
         return dbConnection(self.host, self.port, self.user, self.passwd, self.database)
     
+    def close(self):
+        try:
+            self.db.close()
+        except:
+            pass
+    
     def execute(self, sql=None):
         if sql is None:
             return None

@@ -27,7 +27,7 @@ class workThread(threading.Thread):
             self.db = copy.copy(db)
         
     def run(self):
-        while True:
+        while self.inqueue.qsize() > 0:
             job = self.inqueue.get()
             cmd = job.cmd
             cmdName = cmd.__class__.__name__
@@ -68,6 +68,11 @@ class workThread(threading.Thread):
             self.output.dict[job.id] = jobstatus
             self.output.lock.release()
             self.inqueue.task_done()
+            
+        '''release the resource'''
+        self.connection.close()
+        if self.db is not None:
+            self.db.close()
 
 class jobThread(threading.Thread):
     def __init__(self, inqueue, interval):
@@ -75,33 +80,29 @@ class jobThread(threading.Thread):
         self.inqueue = inqueue
         self.interval = interval
     def run(self):
-        while True:
-            
+        while self.inqueue.qsize() > 0:
             job = self.inqueue.get()
             try:
                 job.run()
+                '''release the api connection'''
+                job.apiClient.connection.close()
             except:
                 pass
+            
             self.inqueue.task_done()
             time.sleep(self.interval)
-       
+        
 class outputDict(object):
     def __init__(self):
         self.lock = threading.Condition()
         self.dict = {}    
 
 class asyncJobMgr(object):
-    def __init__(self, apiClient, db, workers=10):
+    def __init__(self, apiClient, db):
         self.inqueue = Queue.Queue()
         self.output = outputDict() 
         self.apiClient = apiClient
         self.db = db
-        self.workers = workers
-        
-        for i in range(self.workers):
-            worker = workThread(self.inqueue, self.output, self.apiClient, self.db)
-            worker.setDaemon(True)
-            worker.start()
         
     def submitCmds(self, cmds):
         if not self.inqueue.empty():
@@ -121,11 +122,18 @@ class asyncJobMgr(object):
         self.inqueue.join()
         return self.output.dict
     
-    def submitCmdsAndWait(self, cmds):
+    '''put commands into a queue at first, then start workers numbers threads to execute this commands'''
+    def submitCmdsAndWait(self, cmds, workers=10):
         self.submitCmds(cmds)
+        
+        for i in range(workers):
+            worker = workThread(self.inqueue, self.output, self.apiClient, self.db)
+            worker.start()
+        
         return self.waitForComplete()
 
-    def submitJobs(self, job, ntimes=1, nums_threads=1, interval=1):
+    '''submit one job and execute the same job ntimes, with nums_threads of threads'''
+    def submitJobExecuteNtimes(self, job, ntimes=1, nums_threads=1, interval=1):
         inqueue1 = Queue.Queue()
         lock = threading.Condition()
         for i in range(ntimes):
@@ -136,6 +144,20 @@ class asyncJobMgr(object):
         
         for i in range(nums_threads):
             work = jobThread(inqueue1, interval)
-            work.setDaemon(True)
+            work.start()
+        inqueue1.join()
+        
+    '''submit n jobs, execute them with nums_threads of threads'''
+    def submitJobs(self, jobs, nums_threads=1, interval=1):
+        inqueue1 = Queue.Queue()
+        lock = threading.Condition()
+    
+        for job in jobs:
+            setattr(job, "apiClient", copy.copy(self.apiClient))
+            setattr(job, "lock", lock)
+            inqueue1.put(job)
+        
+        for i in range(nums_threads):
+            work = jobThread(inqueue1, interval)
             work.start()
         inqueue1.join()

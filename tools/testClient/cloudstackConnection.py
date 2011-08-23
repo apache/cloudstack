@@ -25,7 +25,13 @@ class cloudConnection(object):
             self.auth = True
             
         self.asyncTimeout = asyncTimeout
-        
+    
+    def close(self):
+        try:
+            self.connection.close()
+        except:
+            pass
+    
     def __copy__(self):
         return cloudConnection(self.mgtSvr, self.port, self.apiKey, self.securityKey, self.asyncTimeout, self.logging)
     

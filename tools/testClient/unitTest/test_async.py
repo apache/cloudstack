@@ -30,7 +30,13 @@ if __name__ == "__main__":
     testclient.dbConfigure()
     api = testclient.getApiClient()
     
-    #testclient.submitJobs(jobs(1), 10, 10, 1)
+    testclient.submitJob(jobs(1), 10, 10, 1)
+    
+    js = []
+    for i in range(10):
+        js.append(jobs(1))
+        
+    testclient.submitJobs(js, 10, 1)
 
     cmds = []
     for i in range(20):
