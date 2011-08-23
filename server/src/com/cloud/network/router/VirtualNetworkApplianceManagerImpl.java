@@ -313,6 +313,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private ServiceOfferingVO _offering;
     private String trafficSentinelHostname;
     private String _dnsBasicZoneUpdates = "all";
+    
+    private boolean _disable_rp_filter = false;
 
     ScheduledExecutorService _executor;
     ScheduledExecutorService _checkExecutor;
@@ -582,6 +584,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
+        }
+        
+        String rpValue = configs.get("network.disable.rpfilter");
+        if (rpValue != null && rpValue.equalsIgnoreCase("true")) {
+            _disable_rp_filter = true;
         }
         
         _dnsBasicZoneUpdates = String.valueOf(_configDao.getValue(Config.DnsBasicZoneUpdates.key()));
@@ -1208,7 +1215,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         String type = null;
         String dhcpRange = null;
-
+        String rpFilter = " ";
         DataCenter dc = dest.getDataCenter();
         DataCenterVO dcVO = _dcDao.findById(dc.getId());
         _dcDao.loadDetails(dcVO);
@@ -1224,10 +1231,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             type = "dhcpsrvr";
         } else {
             type = "router";
+            if (_disable_rp_filter) {
+                rpFilter=" disable_rp_filter=true";
+            }
         }
 
         StringBuilder buf = profile.getBootArgsBuilder();
-        buf.append(" template=domP type=" + type);
+        buf.append(" template=domP type=" + type+rpFilter);
         buf.append(" name=").append(profile.getHostName());
 
         boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
