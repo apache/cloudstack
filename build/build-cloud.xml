@@ -111,6 +111,8 @@
   <property name="meld.home" location="/usr/local/bin" />
   <property name="assertion" value="-da" />
 
+  <!-- directory for vmware-base library -->
+  <property name="vmware-base.dir" location="${base.dir}/vmware-base" />
 
   <!-- directories for testing -->
   <property name="test.target.dir" location="${target.dir}/test" />
@@ -126,6 +128,7 @@
   <property name="console-common.jar" value="cloud-console-common.jar" />
   <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
   <property name="api.jar" value="cloud-api.jar"/>
+  <property name="vmware-base.jar" value="cloud-vmware-base.jar" />
 
   <!--
 		Import information about the build version and company information
@@ -199,10 +202,18 @@
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-core" depends="-init, compile-utils, compile-api" description="Compile the core business logic.">
+  <target name="compile-core" depends="-init, compile-utils, compile-api, compile-vmware-base" description="Compile the core business logic.">
     <compile-java jar.name="${core.jar}" top.dir="${core.dir}" classpath="core.classpath" />
   </target>
 
+  <path id="vmware-base.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-vmware-base" depends="-init, compile-utils" description="Compile the VMware support library">
+    <compile-java jar.name="${vmware-base.jar}" top.dir="${vmware-base.dir}" classpath="vmware-base.classpath" />
+  </target>
+	
   <path id="server.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
