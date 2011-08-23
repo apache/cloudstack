@@ -411,8 +411,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable save password, router doesn't exist in network " + network.getId());
             throw new CloudRuntimeException("Unable to save password to router");
@@ -424,7 +423,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenter dc = _dcDao.findById(userVm.getDataCenterIdToDeployIn());
 
         boolean result = true;
-        for (DomainRouterVO router : routers) {
+        for (VirtualRouter router : routers) {
             boolean sendPassword = true;
             if (dc.getNetworkType() == NetworkType.Basic && userVm.getPodIdToDeployIn().longValue() != router.getPodIdToDeployIn().longValue()) {
                 sendPassword = false;
@@ -877,7 +876,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         long dcId = dest.getDataCenter().getId();
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
 
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(guestNetwork.getId());
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
         
         try {
             int routerCount = 1;
@@ -1099,7 +1098,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.DHCP_USERDATA);
                 plan = new DataCenterDeployment(dcId, podId, null, null, null);
             } else {
-                routers = _routerDao.findByNetwork(guestNetwork.getId());
+                routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.DHCP_USERDATA);
                 plan = new DataCenterDeployment(dcId);
             }
 
@@ -1533,15 +1532,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
 
     @Override
-    public boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+    public boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
             throw new ResourceUnavailableException("Failed to start remote access VPN: no router found for account and zone", DataCenter.class, network.getDataCenterId());
         }
         
-        for (DomainRouterVO router : routers) {
+        for (VirtualRouter router : routers) {
             if (router.getState() != State.Running) {
                 s_logger.warn("Failed to start remote access VPN: router not in right state " + router.getState());
                 throw new ResourceUnavailableException("Failed to start remote access VPN: router not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
@@ -1578,16 +1575,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
 
     @Override
-    public boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+    public boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Failed to delete remote access VPN: no router found for account and zone");
             throw new ResourceUnavailableException("Failed to delete remote access VPN", DataCenter.class, network.getDataCenterId());
         }
         
         boolean result = true;
-        for (DomainRouterVO router : routers) {
+        for (VirtualRouter router : routers) {
             if (router.getState() != State.Running) {
                 s_logger.warn("Failed to delete remote access VPN: domR is not in right state " + router.getState());
                 throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
@@ -1769,8 +1764,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+    public String[] applyVpnUsers(Network network, List<? extends VpnUser> users, List<DomainRouterVO> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
@@ -1882,7 +1876,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return startVirtualRouter(router, user, account, params);
     }
 
-    private void createAssociateIPCommands(final DomainRouterVO router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {
+    private void createAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {
 
         // Ensure that in multiple vlans case we first send all ip addresses of vlan1, then all ip addresses of vlan2, etc..
         Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PublicIpAddress>>();
@@ -1943,7 +1937,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-    private void createApplyPortForwardingRulesCommands(List<? extends PortForwardingRule> rules, DomainRouterVO router, Commands cmds) {
+    private void createApplyPortForwardingRulesCommands(List<? extends PortForwardingRule> rules, VirtualRouter router, Commands cmds) {
         List<PortForwardingRuleTO> rulesTO = null;
         if (rules != null) {
             rulesTO = new ArrayList<PortForwardingRuleTO>();
@@ -1964,7 +1958,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand(cmd);
     }
 
-    private void createApplyStaticNatRulesCommands(List<? extends StaticNatRule> rules, DomainRouterVO router, Commands cmds) {
+    private void createApplyStaticNatRulesCommands(List<? extends StaticNatRule> rules, VirtualRouter router, Commands cmds) {
         List<StaticNatRuleTO> rulesTO = null;
         if (rules != null) {
             rulesTO = new ArrayList<StaticNatRuleTO>();
@@ -1984,7 +1978,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand(cmd);
     }
 
-    private void createApplyLoadBalancingRulesCommands(List<LoadBalancingRule> rules, DomainRouterVO router, Commands cmds) {
+    private void createApplyLoadBalancingRulesCommands(List<LoadBalancingRule> rules, VirtualRouter router, Commands cmds) {
 
         LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
         int i = 0;
@@ -2015,7 +2009,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     }
 
-    private void createApplyVpnCommands(RemoteAccessVpn vpn, DomainRouterVO router, Commands cmds) {
+    private void createApplyVpnCommands(RemoteAccessVpn vpn, VirtualRouter router, Commands cmds) {
         List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
         List<VpnUser> addUsers = new ArrayList<VpnUser>();
         List<VpnUser> removeUsers = new ArrayList<VpnUser>();
@@ -2094,7 +2088,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-    private boolean sendCommandsToRouter(final DomainRouterVO router, Commands cmds) throws AgentUnavailableException {
+    private boolean sendCommandsToRouter(final VirtualRouter router, Commands cmds) throws AgentUnavailableException {
         Answer[] answers = null;
         try {
             answers = _agentMgr.send(router.getHostId(), cmds);
@@ -2120,15 +2114,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean associateIP(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+    public boolean associateIP(Network network, List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to associate ip addresses, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to assign ip addresses", DataCenter.class, network.getDataCenterId());
         }
 
         boolean result = true;
-        for (DomainRouterVO router : routers) {
+        for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 Commands cmds = new Commands(OnError.Continue);
                 // Have to resend all already associated ip addresses
@@ -2150,15 +2143,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to apply firewall rules, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply firewall rules", DataCenter.class, network.getDataCenterId());
         }
 
         boolean result = true;
-        for (DomainRouterVO router : routers) {
+        for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 if (rules != null && !rules.isEmpty()) {
                     if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
@@ -2199,21 +2191,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return result;
     }
 
-    protected boolean applyLBRules(DomainRouterVO router, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+    protected boolean applyLBRules(VirtualRouter router, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createApplyLoadBalancingRulesCommands(rules, router, cmds);
         // Send commands to router
         return sendCommandsToRouter(router, cmds);
     }
 
-    protected boolean applyPortForwardingRules(DomainRouterVO router, List<PortForwardingRule> rules) throws ResourceUnavailableException {
+    protected boolean applyPortForwardingRules(VirtualRouter router, List<PortForwardingRule> rules) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createApplyPortForwardingRulesCommands(rules, router, cmds);
         // Send commands to router
         return sendCommandsToRouter(router, cmds);
     }
 
-    protected boolean applyStaticNatRules(DomainRouterVO router, List<StaticNatRule> rules) throws ResourceUnavailableException {
+    protected boolean applyStaticNatRules(VirtualRouter router, List<StaticNatRule> rules) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createApplyStaticNatRulesCommands(rules, router, cmds);
         // Send commands to router
@@ -2230,7 +2222,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return vrs;
     }
     
-    private void createFirewallRulesCommands(List<? extends FirewallRule> rules, DomainRouterVO router, Commands cmds) {
+    private void createFirewallRulesCommands(List<? extends FirewallRule> rules, VirtualRouter router, Commands cmds) {
         List<FirewallRuleTO> rulesTO = null;
         if (rules != null) {
             rulesTO = new ArrayList<FirewallRuleTO>();
@@ -2251,7 +2243,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     
-    protected boolean applyFirewallRules(DomainRouterVO router, List<FirewallRule> rules) throws ResourceUnavailableException {
+    protected boolean applyFirewallRules(VirtualRouter router, List<FirewallRule> rules) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createFirewallRulesCommands(rules, router, cmds);
         // Send commands to router
@@ -2265,15 +2257,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     
     @Override
-    public boolean applyStaticNats(Network network, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.findByNetwork(network.getId());
+    public boolean applyStaticNats(Network network, List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to create static nat, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to create static nat", DataCenter.class, network.getDataCenterId());
         }
 
         boolean result = true;
-        for (DomainRouterVO router : routers) {
+        for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 s_logger.debug("Applying " + rules.size() + " static nat in network " + network);
                 result = applyStaticNat(router, rules);
@@ -2295,14 +2286,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     
-    protected boolean applyStaticNat(DomainRouterVO router, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+    protected boolean applyStaticNat(VirtualRouter router, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createApplyStaticNatCommands(rules, router, cmds);
         // Send commands to router
         return sendCommandsToRouter(router, cmds);
     }
     
-    private void createApplyStaticNatCommands(List<? extends StaticNat> rules, DomainRouterVO router, Commands cmds) {
+    private void createApplyStaticNatCommands(List<? extends StaticNat> rules, VirtualRouter router, Commands cmds) {
         List<StaticNatRuleTO> rulesTO = null;
         if (rules != null) {
             rulesTO = new ArrayList<StaticNatRuleTO>();
