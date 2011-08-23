@@ -139,6 +139,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         return publicMacAddress;
     }
     
+    @Override
     public String getGuestIpAddress() {
         return guestIpAddress;
     }

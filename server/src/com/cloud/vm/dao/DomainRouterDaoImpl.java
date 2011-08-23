@@ -87,6 +87,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         OutsidePodSearch.and("network", OutsidePodSearch.entity().getNetworkId(), Op.EQ);
         OutsidePodSearch.and("podId", OutsidePodSearch.entity().getPodIdToDeployIn(), Op.NEQ);
         OutsidePodSearch.and("state", OutsidePodSearch.entity().getState(), Op.EQ);
+        OutsidePodSearch.and("role", OutsidePodSearch.entity().getRole(), Op.EQ);
         OutsidePodSearch.done();
 
     }
@@ -189,14 +190,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> findByNetworkAndPod(long networkId, long podId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        sc.setParameters("network", networkId);
-        sc.setParameters("podId", podId);
-        return listBy(sc);
-    }
-
-    @Override
     public List<DomainRouterVO> listActive(long networkId) {
         SearchCriteria<DomainRouterVO> sc = IdNetworkIdStatesSearch.create();
         sc.setParameters("network", networkId);
@@ -213,21 +206,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state) {
+    public List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state, Role role) {
         SearchCriteria<DomainRouterVO> sc = OutsidePodSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("podId", podId);
         sc.setParameters("state", state);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<DomainRouterVO> listByNetworkAndState(long networkId, State state) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        sc.setParameters("network", networkId);
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
+        sc.setParameters("role", role);
         return listBy(sc);
     }
 
