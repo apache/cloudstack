@@ -23,7 +23,7 @@
 # $Id: rundomrpre.sh 10427 2010-07-09 03:30:48Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/hypervisor/kvm/rundomrpre.sh $
 
 set -x
-cert="/root/.ssh/id_rsa.cloud"
+pubKey="/root/.ssh/id_rsa.pub.cloud"
 mntpath() {
   local vmname=$1
   if [ ! -d /mnt/$vmname ]
@@ -87,9 +87,10 @@ patch_all() {
     local datadisk=$3
     local path=$(mntpath $vmname)
 
-    if [ -f $cert ]
+
+    if [ -f $pubKey ]
     then
-        cp $cert  $path/authorized_keys
+        cp $pubKey  $path/authorized_keys
     fi
     echo $cmdline > $path/cmdline 
     sed -i "s/,/\ /g" $path/cmdline

@@ -90,6 +90,10 @@ public class FirewallRuleVO implements FirewallRule {
     @Column(name="icmp_type")
     Integer icmpType;
     
+
+    @Column(name="related")
+    Long related;
+    
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call firewallrules dao to load it.
@@ -172,7 +176,7 @@ public class FirewallRuleVO implements FirewallRule {
     protected FirewallRuleVO() {
     }
     
-    public FirewallRuleVO(String xId, long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType) {
+    public FirewallRuleVO(String xId, long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
         this.xId = xId;
         if (xId == null) {
             this.xId = UUID.randomUUID().toString();
@@ -189,10 +193,16 @@ public class FirewallRuleVO implements FirewallRule {
         this.icmpCode = icmpCode;
         this.icmpType = icmpType;
         this.sourceCidrs = sourceCidrs;
+        
+        if (related != null) {
+            assert (purpose == Purpose.Firewall) : "related field can be set for rule of purpose " + Purpose.Firewall + " only";
+        }
+        
+        this.related = related;
     }
     
-    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType) {
-        this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType);
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
+        this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related);
     }
     
     @Override
@@ -208,6 +218,11 @@ public class FirewallRuleVO implements FirewallRule {
     @Override
     public Integer getIcmpType() {
         return icmpType;
+    }
+
+    @Override
+    public Long getRelated() {
+        return related;
     }
     
 }

@@ -205,6 +205,7 @@ public class DataCenterVO implements DataCenter {
             dhcpProvider = Provider.DhcpServer.getName();
             dnsProvider = Provider.DhcpServer.getName();
             userDataProvider = Provider.DhcpServer.getName();
+            loadBalancerProvider = Provider.ElasticLoadBalancerVm.getName();
         }
 
         this.zoneToken = zoneToken;

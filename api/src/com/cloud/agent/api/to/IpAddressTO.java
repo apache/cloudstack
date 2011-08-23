@@ -40,9 +40,9 @@ public class IpAddressTO {
     private TrafficType trafficType;
     private String[] networkTags;
     
-    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate) {
+    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, boolean isOneToOneNat) {
         this.accountId = accountId;
-    	this.publicIp = ipAddress;
+        this.publicIp = ipAddress;
         this.add = add;
         this.firstIP = firstIP;
         this.sourceNat = sourceNat;
@@ -52,6 +52,7 @@ public class IpAddressTO {
         this.vifMacAddress = vifMacAddress;
         this.guestIp = guestIp;
         this.networkRate = networkRate;
+        this.oneToOneNat = isOneToOneNat;
     }
     
     protected IpAddressTO() {

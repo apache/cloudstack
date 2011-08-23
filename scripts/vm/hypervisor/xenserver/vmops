@@ -13,6 +13,7 @@ import stat
 import tempfile
 import util
 import subprocess
+from util import CommandException
 
 def echo(fn):
     def wrapped(*v, **k):
@@ -362,11 +363,10 @@ def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-1])
-        return '-'.join(vm_name.split('-'))
     return vm_name
 
 def chain_name_def(vm_name):
-    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+    if vm_name.startswith('i-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-2]) + "-def"
         return '-'.join(vm_name.split('-')[:-1]) + "-def"
@@ -392,7 +392,7 @@ def can_bridge_firewall(session, args):
             util.pread2(['iptables', '-A', 'FORWARD', '-j', 'DROP'])
         except:
             result = 'false'
-
+    allow_egress_traffic(session)
     if not os.path.exists('/var/run/cloud'):
         os.makedirs('/var/run/cloud')
  
@@ -400,6 +400,28 @@ def can_bridge_firewall(session, args):
     cleanup_rules(session, args)
     
     return result
+
+@echo
+def allow_egress_traffic(session):
+    devs = []
+    for pif in session.xenapi.PIF.get_all():
+        pif_rec = session.xenapi.PIF.get_record(pif)
+        vlan = pif_rec.get('VLAN')
+        dev = pif_rec.get('device')
+        if vlan == '-1':
+            devs.append(dev)
+        else:
+            devs.append(dev + "." + vlan)
+    for d in devs:
+        try:
+            util.pread2(['/bin/bash', '-c', "iptables -n -L FORWARD | grep '%s '" % d])
+        except:
+            try:
+                util.pread2(['iptables', '-I', 'FORWARD', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', d, '-j', 'ACCEPT'])
+            except:
+                util.SMlog("Failed to add FORWARD rule through to %s" % d)
+                return 'false'
+    return 'true'
 
 
 def ipset(ipsetname, proto, start, end, ips):
@@ -435,7 +457,7 @@ def destroy_network_rules_for_vm(session, args):
     vmchain_default = chain_name_def(vm_name)
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
-    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+    if vm_name.startswith('i-') or vm_name.startswith('r-') or vm_name.startswith('l-'):
         try:
             util.pread2(['iptables', '-F', vmchain_default])
             util.pread2(['iptables', '-X', vmchain_default])
@@ -459,7 +481,7 @@ def destroy_network_rules_for_vm(session, args):
     
     remove_rule_log_for_vm(vm_name)
     
-    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
+    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-', 'l-'] ]:
         return 'true'
     
     try:
@@ -578,16 +600,19 @@ def default_network_rules_systemvm(session, args):
         util.pread2(['iptables', '-N', vmchain])
     except:
         util.pread2(['iptables', '-F', vmchain])
-
+    
+    allow_egress_traffic(session)
   
     for vif in vifs:
         try:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
-            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
+            util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', 'RETURN'])
         except:
             util.SMlog("Failed to program default rules")
             return 'false'
-
+	
+	
     util.pread2(['iptables', '-A', vmchain, '-j', 'ACCEPT'])
     
     if write_rule_log_for_vm(vm_name, '-1', '_ignore_', domid, '_initial_', '-1') == False:
@@ -653,7 +678,7 @@ def default_network_rules(session, args):
     try:
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
         util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
         #allow dhcp
         for v in vifs:
@@ -736,7 +761,7 @@ def network_rules_for_rebooted_vm(session, vmName):
     util.SMlog("Found a rebooted VM -- reprogramming rules for  " + vm_name)
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
-    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
+    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-', 'l-'] ]:
         default_network_rules_systemvm(session, {"vmName":vm_name})
         return True
     
@@ -753,7 +778,7 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     for v in vifs:
         util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
     #change antispoof rule in vmchain
     try:
@@ -824,7 +849,7 @@ def get_rule_logs_for_vms(session, args):
     result = []
     try:
         for name in [session.xenapi.VM.get_name_label(x) for x in vms]:
-            if 1 not in [ name.startswith(c) for c in ['r-', 's-', 'v-', 'i-'] ]:
+            if 1 not in [ name.startswith(c) for c in ['r-', 's-', 'v-', 'i-', 'l-'] ]:
                 continue
             network_rules_for_rebooted_vm(session, name)
             if name.startswith('i-'):
@@ -841,7 +866,7 @@ def cleanup_rules_for_dead_vms(session):
     vms = session.xenapi.VM.get_all()
     cleaned = 0
     for vm_name in [session.xenapi.VM.get_name_label(x) for x in vms]:
-        if 1 in [ vm_name.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
+        if 1 in [ vm_name.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-'] ]:
             vm = session.xenapi.VM.get_by_name_label(vm_name)
             if len(vm) != 1:
                 continue
@@ -869,11 +894,11 @@ def cleanup_rules(session, args):
     cleaned = 0
     cleanup = []
     for chain in chains:
-        if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
-            vm = session.xenapi.VM.get_by_name_label(vm_name)
+        if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-'] ]:
+            vm = session.xenapi.VM.get_by_name_label(chain)
             if len(vm) != 1:
                 util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
-                cleanup.append(vm_name)
+                cleanup.append(chain)
                 continue
             vm_rec = session.xenapi.VM.get_record(vm[0])
             state = vm_rec.get('power_state')
@@ -1073,8 +1098,18 @@ def checkRouter(session, args):
 
     return txt
 
-
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn, "cleanup_rules":cleanup_rules, "checkRouter": checkRouter})
 
-
+     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
+                            "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
+                            "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
+                            "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, 
+                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 
+                            "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
+                            "networkUsage": networkUsage, "network_rules":network_rules, 
+                            "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
+                            "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
+                            "default_network_rules_systemvm":default_network_rules_systemvm, 
+                            "get_rule_logs_for_vms":get_rule_logs_for_vms, 
+                            "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
+                            "cleanup_rules":cleanup_rules, "checkRouter": checkRouter})

@@ -415,7 +415,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
         }        
     }
-
+    
     @Override
 	public void updateCapacityForHost(HostVO host){
     	// prep the service offerings

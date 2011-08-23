@@ -339,7 +339,7 @@ public abstract class AgentAttache {
         if (listener != null) {
             registerListener(seq, listener);
         } else if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(seq, "Routing: "));
+            s_logger.debug(log(seq, "Routed from " + req.getManagementServerId()));
         }
 
         synchronized(this) {

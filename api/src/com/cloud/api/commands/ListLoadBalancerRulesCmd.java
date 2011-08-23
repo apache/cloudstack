@@ -119,4 +119,5 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
+
 }

@@ -1004,7 +1004,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         ClusteredAgentAttache forwardAttache = (ClusteredAgentAttache)attache;
         
         if (success) {
-            
+
             //1) Set transfer mode to false - so the agent can start processing requests normally
             forwardAttache.setTransferMode(false);
             
@@ -1019,6 +1019,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 
                 requestToTransfer = forwardAttache.getRequestToTransfer();
             }
+            s_logger.debug("Management server " + _nodeId + " completed agent " + hostId + " rebalance");
            
         } else {
             failRebalance(hostId);

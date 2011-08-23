@@ -17,9 +17,6 @@
  */
 package com.cloud.network.rules;
 
-import java.util.List;
-
-
 /**
  * Definition for a LoadBalancer 
  */

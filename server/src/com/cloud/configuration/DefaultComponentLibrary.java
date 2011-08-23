@@ -18,7 +18,6 @@
 package com.cloud.configuration;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,6 @@ import com.cloud.certificate.dao.CertificateDaoImpl;
 import com.cloud.cluster.CheckPointManagerImpl;
 import com.cloud.cluster.ClusterFenceManagerImpl;
 import com.cloud.cluster.ClusterManagerImpl;
-import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.cluster.dao.ManagementServerHostDaoImpl;
 import com.cloud.cluster.dao.StackMaidDaoImpl;
@@ -83,7 +81,9 @@ import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.firewall.FirewallManagerImpl;
+import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
+import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
 import com.cloud.network.ovs.OvsNetworkManagerImpl;
 import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.GreTunnelDaoImpl;
@@ -97,8 +97,8 @@ import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl;
-import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.EgressRuleDaoImpl;
+import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
@@ -138,7 +138,6 @@ import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.TemplateManagerImpl;
-import com.cloud.upgrade.DatabaseUpgradeChecker;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.SSHKeyPairDaoImpl;
@@ -150,7 +149,6 @@ import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLibraryBase;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ClusteredVirtualMachineManagerImpl;
 import com.cloud.vm.ItWorkDaoImpl;
@@ -274,6 +272,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
         addDao("ProjectDao", ProjectDaoImpl.class);
         addDao("InlineLoadBalancerNicMapDao", InlineLoadBalancerNicMapDaoImpl.class);
+        addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
+
     }
 
     @Override
@@ -318,12 +318,16 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
         addManager("ResourceManager", ResourceManagerImpl.class);
+
         addManager("OCFS2Manager", OCFS2ManagerImpl.class);
         addManager("FirewallManager", FirewallManagerImpl.class);
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("ProjectManager", ProjectManagerImpl.class);
+        addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
+        addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
+
     }
 
     @Override

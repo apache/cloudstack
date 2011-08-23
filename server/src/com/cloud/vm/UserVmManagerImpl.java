@@ -1251,7 +1251,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
         try {
             if (ip != null) {
-                if (_rulesMgr.disableOneToOneNat(ip.getId())) {
+                if (_rulesMgr.disableStaticNat(ip.getId())) {
                     s_logger.debug("Disabled 1-1 nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
                 } else {
                     s_logger.warn("Failed to disable static nat for ip address " + ip + " as a part of vm id=" + vmId + " expunge");
@@ -1583,7 +1583,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 String checkSum = getChecksum(secondaryStorageHost.getId(), answer.getPath());
                 
                 Transaction txn = Transaction.currentTxn();
-
+                
                 txn.start();
 
                 privateTemplate.setChecksum(checkSum);
@@ -1652,9 +1652,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 List<VolumeVO> volumesForThisVm = _volsDao.findUsableVolumesForInstance(vm.getId());
                 for (VolumeVO volume : volumesForThisVm) {
                     try {
-                        _storageMgr.destroyVolume(volume);
-                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
-                        _usageEventDao.persist(usageEvent);
+                        if (volume.getState() != Volume.State.Destroy) {
+                            _storageMgr.destroyVolume(volume);
+                        }
                     } catch (ConcurrentOperationException e) {
                         s_logger.warn("Unable to delete volume:" + volume.getId() + " for vm:" + vmId + " whilst transitioning to error state");
                     }
@@ -2444,7 +2444,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-        
+        s_logger.debug("Allocating in the DB for vm");
+
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
         short defaultNetworkNumber = 0;
         for (NetworkVO network : networkList) {
@@ -2452,7 +2453,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (network.getDataCenterId() != zone.getId()) {
                 throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
             }
-            
+
             NicProfile profile = null;
             
             //Add requested ips
@@ -2663,12 +2664,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         if (vm.getIsoId() != null) {
-            String isoPath = null;
-            
-            VirtualMachineTemplate template = _templateDao.findById(vm.getIsoId());
-            if (template == null || template.getFormat() != ImageFormat.ISO) {
-                throw new CloudRuntimeException("Can not find ISO in vm_template table for id " + vm.getIsoId());
-            }
+        	String isoPath = null;
+        	
+        	VirtualMachineTemplate template = _templateDao.findById(vm.getIsoId());
+        	if (template == null || template.getFormat() != ImageFormat.ISO) {
+        		throw new CloudRuntimeException("Can not find ISO in vm_template table for id " + vm.getIsoId());
+        	}
+
             Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vm.getDataCenterIdToDeployIn());
 
             if (isoPathPair == null) {
@@ -3374,7 +3376,4 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 
         return vm;
     }
-
-
-
 }

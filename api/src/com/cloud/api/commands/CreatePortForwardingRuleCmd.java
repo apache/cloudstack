@@ -39,7 +39,6 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.NetUtils;
 
 @Implementation(description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
@@ -98,7 +97,10 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     public List<String> getSourceCidrList() {
-        return cidrlist;
+        if (cidrlist != null) {
+            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+        }
+        return null;
     }
     
     public Boolean getOpenFirewall() {
@@ -117,24 +119,21 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     public String getCommandName() {
         return s_name;
     }
-    
-    public void setSourceCidrList(List<String> cidrs){
-        cidrlist = cidrs;
-    }
+
 
     @Override
     public void execute() throws ResourceUnavailableException {
         UserContext callerContext = UserContext.current();
         boolean success = true;
-        PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
+        PortForwardingRule rule = null;
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyFirewallRules(rule.getSourceIpAddressId(), callerContext.getCaller());
+                success = success && _firewallService.applyFirewallRules(ipAddressId, callerContext.getCaller());
             }
             
-            success = success && _rulesService.applyPortForwardingRules(rule.getSourceIpAddressId(), callerContext.getCaller());
+            success = success && _rulesService.applyPortForwardingRules(ipAddressId, callerContext.getCaller());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
@@ -147,6 +146,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         } finally {
             if (!success || rule == null) {
                 _rulesService.revokePortForwardingRule(getEntityId(), true);
+                
+                if (getOpenFirewall()) {
+                    _rulesService.revokeRelatedFirewallRule(getEntityId(), true);
+                }
+                
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply port forwarding rule");
             }
         }
@@ -232,17 +236,17 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public void create() {
-        if (cidrlist != null)
-            for (String cidr: cidrlist){
-                if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Source cidrs formatting error " + cidr); 
-                }
-            }
+        
+        //cidr list parameter is deprecated
+        if (cidrlist != null) {
+            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+        }
+        
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, getOpenFirewall());
             setEntityId(result.getId());
         } catch (NetworkRuleConflictException ex) {
-            s_logger.info("Network rule conflict: " + ex.getMessage());
+            s_logger.info("Network rule conflict: " , ex);
             s_logger.trace("Network Rule Conflict: ", ex);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
@@ -290,6 +294,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     
     @Override
     public Integer getIcmpType() {
+        return null;
+    }
+    
+    @Override
+    public Long getRelated() {
         return null;
     }
 

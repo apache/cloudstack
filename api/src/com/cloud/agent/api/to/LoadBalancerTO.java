@@ -20,21 +20,19 @@ package com.cloud.agent.api.to;
 import java.util.List;
 
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.cloud.utils.StringUtils;
 
 
 public class LoadBalancerTO {
     String srcIp;
     int srcPort;
     String protocol;
-    List<String>  sourceCidrs;
     String algorithm;    
     boolean revoked;
     boolean alreadyAdded;
     DestinationTO[] destinations;
     
     
-    public LoadBalancerTO (String srcIp, int srcPort, String protocol, List<String>  sourceCidrs, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
+    public LoadBalancerTO (String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
         this.srcIp = srcIp;
         this.srcPort = srcPort;
         this.protocol = protocol;
@@ -42,7 +40,6 @@ public class LoadBalancerTO {
         this.revoked = revoked;
         this.alreadyAdded = alreadyAdded;
         this.destinations = new DestinationTO[destinations.size()];
-        this.sourceCidrs = sourceCidrs;
         int i = 0;
         for (LbDestination destination : destinations) {
             this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.isRevoked(), false);
@@ -60,14 +57,6 @@ public class LoadBalancerTO {
         return srcPort;
     }
 
-    public List<String> getSourceCidrs(){
-        return sourceCidrs;
-    }
-    
-    public String getStringSourceCidrs(){
-        return StringUtils.join(sourceCidrs, "-");
-    }    
-    
     public String getAlgorithm() {
         return algorithm;
     }

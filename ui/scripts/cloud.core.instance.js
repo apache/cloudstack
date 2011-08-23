@@ -173,6 +173,7 @@ function afterLoadInstanceJSP() {
 	});		
 }
 
+
 function bindStartVMButton() {    
     $("#start_vm_button").bind("click", function(event) {            
         var itemCounts = 0;
@@ -1859,7 +1860,7 @@ function vmJsonToDetailsTab(){
 		}
 	});  	  
     */
-	
+
 	resetViewConsoleAction(jsonObj, $thisTab);      
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
 	
@@ -1998,6 +1999,7 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		
 		noAvailableActions = false;			    					
 	}
+
 	else if (jsonObj.state == 'Error') {	
 	    buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 	    noAvailableActions = false;	
@@ -2570,3 +2572,4 @@ function doTakeSnapshotFromVmVolume($actionLink, $subgridItem) {
 	    } 
     }).dialog("open");	  
 }		
+

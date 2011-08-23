@@ -54,4 +54,27 @@ INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-serve
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.auth','admin1:AdMiN123','Load Balancer(haproxy) authetication string in the format username:password');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.stats.port','8081','Load Balancer(haproxy) stats port number.');
 
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'use.external.dns', 'false', 'Bypass the cloudstack DHCP/DNS server vm name service, use zone external dns1 and dns2');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.enabled', 'false', 'Whether the load balancing service is enabled for basic zones');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.gc.interval.minutes', '120', 'Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.network', 'guest', 'Whether the elastic load balancing service public ips are taken from the public or guest network');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.vm.cpu.mhz', '128', 'CPU speed for the elastic load balancer vm');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.vm.ram.size', '128', 'Memory in MB for the elastic load balancer vm');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'network.loadbalancer.basiczone.elb.vm.vcpu.num', '1', 'Number of VCPU  for the elastic load balancer vm');
+
 UPDATE `cloud`.`nics` SET strategy='Start' where reserver_name='DirectPodBasedNetworkGuru';
+UPDATE `cloud`.`network_offerings` SET lb_service=1 where unique_name='System-Guest-Network';
+
+
+CREATE TABLE `cloud`.`elastic_lb_vm_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `ip_addr_id` bigint unsigned NOT NULL,
+  `elb_vm_id` bigint unsigned NOT NULL,
+  `lb_id` bigint unsigned,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_elastic_lb_vm_map__ip_id` FOREIGN KEY `fk_elastic_lb_vm_map__ip_id` (`ip_addr_id`) REFERENCES `user_ip_address` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_elastic_lb_vm_map__elb_vm_id` FOREIGN KEY `fk_elastic_lb_vm_map__elb_vm_id` (`elb_vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_elastic_lb_vm_map__lb_id` FOREIGN KEY `fk_elastic_lb_vm_map__lb_id` (`lb_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+

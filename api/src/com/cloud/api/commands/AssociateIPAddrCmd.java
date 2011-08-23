@@ -190,4 +190,5 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.IpAddress;
     }
+
 }

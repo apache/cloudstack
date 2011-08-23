@@ -560,8 +560,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                     if(!pool.isInMaintenance()){
                         if(!avoid.shouldAvoid(pool)){
                             long exstPoolDcId = pool.getDataCenterId();
-                            Long exstPoolPodId = pool.getPodId();
-                            Long exstPoolClusterId = pool.getClusterId();
+
+                            long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
+                            long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
                             if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
                                 s_logger.debug("Planner need not allocate a pool for this volume since its READY");
                                 suitablePools.add(pool);

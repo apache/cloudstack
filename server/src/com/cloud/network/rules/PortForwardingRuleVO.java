@@ -52,8 +52,8 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     public PortForwardingRuleVO() {
     }
 
-    public PortForwardingRuleVO(String xId, long srcIpId, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, List<String> sourceCidrs, long networkId, long accountId, long domainId, long instanceId) {
-        super(xId, srcIpId, srcPortStart, srcPortEnd, protocol, networkId, accountId, domainId, Purpose.PortForwarding, sourceCidrs, null, null);
+    public PortForwardingRuleVO(String xId, long srcIpId, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId, long accountId, long domainId, long instanceId) {
+        super(xId, srcIpId, srcPortStart, srcPortEnd, protocol, networkId, accountId, domainId, Purpose.PortForwarding, null, null, null, null);
         this.destinationIpAddress = dstIp;
         this.virtualMachineId = instanceId;
         this.destinationPortStart = dstPortStart;
@@ -61,7 +61,7 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     }
     
     public PortForwardingRuleVO(String xId, long srcIpId, int srcPort, Ip dstIp, int dstPort, String protocol, List<String> sourceCidrs, long networkId, long accountId, long domainId, long instanceId) {
-        this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol.toLowerCase(), sourceCidrs, networkId, accountId, domainId, instanceId);
+        this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol.toLowerCase(), networkId, accountId, domainId, instanceId);
     }
 
     @Override
@@ -89,6 +89,10 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
         return virtualMachineId;
     }
     
-    
+    @Override
+    public Long getRelated() {
+        return null;
+    }
+
 }
 

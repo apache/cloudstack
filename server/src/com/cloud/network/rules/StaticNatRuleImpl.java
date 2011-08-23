@@ -117,9 +117,15 @@ public class StaticNatRuleImpl implements StaticNatRule{
     public Integer getIcmpType() {
         return null;
     }
-    
+
     @Override
     public List<String> getSourceCidrList() {
         return null;
     }
+
+    @Override
+    public Long getRelated() {
+        return null;
+    }
+
 }

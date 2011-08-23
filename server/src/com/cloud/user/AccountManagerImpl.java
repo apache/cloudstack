@@ -1317,8 +1317,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         user.setTimezone(timezone);
         
         if(userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
-        	//set registration token
-        	byte[] bytes = (domainId + accountName + username + System.currentTimeMillis()).getBytes();
+            //set registration token
+            byte[] bytes = (domainId + accountName + username + System.currentTimeMillis()).getBytes();
             String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
             user.setRegistrationToken(registrationToken);
         }

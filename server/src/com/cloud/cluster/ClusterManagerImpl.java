@@ -461,14 +461,19 @@ public class ClusterManagerImpl implements ClusterManager {
     public void registerListener(ClusterManagerListener listener) {
         // Note : we don't check duplicates
         synchronized (listeners) {
-            listeners.add(listener);
+
+    		s_logger.info("register cluster listener " + listener.getClass());
+    		
+        	listeners.add(listener);
         }
     }
 
     @Override
     public void unregisterListener(ClusterManagerListener listener) {
         synchronized(listeners) {
-            listeners.remove(listener);
+    		s_logger.info("unregister cluster listener " + listener.getClass());
+        	
+        	listeners.remove(listener);
         }
     }
 
@@ -793,7 +798,15 @@ public class ClusterManagerImpl implements ClusterManager {
         }
         
         if(inactiveList.size() > 0) {
+        	if(s_logger.isInfoEnabled()) {
+        		s_logger.info("Found " + inactiveList.size() + " inactive management server node based on timestamp");
+        		for(ManagementServerHostVO host : inactiveList)
+        			s_logger.info("management server node msid: " + host.getMsid() + ", name: " + host.getName() + ", service ip: " + host.getServiceIP() + ", version: " + host.getVersion());
+        	}
+        	
             this.queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, inactiveList));
+        } else {
+        	s_logger.info("No inactive management server node found");
         }
     }
 

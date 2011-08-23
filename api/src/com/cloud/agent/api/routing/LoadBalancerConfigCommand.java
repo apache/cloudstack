@@ -25,7 +25,7 @@ import com.cloud.agent.api.to.LoadBalancerTO;
  */
 public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
-    public String lbStatsVisibility;
+    public String lbStatsVisibility = "guest-network";
     public String lbStatsIp; /* load balancer listen on this ip for stats */
     public String lbStatsPort = "8081"; /*load balancer listen on this port for stats */
     public String lbStatsSrcCidrs = "0/0" ; /* TODO : currently there is no filtering based on the source ip */

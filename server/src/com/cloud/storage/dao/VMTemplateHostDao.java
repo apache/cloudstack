@@ -18,7 +18,6 @@
 
 package com.cloud.storage.dao;
 
-import java.util.Date;
 import java.util.List;
 
 import com.cloud.storage.VMTemplateHostVO;

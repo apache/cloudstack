@@ -23,6 +23,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.ha.HaWorkVO;
 import com.cloud.network.security.SecurityGroupWorkVO;
 import com.cloud.network.security.SecurityGroupWorkVO.Step;
@@ -37,6 +39,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={SecurityGroupWorkDao.class})
 public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO, Long> implements SecurityGroupWorkDao {
+    private static final Logger s_logger = Logger.getLogger(SecurityGroupWorkDaoImpl.class);
+
     private SearchBuilder<SecurityGroupWorkVO> VmIdTakenSearch;
     private SearchBuilder<SecurityGroupWorkVO> VmIdSeqNumSearch;
     private SearchBuilder<SecurityGroupWorkVO> VmIdUnTakenSearch;
@@ -106,22 +110,30 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             txn.start();
             final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
+                txn.commit();
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Security Group take: no work found");
+                }
                 return null;
             }
-            SecurityGroupWorkVO work = null;
-            for (SecurityGroupWorkVO w: vos) {       
-            	//ensure that there is no job in Processing state for the same VM
-            	if ( findByVmIdStep(w.getInstanceId(), Step.Processing) == null) {
-            		work = w;
-            		break;
-            	}
-            }
-            if (work == null) {
-            	return null;
+            SecurityGroupWorkVO work = vos.get(0);
+            boolean processing = false;
+            if ( findByVmIdStep(work.getInstanceId(), Step.Processing) != null) {
+                //ensure that there is no job in Processing state for the same VM
+                processing = true;
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Security Group work take: found a job in Scheduled and Processing  vmid=" + work.getInstanceId());
+                }
             }
             work.setServerId(serverId);
             work.setDateTaken(new Date());
-            work.setStep(SecurityGroupWorkVO.Step.Processing);
+            if (processing) {
+                //the caller to take() should check the step and schedule another work item to come back
+                //and take a look.
+                work.setStep(SecurityGroupWorkVO.Step.Done);
+            } else {
+                work.setStep(SecurityGroupWorkVO.Step.Processing);
+            }
 
             update(work.getId(), work);
 
@@ -198,12 +210,30 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 
 		List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
 		
-		SecurityGroupWorkVO work = createForUpdate();
-		work.setStep(Step.Error);
-		update(work, sc);
-		
 		return result;
 	}
+	
+	@Override
+	public List<SecurityGroupWorkVO> findAndCleanupUnfinishedWork(Date timeBefore) {
+	    final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
+	    sc.setParameters("taken", timeBefore);
+	    sc.setParameters("step", Step.Processing);
+
+	    List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
+
+	    SecurityGroupWorkVO work = createForUpdate();
+	    work.setStep(Step.Error);
+	    update(work, sc);
+
+	    return result;
+	}
+	
+	@Override
+    public List<SecurityGroupWorkVO> findScheduledWork() {
+        final SearchCriteria<SecurityGroupWorkVO> sc = UntakenWorkSearch.create();
+        sc.setParameters("step", Step.Scheduled);
+        return listIncludingRemovedBy(sc);
+    }
 
     
 }

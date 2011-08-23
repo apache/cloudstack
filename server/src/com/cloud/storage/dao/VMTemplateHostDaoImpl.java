@@ -116,7 +116,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
         HostTemplateStateSearch.and("host_id", HostTemplateStateSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostTemplateStateSearch.and("states", HostTemplateStateSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
         HostTemplateStateSearch.done();
-        
+
     }
 	
 	@Override
@@ -306,8 +306,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
             sc.setParameters("state", VMTemplateHostVO.Status.DOWNLOADED);
         } 
         return listBy(sc);
-        
-    }	
+    }
 	
 	@Override
 	public List<VMTemplateHostVO> listDestroyed(long hostId) {

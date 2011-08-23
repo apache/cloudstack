@@ -414,7 +414,7 @@ public class Link {
         	    stream = new FileInputStream(keystorePath);
         	} else {
         		s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
-                        stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
+        		stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
         	}
         	ks.load(stream, passphrase);
         	stream.close();

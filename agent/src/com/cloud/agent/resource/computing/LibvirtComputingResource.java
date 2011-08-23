@@ -56,7 +56,6 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
-import org.libvirt.Network;
 import org.libvirt.NodeInfo;
 import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo;
@@ -135,8 +134,8 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
@@ -1980,6 +1979,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	    		} catch (Exception e) {
 	    			
 	    		}
+	    		get_rule_logs_for_vms();
 	    		return new RebootAnswer(cmd, null, bytesSent, bytesReceived, vncPort);
 	    	} else {
 	    		return new RebootAnswer(cmd, result);
@@ -2463,9 +2463,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		    }
 		    
 		    DiskDef disk = new DiskDef();
-
 	        disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
-	        
 	        String xml = disk.toString();
 	        return attachOrDetachDevice(conn, attach, vmName, xml);
 		} finally {

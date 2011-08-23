@@ -274,7 +274,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     	    }
     	    return;
     	}
-    	
+
     	if(vm.getHypervisorType() == HypervisorType.VMware) {
     		s_logger.info("Skip HA for VMware VM " + vm.getInstanceName());
     		return;

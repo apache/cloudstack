@@ -50,7 +50,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     @Column(name="network_id")
     long networkId;
-    
+
     @Column(name="is_redundant_router")
     boolean isRedundantRouter;
     
@@ -79,6 +79,27 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             RedundantState redundantState,
             boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+        this.networkId = networkId;
+        this.isRedundantRouter = isRedundantRouter;
+        this.priority = priority;
+        this.redundantState = redundantState;
+    }
+    
+    public DomainRouterVO(long id,
+            long serviceOfferingId,
+            String name,
+            long templateId,
+            HypervisorType hypervisorType,
+            long guestOSId,
+            long domainId,
+            long accountId,
+            long networkId,
+            boolean isRedundantRouter,
+            int priority,
+            RedundantState redundantState,
+            boolean haEnabled,
+            VirtualMachine.Type vmType) {
+        super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;

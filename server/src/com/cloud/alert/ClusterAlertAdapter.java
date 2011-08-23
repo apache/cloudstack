@@ -62,7 +62,7 @@ public class ClusterAlertAdapter implements AlertAdapter {
     private void onClusterNodeJoined(Object sender, ClusterNodeJoinEventArgs args) {
         if (s_logger.isDebugEnabled()) {
         	for(ManagementServerHostVO mshost: args.getJoinedNodes()) {
-                s_logger.debug("Handle cluster node join alert, joined node: " + mshost.getServiceIP());
+                s_logger.debug("Handle cluster node join alert, joined node: " + mshost.getServiceIP() + ", msidL: " + mshost.getMsid());
         	}
         }
 
@@ -82,7 +82,7 @@ public class ClusterAlertAdapter implements AlertAdapter {
 
         if (s_logger.isDebugEnabled()) {
         	for(ManagementServerHostVO mshost: args.getLeftNodes()) {
-        		s_logger.debug("Handle cluster node left alert, leaving node: " + mshost.getServiceIP());
+        		s_logger.debug("Handle cluster node left alert, leaving node: " + mshost.getServiceIP() + ", msid: " + mshost.getMsid());
         	}
         }
 

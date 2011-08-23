@@ -1196,7 +1196,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
             newDetails.put(ZoneConfig.DnsSearchOrder.getName(), StringUtils.join(dnsSearchOrder, ","));
         }
-        
+
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
         }
@@ -2790,6 +2790,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String availabilityStr = cmd.getAvailability();
         String guestIpTypeString = cmd.getGuestIpType();
         Boolean redundantRouter = cmd.getRedundantRouter();
+
         Integer networkRate = cmd.getNetworkRate();
 
         TrafficType trafficType = null;

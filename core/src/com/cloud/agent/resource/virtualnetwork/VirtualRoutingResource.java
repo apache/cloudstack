@@ -47,11 +47,13 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
@@ -121,6 +123,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute ((VmDataCommand)cmd);
             } else if (cmd instanceof CheckRouterCommand) {
                 return execute ((CheckRouterCommand)cmd);
+            } else if (cmd instanceof SetFirewallRulesCommand) {
+                return execute((SetFirewallRulesCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -129,10 +133,46 @@ public class VirtualRoutingResource implements Manager {
         }
     }
 
+    private Answer execute(SetFirewallRulesCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        for (int i =0; i < cmd.getRules().length; i++) {
+            results[i] = "Failed";
+        }
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        if (routerIp == null) {
+            return new SetFirewallRulesAnswer(cmd, false, results);
+        }
+
+        String[][] rules = cmd.generateFwRules();
+        final Script command = new Script(_firewallPath, _timeout, s_logger);
+        command.add(routerIp);
+        command.add("-F");
+        
+        StringBuilder sb = new StringBuilder();
+        String[] fwRules = rules[0];
+        if (fwRules.length > 0) {
+            for (int i = 0; i < fwRules.length; i++) {
+                sb.append(fwRules[i]).append(',');
+            }
+            command.add("-a", sb.toString());
+        }
+       
+        String result = command.execute();
+        if (result != null) {
+            return new SetFirewallRulesAnswer(cmd, false, results);
+        }
+        return new SetFirewallRulesAnswer(cmd, true, null);
+        
+        
+    }
+
     private Answer execute(SetPortForwardingRulesCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        
+        boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
             final Script command = new Script(_firewallPath, _timeout, s_logger);
@@ -145,16 +185,22 @@ public class VirtualRoutingResource implements Manager {
             command.add("-r ", rule.getDstIp());
             command.add("-d ", rule.getStringDstPortRange());
             result = command.execute();
-            results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetPortForwardingRulesAnswer(cmd, results);
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
     
     private Answer execute(SetStaticNatRulesCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             String result = null;
             final Script command = new Script(_firewallPath, _timeout, s_logger);
@@ -164,15 +210,24 @@ public class VirtualRoutingResource implements Manager {
             //1:1 NAT needs instanceip;publicip;domrip;op
             command.add(" -l ", rule.getSrcIp());
             command.add(" -r ", rule.getDstIp());
-            command.add(" -P ", rule.getProtocol().toLowerCase());
+            
+            if (rule.getProtocol() != null) { 
+                command.add(" -P ", rule.getProtocol().toLowerCase());
+            }
+            
             command.add(" -d ", rule.getStringSrcPortRange());
             command.add(" -G ") ;
             
             result = command.execute();
-            results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetStaticNatRulesAnswer(cmd, results);
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
     
 

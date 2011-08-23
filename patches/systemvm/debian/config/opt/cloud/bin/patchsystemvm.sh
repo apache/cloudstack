@@ -101,6 +101,16 @@ dhcpsrvr_svcs() {
    echo "cloud nfs-common haproxy portmap" > /var/cache/cloud/disabled_svcs
 }
 
+elbvm_svcs() {
+   chkconfig cloud off
+   chkconfig haproxy on ; 
+   chkconfig ssh on
+   chkconfig nfs-common off
+   chkconfig portmap off
+   echo "ssh haproxy" > /var/cache/cloud/enabled_svcs
+   echo "cloud cloud-passwd-srvr dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
+}
+
 enable_pcihotplug() {
    sed -i -e "/acpiphp/d" /etc/modules
    sed -i -e "/pci_hotplug/d" /etc/modules
@@ -196,6 +206,16 @@ then
   then
     printf "Failed to execute secstorage_svcs\n" >$logfile
     exit 8
+  fi
+fi
+
+if [ "$TYPE" == "elbvm" ]
+then
+  elbvm_svcs
+  if [ $? -gt 0 ]
+  then
+    printf "Failed to execute elbvm svcs\n" >$logfile
+    exit 9
   fi
 fi
 

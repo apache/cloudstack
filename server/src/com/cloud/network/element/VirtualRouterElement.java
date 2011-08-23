@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -48,11 +49,11 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
-import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -61,8 +62,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -85,6 +86,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     @Inject DomainRouterDao _routerDao;
     @Inject LoadBalancerDao _lbDao;
     @Inject HostDao _hostDao;
+    @Inject ConfigurationDao _configDao;
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
@@ -97,6 +99,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
         if (!canHandle(guestConfig.getGuestType(), dest.getDataCenter())) {
             return false;
         }
@@ -113,20 +116,18 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network.getGuestType(), dest.getDataCenter())) {
+            boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-
-            NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), offering.getRedundantRouter());
+            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), isRedundant);
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
             }
-            List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);
-
+            List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
             return (rets != null) && (!rets.isEmpty());
         } else {
             return false;
@@ -151,7 +152,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             s_logger.trace("Can't find virtual router element in network " + network.getId());
             return true;
         }
-        
+
         /* Get the host_id in order to find the cluster */
         Long host_id = new Long(0);
         for (DomainRouterVO router : routers) {
@@ -299,5 +300,22 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         capabilities.put(Service.Gateway, gatewayCapabilities);
         
         return capabilities;
+    }
+    
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        DataCenter dc = _configMgr.getZone(config.getDataCenterId());
+        if (canHandle(config.getGuestType(),dc)) {
+            long networkId = config.getId();
+            List<DomainRouterVO> routers = _routerDao.findByNetwork(networkId);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual router doesn't exist in the network " + config.getId());
+                return true;
+            }
+            
+            return _routerMgr.applyStaticNats(config, rules);
+        } else {
+            return true;
+        }
     }
 }

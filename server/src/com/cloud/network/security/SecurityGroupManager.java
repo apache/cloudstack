@@ -31,6 +31,8 @@ public interface SecurityGroupManager {
 	
 	public static final String DEFAULT_GROUP_NAME = "default"; 
 	public static final String DEFAULT_GROUP_DESCRIPTION = "Default Security Group"; 
+	public static final int TIME_BETWEEN_CLEANUPS = 60;
+	public static final int WORKER_THREAD_COUNT = 10;
 	
 	public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName);
 	

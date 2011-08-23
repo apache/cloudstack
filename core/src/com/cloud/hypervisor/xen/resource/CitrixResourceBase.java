@@ -112,10 +112,10 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
-import com.cloud.agent.api.SecurityIngressRuleAnswer;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SecurityEgressRuleAnswer;
 import com.cloud.agent.api.SecurityEgressRulesCmd;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -481,8 +481,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((CheckSshCommand)cmd);
         } else if (clazz == SecurityIngressRulesCmd.class) {
             return execute((SecurityIngressRulesCmd) cmd);
-        } else if (clazz == SecurityEgressRulesCmd.class) {
-            return execute((SecurityEgressRulesCmd) cmd);
         } else if (clazz == OvsCreateGreTunnelCommand.class) {
         	return execute((OvsCreateGreTunnelCommand)cmd);
         } else if (clazz == OvsSetTagAndFlowCommand.class) {
@@ -1101,13 +1099,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (_canBridgeFirewall) {
                 String result = null;
                 if (vmSpec.getType() != VirtualMachine.Type.User) {
-                    result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
-                    
-                    if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                        s_logger.warn("Failed to program default network rules for " + vmName);
-                    } else {
-                        s_logger.info("Programmed default network rules for " + vmName);
+                    NicTO[] nics = vmSpec.getNics();
+                    boolean secGrpEnabled = false;
+                    for (NicTO nic : nics) {
+                        if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                            secGrpEnabled = true;
+                            break;
+                        }
                     }
+                    if (secGrpEnabled) {
+                        result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
+                        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                            s_logger.warn("Failed to program default network rules for " + vmName);
+                        } else {
+                            s_logger.info("Programmed default network rules for " + vmName);
+                        }
+                    }
+
                 } else {
                 	//For user vm, program the rules for each nic if the isolation uri scheme is ec2
                 	NicTO[] nics = vmSpec.getNics();
@@ -1244,6 +1252,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        
+        boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             StringBuilder args = new StringBuilder();
             args.append(routerIp);
@@ -1256,10 +1266,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
 
-            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetPortForwardingRulesAnswer(cmd, results);
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
     
     protected SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
@@ -1269,6 +1284,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         //String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
+        boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             //1:1 NAT needs instanceip;publicip;domrip;op
             StringBuilder args = new StringBuilder();
@@ -1276,15 +1292,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(rule.revoked() ? " -D " : " -A ");
             args.append(" -l ").append(rule.getSrcIp());
             args.append(" -r ").append(rule.getDstIp());
+
+            if (rule.getProtocol() != null) {
             args.append(" -P ").append(rule.getProtocol().toLowerCase());
+            }
+
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
            
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
-            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
         }
 
-        return new SetStaticNatRulesAnswer(cmd, results);
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
@@ -2569,8 +2595,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }           
         try {
             final HashMap<String, VmState> vmStates = new HashMap<String, VmState>();
-            Map<VM, VM.Record> vmRs = VM.getAllRecords(conn);
-            for (VM.Record record : vmRs.values()) {
+            Host lhost = Host.getByUuid(conn, _host.uuid);
+            Set<VM> vms = lhost.getResidentVMs(conn);
+            for (VM vm: vms) {
+                VM.Record record = vm.getRecord(conn);
                 if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
                     continue; // Skip DOM0
                 }
@@ -6542,15 +6570,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	    return new Answer(cmd, success, "");
 	}
 	
-	protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
+  protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
 		String[] results = new String[cmd.getRules().length];
 		String callResult;
-		Connection conn = getConnection();
-		String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
 		if (routerIp == null) {
 			return new SetFirewallRulesAnswer(cmd, false, results);
-		}
+        }
 
 		String[][] rules = cmd.generateFwRules();
 		String args = "";
@@ -6563,7 +6591,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 			}
 			args += " -a " + sb.toString();
 		}
-
+	
 		callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
 
 		if (callResult == null || callResult.isEmpty()) {
