@@ -39,7 +39,14 @@ class cloudstackTestClient(object):
             self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
         return self.asyncJobMgr.submitCmdsAndWait(cmds)
     
-    def submitJobs(self, job, ntimes=1, nums_threads=10, interval=1):
+    '''submit one job and execute the same job ntimes, with nums_threads of threads'''
+    def submitJob(self, job, ntimes=1, nums_threads=10, interval=1):
         if self.asyncJobMgr is None:
             self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
-        self.asyncJobMgr.submitJobs(job, ntimes, nums_threads, interval)
+        self.asyncJobMgr.submitJobExecuteNtimes(job, ntimes, nums_threads, interval)
+        
+    '''submit n jobs, execute them with nums_threads of threads'''    
+    def submitJobs(self, jobs, nums_threads=10, interval=1):
+        if self.asyncJobMgr is None:
+            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
+        self.asyncJobMgr.submitJobs(jobs, nums_threads, interval)
