@@ -1654,11 +1654,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         s_logger.warn(e.getMessage());
                     }
                 }
-            } else if (serverState == State.Stopping || serverState == State.Stopped || serverState == State.Expunging || serverState == State.Destroyed || serverState == State.Error) {
+            } else if (serverState == State.Stopping) {
                 s_logger.debug("Scheduling a stop command for " + vm);
                 _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
+            } else if(serverState == State.Stopped || serverState == State.Expunging || serverState == State.Destroyed || serverState == State.Error) {
+                s_logger.debug("Cleanup vm " + vm + " as its server state is at " + serverState);
+                command = cleanup(agentName);
             } else {
-                s_logger.debug("server VM state " + serverState + " does not meet expectation of a running VM report from agent");
+                s_logger.warn("server VM state " + serverState + " does not meet expectation of a running VM report from agent");
                 
                 // just be careful not to stop VM for things we don't handle
                 // command = cleanup(agentName);
