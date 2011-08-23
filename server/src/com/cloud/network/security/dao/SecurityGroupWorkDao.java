@@ -21,12 +21,13 @@ package com.cloud.network.security.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.network.security.SecurityGroupWork;
 import com.cloud.network.security.SecurityGroupWorkVO;
-import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.utils.db.GenericDao;
 
 public interface SecurityGroupWorkDao extends GenericDao<SecurityGroupWorkVO, Long> {
-    SecurityGroupWorkVO findByVmId(long vmId, boolean taken);
+    SecurityGroupWork findByVmId(long vmId, boolean taken);
     
     SecurityGroupWorkVO findByVmIdStep(long vmId, Step step);
 

@@ -18,17 +18,27 @@
 
 package com.cloud.network.security.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Set;
+
 import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.network.security.VmRulesetLogVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 
 @Local(value={VmRulesetLogDao.class})
 public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> implements VmRulesetLogDao {
+    protected static Logger s_logger = Logger.getLogger(VmRulesetLogDaoImpl.class);
     private SearchBuilder<VmRulesetLogVO> VmIdSearch;
-  
+    private String INSERT_OR_UPDATE = "INSERT INTO op_vm_ruleset_log (instance_id, created, logsequence) " +
+    		" VALUES(?, now(), 1) ON DUPLICATE KEY UPDATE logsequence=logsequence+1";
+
 
     protected VmRulesetLogDaoImpl() {
         VmIdSearch = createSearchBuilder();
@@ -43,6 +53,39 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
         SearchCriteria<VmRulesetLogVO> sc = VmIdSearch.create();
         sc.setParameters("vmId", vmId);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public void createOrUpdate(Set<Long> workItems) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement stmtInsert = null;
+        int [] queryResult = null;
+        boolean success = true;
+        try {
+            stmtInsert = txn.prepareAutoCloseStatement(INSERT_OR_UPDATE);
+            for (Long vmId: workItems) {
+                stmtInsert.setLong(1, vmId);
+                stmtInsert.addBatch();
+            }
+            queryResult = stmtInsert.executeBatch();
+            
+            txn.commit();
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("Updated or inserted " + workItems.size() + " log items");
+        } catch (SQLException e) {
+            s_logger.warn("Failed to execute batch update statement for ruleset log");
+            success = false;
+        }
+        if (!success && queryResult != null) {
+            Long [] arrayItems = new Long[workItems.size()];
+            workItems.toArray(arrayItems);
+            for (int i=0; i < queryResult.length; i++) {
+                if (queryResult[i] < 0 ) {
+                    s_logger.debug("Batch query update failed for vm " + arrayItems[i]);
+                }
+            }
+        } 
+        return;
     }
 
     

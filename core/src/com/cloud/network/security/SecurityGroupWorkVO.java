@@ -34,13 +34,8 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="op_nwgrp_work")
-public class SecurityGroupWorkVO {
-	public enum Step {
-        Scheduled,
-        Processing,
-        Done,
-        Error
-    }
+public class SecurityGroupWorkVO implements SecurityGroupWork{
+	
 	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -132,7 +127,8 @@ public class SecurityGroupWorkVO {
 		return logsequenceNumber;
 	}
 
-	public void setLogsequenceNumber(Long logsequenceNumber) {
+	@Override
+    public void setLogsequenceNumber(Long logsequenceNumber) {
 		this.logsequenceNumber = logsequenceNumber;
 	}
 

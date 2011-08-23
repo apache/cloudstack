@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,17 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.network.security;
 
-package com.cloud.network.security.dao;
-
+import java.util.List;
 import java.util.Set;
 
-import com.cloud.network.security.VmRulesetLogVO;
-import com.cloud.utils.db.GenericDao;
 
-public interface VmRulesetLogDao extends GenericDao<VmRulesetLogVO, Long> {
-    VmRulesetLogVO findByVmId(long vmId);
-
-    void createOrUpdate(Set<Long> workItems);
+/**
+ * Security Group Work queue 
+ * standard producer / consumer interface
+ *
+ */
+public interface SecurityGroupWorkQueue {
     
+    void submitWorkForVm(long vmId, long sequenceNumber);
+    
+    int submitWorkForVms(Set<Long> vmIds);
+    
+    List<SecurityGroupWork> getWork(int numberOfWorkItems);
+    
+    int size();
+    
+    void clear();
 }
