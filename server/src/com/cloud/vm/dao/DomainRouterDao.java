@@ -91,8 +91,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
 	
 	List<DomainRouterVO> findByNetwork(long networkId);
 
-	List<DomainRouterVO> findByNetworkAndPod(long networkId, long podId);
-
     List<DomainRouterVO> listActive(long networkId);
 
     /**
@@ -101,8 +99,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      */    
     List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType);
     
-    List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state);
-    List<DomainRouterVO> listByNetworkAndState(long networkId, State state);
+    List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state, Role role);
     
     List<DomainRouterVO> listByNetworkAndPodAndRole(long networkId, long podId, Role role);
     

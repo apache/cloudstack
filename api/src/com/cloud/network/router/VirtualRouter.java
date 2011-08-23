@@ -37,4 +37,5 @@ public interface VirtualRouter extends VirtualMachine {
         FAULT
     }
     RedundantState getRedundantState();
+    String getGuestIpAddress();
 }
