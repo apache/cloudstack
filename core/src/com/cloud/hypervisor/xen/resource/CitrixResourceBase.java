@@ -889,6 +889,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         
         try {
             VM.Record vmr = vm.getRecord(conn);
+            List<Network> networks = new ArrayList<Network>();
+            for (VIF vif : vmr.VIFs) {
+                try {
+                    VIF.Record rec = vif.getRecord(conn);
+                    networks.add(rec.network);
+                } catch (Exception e) {
+                    s_logger.warn("Unable to cleanup VIF", e);
+                }
+            }
             if (vmr.powerState == VmPowerState.RUNNING) {
                 try {
                     vm.hardShutdown(conn);
@@ -919,6 +928,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.warn("Unable to cleanup VIF", e);
                 }
             }
+            for (Network network : networks) {
+                if (network.getNameLabel(conn).startsWith("VLAN")) {
+                    disableVlanNetwork(conn, network);
+                }
+            }                    
         } catch (Exception e) {
             s_logger.warn("VM getRecord failed due to ", e);
         }
@@ -6466,7 +6480,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * XsNic represents a network and the host's specific PIF.
      */
     protected class XsLocalNetwork {
-        private Network _n;
+        private final Network _n;
         private Network.Record _nr;
         private PIF _p;
         private PIF.Record _pr;
