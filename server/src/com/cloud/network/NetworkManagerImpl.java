@@ -102,10 +102,10 @@ import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -1832,38 +1832,38 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
         }
         
-        DomainVO domain = null;
         if (domainId != null) {
-            domain = _domainDao.findById(domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist in the system");
             }
 
             _accountMgr.checkAccess(caller, domain);
-        }
-
-        if (_accountMgr.isAdmin(caller.getType())) {
-            if (domainId != null) {
-                if (accountName != null) {
-                    Account owner = _accountMgr.getActiveAccount(accountName, domainId);
-                    if (owner == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = owner.getId();
+            if (accountName != null) {
+                Account owner = _accountMgr.getActiveAccount(accountName, domainId);
+                if (owner == null) {
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
+                
+                _accountMgr.checkAccess(caller, owner);
+                accountId = owner.getId();
             }
-        } else {
+        }
+        
+        if (!_accountMgr.isAdmin(caller.getType())) {
             accountId = caller.getId();
         }
         
         path = _domainDao.findById(caller.getDomainId()).getPath();
-        
-        if (domainId == null) {
-            domainId = caller.getDomainId();
-        }
 
         if ((isSystem == null || !isSystem) && (isShared == null || isShared)) {
-            sharedNetworkDomainId = domainId;
+            if (isShared != null && isShared && caller.getId() != Account.ACCOUNT_ID_SYSTEM && domainId == null) {
+                sharedNetworkDomainId = caller.getDomainId();
+            } else if (isShared == null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN && domainId == null) {
+                sharedNetworkDomainId = caller.getDomainId();
+            }else{
+                sharedNetworkDomainId = domainId;
+            }
         }
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1903,7 +1903,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             //if user requested only domain specific networks, don't return account/zone wide networks
-            if (!(isShared != null && isShared && cmd.getDomainId() != null) && (accountId != null || (domainId == null && accountName == null))) {
+            if (accountId != null || (domainId == null && accountName == null)) {
                 networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, accountId, path));
             }
 
