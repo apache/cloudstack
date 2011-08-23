@@ -44,7 +44,7 @@ class workThread(threading.Thread):
                 else:
                     result = self.connection.make_request(cmd, responseInstance, True)
                     jobId = self.connection.getAsyncJobId(responseInstance, result)
-                    result = self.connection.pollAsyncJob(cmd, responseInstance, jobId)
+                    result,morethanone = self.connection.pollAsyncJob(cmd, responseInstance, jobId)
                     jobstatus.result = result
                     
                     
@@ -57,10 +57,14 @@ class workThread(threading.Thread):
                 jobstatus.result = sys.exc_info()
             
             if self.db is not None and jobId is not None:
-                result = self.db.execute("select created, last_updated from async_job where id=%s"%jobId)
+                result = self.db.execute("select job_status, created, last_updated from async_job where id=%s"%jobId)
                 if result is not None and len(result) > 0:
-                    jobstatus.startTime = result[0][0]
-                    jobstatus.endTime = result[0][1]
+                    if result[0][0] == 1:
+                        jobstatus.status = True
+                    else:
+                        jobstatus.status = False
+                    jobstatus.startTime = result[0][1]
+                    jobstatus.endTime = result[0][2]
                     delta = jobstatus.endTime - jobstatus.startTime
                     jobstatus.duration = delta.total_seconds()
             #print job.id
