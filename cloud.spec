@@ -602,9 +602,9 @@ fi
 %defattr(0644,root,root,0755)
 %attr(0755,root,root) %{_bindir}/%{name}-run-test
 %{_javadir}/%{name}-test.jar
-#%{_sharedstatedir}/%{name}/test/*
-#%{_libdir}/%{name}/test/*
-#%{_sysconfdir}/%{name}/test/*
+%{_sharedstatedir}/%{name}/test/*
+%{_libdir}/%{name}/test/*
+%{_sysconfdir}/%{name}/test/*
 
 #%if %{_premium}
 #
