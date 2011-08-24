@@ -981,6 +981,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return this.start(router, user, caller, params, null);
         }
         
+        if (router.getState() == State.Running) {
+            s_logger.debug("Redundant router " + router.getInstanceName() + " is already running!");
+            return router;
+        }
+
         DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null);
         DomainRouterVO result = null;
         assert router.getIsRedundantRouter();
