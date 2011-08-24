@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.SecurityIngressRulesCmd;
@@ -36,6 +37,7 @@ import com.cloud.vm.VirtualMachine.State;
  * Same as the base class -- except it uses the abstracted security group work queue
  *
  */
+@Local(value={ SecurityGroupManager.class, SecurityGroupService.class })
 public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
     
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();
@@ -73,8 +75,6 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         _rulesetLogDao.createOrUpdate(workItems);
         txn.commit();
         _workQueue.submitWorkForVms(workItems);
-        notifyAll();
-
     }
 
     @Override
