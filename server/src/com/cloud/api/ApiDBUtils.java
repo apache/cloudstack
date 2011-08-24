@@ -18,6 +18,7 @@
 
 package com.cloud.api;
 
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -593,8 +594,8 @@ public class ApiDBUtils {
         return _firewallCidrsDao.getSourceCidrs(id);  
     }
     
-    public static UserVmData listVmDetails(UserVm userVm, boolean show_host){
-        return _userVmDao.listVmDetails(userVm, show_host);
+    public static Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> vmData){
+        return _userVmDao.listVmDetails(vmData);
     }
 
 }

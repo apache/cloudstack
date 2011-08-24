@@ -22,7 +22,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,8 +77,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
    
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') " +
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
-
-    private static final String VM_DETAILS = "select account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
+    
+    private static final int VM_DETAILS_BATCH_SIZE=100;
+    private static final String VM_DETAILS = "select vm_instance.id, " +
+    		"account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
     		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, " + 
     		"vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
     		"vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
@@ -90,7 +94,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "left join data_center on vm_instance.data_center_id=data_center.id " +
             "left join host on vm_instance.host_id=host.id " + 
             "left join vm_template on vm_instance.vm_template_id=vm_template.id " +
-            "left join vm_template iso on iso.id=? " + 
+            "left join user_vm on vm_instance.id=user_vm.id " +
+            "left join vm_template iso on iso.id=user_vm.iso_id " +  
             "left join service_offering on vm_instance.service_offering_id=service_offering.id " +
             "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " +
             "left join volumes on vm_instance.id=volumes.instance_id " +
@@ -99,7 +104,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "left join security_group on security_group_vm_map.security_group_id=security_group.id " +
             "left join nics on vm_instance.id=nics.instance_id " +
             "left join networks on nics.network_id=networks.id " +
-            "where vm_instance.id=?";
+            "where vm_instance.id in (";
     
     protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
     
@@ -342,161 +347,192 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public UserVmData listVmDetails(UserVm userVm, boolean show_host){
+    public Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmDataHash){
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
-
+        
         try {
-            String sql = VM_DETAILS;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, userVm.getIsoId() == null ? -1 : userVm.getIsoId());
-            pstmt.setLong(2, userVm.getId());
+            int curr_index=0;
             
-            ResultSet rs = pstmt.executeQuery();
-            boolean is_data_center_security_group_enabled=false;
-            Set<SecurityGroupData> securityGroupResponse = new HashSet<SecurityGroupData>();
-            Set<NicData> nicResponses = new HashSet<NicData>();
-            UserVmData userVmResponse = null;
-            while (rs.next()) {
-                if (userVmResponse==null){
-                    userVmResponse=new UserVmData();
-                    userVmResponse.setId(userVm.getId());
-                    userVmResponse.setName(userVm.getInstanceName());
-                    userVmResponse.setCreated(userVm.getCreated());
-                    userVmResponse.setGuestOsId(userVm.getGuestOSId());
-                    userVmResponse.setHaEnable(userVm.isHaEnabled());
-                    if (userVm.getState() != null) {
-                        userVmResponse.setState(userVm.getState().toString());
+            List<UserVmData> userVmDataList = new ArrayList(userVmDataHash.values()); 
+            
+            if (userVmDataList.size() > VM_DETAILS_BATCH_SIZE){
+                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));
+                while ( (curr_index + VM_DETAILS_BATCH_SIZE) <= userVmDataList.size()){
+                    // set the vars value
+                    for (int k=1,j=curr_index;j<curr_index+VM_DETAILS_BATCH_SIZE;j++,k++){
+                        pstmt.setLong(k, userVmDataList.get(j).getId());
                     }
-                    if (userVm.getDisplayName() != null) {
-                        userVmResponse.setDisplayName(userVm.getDisplayName());
-                    } else {
-                        userVmResponse.setDisplayName(userVm.getHostName());
-                    }
-                    
-                    //account.account_name, account.type, domain.name,  instance_group.id, instance_group.name,"
-                    
-                    userVmResponse.setAccountName(rs.getString("account.account_name"));
-                    userVmResponse.setDomainId(userVm.getDomainId());
-                    userVmResponse.setDomainName(rs.getString("domain.name"));
-                    
-                    long grp_id = rs.getLong("instance_group.id");
-                    if (grp_id > 0){
-                        userVmResponse.setGroupId(grp_id);
-                        userVmResponse.setGroup(rs.getString("instance_group.name"));
-                    }
-                    
-                    //"data_center.id, data_center.name, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, vm_template.enable_password, 
-                    userVmResponse.setZoneId(rs.getLong("data_center.id"));
-                    userVmResponse.setZoneName(rs.getString("data_center.name"));
-                    
-                    if (show_host){
-                        userVmResponse.setHostId(rs.getLong("host.id"));
-                        userVmResponse.setHostName(rs.getString("host.name"));
-                    }
-
-                    if (userVm.getHypervisorType() != null) {
-                        userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
-                    }
-                    
-                    long template_id = rs.getLong("vm_template.id");
-                    if (template_id > 0){
-                        userVmResponse.setTemplateId(template_id);
-                        userVmResponse.setTemplateName(rs.getString("vm_template.name"));
-                        userVmResponse.setTemplateDisplayText(rs.getString("vm_template.display_text"));
-                        userVmResponse.setPasswordEnabled(rs.getBoolean("vm_template.enable_password"));
-                    }
-                    else {
-                        userVmResponse.setTemplateId(-1L);
-                        userVmResponse.setTemplateName("ISO Boot");
-                        userVmResponse.setTemplateDisplayText("ISO Boot");
-                        userVmResponse.setPasswordEnabled(false);
-                    }
-                    
-                    long iso_id = rs.getLong("iso.id");
-                    if (iso_id > 0){
-                        userVmResponse.setIsoId(iso_id);
-                        userVmResponse.setIsoName(rs.getString("iso.name"));
-                    }
-
-                    if (userVm.getPassword() != null) {
-                        userVmResponse.setPassword(userVm.getPassword());
-                    }
-    
-                    //service_offering.id, disk_offering.name, " 
-                    //"service_offering.cpu, service_offering.speed, service_offering.ram_size,
-                    userVmResponse.setServiceOfferingId(rs.getLong("service_offering.id"));
-                    userVmResponse.setServiceOfferingName(rs.getString("disk_offering.name"));
-                    userVmResponse.setCpuNumber(rs.getInt("service_offering.cpu"));
-                    userVmResponse.setCpuSpeed(rs.getInt("service_offering.speed"));
-                    userVmResponse.setMemory(rs.getInt("service_offering.ram_size"));
-
-                    // volumes.device_id, volumes.volume_type, 
-                    long vol_id = rs.getLong("volumes.id");
-                    if (vol_id > 0){
-                        userVmResponse.setRootDeviceId(rs.getLong("volumes.device_id"));
-                        userVmResponse.setRootDeviceType(rs.getString("volumes.volume_type"));
-                        // storage pool
-                        long pool_id = rs.getLong("storage_pool.id");
-                        if (pool_id > 0){
-                            userVmResponse.setRootDeviceType(rs.getString("storage_pool.pool_type"));
+                    ResultSet rs = pstmt.executeQuery();
+                    while(rs.next()){
+                        long vm_id=rs.getLong("vm_instance.id");
+                        //check if the entry is already there
+                        UserVmData uvm=userVmDataHash.get(vm_id);
+                        if (uvm == null){
+                            uvm = new UserVmData();
+                            uvm.setId(vm_id);
                         }
-                        else {
-                            userVmResponse.setRootDeviceType("Not created");
-                        }
+                        // initialize the data with this row
+                        setUserVmData(uvm, rs);
                     }
-                    is_data_center_security_group_enabled = rs.getBoolean("data_center.is_security_group_enabled");
+                    rs.close();
+                    curr_index+=VM_DETAILS_BATCH_SIZE;
                 }
-                
-                //security_group.id, security_group.name, security_group.description, , data_center.is_security_group_enabled
-                if (is_data_center_security_group_enabled){
-                    SecurityGroupData resp = userVmResponse.newSecurityGroupData();
-                    resp.setId(rs.getLong("security_group.id"));
-                    resp.setName(rs.getString("security_group.name"));
-                    resp.setDescription(rs.getString("security_group.description"));
-                    resp.setObjectName("securitygroup");
-                    securityGroupResponse.add(resp);
-                }
-                
-                
-                //nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics. mac_address, nics.broadcast_uri, nics.isolation_uri, " +
-                //"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance, "
-                long nic_id = rs.getLong("nics.id");
-                if (nic_id > 0){
-                    NicData nicResponse = userVmResponse.newNicData();
-                    nicResponse.setId(nic_id);
-                    nicResponse.setIpaddress(rs.getString("nics.ip4_address"));
-                    nicResponse.setGateway(rs.getString("nics.gateway"));
-                    nicResponse.setNetmask(rs.getString("nics.netmask"));
-                    nicResponse.setNetworkid(rs.getLong("nics.network_id"));
-                    nicResponse.setMacAddress(rs.getString("nics.mac_address"));
-                    
-                    int account_type = rs.getInt("account.type");
-                    if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
-                        nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
-                        nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
-                    }
-    
-    
-                    nicResponse.setTrafficType(rs.getString("networks.traffic_type"));
-                    nicResponse.setType(rs.getString("networks.guest_type"));
-                    nicResponse.setIsDefault(rs.getBoolean("networks.is_default"));
-                    nicResponse.setObjectName("nic");
-                    nicResponses.add(nicResponse);
-                }
-                
             }
-            userVmResponse.setSecurityGroupList(new ArrayList<SecurityGroupData>(securityGroupResponse));
-            userVmResponse.setNics(new ArrayList<NicData>(nicResponses));
-            rs.close();
+            
+            
+            if (curr_index < userVmDataList.size()){
+                int batch_size = (userVmDataList.size() - curr_index);
+                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(batch_size));
+                // set the vars value
+                for (int k=1,j=curr_index;j<curr_index+batch_size;j++,k++){
+                    pstmt.setLong(k, userVmDataList.get(j).getId());
+                }
+                ResultSet rs = pstmt.executeQuery();
+                while(rs.next()){
+                    long vm_id=rs.getLong("vm_instance.id");
+                    //check if the entry is already there
+                    UserVmData uvm=userVmDataHash.get(vm_id);
+                    if (uvm == null){
+                        uvm = new UserVmData();
+                        uvm.setId(vm_id);
+                    }
+                    // initialize the data with this row
+                    setUserVmData(uvm, rs);
+                }
+                rs.close();
+            }
             pstmt.close();
-            return userVmResponse;
+            return userVmDataHash;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + VM_DETAILS, e);
         }
     }
+    
+    
+
+    public static UserVmData setUserVmData(UserVmData userVmData, ResultSet rs)
+        throws SQLException
+    {
+        
+        if (!userVmData.isInitialized()){
+        
+            //account.account_name, account.type, domain.name,  instance_group.id, instance_group.name,"
+            userVmData.setAccountName(rs.getString("account.account_name"));
+            userVmData.setDomainName(rs.getString("domain.name"));
+            
+            long grp_id = rs.getLong("instance_group.id");
+            if (grp_id > 0){
+                userVmData.setGroupId(grp_id);
+                userVmData.setGroup(rs.getString("instance_group.name"));
+            }
+            
+            //"data_center.id, data_center.name, host.id, host.name, vm_template.id, vm_template.name, vm_template.display_text, vm_template.enable_password, 
+            userVmData.setZoneId(rs.getLong("data_center.id"));
+            userVmData.setZoneName(rs.getString("data_center.name"));
+            
+            userVmData.setHostId(rs.getLong("host.id"));
+            userVmData.setHostName(rs.getString("host.name"));
+            
+            long template_id = rs.getLong("vm_template.id");
+            if (template_id > 0){
+                userVmData.setTemplateId(template_id);
+                userVmData.setTemplateName(rs.getString("vm_template.name"));
+                userVmData.setTemplateDisplayText(rs.getString("vm_template.display_text"));
+                userVmData.setPasswordEnabled(rs.getBoolean("vm_template.enable_password"));
+            }
+            else {
+                userVmData.setTemplateId(-1L);
+                userVmData.setTemplateName("ISO Boot");
+                userVmData.setTemplateDisplayText("ISO Boot");
+                userVmData.setPasswordEnabled(false);
+            }
+            
+            long iso_id = rs.getLong("iso.id");
+            if (iso_id > 0){
+                userVmData.setIsoId(iso_id);
+                userVmData.setIsoName(rs.getString("iso.name"));
+            }
+    
+    
+            //service_offering.id, disk_offering.name, " 
+            //"service_offering.cpu, service_offering.speed, service_offering.ram_size,
+            userVmData.setServiceOfferingId(rs.getLong("service_offering.id"));
+            userVmData.setServiceOfferingName(rs.getString("disk_offering.name"));
+            userVmData.setCpuNumber(rs.getInt("service_offering.cpu"));
+            userVmData.setCpuSpeed(rs.getInt("service_offering.speed"));
+            userVmData.setMemory(rs.getInt("service_offering.ram_size"));
+    
+            // volumes.device_id, volumes.volume_type, 
+            long vol_id = rs.getLong("volumes.id");
+            if (vol_id > 0){
+                userVmData.setRootDeviceId(rs.getLong("volumes.device_id"));
+                userVmData.setRootDeviceType(rs.getString("volumes.volume_type"));
+                // storage pool
+                long pool_id = rs.getLong("storage_pool.id");
+                if (pool_id > 0){
+                    userVmData.setRootDeviceType(rs.getString("storage_pool.pool_type"));
+                }
+                else {
+                    userVmData.setRootDeviceType("Not created");
+                }
+            }
+            userVmData.setInitialized();
+        }
+        
+        
+        boolean is_data_center_security_group_enabled = rs.getBoolean("data_center.is_security_group_enabled");
+        //security_group.id, security_group.name, security_group.description, , data_center.is_security_group_enabled
+        if (is_data_center_security_group_enabled){
+            SecurityGroupData resp = userVmData.newSecurityGroupData();
+            resp.setId(rs.getLong("security_group.id"));
+            resp.setName(rs.getString("security_group.name"));
+            resp.setDescription(rs.getString("security_group.description"));
+            resp.setObjectName("securitygroup");
+            userVmData.addSecurityGroup(resp);
+        }
+        
+        
+        //nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics. mac_address, nics.broadcast_uri, nics.isolation_uri, " +
+        //"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance, "
+        long nic_id = rs.getLong("nics.id");
+        if (nic_id > 0){
+            NicData nicResponse = userVmData.newNicData();
+            nicResponse.setId(nic_id);
+            nicResponse.setIpaddress(rs.getString("nics.ip4_address"));
+            nicResponse.setGateway(rs.getString("nics.gateway"));
+            nicResponse.setNetmask(rs.getString("nics.netmask"));
+            nicResponse.setNetworkid(rs.getLong("nics.network_id"));
+            nicResponse.setMacAddress(rs.getString("nics.mac_address"));
+            
+            int account_type = rs.getInt("account.type");
+            if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
+                nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
+                nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
+            }
+
+
+            nicResponse.setTrafficType(rs.getString("networks.traffic_type"));
+            nicResponse.setType(rs.getString("networks.guest_type"));
+            nicResponse.setIsDefault(rs.getBoolean("networks.is_default"));
+            nicResponse.setObjectName("nic");
+            userVmData.addNic(nicResponse);
+        }
+        return userVmData;
+    }
+    
+    public String getQueryBatchAppender(int count){
+        StringBuilder sb = new StringBuilder();
+        for (int i=0;i<count;i++){
+            sb.append(" ?,");
+        }
+        sb.deleteCharAt(sb.length()-1).append(")");
+        System.out.println("Appending " + sb.toString());
+        return sb.toString();
+    }
+
 
     @Override
     public Long countAllocatedVMsForAccount(long accountId) {

@@ -19,9 +19,12 @@ package com.cloud.api;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1053,15 +1056,26 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
         Account caller = UserContext.current().getCaller();
-        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        boolean caller_is_admin = ((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN));
+        
+        Hashtable<Long, UserVmData> vmDataList = new Hashtable<Long, UserVmData>();
+        // Initialise the vmdatalist with the input data
         for (UserVm userVm : userVms) {
-            UserVmData  userVmData = ApiDBUtils.listVmDetails(userVm, (((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)));
-            UserVmResponse userVmResponse = newUserVmResponse(userVmData);
+            UserVmData userVmData = newUserVmData(userVm);
+            vmDataList.put(userVm.getId(), userVmData);
+        }
+        
+        vmDataList = ApiDBUtils.listVmDetails(vmDataList);
+        
+        //initialize vmresponse from vmdatalist
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        for (UserVmData uvd: vmDataList.values()){
+            UserVmResponse userVmResponse = newUserVmResponse(uvd, caller_is_admin);
+            
             // stats calculation
             String cpuUsed = null;
-            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+            VmStats vmStats = ApiDBUtils.getVmStatistics(userVmResponse.getId());
             if (vmStats != null) {
                 float cpuUtil = (float) vmStats.getCPUUtilization();
                 cpuUsed = decimalFormat.format(cpuUtil) + "%";
@@ -1074,6 +1088,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
             }
             userVmResponse.setObjectName(objectName);
+            
             vmResponses.add(userVmResponse);
         }
         return vmResponses;
@@ -2166,10 +2181,38 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
         return response;
-
     }
     
-    public UserVmResponse newUserVmResponse(UserVmData userVmData){
+
+    
+    public UserVmData newUserVmData(UserVm userVm){
+        UserVmData userVmData = new UserVmData();
+        userVmData.setId(userVm.getId());
+        userVmData.setName(userVm.getInstanceName());
+        userVmData.setCreated(userVm.getCreated());
+        userVmData.setGuestOsId(userVm.getGuestOSId());
+        userVmData.setHaEnable(userVm.isHaEnabled());
+        if (userVm.getState() != null) {
+            userVmData.setState(userVm.getState().toString());
+        }
+        if (userVm.getDisplayName() != null) {
+            userVmData.setDisplayName(userVm.getDisplayName());
+        } else {
+            userVmData.setDisplayName(userVm.getHostName());
+        } 
+        userVmData.setDomainId(userVm.getDomainId());
+
+        if (userVm.getHypervisorType() != null) {
+            userVmData.setHypervisor(userVm.getHypervisorType().toString());
+        }
+
+        if (userVm.getPassword() != null) {
+            userVmData.setPassword(userVm.getPassword());
+        }
+        return userVmData;
+    }
+    
+    public UserVmResponse newUserVmResponse(UserVmData userVmData, boolean caller_is_admin){
         UserVmResponse userVmResponse = new UserVmResponse();
         userVmResponse.setHypervisor(userVmData.getHypervisor());
         userVmResponse.setId(userVmData.getId());
@@ -2186,8 +2229,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setGroup(userVmData.getGroup());
         userVmResponse.setZoneId(userVmData.getZoneId());
         userVmResponse.setZoneName(userVmData.getZoneName());
-        userVmResponse.setHostId(userVmData.getHostId());
-        userVmResponse.setHostName(userVmData.getHostName());
+        if (caller_is_admin){
+            userVmResponse.setHostId(userVmData.getHostId());
+            userVmResponse.setHostName(userVmData.getHostName());
+        }
         userVmResponse.setTemplateId(userVmData.getTemplateId());
         userVmResponse.setTemplateName(userVmData.getTemplateName());
         userVmResponse.setTemplateDisplayText(userVmData.getTemplateDisplayText());
