@@ -1,0 +1,1892 @@
+<sanity>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+	
+	<!-- Test case #   - Create the Account and a User -->
+	
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item>
+				<name>account</name>
+				<value>nimbus-account</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item setparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>			
+		</returnvalue>
+	</command>
+	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+	
+	<!-- Test case # 3 - Create a User -->
+	
+	<command>
+		<name>createUser</name>
+		<testcase>  3 [Create User Command]</testcase>
+		<parameters>
+			<item>
+				<name>account</name>
+				<value>nimbus-account</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>secondusernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>nimbus-user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>nimbus-userlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>nimbus-user@gmail.com</value>
+			</item>			
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>seconduserid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>nimbus-user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>nimbus-userlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>nimbus-user@gmail.com</value>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item setparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case #950 - listAccounts -->
+	<command>
+		<name>listAccounts</name>
+		<testcase>950 [List the Account of the User created in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case #6 - updateUser command -->
+	<command>
+		<name>updateUser</name>
+		<testcase>  6 [Update the User created in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>newuser</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatednimbus</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatednimbuslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatednimbus@gmail.com</value>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+			<item random="true" setparam="true">
+					<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>newuser</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatednimbus</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatednimbuslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatednimbus@gmail.com</value>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Updated User updated in (6)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>newuser</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatednimbus</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatednimbuslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatednimbus@gmail.com</value>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case lockUser command -->
+	<!-- LOCK USER COMMAND IS NO LONGER USED. IT IS BEING COMMENTED FOR RECORDS -->
+	<!-- 
+	<command>
+		<name>lockUser</name>
+		<testcase>    [Lock the User created in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>newuser</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatedadmin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatedadminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatedadmin@gmail.com</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>locked</value>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+-->
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case #428 - disableUser command -->
+	<command>
+		<name>disableUser</name>
+		<testcase>428 [Disable the User created in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>newuser</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatednimbus</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatednimbuslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatednimbus@gmail.com</value>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>disabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case #9 - enableUser command -->
+	<command>
+		<name>enableUser</name>
+		<testcase>  9 [Enable the User created in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>newuser</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatednimbus</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatednimbuslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatednimbus@gmail.com</value>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case # - lockAccount command -->
+	<command>
+		<name>disableAccount</name>
+		<testcase>    [Lock the Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>lock</name>
+				<value>true</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+						<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>locked</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case # - enableAccount command -->
+		<command>
+		<name>enableAccount</name>
+		<testcase>    [Enable the Locked Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>			
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+						<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case # - disableAccount command -->
+	<command>
+		<name>disableAccount</name>
+		<testcase>    [Lock the Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>lock</name>
+				<value>false</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+						<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>disabled</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case # - enableAccount command -->
+		<command>
+		<name>enableAccount</name>
+		<testcase>    [Enable the Locked Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>			
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+						<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case #10 - createDomain command -->
+	<command>
+		<name>createDomain</name>
+		<testcase> 10 [Create Domain]</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>domainname</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item getparam="true">
+				<name>name</name>
+				<param>domainname</param>
+			</item>
+			<item setparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+			<item>
+				<name>level</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainname</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>haschild</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case #11 - listDomains command -->
+	<command>
+		<name>listDomains</name>
+		<testcase> 11 [List Domains]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>domainname</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>domainname</param>
+			</item>
+			<item>
+				<name>level</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainname</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>haschild</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!--
+		Test case #952 - updateDomain command - edit domain name and verify
+		that it was really updated
+	-->
+	<command>
+		<name>updateDomain</name>
+		<testcase>952 [Update the Domain created in (10)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>newdomainname</param>
+			</item>
+		</parameters>
+		
+		<returnvalues>
+			<item getparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>newdomainname</param>
+			</item>
+			<item>
+				<name>level</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainname</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>haschild</name>
+				<value>false</value>
+			</item>
+		</returnvalues>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case # - listDomainChildren command -->
+
+	<command>
+		<name>listDomainChildren</name>
+		<testcase> -   List One of the Children of the Parent Domain - </testcase>
+		<parameters>
+			<item>
+				<name>id</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		
+		<returnvalues list="true">
+			<name>domain</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>newdomainname</param>
+			</item>
+			<item>
+				<name>level</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>parentdomainname</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>haschild</name>
+				<value>false</value>
+			</item>
+		</returnvalues>
+	</command>
+	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+	<!-- Test case #654 - deleteDomain command -->
+	<command>
+		<name>deleteDomain</name>
+		<testcase>654 [Delete Domain created in (10)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+			<item>
+				<name>cleanup</name>
+				<value>true</value>
+			</item>
+		</parameters>
+		
+		<returnvalues>
+			<item>
+				<name>success</name>
+				<value>true</value>
+			</item>
+		</returnvalues>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case #27 - listTemplates command -->
+	<command>
+		<name>listTemplates</name>
+		<testcase> 27 [List Templates - List System Template]</testcase>
+		<parameters>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+			</item>
+			<item>
+				<name>id</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		
+		<returnvalue list="true">
+			<name>template</name>
+			<element>0</element>
+			<item setparam="true">
+				<name>id</name>
+				<param>debian50templateid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>debian50templatename</param>
+			</item>
+			<item setparam="true">
+				<name>displaytext</name>
+				<param>debian50templatedisplaytext</param>
+			</item>
+			<item setparam="true">
+				<name>ispublic</name>
+				<param>debian50templateispublic</param>
+			</item>
+			<item setparam="true">
+				<name>created</name>
+				<param>debian50templatecreated</param>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>true</value>
+			</item>
+			<item setparam="true">
+				<name>passwordenabled</name>
+				<param>debian50templatepasswordenabled</param>
+			</item>
+			<item>
+				<name>format</name>
+				<value>VHD</value>
+			</item>
+			<!--<item>
+				<name>bootable</name>
+				<value>false</value>
+			</item> -->
+			<item>
+				<name>isfeatured</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>crossZones</name>
+				<value>true</value>
+			</item>
+			<item setparam="true">
+				<name>ostypeid</name>
+				<param>debian50templateostypeid</param>
+			</item>
+			<item setparam="true">
+				<name>ostypename</name>
+				<param>debian50templateostypename</param>
+			</item>
+			<item setparam="true">
+				<name>size</name>
+				<param>debian50templatesize</param>				
+			</item>
+			<item>
+				<name>account</name>
+				<value>system</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>status</name>
+				<value>Download Complete</value>
+			</item>
+			<item>
+				<name>templatetype</name>
+				<value>SYSTEM</value>
+			</item>
+			<item>
+				<name>hypervisor</name>
+				<value>XenServer</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<command>
+		<name>listTemplates</name>
+		<testcase> -   Verify All the Parameters of the Listed Template -	</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>debian50templatename</param>
+			</item>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+			</item>
+		</parameters>
+		<returnvalue list="true">
+			<name>template</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>debian50templateid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>debian50templatename</param>
+			</item>
+			<item getparam="true">
+				<name>displaytext</name>
+				<param>debian50templatedisplaytext</param>
+			</item>
+			<item getparam="true">
+				<name>ispublic</name>
+				<param>debian50templateispublic</param>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>debian50templatecreated</param>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>true</value>
+			</item>
+			<item>
+				<name>isfeatured</name>
+				<value>false</value>
+			</item>
+			<item getparam="true">
+				<name>passwordenabled</name>
+				<param>debian50templatepasswordenabled</param>
+			</item>
+			<item>
+				<name>crossZones</name>
+				<value>true</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>VHD</value>
+			</item>
+			<item getparam="true">
+				<name>ostypeid</name>
+				<param>debian50templateostypeid</param>
+			</item>
+			<item getparam="true">
+				<name>ostypename</name>
+				<param>debian50templateostypename</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>system</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>status</name>
+				<value>Download Complete</value>
+			</item>
+			<item getparam="true">
+				<name>size</name>
+				<param>debian50templatesize</param>
+			</item>
+			<item>
+				<name>templatetype</name>
+				<value>SYSTEM</value>
+			</item>
+			<item>
+				<name>hypervisor</name>
+				<value>XenServer</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case #28 - listServiceOffering command -->
+	<command>
+		<name>listServiceOfferings</name>
+		<testcase> 28 [List the Small Instance Service Offering]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>globalserviceofferingid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smallofferingid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>smallofferingname</param>
+			</item>
+			<item setparam="true">
+				<name>displaytext</name>
+				<param>smallofferingdisplaytext</param>
+			</item>
+			<item setparam="true">
+				<name>cpunumber</name>
+				<param>smallofferingcpunumber</param>
+			</item>
+			<item setparam="true">
+				<name>cpuspeed</name>
+				<param>smallofferingcpuspeed</param>
+			</item>
+			<item setparam="true">
+				<name>memory</name>
+				<param>smallofferingmemory</param>
+			</item>
+			<item setparam="true">
+				<name>created</name>
+				<param>smallofferingcreatetime</param>
+			</item>
+			<item setparam="true">
+				<name>storagetype</name>
+				<param>smallofferingstoragetype</param>
+			</item>
+			<item>
+				<name>offerha</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<command>
+		<name>listServiceOfferings</name>
+		<testcase>876 [Verify the First Service Offering] </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>smallofferingname</param>
+			</item>
+		</parameters>
+		<returnvalue list="true">
+			<name>serviceoffering</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>smallofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>smallofferingname</param>
+			</item>
+			<item getparam="true">
+				<name>displaytext</name>
+				<param>smallofferingdisplaytext</param>
+			</item>
+			<item getparam="true">
+				<name>cpunumber</name>
+				<param>smallofferingcpunumber</param>
+			</item>
+			<item getparam="true">
+				<name>cpuspeed</name>
+				<param>smallofferingcpuspeed</param>
+			</item>
+			<item getparam="true">
+				<name>memory</name>
+				<param>smallofferingmemory</param>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>smallofferingcreatetime</param>
+			</item>
+			<item setparam="true">
+				<name>storagetype</name>
+				<param>smallofferingstoragetype</param>
+			</item>
+			<item>
+				<name>offerha</name>
+				<value>false</value>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<!-- Test case #39 - listZones command -->
+	<command>
+		<name>listZones</name>
+		<testcase> 39 [List the Global Zone with id-2]</testcase>
+
+		<returnvalue list="true">
+			<name>zone</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>globalzonename</param>
+			</item>
+			<item getparam="true">
+				<name>dns1</name>
+				<param>dns1</param>
+			</item>
+			<item getparam="true">
+				<name>dns2</name>
+				<param>dns2</param>
+			</item>
+			<item getparam="true">
+				<name>internaldns1</name>
+				<param>internaldns1</param>
+			</item>
+			<item>
+				<name>vlan</name>
+			</item>
+			<item>
+				<name>guestcidraddress</name>				
+			</item>
+			<item>
+				<name>networktype</name>
+				<value>Basic</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</sanity>

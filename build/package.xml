@@ -141,7 +141,17 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-ui, build-war-oss">
+  <target name="build-all" depends="build-opensource, build-ui, build-war-oss, compile-testclient">
+  </target>
+
+  <target name="build-all-with-simulator" depends="build-all, compile-agent-simulator">
+      <war destfile="${client.dist.dir}/client.war" webxml="${client.dir}/WEB-INF/web.xml" update="true">
+      <lib dir="${jar.dir}">
+        <include name="cloud-*.jar" />
+        <include name="vmware-*.jar" />
+        <exclude name="cloud-servlet-api.jar"/>
+      </lib>
+    </war>
   </target>
 
   <target name="build-war-oss" depends="-init-package" description="Compile the GWT client UI and builds WAR file.">

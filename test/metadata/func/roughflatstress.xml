@@ -1,0 +1,673 @@
+<flatnetworkstress>
+	
+	<command>
+	<name>createAccount</name>
+	<testcase>    [Create the Account and a User for the account]</testcase>
+	<parameters>
+		<item setparam="true" random="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item getparam="true">
+			<name>accounttype</name>
+			<param>globalaccttype</param>
+		</item>
+		<item getparam="true">
+			<name>domainid</name>
+			<param>globaldomainid</param>
+		</item>
+		<item>
+			<name>email</name>
+			<value>firstuser@gmail.com</value>
+		</item>
+		<item>
+			<name>firstname</name>
+			<value>firstuser</value>
+		</item>
+		<item>
+			<name>lastname</name>
+			<value>firstuserlastname</value>
+		</item>
+		<item random="true" setparam="true">
+			<name>username</name>
+			<param>getusernameparam1</param>
+		</item>
+		<item>
+			<name>password</name>
+			<value>password</value>
+		</item>
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getaccountid</param>
+		</item>
+		<item>
+			<name>state</name>
+			<value>enabled</value>
+		</item>
+	</returnvalue>
+	</command>
+	
+	<command>
+	<name>listUsers</name>
+	<testcase>    [List the User of the account]</testcase>
+	<parameters>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item getparam="true">
+			<name>accounttype</name>
+			<param>globalaccttype</param>
+		</item>
+		<item getparam="true">
+			<name>domainid</name>
+			<param>globaldomainid</param>
+		</item>
+		<item getparam="true">
+			<name>username</name>
+			<param>getusernameparam1</param>
+		</item>
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getuserid1</param>
+		</item>
+		<item>
+			<name>state</name>
+			<value>enabled</value>
+		</item>
+	</returnvalue>
+	</command>
+			
+	<command>
+		<name>registerUserKeys</name>
+		<testcase>Registering the First User</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>getuserid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createSecurityGroup</name>
+		<usercommand>true</usercommand>
+		<testcase>Creating First Security group for the Account</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>name</name>
+				<param>getsecuritygroupname1</param>
+			</item>
+			<item random="true">
+				<name>description</name>
+			</item>
+<!-- 		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>getsecuritygroupid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>authorizeSecurityGroupIngress</name>
+		<usercommand>true</usercommand>
+		<testcase>Authorizing First network group ingress rule for the First Security Group</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>securitygroupid</name>
+				<param>getsecuritygroupid1</param>
+			</item>
+			<item getparam="true">
+				<name>cidrlist</name>
+				<param>globalcidrlist</param>
+			</item>
+			<item>
+				<name>endport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+<!--		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+	</command>
+	
+	<command>
+		<name>listSecurityGroups</name>
+		<usercommand>true</usercommand>
+		<testcase> List the Security group and get the ingress rule ID </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>securitygroupid</name>
+				<param>getsecuritygroupid1</param>
+			</item>
+<!--		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ruleid</name>
+				<param>getingressruleid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Deploying VM for the First Account</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>zoneId</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>
+			<item getparam="true">
+				<name>templateId</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>serviceOfferingId</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>securitygroupids</name>
+				<param>getsecuritygroupid1</param>
+			</item>
+<!-- 		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>	
+-->			</parameters>
+			<returnvalue>
+				<item setparam="true">
+					<name>id</name>
+					<param>getvmid1</param>
+				</item>
+				<item setparam="true">
+					<name>ipaddress</name>
+					<param>getvmip1</param>
+				</item>		
+			</returnvalue>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>getvmip1</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 1 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>revokeSecurityGroupIngress</name>
+		<usercommand>true</usercommand>
+		<testcase>Revoking network group igress</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getingressruleid1</param>
+			</item>
+		</parameters>
+	</command>
+<!-- 		
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Ssh test for the vm - should fail as network group is revoked</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>getvmip1</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+-->	
+
+<!-- SECOND GROUP -->
+	
+	<command>
+		<name>createSecurityGroup</name>
+		<usercommand>true</usercommand>
+		<testcase>Creating a Second Security group for the Account</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>name</name>
+				<param>getsecuritygroupname2</param>
+			</item>
+			<item random="true">
+				<name>description</name>
+			</item>
+<!-- 		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>getsecuritygroupid2</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>authorizeSecurityGroupIngress</name>
+		<usercommand>true</usercommand>
+		<testcase>Authorizing network group ingress for the second Security group</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>securitygroupid</name>
+				<param>getsecuritygroupid2</param>
+			</item>
+			<item getparam="true">
+				<name>usersecuritygrouplist[0].account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>usersecuritygrouplist[0].group</name>
+				<param>getsecuritygroupname1</param>
+			</item>			
+			<item>
+				<name>endport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+<!--		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+	</command>
+	
+		
+	<command>
+		<name>authorizeSecurityGroupIngress</name>
+		<usercommand>true</usercommand>
+		<testcase>Authorizing one more network group ingress rule for the Second Security Group </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>securitygroupid</name>
+				<param>getsecuritygroupid2</param>
+			</item>
+			<item getparam="true">
+				<name>cidrlist</name>
+				<param>globalcidrlist</param>
+			</item>
+			<item>
+				<name>endport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+<!--		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+	</command>
+	
+	<command>
+		<name>listSecurityGroups</name>
+		<usercommand>true</usercommand>
+		<testcase> List the Security group and get the first ingress rule ID </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>securitygroupid</name>
+				<param>getsecuritygroupid2</param>
+			</item>
+<!--		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ruleid</name>
+				<param>getingressruleid2</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Deploying Second VM for the First Account</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>zoneId</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>
+			<item getparam="true">
+				<name>templateId</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>serviceOfferingId</name>
+				<param>flatnetworkserviceofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>securitygroupids</name>
+				<param>getsecuritygroupid2</param>
+			</item>
+<!-- 		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>	
+-->			</parameters>
+			<returnvalue>
+				<item setparam="true">
+					<name>id</name>
+					<param>getvmid2</param>
+				</item>
+				<item setparam="true">
+					<name>ipaddress</name>
+					<param>getvmip2</param>
+				</item>		
+			</returnvalue>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>getvmip2</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 1 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>revokeSecurityGroupIngress</name>
+		<usercommand>true</usercommand>
+		<testcase>Revoking Second Network group's First ingress rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getingressruleid2</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listSecurityGroups</name>
+		<usercommand>true</usercommand>
+		<testcase> List the Security group and get the second ingress rule ID </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>securitygroupid</name>
+				<param>getsecuritygroupid2</param>
+			</item>
+<!--		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+-->		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ruleid</name>
+				<param>getingressruleid2</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>revokeSecurityGroupIngress</name>
+		<usercommand>true</usercommand>
+		<testcase>Revoking Second network group's second ingress rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getingressruleid2</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- 		
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Ssh test for the vm - should fail as network group is revoked</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>getvmip2</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+-->	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Destroying virutal machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getvmid1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 1 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>destroyVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Destroying virutal machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getvmid2</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 1 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>
+		
+	
+<!--  Delete user as a part of cleanup -->	
+	<command>
+		<name>deleteUser</name>
+		<testcase>Deleting the user</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>getuserid1</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+	<name>deleteAccount</name>
+	<testcase> Delete Account </testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getaccountid</param>
+	</item>
+	</parameters>
+	
+</command>	
+</flatnetworkstress>

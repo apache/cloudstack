@@ -1,0 +1,108 @@
+<delegatedadmin>
+	
+<!--  EXECUTE CLEANUP FOR DOMAINS -->
+	<command>
+		<name>registerUserKeys</name>
+		<parameters>
+			<item>
+			    <name>id</name>
+				<value>2</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+
+	<command>
+		<name>listDomains</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+			    <name>name</name>
+			    <value>0-1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>level1domain1id</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<command>
+		<name>listDomains</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+			    <name>name</name>
+			    <value>0-2</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>level1domain2id</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deleteUser</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>rootadmin1id</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteUser</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>rootadmin2id</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteDomain</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>level1domain1id</param>
+			</item>
+			<item>
+			    <name>cleanup</name>
+			    <value>true</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>deleteDomain</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>level1domain2id</param>
+			</item>
+			<item>
+			    <name>cleanup</name>
+			    <value>true</value>
+			</item>
+		</parameters>
+	</command>
+
+
+</delegatedadmin>	

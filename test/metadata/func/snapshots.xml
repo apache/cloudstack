@@ -1,0 +1,809 @@
+<snapshots>
+<!-- STEPS + TEST CASES COVERED:
+	1.Creating a Normal User
+	2.Register that User
+	3.Deploy a Smaller Disk Offering VM(Small VM)
+	4.Deploy a Medium Disk Offering VM (Medium VM)
+		a.List the Root Disk of the Small VM
+		b.List the Data Disk of the Small VM
+		c.List the Root Disk of the Medium VM
+		d.List the Data Disk of the Medium VM
+	5.Create a Snapshot from the root disk of the Small VM
+	6.Create a Snapshot from the data disk of the Small VM
+	7.Create a Snapshot from the root disk of the Medium VM 
+	8.Create a Snapshot from the data disk of the Medium VM
+	9.Create a Template from the snapshot taken of the root disk of the Small VM
+	10.Create a Template from the snapshot taken of the root disk of the Medium VM
+	11.Deploy a VM from the template created from the snapshot taken of the root disk of the Small VM
+	12.Deploy a VM from the template created from the snapshot taken of the root disk of the Medium VM
+	13.Create a Volume from the snapshot taken of the root disk of the Small VM
+	14.Create a Volume from the snapshot taken of the root disk of the Medium VM
+	15.Attach the volume created from the snapshot taken of the root disk of the Small VM to the VM created from the template created from the snapshot taken of the root disk of the Small VM
+	16.Attach the volume created from the snapshot taken of the root disk of the Medium VM to the VM created from the template created from the snapshot taken of the root disk of the Medium VM
+	17.Reboot,start,stop,destroy VM created from the template created from the snapshot taken of the root disk of the Small VM 
+ 	18.Reboot,start,stop,destroy VM created from the template created from the snapshot taken of the root disk of the Medium VM 
+	19.Clean Up 
+ -->
+<!-- 1. Create a Normal User -->
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuserlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountvar</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- 
+<command> 
+		<name>createUser</name>
+		<testcase>Create a user</testcase>
+		
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<testcase>Registering the user</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>Deploying vm from small diskOffering</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>SnapshotsTest-VM-1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smallvmid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+		<command>
+		<name>deployVirtualMachine</name>
+		<testcase>Deploying vm from Medium disk offering</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>mediumglobaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>SnapshotsTest-VM-2</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largevmid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>smallvmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smallrootvolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>smallvmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>datadisk</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smalldatavolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>largevmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largerootvolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>largevmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>datadisk</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largedatavolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- Wait for some time for the management server to respond -->
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for some time</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>200</value>
+			</item>
+		</parameters>
+	</command>	
+
+<!--  Create a snapshot from Root and DataDisk volumes of user vms (Small vm and Large vm) -->
+	<command>
+		<name>createSnapshot</name>
+		<testcase>Creating snapshot of ROOT disk of small vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>smallrootvolumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smallrootsnapshot</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createSnapshot</name>
+		<testcase>Creating snapshot of Data disk of small vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>smalldatavolumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smalldatasnapshot</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createSnapshot</name>
+		<testcase>Creating snapshot of ROOT disk of medium vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>largerootvolumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largerootsnapshot</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createSnapshot</name>
+		<testcase>Creating snapshot of DATA disk of medium vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>largedatavolumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largedatasnapshot</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!--  Create templates from root snapshots and start vms from them -->
+	<command>
+		<name>createTemplate</name>
+		<testcase>Creating template of ROOT snapshot of small vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>snapshotid</name>
+				<param>smallrootsnapshot</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smalltemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<testcase>Creating template of ROOT snapshot of large vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>snapshotid</name>
+				<param>largerootsnapshot</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>Deploy a vm from template created from snapshot of ROOT disk of small vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>smalltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>SnapshotsTest-VM-3</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smallvmid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>Deploy a vm from template created from snapshot of ROOT disk of medium vm</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>mediumglobaldiskofferinigid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>largetemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>SnapshotsTest-VM-4</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largevmid1</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!--  Create volumes from snapshots and attach them to the running vms -->
+<!-- Create Volumes From Snapshots of a Smaller and a Larger Disk -->
+	<command>
+		<name>createVolume</name>
+		<testcase>Create a volume from smaller disk snapshot</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>snapshotid</name>
+				<param>smallrootsnapshot</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smallvolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>createVolume</name>
+		<testcase>Create a volume from larger disk snapshot</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>snapshotid</name>
+				<param>largerootsnapshot</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>largevolumeid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>attachVolume</name>
+		<testcase>Attach small volume to the vm created from small snapshot</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>smallvolumeid</param>
+			</item>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>smallvmid1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>attachVolume</name>
+		<testcase>Attach medium volume to the vm created from medium snapshot</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>largevolumeid</param>
+			</item>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>largevmid1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!--  Reboot small vm, start/stop medium vm -->
+	<command>
+		<name>rebootVirtualMachine</name>
+		<testcase>Reboot small vm</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>smallvmid1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>stopVirtualMachine</name>
+		<testcase>stop medium vm</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>largevmid1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>startVirtualMachine</name>
+		<testcase>stop medium vm</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>largevmid1</param>
+			</item>
+		</parameters>
+	</command>
+
+
+<!-- Destroy small and medium vms  -->
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy small vm</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>smallvmid1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy large vm</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>largevmid1</param>
+			</item>
+		</parameters>
+	</command>
+
+	
+<!--  Execute the cleanup - Delete a user -->
+
+	<command>
+		<name>deleteAccount</name>
+		<testcase>Deleting a user</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+
+<!-- 
+	<command>
+		<name>deleteUser</name>
+		<testcase>Deleting a user</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+	</command>	
+-->
+	
+	
+</snapshots>

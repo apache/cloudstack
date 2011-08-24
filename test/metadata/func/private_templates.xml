@@ -1,0 +1,893 @@
+<privatetemplates>
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>privateuser@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>privateuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>privateuserlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountvar</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- 	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>privatetemplates_regressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>privatetemplates_regressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>PrivateTemplate-VM-1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootvolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+<!--  Test case 507 - create a private template for stopped vm -->
+	<command>
+		<name>stopVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>507</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+<!--  Test case 508 - create a private template for Running vm  - negative case-->
+	<command>
+		<name>startVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<error>true</error>
+		<testcase>508</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!--  Test case 509 - create a private template for Destroyed vm  - negative case-->
+	<command>
+		<name>destroyVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<error>true</error>
+		<testcase>509</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!--  Test case 510 - deploy a vm from the private template-->
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>510</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>PrivateTemplate-VM-2</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!--  Test case 511 - Deploy a vm from the private template created from the vm which was deployed from the private template-->
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootvolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>stopVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>511</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>PrivateTemplate-VM-3</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!--  Test case 512 - Try to create 2 templates with the same name for the same account - should be allowed-->
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>512</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!--  Test case 513 - create 2 templates with the same name for different accounts -->
+
+<command>
+		<name>createAccount</name>
+		<testcase>    [Create Different Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountvar1</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>jack@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>jack12</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>jacklastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam1</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>jack12</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid1</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountvar1</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar1</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid1</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- 	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>jack12</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>jack12</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>jacklastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>jack@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid1</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar1</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar1</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>PrivateTemplate-VM-2</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>stopVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootvolumeid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>513</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid1</param>
+			</item>
+			<item random="true" getparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!--  Execute a cleanup -->	
+	
+	<command>
+		<name>deleteAccount</name>
+		<testcase>Deleting First Account as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountvar</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteAccount</name>
+		<testcase>Deleting Second Account as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountvar1</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- 	
+	<command>
+		<name>deleteUser</name>
+		<testcase>Deleting user as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteUser</name>
+		<testcase>Deleting user as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>userid1</param>
+			</item>
+		</parameters>
+	</command>
+
+-->
+	
+</privatetemplates>

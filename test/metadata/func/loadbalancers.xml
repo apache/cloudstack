@@ -1,0 +1,2018 @@
+<LoadBalancerRules>
+
+<!-- Test case #853 - port value validation when do create a load balancer -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploy Virtual Machine in the admin account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>LoadBalancer-VM-1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>associateIpAddress</name>
+		<testcase>	[Acquire a non-Source NAT IP Address for the Admin Account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>	[Create Load Balancing Rule -ve test (Private Port 0)]</testcase>
+		<error>true</error>
+		<testcase>853</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>0</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>986</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>	[Create Load Balancing Rule -ve test (Private Port 65536)]</testcase>
+		<error>true</error>
+		<testcase>853</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>65536</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>986</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>	[Create Load Balancing Rule -ve test (Private Port 65536)]</testcase>
+		<error>true</error>
+		<testcase>853</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>1</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>0</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>	[Create Load Balancing Rule -ve test (Public Port 65536)]</testcase>
+		<error>true</error>
+		<testcase>853</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>65535</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>65536</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+<!-- Test case #919 - algorithm validation when do create a load balancer -->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>919 [Create Load Balancing Rule - 1(Set of LB Rules for Algorithm Validation begins)]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9191</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9191</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>919-1 [Create Load Balancing Rule - 2]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9192</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9192</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>leastconn</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>919-2 [Create Load Balancing Rule - 3]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9193</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9193</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<error>true</error>
+		<testcase>919-3 [Create Load Balancing Rule - 4 (Set of LB Rules for Algorithm Validation ends)]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9194</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9194</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobinblahblah</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+
+
+<!-- Test case #920 - verify that the same names are allowed for load balancers belonging to the same account-->
+
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>920-1 [Create Load Balancer Rule]</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+			    <name>name</name>
+			    <param>lbname</param>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9201</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9201</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>920-2 [Create a Load Balancer Rule with the Same Name]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>name</name>
+				<param>lbname</param>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9202</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9202</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+
+
+<!-- Test case #921 - verify that the same names for load balancers are allowed across accounts -->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>921-1 [Create Load Balancer Rule in one account]</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+			    <name>name</name>
+				<param>lbname</param>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>921</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>921</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuserlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountvar</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>	[List the Created User in that account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- 	
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernamevar</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<testcase>	[Register User Keys]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>loadbalancersregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>loadbalancersregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploy Virtual Machine in that Account]</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>namefordisplay</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountvar</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmidtemp</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>associateIpAddress</name>
+		<testcase>	[Acquire a Non-Source NAT IP Address]</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>	[Creating a LB Rule with the same name of a rule in another account]</testcase>
+		<usercommand>true</usercommand>
+		<testcase>921-2</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>name</name>
+				<param>lbname</param>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9211</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9211</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+
+
+<!-- Test case #922 - try to create a load balancer with non-existing ip address -->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>922 [Create Load Balancer Rule with Non-existing ip address -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item>
+			    <name>publicip</name>
+				<value>192.168.0.5</value>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>922</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>922</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!-- Test case #923 - try to create a load balancer rule with ip address belonging to different user -->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<testcase>923 [Create Load Balancer Rule with Ip Address belonging to different user -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>923</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>923</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+		</parameters>
+	</command>		
+	
+<!-- Test case #924 - create a load balancer with non-source nat ip address -->
+	<command>
+		<name>associateIpAddress</name>
+		<testcase> [Acquire a non-Source NAT Ip address]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>924 [Create Load Balancer Rule from non-Source NAT IP Address]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>924</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>924</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+<!-- Test case #925 - try to delete load balancer with non-existing id - negative case-->
+	<command>
+		<name>deleteLoadBalancerRule</name>
+		<testcase> [Try to a delete a Non-Existing Load Balancer Rule]</testcase>
+		<error>true</error>
+		<testcase>925</testcase>
+		<parameters>
+			<item>
+			    <name>id</name>
+				<value>10000</value>
+			</item>
+		</parameters>
+	</command>	
+
+<!-- Test case #926 - verify that admin can delete any rule via 8096 port-->
+	<command>
+			<name>deleteAccount</name>
+			<testcase>	[Delete account]</testcase>
+			<parameters>
+				<item getparam="true">
+				    <name>id</name>
+					<param>accountid</param>
+				</item>
+			</parameters>
+	</command>	
+
+	<command>
+		<name>createAccount</name>
+		<testcase>   [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuserlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountvar</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>   [List the Created User]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- 
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernamevar</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<testcase>	[Register User Keys]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>loadbalancersregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>loadbalancersregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase> [Deploy Virtual Machine in the account created]</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>namefordisplay</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>associateIpAddress</name>
+		<testcase> [Acquire a non-Source NAT IP Address for that account]</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase> [Create Load Balancer Rule with the acquired Ip address]</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+			    <name>name</name>
+				<value>loadb9261</value>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9261</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9261</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid1</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase> [Create a Second Load Balancer Rule with the Acquired Ip Address]</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+			    <name>name</name>
+				<value>loadb9262</value>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9262</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9262</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>			
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid2</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase> [Create a Third Load Balancer Rule with the Acquired Ip Address]</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+			    <name>name</name>
+				<value>loadb9263</value>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>9263</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>9263</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid3</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>deleteLoadBalancerRule</name>
+		<testcase>926 [Admin allowed to Delete Load Balancer Rule of another account via 8096 port]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid1</param>
+			</item>
+		</parameters>
+	</command>
+
+
+<!-- Test case #927 - verify that admin can delete any rule via 8080 port-->
+	<command>
+		<name>deleteAccount</name>
+		<testcase>	[Delete Account as a part of Clean Up]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+
+	<command>
+		<name>createAccount</name>
+		<testcase>	[Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuserlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountvar</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase> [List the Created User of the Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- 
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernamevar</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<testcase> [Register User Keys]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>deleteLoadBalancerRule</name>
+		<testcase> [Admin allowed to Delete Load Balancer Rule of another account via 8080 port]</testcase>
+		<usercommand>true</usercommand>
+		<testcase>927</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid2</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!--  Test case 928 - verify that regular user can't delete lb rule belonging to another user -->
+	<command>
+		<name>deleteAccount</name>
+		<testcase>	[Delete Account as part of Clean Up]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createAccount</name>
+		<testcase>	[Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>	
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuserlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountvar</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase> [List the Created User of the account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- 		
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernamevar</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<testcase>	[Register User Keys]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountvar</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>loadbalancers-regressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>loadbalancers-defaultregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deleteLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<testcase>928 [Regular User can't Delete LBrule belonging to Another User]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid3</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!--  Test case 939 - verify that you can assign a load balancer to multipe vms -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase> [Deploy a Virtual Machine-1 to check multiple VMs - LB assignment]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>LoadBalancers-VM-1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase> [Deploy a Virtual Machine-2 to check multiple VMs - LB assignment]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>LoadBalancers-VM-2</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid2</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>associateIpAddress</name>
+		<testcase> [Acquire a non-Source NAT IP address]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>	[Create a Load Balancer Rule]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>931</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>931</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>source</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>assignToLoadBalancerRule</name>
+		<testcase>939 [Assign the First VM to the Load Balancing Rule]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineids</name>
+				<param>vmid1</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>assignToLoadBalancerRule</name>
+		<testcase>939 [Assign the Second VM to the Load Balancing Rule]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineids</name>
+				<param>vmid2</param>
+			</item>
+		</parameters>
+	</command>	
+	
+<!--  Test case 978 - try to create 2 load balancers with the same settings -->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>978 [Create Load Balancing Rule (to test the creation of 2 LB Rules with the same settings )]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>978</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>978</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>978 [Creation of Second LoadBalancer Rule should Fail]</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>978</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>978</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+<!--  Test case 1017 - verify that you can create a load balancer with source nat ip address -->
+	<command>
+		<name>listRouters</name>
+		<testcase>	[Obtain the source nat IP Address - List Routers]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue list="true">
+			<name>router</name>
+		    <element>0</element>
+			<item setparam="true">
+				<name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>1017 [Create Load Balancer Rule with Source NAT IP Address]</testcase>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>1017</value>
+			</item>
+			<item>
+			    <name>publicport</name>
+				<value>1017</value>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item>
+			    <name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+<!--  Execute cleanup here -->
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>	[Destroy VM as a Part of Cleanup]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>	[Destroy vm as a part of cleanup]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid2</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>	[Destroy vm as a part of cleanup]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteAccount</name>
+		<testcase>	[Deleting Account as a part of cleanup]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+</LoadBalancerRules>

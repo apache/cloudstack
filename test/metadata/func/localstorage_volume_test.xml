@@ -1,0 +1,135 @@
+<volumes>
+	<command>
+		<name>deployVirtualMachine</name>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!--  test case 1027 - try to create a volume in local storage setup (no shared storage) - should fail -->
+	<command>
+		<name>createVolume</name>
+		<testcase>1027</testcase>
+		<error>true</error>
+		<parameters>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+	</command>
+	
+	
+<!--  Test case 1032 - try to detach datadisk volume from the Centos vm in local storage setup - should fail -->
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>DATADISK</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>datadiskvolume</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>detachVolume</name>
+		<testcase>1032</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>datadiskvolume</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+	
+	<!--  Test case 1034 - try to detach root volume from the Centos vm in local storage setup - should fail -->
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootdiskvolume</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>detachVolume</name>
+		<testcase>1034</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>rootdiskvolume</param>
+			</item>
+		</parameters>
+	</command>
+	
+		
+	
+	
+	
+</volumes>

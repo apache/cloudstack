@@ -1,0 +1,294 @@
+<delegatedadmin>
+
+<!--  CREATE ALL USERS -->
+
+<!--  Create 3 domains -->
+	<command>
+		<name>createDomain</name>
+		<parameters>
+			<item>
+			    <name>name</name>
+			    <value>0-1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>level1domain1id</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createDomain</name>
+		<parameters>
+			<item>
+			    <name>name</name>
+			    <value>0-2</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>level1domain2id</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createDomain</name>
+		<parameters>
+			<item>
+			    <name>name</name>
+			    <value>0-1-1</value>
+			</item>
+			<item getparam="true">
+				<name>parentdomainid</name>
+				<param>level1domain1id</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>level2domain1id</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createDomain</name>
+		<parameters>
+			<item>
+			    <name>name</name>
+			    <value>0-2-1</value>
+			</item>
+			<item getparam="true">
+				<name>parentdomainid</name>
+				<param>level1domain2id</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>level2domain2id</param>
+			</item>
+		</returnvalue>
+	</command>
+
+
+<!-- Create root admin 1 -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>123@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootadmin1id</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>rootadmin1account</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- Create root admin 2 -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>123@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootadmin2id</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>rootadmin2account</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+<!-- Create domain admin for domain1 in level 1 -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>123@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>2</value>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>level1domain1id</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>domain11adminid</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>domain11adminaccount</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+<!-- Create domain admin for domain2 in level 1 -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>123@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>2</value>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>level1domain2id</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>domain12adminid</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>domain12adminaccount</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+<!-- Create domain admin for domain1 in level 2 -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>123</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>123@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>2</value>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>level2domain1id</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>domain21adminid</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>domain21adminaccount</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+
+</delegatedadmin>

@@ -1,0 +1,402 @@
+<delegatedadmin>
+<!--  EXECUTE INITIAL SET OF COMMANDS AS USER1 -->
+	<command>
+		<name>registerUserKeys</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+
+<!--  VM RELATED COMMANDS -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>		
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+<!--  VOLUME RELATED COMMANDS -->
+	<command>
+		<name>createVolume</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volumeid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	
+<!--  TEMPLATE RELATED COMMANDS - REGISTER AND CREATETEMPLATE COMMANDS -->
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<command>
+		<name>registerTemplate</name>
+		<testcase>Register template</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item random="true">
+				<name>displaytext</name>
+			</item>
+			<item getparam="true">
+				<name>url</name>
+				<param>globaltemplateurl</param>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>registeredtemplateid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	
+<!--  ISO RELATED COMMANDS -->
+	<command>
+		<name>registerIso</name>
+		<usercommand>true</usercommand>
+		<testcase>Register iso</testcase>
+		<parameters>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item random="true" >
+				<name>displaytext</name>
+			</item>
+			<item getparam="true">
+				<name>url</name>
+				<param>globalisourl</param>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>53</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>isoid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+<!--  SNAPSHOT RELATED COMMANDS -->
+	<command>
+		<name>createSnapshot</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snapshotid</param>
+			</item>
+		</returnvalue>
+	</command>		
+	
+	<command>
+		<name>createSnapshotPolicy</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+			<item>
+				<name>intervaltype</name>
+				<value>hourly</value>
+			</item>
+			<item>
+				<name>schedule</name>
+				<value>10</value>
+			</item>
+			<item>
+				<name>maxsnaps</name>
+				<value>4</value>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>Africa/Casablanca</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snapshotpolicyid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+
+<!--  Ip address section -->
+	<command>
+		<name>associateIpAddress</name>
+		<usercommand>true</usercommand>
+		<testcase>Associate ip address</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>zoneid</name>
+			<param>globalzoneid</param>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+
+<!--  Port forwarding section -->
+	<command>
+		<name>createPortForwardingService</name>
+		<testcase>Create port forwarding service</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item>
+			    <name>description</name>
+				<value>none</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>pfgroupid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createPortForwardingService</name>
+		<testcase>Create port forwarding service</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item>
+			    <name>description</name>
+				<value>none</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>pfgroupid1</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createPortForwardingServiceRule</name>
+		<testcase>Create port forwarding service rule</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+			    <name>publicport</name>
+				<value>22</value>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>22</value>
+			</item>
+			<item getparam="true">
+			    <name>portforwardingserviceid</name>
+				<param>pfgroupid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>pfruleid</param>
+			</item>
+		</returnvalue>
+	</command>		
+
+
+<!--  Load balancer section -->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>Create load balancer rule</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>ipaddress</param>
+			</item>
+			<item randomnumber="true">
+			    <name>privateport</name>
+			</item>
+			<item randomnumber="true">
+			    <name>publicport</name>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>Create load balancer rule</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>ipaddress</param>
+			</item>
+			<item randomnumber="true">
+			    <name>privateport</name>
+			</item>
+			<item randomnumber="true">
+			    <name>publicport</name>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid1</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>assignToLoadBalancerRule</name> 
+		<testcase>Assign to load balancer</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+</delegatedadmin>	

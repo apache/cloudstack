@@ -1,0 +1,389 @@
+<vmsynctest>
+
+<!-- 1. Deploy two VMs, One HA enabled, One HA disabled -->
+<!-- 1.1 Deploy HA enabled VM -->
+<command>
+		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
+            <testcase>deploy HA enabled VM test case</testcase>
+            
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item>
+				<name>displayname</name>
+				<value>HAenabledVM</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid_en</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname_en</param>
+			</item>
+			<item setparam="true">
+				<name>hostid</name>
+				<param>hostid_en</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- 1.2 Deploy the HA disabled VM -->
+<command>
+		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
+            <testcase>deploy HA disabled VM test case</testcase>
+            
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item>
+				<name>displayname</name>
+				<value>HAdisabledVM</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid_db</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname_db</param>
+			</item>
+			<item setparam="true">
+				<name>hostid</name>
+				<param>hostid_db</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- 2. Enable and disable HA on the VMs respectively -->
+<!-- 2.1 Enable HA -->
+<command>
+		<name>updateVirtualMachine</name>
+		<testcase>HA enable virtual machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_en</param>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>HAenabledVirtualMachine</value>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>true</value>
+			</item>
+		</parameters>
+</command>
+
+<!-- 2.2 Disable HA -->
+<command>
+		<name>updateVirtualMachine</name>
+		<testcase>HA disable virtual machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_db</param>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>HAdisabledVirtualMachine</value>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>			
+		</parameters>
+</command>
+
+<!--  3. Obtain the Host IP addresses for the Hosts accommodating the VMs -->
+<!-- 3.1 Obtains the Host IP address of the HA enabled VM's Host machine -->
+<command>
+		<name>listHosts</name>
+		<testcase>Obtain IP address of ha disabled VM's Host Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>hostid_db</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress_db</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!-- 3.2 Obtains the Host IP address of the HA disabled VM's Host machine -->
+
+<command>
+		<name>listHosts</name>
+		<testcase>Obtain IP address of ha enabled VM's Host Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>hostid_en</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress_en</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- 4. Get VM instance name of the VMs from the db -->
+	<command>
+		<name>select instance_name from vm_instance</name>
+		<mysql>true</mysql>
+		<testcase>Obtaining the internal instance name for the ha disabled VM Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_db</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>instance_name</name>
+				<param>instance_name_db</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>select instance_name from vm_instance</name>
+		<mysql>true</mysql>
+		<testcase>Obtaining the internal instance name for the ha enabled VM Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_en</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>instance_name</name>
+				<param>instance_name_en</param>
+			</item>
+		</returnvalue>
+	</command>	
+
+<!-- 5. Kill the two VMs -->
+
+<command>
+	<name>killvm.sh</name>
+	<testcase>Kill the HA enabled VM</testcase>
+	<script>true</script>
+	
+	<parameters>
+		<item getparam="true">
+			<name>n</name>
+			<param>instance_name_en</param>
+		</item>
+		
+		<item getparam="true">
+			<name>h</name>
+			<param>ipaddress_en</param>
+		</item>
+	</parameters>
+</command>
+
+
+<command>
+	<name>killvm.sh</name>
+	<testcase>Kill the HA disabled VM</testcase>
+	<script>true</script>
+	
+	<parameters>
+		<item getparam="true">
+			<name>n</name>
+			<param>instance_name_db</param>
+		</item>
+		
+		<item getparam="true">
+			<name>h</name>
+			<param>ipaddress_db</param>
+		</item>
+	</parameters>
+</command>
+
+<!--6. Wait for some time for the management server to respond -->
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for some time</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>300</value>
+			</item>
+		</parameters>
+	</command>	
+
+<!--  Check that States of the vms at the database and at the agents - verify both api and backend  -->
+<!-- 7. Check the Management Server Database for the states of the killed VMs -->
+
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>List virtual machine with ha disabled</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_db</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>			
+		</returnvalue>
+	</command>		
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>List virtual machine with ha enabled</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_en</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+			<item setparam="true">			<!-- HA enabled VM may be restarted on any hosts -->
+				<name>hostid</name>
+				<param>hostid_en</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- 9. Find the host IP address of the ha enabled VM -->
+<command>
+		<name>listHosts</name>
+		<testcase>List host with ha enabled machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>hostid_en</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress_en</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- 10. Verify whether the HA enabled VM is actually running on the host -->
+<command>
+		<name>listvm.sh</name>
+		<script>true</script>
+		<testcase>List ha enabled machine</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>ipaddress_en</param>
+			</item>
+			<item getparam="true">
+			    <name>n</name>
+				<param>instance_name_en</param>
+			</item>
+		</parameters>
+</command>
+
+<!--  Cleanup section -->
+<!-- 11. Destroy VMs-->
+<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy ha disabled vm as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_db</param>
+			</item>
+		</parameters>
+</command>
+	
+<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy ha enabled vm as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_en</param>
+			</item>
+		</parameters>
+</command>
+</vmsynctest>

@@ -1,0 +1,1876 @@
+<thirdtest>
+<!-- FIRST USER -->
+<!--Step 1: Create a user-->
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>user@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>userlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+
+<!-- 
+<command>
+            <name>createUser</name>
+            <testcase>Create User Test Case</testcase>
+            <parameters>
+                  <item random="true">
+                      <name>username</name>
+                      <param>usernameparam</param>
+                  </item>
+                  <item>
+                      <name>password</name>
+                        <value>alena123</value>
+                  </item>
+                  <item>
+                        <name>firstname</name>
+                        <value>user</value>
+                  </item>
+                  <item>
+                        <name>lastname</name>
+                        <value>userlastname</value>
+                  </item>
+                  <item>
+                        <name>email</name>
+                        <value>user@gmail.com</value>
+                  </item>
+                  <item>
+                        <name>accounttype</name>
+                        <value>0</value>
+                  </item>
+            </parameters>
+            
+            <returnvalue>
+                  <item setparam="true">
+                        <name>id</name>
+                        <param>userid</param>
+                  </item>
+                  <item setparam="true">
+                        <name>account</name>
+                        <param>accountname</param>
+                  </item>
+            </returnvalue>
+</command>
+-->
+
+
+<!--Step 2(a): Setup VMs limit for the account-->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Setup VMs Limit for Account Test Case</testcase>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>0</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>2</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>0</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>2</value>
+                  </item>
+            </returnvalue>
+ </command>        
+
+<!--Step 2(b): Setup Public-IPs limit for the account-->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Setup Public-Ips Limit for Account Test Case</testcase>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>1</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>2</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>1</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>1</value>
+                  </item>
+            </returnvalue>
+ </command>        
+ 
+ <!--Step 2(c): Setup Volumes limit for the account-->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Setup Volumes Limit for Account Test Case</testcase>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>2</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>6</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>2</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>6</value>
+                  </item>
+            </returnvalue>
+ </command>        
+
+<!--Step 2(d): Setup Snapshots limit for the account -->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Setup Snapshots Limit for Account Test Case</testcase>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>3</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>2</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>3</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>2</value>
+                  </item>
+            </returnvalue>
+ </command> 
+
+<!-- 2(e): Setup Templates limit for the account -->
+<command>
+			<name>updateResourceLimit</name>
+            <testcase>Setup Templates Limit for Account Test Case</testcase>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>4</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>2</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>4</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>2</value>
+                  </item>
+            </returnvalue>
+		
+</command> 
+ 
+<!--Step 3:  Register user-->
+      <command>
+            <name>registerUserKeys</name>
+            <testcase>Register User Keys Test Case</testcase>
+            <parameters>
+                  <item getparam="true">
+                      <name>id</name>
+                        <param>userid</param>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item setparam="true">
+                        <name>apikey</name>
+                        <param>apikey</param>
+                  </item>
+                  <item setparam="true">
+                        <name>secretkey</name>
+                        <param>secretkey</param>
+                  </item>
+            </returnvalue>
+   </command>  
+   
+   <command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!--Step4(a): Execute command deploy vm as user – deploy 2 vms -->
+
+		<command>
+		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
+            <testcase>deploy vm1 test case</testcase>
+            <usercommand>true</usercommand>
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>ResourceLimits-VM-1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+		</returnvalue>
+		</command>
+
+		<command>
+			<name>deployVirtualMachine</name>   <!--deploy vm 2-->
+            <testcase>deploy vm2 test case</testcase>
+            <usercommand>true</usercommand>
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+			<item>
+				<name>displayname</name>
+				<value>ResourceLimits-VM-2</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid2</param>
+			</item>
+		</returnvalue>
+		</command>
+		
+<!--Step 4(b): Associate an IP other than the one assigned to the DOMR -->
+
+<command>
+		<name>associateIpAddress</name> 
+		<testcase>Associate second IP Test Case</testcase>
+		<usercommand>true</usercommand>
+		
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipid</param>
+			</item>
+		</returnvalue>
+		
+		
+</command>		
+
+
+<!--Step 4(c): Add fifth and Sixth volume to the existing volumes of one of the VMs -->
+<command>
+		<name>createVolume</name>
+		<testcase>Create Fifth Volume Test Case</testcase>
+		<usercommand>true</usercommand>
+		
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>FifthVolume</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volid1</param>
+			</item>
+		</returnvalue>
+		
+</command>		
+
+<command>
+		<name>attachVolume</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>volid1</param>
+			</item>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid1</param>
+			</item>
+		</parameters>
+</command>
+		
+<command>
+		<name>createVolume</name>
+		<testcase>Create Sixth Volume Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>SixthVolume</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volid2</param>
+			</item>
+		</returnvalue>
+		
+</command>
+
+<command>
+		<name>attachVolume</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>volid2</param>
+			</item>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid2</param>
+			</item>
+		</parameters>
+</command>
+		
+<!-- Step 4(d): Create two snapshots for one of the Volumes -->
+<command>
+		<name>createSnapshot</name>
+		<testcase>Create First Snapshot Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snpid</param>
+			</item>
+		</returnvalue>
+</command>
+
+<command>
+		<name>createSnapshot</name>
+		<testcase>Create Second Snapshot Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volid2</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snpid</param>
+			</item>
+		</returnvalue>
+</command> 
+
+<!--Step 4(e) Register two templates -->
+<command>
+		<name>registerTemplate</name>
+		<testcase>Create First Template Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>FirstTemplate</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>Firsttemplate</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.10.231/templates/routing/latest/systemvm.vhd.bz2</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>41</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>							
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>templid1</param>
+			</item>
+		</returnvalue>
+</command>
+
+<command>
+		<name>registerTemplate</name>
+		<testcase>Create Second Template Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>SecondTemplate</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>Secondtemplate</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.10.231/templates/routing/latest/systemvm.vhd.bz2</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>41</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>						
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>templid2</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!--Step 5(a): try to deploy third vm:-->
+
+		<command>
+			<name>deployVirtualMachine</name>  <!--deploy vm 3 – should fail-->
+            <testcase>Deploy VM3 Failure test case</testcase>
+            <usercommand>true</usercommand>
+			<error>true</error>
+        <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item>
+			    <name>templateid</name>
+				<value>2</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>network</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid3</param>
+			</item>
+		</returnvalue>
+         </command>
+         
+<!--Step 5(b): Associate Third IP other than the two assigned -->
+
+<command>
+		<name>associateIpAddress</name> 
+		<testcase>Associate Second IP Failure Test Case</testcase>
+		<usercommand>true</usercommand>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipid</param>
+			</item>
+		</returnvalue>
+		
+		
+</command>
+
+<!--Step 5(c): Add Seventh volume to the existing volumes of one of the VMs -->
+<command>
+		<name>createVolume</name>
+		<testcase>Create Seventh Volume Failure Test Case</testcase>
+		<usercommand>true</usercommand>
+		<error>true</error>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>SeventhVolume</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volid3</param>
+			</item>
+		</returnvalue>
+		
+</command>			         
+
+<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid1</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootvolumeid</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- Step 5(d): Create a third Snapshot of the volume--> 
+<command>
+		<name>createSnapshot</name>
+		<testcase>Create Third Snapshot Failure Test Case</testcase>
+		<usercommand>true</usercommand>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snpid</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- Step 5 (e): Try to create a third template for the same user -->
+
+<command>
+		<name>registerTemplate</name>
+		<testcase>Create Third Template Failure Test Case</testcase>
+		<usercommand>true</usercommand>
+		<error>true</error>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>ThirdTemplate</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>Thirdtemplate</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.10.231/templates/routing/latest/systemvm.vhd.bz2</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>41</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>							
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>templid3</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- Step 6: Clean Up -->
+<command>
+		<name>deleteAccount</name>
+		<testcase>Clean up account test case</testcase>
+		
+		<parameters>
+				<item getparam="true">
+					<name>id</name>
+					<param>accountname</param>
+				</item>
+		</parameters>
+		
+</command>
+
+<!--  SECOND USER -->
+
+<!--Step 1: Create a user-->
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>newadmin@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>newadmin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>newadminlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+<!-- 
+<command>
+            <name>createUser</name>
+            <testcase>Create Admin Test Case</testcase>
+            <parameters>
+                  <item random="true">
+                      <name>username</name>
+                      <param>usernameparam</param>
+                  </item>
+                  <item>
+                      <name>password</name>
+                        <value>alena123</value>
+                  </item>
+                  <item>
+                        <name>firstname</name>
+                        <value>user</value>
+                  </item>
+                  <item>
+                        <name>lastname</name>
+                        <value>userlastname</value>
+                  </item>
+                  <item>
+                        <name>email</name>
+                        <value>user@gmail.com</value>
+                  </item>
+                  <item>
+                        <name>accounttype</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            
+            <returnvalue>
+                  <item setparam="true">
+                        <name>id</name>
+                        <param>userid</param>
+                  </item>
+                  <item setparam="true">
+                        <name>account</name>
+                        <param>accountname</param>
+                  </item>
+            </returnvalue>
+</command>
+-->
+
+<!--Step 2(a): Setup VMs limit for the account-->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Failure in Setting Up VMs Limit for Admin Account Test Case</testcase>
+            <error>true</error>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>0</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>2</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>0</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>2</value>
+                  </item>
+            </returnvalue>
+ </command>        
+
+<!--Step 2(b): Setup Public-IPs limit for the account-->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Failure in Setting Up Public-Ips Limit for Admin Account Test Case</testcase>
+            <error>true</error>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>1</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>1</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>1</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>1</value>
+                  </item>
+            </returnvalue>
+ </command>        
+ 
+ <!--Step 2(c): Setup Volumes limit for the account-->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Failure in Setting Up Volumes Limit for Admin Account Test Case</testcase>
+            <error>true</error>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>2</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>6</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>2</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>6</value>
+                  </item>
+            </returnvalue>
+ </command>        
+
+<!--Step 2(d): Setup Snapshots limit for the account-->
+<command>     
+      		<name>updateResourceLimit</name>
+            <testcase>Failure in Setting up Snapshots Limit for Admin Account Test Case</testcase>
+            <error>true</error>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>3</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>2</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>3</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>2</value>
+                  </item>
+            </returnvalue>
+ </command>
+
+<!-- 2(e): Setup Templates limit for the account -->
+<command>
+			<name>updateResourceLimit</name>
+            <testcase>Failure in Seting Up Templates Limit for Admin Account Test Case</testcase>
+            <error>true</error>
+            <parameters>
+                  <item>
+                      <name>resourcetype</name>
+                        <value>4</value>
+                  </item>
+                  <item>
+                      <name>max</name>
+                        <value>2</value>
+                  </item>
+                  <item getparam="true">
+                      <name>account</name>
+                      <param>accountname</param>
+                  </item>
+                  <item>
+                      <name>domainid</name>
+                        <value>1</value>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item>
+                        <name>resourcetype</name>
+                        <value>4</value>
+                  </item>
+                  <item>
+                        <name>max</name>
+                        <value>2</value>
+                  </item>
+            </returnvalue>
+		
+</command> 
+ 
+<!--Step 3:  Register user-->
+      <command>
+            <name>registerUserKeys</name>
+            <testcase>Register User Keys Test Case</testcase>
+            <parameters>
+                  <item getparam="true">
+                      <name>id</name>
+                        <param>userid</param>
+                  </item>
+            </parameters>
+            <returnvalue>
+                  <item setparam="true">
+                        <name>apikey</name>
+                        <param>apikey</param>
+                  </item>
+                  <item setparam="true">
+                        <name>secretkey</name>
+                        <param>secretkey</param>
+                  </item>
+            </returnvalue>
+   </command>  
+
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!--Step4(a): Execute command deploy vm as user – deploy 2 vms -->
+
+		<command>
+		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
+            <testcase>deploy vm1 test case</testcase>
+            <usercommand>true</usercommand>
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>SnapshotTest-Admin-VM-1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+		</returnvalue>
+		</command>
+
+		<command>
+			<name>deployVirtualMachine</name>   <!--deploy vm 2-->
+            <testcase>deploy vm2 test case</testcase>
+            <usercommand>true</usercommand>
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>SnapshotTest-Admin-VM-2</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid2</param>
+			</item>
+		</returnvalue>
+		</command>
+		
+<!--Step 4(b): Associate an IP other than the one assigned to the DOMR -->
+
+<command>
+		<name>associateIpAddress</name> 
+		<testcase>Associate second IP Test Case</testcase>
+		<usercommand>true</usercommand>
+		
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipid</param>
+			</item>
+		</returnvalue>				
+</command>		
+
+<!--Step 4(c): Add fifth and Sixth volume to the existing volumes of one of the VMs -->
+<command>
+		<name>createVolume</name>
+		<testcase>Create Fifth Volume Test Case</testcase>
+		<usercommand>true</usercommand>
+		
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>AdminsFifthVolume</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volid1</param>
+			</item>
+		</returnvalue>
+		
+</command>		
+		
+<command>
+		<name>attachVolume</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>volid1</param>
+			</item>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid1</param>
+			</item>
+		</parameters>
+</command>		
+		
+<command>
+		<name>createVolume</name>
+		<testcase>Create Sixth Volume Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>AdminsSixthVolume</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volid2</param>
+			</item>
+		</returnvalue>
+		
+</command>
+
+<command>
+		<name>attachVolume</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>volid2</param>
+			</item>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid2</param>
+			</item>
+		</parameters>
+</command>
+		
+<!--Step 4(d): Create two snapshots for one of the Volumes-->
+<command>
+		<name>createSnapshot</name>
+		<testcase>Create First Snapshot Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snpid</param>
+			</item>
+		</returnvalue>
+</command>
+
+<command>
+		<name>createSnapshot</name>
+		<testcase>Create Second Snapshot Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volid2</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snpid</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!--Step 4(e) Register two templates -->
+<command>
+		<name>registerTemplate</name>
+		<testcase>Create First Template Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>AdminsFirstTemplate</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>AdminsFirsttemplate</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.10.231/templates/routing/latest/systemvm.vhd.bz2</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>41</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>						
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>templid1</param>
+			</item>
+		</returnvalue>
+</command>
+
+<command>
+		<name>registerTemplate</name>
+		<testcase>Create Second Template Test Case</testcase>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>AdminsSecondTemplate</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>AdminsSecondtemplate</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.10.231/templates/routing/latest/systemvm.vhd.bz2</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value></value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>41</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>						
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>templid2</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!--Step 5(a): try to deploy third vm:-->
+
+		<command>
+			<name>deployVirtualMachine</name>  <!--deploy vm 3 – should fail-->
+            <testcase>Deploy VM3 Failure Avoidance test case</testcase>
+            <usercommand>true</usercommand>
+			
+        <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>SnapshotTest-Admin-VM-3</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid3</param>
+			</item>
+		</returnvalue>
+         </command>
+         
+<!--Step 5(b): Associate Third IP other than the two assigned -->
+
+<command>
+		<name>associateIpAddress</name> 
+		<testcase>Associate Second IP Failure Avoidance Test Case</testcase>
+		<usercommand>true</usercommand>
+	
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipid</param>
+			</item>
+		</returnvalue>
+		
+		
+</command>
+
+<!--Step 5(c): Add Seventh volume to the existing volumes of one of the VMs -->
+<command>
+		<name>createVolume</name>
+		<testcase>Create Seventh Volume Failure Avoidance Test Case</testcase>
+		<usercommand>true</usercommand>
+	
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>AdminsSeventhVolume</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+			    <param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>	
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>	
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volid3</param>
+			</item>
+		</returnvalue>
+		
+</command>			         
+
+<!-- Step 5(d): Create a third Snapshot of the volume--> 
+<command>
+		<name>createSnapshot</name>
+		<testcase>Create Third Snapshot Failure Test Case</testcase>
+		<usercommand>true</usercommand>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snpid</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- Step 5 (e): Try to create a third template for the same user -->
+
+<command>
+		<name>registerTemplate</name>
+		<testcase>Create Third Template Failure Avoidance Test Case</testcase>
+		<usercommand>true</usercommand>
+
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>AdminsThirdTemplate</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>AdminsThirdtemplate</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.10.231/templates/routing/latest/systemvm.vhd.bz2</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>41</value>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>hypervisor</name>
+				<param>globalhypervisortype</param>
+			</item>	
+						
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>templid3</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- Step 6: Clean Up -->
+<command>
+		<name>deleteAccount</name>
+		<testcase>Clean up admin account test case</testcase>
+		
+		<parameters>
+				<item getparam="true">
+					<name>id</name>
+					<param>accountid</param>
+				</item>
+		</parameters>
+		
+</command>
+</thirdtest>

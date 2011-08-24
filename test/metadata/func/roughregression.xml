@@ -1,0 +1,5994 @@
+<regression>
+<command>
+	<name>listDomains</name>
+	<testcase>    [List Domains]</testcase>
+	<parameters>
+		<item getparam="true">
+			<name>id</name>
+			<param>globaldomainid</param>
+		</item>
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>name</name>
+			<param>getdomainname1</param>
+		</item>
+	</returnvalue>
+</command>
+
+<!--CREATE AN ACCOUNT-->
+<command>
+	<name>createAccount</name>
+	<testcase>    [Create the Account and a User for the account]</testcase>
+	<parameters>
+		<item setparam="true" random="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item getparam="true">
+			<name>accounttype</name>
+			<param>globalaccttype</param>
+		</item>
+		<item getparam="true">
+			<name>domainid</name>
+			<param>globaldomainid</param>
+		</item>
+		<item>
+			<name>email</name>
+			<value>firstuser@gmail.com</value>
+		</item>
+		<item>
+			<name>firstname</name>
+			<value>firstuser</value>
+		</item>
+		<item>
+			<name>lastname</name>
+			<value>firstuserlastname</value>
+		</item>
+		<item random="true" setparam="true">
+			<name>username</name>
+			<param>getusernameparam1</param>
+		</item>
+		<item>
+			<name>password</name>
+			<value>password</value>
+		</item>
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getaccountid</param>
+		</item>
+		<item>
+			<name>state</name>
+			<value>enabled</value>
+		</item>
+	</returnvalue>
+</command>
+
+<command>
+	<name>registerIso</name>
+	<testcase>[] registerIsotestcase </testcase>
+	<parameters>
+        <item>
+                <name>name</name>
+                <value>CentOS-5-5-ISO</value>
+        </item>
+        <item>
+                <name>displayText</name>
+                <value>CentOS-5-5-ISO</value>
+        </item>
+        <item>
+                <name>url</name>
+                <value>http://nfs1.lab.vmops.com/isos_64bit/CentOS-5.5-x86_64-bin-DVDs/CentOS-5.5-x86_64-bin-DVD-1of2.iso</value>
+        </item>
+        <item>
+                <name>zoneId</name>
+                <value>-1</value>
+        </item>
+        <item>
+                <name>isPublic</name>
+                <value>true</value>
+        </item>
+        <item>
+                <name>bootable</name>
+                <value>true</value>
+        </item>
+        <item>
+                <name>osTypeId</name>
+                <value>112</value>
+        </item>
+        <item>
+                <name>isfeatured</name>
+                <value>true</value>
+        </item>
+		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+		</item>
+		<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+		</item>
+        </parameters>
+		<returnvalue>
+		<item setparam="true">
+				<name>id</name>
+				<param>getisoid1</param>
+		</item>
+		</returnvalue>
+</command>
+
+<command>
+		<name>listIsos</name>
+		<testcase>[] listIsosTestCase </testcase>
+		<parameters>
+        <item>
+                <name>isofilter</name>
+                <value>self</value>
+        </item>
+        <item getparam="true">
+                <name>id</name>
+                <param>getisoid1</param>
+        </item>
+        <item>
+                <name>zoneid</name>
+                <value>1</value>
+        </item>
+        </parameters>
+		<returnvalue>
+		<item getparam="true">
+				<name>id</name>
+				<param>getisoid1</param>
+		</item>
+		<item>
+                <name>name</name>
+                <value>CentOS-5-5-ISO</value>
+        </item>
+        <item>
+                <name>displayText</name>
+                <value>CentOS-5-5-ISO</value>
+        </item>
+        <item>
+                <name>zoneId</name>
+                <value>1</value>
+        </item>
+        <item>
+                <name>isPublic</name>
+                <value>true</value>
+        </item>
+        <item>
+                <name>bootable</name>
+                <value>true</value>
+        </item>
+        <item>
+                <name>osTypeId</name>
+                <value>112</value>
+        </item>
+        <item>
+                <name>isfeatured</name>
+                <value>true</value>
+        </item>
+		<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+		</item>
+		<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+		</item>
+		<item getparam="true">
+				<name>domain</name>
+				<param>getdomainname1</param>
+		</item>
+		</returnvalue>		
+</command>
+
+
+
+
+
+	<!-- Create default network-->
+	<command>
+	<name>createNetwork</name>
+	<testcase>	[Creating default network]</testcase>
+	<parameters>
+		<item getparam="true">
+		    <name>zoneid</name>
+		    <param>globalzoneid</param>
+		</item>
+		<item getparam="true">
+		    <name>networkOfferingId</name>
+		    <param>globalnetworkofferingid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item getparam="true">
+			<name>domainid</name>
+			<param>globaldomainid</param>
+		</item>
+		<item>
+			<name>name</name>
+			<value>defaultregressionnetwork</value>
+		</item>
+		<item>
+			<name>displaytext</name>
+			<value>defaultregressionnetwork</value>
+		</item>
+		</parameters>
+		<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getnetworkid1</param>
+		</item>
+		</returnvalue>
+	</command>
+	
+
+<!-- Test case #950 - listAccounts -->
+<command>
+	<name>listAccounts</name>
+	<testcase>950 [List the Account of the User created in (3)]</testcase>
+	<parameters>
+		<item getparam="true">
+			<name>name</name>
+			<param>accountname</param>
+		</item>
+	</parameters>
+	<returnvalue>
+		<item getparam="true">
+			<name>id</name>
+			<param>getaccountid</param>
+		</item>
+		<item getparam="true">
+			<name>name</name>
+			<param>accountname</param>
+		</item>
+		<item getparam="true">
+			<name>accounttype</name>
+			<param>globalaccttype</param>
+		</item>
+		<item getparam="true">
+			<name>domainid</name>
+			<param>globaldomainid</param>
+		</item>
+		<item>
+			<name>domain</name>
+			<param>getdomainname1</param>
+		</item>
+		<item>
+			<name>receivedbytes</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>sentbytes</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>vmlimit</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>vmtotal</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>vmavailable</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>ipavailable</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>iptotal</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>iplimit</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>volumelimit</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>volumetotal</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>volumeavailable</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>snapshotlimit</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>snapshottotal</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>snapshotavailable</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>templatelimit</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>templatetotal</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>templateavailable</name>
+			<value>Unlimited</value>
+		</item>
+		<item>
+			<name>vmstopped</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>vmrunning</name>
+			<value>0</value>
+		</item>
+		<item>
+			<name>state</name>
+			<value>enabled</value>
+		</item>
+		</returnvalue>
+</command>
+
+<!-- Test case #5 - listUsers command -->
+<command>
+	<name>listUsers</name>
+	<testcase>  5 [List the Created User in (3)]</testcase>
+	<parameters>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getuserid1</param>
+		</item>
+		<item setparam="true">
+			<name>username</name>
+			<param>getusernameparam1</param>
+		</item>
+	</returnvalue>
+</command>
+		
+	<!-- Test case # 3 - Create a User -->
+<command>
+	<name>createUser</name>
+	<testcase>  3 [Create User Command]</testcase>
+	<parameters>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item getparam="true">
+			<name>accounttype</name>
+			<param>globalaccttype</param>
+		</item>
+		<item random="true" setparam="true">
+			<name>username</name>
+			<param>getusernameparam2</param>
+		</item>
+		<item>
+			<name>password</name>
+			<value>password</value>
+		</item>
+		<item>
+			<name>firstname</name>
+			<value>seconduser</value>
+		</item>
+		<item>
+			<name>lastname</name>
+			<value>seconduserlastname</value>
+		</item>
+		<item>
+			<name>email</name>
+			<value>seconduser@gmail.com</value>
+		</item>
+		<item getparam="true">
+			<name>domainid</name>
+			<param>globaldomainid</param>
+		</item>		
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getuserid2</param>
+		</item>
+	</returnvalue>
+</command>
+
+
+<!-- Test case #6 - updateUser command -->
+<command>
+	<name>updateUser</name>
+	<testcase>  6 [Update the User created in (3)]</testcase>
+	<parameters>
+		<item getparam="true">
+			<name>id</name>
+			<param>getuserid1</param>
+		</item>
+		<item random="true" setparam="true">
+			<name>username</name>
+			<param>getusernameparam3</param>
+		</item>
+		<item>
+			<name>password</name>
+			<value>password</value>
+		</item>
+		<item>
+			<name>firstname</name>
+			<value>updatedfirstuser</value>
+		</item>
+		<item>
+			<name>lastname</name>
+			<value>updatedfirstuserlastname</value>
+		</item>
+		<item>
+			<name>email</name>
+			<value>updatedfirstuser@gmail.com</value>
+		</item>
+		<item>
+			<name>timezone</name>
+			<value>PST</value>
+		</item>
+<!--		<item random="true" setparam="true">
+			<name>apikey</name>
+			<param>getuserapikey</param>
+		</item>
+		<item random="true" setparam="true">
+			<name>secretkey</name>
+			<param>getusersecretkey</param>
+		</item>
+-->	</parameters>
+	<returnvalue>
+		<item getparam="true">
+				<name>id</name>
+				<param>getuserid1</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>getusernameparam3</param>
+			</item>
+<!--			<item getparam="true">
+				<name>apikey</name>
+				<param>getuserapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>getusersecretkey</param>
+			</item>
+-->	</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Updated User updated in (6)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getuserid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getuserid1</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>getusernameparam3</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>accounttype</name>
+				<param>globalaccttype</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>domain</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+<!--			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+-->		</returnvalue>
+	</command>
+
+	<!-- Test case #428 - disableUser command -->
+	<command>
+		<name>disableUser</name>
+		<testcase>428 [Disable the User created in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getuserid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getuserid1</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>getusernameparam3</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatedfirstuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatedfirstuserlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatedfirstuser@gmail.com</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>disabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>accounttype</name>
+				<param>globalaccttype</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>domain</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+<!--			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+-->		</returnvalue>
+	</command>
+
+	<!-- Test case #9 - enableUser command -->
+	<command>
+		<name>enableUser</name>
+		<testcase>  9 [Enable the User created in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getuserid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getuserid1</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>getusernameparam3</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>updatednimbus</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>updatednimbuslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>updatednimbus@gmail.com</value>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>accounttype</name>
+				<param>globalaccttype</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>domain</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>timezone</name>
+				<value>PST</value>
+			</item>
+<!--			<item getparam="true">
+				<name>apikey</name>
+				<param>userapikey</param>
+			</item>
+			<item getparam="true">
+				<name>secretkey</name>
+				<param>usersecretkey</param>
+			</item>
+-->		</returnvalue>
+	</command>
+
+	<!-- Test case # - disableAcount command -->
+	<command>
+		<name>disableAccount</name>
+		<testcase>    [Disable the Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item>
+				<name>lock</name>
+				<value>true</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getaccountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>accounttype</name>
+				<param>globalaccttype</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>domain</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>locked</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+	<!-- Test case # - enableAccount command -->
+		<command>
+		<name>enableAccount</name>
+		<testcase>    [Enable the Locked Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>			
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getaccountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>accounttype</name>
+				<param>globalaccttype</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>domain</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+	<!-- Test case # - disableAccount command -->
+	<command>
+		<name>disableAccount</name>
+		<testcase>    [Lock the Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item>
+				<name>lock</name>
+				<value>false</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getaccountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>accounttype</name>
+				<param>globalaccttype</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>domain</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>	
+						<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>disabled</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+	<!-- Test case # - enableAccount command -->
+		<command>
+		<name>enableAccount</name>
+		<testcase>    [Enable the Locked Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>			
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getaccountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>accounttype</name>
+				<param>globalaccttype</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>						
+		</returnvalue>
+	</command>
+
+<!-- Test case #10 - createDomain command -->
+
+<command>
+	<name>createDomain</name>
+	<testcase>    [Create Domain]</testcase>
+	<parameters>
+		<item random="true" setparam="true">
+			<name>name</name>
+			<param>getdomainname2</param>
+		</item>
+		<item getparam="true">
+			<name>parentdomainid</name>
+			<param>globaldomainid</param>
+		</item>
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getdomainid1</param>
+		</item>
+	</returnvalue>
+</command>
+
+	<!-- Test case #11 - listDomains command -->
+	<command>
+		<name>listDomains</name>
+		<testcase> 11 [List Domains]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>getdomainname2</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>getdomainid1</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>getdomainname2</param>
+			</item>
+			<item setparam="true">
+				<name>level</name>
+				<param>getcurrentlevel1</param>
+			</item>
+			<item getparam="true">
+				<name>parentdomainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>parentdomainname</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>haschild</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+
+<!--
+		Test case #952 - updateDomain command - edit domain name and verify
+		that it was really updated
+	-->
+	<command>
+		<name>updateDomain</name>
+		<testcase>952 [Update the Domain created in (10)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getdomainid1</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>getdomainname2</param>
+			</item>
+		</parameters>
+		<returnvalues>
+			<item getparam="true">
+				<name>id</name>
+				<param>getdomainid1</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>getdomainname2</param>
+			</item>
+			<item getparam="true">
+				<name>level</name>
+				<param>getcurrentlevel1</param>
+			</item>
+			<item getparam="true">
+				<name>parentdomainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item getparam="true">
+				<name>parentdomainname</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>haschild</name>
+				<value>false</value>
+			</item>
+		</returnvalues>
+	</command>	
+	
+	<!-- Test case # - listDomainChildren command -->
+
+	<command>
+		<name>listDomainChildren</name>
+		<testcase> -  [List One of the Children of the Parent Domain] </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>globaldomainid</param>
+			</item>
+		</parameters>
+		
+		<returnvalues list="true">
+			<name>domain</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>getdomainid1</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>getdomainname2</param>
+			</item>
+			<item getparam="true">
+				<name>level</name>
+				<param>getcurrentlevel1</param>
+			</item>
+			<item getparam="true">
+				<name>parentdomainid</name>
+				<param>globaldomainid</param>
+			</item>
+			<item>
+				<name>parentdomainname</name>
+				<param>getdomainname1</param>
+			</item>
+			<item>
+				<name>haschild</name>
+				<value>false</value>
+			</item>
+		</returnvalues>
+	</command>
+	
+	<!-- Test case #654 - deleteDomain command -->
+	<command>
+		<name>deleteDomain</name>
+		<testcase>654 [Delete Domain created in (10)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>getdomainid1</param>
+			</item>
+			<item>
+				<name>cleanup</name>
+				<value>true</value>
+			</item>
+		</parameters>
+		
+		<returnvalues>
+			<item>
+				<name>success</name>
+				<value>true</value>
+			</item>
+		</returnvalues>
+	</command>
+
+	<!-- Test case #27 - listTemplates command -->
+	<command>
+		<name>listTemplates</name>
+		<testcase> 27 [List Templates - List System Template]</testcase>
+		<parameters>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+			</item>
+			<item>
+				<name>id</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		
+		<returnvalue list="true">
+			<name>template</name>
+			<element>0</element>
+			<item setparam="true">
+				<name>id</name>
+				<param>debian50templateid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>debian50templatename</param>
+			</item>
+			<item setparam="true">
+				<name>displaytext</name>
+				<param>debian50templatedisplaytext</param>
+			</item>
+			<item setparam="true">
+				<name>ispublic</name>
+				<param>debian50templateispublic</param>
+			</item>
+			<item setparam="true">
+				<name>created</name>
+				<param>debian50templatecreated</param>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>true</value>
+			</item>
+			<item setparam="true">
+				<name>passwordenabled</name>
+				<param>debian50templatepasswordenabled</param>
+			</item>
+			<item>
+				<name>format</name>
+				<value>VHD</value>
+			</item>
+			<item>
+				<name>isfeatured</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>crossZones</name>
+				<value>true</value>
+			</item>
+			<item setparam="true">
+				<name>ostypeid</name>
+				<param>debian50templateostypeid</param>
+			</item>
+			<item setparam="true">
+				<name>ostypename</name>
+				<param>debian50templateostypename</param>
+			</item>
+			<item setparam="true">
+				<name>size</name>
+				<param>debian50templatesize</param>				
+			</item>
+			<item>
+				<name>account</name>
+				<value>system</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>status</name>
+				<value>Download Complete</value>
+			</item>
+			<item>
+				<name>templatetype</name>
+				<value>SYSTEM</value>
+			</item>
+			<item>
+				<name>hypervisor</name>
+				<value>XenServer</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!--
+
+	<command>
+		<name>listTemplates</name>
+		<testcase> -   Verify All the Parameters of the Listed Template -</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>debian50templatename</param>
+			</item>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+			</item>
+		</parameters>
+		<returnvalue list="true">
+			<name>template</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>debian50templateid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>debian50templatename</param>
+			</item>
+			<item getparam="true">
+				<name>displaytext</name>
+				<param>debian50templatedisplaytext</param>
+			</item>
+			<item getparam="true">
+				<name>ispublic</name>
+				<param>debian50templateispublic</param>
+			</item>
+			<item getparam="true">
+				<name>created</name>
+				<param>debian50templatecreated</param>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>true</value>
+			</item>
+			<item>
+				<name>isfeatured</name>
+				<value>false</value>
+			</item>
+			<item getparam="true">
+				<name>passwordenabled</name>
+				<param>debian50templatepasswordenabled</param>
+			</item>
+			<item>
+				<name>crossZones</name>
+				<value>true</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>VHD</value>
+			</item>
+			<item getparam="true">
+				<name>ostypeid</name>
+				<param>debian50templateostypeid</param>
+			</item>
+			<item getparam="true">
+				<name>ostypename</name>
+				<param>debian50templateostypename</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>system</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>status</name>
+				<value>Download Complete</value>
+			</item>
+			<item getparam="true">
+				<name>size</name>
+				<param>debian50templatesize</param>
+			</item>
+			<item>
+				<name>templatetype</name>
+				<value>SYSTEM</value>
+			</item>
+			<item>
+				<name>hypervisor</name>
+				<value>XenServer</value>
+			</item>
+		</returnvalue>
+	</command>
+-->
+
+	<!-- Test case #28 - listServiceOffering command -->
+	<command>
+		<name>listServiceOfferings</name>
+		<testcase> 28 [List the Small Instance Service Offering]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>globalserviceofferingid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>smallofferingid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>smallofferingname</param>
+			</item>
+			<item setparam="true">
+				<name>displaytext</name>
+				<param>smallofferingdisplaytext</param>
+			</item>
+			<item setparam="true">
+				<name>cpunumber</name>
+				<param>smallofferingcpunumber</param>
+			</item>
+			<item setparam="true">
+				<name>cpuspeed</name>
+				<param>smallofferingcpuspeed</param>
+			</item>
+			<item setparam="true">
+				<name>memory</name>
+				<param>smallofferingmemory</param>
+			</item>
+<!--			<item setparam="true">
+				<name>created</name>
+				<param>smallofferingcreatetime</param>
+			</item>
+-->			<item setparam="true">
+				<name>storagetype</name>
+				<param>smallofferingstoragetype</param>
+			</item>
+			<item>
+				<name>offerha</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listServiceOfferings</name>
+		<testcase>876 [Verify the First Service Offering] </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>smallofferingname</param>
+			</item>
+		</parameters>
+		<returnvalue list="true">
+			<name>serviceoffering</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>smallofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>smallofferingname</param>
+			</item>
+			<item getparam="true">
+				<name>displaytext</name>
+				<param>smallofferingdisplaytext</param>
+			</item>
+			<item getparam="true">
+				<name>cpunumber</name>
+				<param>smallofferingcpunumber</param>
+			</item>
+			<item getparam="true">
+				<name>cpuspeed</name>
+				<param>smallofferingcpuspeed</param>
+			</item>
+			<item getparam="true">
+				<name>memory</name>
+				<param>smallofferingmemory</param>
+			</item>
+<!--			<item getparam="true">
+				<name>created</name>
+				<param>smallofferingcreatetime</param>
+			</item>
+-->			<item setparam="true">
+				<name>storagetype</name>
+				<param>smallofferingstoragetype</param>
+			</item>
+			<item>
+				<name>offerha</name>
+				<value>false</value>
+			</item>			
+		</returnvalue>
+	</command>
+
+
+	<!-- Test case #39 - listZones command -->
+	<command>
+		<name>listZones</name>
+		<testcase> 39 [List the Global Zone with id-2]</testcase>
+		<returnvalue list="true">
+			<name>zone</name>
+			<element>0</element>
+			<item getparam="true">
+				<name>id</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>globalzonename</param>
+			</item>
+			<item getparam="true">
+				<name>dns1</name>
+				<param>dns1</param>
+			</item>
+			<item getparam="true">
+				<name>dns2</name>
+				<param>dns2</param>
+			</item>
+			<item getparam="true">
+				<name>internaldns1</name>
+				<param>internaldns1</param>
+			</item>
+			<item>
+				<name>vlan</name>
+			</item>
+			<item>
+				<name>guestcidraddress</name>				
+			</item>
+			<item>
+				<name>networktype</name>
+				<value>Advanced</value>
+			</item>
+		</returnvalue>
+	</command>
+			
+<!--List the User-->
+
+<!--Create Service Offering-->
+
+<command>
+	<name>createServiceOffering</name>
+	<testcase>[1] createServiceOffering-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>issystem</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LittleInstance</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>LittleInstance</value>
+	</item>
+	<item>
+		<name>storagetype</name>
+		<value>shared</value>
+	</item>
+	<item>
+		<name>cpuNumber</name>
+		<value>1</value>
+	</item>
+	<item>
+		<name>cpuSpeed</name>
+		<value>100</value>
+	</item>
+	<item>
+		<name>memory</name>
+		<value>128</value>
+	</item>
+	<item>
+		<name>offerha</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>limitcpuuse</name>
+		<value>false</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>servofferid</param>
+	</item>
+	</returnvalue>
+</command>
+
+<!-- Create a New Disk Offering -->
+
+<command>
+<name>createDiskOffering</name>
+	<testcase>[1] createDiskOffering-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>isMirrored</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>name</name>
+		<value>Little</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>LittleDisk1GB</value>
+	</item>
+	<item>
+		<name>customized</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>disksize</name>
+		<value>1</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>diskofferid</param>
+	</item>
+	</returnvalue>
+</command>
+
+<!-- Deploy A Virtual Machine -->
+ 
+<command>
+	<name>deployVirtualMachine</name>
+	<testcase>[2] deployVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneId</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>hypervisor</name>
+		<param>globalhypervisortype</param>
+	</item>
+	<item getparam="true">
+		<name>templateId</name>
+		<param>globaltemplateid</param>
+	</item>
+	<item getparam="true">
+		<name>serviceOfferingId</name>
+		<param>servofferid</param>
+	</item>
+	<item getparam="true">
+		<name>networkIds</name>
+		<param>getnetworkid1</param>
+	</item>
+	<item getparam="true">
+		<name>diskOfferingId</name>
+		<param>diskofferid</param>
+	</item>
+	<item>
+		<name>displayname</name>
+		<value>FirstVM</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>FirstVM</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>	
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getvmid1</param>
+		</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>updateVirtualMachine</name>
+	<testcase>[3] updateVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>displayName</name>
+		<value>First-VM</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>First-VM</value>
+	</item>
+	<item>
+		<name>haenable</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	</parameters>
+</command>
+ 
+ <!-- Network Rule Section BEGIN -->
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[4] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>enableStaticNat</name>
+	<testcase>[5] enableStaticNat-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createIpForwardingRule</name>
+	<testcase>[6] createIpForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>startPort</name>
+		<value>1</value>
+	</item>
+	<item>
+		<name>endPort</name>
+		<value>100</value>
+	</item>
+	<item>
+		<name>protocol</name>
+		<value>TCP</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getipfwdruleid1</param>
+	</item>	
+	</returnvalue>
+</command>
+ 
+ 	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+		    <name>h</name>
+			<param>getipaddress1</param>
+		</item>
+		<item>
+		    <name>p</name>
+			<value>password</value>
+		</item>
+		</parameters>
+	</command>
+ 
+<command>
+	<name>deleteIpForwardingRule</name>
+	<testcase>[7] deleteIpForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getipfwdruleid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disableStaticNat</name>
+	<testcase>[8] disableStaticNat-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[9] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[10] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createPortForwardingRule</name>
+	<testcase>[11] createPortForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>cidrlist</name>
+		<value>0.0.0.0/0</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>22</value>
+	</item>
+	<item>
+		<name>publicendport</name>
+		<value>30</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>22</value>
+	</item>
+	<item>
+		<name>privateendport</name>
+		<value>30</value>
+	</item>
+	<item>
+		<name>protocol</name>
+		<value>TCP</value>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getportfwdruleid1</param>
+	</item>
+	
+	</returnvalue>
+</command>
+
+<!-- SSH TEST NEEDS TO BE DONE HERE -->
+ 	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+		    <name>h</name>
+			<param>getipaddress1</param>
+		</item>
+		<item>
+		    <name>p</name>
+			<value>password</value>
+		</item>
+		</parameters>
+	</command>
+ 
+<command>
+	<name>deletePortForwardingRule</name>
+	<testcase>[12] deletePortForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getportfwdruleid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[13] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[14] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createLoadBalancerRule</name>
+	<testcase>[15] createLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>publicipid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRule-1</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[16] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!--
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[17] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid2</param>
+	</item>
+	</parameters>
+</command>
+ -->
+<command>
+	<name>removeFromLoadBalancerRule</name>
+	<testcase>[18] removeFromLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>updateLoadBalancerRule</name>
+	<testcase>[19] updateLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRuleUpdated-1</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[20] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[14] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</returnvalue>
+</command> 
+ 
+<command>
+	<name>createLoadBalancerRule</name>
+	<testcase>[21] createLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>publicipid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRule-2</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[22] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<!-- 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[23] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid2</param>
+	</item>
+	</parameters>
+</command>
+-->
+
+<command>
+	<name>deleteLoadBalancerRule</name>
+	<testcase>[24] deleteLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[25] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!-- Network Rule Section END -->
+<command>
+	<name>listVolumes</name>
+	<testcase>[26] listROOTVolumes-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>type</name>
+		<value>ROOT</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createSnapshot</name>
+	<testcase>[26] createSnapshotofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getsnapshotid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>listSnapshots</name>
+	<testcase>[27] listROOTVolumeSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <command>
+	<name>listVolumes</name>
+	<testcase>[26] listDATADISKVolumes-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>type</name>
+		<value>DATADISK</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	</returnvalue>
+</command>
+
+<command>
+	<name>createSnapshot</name>
+	<testcase>[28] createSnapshotofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getsnapshotid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>listSnapshots</name>
+	<testcase>[29] listDATADISKVolumeSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[30] createTemplateFromSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromSnapshot-1</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>TemplateFromSnapshot-1</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>isfeatured</name>
+		<value>true</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[31] createTemplateFromSnapshotTakenofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid2</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromSnapshot-2</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>TemplateFromSnapshot-2</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>isfeatured</name>
+		<value>true</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createVolume</name>
+	<testcase>[32] createVolumeFromSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>VlmfromSnapshot-1</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createVolume</name>
+	<testcase>[33] createVolumeFromSnapshotTakenofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid2</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>VlmfromSnapshot-2</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</returnvalue>
+
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[34] attachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[35] attachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!--create a blank Volume and try to attach it -->
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[36] detachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[37] detachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[34] attachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[35] attachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[40] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>updateVirtualMachine</name>
+	<testcase>[41] updateVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>displayName</name>
+		<value>First-VM-1-1</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>First-VM-1-1</value>
+	</item>
+	<item>
+		<name>haenable</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[36] detachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[37] detachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[44] createTemplateFromROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeId</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromRootVolume-3</value>
+	</item>
+	<item>
+		<name>displayText</name>
+		<value>TemplateFromRootVolume-3</value>
+	</item>
+	<item>
+		<name>osTypeId</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid3</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[45] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[46] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[47] createHOURLYSnapshotPolicyForRootVolume-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>hourly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>11</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[48] createDAILYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>daily</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>13:07</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[49] createWEEKLYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>weekly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>16:07:4</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[50] createMONTHLYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>monthly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>18:19:1</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getmonthlysnapshotpolicyid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>deleteSnapshotPolicies</name>
+	<testcase>[51] deleteMONTHLYSnapshotPolicies-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getmonthlysnapshotpolicyid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteVolume</name>
+	<testcase>[52] deleteVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteVolume</name>
+	<testcase>[53] deleteVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+
+<!-- ONE MORE VOLUME NEEDS TO BE DELETE, AFTER ADDING THE CREATION PART -->
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[54] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>recoverVirtualMachine</name>
+	<testcase>[55] recoverVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[56] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[57] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[58] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[59] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>recoverVirtualMachine</name>
+	<testcase>[60] recoverVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>changeServiceForVirtualMachine</name>
+	<testcase>[61] changeServiceForVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	<item getparam="true">
+		<name>serviceOfferingId</name>
+		<param>globalchangeservoff</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[62] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[63] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[64] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[65] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deployVirtualMachine</name>
+	<testcase>[66] deployVirtualMachineFromTemplateCreatedFromSnapshotofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneId</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>hypervisor</name>
+		<param>globalhypervisortype</param>
+	</item>
+	<item getparam="true">
+		<name>templateId</name>
+		<param>gettemplateid1</param>
+	</item>
+	<item getparam="true">
+		<name>serviceOfferingId</name>
+		<param>servofferid</param>
+	</item>
+	<item getparam="true">
+		<name>networkIds</name>
+		<param>getnetworkid1</param>
+	</item>
+	<item getparam="true">
+		<name>diskOfferingId</name>
+		<param>diskofferid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</returnvalue>
+</command>
+
+<command>
+	<name>deleteTemplate</name>
+	<testcase>[67] deleteTemplateofSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>gettemplateid1</param>
+	</item>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteTemplate</name>
+	<testcase>[68] deleteTemplateofSnapshotTakenofDATAVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>gettemplateid2</param>
+	</item>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteTemplate</name>
+	<testcase>[69] deleteTemplateCreatedFromROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>gettemplateid3</param>
+	</item>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteSnapshot</name>
+	<testcase>[70] deleteSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getsnapshotid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteSnapshot</name>
+	<testcase>[71] deleteSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getsnapshotid2</param>
+	</item>
+	</parameters>
+</command>
+
+<!-- START -->
+<!-- Start of tests for VM created From Template created From a Snapshot-->
+
+<command>
+	<name>updateVirtualMachine</name>
+	<testcase>[3] updateVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>displayName</name>
+		<value>First-VM</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>First-VM</value>
+	</item>
+	<item>
+		<name>haenable</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	</parameters>
+</command>
+ 
+ <!-- Network Rule Section BEGIN -->
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[4] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>enableStaticNat</name>
+	<testcase>[5] enableStaticNat-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createIpForwardingRule</name>
+	<testcase>[6] createIpForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>startPort</name>
+		<value>1</value>
+	</item>
+	<item>
+		<name>endPort</name>
+		<value>100</value>
+	</item>
+	<item>
+		<name>protocol</name>
+		<value>TCP</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getipfwdruleid1</param>
+	</item>	
+	</returnvalue>
+</command>
+ 
+ 	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+		    <name>h</name>
+			<param>getipaddress1</param>
+		</item>
+		<item>
+		    <name>p</name>
+			<value>password</value>
+		</item>
+		</parameters>
+	</command>
+ 
+<command>
+	<name>deleteIpForwardingRule</name>
+	<testcase>[7] deleteIpForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getipfwdruleid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disableStaticNat</name>
+	<testcase>[8] disableStaticNat-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[9] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[10] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createPortForwardingRule</name>
+	<testcase>[11] createPortForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>cidrlist</name>
+		<value>0.0.0.0/0</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>22</value>
+	</item>
+	<item>
+		<name>publicendport</name>
+		<value>30</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>22</value>
+	</item>
+	<item>
+		<name>privateendport</name>
+		<value>30</value>
+	</item>
+	<item>
+		<name>protocol</name>
+		<value>TCP</value>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getportfwdruleid1</param>
+	</item>
+	
+	</returnvalue>
+</command>
+
+<!-- SSH TEST NEEDS TO BE DONE HERE -->
+ 	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+		    <name>h</name>
+			<param>getipaddress1</param>
+		</item>
+		<item>
+		    <name>p</name>
+			<value>password</value>
+		</item>
+		</parameters>
+	</command>
+ 
+<command>
+	<name>deletePortForwardingRule</name>
+	<testcase>[12] deletePortForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getportfwdruleid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[13] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[14] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createLoadBalancerRule</name>
+	<testcase>[15] createLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>publicipid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRule-1</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[16] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!--
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[17] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid2</param>
+	</item>
+	</parameters>
+</command>
+ -->
+<command>
+	<name>removeFromLoadBalancerRule</name>
+	<testcase>[18] removeFromLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item>
+		<name>virtualmachineids</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>updateLoadBalancerRule</name>
+	<testcase>[19] updateLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRuleUpdated-1</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[20] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[14] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</returnvalue>
+</command> 
+ 
+<command>
+	<name>createLoadBalancerRule</name>
+	<testcase>[21] createLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>publicipid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRule-2</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[22] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<!-- 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[23] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid2</param>
+	</item>
+	</parameters>
+</command>
+--> 
+<command>
+	<name>deleteLoadBalancerRule</name>
+	<testcase>[24] deleteLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[25] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!-- Network Rule Section END -->
+<command>
+	<name>listVolumes</name>
+	<testcase>[26] listROOTVolumes-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>type</name>
+		<value>ROOT</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createSnapshot</name>
+	<testcase>[26] createSnapshotofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getsnapshotid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>listSnapshots</name>
+	<testcase>[27] listROOTVolumeSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <command>
+	<name>listVolumes</name>
+	<testcase>[26] listDATADISKVolumes-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>type</name>
+		<value>DATADISK</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	</returnvalue>
+</command>
+
+<command>
+	<name>createSnapshot</name>
+	<testcase>[28] createSnapshotofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getsnapshotid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>listSnapshots</name>
+	<testcase>[29] listDATADISKVolumeSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[30] createTemplateFromSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromSnapshot-4</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>TemplateFromSnapshot-4</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>isfeatured</name>
+		<value>true</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[31] createTemplateFromSnapshotTakenofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid2</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromSnapshot-5</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>TemplateFromSnapshot-5</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>isfeatured</name>
+		<value>true</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createVolume</name>
+	<testcase>[32] createVolumeFromSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>VlmfromSnapshot-1</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createVolume</name>
+	<testcase>[33] createVolumeFromSnapshotTakenofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid2</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>VlmfromSnapshot-2</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</returnvalue>
+
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[34] attachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[35] attachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!--create a blank Volume and try to attach it -->
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[36] detachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[37] detachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[34] attachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[35] attachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[40] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>updateVirtualMachine</name>
+	<testcase>[41] updateVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	<item>
+		<name>displayName</name>
+		<value>First-VM-1-1</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>First-VM-1-1</value>
+	</item>
+	<item>
+		<name>haenable</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[36] detachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[37] detachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[44] createTemplateFromROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeId</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromRootVolume-6</value>
+	</item>
+	<item>
+		<name>displayText</name>
+		<value>TemplateFromRootVolume-6</value>
+	</item>
+	<item>
+		<name>osTypeId</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid3</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[45] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[46] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[47] createHOURLYSnapshotPolicyForRootVolume-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>hourly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>11</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[48] createDAILYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>daily</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>13:07</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[49] createWEEKLYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>weekly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>16:07:4</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[50] createMONTHLYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>monthly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>18:19:1</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getmonthlysnapshotpolicyid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>deleteSnapshotPolicies</name>
+	<testcase>[51] deleteMONTHLYSnapshotPolicies-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getmonthlysnapshotpolicyid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteVolume</name>
+	<testcase>[52] deleteVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteVolume</name>
+	<testcase>[53] deleteVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+
+<!-- ONE MORE VOLUME NEEDS TO BE DELETE, AFTER ADDING THE CREATION PART -->
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[54] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>recoverVirtualMachine</name>
+	<testcase>[55] recoverVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[56] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[57] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[58] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[59] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>recoverVirtualMachine</name>
+	<testcase>[60] recoverVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>changeServiceForVirtualMachine</name>
+	<testcase>[61] changeServiceForVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	<item getparam="true">
+		<name>serviceOfferingId</name>
+		<param>globalchangeservoff</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[62] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[63] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[64] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[65] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<!-- End of tests for VM created From Template created From a Snapshot-->
+<!-- END -->
+
+<!-- START -->
+<!-- Start of tests for VM created from ISO -->
+
+<!-- Deploy A Virtual Machine -->
+ 
+ <!--
+<command>
+	<name>deployVirtualMachine</name>
+	<testcase>[2] deployVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneId</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>hypervisor</name>
+		<param>globalhypervisortype</param>
+	</item>
+	<item getparam="true">
+		<name>templateId</name>
+		<param>getisoid1</param>
+	</item>
+	<item getparam="true">
+		<name>serviceOfferingId</name>
+		<param>servofferid</param>
+	</item>
+	<item getparam="true">
+		<name>networkIds</name>
+		<param>getnetworkid1</param>
+	</item>
+	<item getparam="true">
+		<name>diskOfferingId</name>
+		<param>diskofferid</param>
+	</item>
+	<item>
+		<name>displayname</name>
+		<value>ISO-ThirdVM</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>ISO-ThirdVM</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>	
+	</parameters>
+	<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>getvmid1</param>
+		</item>
+	</returnvalue>
+</command>
+ -->
+<command>
+	<name>updateVirtualMachine</name>
+	<testcase>[3] updateVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	<item>
+		<name>displayName</name>
+		<value>ISO-Third-VM</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>ISO-Third-VM</value>
+	</item>
+	<item>
+		<name>haenable</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>112</value>
+	</item>
+	</parameters>
+</command>
+ 
+ <!-- Network Rule Section BEGIN -->
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[4] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>enableStaticNat</name>
+	<testcase>[5] enableStaticNat-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createIpForwardingRule</name>
+	<testcase>[6] createIpForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>startPort</name>
+		<value>1</value>
+	</item>
+	<item>
+		<name>endPort</name>
+		<value>100</value>
+	</item>
+	<item>
+		<name>protocol</name>
+		<value>TCP</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getipfwdruleid1</param>
+	</item>	
+	</returnvalue>
+</command>
+ 
+ 	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+		    <name>h</name>
+			<param>getipaddress1</param>
+		</item>
+		<item>
+		    <name>p</name>
+			<value>password</value>
+		</item>
+		</parameters>
+	</command>
+ 
+<command>
+	<name>deleteIpForwardingRule</name>
+	<testcase>[7] deleteIpForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getipfwdruleid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disableStaticNat</name>
+	<testcase>[8] disableStaticNat-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[9] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[10] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createPortForwardingRule</name>
+	<testcase>[11] createPortForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>ipaddressid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>cidrlist</name>
+		<value>0.0.0.0/0</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>22</value>
+	</item>
+	<item>
+		<name>publicendport</name>
+		<value>30</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>22</value>
+	</item>
+	<item>
+		<name>privateendport</name>
+		<value>30</value>
+	</item>
+	<item>
+		<name>protocol</name>
+		<value>TCP</value>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getportfwdruleid1</param>
+	</item>
+	
+	</returnvalue>
+</command>
+
+<!-- SSH TEST NEEDS TO BE DONE HERE -->
+ 	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh test for the vm</testcase>
+		<parameters>
+		<item getparam="true">
+		    <name>h</name>
+			<param>getipaddress1</param>
+		</item>
+		<item>
+		    <name>p</name>
+			<value>password</value>
+		</item>
+		</parameters>
+	</command>
+ 
+<command>
+	<name>deletePortForwardingRule</name>
+	<testcase>[12] deletePortForwardingRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getportfwdruleid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[13] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[14] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item setparam="true">
+		<name>ipaddress</name>
+		<param>getipaddress1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createLoadBalancerRule</name>
+	<testcase>[15] createLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>publicipid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRule-1</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[16] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!--
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[17] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid2</param>
+	</item>
+	</parameters>
+</command>
+ -->
+<command>
+	<name>removeFromLoadBalancerRule</name>
+	<testcase>[18] removeFromLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>updateLoadBalancerRule</name>
+	<testcase>[19] updateLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRuleUpdated-1</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[20] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>associateIpAddress</name>
+	<testcase>[14] associateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</returnvalue>
+</command> 
+ 
+<command>
+	<name>createLoadBalancerRule</name>
+	<testcase>[21] createLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>publicipid</name>
+		<param>getpublicipid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>LBRule-2</value>
+	</item>
+	<item>
+		<name>publicport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>privateport</name>
+		<value>80</value>
+	</item>
+	<item>
+		<name>algorithm</name>
+		<value>roundrobin</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[22] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<!-- 
+<command>
+	<name>assignToLoadBalancerRule</name>
+	<testcase>[23] assignToLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	<item getparam="true">
+		<name>virtualmachineids</name>
+		<param>getvmid2</param>
+	</item>
+	</parameters>
+</command>
+-->
+
+<command>
+	<name>deleteLoadBalancerRule</name>
+	<testcase>[24] deleteLoadBalancerRule-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getldblcrule1</param>
+	</item>	
+	</parameters>
+</command>
+ 
+<command>
+	<name>disassociateIpAddress</name>
+	<testcase>[25] disassociateIpAddress-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getpublicipid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!-- Network Rule Section END -->
+<command>
+	<name>listVolumes</name>
+	<testcase>[26] listROOTVolumes-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>globalisovmid1</param>
+	</item>
+	<item>
+		<name>type</name>
+		<value>ROOT</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createSnapshot</name>
+	<testcase>[26] createSnapshotofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getsnapshotid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>listSnapshots</name>
+	<testcase>[27] listROOTVolumeSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <command>
+	<name>listVolumes</name>
+	<testcase>[26] listDATADISKVolumes-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>virtualmachineid</name>
+		<param>globalisovmid1</param>
+	</item>
+	<item>
+		<name>type</name>
+		<value>DATADISK</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	</returnvalue>
+</command>
+
+<command>
+	<name>createSnapshot</name>
+	<testcase>[28] createSnapshotofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getsnapshotid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>listSnapshots</name>
+	<testcase>[29] listDATADISKVolumeSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getdatavolumeid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[30] createTemplateFromSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromSnapshot-1</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>TemplateFromSnapshot-1</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>isfeatured</name>
+		<value>true</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[31] createTemplateFromSnapshotTakenofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid2</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromSnapshot-2</value>
+	</item>
+	<item>
+		<name>displaytext</name>
+		<value>TemplateFromSnapshot-2</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>isfeatured</name>
+		<value>true</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createVolume</name>
+	<testcase>[32] createVolumeFromSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>VlmfromSnapshot-1</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>createVolume</name>
+	<testcase>[33] createVolumeFromSnapshotTakenofDATADISKVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>snapshotid</name>
+		<param>getsnapshotid2</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>VlmfromSnapshot-2</value>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</returnvalue>
+
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[34] attachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[35] attachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+ <!--create a blank Volume and try to attach it -->
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[36] detachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[37] detachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[34] attachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>attachVolume</name>
+	<testcase>[35] attachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	<item getparam="true">
+		<name>virtualMachineId</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[40] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>updateVirtualMachine</name>
+	<testcase>[41] updateVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	<item>
+		<name>displayName</name>
+		<value>First-VM-1-1</value>
+	</item>
+	<item>
+		<name>group</name>
+		<value>First-VM-1-1</value>
+	</item>
+	<item>
+		<name>haenable</name>
+		<value>false</value>
+	</item>
+	<item>
+		<name>ostypeid</name>
+		<value>12</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[36] detachVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>detachVolume</name>
+	<testcase>[37] detachVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createTemplate</name>
+	<testcase>[44] createTemplateFromROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>volumeId</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>name</name>
+		<value>TemplateFromRootVolume-3</value>
+	</item>
+	<item>
+		<name>displayText</name>
+		<value>TemplateFromRootVolume-3</value>
+	</item>
+	<item>
+		<name>osTypeId</name>
+		<value>12</value>
+	</item>
+	<item>
+		<name>isPublic</name>
+		<value>true</value>
+	</item>
+	<item>
+		<name>passwordEnabled</name>
+		<value>false</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>gettemplateid3</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[45] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[46] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[47] createHOURLYSnapshotPolicyForRootVolume-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>hourly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>11</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[48] createDAILYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>daily</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>13:07</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[49] createWEEKLYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>weekly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>16:07:4</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>createSnapshotPolicy</name>
+	<testcase>[50] createMONTHLYSnapshotPolicy-TestCase</testcase>
+	<parameters>
+	<item>
+		<name>intervaltype</name>
+		<value>monthly</value>
+	</item>
+	<item>
+		<name>schedule</name>
+		<value>18:19:1</value>
+	</item>
+	<item getparam="true">
+		<name>volumeid</name>
+		<param>getrootvolumeid1</param>
+	</item>
+	<item>
+		<name>maxsnaps</name>
+		<value>8</value>
+	</item>
+	<item>
+		<name>timezone</name>
+		<value>America%2FLos_Angeles</value>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getmonthlysnapshotpolicyid1</param>
+	</item>
+	</returnvalue>
+</command>
+ 
+<command>
+	<name>deleteSnapshotPolicies</name>
+	<testcase>[51] deleteMONTHLYSnapshotPolicies-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getmonthlysnapshotpolicyid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteVolume</name>
+	<testcase>[52] deleteVolume1-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid2</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteVolume</name>
+	<testcase>[53] deleteVolume2-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getdatavolumeid3</param>
+	</item>
+	</parameters>
+</command>
+
+<!-- ONE MORE VOLUME NEEDS TO BE DELETE, AFTER ADDING THE CREATION PART -->
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[54] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>recoverVirtualMachine</name>
+	<testcase>[55] recoverVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[56] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[57] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[58] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[59] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>recoverVirtualMachine</name>
+	<testcase>[60] recoverVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>changeServiceForVirtualMachine</name>
+	<testcase>[61] changeServiceForVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	<item getparam="true">
+		<name>serviceOfferingId</name>
+		<param>globalchangeservoff</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>startVirtualMachine</name>
+	<testcase>[62] startVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>rebootVirtualMachine</name>
+	<testcase>[63] rebootVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>stopVirtualMachine</name>
+	<testcase>[64] stopVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>destroyVirtualMachine</name>
+	<testcase>[65] destroyVirtualMachine-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>globalisovmid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deployVirtualMachine</name>
+	<testcase>[66] deployVirtualMachineFromTemplateCreatedFromSnapshotofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>zoneId</name>
+		<param>globalzoneid</param>
+	</item>
+	<item getparam="true">
+		<name>hypervisor</name>
+		<param>globalhypervisortype</param>
+	</item>
+	<item getparam="true">
+		<name>templateId</name>
+		<param>gettemplateid1</param>
+	</item>
+	<item getparam="true">
+		<name>serviceOfferingId</name>
+		<param>servofferid</param>
+	</item>
+	<item getparam="true">
+		<name>networkIds</name>
+		<param>getnetworkid1</param>
+	</item>
+	<item getparam="true">
+		<name>diskOfferingId</name>
+		<param>diskofferid</param>
+	</item>
+	<item getparam="true">
+		<name>account</name>
+		<param>accountname</param>
+	</item>
+	<item getparam="true">
+		<name>domainid</name>
+		<param>globaldomainid</param>
+	</item>
+	</parameters>
+	<returnvalue>
+	<item setparam="true">
+		<name>id</name>
+		<param>getvmid1</param>
+	</item>
+	</returnvalue>
+</command>
+
+<command>
+	<name>deleteTemplate</name>
+	<testcase>[67] deleteTemplateofSnapshotTakenofROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>gettemplateid1</param>
+	</item>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteTemplate</name>
+	<testcase>[68] deleteTemplateofSnapshotTakenofDATAVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>gettemplateid2</param>
+	</item>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteTemplate</name>
+	<testcase>[69] deleteTemplateCreatedFromROOTVolume-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>gettemplateid3</param>
+	</item>
+	<item getparam="true">
+		<name>zoneid</name>
+		<param>globalzoneid</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteSnapshot</name>
+	<testcase>[70] deleteSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getsnapshotid1</param>
+	</item>
+	</parameters>
+</command>
+ 
+<command>
+	<name>deleteSnapshot</name>
+	<testcase>[71] deleteSnapshot-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getsnapshotid2</param>
+	</item>
+	</parameters>
+</command>
+
+
+<!-- End of tests for VM created from ISO -->
+<!-- END -->
+
+<command>
+		<name>extractIso</name>
+		<testcase>[] extractIsoTestCase </testcase>
+		<parameters>
+        <item getparam="true">
+                <name>id</name>
+                <param>getisoid1</param>
+        </item>
+        <item>
+                <name>zoneid</name>
+                <value>1</value>
+        </item>
+        <item>
+                <name>mode</name>
+                <value>HTTP_DOWNLOAD</value>
+        </item>
+        </parameters>
+</command>
+
+<command>
+		<name>deleteIso</name>
+		<testcase>[] deleteIsoTestCase </testcase>
+		<parameters>
+        <item getparam="true">
+                <name>id</name>
+                <param>getisoid1</param>
+        </item>
+        <item>
+                <name>zoneid</name>
+                <value>1</value>
+        </item>
+        </parameters>
+</command>
+
+<command>
+	<name>deleteAccount</name>
+	<testcase>[72] deleteAccount-TestCase</testcase>
+	<parameters>
+	<item getparam="true">
+		<name>id</name>
+		<param>getaccountid</param>
+	</item>
+	</parameters>
+</command>	
+</regression> 

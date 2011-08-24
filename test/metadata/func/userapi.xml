@@ -1,0 +1,1275 @@
+<userapi>
+
+<!-- Test case #   - Create the Account and a User -->
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>nimbus-user@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>nimbus-user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>nimbus-userlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>						
+		</returnvalue>
+	</command>
+		
+	<!-- Test case # 3 - Create a User -->
+	<command>
+		<name>createUser</name>
+		<testcase>    [Create the Same User Again Should Fail]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>nimbus-user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>nimbus-userlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>nimbus-user@gmail.com</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>		
+		</parameters>
+	</command>
+	
+	
+<!-- Test case #53- try to 2 users with the same name and no account specified - Negative test-->
+<!-- 	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>user123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernamevar</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>createUser</name>
+		<testcase>53</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>username</name>
+			    <param>usernamevar</param>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>user123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+	</command>
+-->	
+
+<!-- Test case #54- create 2 users with the same name and different accounts specified in the same domain - should fail - Negative case-->
+
+	<command>
+		<name>createAccount</name>
+		<testcase> 54 [Create a Different Account with an Existing User's Name]</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+				<name>account</name>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>nimbus-user@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>nimbus-user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>nimbus-userlastname</value>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>		
+	</command>
+
+<!-- 	<command>
+		<name>createUser</name>
+		<testcase>54</testcase>
+		<error>true</error>
+		<parameters>
+			<item param="true">
+			    <name>username</name>
+				<param>usernamevar</param>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>user123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>usernewaccount</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+	</command>
+-->	
+<!-- Test case #593- try update user with the userName that already exists in the system - Negative test-->
+<command>
+		<name>createUser</name>
+		<testcase>593 [Create a Different User in the Same Account]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item random="true">
+				<name>username</name>				
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>nimbus-user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>nimbus-userlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>nimbus-user@gmail.com</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>		
+		</parameters>
+	</command>
+	<returnvalue>
+			<item setparam="true">
+			    <name>id</name>
+				<param>seconduserid</param>
+			</item>
+	</returnvalue>
+		
+	<command>
+		<name>updateUser</name>
+		<testcase>593</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>seconduserid</param>
+			</item>
+			<item getparam="true">
+			    <name>username</name>
+				<param>usernameparam</param>
+			</item>
+		</parameters>
+	</command>
+
+
+<!-- Test case #56 - try to delete non-existing user - Negative case  -->
+	<command>
+		<name>deleteUser</name>
+		<testcase>56</testcase>
+		<error>true</error>
+		<parameters>
+			<item>
+			    <name>id</name>
+				<value>100000000</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #58 - try to delete the same user twice - should fail to do it second time - Negative case  -->
+	<command>
+		<name>deleteUser</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteUser</name>
+		<testcase>58</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #59 - try to get a remove user - Negative case  -->	
+	<command>
+		<name>listUsers</name>
+		<testcase>59</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #60 - try to get non-existing user - Negative case  -->
+	<command>
+		<name>listUsers</name>
+		<testcase>60</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item>
+			    <name>id</name>
+				<value>10000000</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #62 - try to update removed user - Negative case  -->
+	<command>
+		<name>updateUser</name>
+		<testcase>62</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+			<item random="true">
+				<name>username</name>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #63 - try to update non-existing user - Negative case  -->
+	<command>
+		<name>updateUser</name>
+		<testcase>63</testcase>
+		<error>true</error>
+		<parameters>
+			<item>
+			    <name>id</name>
+				<value>2000000000</value>
+			</item>
+			<item random="true">
+				<name>username</name>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- Test case #45- try to create user and assign it to non-existing domain - Negative test-->
+	<command>
+		<name>createUser</name>
+		<testcase>45</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>john12345</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1000000</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- Test case #46- create user and specify account in the request - Positive -->
+	<command>
+		<name>createUser</name>
+		<testcase>46</testcase>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>john12345</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+	<!-- Test case #47- try to create user without specifying required parameters in the request - negative case  -->
+	<command>
+		<name>createUser</name>
+		<testcase>47</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+	<command>
+		<name>createUser</name>
+		<testcase>47</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>1234567</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createUser</name>
+		<testcase>47</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>1234567</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createUser</name>
+		<testcase>47</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>1234567</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!-- Test case #51 and #52. 51 - try to create user and assign it to existing account with non-existing domain; #52 - create a user and assign it to the existing account with the correct domain -->
+	<command>
+		<name>createDomain</name>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>name</name>
+				<param>domainname</param>
+			</item>
+			<item setparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+		<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User in the New Domain]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname1</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>2</value>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>newdomainid</param>
+			</item>
+			<item>
+				<name>email</name>
+				<value>nimbus-user@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>nimbus-user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>nimbus-userlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname1</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  52 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname1</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>						
+		</returnvalue>
+	</command>
+
+<!--  
+	<command>
+		<name>createUser</name>
+		<testcase>52</testcase>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>alena</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>alenaslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>alena@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>newdomainid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>			
+		</parameters>		
+	</command>
+-->	
+<!-- 	
+	<command>
+		<name>createUser</name>
+		<testcase>52</testcase>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>alena</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>alenaslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>alena@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>id</name>
+				<param>newdomainid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>alenasaccount</param>
+			</item>
+		</parameters>
+	</command>
+-->	
+	<command>
+		<name>createUser</name>
+		<testcase>51</testcase>
+		<error>true</error>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>alena</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>alenaslastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>alena@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>300000000</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!-- Test case #55 - create 2 users with the same name in different domains - Positive case  -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>jane</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>jane</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>jane</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>jane@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>newdomainid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>jane</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>jane</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>jane</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>jane@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname1</param>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>newdomainid</param>
+			</item>
+		</parameters>
+	</command>
+
+<!-- Test case #64 - try to create 2 domains with the same name - Negative case  -->	
+	<command>
+		<name>createDomain</name>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>domaindomainid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>domaindomainname</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createDomain</name>
+		<testcase>64</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>name</name>
+				<param>domaindomainname</param>
+			</item>
+		</parameters>
+	</command>
+	
+
+<!-- Test case #65 - try to list removed domain - Negative case  -->	
+	<command>
+		<name>deleteDomain</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>domaindomainid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listDomains</name>
+		<testcase>65</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>name</name>
+				<param>domaindomainname</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!-- Test case #66 - try to remove domain while it has users assigned to it - Negative case  -->
+<!-- 	<command>
+		<name>createDomain</name>
+		<parameters>
+			<item random="true">
+			    <name>name</name>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>testcase66domainid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>user66</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>user66</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>user66</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>user66@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>testcase66domainid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>
+	</command>
+-->	
+	<command>
+		<name>deleteDomain</name>
+		<testcase>66</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>domainid</name>
+				<param>newdomainid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+		</returnvalue>
+	</command>
+	
+<!-- Test case #140 - verify that root domain exists in the system  -->
+	<command>
+		<name>listDomains</name>
+		<testcase>140</testcase>
+		<parameters>
+			<item>
+			    <name>name</name>
+				<value>root</value>
+			</item>
+		</parameters>
+		<returnvalue>
+		</returnvalue>
+	</command>	
+	
+<!-- Test case #601 - verify that you can see events of removed user  -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>testcase601</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid601</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>username601</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>account601</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>account601</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>DomainTest-VM</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteUser</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid601</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listEvents</name>
+		<testcase>601</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>account601</param>
+			</item>
+		</parameters>
+	</command>
+	
+
+<!-- Test case #75 - verify regular user can't see VMs of an admin user  -->
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>baduser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>configuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>configuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>baduserid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>badusername</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>registerUserKeys</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>baduserid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<testcase>75</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!--  Execute a cleanup - delete all domains -->
+	<command>
+		<name>deleteDomain</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>newdomainid</param>
+			</item>
+			<item>
+			    <name>cleanup</name>
+			    <value>true</value>
+			</item>
+		</parameters>
+	</command>	
+	
+<!-- 	<command>
+		<name>deleteDomain</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>testcase66domainid</param>
+			</item>
+			<item>
+			    <name>cleanup</name>
+			    <value>true</value>
+			</item>
+		</parameters>
+	</command>
+-->	
+	<command>
+		<name>deleteAccount</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid</param>				
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>deleteAccount</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>accountid1</param>				
+			</item>
+		</parameters>
+	</command>
+	
+</userapi>

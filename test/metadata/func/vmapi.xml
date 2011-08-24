@@ -1,0 +1,873 @@
+<vmapi>	
+
+<!-- 
+		KEEP IN MIND: EXPUNGE INTERVAL, PASSWORD ENABLED TEMPLATE
+	
+		STEPS/TEST CASES COVERED:
+		1. Deploy a Virtual Machine in admin account
+		2. Destroy the Virtual Machine
+		3. List the Destroyed Virtual Machine
+		4. Check that the Destroyed VM cannot be started
+		5. Check that a non-existing VM cannot be listed (Id doesnt exist)
+		6. Create the Account and a User for the account (List VM for a Removed User exercise BEGIN)
+		7. List the Created User
+		8. Creating default network
+		9. Deploy Virtual Machine in the New Account
+		10. Delete User
+		11. Delete Account
+		12. Check that no VMs present under the Account(List VM for a Removed User exercise END)
+		13. updateVirtualMachine api: should deny to update Destroyed vms
+		14. Verify that one can't enable HA for non-existing vm
+		15. Recover the Destroyed VM
+		16. Verify that one can reset password for VM in stopped state
+		17. Verify that one can enable HA for VM in stopped state
+		18. Start Virtual Machine (reset password for VM in running state exercise BEGIN)
+		19. Verify that one can reset password for VM in running state
+		20. Verify that one can disable HA for VM in running state
+		21. Destroy Virtual Machine (reset password on a destroyed VM exercise BEGIN)
+		22. Verify that one can't reset password for VM in destroyed state
+		23. Verify that one can't reboot destroyed VM
+		24. Deploy Virtual Machine to test reset password negative case
+		25. Check whether password can be reset on virtual machine made from password disabled VM
+		26. Try to change service offering for VM in running state
+		27. Stop the Virtual machine to change its Service Offering
+		28. Try to change service offering to the one that VM already has -ve case
+		29. Try to reboot stopped virtual machine - Negative case
+		30. Try to recover stopped virtual machine
+		31. Start the Virtual Machine
+		32. Try to recover running virtual machine
+		33. Try to deploy vm and assign it to non-existing account -ve case
+		34. Try to deploy vm and assign it to removed account -ve case
+		35. Try to send destroy command for non-existing vm -ve case
+		36. Try to send reboot command for non-existing vm -ve case
+		37. Try to send start command for non-existing vm -ve case
+		38. Destroy Virtual Machine as part of Clean up
+		
+	 -->
+
+
+<!-- Test case #72 - verify that listVm command doesn't display VM in expunging state but displays a VM in destroyed state -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploy Virtual Machine in Admin Account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>VMapis-VM</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>	[Destroy Virtual Machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>72  [List the Destroyed Virutal Machine]</testcase>
+		<parameters>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #92 - verify that you can't start destroyed virtual machine -->
+	<command>
+		<name>startVirtualMachine</name>
+		<testcase>92  [Check that the Destroyed VM cannot be started]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #73 - verify that listVm returns nothing when id of non-existing VM is specified -->
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>73  [Check that a non-existing VM cannot be listed (Id doesnt exist)]</testcase>
+		<parameters>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>id</name>
+				<value>100000000</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #74 - verify that listVm returns empty response when account=removedAccount is specified -->	
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account (List VM for a Removed User exercise BEGIN)]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>testcase74@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>testcase74</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>testcase74lastname</value>
+			</item>
+			<item random="true">
+				<name>username</name>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>    [List the Created User]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+		</returnvalue>
+	</command>
+
+
+<!-- 
+	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>testcase74</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>testcase74</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>testcase74</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>testcase74@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item verify="false" setparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item verify="false" setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network for the account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>vmapi_network</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>vmapi_network</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploy Virtual Machine in the new Account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>VMapis-VM-2</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid2</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deleteUser</name>
+		<testcase>    [Delete User]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+	</command>	
+
+	<command>
+		<name>deleteAccount</name>
+		<testcase>    [Delete Account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+		<command>
+		<name>listVirtualMachines</name>
+		<testcase>74  [Check that no VMs present under the Account(List VM for a Removed User exercise END)]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #77 - verify that you can't enable HA for VM in destroyed state -->
+	<command>
+		<name>updateVirtualMachine</name>
+		<testcase>77 - Bug 3237 [updateVirtualMachine api: should deny to update Destroyed vms]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>true</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<!-- Test case #592 - verify that you can't enable HA for non-existing vm -->
+	<command>
+		<name>updateVirtualMachine</name>
+		<testcase>592 [Verify that you can't enable HA for non-existing vm]</testcase>
+		<error>true</error>
+		<parameters>
+			<item>
+				<name>id</name>
+				<value>1000000</value>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>true</value>
+			</item>
+		</parameters>
+	</command>	
+	
+
+<!-- Test case #79 - verify that you can reset password for VM in stopped state -->	
+	<command>
+		<name>recoverVirtualMachine</name>
+		<testcase>    [Recover the Destroyed VM]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>resetPasswordForVirtualMachine</name>
+		<testcase>79-1 [Verify that one can reset password for VM in stopped state]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+
+<!-- Test case #76 - verify that you can enable HA for VM in stopped state -->	
+
+	<command>
+		<name>updateVirtualMachine</name>
+		<testcase>76  [Verify that one can enable HA for VM in stopped state]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>true</value>
+			</item>
+		</parameters>
+	</command>	
+
+
+<!-- Test case #79 - verify that you can reset password for VM in running state -->	
+	<command>
+		<name>startVirtualMachine</name>
+		<testcase>    [Start Virtual Machine (reset password for VM in running state exercise BEGIN)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>resetPasswordForVirtualMachine</name>
+		<testcase>79-2 [Verify that one can reset password for VM in running state]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+
+<!-- Test case #76 - verify that you can disable HA for VM in running state -->
+	<command>
+		<name>updateVirtualMachine</name>
+		<testcase>76  [Verify that one can disable HA for VM in running state]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+<!-- Test case #80 - verify that you can't reset password for VM in destroyed state -->
+		<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>    [Destroy Virtual Machine (reset password on a destroyed VM exercise BEGIN)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>resetPasswordForVirtualMachine</name>
+		<testcase>80  [Verify that one can't reset password for VM in destroyed state]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #89 - verify that you can't reboot destroyed VM -->	
+	<command>
+		<name>rebootVirtualMachine</name>
+		<testcase>89  [Verify that one can't reboot destroyed VM]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+
+	
+<!-- Test case #81 - resetpassword for virtual machine which was made of template with password disabled - Negative case -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>    [Deploy Virtual Machine to test reset password negative case]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>VMapis-VM-3</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>windowsvmname</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>windowsvmipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>resetPasswordForVirtualMachine</name>
+		<testcase>81  [Check whether password can be reset on virtual machine made from password disabled VM]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #82 - try to change service offering for VM in running state - should fail - Negative case -->
+	<command>
+		<name>changeServiceForVirtualMachine</name>
+		<testcase>82 [Try to change service offering for VM in running state]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+			<item getparam="true">
+				<name>serviceofferingid</name>
+				<param>mediumglobalserviceofferingid</param>
+			</item>
+		</parameters>
+	</command>
+
+<!-- Test case #83 - try to change service offering to the one that VM already has - should fail - Negative case -->
+	<command>
+		<name>stopVirtualMachine</name>
+		<testcase>    [Stop the Virtual machine to change its Service Offering]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>changeServiceForVirtualMachine</name>
+		<testcase>83  [Try to change service offering to the one that VM already has -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+			<item getparam="true">
+				<name>serviceofferingid</name>
+				<value>globalserviceofferingid</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!-- Test case #90 - try to reboot stopped vitrual machine - should fail - Negative case -->
+	<command>
+		<name>rebootVirtualMachine</name>
+		<testcase>90  [Try to reboot stopped vitrual machine - Negative case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+		</parameters>
+	</command>
+		
+
+<!-- Test case #95 - try to recover stopped/running virtual machine - should fail -->
+	<command>
+		<name>recoverVirtualMachine</name>
+		<testcase>813 [Try to recover stopped virtual machine]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>startVirtualMachine</name>
+		<testcase>    [Start virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>recoverVirtualMachine</name>
+		<testcase>813 [Try to recover running virtual machine]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+		</parameters>
+	</command>
+
+
+<!-- Test case #84 - try to deploy vm and assign it to non-existing account - should fail - Negative case -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>84  [Try to deploy vm and assign it to non-existing account -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>		
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>blahblah-invaliduser</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>VMapis-VM-4</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+<!-- Test case #85 - try to deploy vm and assign it to removed account - should fail - Negative case -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>85  [Try to deploy vm and assign it to removed account -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>VMapis-VM-5</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+<!-- Test case #87 - try to send destroy command for non-existing vm - should fail - Negative case -->
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>87  [Try to send destroy command for non-existing vm -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item>
+				<name>id</name>
+				<value>100000</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #88 - try to send reboot command for non-existing vm - should fail - Negative case -->
+	<command>
+		<name>rebootVirtualMachine</name>
+		<testcase>88  [Try to send reboot command for non-existing vm -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item>
+				<name>id</name>
+				<value>100000</value>
+			</item>
+		</parameters>
+	</command>
+	
+<!-- Test case #91 - try to send start command for non-existing vm - should fail - Negative case -->
+	<command>
+		<name>startVirtualMachine</name>
+		<testcase>88  [Try to send start command for non-existing vm -ve case]</testcase>
+		<error>true</error>
+		<parameters>
+			<item>
+				<name>id</name>
+				<value>100000</value>
+			</item>
+		</parameters>
+	</command>
+
+<!-- Execute cleanup - destroy the VM-->
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>    [Destroy Virtual Machine as part of Clean up]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>windowsvmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+</vmapi>		
